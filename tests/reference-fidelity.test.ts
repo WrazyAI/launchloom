@@ -24,6 +24,29 @@ describe("reference fidelity validator", () => {
     expect(report.hardFindings).toContainEqual(expect.objectContaining({ code: "css-token-collision" }));
   });
 
+  it("does not mistake CSS feature queries for unisolated custom-property declarations", () => {
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: validExperience,
+      stylesSource: `${validStyles} @supports (--primary: #fff) { .hero { color: var(--primary); } }`,
+      motionSource: validMotion,
+    });
+
+    expect(report.pass).toBe(true);
+    expect(report.hardFindings).not.toContainEqual(
+      expect.objectContaining({ code: "css-token-collision" }),
+    );
+    const unisolatedRegisteredProperty = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: validExperience,
+      stylesSource: `${validStyles} @property --primary { syntax: "<color>"; inherits: false; initial-value: #fff; }`,
+      motionSource: validMotion,
+    });
+    expect(unisolatedRegisteredProperty.hardFindings).toContainEqual(
+      expect.objectContaining({ code: "css-token-collision" }),
+    );
+  });
+
   it("ignores prohibited words outside relevant attribute values", () => {
     const report = validateReferenceCandidate({
       referenceDna: { ...dna, prohibitedPatterns: [...dna.prohibitedPatterns, "cards", "grid"] },
@@ -208,5 +231,18 @@ export default function Experience({ content }) { return <main data-mobile-recom
     expect(report.visualFindings).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: "hero-geometry-mismatch" }),
     ]));
+  });
+});
+
+
+describe("runtime palette ownership", () => {
+  const roles = ["surface", "text", "muted-text", "link", "action", "on-action", "border", "focus"];
+  it("permits reads of each runtime role while rejecting declarations and registrations", () => {
+    for (const role of roles) {
+      const check = (stylesSource: string) => validateReferenceCandidate({ referenceDna: dna, experienceSource: validExperience, stylesSource: validStyles + stylesSource, motionSource: validMotion });
+      expect(check(`.owned { color: var(--ll-${role}); }`).hardFindings).not.toContainEqual(expect.objectContaining({ code: "css-token-collision" }));
+      expect(check(`.owned { --ll-${role}: #fff; }`).hardFindings).toContainEqual(expect.objectContaining({ code: "css-token-collision" }));
+      expect(check(`@property --ll-${role} { syntax: "<color>"; inherits: true; initial-value: #fff; }`).hardFindings).toContainEqual(expect.objectContaining({ code: "css-token-collision" }));
+    }
   });
 });

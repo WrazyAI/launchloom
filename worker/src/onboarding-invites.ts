@@ -226,6 +226,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
   }
 
   private async sendIntakeDispatch(task: OutboxRow) {
+    const invite = this.row(task.invite_id);
     const response = await fetch("https://api.github.com/repos/WrazyAI/launchloom/dispatches", {
       method: "POST",
       headers: {
@@ -237,7 +238,13 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       },
       body: JSON.stringify({
         event_type: "intake-submitted",
-        client_payload: { issue: task.issue_number, submission_id: task.submission_id },
+        client_payload: {
+          issue: task.issue_number,
+          submission_id: task.submission_id,
+          // The lifecycle email address lets the generation ledger attribute a
+          // run to the invited client without storing a second copy of it.
+          ...(invite?.client_email ? { client_email: invite.client_email } : {}),
+        },
       }),
     });
     if (!response.ok) throw new Error(`GitHub dispatch failed: ${response.status}`);
@@ -486,8 +493,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       now,
     );
     return this.ctx.storage.sql
-      .exec<Pick<InviteRow, "invite_id" | "client_email" | "expires_at" | "status" | "created_at" | "updated_at">>(
-        `SELECT invite_id, client_email, expires_at, status, created_at, updated_at
+      .exec<Pick<InviteRow, "invite_id" | "client_email" | "expires_at" | "status" | "created_at" | "updated_at" | "submission_id" | "issue_number">>(
+        `SELECT invite_id, client_email, expires_at, status, created_at, updated_at, submission_id, issue_number
          FROM onboarding_invites ORDER BY created_at DESC LIMIT 100`,
       )
       .toArray()
@@ -498,6 +505,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         status: row.status,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+        submissionId: row.submission_id,
+        issueNumber: row.issue_number,
       }));
   }
 }

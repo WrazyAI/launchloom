@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "source": "LaunchLoom main 849ca939cef734fc19114dba1746669470cdb1f3; exact generated template bytes before creative palette bindings; also exact Stage 2 template bytes at 7e3992cc5a745d8465193023596a25ddaa72df46; exact Stage 3 main template bytes at 0ad1400 for Stage 4 metadata migration; exact Stage 4 main template bytes at 0c3ed90 before static homepage contrast repairs",
+  "files": {
+    "src/lib/site.ts": [
+      "5ef2cba26110bbc8ca3c0d2e6ee49d33751dfa2ce7a62622392b11d4ba4775a1",
+      "dc200324f3dabeffc5f5eb921d0cf987e060310243d1455dc783c7a3a6b74e8d",
+      "0944b27fde1d8651f31e798c7a08db8ff56124618ded4d60792fc83fdc1cb367",
+      "ab6496822b5297a7c4cb8c62887907727944c1ed1f183d4c994eea83e92271df"
+    ],
+    "src/components/CreativeExperience.astro": [
+      "b5db51a1854afee5c2a7f22b55479ae48b691b56d702439aeed95504ef1d10af"
+    ],
+    "src/layouts/SiteLayout.astro": [
+      "ebc4d007ef8dfcbd8edbdd6004755a65336fe8a07f73f1b85b56396a4d673c28",
+      "0d2f4f5bb7ecfad886fa52ab6541c5c676a48463037fa0923d23442cb5422cfe",
+      "67fc0c1096e0a4066a4dbc2cc18688b33f4ab2805df9f2c957ba4e30f4ee2ced",
+      "f4215c6042047e7ba9edae120c93135fabe9b69b4b8320166f7fc5dac3305b03"
+    ],
+    "src/styles/creative-runtime.css": [
+      "fb2085fb02a589464e35f6a12d94c5d2737b65dc32a588a4a08c98d6b52e7ce7"
+    ],
+    "src/components/Header.astro": [
+      "65c768de78b6b93e0935314bec0e9c674f0182c0f01b2220215b3fbf765550e2",
+      "a81af0d43e9852c7297b8e4775143c8a507eb3a2eb1e16e029847c15fd431114"
+    ],
+    "src/components/Footer.astro": [
+      "8b1f9c4af9fe6fcf852d09e3e8ce6003a1000efcef651776a4e3c881b9f16421",
+      "7988689709fab223a3bb23b2d97ede7f9fdd81f37190c6143a48d629ce950290",
+      "86231bdd3547b7a140a74029966188014a6680c1fc7dbb95319eee70648e3f84"
+    ],
+    "src/components/PageSections.astro": [
+      "b69e1e8ce3bfe2566633199f249642df7a70cf3cfa4a3335916c56d8ab15a894",
+      "df68311ab0b1c563ea7d806f590369b09e9e8ac4e1a063f8571bf519ae4ec940"
+    ],
+    "src/pages/contact.astro": [
+      "ea2da8660d005ed3df877e033bc601932e3cb75089178dea39e6a45286a0656e",
+      "2204841133f56410dd3d2a59834199b94bbb420feba4b33e300a59e6c423f48c"
+    ],
+    "src/pages/services/[slug].astro": [
+      "e0cbddb189b3d6b25809257c84d77fbfa2a0a87a4c15d7bcf8169eb8dee8bb4a",
+      "f4700cdd146ccd17d7ec36b5ff966745bebd77ae1476b638f89c94a1dd07ad79",
+      "9b5d1a9fffdb838f55eef595ff1ad7761f850521b367f90b0989b32590573794"
+    ],
+    "src/pages/locations/[slug].astro": [
+      "9c05ac1080898fbdcf4b759130dafd20e0fb93564326c0c4e57b8d00c00cfe4a",
+      "79f7d4663ae560bd894ffd6489d1cd23d7a691b8b359a1507ee5f372eb7370ff",
+      "e23da007a4ef63820eba844069150d2d2d88c697b28b7e9e23df934fde878f26"
+    ],
+    "src/components/ReviewBanner.astro": [
+      "37b793a0060aae4a97962b95ab907d0b5032bb0b9e9d28274642782ce0e003eb",
+      "998f2518616eaefac266cf33397e7b99e915786b822aec1171608052ff6e0c7e",
+      "704d6aba74b79f18c9e3f029aa883bee156640a0ffe0ebb3334745a69f76d18a"
+    ],
+    "src/styles/site.css": [
+      "2f1f4d5e8f4a74d2849ed6110041261771e5864b5aeb35d66dd3491c03589810",
+      "73815783054281ba9964b9b2a4fd76e39d78392fc6fd860c1f89150774eadf27",
+      "bfff9dc6a1a716de94f945f661fe17874e385a7986082f2694dae5139f86989e"
+    ],
+    "src/lib/seo-readiness.mjs": [
+      "a23d9ab8359a20c7b0218064297c755e8719968e87e04da408f19e6c8ef6b4a9",
+      "dd35142693f1ae6b41f312b2b8ead783ba98a3dcd3ba95bc4f0f8d0fba51d283"
+    ],
+    "src/lib/seo-readiness.d.mts": [
+      "9e1c667876fc9e0b5b1958b6e19ffb31c76ea30ea528ed212b03bbbd4d110ecb",
+      "2818791948a50a360f51a4aa6f584e0c65a3747353e708a68cc8363846fc8833"
+    ],
+    "src/pages/sitemap.xml.ts": [
+      "156159299ef8d41e0cf5aa20ddab5fc776a634606ab3aaa28a9f43bb13bf68b4"
+    ],
+    "src/components/DesignFamilySections.astro": [
+      "bf3db9d9468b716f8eab9fbb40e08c6118347b41557673ca530ef8082b19abc1"
+    ],
+    "src/components/experiences/EditorialFolioExperience.astro": [
+      "d0f611e0c90140c56ba652c644000f2d85b1c64818b2e03398a66b078d1221d3"
+    ],
+    "src/components/experiences/GuidedConversationExperience.astro": [
+      "9dfcf8b317f072e1f2e911578ff924aef5d43bb96c9d7bccc5d480451f9405f1"
+    ],
+    "src/components/experiences/ServiceLedExperience.astro": [
+      "1d28386af044b262cd04b3aa98ecfe5fe6335de63698c0d52d76d3d49795b3a7"
+    ],
+    "src/pages/blog/[...slug].astro": [
+      "9c622e6eca654ddd9858021047d0da1ce4db71579dfb087ecc5267b0c77add02"
+    ],
+    "src/pages/about.astro": [
+      "ae63f89eb40aec1a8ef2f6bc7fadcd4769d16f8159d0cf7890eb7279c1a836b7"
+    ],
+    "src/pages/services/index.astro": [
+      "cc37b6a33071c52c62946afd25870bba44588d8b98287d5c78b65b36af634db4"
+    ],
+    "src/lib/creative-runtime.tsx": [
+      "5ee864d7423afe21bab2cf6b06370be75f5cadec5e7792eb8bc42c96d248d511"
+    ],
+    "src/pages/[support].astro": [
+      "7cabeaaf02dfb44daf30ca6b785c39be92cae9825e17b5c04970ead2feb83abc"
+    ],
+    "src/pages/about/[...page].astro": [
+      "340e36eb7e865f4f8adc1db890124c4ae8c538a0c98723c8a4cf12ab197ba40d",
+      "3bf65bf4d8c208ae7ae11f4a7fff23a9dc001c059b5148619ad505c31c581819"
+    ],
+    "src/pages/contact/[...page].astro": [
+      "9e3f73e8bbd6f3ca57aba852f2afbe2d55a55c09a2b62ade02859d3e8d3d8f4d"
+    ],
+    "src/pages/services/[...overview].astro": [
+      "4a95cdcef38a3f09291c9620130a35eab8838f0efec43c735c7dbeec0f8c57e3"
+    ],
+    "src/components/LeadForm.astro": [
+      "64aed1820f71bbdb87c5f918b442d69c98dda46c361cd930cc5250fc09044c39"
+    ]
+  }
+}

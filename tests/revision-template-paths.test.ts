@@ -4,6 +4,16 @@ import {
   revisionTemplateWritePaths,
 } from "../scripts/revision-template-paths.mjs";
 
+it("authorizes exact self-hosted font assets required by the migrated layout", async () => {
+  const { fontFaceCss } =
+    await import("../templates/client-site/src/lib/font-catalog.mjs");
+  const allowed = revisionTemplateWritePaths({});
+  for (const match of fontFaceCss().matchAll(/url\("([^"]+)"\)/gu))
+    expect(allowed).toContain("public" + match[1]);
+  expect(allowed).toContain("public/fonts/LICENSES.md");
+  expect(allowed).not.toContain("public/fonts/**");
+});
+
 it("includes every shared template write destination without granting directory scopes", () => {
   const paths = revisionTemplatePaths({});
 
@@ -15,7 +25,7 @@ it("includes every shared template write destination without granting directory 
       "src/pages/sitemap.xml.ts",
     ]),
   );
-  expect(paths.some((entry) => /[*?\[\]]/u.test(entry))).toBe(false);
+  expect(paths.some((entry) => /[*?]/u.test(entry))).toBe(false);
   expect(paths.some((entry) => entry.endsWith("/**"))).toBe(false);
 });
 
@@ -28,6 +38,7 @@ it("allows the legacy homepage only when social proof insertion can write it", (
   });
 
   expect(withoutProof).toContain("src/layouts/SiteLayout.astro");
+  expect(withoutProof).toContain(".launchloom/revision-template-baseline.json");
   expect(withoutProof).not.toContain("src/pages/index.astro");
   expect(withProof).toContain("src/pages/index.astro");
 });
@@ -58,4 +69,22 @@ it("allows exactly the feedback replacements named by set_image operations", () 
   expect(paths).toContain("public/images/feedback/hero-0123456789ab.webp");
   expect(paths).not.toContain("public/images/generated/logo-old.webp");
   expect(paths.some((entry) => entry.includes("escape"))).toBe(false);
+});
+
+it("refreshes paired surface owners and math together for a palette revision", () => {
+  const paths = revisionTemplatePaths({
+    revisionReport: { operations: [{ kind: "set_color_palette" }] },
+  });
+  expect(paths).toEqual(
+    expect.arrayContaining([
+      "src/lib/color-contrast.mjs",
+      "src/lib/color-policy.mjs",
+      "src/components/Header.astro",
+      "src/components/Footer.astro",
+      "src/components/PageSections.astro",
+      "src/pages/contact/[...page].astro",
+      "src/pages/services/[slug].astro",
+      "src/pages/locations/[slug].astro",
+    ]),
+  );
 });

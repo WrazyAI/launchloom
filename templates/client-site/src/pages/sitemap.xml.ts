@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import siteConfig from "../lib/site";
+import { routeInventory } from "../lib/site";
 
 export const prerender = true;
 
@@ -13,19 +13,14 @@ const escapeXml = (value: string) =>
 
 export const GET: APIRoute = ({ site }) => {
   const configured = site?.href || "https://example.pages.dev/";
-  const paths = [
-    "/",
-    "/services/",
-    ...siteConfig.services.map((service) => `/services/${service.slug}/`),
-    "/about/",
-    "/contact/",
-    ...(siteConfig.industry === "home-services"
-      ? siteConfig.locations.map((location) => `/locations/${location.slug}/`)
-      : []),
-    ...(siteConfig.blogArticles?.length
-      ? ["/blog/", ...siteConfig.blogArticles.map((article) => `/blog/${article.slug}/`)]
-      : []),
-  ];
+  const review =
+    import.meta.env.PUBLIC_REVIEW_MODE === "true" ||
+    import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
+  const paths = review
+    ? []
+    : routeInventory.records
+        .filter((route) => route.discovery.sitemap)
+        .map((route) => route.path);
   const urls = paths
     .map(
       (pathname) =>

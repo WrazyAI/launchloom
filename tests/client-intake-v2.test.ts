@@ -17,17 +17,27 @@ const onlineFormStringFields = [
   "email",
   "phone",
   "address",
+  "addressVisibility",
+  "hours",
+  "researchLanguageCode",
   "website",
   "domain",
   "services",
+  "excludedServices",
   "industry",
   "serviceAreas",
   "serviceRadius",
+  "primaryCity",
+  "coverageAreas",
+  "coverageSelection",
   "differentiators",
   "primaryCta",
   "brandNotes",
   "brandColorPicker",
   "brandColor",
+  "headingFont",
+  "bodyFont",
+  "accentColor",
   "leadEmail",
   "confirmRights",
   "confirmSeoResearch",
@@ -65,6 +75,9 @@ describe("ClientIntakeV2 normalization", () => {
       primaryCta: "Request a plumbing visit",
       confirmAccuracy: "yes",
       brandColor: "#235d57",
+      headingFont: "fraunces",
+      bodyFont: "inter",
+      accentColor: "#C86D51",
       unexpectedAgentField: "must not be submitted",
     });
     const payload = createClientIntakeV2Submission(formFields, {
@@ -82,6 +95,9 @@ describe("ClientIntakeV2 normalization", () => {
       inviteToken: "local-fixture-only",
       services: "Drain cleaning\nWater heater repair",
       brandColor: "#235d57",
+      headingFont: "fraunces",
+      bodyFont: "inter",
+      accentColor: "#C86D51",
       assets: { photoOne: "./assets/rainline-hero.svg" },
     });
     expect(payload).not.toHaveProperty("unexpectedAgentField");
@@ -90,7 +106,28 @@ describe("ClientIntakeV2 normalization", () => {
       primaryCity: "Eugene, OR",
       serviceRadius: 20,
       confirmedServices: ["Drain cleaning", "Water heater repair"],
+      headingFont: "fraunces",
+      bodyFont: "inter",
+      accentColor: "#C86D51",
     });
+  });
+
+  it("drops unknown font ids and malformed accents from intake", () => {
+    const normalized = normalizeClientIntake({
+      ...required,
+      intakeVersion: "2",
+      services: "Drain cleaning",
+      industry: "home-services",
+      serviceAreas: "Tacoma, WA",
+      serviceRadius: "10",
+      confirmAccuracy: "yes",
+      headingFont: "not-a-font",
+      bodyFont: "inter",
+      accentColor: "burgundy",
+    });
+    expect(normalized.headingFont).toBe("");
+    expect(normalized.bodyFont).toBe("inter");
+    expect(normalized.accentColor).toBe("");
   });
 
   it("normalizes v2 services, city, radius, and single confirmation", () => {
@@ -112,9 +149,106 @@ describe("ClientIntakeV2 normalization", () => {
       primaryCity: "Tacoma, WA",
       serviceRadius: 30,
       coverageAreas: ["Tacoma, WA"],
+      coverageSelection: null,
+      coverageConfirmation: {
+        status: "legacy_unconfirmed",
+        source: "unavailable",
+        primaryCity: "Tacoma, WA",
+        radiusMiles: 30,
+      },
       confirmation: { businessFactsAndAssetRights: true },
       businessName: "Harbor Plumbing",
     });
+  });
+
+  it("carries a confirmed coverage selection through v2 normalization", () => {
+    const normalized = normalizeClientIntake({
+      ...required,
+      intakeVersion: "2",
+      services: "Drain cleaning",
+      industry: "home-services",
+      primaryCity: "Cookeville, TN",
+      serviceAreas: "Cookeville, TN",
+      serviceRadius: "10",
+      coverageAreas: "Cookeville, TN\nAlgood, TN\nBaxter, TN",
+      coverageSelection: JSON.stringify({
+        status: "confirmed",
+        reference: "signed-coverage-reference",
+        selectedIds: ["algood-place", "baxter-place"],
+      }),
+      confirmAccuracy: "yes",
+    });
+
+    expect(normalized.coverageAreas).toEqual(["Cookeville, TN", "Algood, TN", "Baxter, TN"]);
+    expect(normalized.primaryCity).toBe("Cookeville, TN");
+    expect(normalized.coverageSelection).toEqual({
+      status: "confirmed",
+      reference: "signed-coverage-reference",
+      selectedIds: ["algood-place", "baxter-place"],
+      reason: "",
+    });
+    // Provider provenance is derived by the Worker from the signed reference,
+    // never from the submitted labels.
+    expect(normalized.coverageConfirmation).toBeNull();
+  });
+
+  it("accepts an explicitly confirmed primary-city-only fallback", () => {
+    const normalized = normalizeClientIntake({
+      ...required,
+      intakeVersion: "2",
+      services: "Drain cleaning",
+      industry: "home-services",
+      primaryCity: "Cookeville, TN",
+      serviceAreas: "Cookeville, TN",
+      serviceRadius: "20",
+      coverageAreas: "Cookeville, TN",
+      coverageSelection: JSON.stringify({
+        status: "primary_city_only",
+        reason: "provider_failure",
+      }),
+      confirmAccuracy: "yes",
+    });
+    expect(normalized.coverageAreas).toEqual(["Cookeville, TN"]);
+    expect(normalized.coverageConfirmation).toMatchObject({
+      status: "primary_city_only",
+      source: "client_confirmed_primary_city_only",
+      reason: "provider_failure",
+      radiusMiles: 20,
+    });
+  });
+
+  it("rejects a confirmed coverage selection that does not match its submitted list", () => {
+    expect(() => normalizeClientIntake({
+      ...required,
+      intakeVersion: "2",
+      services: "Drain cleaning",
+      industry: "home-services",
+      primaryCity: "Cookeville, TN",
+      serviceAreas: "Cookeville, TN",
+      serviceRadius: "10",
+      coverageAreas: "Cookeville, TN",
+      coverageSelection: JSON.stringify({
+        status: "confirmed",
+        reference: "signed-coverage-reference",
+        selectedIds: ["algood-place"],
+      }),
+      confirmAccuracy: "yes",
+    })).toThrow(/coverage list changed/iu);
+  });
+
+  it("rejects malformed coverage confirmations instead of silently downgrading them", () => {
+    expect(() => normalizeClientIntake({
+      ...required,
+      intakeVersion: "2",
+      services: "Drain cleaning",
+      industry: "home-services",
+      primaryCity: "Cookeville, TN",
+      serviceAreas: "Cookeville, TN",
+      serviceRadius: "10",
+      coverageAreas: "Cookeville, TN",
+      coverageSelection: "{broken",
+      confirmAccuracy: "yes",
+    })).toThrow(/confirm/iu);
   });
 
   it("preserves legacy compatibility when legacy consent fields are all affirmed", () => {
@@ -240,4 +374,10 @@ describe("ClientIntakeV2 normalization", () => {
       confirmAccuracy: "yes",
     })).toThrow(/city and a supported travel radius/u);
   });
+});
+
+
+it("rejects more than five additional cities in a new confirmed intake", () => {
+  const areas = ["Cookeville, TN", ...Array.from({length: 35}, (_, i) => `Confirmed Municipality ${i}, TN`)];
+  expect(() => normalizeClientIntake({ ...required, intakeVersion:"2", industry:"home-services", services:"Drain cleaning", primaryCity:"Cookeville, TN",serviceRadius:"10", coverageAreas:areas.join("\n"),coverageSelection:JSON.stringify({status:"confirmed",reference:"signed-test-reference",selectedIds:areas.slice(1).map((_,i)=>`city-${i}`)}),confirmAccuracy:"yes" })).toThrow();
 });

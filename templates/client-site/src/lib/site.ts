@@ -1,3 +1,11 @@
+import { compilePageBriefs } from "./page-briefs.mjs";
+import { resolvePageRecipe } from "./page-recipe";
+import {
+  compileRouteInventory,
+  approvedRoutes,
+  productionRouteMode,
+} from "./route-inventory.mjs";
+import { publicBusiness } from "./business-facts.mjs";
 import config from "../site.config.json";
 
 export type Service = {
@@ -112,9 +120,21 @@ export type ExperiencePackId =
   | "guided-conversation"
   | "service-led";
 export type SiteConfig = {
+  pageContent?: Record<string, any>;
+  pageEvidence?: Array<Record<string, any>>;
+  pageBriefs?: ReturnType<typeof compilePageBriefs>;
+  routePolicy?: import("./route-inventory.mjs").RoutePolicy;
+  routeInventory?: import("./route-inventory.mjs").RouteInventory;
+  supportingPages?: Record<
+    string,
+    { title?: string; body: string; reviewed: boolean; source: string }
+  >;
+  excludedServices?: string[];
+  factReadiness?: import("./business-facts.mjs").FactReadiness;
   preset: "wellness" | "home-services";
   industry?: string;
   businessKind?: string;
+  demoNotice?: string;
   business: {
     name: string;
     tagline: string;
@@ -122,6 +142,7 @@ export type SiteConfig = {
     phone: string;
     email: string;
     address: string;
+    addressVisibility?: "public" | "private";
     serviceAreas: string[];
     primaryCity?: string;
     serviceRadiusMiles?: number | "50+" | null;
@@ -134,12 +155,29 @@ export type SiteConfig = {
     googleMapsUrl?: string;
   };
   style: {
+    surfaces?: Record<
+      string,
+      {
+        surface: string;
+        text: string;
+        mutedText: string;
+        link: string;
+        action: string;
+        onAction: string;
+        border: string;
+        focus: string;
+      }
+    >;
     primaryColor: string;
     tone: string;
     preference?: string;
     visualDirection?: string;
     showBrandName?: boolean;
     surfaceColor?: string;
+    creativeColorOverrides?: Record<
+      string,
+      { variable: string; value: string }
+    >;
     heroColor?: string;
     inkColor?: string;
     mutedColor?: string;
@@ -148,6 +186,11 @@ export type SiteConfig = {
     brandTextColor?: string;
     brandSurfaceColor?: string;
     brandSurfaceTextColor?: string;
+    headingFont?: string;
+    bodyFont?: string;
+    accentColor?: string;
+    accentTextColor?: string;
+    accentContrastColor?: string;
   };
   services: Service[];
   seoPageMap?: SeoPageMap[];
@@ -241,8 +284,16 @@ export type SiteConfig = {
       distinctivenessScore?: number;
       candidatePackIds?: string[];
       avoidPackIds?: string[];
-      selectionMode?: "internal-bakeoff" | "requested" | "legacy" | "creative-bakeoff";
+      selectionMode?:
+        | "internal-bakeoff"
+        | "requested"
+        | "legacy"
+        | "creative-bakeoff"
+        | "creative-diagnostic";
       fingerprint?: string;
+      servicePage?: boolean;
+      locationPage?: boolean;
+      servicesIndex?: boolean;
     };
   };
   assetReport?: {
@@ -276,7 +327,9 @@ export type SiteConfig = {
     publishReady: boolean;
     metricLocation?: string;
     labsMetricLocation?: string;
-    validatedQueries: Array<SeoKeyword & { query?: string; searchVolume?: number | null }>;
+    validatedQueries: Array<
+      SeoKeyword & { query?: string; searchVolume?: number | null }
+    >;
     customerQuestions: string[];
     copyVocabulary: string[];
     pageDecisions: Array<{
@@ -292,7 +345,23 @@ export type SiteConfig = {
     blogOpportunities?: Array<Record<string, unknown>>;
     quickWins?: Array<Record<string, unknown>>;
     marketSnapshot?: Record<string, unknown>;
+    coverageAreas?: string[];
+    coverageConfirmation?: Record<string, unknown>;
+    coverageResearch?: {
+      version: number;
+      areas: string[];
+      complete: boolean;
+      approvalPolicy: "primary-city" | "all-confirmed-cities";
+      cities: Array<{
+        city: string;
+        status: "complete" | "partial" | "pending";
+        research: Record<string, unknown> | null;
+        reason?: string;
+      }>;
+    };
     completeness?: Record<string, unknown>;
+    fallbackSearch?: Record<string, unknown>;
+    externalSearchEvidence?: Array<Record<string, unknown>>;
     prohibitedClaims: string[];
     evidence: Array<Record<string, unknown>>;
     cost: { tasks: number; usd: number; limitUsd: number };
@@ -325,8 +394,47 @@ export type SiteConfig = {
   lead?: { apiUrl: string; token: string };
 };
 
-const site = config as SiteConfig;
+const site = {
+  ...config,
+  business: publicBusiness(config.business),
+} as SiteConfig;
 
+// Always compile from current content/policy; stored reports cannot authorize routes.
+export const routeInventory = compileRouteInventory(site);
+export const pageBriefs = compilePageBriefs(site);
+export const routePageBrief = (routeId: string) => pageBriefs.briefs.find(brief => brief.routeId === routeId.trim().toLowerCase().replace(/\s+/gu, " ")) || null;
+export const renderedRoutes = approvedRoutes(routeInventory, {
+  production: productionRouteMode(import.meta.env),
+});
+export const routeIsRendered = (path: string) =>
+  renderedRoutes.some((route) => route.path === path);
+export const pageHref = (path: string, fallback = "/") =>
+  routeIsRendered(path) ? path : fallback;
+export const homeSectionHref = (type: string) => {
+  const section = resolvePageRecipe(site).sections.find(
+    (section) => section.type === type,
+  );
+  const id = site.design?.experience?.packId
+    ? type === "faq"
+      ? "faqs"
+      : type
+    : section?.id;
+  return id ? `/#${id}` : "/";
+};
+export const serviceHref = (slug: string) =>
+  pageHref(`/services/${slug}/`, homeSectionHref("services"));
+export const approvedServices = site.services.filter((service) =>
+  routeIsRendered(`/services/${service.slug}/`),
+);
+site.locations = site.locations.filter((location) =>
+  routeIsRendered(`/locations/${location.slug}/`),
+);
+export const footerRoutes = renderedRoutes.filter(
+  (route) => route.discovery.navigation === "footer",
+);
+export const headerRoutes = renderedRoutes.filter(
+  (route) => route.discovery.navigation === "header",
+);
 export default site;
 
 export const phoneHref = (phone: string) =>

@@ -5,14 +5,23 @@ owns query selection, research, competitor structure, page architecture, and
 content opportunity selection. Research never changes a business fact or adds
 an unconfirmed service.
 
+Business fact status, public-address permission, and research language are
+specified in [the Stage 1 contract](business-facts-contract.md). Fact blockers
+are enforced by the same shared readiness path as research blockers. Optional
+missing facts remain omitted, and pending additional-city research keeps the
+existing primary-city approval policy.
+
 ## Pipeline
 
 1. A private one-use invitation opens the three-step Business, Services, and
    Brand intake. Google Places can prefill business details and category.
    Suggestions remain unchecked until the client confirms them.
-2. `scripts/coverage-areas.mjs` resolves a bounded list of nearby communities
-   from the confirmed city and radius. Those communities are coverage facts,
-   not automatic location pages.
+2. The intake discovers nearby city/town candidates and persists the exact
+   client-confirmed selection after server signature verification.
+   `scripts/coverage-areas.mjs` preserves that list without another provider
+   lookup. Unconfirmed legacy intakes retain their previous enrichment path.
+   An old v2 intake explicitly marked `legacy_unconfirmed` stays primary-only.
+   Service coverage does not imply an office or an automatic location page.
 3. `scripts/seo-research.mjs` researches only confirmed services and the
    confirmed primary city. It writes `.launchloom/seo-research.json` as the
    machine-authoritative map and `.launchloom/seo-map.md` as its operator
@@ -25,6 +34,10 @@ an unconfirmed service.
    services. Location pages are allowed only when the map has search evidence
    and verified local facts. The blog routes are built when articles exist;
    the initial site does not create filler articles.
+
+Google Ads `competition_index` (0-100) is stored as a 0-1 fraction in the
+numeric competition field. Categorical `HIGH`, `MEDIUM`, and `LOW` labels never
+become invented numeric scores. Missing numeric competition remains unavailable.
 
 ## Research stages
 
@@ -60,20 +73,26 @@ Model-authored prose is discarded and is never treated as search evidence.
 Fallback web observations remain separate from confirmed business facts and
 measured SEO fields. They do not create search volume, Keyword Difficulty,
 intent, ranking positions, competitor-rank claims, services, or locations.
-A site with fallback web evidence is still `context-only` and
-`publishReady: false`; the preview can be reviewed, but the production SEO
-release gate remains blocked until the measured DataForSEO requirements pass.
+Completed bounded fallback research stays `context-only` and sets
+`publishReady: true` for developer approval. It must have usable HTTPS citations,
+no failed queries, complete provider-reported fallback cost within its cap, and
+no budget exhaustion. The review banner states: "Web research complete.
+Measured SEO data unavailable. Developer approval is available." Missing,
+empty, failed, partial, or unreported-cost fallback research remains blocked.
+The Worker, rendered review controls, and production build use the same evidence
+policy; the ready flag alone cannot unlock a new preview.
 If OpenRouter is unavailable or not configured, the result stays explicitly
 degraded/context-only and is not described as researched.
 
 Missing provider values stay `null` or are listed as unavailable. The report
 shows warnings, the configured task/cost limits, and DataForSEO-reported spend.
 The research task limit is hard-bounded to 32 and the USD limit to $2 even if
-an operator sets higher values. A provider-reported final-task overrun blocks
-publishing and prevents additional tasks from starting.
+an operator sets higher values. A provider-reported final-task overrun prevents additional measured tasks from
+starting and disqualifies the measured-research approval path.
 If a completed or failed provider task has no reported cost, the task cost is
-recorded as unavailable, further paid tasks stop, and production approval stays
-blocked rather than presenting an invented $0 total.
+recorded as unavailable and further measured tasks stop, rather than presenting
+an invented $0 total. A separately completed bounded cited fallback can still
+qualify for developer approval.
 
 ## Configuration
 
@@ -97,12 +116,42 @@ GitHub Actions variables:
 
 The generated client repository retains the JSON map, Markdown report,
 business enrichment, and canonical brief under `.launchloom/`. Production
-approval remains fail-closed unless the stored research map is version 2,
-`publishReady` is true, all required measurement stages completed, every
-confirmed service has a successful SERP snapshot, and at least three ranking
-domains were found. A preview can still be reviewed when provider data is
-missing, but it cannot be published as production.
+approval accepts either a complete measured map or completed cited fallback
+research. The measured path requires all measurement stages, service SERPs,
+three ranking domains, and reported cost. The fallback path verifies its own
+citations and completion/budget receipt without claiming measured metrics.
+Existing version-two fallback receipts can qualify even when their historical
+`publishReady` flag is false, provided those receipts are preserved in the site
+config. Incomplete research remains blocked. Creative, reference, content,
+indexability, signed-review, and exact-reviewed-head checks still apply.
 
 The operator Access setup and one-use invitation secret are documented in
 [`private-onboarding.md`](private-onboarding.md). No SEO metric, competitor
 rank, or search intent is fabricated to make a map appear complete.
+
+## Confirmed-city research
+
+For a new multi-city confirmation, the pipeline researches each selected city
+independently, with its own local metric location, keywords, SERPs and provider
+provenance. `coverageResearch.cities` stores each result and its status. The
+primary city's service page map stays the site page map; nearby cities do not
+silently become location pages. A location page still requires search evidence
+and trusted local facts.
+
+All cities share the configured DataForSEO task/USD caps and fallback query/USD
+caps. Caps are not multiplied by the city count. Unknown provider cost stops
+further measured requests across the run. Cities that cannot be researched
+remain visibly pending; no confirmed cities are silently dropped by the old
+20-area limit. Both measured and completed cited fallback qualify per city
+under the existing evidence policy. The default `primary-city` approval policy
+preserves existing primary-city release requirements, including complete
+reported measured spend; secondary pending research is disclosed rather than
+silently promoted as complete. Strict `all-confirmed-cities` policy is supported
+by the research API and requires every selected city to qualify. The mode
+refers to the primary city's research, and per-city modes remain explicit.
+Incomplete coverage is listed in the operator report, review banner and config.
+
+Server-confirmed coverage takes priority over legacy enrichment at every seam.
+Deselected cities cannot return through the enrichment merge, service-area text,
+or canonical page filtering. Primary-only fallback is preserved as an explicit
+selection and does not trigger nearby discovery during generation.

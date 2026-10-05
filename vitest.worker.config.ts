@@ -14,6 +14,7 @@ export default defineConfig({
           LEAD_SIGNING_SECRET: "test-lead-secret",
           OPENROUTER_API_KEY: "test-openrouter-key",
           ONBOARDING_INVITE_SIGNING_SECRET: "test-onboarding-invite-secret",
+          GENERATION_TRACKING_SECRET: "test-generation-tracking-secret",
           ONBOARDING_ORIGIN: "https://onboard.example.test",
           ONBOARDING_ADMIN_EMAILS: "admin@example.test",
           ONBOARDING_ACCESS_AUD: "launchloom-local-onboarding-admin",

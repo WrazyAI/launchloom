@@ -1,0 +1,36 @@
+name: Verify internal QA delivery (read only)
+on:
+  workflow_dispatch:
+    inputs:
+      requests:
+        description: "JSON array, max 2: project, testName ([LaunchLoom QA] project correlation), submittedAt (UTC ISO). Optional repo, commit, origin."
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: internal-qa-delivery-readback
+  cancel-in-progress: false
+jobs:
+  readback:
+    runs-on: depot-ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Read provider delivery status
+        env:
+          QA_REQUESTS_JSON: ${{ inputs.requests }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          LAUNCHLOOM_INTERNAL_QA_RECIPIENT: ${{ secrets.LAUNCHLOOM_INTERNAL_QA_RECIPIENT }}
+        run: node scripts/verify-internal-qa-delivery.mjs
+      - name: Retain redacted evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: internal-qa-delivery-evidence
+          path: artifacts/internal-qa-delivery/evidence.json
+          retention-days: 7
+          if-no-files-found: error

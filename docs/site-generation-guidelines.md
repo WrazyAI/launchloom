@@ -19,6 +19,14 @@ stay outside deployed public assets. Visual review remains mandatory.
 
 ## Shared standard
 
+The canonical brief records fact status and provenance. Missing optional facts
+are omitted; unresolved contradictions and missing required contact/service
+facts block publication while a review preview remains available. A private
+business address stays in the protected operational brief and must not enter
+public copy, configuration, hydrated props, JSON-LD, maps, or directions links.
+Client confirmation records testimony, not independent credential verification.
+See `business-facts-contract.md` for the versioned contract and legacy migration.
+
 Every site should make four things clear near the top of the page: who the
 business helps, what it provides, where it operates when location matters, and
 what the visitor should do next. Use one primary action and one useful
@@ -75,6 +83,78 @@ descriptions to one distinct sentence. Put supporting detail on the service
 page. Do not add decorative ordinal numbers to service or proof cards. Reserve
 numbering for a sequence where the order communicates a real process.
 
+## Programmatic color and contrast contract
+
+Keep the chosen brand color as identity and derive readable variants by local
+role before authorship. `palette.surfaces` pairs page, hero, navigation, light,
+dark and bounded brand surfaces with body/muted text, links, actions, action
+text, required control borders and focus indicators. Authored surfaces use
+`data-ll-surface` and the scoped `--ll-*` role variables; a section changing
+surface must use its own foreground pair. Typography and composition remain
+authored. Decorative separators do not need control-boundary contrast.
+
+Rendered contrast is a deterministic promotion gate on every built HTML route
+at desktop, compact desktop and mobile, including hover, keyboard focus,
+native disclosures and explicitly controlled navigation menus. Ordinary text
+requires 4.5:1, large text 3:1, and necessary control/focus indicators 3:1.
+Composited alpha is measured; unsupported effects and ambiguous image backdrops
+are unresolved, not presumed readable. Image overlays may use a local opaque
+plate or a scrim whose worst-case backdrop passes. Text shadows alone do not
+prove contrast. Existing visual, source and reference-fidelity gates still run.
+Interaction audits include summary controls and links revealed by disclosures
+and menus. Inset focus indicators use their local paint and block unmeasured
+border overlap. Unrelated paint remains unresolved unless bounded geometry
+and stacking prove an opaque plate or opaque occlusion. Obstruction remains
+subject to the visual gate.
+
+Initial candidates may receive one bounded local text-color sweep. Corrections
+are scoped to a verified route, actual stylesheet media conditions and exact rendered element;
+only deterministic solid-surface pairs with consistent measured interaction
+states are eligible. Persist CSS, rebuild, audit again, then rerun visual and
+reference gates. More than 32 unique correction groups, over 16 KiB of local correction CSS, or ambiguous backdrops go to
+the existing bounded author repair path. Human revisions run the complete
+audit without automatic unrelated recoloring. Preserve before/after ratios,
+selectors, viewports and correction reports with private workflow evidence.
+
+Publication runs the same read-only audit before upload, including developer visual overrides; approved source is never silently rewritten during publication.
+
+Run `npm run quality:contrast -- --site <client-directory>` after a client build.
+For a controlled initial-generation sweep, explicitly supply `--repair true
+--styles src/generated-experiences/selected/styles.css`. A failing/unresolved
+report exits nonzero and never authorizes publication.
+
+## Client typography and accent contract
+
+Clients choose a heading and body family from the self-hosted catalog in
+`templates/client-site/src/lib/font-catalog.mjs` (twelve OFL families; latin
+subset woff2 vendored by `scripts/vendor-brand-fonts.mjs` into both public
+directories). Runtime pages never load remote font URLs. Leaving one side
+automatic pairs an explicit choice with a curated partner through
+`resolveFontPairing`; leaving both automatic keeps the recipe typography.
+
+`SiteLayout.astro` emits the catalog `@font-face` rules and
+`--font-heading` / `--font-body` from the resolved pairing. Deterministic CSS
+and the folio, guide, and service experience packs must read those variables
+with their original stack as the fallback (`var(--font-heading, <stack>)`), so
+an unchosen site renders exactly as before while a chosen family wins on every
+level and every page, including inner pages that carry the resolved
+`type-<treatment>` class.
+
+The creative lane receives `visualBrief.typography` (family ids, names, local
+stacks) and must bind authored display roles to `var(--font-heading, <palette
+stack>)` and body roles to `var(--font-body, <palette stack>)`, never
+redeclaring host variables. Styles validation fails candidate promotion when a
+named family is not bound, and the rendered reference judge scores visible
+headings and body text against the chosen families.
+
+An optional second accent color is contrast-repaired by `resolvePalette`
+(`accentTextColor` readable on the page surface, `accentContrastColor`
+readable on the fill) and is limited to secondary marks such as kickers,
+underlines, and small highlights; it never replaces the primary action or
+carries a large surface. Revisions may add, change, or explicitly clear the
+accent (`role: "accent"` in structured colors); unrelated palette revisions
+preserve a configured accent, and font choices survive palette-only revisions.
+
 ## Conversion tools
 
 New sites receive a guided qualifier, a scripted quick-answer assistant, and,
@@ -124,7 +204,14 @@ authentic customer proof, recent work, coverage, practical questions, quote.
 ## Local SEO pages
 
 Create substantive service pages that answer a real customer question and link
-to related services and the primary action. Create location pages only for
+to related services and the primary action. On a creative-candidate site,
+service detail pages, location pages for listed home-service areas, and the
+services index are authored from the same Reference DNA, design contract, and
+stylesheet as the homepage, so they keep the same palette, typography,
+surfaces, navigation language, and composition rhythm; their rendered canvas
+and heading identity are verified against the homepage before promotion. The
+deterministic inner template remains only for legacy and experience-pack sites.
+Create location pages only for
 submitted service areas. Each location page must state coverage truthfully and
 provide useful local context from verified facts. Do not multiply thin pages
 by combining every service with every city or create interchangeable city-swap
@@ -217,6 +304,14 @@ a new page recipe. Explicit requested colors take precedence over a generic
 preset palette, with readable action text selected for the resulting brand
 color.
 
+For `creative-candidate` pages, section-scoped color, spacing, typography, and
+variant requests belong to the authored-source repair lane; do not treat a
+page-wide legacy palette or section-variant config change as proof that the
+creative page changed. Adding, hiding, or reordering sections is not supported
+by the current creative-source scope contract, so classify those requests for
+manual attention without mutating the section configuration. Extend this only
+alongside a scoped source operation and rendered acceptance test.
+
 Revision acceptance checks both the built HTML and a real browser render at
 desktop and mobile widths. The requested section, order, variant, treatment,
 copy, and colors must be visible; calls and fragment links must work; primary
@@ -286,3 +381,16 @@ Replacement images are reviewer-supplied assets:
 - Requested revision artifacts are visible in the rendered page.
 - Desktop and mobile layouts are readable and free of horizontal overflow.
 - Rendered output contains no em dashes or placeholder values.
+
+### Uploaded image revisions
+
+An explicit uploaded replacement for a named image slot is a deterministic asset
+change. Phrases such as “change the hero image to the one I uploaded” must not
+trigger copy rewriting, a page redesign, or another candidate bakeoff. Preserve
+the selected authored source, other images, business facts, copy, and services.
+Additional composition or copy requests remain separate bounded operations.
+
+A successful revision must show the exact replacement as a loaded, visible
+image in its requested placement on desktop and mobile. Serialized props,
+attachment thumbnails, hidden images, or use in another section are insufficient.
+Do not send a completion email until these rendered checks pass.

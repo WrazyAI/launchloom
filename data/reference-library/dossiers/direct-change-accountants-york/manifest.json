@@ -10,11 +10,10 @@
     "rights": "permission-cleared",
     "rightsEvidence": "The requester attested on 2026-09-26 that clearance covers full-page screenshot retention, derived prompts, and pipeline-model visual-reference use. No source-owner grant file was uploaded.",
     "rightsEvidencePath": "rights/requester-attestation.md",
-    "assetEvidencePaths": [
-      "rights/requester-attestation.md"
-    ],
     "provenanceEvidencePaths": [
-      "rights/provenance.md"
+      "rights/provenance.md",
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {
@@ -90,7 +89,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "827237b36bfc3d48864c5ab46b8ee1083c610a8d69140a89169cf0619f98482c"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -98,7 +98,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "79e5f38e2a82d97e02f0c4b09ce64572a6fcb1fdd290f044ac326459c900edfc"
     }
   },
   "referenceDna": {
@@ -210,7 +211,17 @@
       "hero is legible at desktop 100 percent zoom",
       "mobile taxonomy remains readable",
       "source imagery, names, logos and wording are excluded"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "type-led-statement",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "copy-leads-opening",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "curated-permission-attested",

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "sourceUrl": "https://www.catclinic.co.uk/",
+  "captures": {
+    "desktop": {
+      "url": "https://www.catclinic.co.uk/",
+      "finalUrl": "https://www.catclinic.co.uk/",
+      "httpStatus": 200,
+      "title": "Compassionate Care for Cats - Independent Cat Vets Edinburgh",
+      "h1": [
+        "This site uses cookies to store information on your computer",
+        "Calm, compassionate\nveterinary care\ndedicated entirely\nto cats"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "image": {
+        "width": 1440,
+        "height": 5795
+      },
+      "documentWidth": 1440,
+      "documentHeight": 5795,
+      "scrollWidthOverflow": false,
+      "brokenImages": [],
+      "pageErrors": [],
+      "fullPage": true,
+      "captureMethod": "Playwright Chromium fullPage after progressive scroll/lazy-media activation"
+    },
+    "mobile": {
+      "url": "https://www.catclinic.co.uk/",
+      "finalUrl": "https://www.catclinic.co.uk/",
+      "httpStatus": 200,
+      "title": "Compassionate Care for Cats - Independent Cat Vets Edinburgh",
+      "h1": [
+        "This site uses cookies to store information on your computer",
+        "Calm, compassionate\nveterinary care\ndedicated entirely\nto cats"
+      ],
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "image": {
+        "width": 390,
+        "height": 6872
+      },
+      "documentWidth": 390,
+      "documentHeight": 6872,
+      "scrollWidthOverflow": false,
+      "brokenImages": [],
+      "pageErrors": [],
+      "fullPage": true,
+      "captureMethod": "Playwright Chromium fullPage after progressive scroll/lazy-media activation"
+    }
+  }
+}

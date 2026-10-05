@@ -18,6 +18,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
     steps:
@@ -26,7 +27,12 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
+      - name: Install contrast verifier dependencies
+        run: npm ci
+      - name: Install contrast verifier browser
+        run: npx playwright install --with-deps chromium
       - name: Build and direct-upload approved client site
+        id: publish
         env:
           CLIENT_REPO: ${{ github.event.client_payload.repo }}
           CLIENT_PR: ${{ github.event.client_payload.pr }}
@@ -56,15 +62,19 @@ jobs:
           PRODUCTION="https://$PROJECT.pages.dev"
           npm ci
           PUBLIC_SITE_URL="$PRODUCTION" PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
+          node "$GITHUB_WORKSPACE/scripts/verify-contrast.mjs" --site "$RUNNER_TEMP/client" --report "$RUNNER_TEMP/production-contrast.json"
           node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION"
+          node "$GITHUB_WORKSPACE/scripts/verify-site-routes.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION" --site "$RUNNER_TEMP/client" --commit "$APPROVED_SHA" --report "$RUNNER_TEMP/production-route-handoff.json" --screenshots "$RUNNER_TEMP/production-route-screenshots" --write-manifest true
           if [ "$DEVELOPER_OVERRIDE" = "true" ]; then
             MARKER="<!-- launchloom-human-gate-override:$OVERRIDE_SESSION_ID -->"
             if ! gh api "repos/$CLIENT_REPO/issues/$CLIENT_PR/comments?per_page=100" --paginate --jq '.[].body' | grep -Fq "$MARKER"; then
-              gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nReviewed preview commit: %s\nCreative candidate: %s\nClient release commit: %s\n\nThe developer explicitly authorized sending this version despite its recorded automated visual-quality findings. Build, content-integrity, and production SEO checks must pass before any deployment.' "$MARKER" '## Developer visual-gate override' "$OVERRIDE_REVIEWED_SHA" "$OVERRIDE_CANDIDATE_ID" "$APPROVED_SHA")"
+              gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nReviewed preview commit: %s\nCreative candidate: %s\nClient release commit: %s\n\nThe developer explicitly authorized sending this version despite its recorded automated visual-quality findings. Build, content-integrity, contrast/readability, and production SEO checks must pass before any deployment.' "$MARKER" '## Developer visual-gate override' "$OVERRIDE_REVIEWED_SHA" "$OVERRIDE_CANDIDATE_ID" "$APPROVED_SHA")"
             fi
           fi
           npx wrangler pages deploy dist --project-name "$PROJECT" --commit-hash "$APPROVED_SHA" --commit-message "LaunchLoom approved deployment"
+          node "$GITHUB_WORKSPACE/scripts/verify-site-routes.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION" --destination "$PRODUCTION" --site "$RUNNER_TEMP/client" --commit "$APPROVED_SHA" --report "$RUNNER_TEMP/destination-route-handoff.json" --screenshots "$RUNNER_TEMP/destination-route-screenshots"
           TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage client --repo "$CLIENT_REPO" --site "$PROJECT" --email "$CLIENT_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$PRODUCTION" --token-only true)
+          echo "::add-mask::$TOKEN"
           NAME="$(node -e 'const x=require("./src/site.config.json"); console.log(x.business.name)')"
           REVIEW_URL="$PRODUCTION?review=$TOKEN"
           EMAIL_ARGS=(--to "$CLIENT_EMAIL" --name "$NAME" --preview "$PRODUCTION" --review "$REVIEW_URL" --kind published --audience client)
@@ -79,3 +89,77 @@ jobs:
             node "$GITHUB_WORKSPACE/scripts/send-preview-email.mjs" --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "$PRODUCTION" --review "$REVIEW_URL" --kind published --audience delivery-failure || true
             exit 1
           fi
+      - name: Retain private route verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: approved-site-route-verification
+          path: |
+            ${{ runner.temp }}/production-route-handoff.json
+            ${{ runner.temp }}/destination-route-handoff.json
+            ${{ runner.temp }}/production-route-screenshots
+            ${{ runner.temp }}/destination-route-screenshots
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Record published generation
+        if: always()
+        continue-on-error: true
+        env:
+          CLIENT_REPO: ${{ github.event.client_payload.repo }}
+          APPROVED_SHA: ${{ github.event.client_payload.approvedSha }}
+          CLIENT_PR: ${{ github.event.client_payload.pr }}
+          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+        run: |
+          case "$CLIENT_REPO" in
+            WrazyAI/launchloom-[0-9]*-*) ;;
+            *) echo "generation_tracking=skipped reason=non-standard-repo"; exit 0 ;;
+          esac
+          ISSUE=$(printf '%s' "$CLIENT_REPO" | sed -E 's#^WrazyAI/launchloom-([0-9]+)-.*#\1#')
+          PROJECT=""
+          if [ -f "$RUNNER_TEMP/client/.launchloom-deployment.json" ]; then
+            PROJECT=$(node -e "console.log(require(process.env.RUNNER_TEMP + '/client/.launchloom-deployment.json').project)")
+          fi
+          PRODUCTION=""
+          if [ -n "$PROJECT" ]; then PRODUCTION="https://$PROJECT.pages.dev"; fi
+          STATUS=attention
+          EVENT_STATUS=failed
+          FAILURE="Publish workflow $WORKFLOW_RUN_ID did not complete. Inspect the Actions run before telling the client the site is live."
+          if [ "$PUBLISH_OUTCOME" = "success" ]; then
+            STATUS=published
+            EVENT_STATUS=completed
+            FAILURE=""
+          fi
+          EVENT_STATUS="$EVENT_STATUS" PRODUCTION="$PRODUCTION" APPROVED_SHA="$APPROVED_SHA" CLIENT_PR="$CLIENT_PR" node -e '
+            const fs = require("node:fs");
+            fs.writeFileSync("/tmp/publish-event.json", JSON.stringify([{
+              eventKey: "publish:" + String(process.env.APPROVED_SHA || "unknown").slice(0, 40),
+              stage: "publish",
+              status: process.env.EVENT_STATUS,
+              provider: "cloudflare-pages",
+              model: null,
+              costUsd: null,
+              costKind: "unreported",
+              detail: {
+                approvedSha: process.env.APPROVED_SHA || null,
+                pr: Number(process.env.CLIENT_PR || 0) || null,
+                productionUrl: process.env.PRODUCTION || null,
+                notes: process.env.EVENT_STATUS === "completed"
+                  ? "Production deploy, route verification, and client delivery email finished."
+                  : "Publishing stopped before the client delivery completed.",
+              },
+            }]));
+          '
+          ARGS=(
+            --action complete
+            --issue "$ISSUE"
+            --repo "$CLIENT_REPO"
+            --pr "$CLIENT_PR"
+            --sha "$APPROVED_SHA"
+            --status "$STATUS"
+            --events /tmp/publish-event.json
+            --completed-at "$(date +%s%3N)"
+          )
+          if [ -n "$PRODUCTION" ]; then ARGS+=(--production-url "$PRODUCTION"); fi
+          if [ -n "$FAILURE" ]; then ARGS+=(--failure "$FAILURE"); fi
+          node scripts/record-generation-event.mjs "${ARGS[@]}"

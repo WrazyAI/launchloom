@@ -23,6 +23,17 @@ on:
         required: false
         type: boolean
         default: false
+      internal_qa_delivery:
+        description: Route fresh fictional preview-only canary notifications and leads to the internal QA recipient secret
+        required: false
+        type: boolean
+        default: false
+
+      qa_repair_experiment:
+        description: One-call-per-candidate experiment on verified fictional frozen QA previews only
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -92,7 +103,12 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
-      LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
+      LAUNCHLOOM_DEVELOPER_EMAIL: ${{ (github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery && secrets.LAUNCHLOOM_INTERNAL_QA_RECIPIENT) || (!(github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery) && vars.LAUNCHLOOM_DEVELOPER_EMAIL) || '' }}
+      LAUNCHLOOM_INTERNAL_QA_RECIPIENT: ${{ secrets.LAUNCHLOOM_INTERNAL_QA_RECIPIENT }}
+      QA_REPAIR_EXPERIMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.qa_repair_experiment || false }}
+      INTERNAL_QA_DELIVERY: ${{ github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery || false }}
+      GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
+      FAL_IMAGE_USD_PER_IMAGE: ${{ vars.FAL_IMAGE_USD_PER_IMAGE }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
       REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
       REUSABLE_CANDIDATE_REPO: ${{ inputs.candidate_repository || '' }}
@@ -109,6 +125,21 @@ jobs:
       - name: Verify required secrets
         run: |
           for key in GITHUB_ORG_TOKEN OPENROUTER_API_KEY REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_DEVELOPER_EMAIL; do test -n "${!key}" || { echo "Missing: $key"; exit 1; }; done
+      # Best-effort tracking. Never blocks or fails generation; disabled until
+      # GENERATION_TRACKING_SECRET is configured.
+      - name: Record generation started
+        continue-on-error: true
+        env:
+          CLIENT_EMAIL: ${{ github.event.client_payload.client_email }}
+          SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
+        run: |
+          node scripts/record-generation-event.mjs \
+            --action start \
+            --issue "${{ github.event.client_payload.issue || inputs.issue }}" \
+            --submission-id "$SUBMISSION_ID" \
+            --client-email "$CLIENT_EMAIL" \
+            --status generating \
+            --started-at "$(date +%s%3N)"
       - name: Read and generate from intake
         id: intake
         env:
@@ -118,6 +149,9 @@ jobs:
           LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
         run: |
           gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
+          if [ "$REUSE_AUTHORED_CANDIDATES" != "true" ]; then
+            node scripts/internal-qa-intake.mjs /tmp/intake.md
+          fi
           if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then
             case "$REUSABLE_CANDIDATE_REPO" in
               "WrazyAI/launchloom-$ISSUE-"*) ;;
@@ -125,6 +159,14 @@ jobs:
             esac
             CANDIDATE_SOURCE="$RUNNER_TEMP/launchloom-candidate-source"
             gh repo clone "$REUSABLE_CANDIDATE_REPO" "$CANDIDATE_SOURCE" -- --branch review/initial --depth 1
+            node scripts/internal-qa-intake.mjs /tmp/intake.md "$CANDIDATE_SOURCE"
+            if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
+              test -f "$CANDIDATE_SOURCE/.launchloom/generated-assets.json" || { echo "Frozen QA asset manifest missing"; exit 1; }
+              test -d "$CANDIDATE_SOURCE/public/images/generated" || { echo "Frozen QA asset directory missing"; exit 1; }
+              mkdir -p "$RUNNER_TEMP/frozen-qa-assets/images"
+              cp "$CANDIDATE_SOURCE/.launchloom/generated-assets.json" "$RUNNER_TEMP/frozen-qa-assets/manifest.json"
+              cp -R "$CANDIDATE_SOURCE/public/images/generated/." "$RUNNER_TEMP/frozen-qa-assets/images/"
+            fi
             for file in \
               src/site.config.json \
               .launchloom/seo-research.json \
@@ -150,7 +192,7 @@ jobs:
             node scripts/coverage-areas.mjs --source /tmp/intake.md --out /tmp/business-enrichment.json
             node scripts/seo-research.mjs --source /tmp/intake.md --out /tmp/seo-research.json --map-out /tmp/seo-map.md --enrichment /tmp/business-enrichment.json
             node scripts/compile-canonical-site-brief.mjs --source /tmp/intake.md --research /tmp/seo-research.json --enrichment /tmp/business-enrichment.json --out /tmp/canonical-site-brief.json
-            node scripts/generate-site-config.mjs --brief /tmp/canonical-site-brief.json --out /tmp/site.config.json
+            node scripts/generate-site-config.mjs --brief /tmp/canonical-site-brief.json --out /tmp/site.config.json --usage-out /tmp/site-config-usage.json
             node scripts/compile-inspiration-pack.mjs --config /tmp/site.config.json --intake /tmp/canonical-site-brief.json --out /tmp/inspiration-pack.json
             rm -f /tmp/reasoning-preflight.json
           fi
@@ -166,19 +208,40 @@ jobs:
           echo "research_mode=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(x.mode)')" >> "$GITHUB_OUTPUT"
           echo "research_cost=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')" >> "$GITHUB_OUTPUT"
           echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "No measured queries")')" >> "$GITHUB_OUTPUT"
-          node -e 'const x=require("/tmp/seo-research.json"); const web=x.fallbackSearch || {}; const observed=(x.externalSearchEvidence || []).length; const state=x.publishReady ? "Measured SEO research is complete. Production approval is available." : observed ? "A live web-search fallback collected cited market observations, but measured SEO research is incomplete. This preview can be reviewed; production approval remains blocked until the measured SEO gate passes." : "SEO research is degraded and context-only. This preview can be reviewed; production approval remains blocked until the measured SEO gate passes."; const fallback=web.status && web.status !== "unavailable" ? `\nFallback web search: ${web.status}; ${observed} cited observation(s) from ${web.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(web.costUsd || 0).toFixed(5)} / USD ${Number(web.maxUsd || 0).toFixed(2)} cap${web.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}.` : "\nFallback web search: unavailable."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}${fallback}\nMeasured queries: ${(x.validatedQueries || []).filter(item => item.volume !== null || item.kd !== null || item.intent !== null).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "None"}\nRecorded DataForSEO cost: ${Number(x.cost?.usd || 0).toFixed(5)}`)'
+          node -e 'const x=require("/tmp/seo-research.json"); const web=x.fallbackSearch || {}; const observed=(x.externalSearchEvidence || []).length; const state=x.publishReady ? (x.mode === "researched" ? "Measured SEO research is complete. Production approval is available." : "Web research complete. Measured SEO data unavailable. Developer approval is available.") : "SEO research is incomplete. This preview can be reviewed; production approval remains blocked until research completes."; const fallback=web.status && web.status !== "unavailable" ? `\nFallback web search: ${web.status}; ${observed} cited observation(s) from ${web.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(web.costUsd || 0).toFixed(5)} / USD ${Number(web.maxUsd || 0).toFixed(2)} cap${web.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}.` : "\nFallback web search: unavailable."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}${fallback}\nMeasured queries: ${(x.validatedQueries || []).filter(item => item.volume !== null || item.kd !== null || item.intent !== null).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "None"}\nRecorded DataForSEO cost: ${Number(x.cost?.usd || 0).toFixed(5)}`)'
+      - name: Record SEO research result
+        continue-on-error: true
+        env:
+          SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
+        run: |
+          node scripts/generation-cost-summary.mjs \
+            --seo /tmp/seo-research.json \
+            --output /tmp/seo-cost.json
+          node scripts/record-generation-event.mjs \
+            --action event \
+            --issue "${{ steps.intake.outputs.issue }}" \
+            --submission-id "$SUBMISSION_ID" \
+            --business "${{ steps.intake.outputs.business_name }}" \
+            --slug "${{ steps.intake.outputs.slug }}" \
+            --status generating \
+            --cost-summary /tmp/seo-cost.json
       # Reserve visual routes against the latest main history before expensive
-      # reference analysis or authoring. If another intake wins the push race,
-      # reselect from the newly updated history rather than saving a stale pack.
+      # reference analysis or authoring. Branch preview-only canaries read the
+      # same history without writing hypothetical attempts into production.
+      # If a production intake wins the push race, reselect from latest main.
       - name: Reserve inspiration routes
-        if: (github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main') && env.REUSE_AUTHORED_CANDIDATES != 'true'
+        if: >-
+          (github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main' ||
+          (github.event_name == 'workflow_dispatch' && inputs.preview_only)) &&
+          env.REUSE_AUTHORED_CANDIDATES != 'true'
         env:
           LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
+          LAUNCHLOOM_READ_ONLY_HISTORY: ${{ github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main' && inputs.preview_only || false }}
         run: |
           git config user.name "LaunchLoom"
           git config user.email "automation@launchloom.app"
           HISTORY_DIR="$RUNNER_TEMP/launchloom-history-main"
-          HISTORY_RECORDED=false
+          HISTORY_READY=false
           for HISTORY_ATTEMPT in 1 2 3; do
             git worktree remove --force "$HISTORY_DIR" >/dev/null 2>&1 || true
             if ! git fetch origin main; then
@@ -188,35 +251,40 @@ jobs:
               continue
             fi
             HISTORY_FILE="$HISTORY_DIR/data/recent-launch-signatures.json"
-          node "$GITHUB_WORKSPACE/scripts/compile-inspiration-pack.mjs" \
+            node "$GITHUB_WORKSPACE/scripts/compile-inspiration-pack.mjs" \
               --config /tmp/site.config.json \
               --intake /tmp/canonical-site-brief.json \
               --history "$HISTORY_FILE" \
               --out /tmp/inspiration-pack.json
+            if [ "$LAUNCHLOOM_READ_ONLY_HISTORY" = "true" ]; then
+              echo "Preview-only branch canary selected against latest main history; no production attempt will be written."
+              HISTORY_READY=true
+              break
+            fi
             if ! node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
               --config /tmp/site.config.json \
               --inspiration /tmp/inspiration-pack.json \
               --stage attempt \
-              --record-key "$LAUNCHLOOM_INTAKE_ID" \
+              --record-key "$LAUNCHLOOM_INTAKE_ID-run-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
               --history "$HISTORY_FILE"; then
               git worktree remove --force "$HISTORY_DIR" >/dev/null 2>&1 || true
               continue
             fi
             if git -C "$HISTORY_DIR" diff --quiet -- data/recent-launch-signatures.json; then
               echo "No inspiration history change."
-              HISTORY_RECORDED=true
+              HISTORY_READY=true
               break
             fi
             git -C "$HISTORY_DIR" add data/recent-launch-signatures.json
             git -C "$HISTORY_DIR" commit -m "Record inspiration attempt [skip ci]"
             if git -C "$HISTORY_DIR" push origin HEAD:main; then
-              HISTORY_RECORDED=true
+              HISTORY_READY=true
               break
             fi
             echo "History push raced with another intake; reselecting from latest main ($HISTORY_ATTEMPT/3)."
           done
           git worktree remove --force "$HISTORY_DIR" >/dev/null 2>&1 || true
-          if [ "$HISTORY_RECORDED" != true ]; then
+          if [ "$HISTORY_READY" != true ]; then
             echo "::error title=Inspiration reservation failed::Could not atomically reserve a fresh inspiration pack after three attempts."
             exit 1
           fi
@@ -227,7 +295,8 @@ jobs:
           if [ "$REUSE_AUTHORED_CANDIDATES" != "true" ]; then
             node scripts/analyze-reference-dna.mjs \
               --inspiration /tmp/inspiration-pack.json \
-              --out /tmp/inspiration-pack.json
+              --out /tmp/inspiration-pack.json \
+              --usage-out /tmp/reference-dna-usage.json
             rm -f /tmp/reasoning-preflight.json
             if [ "$CREATIVE_EXPERIENCE_MODEL" = "openai/gpt-6-luna" ]; then
               node scripts/run-reasoning-preflight.mjs \
@@ -311,7 +380,7 @@ jobs:
             CHAT_TOKEN=$(node scripts/create-ai-chat-token.mjs --project "$PROJECT" --file /tmp/site.config.json --origins "$ORIGINS")
             CHAT_ARGS=(--chatToken "$CHAT_TOKEN")
           fi
-          node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}" "${CHAT_ARGS[@]}"
+          node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --preserve-assets "$REUSE_AUTHORED_CANDIDATES" --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}" "${CHAT_ARGS[@]}"
           REMOTE="https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git"
           # A newly-created private repository can be available through the
           # REST API several seconds before GitHub's Smart HTTP endpoint. Use
@@ -357,6 +426,9 @@ jobs:
             git config user.email "automation@launchloom.app"
             git remote set-url origin "$REMOTE"
           fi
+          if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
+            node --input-type=module -e 'const { initializeQaRepairReceipt } = await import(process.env.GITHUB_WORKSPACE + "/scripts/creative-repair-experiment.mjs"); await initializeQaRepairReceipt(".launchloom/creative-repair");'
+          fi
           cp /tmp/site.config.json src/site.config.json
           mkdir -p .launchloom
           cp /tmp/seo-research.json .launchloom/seo-research.json
@@ -366,7 +438,11 @@ jobs:
           cp /tmp/inspiration-pack.json .launchloom/inspiration-pack.json
           git add .
           if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi
-          git_push_with_retry --set-upstream origin review/initial
+          if [ "$BOOTSTRAP" = "review" ]; then
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
+          else
+            git_push_with_retry --set-upstream origin review/initial
+          fi
           PR=$(gh pr list --repo "$CLIENT_REPO" --state open --head review/initial --json url --jq '.[0].url // ""')
           if [ -z "$PR" ]; then
             PR=$(gh pr create --repo "$CLIENT_REPO" --base main --head review/initial --title "Initial LaunchLoom site" --body "Private developer preview generated from the verified intake.\n\n<!-- launchloom-feedback-inbox:${{ steps.client.outputs.feedback_issue }} -->")
@@ -379,23 +455,34 @@ jobs:
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           mkdir -p public/images/generated
-          node "$GITHUB_WORKSPACE/scripts/generate-contextual-assets.mjs" \
-            --config /tmp/site.config.json \
-            --inspiration /tmp/inspiration-pack.json \
-            --output "$PWD/public/images/generated" \
-            --manifest "$PWD/.launchloom/generated-assets.json"
+          if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
+            test -f "$RUNNER_TEMP/frozen-qa-assets/manifest.json" || { echo "Frozen QA asset snapshot missing"; exit 1; }
+            test -d "$RUNNER_TEMP/frozen-qa-assets/images" || { echo "Frozen QA asset snapshot directory missing"; exit 1; }
+            cp "$RUNNER_TEMP/frozen-qa-assets/manifest.json" .launchloom/generated-assets.json
+            cp -R "$RUNNER_TEMP/frozen-qa-assets/images/." public/images/generated/
+            echo "Frozen QA contextual assets retained; provider asset generation skipped."
+          else
+            node "$GITHUB_WORKSPACE/scripts/generate-contextual-assets.mjs" \
+              --config /tmp/site.config.json \
+              --inspiration /tmp/inspiration-pack.json \
+              --output "$PWD/public/images/generated" \
+              --manifest "$PWD/.launchloom/generated-assets.json"
+          fi
           cp /tmp/site.config.json src/site.config.json
           git add src/site.config.json public/images/generated .launchloom/generated-assets.json
           if ! git diff --cached --quiet; then
             git commit -m "Add contextual image assets"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
           node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
       - name: Author independent experience candidates
-        # Luna authors three independent candidates in separate stages. Keep
-        # the runner timeout above the author's internal fail-closed budget
-        # so Actions cannot terminate a valid creative run early.
-        timeout-minutes: 55
+        id: authoring
+        # Luna authors three independent candidates in separate stages, now
+        # including the authored service, location, and services-index pages
+        # per candidate. Keep the runner timeout above the author's internal
+        # fail-closed budget so Actions cannot terminate a valid creative run
+        # early.
+        timeout-minutes: 100
         run: |
           SESSION_ARGS=()
           if [ -f /tmp/reasoning-preflight.json ]; then
@@ -420,6 +507,7 @@ jobs:
               --failure-mode throw
           fi
       - name: Commit authored experience evidence
+        id: authored_evidence
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           mkdir -p .launchloom
@@ -432,7 +520,7 @@ jobs:
           fi
           if ! git diff --cached --quiet; then
             git commit -m "Record authored experience candidates"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
       - name: Render and repair creative candidates in the production shell
         id: creative_render
@@ -443,25 +531,33 @@ jobs:
           if [ -f "$PWD/.launchloom/reasoning-preflight.json" ]; then
             SESSION_ARGS=(--session "$PWD/.launchloom/reasoning-preflight.json")
           fi
+          REPAIR_ARGS=(--max-cycles 3)
+          if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
+            REPAIR_ARGS=(--max-cycles 1 --qa-repair-experiment true)
+          fi
           node "$GITHUB_WORKSPACE/scripts/run-rendered-creative-repair.mjs" \
             --site-dir "$PWD" \
             --candidates /tmp/generated-experiences \
             --out .launchloom/creative-repair \
             --mode "$CREATIVE_EXPERIENCE_MODE" \
             "${SESSION_ARGS[@]}" \
-            --max-cycles 2 \
+            "${REPAIR_ARGS[@]}" \
             --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs"
           cp .launchloom/creative-repair/final/creative-bakeoff.json .launchloom/creative-bakeoff.json
           rm -rf .launchloom/generated-experiences
           cp -R /tmp/generated-experiences .launchloom/generated-experiences
           git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
+          if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
+            test -f .launchloom/creative-repair/qa-provider-calls.json || { echo "Private QA call receipt missing"; exit 1; }
+            git add .launchloom/creative-repair/qa-provider-calls.json
+          fi
           if ! git diff --cached --quiet; then
             git commit -m "Render and repair creative experience candidates"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
       - name: Prepare private creative-recovery report
         id: creative_recovery
-        if: failure() && steps.creative_render.outcome == 'failure' && steps.branch.outputs.dir != ''
+        if: failure() && steps.branch.outputs.dir != '' && (steps.authoring.outcome == 'failure' || steps.creative_render.outcome == 'failure' || steps.authored_evidence.outcome == 'failure')
         continue-on-error: true
         run: |
           cd "${{ steps.branch.outputs.dir }}"
@@ -470,12 +566,32 @@ jobs:
           # Keep source, screenshots, and findings in the client's private repo.
           # They must not be uploaded as artifacts from this public repository.
           mkdir -p .launchloom/generated-experiences
-          cp -R /tmp/generated-experiences/. .launchloom/generated-experiences/
+          EVIDENCE_SOURCE=""
+          if [ -d /tmp/generated-experiences ]; then
+            EVIDENCE_SOURCE=/tmp/generated-experiences
+          elif [ -d "$RUNNER_TEMP/reusable-authored-candidates" ]; then
+            EVIDENCE_SOURCE="$RUNNER_TEMP/reusable-authored-candidates"
+          fi
+          if [ -n "$EVIDENCE_SOURCE" ]; then
+            cp -R "$EVIDENCE_SOURCE/." .launchloom/generated-experiences/
+          fi
           git add .launchloom/generated-experiences
           if [ -d .launchloom/creative-repair ]; then git add .launchloom/creative-repair; fi
           if ! git diff --cached --quiet; then
             git commit -m "Preserve failed creative review evidence"
-            git push origin review/initial
+          fi
+          if ! node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial; then
+            EVIDENCE_BRANCH="launchloom/evidence-${GITHUB_RUN_ID}"
+            git switch -c "$EVIDENCE_BRANCH"
+            if git push origin "HEAD:refs/heads/$EVIDENCE_BRANCH"; then
+              echo "evidence_branch=$EVIDENCE_BRANCH" >> "$GITHUB_OUTPUT"
+              echo "Preserved generated evidence on private branch $EVIDENCE_BRANCH."
+            else
+              echo "Could not push private recovery evidence branch $EVIDENCE_BRANCH." >&2
+              exit 1
+            fi
+          elif [ -n "$EVIDENCE_SOURCE" ]; then
+            echo "evidence_branch=review/initial" >> "$GITHUB_OUTPUT"
           fi
           RESULT=$(node "$GITHUB_WORKSPACE/scripts/prepare-creative-recovery.mjs" \
             --site-dir "$PWD" \
@@ -487,7 +603,7 @@ jobs:
           git add .launchloom/creative-recovery.json src/site.config.json src/generated-experiences/selected
           if ! git diff --cached --quiet; then
             git commit -m "Prepare private creative recovery review"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
       - name: Build and deploy noindex diagnostic preview
         id: diagnostic_preview
@@ -503,7 +619,7 @@ jobs:
           git add .launchloom/creative-repair/diagnostic
           if ! git diff --cached --quiet; then
             git commit -m "Record noindex diagnostic preview checks"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
           PROJECT="${{ steps.client.outputs.project }}"
           npx wrangler pages deploy dist --project-name "$PROJECT" --branch creative-diagnostic --commit-hash "$(git rev-parse HEAD)" --commit-message "Private diagnostic design preview"
@@ -541,6 +657,7 @@ jobs:
             --origins "$ORIGINS" \
             --creative-repair-session "$SESSION_ID" \
             --token-only true)
+          echo "::add-mask::$TOKEN"
           REVIEW_LINK="${LAUNCHLOOM_PLATFORM_URL:-https://launchloom.wrazyos.com}/review?token=$TOKEN"
           if [ -n "$DIAGNOSTIC_PREVIEW_URL" ]; then
             echo "send_anyway_url=$DIAGNOSTIC_PREVIEW_URL?review=$TOKEN" >> "$GITHUB_OUTPUT"
@@ -580,14 +697,15 @@ jobs:
           git add src/site.config.json
           if ! git diff --cached --quiet; then
             git commit -m "Select reviewed experience candidate"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
+          FINAL_BUILD_SHA=$(git rev-parse HEAD)
           PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
           grep -I -F -q 'data-creative-host="true"' dist/index.html || { echo "Creative host marker missing from fresh build"; exit 1; }
           grep -I -F -q "data-creative-candidate=\"$CANDIDATE_ID\"" dist/index.html || { echo "Fresh build does not contain selected creative candidate $CANDIDATE_ID"; exit 1; }
           if grep -I -E -q 'data-experience-pack|legacy-design-family' dist/index.html; then echo "Legacy renderer marker found in creative preview"; exit 1; fi
           PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
-          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
+          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/route-technical-report.json"
           CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
           FINAL_REPAIR_GATE=.launchloom/creative-repair/final/visual-gate.json
           jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$FINAL_REPAIR_GATE" >/dev/null || { echo "Rendered creative repair did not finish with a passing visual gate"; exit 1; }
@@ -602,18 +720,25 @@ jobs:
           git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
           if ! git diff --cached --quiet; then
             git commit -m "Record repaired creative candidate"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
+          fi
+          git fetch --no-tags origin refs/heads/review/initial:refs/remotes/origin/review/initial
+          if ! git diff --quiet "$FINAL_BUILD_SHA" origin/review/initial -- . ':(exclude).launchloom/**'; then
+            echo "Review source changed during the final build; refusing to deploy stale preview output from $FINAL_BUILD_SHA." >&2
+            exit 1
           fi
           # Scan rendered text assets only. Binary generated imagery can contain
           # the UTF-8 byte sequence by coincidence and is not page copy.
           if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
-          npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$(git rev-parse HEAD)" --commit-message "Initial LaunchLoom preview"
+          npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$FINAL_BUILD_SHA" --commit-message "Initial LaunchLoom preview"
           echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "sha=$FINAL_BUILD_SHA" >> "$GITHUB_OUTPUT"
       # Recording previews keeps rotation useful during internal testing. A
       # failure here must not block generation, preview deployment, or handoff.
       - name: Record launch signature for rotation
         if: github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main'
+        env:
+          LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
         continue-on-error: true
         run: |
           git config user.name "LaunchLoom"
@@ -621,7 +746,8 @@ jobs:
           node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
             --config "${{ steps.branch.outputs.dir }}/src/site.config.json" \
             --inspiration "${{ steps.branch.outputs.dir }}/.launchloom/inspiration-pack.json" \
-            --stage preview
+            --stage preview \
+            --record-key "$LAUNCHLOOM_INTAKE_ID-run-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"
           if git diff --quiet -- data/recent-launch-signatures.json; then
             echo "No launch history change."
             exit 0
@@ -637,12 +763,44 @@ jobs:
           gh pr edit "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --add-label launchloom-delivery-pending
       - name: Wait for secure preview URL
         run: node scripts/wait-for-pages-preview.mjs --url "${{ steps.deploy.outputs.preview }}"
+      - name: Record preview ready
+        continue-on-error: true
+        env:
+          SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
+        run: |
+          STATUS=preview_ready
+          if [ "${{ steps.creative_recovery.outputs.repair_available }}" = "true" ]; then STATUS=attention; fi
+          node scripts/generation-cost-summary.mjs \
+            --seo /tmp/seo-research.json \
+            --site-config-usage /tmp/site-config-usage.json \
+            --reference-dna-usage /tmp/reference-dna-usage.json \
+            --preflight /tmp/reasoning-preflight.json \
+            --assets "${{ steps.branch.outputs.dir }}/.launchloom/generated-assets.json" \
+            --creative-run "${{ steps.branch.outputs.dir }}/.launchloom/generated-experiences/creative-run.json" \
+            --repair-dir "${{ steps.branch.outputs.dir }}/.launchloom/creative-repair" \
+            --output /tmp/generation-cost.json
+          node scripts/record-generation-event.mjs \
+            --action complete \
+            --issue "${{ steps.intake.outputs.issue }}" \
+            --submission-id "$SUBMISSION_ID" \
+            --business "${{ steps.intake.outputs.business_name }}" \
+            --slug "${{ steps.intake.outputs.slug }}" \
+            --site "${{ steps.client.outputs.project }}" \
+            --repo "${{ steps.client.outputs.repo }}" \
+            --pr "${{ steps.branch.outputs.pr }}" \
+            --sha "${{ steps.deploy.outputs.sha }}" \
+            --preview-url "${{ steps.deploy.outputs.preview }}" \
+            --status "$STATUS" \
+            --cost-summary /tmp/generation-cost.json \
+            --hero "$RUNNER_TEMP/initial-screenshots/desktop.png" \
+            --completed-at "$(date +%s%3N)"
       - name: Create secure review link
         id: review
         run: |
           PREVIEW="${{ steps.deploy.outputs.preview }}"
           ORIGINS="$PREVIEW,https://${{ steps.client.outputs.project }}.pages.dev"
           TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "${{ steps.client.outputs.repo }}" --pr "${{ steps.branch.outputs.pr }}" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.client.outputs.project }}" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "${{ steps.intake.outputs.email }}" --feedback-issue "${{ steps.client.outputs.feedback_issue }}" --origins "$ORIGINS" --token-only true)
+          echo "::add-mask::$TOKEN"
           echo "link=$PREVIEW?review=$TOKEN" >> "$GITHUB_OUTPUT"
       - name: Post handoff links
         env:
@@ -685,6 +843,8 @@ jobs:
           REPAIR_LINK: ${{ steps.creative_repair_link.outputs.link }}
           DIAGNOSTIC_PREVIEW: ${{ steps.creative_repair_link.outputs.preview }}
           SEND_ANYWAY_URL: ${{ steps.creative_repair_link.outputs.send_anyway_url }}
+          CLIENT_REPO: ${{ steps.client.outputs.repo }}
+          EVIDENCE_BRANCH: ${{ steps.creative_recovery.outputs.evidence_branch }}
         run: |
           NAME=$(gh issue view "$ISSUE" --repo WrazyAI/launchloom --json title --jq '.title | sub("^Intake: "; "")')
           if [ -n "$REPAIR_LINK" ]; then
@@ -694,6 +854,28 @@ jobs:
             node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "${DIAGNOSTIC_PREVIEW:-https://github.com/WrazyAI/launchloom/issues/$ISSUE}" --review "$REPAIR_LINK" --send-anyway-url "$SEND_ANYWAY_URL" --kind revision --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-repair-ready-$ISSUE-${{ github.run_id }}"
           else
             printf 'Intake #%s could not be completed automatically. No client site or completion email should be assumed.\n' "$ISSUE" > "$RUNNER_TEMP/generation-failure-feedback.txt"
+            if [ -n "$EVIDENCE_BRANCH" ]; then printf 'Private candidate evidence was preserved on: https://github.com/%s/tree/%s\n' "$CLIENT_REPO" "$EVIDENCE_BRANCH" >> "$RUNNER_TEMP/generation-failure-feedback.txt"; fi
             printf 'Inspect GitHub Actions run %s, correct the failure, then rerun this exact intake.\n' '${{ github.run_id }}' > "$RUNNER_TEMP/generation-failure-outcome.txt"
             node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/WrazyAI/launchloom/issues/$ISSUE" --review "https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}" --kind generation-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-failed-$ISSUE-${{ github.run_id }}"
           fi
+      - name: Record generation failure
+        if: failure()
+        continue-on-error: true
+        env:
+          ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
+          SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
+          REPAIR_AVAILABLE: ${{ steps.creative_repair_link.outputs.link != '' }}
+        run: |
+          STATUS=failed
+          FAILURE="Generation workflow ${{ github.run_id }} stopped before a preview was ready. Inspect the Actions run and the intake issue."
+          if [ "$REPAIR_AVAILABLE" = "true" ]; then
+            STATUS=attention
+            FAILURE="The authored candidate needs its one-shot repair. A diagnostic preview and review link were issued to the developer."
+          fi
+          node scripts/record-generation-event.mjs \
+            --action complete \
+            --issue "$ISSUE" \
+            --submission-id "$SUBMISSION_ID" \
+            --status "$STATUS" \
+            --failure "$FAILURE" \
+            --completed-at "$(date +%s%3N)"

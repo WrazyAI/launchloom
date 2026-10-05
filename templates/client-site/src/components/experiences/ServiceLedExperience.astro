@@ -1,4 +1,5 @@
 ---
+import { serviceHref } from "../../lib/site";
 import { phoneHref, primaryCtaHref } from "../../lib/site";
 import type { ExperienceBlueprintV2, ExperienceContent } from "../../lib/experience-pack";
 import LeadForm from "../LeadForm.astro";
@@ -28,7 +29,7 @@ const { brand, hero, services, proof, process, faqs, locations, copy } = content
 
     <section class="xp-service__services" id="services">
       <header><p class="xp-service__eyebrow">Start with the need</p><h2>{copy.servicesHeading || "What needs attention?"}</h2><p>{copy.servicesIntro || "Choose the service closest to what is happening."}</p></header>
-      <div>{services.map((service) => <a href={`/services/${service.slug}/`}><div><span>Service</span><h3>{service.name}</h3></div><p>{service.description}</p><b aria-hidden="true">↗</b></a>)}</div>
+      <div>{services.map((service) => <a href={serviceHref(service.slug)}><div><span>Service</span><h3>{service.name}</h3></div><p>{service.description}</p><b aria-hidden="true">↗</b></a>)}</div>
     </section>
 
     <section class="xp-service__coverage"><div><p class="xp-service__eyebrow">Service area</p><h2>{content.coverageHeading}</h2><p>{content.coverageIntro}</p></div><div>{locations.length ? locations.map((location) => <a href={`/locations/${location.slug}/`}>{location.name}</a>) : brand.serviceAreas.map((area) => <span>{area}</span>)}</div></section>

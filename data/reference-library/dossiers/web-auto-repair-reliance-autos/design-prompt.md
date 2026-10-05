@@ -8,6 +8,8 @@ The observed home-page rhythm is garage-photo opening; trust summary; service me
 
 # Responsive translation
 
+Retain the mobile workshop-image field behind the headline, explanation and stacked contact actions. The dark overlay keeps copy readable but does not remove the photographic composition. Do not replace it with a flat text-only hero or adjacent image column. Use approved representative or client workshop imagery without inventing a physical premises, review count, walk-in promise or operating history.
+
 At 1440 px, establish the opening and broad image-to-text rhythm without making every chapter the same card grid. At 390 px, turn desktop service cards into a clean vertical service index. Let headlines wrap naturally, keep body text at a comfortable measure, and place buttons after the content they act on. Re-crop new imagery around its subject rather than scaling a desktop crop blindly. Check both full-page states for overlays, hidden reveal content, clipped navigation, horizontal overflow, readable contrast, and working booking or enquiry controls. Motion is optional; all text and actions must be present when motion is reduced or disabled.
 
 # Signature elements

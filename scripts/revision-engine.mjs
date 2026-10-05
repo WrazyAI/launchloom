@@ -1,3 +1,11 @@
+import {
+  applyPageContentRevision,
+  pageBriefFor,
+  compilePageBriefs,
+  publicPageEvidence,
+} from "../templates/client-site/src/lib/page-briefs.mjs";
+import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
+import { factText } from "../templates/client-site/src/lib/business-facts.mjs";
 import { parseModelJson } from "./model-json.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import {
@@ -24,6 +32,105 @@ const COPY_FIELDS = new Set([
   "faqHeading",
   "formIntro",
 ]);
+const COPY_RENDER_TARGETS = {
+  heroKicker: {
+    route: "/",
+    sectionType: "hero",
+    placement: "hero-eyebrow",
+    tags: ["span", "p"],
+  },
+  heroHeading: {
+    route: "/",
+    sectionType: "hero",
+    placement: "hero-heading",
+    tags: ["h1"],
+  },
+  heroBody: {
+    route: "/",
+    sectionType: "hero",
+    placement: "hero-copy",
+    tags: ["p"],
+  },
+  servicesHeading: {
+    route: "/services/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-heading",
+    tags: ["h1"],
+  },
+  servicesIntro: {
+    route: "/services/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-copy",
+    tags: ["p"],
+  },
+  aboutKicker: {
+    route: "/about/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-eyebrow",
+    tags: ["span"],
+  },
+  aboutHeading: {
+    route: "/about/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-heading",
+    tags: ["h1"],
+  },
+  aboutBody: {
+    route: "/about/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-copy",
+    tags: ["p"],
+  },
+  contactKicker: {
+    route: "/contact/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-eyebrow",
+    tags: ["span"],
+  },
+  contactHeading: {
+    route: "/contact/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-heading",
+    tags: ["h1"],
+  },
+  processKicker: {
+    route: "/",
+    sectionType: "process",
+    placement: "section-kicker",
+    tags: ["span", "p"],
+  },
+  processHeading: {
+    route: "/",
+    sectionType: "process",
+    placement: "section-heading",
+    tags: ["h2"],
+  },
+  faqKicker: {
+    route: "/",
+    sectionType: "faq",
+    placement: "section-kicker",
+    tags: ["span", "p"],
+  },
+  faqHeading: {
+    route: "/",
+    sectionType: "faq",
+    placement: "section-heading",
+    tags: ["h2"],
+  },
+  formIntro: {
+    route: "/contact/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-copy",
+    tags: ["p"],
+  },
+};
+const RENDERED_SECTION_ALIASES = {
+  hero: ["opening", "banner"],
+  services: ["service"],
+  about: ["story", "team"],
+  process: ["steps"],
+  faq: ["faqs", "questions"],
+};
 
 const PALETTE_KEYS = [
   "primaryColor",
@@ -40,6 +147,7 @@ const COLOR_ROLE_KEYS = {
   ink: "inkColor",
   muted: "mutedColor",
   line: "lineColor",
+  accent: "accentColor",
 };
 // Replacement images are materialized into the client repository by the
 // revision workflow. The engine only accepts local feedback asset paths so a
@@ -53,6 +161,7 @@ const IMAGE_TARGET_FIELDS = {
 };
 const FEEDBACK_IMAGE_PATH = /^\/images\/feedback\/[a-z0-9-]+\.webp$/u;
 const MODEL_OPERATION_KINDS = new Set([
+  "set_page_content",
   "set_copy",
   "set_service_copy",
   "set_process",
@@ -162,16 +271,90 @@ const brandNameRequest =
 const colorRequest = /\b(colou?rs?|color palette|palette|brand colors?)\b/i;
 const broadLayoutRequest =
   /\b(?:redesign|rework|refresh|improve|change|update|revise|strengthen)\b.{0,60}\b(?:layout|page structure|visual hierarchy|composition)\b|\b(?:layout|page structure|visual hierarchy|composition)\b.{0,60}\b(?:redesign|rework|refresh|improve|change|update|revise|strengthen)\b/i;
+const globalLayoutScope =
+  /\b(?:globally|site[- ]wide|page[- ]wide|whole (?:website|site|page)|entire (?:website|site|page)|throughout (?:the )?(?:site|page|website)|across (?:the )?(?:whole|entire) (?:site|page|website)|all sections|every section|across the board|overall (?:website|site|page|layout|composition|design|look|style))\b/i;
+const scopedLayoutRequest =
+  /\b(?:layout|composition|spacing|spacious|compact|density|tight(?:er)?|gaps?|font|typography|variant|center(?:ed)?|align(?:ment|ed)?|move|reorder|above|below|before|after|hide|remove|show|add|include|enable|disable|style|visual|imagery|premium|cinematic|asymmetrical|editorial|practical|featured|problem[- ]led|immersive|guided|quiet|numbered|cards?|work|local|consultation)\b/i;
 const layoutRequest =
   /\b(layout|reorder|move|above|below|before|after|hide|remove|show|add|section|spacing|spacious|compact|density|typography|font|modern|editorial|bold|immersive|center(?:ed)?)\b/i;
 const contentRequest =
-  /\b(copy|wording|text|headline|heading|kicker|description|intro|service card|form intro)\b|(?:rewrite|revise|edit|change|update|clarify|expand|shorten|simplify|condense).{0,50}\b(faq|question|answer|process|step|hero|opening)\b|\b(faq|question|answer|process|step|hero|opening)\b.{0,50}(?:say|read|explain|mention|shorter|simpler|concise|bloated|too long)\b/i;
+  /\b(copy|wording|text|headline|heading|kicker|description|intro|introduction|metadata|service card|form intro)\b|(?:rewrite|revise|edit|change|update|clarify|expand|shorten|simplify|condense).{0,50}\b(faq|question|answer|process|step|hero|opening)\b|\b(faq|question|answer|process|step|hero|opening)\b.{0,50}(?:say|read|explain|mention|shorter|simpler|concise|bloated|too long)\b/i;
+const COPY_FIELD_TARGETS = [
+  [
+    "heroHeading",
+    /\b(?:hero|opening)(?:\s+(?:section|main))?\s+(?:heading|headline|title|h1)\b|\b(?:heading|headline|title|h1)\s+(?:for|in|of)\s+(?:the\s+)?(?:hero|opening)\b/i,
+  ],
+  [
+    "heroBody",
+    /\b(?:hero|opening)(?:\s+section)?\s+(?:body|paragraph|description|intro)\b|\b(?:body|paragraph|description|intro)\s+(?:for|in|of)\s+(?:the\s+)?(?:hero|opening)\b/i,
+  ],
+  [
+    "heroKicker",
+    /\b(?:hero|opening)(?:\s+section)?\s+(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?(?:hero|opening)\b/i,
+  ],
+  [
+    "servicesHeading",
+    /\bservices?\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?services?\b/i,
+  ],
+  [
+    "servicesIntro",
+    /\bservices?\s+(?:section\s+)?(?:intro|introduction|description|paragraph)\b|\b(?:intro|introduction|description|paragraph)\s+(?:for|in|of)\s+(?:the\s+)?services?\b/i,
+  ],
+  [
+    "aboutHeading",
+    /\babout(?:\s+us)?\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?about(?:\s+us)?\b/i,
+  ],
+  [
+    "aboutBody",
+    /\babout(?:\s+us)?\s+(?:section\s+)?(?:body|paragraph|description|copy)\b|\b(?:body|paragraph|description|copy)\s+(?:for|in|of)\s+(?:the\s+)?about(?:\s+us)?\b/i,
+  ],
+  [
+    "aboutKicker",
+    /\babout(?:\s+us)?\s+(?:section\s+)?(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?about(?:\s+us)?\b/i,
+  ],
+  [
+    "contactHeading",
+    /\bcontact\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?contact\b/i,
+  ],
+  [
+    "contactKicker",
+    /\bcontact\s+(?:section\s+)?(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?contact\b/i,
+  ],
+  [
+    "processHeading",
+    /\bprocess\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?process\b/i,
+  ],
+  [
+    "processKicker",
+    /\bprocess\s+(?:section\s+)?(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?process\b/i,
+  ],
+  [
+    "faqHeading",
+    /\b(?:faqs?|questions?)\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?(?:faqs?|questions?)\b/i,
+  ],
+  [
+    "faqKicker",
+    /\b(?:faqs?|questions?)\s+(?:section\s+)?(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?(?:faqs?|questions?)\b/i,
+  ],
+  [
+    "formIntro",
+    /\b(?:contact |request )?form\s+(?:intro|introduction|description|prompt)\b|\b(?:intro|introduction|description|prompt)\s+(?:for|in|of)\s+(?:the\s+)?(?:contact |request )?form\b/i,
+  ],
+];
+const COPY_SECTION_FIELDS = {
+  hero: ["heroKicker", "heroHeading", "heroBody"],
+  services: ["servicesHeading", "servicesIntro"],
+  about: ["aboutKicker", "aboutHeading", "aboutBody"],
+  contact: ["contactKicker", "contactHeading", "formIntro"],
+  process: ["processKicker", "processHeading"],
+  faq: ["faqKicker", "faqHeading"],
+};
 const conversionFeatureRequest =
   /\b(exit(?:-intent)? (?:offer|popup|modal)|before you go|quick answers?|website assistant|faq (?:widget|assistant|chat)|ai (?:faq )?(?:chat|assistant|chatbot)|chatbot|guided (?:qualifier|questions?)|qualification (?:form|questions?)|question(?:naire)? tool|multi-step form)\b/i;
 const creativeVisualRequest =
   /\b(premium|high[- ]end|polished|cinematic|editorial|distinctive|generic|visual|composition|layout|hierarchy|spacing|whitespace|asymmetr(?:y|ical)|full[- ]bleed|motion|animation|reveal|scroll|mobile|responsive|typography|font|serif|sans|bold|minimal|modern|immersive|prominent|understated|simpler)\b|\b(move|place|reposition|resize|restyle|hide|remove|show|add|replace|change|swap)\b.{0,70}\b(hero|navigation|navbar|nav|cta|button|card|grid|image|imagery|photo|gallery|section|services?|feature|widget|calculator|carousel|tabs?|comparison|timeline|panel)\b|\b(larger|smaller|taller|shorter|wider|narrower)\b.{0,50}\b(hero|cta|button|image|imagery|photo|gallery|section|services?|feature|widget|panel)\b/i;
 const pureStructuredImageClause =
-  /^\s*(?:please\s+)?(?:smoke test:?\s*)?(?:replace|swap|change|update|use|choose|generate|regenerate|select)\b[^.;!?]{0,90}?\b(image|images|photo|photos|picture|pictures|logo|gallery|hero|opening|team photo)\b(?:\s+(?:instead|please|now))?[.!?]?\s*$/iu;
+  /^\s*(?:please\s+)?(?:smoke test:?\s*)?(?:replace|swap|change|update|use|choose|generate|regenerate|select)\b[^.;!?]{0,160}?\b(image|images|photo|photos|picture|pictures|logo|gallery|hero|opening|team photo)\b[^.;!?]{0,160}$/iu;
 const creativeVisualKeyword =
   /\b(premium|high[- ]end|polished|cinematic|editorial|distinctive|generic|visual|composition|layout|hierarchy|spacing|whitespace|asymmetr(?:y|ical)|full[- ]bleed|motion|animation|reveal|scroll|mobile|responsive|typography|font|serif|sans|bold|minimal|modern|immersive|prominent|understated|simpler|larger|smaller|taller|shorter|wider|narrower|video|icon|illustration|graphic)\b/iu;
 
@@ -181,10 +364,21 @@ const creativeVisualKeyword =
 function residualVisualRequest(feedback) {
   return clean(feedback, 4000)
     .replace(/^\s*\[[^\]]+\]\s*/u, "")
-    .split(/(?<=[.;!?])\s+/u)
+    .split(
+      /(?<=[.;!?])\s+|\s+and\s+|,\s*(?=(?:please\s+)?(?:change|revise|rewrite|update|make|add|remove|keep|leave)\b)/iu,
+    )
     .map((clause) =>
-      pureStructuredImageClause.test(clause) &&
-      !creativeVisualKeyword.test(clause)
+      (pureStructuredImageClause.test(clause.replace(/[.!?]$/u, "")) &&
+        !creativeVisualKeyword.test(clause) &&
+        !/\b(?:but|also|then|remove|hide|add|move|resize|restyle|reorder|rewrite|revise)\b/iu.test(
+          clause,
+        ) &&
+        !/\b(?:heading|headline|copy|text|wording|layout|background|crop|position|overlay)\b/iu.test(
+          clause,
+        )) ||
+      /^(?:keep|leave)\b.{0,100}\b(?:unchanged|same|as it is|as is|alone)[.!?]?\s*$/iu.test(
+        clause,
+      )
         ? " "
         : clause,
     )
@@ -357,6 +551,24 @@ function colorForRole(feedback, rolePattern) {
 function paletteFor(config, feedback = "") {
   const requested = requestedColors(feedback);
   if (requested.length) {
+    const current = config.style || {};
+    // A note that names the accent role changes or adds the optional second
+    // color while leaving the established palette in place.
+    const accentRequest = colorForRole(feedback, "accent|highlight");
+    if (accentRequest && /\b(?:accent|highlight)\b/i.test(feedback)) {
+      const base = paletteFor(config, "");
+      const primaryRequest = colorForRole(feedback, "primary|brand");
+      return {
+        ...Object.fromEntries(
+          PALETTE_KEYS.map((key) => [
+            key,
+            validPaletteValue(current[key]) || base[key],
+          ]),
+        ),
+        ...(primaryRequest ? { primaryColor: primaryRequest } : {}),
+        accentColor: accentRequest,
+      };
+    }
     const primary =
       colorForRole(feedback, "primary|brand|accent") ||
       requested.find(
@@ -411,10 +623,119 @@ function mentionedSection(text) {
       new RegExp(`\\b${alias.replace(" ", "\\s+")}s?\\b`).test(lowered),
     )?.[1];
 }
+function explicitSectionScope(alias, text) {
+  const aliasPattern = alias
+    .split(/\s+/)
+    .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("[-\\s]+");
+  const sectionTarget = `(?:the\\s+)?${aliasPattern}(?:\\s+(?:section|area|block))?`;
+  const action =
+    "(?:make|keep|change|update|adjust|tighten|loosen|space|center|centre|align|move|reorder|hide|remove|show|add|include|enable|disable|style|redesign|rework|refresh|simplify|improve|condense|expand|widen|narrow|reduce|increase)";
+  const layoutTerm =
+    "(?:layout|composition|spacing|spacious|compact|density|tight(?:er)?|gaps?|font|typography|variant|center(?:ed)?|align(?:ment|ed)?|style|visual|imagery|premium|cinematic|asymmetrical|editorial|practical|featured|problem[- ]led|immersive|guided|quiet|numbered|cards?|work|local|consultation)";
+  const patterns = [
+    new RegExp(`\\b${action}\\s+${sectionTarget}\\b`, "i"),
+    new RegExp(
+      `\\b(?:use|apply|give)\\b[^.!?;\\n]{0,45}\\b${layoutTerm}\\b[^.!?;\\n]{0,35}\\b(?:in|for|on|around|within)\\s+${sectionTarget}\\b`,
+      "i",
+    ),
+    new RegExp(
+      `\\b${sectionTarget}\\s+(?:should|needs?\\s+to|must|could|can|is|feels?|looks?|seems?)\\s+(?:be\\s+)?(?:more|less|too|very|tighter|looser|centered|centred|compact|spacious|practical|editorial|featured|immersive|quiet|numbered)\\b`,
+      "i",
+    ),
+    new RegExp(
+      `\\b${layoutTerm}\\b[^.!?;\\n]{0,35}\\b(?:in|for|on|around|within|of)\\s+${sectionTarget}\\b`,
+      "i",
+    ),
+    new RegExp(
+      `\\b(?:in|within|around|for|on)\\s+${sectionTarget}\\b[^.!?;\\n]{0,60}\\b${layoutTerm}\\b`,
+      "i",
+    ),
+  ];
+  return patterns.some((pattern) => pattern.test(text));
+}
+function explicitlyScopedSections(text) {
+  const lowered = String(text || "").toLowerCase();
+  return [
+    ...new Set(
+      [...SECTION_ALIASES.entries()]
+        .filter(([alias]) => explicitSectionScope(alias, lowered))
+        .map(([, type]) => type),
+    ),
+  ];
+}
+function scopedLayoutSections(feedback) {
+  if (broadLayoutRequest.test(feedback) || globalLayoutScope.test(feedback))
+    return [];
+  return explicitlyScopedSections(feedback);
+}
+function wholePhraseContains(text, phrase) {
+  const tokens = (value) =>
+    String(value || "")
+      .toLocaleLowerCase()
+      .match(/[\p{L}\p{N}]+/gu) || [];
+  const phraseTokens = tokens(phrase);
+  const textTokens = tokens(text);
+  if (!phraseTokens.length || phraseTokens.length > textTokens.length)
+    return false;
+  return textTokens.some((_, start) =>
+    phraseTokens.every((token, offset) => textTokens[start + offset] === token),
+  );
+}
+function requestedSectionVariant(feedback, sectionType) {
+  const variants = [...(SECTION_VARIANTS[sectionType] || [])].sort(
+    (left, right) => right.length - left.length,
+  );
+  for (const variant of variants) {
+    const pattern = variant
+      .split("-")
+      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("[-\\s]+");
+    if (new RegExp(`\\b${pattern}\\b`, "i").test(feedback)) return variant;
+  }
+  if (
+    sectionType === "hero" &&
+    /\b(?:center|centered|centre|centred)\b/i.test(feedback) &&
+    SECTION_VARIANTS.hero.has("centered")
+  )
+    return "centered";
+  return undefined;
+}
+function operationMatchesSectionScope(operation, sectionTypes, feedback) {
+  if (!sectionTypes.length) return true;
+  if (operation.kind === "set_design_treatment") return false;
+  if (operation.kind === "reorder_section")
+    return (
+      sectionTypes.includes(operation.sectionType) ||
+      sectionTypes.includes(operation.relativeTo)
+    );
+  if (operation.kind === "set_section_enabled")
+    return sectionTypes.includes(operation.sectionType);
+  if (operation.kind === "set_section_variant")
+    return (
+      sectionTypes.includes(operation.sectionType) &&
+      requestedSectionVariant(feedback, operation.sectionType) ===
+        operation.variant
+    );
+  return false;
+}
+function sameStructuralOperation(expected, actual) {
+  if (expected.kind !== actual.kind) return false;
+  const fields = {
+    set_section_enabled: ["sectionType", "enabled"],
+    reorder_section: ["sectionType", "relativeTo", "position"],
+    set_section_variant: ["sectionType", "variant"],
+    set_design_treatment: ["density", "typography"],
+  }[expected.kind];
+  return Boolean(
+    fields && fields.every((field) => expected[field] === actual[field]),
+  );
+}
 function structuralOperations(feedback, config) {
   const text = clean(feedback, 1200).toLowerCase();
   const operations = [];
   const sections = currentSections(config);
+  const scopedSections = scopedLayoutSections(feedback);
   const hide = text.match(
     /\b(?:hide|remove|drop|disable)\s+(?:the\s+)?([a-z -]+?)(?:\s+section)?(?:[.,]|$)/i,
   );
@@ -454,28 +775,33 @@ function structuralOperations(feedback, config) {
       });
   }
   if (
+    scopedSections.length === 0 &&
     /\b(more spacious|more breathing room|increase (?:the )?spacing|generous spacing)\b/i.test(
       text,
     )
   )
     operations.push({ kind: "set_design_treatment", density: "spacious" });
   if (
+    scopedSections.length === 0 &&
     /\b(more compact|less spacing|tighter|reduce (?:the )?spacing)\b/i.test(
       text,
     )
   )
     operations.push({ kind: "set_design_treatment", density: "compact" });
   if (
+    scopedSections.length === 0 &&
     /\b(editorial|serif)\b/i.test(text) &&
     /\b(font|typography|look|style|layout)\b/i.test(text)
   )
     operations.push({ kind: "set_design_treatment", typography: "editorial" });
   if (
+    scopedSections.length === 0 &&
     /\b(modern|sans(?: serif)?|cleaner)\b/i.test(text) &&
     /\b(font|typography|look|style|layout)\b/i.test(text)
   )
     operations.push({ kind: "set_design_treatment", typography: "sans" });
   if (
+    scopedSections.length === 0 &&
     /\b(bold|stronger)\b/i.test(text) &&
     /\b(font|typography|look|style|layout|visual)\b/i.test(text)
   )
@@ -638,7 +964,8 @@ export function structuredOperations(item, config) {
     const field = IMAGE_TARGET_FIELDS[asset?.target];
     const path = clean(asset?.path, 120);
     if (!field || !FEEDBACK_IMAGE_PATH.test(path)) continue;
-    const source = asset?.source === "fal-generated" ? "fal-generated" : "client";
+    const source =
+      asset?.source === "fal-generated" ? "fal-generated" : "client";
     operations.push({
       kind: "set_image",
       target: asset.target,
@@ -680,25 +1007,41 @@ export function structuredOperations(item, config) {
       kind: "set_color_palette",
       palette,
       requestedColors: selectedColors.map((color) => color.hex.toLowerCase()),
+      requestedFields: selectedColors.map(
+        (color) => COLOR_ROLE_KEYS[color.role],
+      ),
     });
   }
   return operations;
 }
 function intentsFor(item, config) {
-  const feedback = typeof item === "string" ? item : clean(item?.text, 4000);
+  const originalFeedback =
+    typeof item === "string" ? item : clean(item?.text, 4000);
+  const feedback =
+    Array.isArray(item?.assets) && item.assets.length
+      ? residualVisualRequest(originalFeedback)
+      : originalFeedback;
   const intents = [];
   if (socialProofRequest.test(feedback)) intents.push("social-proof");
   if (requestsColorChange(feedback)) intents.push("color");
   if (brandNameRequest.test(feedback)) intents.push("brand-name");
   if (Array.isArray(item?.assets) && item.assets.length) intents.push("image");
-  if (Array.isArray(item?.colors) && item.colors.length && !intents.includes("color"))
+  if (
+    Array.isArray(item?.colors) &&
+    item.colors.length &&
+    !intents.includes("color")
+  )
     intents.push("color");
   const structuralFeedback = feedbackWithoutConversionFeatures(feedback);
   const structural = layoutRequest.test(structuralFeedback)
     ? structuralOperations(structuralFeedback, config)
     : [];
+  const sectionScopedLayoutRequested =
+    scopedLayoutSections(feedback).length > 0 &&
+    scopedLayoutRequest.test(feedback);
   if (
     broadLayoutRequest.test(feedback) ||
+    sectionScopedLayoutRequested ||
     structural.some(
       (operation) =>
         !(
@@ -710,6 +1053,13 @@ function intentsFor(item, config) {
   )
     intents.push("layout");
   if (contentRequest.test(feedback.replace(/^\s*\[[^\]]+\]\s*/, "")))
+    intents.push("content");
+  if (
+    explicitContentTargets(feedback, config).some(
+      (target) => target.kind === "page-content",
+    ) &&
+    /\b(?:local (?:detail|context)|image|photo|media)\b/iu.test(feedback)
+  )
     intents.push("content");
   if (conversionFeatureRequest.test(feedback))
     intents.push("conversion-feature");
@@ -725,7 +1075,161 @@ function intentsFor(item, config) {
     if (!structuredImageOnly && creativeVisualRequest.test(feedback))
       intents.push("layout");
   }
+  if (
+    (item?.assets?.length || item?.colors?.length) &&
+    feedback.trim() &&
+    intents.every((intent) => intent === "image" || intent === "color") &&
+    feedback
+      .split(/[.!?;,]|\band\b/iu)
+      .some(
+        (clause) =>
+          /\b(?:change|revise|rewrite|update|make|add|remove|hide|move|adjust|enable|disable)\b/iu.test(
+            clause,
+          ) && !requestsColorChange(clause),
+      )
+  )
+    intents.push("unknown");
   return intents.length ? [...new Set(intents)] : ["unknown"];
+}
+function explicitContentTargets(feedback, config) {
+  const normalizedText = String(feedback || "").toLowerCase();
+  const pathTokens = new Set(
+    (normalizedText.match(/\/[a-z0-9/-]*/gu) || []).map((path) =>
+      path.endsWith("/") ? path : `${path}/`,
+    ),
+  );
+  const namedRoutes = compileRouteInventory(config).records.filter(
+    (route) =>
+      route.approval.status === "approved" &&
+      config.pageContent?.[route.id] &&
+      (pathTokens.has(route.path.toLowerCase()) ||
+        wholePhraseContains(normalizedText, route.id)),
+  );
+
+  const text = feedback
+    .replace(/^\s*\[[^\]]+\]\s*/, "")
+    .replace(/\/[a-z0-9/-]*/giu, " ");
+  const namedServices = (config.services || []).filter(
+    (service) =>
+      service &&
+      [service.name, service.slug]
+        .filter((value) => String(value || "").trim())
+        .some((value) => wholePhraseContains(text, value)),
+  );
+  const specificServiceDescription =
+    namedServices.length > 0 &&
+    /\bservice (?:copy|wording|description|card)\b/i.test(text);
+  const exactFields = COPY_FIELD_TARGETS.filter(
+    ([field, pattern]) =>
+      pattern.test(text) &&
+      !(field === "servicesIntro" && specificServiceDescription),
+  ).map(([field]) => field);
+  const requestedPageFields = [
+    ["introduction", /\b(?:intro|introduction|page copy|page wording)\b/iu],
+    ["metadataDescription", /\b(?:metadata|meta description)\b/iu],
+    ["faqs", /\b(?:faqs?|questions?|answers?)\b/iu],
+    ["localContext", /\blocal (?:detail|context|information)\b/iu],
+    ["media", /\b(?:images?|photos?|media)\b/iu],
+  ]
+    .filter(([, pattern]) => pattern.test(text))
+    .map(([field]) => field);
+  const targets = [
+    ...namedRoutes.flatMap((route) =>
+      (requestedPageFields.length ? requestedPageFields : [null]).map(
+        (field) => ({
+          kind: "page-content",
+          routeId: route.id,
+          field,
+        }),
+      ),
+    ),
+    ...exactFields.map((field) => ({ kind: "copy-field", field })),
+  ];
+  for (const service of namedServices.filter(
+    (service) =>
+      specificServiceDescription ||
+      !namedRoutes.some(
+        (route) =>
+          route.pageType === "service" &&
+          route.target.trim().toLowerCase() ===
+            service.name.trim().toLowerCase(),
+      ),
+  ))
+    targets.push({
+      kind: "service",
+      slug: service.slug,
+    });
+
+  const exactFaqCopyField = exactFields.some(
+    (field) => field === "faqHeading" || field === "faqKicker",
+  );
+  if (
+    (!namedRoutes.length &&
+      /\banswers?\b|\bfaq (?:questions|entries|content)\b/i.test(text)) ||
+    (/\b(?:faqs?|frequently asked questions?)\b/i.test(text) &&
+      !namedRoutes.length &&
+      !exactFaqCopyField)
+  )
+    targets.push({ kind: "operation", operation: "set_faqs" });
+  const exactProcessCopyField = exactFields.some(
+    (field) => field === "processHeading" || field === "processKicker",
+  );
+  if (
+    /\b(?:steps?|how it works)\b/i.test(text) ||
+    (/\bprocess\b/i.test(text) && !exactProcessCopyField)
+  )
+    targets.push({ kind: "operation", operation: "set_process" });
+
+  for (const [section, fields] of Object.entries(COPY_SECTION_FIELDS)) {
+    if (
+      section === "faq" ||
+      section === "process" ||
+      exactFields.some((field) => fields.includes(field))
+    )
+      continue;
+    const sectionPattern =
+      section === "hero"
+        ? /\b(hero|opening)\b/i
+        : new RegExp(`\\b${section}\\b`, "i");
+    if (sectionPattern.test(text) && contentRequest.test(text))
+      targets.push({ kind: "copy-section", section, fields });
+  }
+  if (/\bservice (?:copy|wording|description|card)\b/i.test(text))
+    targets.push({ kind: "service-copy" });
+  return targets;
+}
+function contentOperationMatchesTarget(operation, target) {
+  if (target.kind === "page-content")
+    return (
+      operation.kind === "set_page_content" &&
+      operation.routeId === target.routeId &&
+      (!target.field || operation.field === target.field)
+    );
+  if (target.kind === "copy-field")
+    return operation.kind === "set_copy" && operation.field === target.field;
+  if (target.kind === "copy-section")
+    return (
+      (operation.kind === "set_copy" &&
+        target.fields.includes(operation.field)) ||
+      (target.section === "services" && operation.kind === "set_service_copy")
+    );
+  if (target.kind === "service")
+    return (
+      operation.kind === "set_service_copy" &&
+      operation.serviceSlug === target.slug
+    );
+  if (target.kind === "service-copy")
+    return operation.kind === "set_service_copy";
+  if (target.kind === "operation") return operation.kind === target.operation;
+  return false;
+}
+function contentTargetsSatisfied(targets, operations) {
+  if (!targets.length) return intentSatisfied("content", operations);
+  return targets.every((target) =>
+    operations.some((operation) =>
+      contentOperationMatchesTarget(operation, target),
+    ),
+  );
 }
 export async function modelOperations(
   feedbackItems,
@@ -747,21 +1251,21 @@ export async function modelOperations(
       responseCache: true,
       responseCacheTtlSeconds: 900,
       body: {
-          model,
-          reasoning_effort: reasoningEffort,
-          temperature: 0.1,
-          response_format: { type: "json_object" },
-          messages: [
-            {
-              role: "system",
-              content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep hero headings to 4-10 memorable words, hero bodies to one sentence under 28 words, and service-card descriptions to one sentence under 22 words. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
-            },
-            {
-              role: "user",
-              content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`,
-            },
-          ],
-        },
+        model,
+        reasoning_effort: reasoningEffort,
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_page_content',routeId,field:'introduction'|'metadataDescription'|'faqs'|'localContext'|'media',value}; existing page evidence and its exact supported wording must be reused, never grant new confirmation or create evidence. A route-specific FAQ, image, local detail, introduction or metadata request must use the exact approved route ID and may not edit company-wide content. {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep hero headings to 4-10 memorable words, hero bodies to one sentence under 28 words, and service-card descriptions to one sentence under 22 words. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. When feedback names specific section(s), only edit those sections; never use page-wide design treatment or edit another section to satisfy a section-specific request. If the allowed operations cannot express the requested scope, return no operation. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
+          },
+          {
+            role: "user",
+            content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, pageBriefs: compilePageBriefs(config).briefs, pageEvidence: publicPageEvidence(config), copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`,
+          },
+        ],
+      },
     });
     if (!response.ok) continue;
     try {
@@ -826,6 +1330,8 @@ function conciseRevisionContent(value, field) {
 }
 export function applyOperation(config, operation) {
   if (!operation || typeof operation !== "object") return false;
+  if (operation.kind === "set_page_content")
+    return applyPageContentRevision(config, operation);
   if (operation.kind === "set_social_proof") {
     config.socialProof = {
       source:
@@ -850,29 +1356,49 @@ export function applyOperation(config, operation) {
   }
   if (operation.kind === "set_color_palette") {
     const palette = operation.palette;
+    const requestedAccent = palette?.accentColor;
     if (
       !palette ||
       typeof palette !== "object" ||
       PALETTE_KEYS.some(
         (key) => !/^#[0-9a-f]{6}$/i.test(String(palette[key] || "")),
-      )
+      ) ||
+      (requestedAccent !== undefined &&
+        requestedAccent !== null &&
+        requestedAccent !== "" &&
+        !/^#[0-9a-f]{6}$/i.test(String(requestedAccent)))
     )
       return false;
-    config.style = {
-      ...(config.style || {}),
-      ...resolvePalette(
-        Object.fromEntries(
-          PALETTE_KEYS.map((key) => [key, palette[key].toLowerCase()]),
-        ),
+    const preservedAccent =
+      requestedAccent === undefined &&
+      /^#[0-9a-f]{6}$/i.test(String(config.style?.accentColor || ""))
+        ? String(config.style.accentColor).toLowerCase()
+        : undefined;
+    const accentForResolve = requestedAccent
+      ? String(requestedAccent).toLowerCase()
+      : preservedAccent;
+    const resolved = resolvePalette({
+      ...Object.fromEntries(
+        PALETTE_KEYS.map((key) => [key, palette[key].toLowerCase()]),
       ),
-    };
+      ...(accentForResolve ? { accentColor: accentForResolve } : {}),
+    });
+    const nextStyle = { ...(config.style || {}), ...resolved };
+    if (requestedAccent === null || requestedAccent === "") {
+      // An explicit clear removes the optional accent instead of replacing it.
+      delete nextStyle.accentColor;
+      delete nextStyle.accentTextColor;
+      delete nextStyle.accentContrastColor;
+    }
+    config.style = nextStyle;
     return true;
   }
   if (operation.kind === "set_image") {
     const field = IMAGE_TARGET_FIELDS[operation.target];
     const path = clean(operation.path, 120);
     if (!field || !FEEDBACK_IMAGE_PATH.test(path)) return false;
-    const source = operation.source === "fal-generated" ? "fal-generated" : "client";
+    const source =
+      operation.source === "fal-generated" ? "fal-generated" : "client";
     config.images = { ...(config.images || {}) };
     config.assets = { ...(config.assets || {}) };
     if (field.images) config.images[field.images] = path;
@@ -1188,7 +1714,11 @@ function intentSatisfied(intent, operations) {
       (operation) => operation.kind === "set_color_palette",
     );
   if (intent === "image")
-    return operations.some((operation) => operation.kind === "set_image");
+    return operations.some(
+      (operation) =>
+        operation.kind === "set_image" ||
+        (operation.kind === "set_page_content" && operation.field === "media"),
+    );
   if (intent === "brand-name")
     return operations.some((operation) => operation.kind === "show_brand_name");
   if (intent === "layout")
@@ -1202,9 +1732,13 @@ function intentSatisfied(intent, operations) {
     );
   if (intent === "content")
     return operations.some((operation) =>
-      ["set_copy", "set_service_copy", "set_process", "set_faqs"].includes(
-        operation.kind,
-      ),
+      [
+        "set_copy",
+        "set_service_copy",
+        "set_process",
+        "set_faqs",
+        "set_page_content",
+      ].includes(operation.kind),
     );
   if (intent === "conversion-feature")
     return operations.some(
@@ -1227,19 +1761,49 @@ export async function planRevision(
         colors: Array.isArray(item?.colors) ? item.colors : [],
       };
     })
-    .filter(
-      (item) => item.text || item.assets.length || item.colors.length,
-    );
+    .filter((item) => item.text || item.assets.length || item.colors.length);
   const textItems = items.map((item) => item.text);
-  const deterministic = items.flatMap((item, feedbackIndex) =>
-    [
-      ...deterministicOperations(item.text, config),
-      // Explicit image and color choices are applied after text-derived
-      // operations so the reviewer's selection always wins.
-      ...structuredOperations(item, config),
-    ].map((operation) => ({ ...operation, feedbackIndex })),
+  const creativeCandidate =
+    config.design?.experience?.renderer === "creative-candidate";
+  const sectionScopedCreativeColor = items.map((item) => {
+    if (!creativeCandidate || globalLayoutScope.test(item.text)) return false;
+    return item.text
+      .split(/[.!?;]|\band\b/iu)
+      .some(
+        (clause) => requestsColorChange(clause) && mentionedSection(clause),
+      );
+  });
+  const deterministic = items
+    .flatMap((item, feedbackIndex) =>
+      [
+        ...deterministicOperations(item.text, config),
+        // Explicit image and color choices are applied after text-derived
+        // operations so the reviewer's selection always wins.
+        ...structuredOperations(item, config),
+      ].map((operation) => ({ ...operation, feedbackIndex })),
+    )
+    .filter(
+      (operation) =>
+        !(
+          sectionScopedCreativeColor[operation.feedbackIndex] &&
+          operation.kind === "set_color_palette"
+        ),
+    );
+  const contentTargets = items.map((feedback) =>
+    explicitContentTargets(feedback.text, config),
   );
-  const modeled = (await planner(textItems, config)).filter((operation) => {
+  const structuredOnly = items.every(
+    (item, index) =>
+      !sectionScopedCreativeColor[index] &&
+      intentsFor(item, config).every(
+        (intent) =>
+          intent === "image" || (intent === "color" && item.colors.length > 0),
+      ),
+  );
+  const modeledOperations = structuredOnly
+    ? []
+    : await planner(textItems, config);
+  const modeled = modeledOperations.filter((operation) => {
     if (!MODEL_OPERATION_KINDS.has(operation.kind)) return false;
     const item = items[operation.feedbackIndex];
     const feedback = item?.text;
@@ -1254,6 +1818,26 @@ export async function planRevision(
       ].includes(operation.kind)
     )
       if (intents.includes("layout")) {
+        const deterministicStructural = deterministic.filter(
+          (expected) =>
+            expected.feedbackIndex === operation.feedbackIndex &&
+            [
+              "set_section_enabled",
+              "reorder_section",
+              "set_section_variant",
+              "set_design_treatment",
+            ].includes(expected.kind),
+        );
+        if (
+          deterministicStructural.length > 0 &&
+          !deterministicStructural.some((expected) =>
+            sameStructuralOperation(expected, operation),
+          )
+        )
+          return false;
+        const sectionTargets = scopedLayoutSections(feedback);
+        if (!operationMatchesSectionScope(operation, sectionTargets, feedback))
+          return false;
         const broadLayout = broadLayoutRequest.test(feedback);
         if (operation.kind === "set_design_treatment") {
           if (
@@ -1292,9 +1876,14 @@ export async function planRevision(
       } else return false;
     if (operation.kind === "set_conversion_feature")
       return intents.includes("conversion-feature");
-    return intents.includes("content");
+    if (!intents.includes("content")) return false;
+    const targets = contentTargets[operation.feedbackIndex];
+    return (
+      !targets.length ||
+      targets.some((target) => contentOperationMatchesTarget(operation, target))
+    );
   });
-  const candidates = [...deterministic, ...modeled]
+  const proposedCandidates = [...deterministic, ...modeled]
     .filter(
       (operation) =>
         Number.isInteger(operation.feedbackIndex) &&
@@ -1322,25 +1911,61 @@ export async function planRevision(
         )
       );
     });
+  const unsupportedCreativeStructureFeedback = new Set(
+    creativeCandidate
+      ? proposedCandidates
+          .filter((operation) =>
+            ["set_section_enabled", "reorder_section"].includes(operation.kind),
+          )
+          .map((operation) => operation.feedbackIndex)
+      : [],
+  );
+  const candidates = proposedCandidates.filter((operation) => {
+    if (!creativeCandidate) return true;
+    if (["set_section_enabled", "reorder_section"].includes(operation.kind))
+      return false;
+    if (
+      ["set_section_variant", "set_design_treatment"].includes(operation.kind)
+    )
+      return false;
+    return !(
+      sectionScopedCreativeColor[operation.feedbackIndex] &&
+      operation.kind === "set_color_palette"
+    );
+  });
   const draft = structuredClone(config);
   const applied = [];
   for (const operation of candidates)
     if (applyOperation(draft, operation)) applied.push(operation);
   const results = items.map((item, feedbackIndex) => {
+    const feedback = item.text;
     const intents = intentsFor(item, config);
+    const unsupportedCreativeStructure =
+      unsupportedCreativeStructureFeedback.has(feedbackIndex);
     const operations = applied.filter(
       (operation) => operation.feedbackIndex === feedbackIndex,
     );
     const fulfilled = intents.filter((intent) =>
-      intentSatisfied(intent, operations),
+      intent === "content"
+        ? contentTargetsSatisfied(contentTargets[feedbackIndex], operations)
+        : intent === "layout" && scopedLayoutSections(feedback).length > 0
+          ? operations.some((operation) =>
+              operationMatchesSectionScope(
+                operation,
+                scopedLayoutSections(feedback),
+                feedback,
+              ),
+            )
+          : intentSatisfied(intent, operations),
     );
-    const unresolved = intents.filter(
-      (intent) => !fulfilled.includes(intent),
-    );
-    const creativeDeferred =
-      config.design?.experience?.renderer === "creative-candidate"
-        ? unresolved.filter((intent) => intent === "layout")
-        : [];
+    const unresolved = intents.filter((intent) => !fulfilled.includes(intent));
+    const creativeDeferred = creativeCandidate
+      ? unresolved.filter(
+          (intent) =>
+            (intent === "layout" && !unsupportedCreativeStructure) ||
+            (intent === "color" && sectionScopedCreativeColor[feedbackIndex]),
+        )
+      : [];
     const hardUnresolved = unresolved.filter(
       (intent) => !creativeDeferred.includes(intent),
     );
@@ -1355,12 +1980,24 @@ export async function planRevision(
     return {
       feedbackIndex,
       feedback: item.text,
+      structuredColorOnly:
+        item.colors.length > 0 &&
+        !requestsColorChange(item.text.replace(/^\s*\[[^\]]+\]\s*/u, "")),
+      ...(status === "creative" && item.assets.length
+        ? { sourceFeedback: residualVisualRequest(item.text).trim() }
+        : {}),
       intents,
       status,
       fulfilled,
       deferred: creativeDeferred,
       unresolved: hardUnresolved,
       operationKinds: operations.map((operation) => operation.kind),
+      ...(unsupportedCreativeStructure
+        ? {
+            reason:
+              "Creative section structure changes (adding, hiding, or reordering sections) are not supported by the source-edit lane and were not applied.",
+          }
+        : {}),
     };
   });
   return {
@@ -1406,36 +2043,82 @@ export function ensureLegacySocialProofMarkup(source) {
 export function expectedArtifacts(operations, config) {
   return operations.flatMap((operation) => {
     if (operation.kind === "replace_asset") {
-      const placement = {
-        logo: "header",
-        photoOne: "hero",
-        photoTwo: "about",
-        photoThree: "gallery",
-      }[operation.slot] || "page";
-      return [{ type: "asset", url: clean(operation.url), route: "/", placement, slot: operation.slot }];
+      const placement =
+        {
+          logo: "header",
+          photoOne: "hero",
+          photoTwo: "about",
+          photoThree: "gallery",
+        }[operation.slot] || "page";
+      return [
+        {
+          type: "asset",
+          url: clean(operation.url),
+          route: "/",
+          placement,
+          slot: operation.slot,
+        },
+      ];
     }
     if (operation.kind === "replace_copy_fragment") {
-      const serviceMatch = operation.path?.match(/^services\[(\d+)\]\.description$/u);
+      const serviceMatch = operation.path?.match(
+        /^services\[(\d+)\]\.description$/u,
+      );
       const serviceSlug = serviceMatch
         ? config.services?.[Number(serviceMatch[1])]?.slug
         : "";
-      const route = serviceSlug ? `/services/${serviceSlug}/` :
-        operation.path?.startsWith("copy.about") ? "/about/" :
-          operation.path === "copy.contactHeading" ? "/contact/" :
-            operation.path?.startsWith("copy.services") ? "/services/" : "/";
-      const placement = serviceMatch ? "service-description" :
-        operation.path === "copy.heroHeading" ? "hero-heading" :
-          ["copy.contactHeading", "copy.servicesHeading"].includes(operation.path) ? "heading" :
-          operation.path === "copy.heroKicker" ? "hero-eyebrow" :
-            operation.path === "copy.heroBody" ? "hero-copy" :
-              operation.path?.startsWith("conversion.process[") ? "process-step" :
-                operation.path?.endsWith(".question") && operation.path?.startsWith("conversion.faqs[") ? "faq-question" :
-                  operation.path?.endsWith(".answer") && operation.path?.startsWith("conversion.faqs[") ? "faq-answer" :
-                    operation.path?.startsWith("differentiators[") ? "proof-point" : "page-copy";
-      return [{ type: "text", value: clean(operation.to), path: operation.path, route, placement }];
+      const route = serviceSlug
+        ? `/services/${serviceSlug}/`
+        : operation.path?.startsWith("copy.about")
+          ? "/about/"
+          : operation.path === "copy.contactHeading"
+            ? "/contact/"
+            : operation.path?.startsWith("copy.services")
+              ? "/services/"
+              : "/";
+      const placement = serviceMatch
+        ? "service-description"
+        : operation.path === "copy.heroHeading"
+          ? "hero-heading"
+          : ["copy.contactHeading", "copy.servicesHeading"].includes(
+                operation.path,
+              )
+            ? "heading"
+            : operation.path === "copy.heroKicker"
+              ? "hero-eyebrow"
+              : operation.path === "copy.heroBody"
+                ? "hero-copy"
+                : operation.path?.startsWith("conversion.process[")
+                  ? "process-step"
+                  : operation.path?.endsWith(".question") &&
+                      operation.path?.startsWith("conversion.faqs[")
+                    ? "faq-question"
+                    : operation.path?.endsWith(".answer") &&
+                        operation.path?.startsWith("conversion.faqs[")
+                      ? "faq-answer"
+                      : operation.path?.startsWith("differentiators[")
+                        ? "proof-point"
+                        : "page-copy";
+      return [
+        {
+          type: "text",
+          value: clean(operation.to),
+          path: operation.path,
+          route,
+          placement,
+        },
+      ];
     }
     if (operation.kind === "update_business_fact")
-      return [{ type: "text", value: clean(operation.value), path: `business.${operation.field}`, route: "/", placement: "business-fact" }];
+      return [
+        {
+          type: "text",
+          value: clean(operation.value),
+          path: `business.${operation.field}`,
+          route: "/",
+          placement: "business-fact",
+        },
+      ];
     if (
       operation.kind === "update_design_token" &&
       operation.token === "palette"
@@ -1448,11 +2131,21 @@ export function expectedArtifacts(operations, config) {
     if (operation.kind === "update_design_token") {
       const artifacts = [];
       if (operation.value)
-        artifacts.push({ type: "style", field: "primaryColor", value: clean(operation.value).toLowerCase() });
+        artifacts.push({
+          type: "style",
+          field: "primaryColor",
+          value: clean(operation.value).toLowerCase(),
+        });
       if (operation.density)
-        artifacts.push({ type: "class", marker: `density-${operation.density}` });
+        artifacts.push({
+          type: "class",
+          marker: `density-${operation.density}`,
+        });
       if (operation.typography)
-        artifacts.push({ type: "class", marker: `type-${operation.typography}` });
+        artifacts.push({
+          type: "class",
+          marker: `type-${operation.typography}`,
+        });
       return artifacts;
     }
     if (operation.kind === "set_social_proof")
@@ -1465,12 +2158,37 @@ export function expectedArtifacts(operations, config) {
       ];
     if (operation.kind === "show_brand_name")
       return [{ type: "html", marker: 'class="wordmark__name"' }];
-    if (operation.kind === "set_color_palette")
-      return PALETTE_KEYS.map((field) => ({
+    if (operation.kind === "set_color_palette") {
+      const artifacts = PALETTE_KEYS.map((field) => ({
         type: "style",
         field,
         value: operation.palette[field].toLowerCase(),
       }));
+      if (/^#[0-9a-f]{6}$/i.test(String(operation.palette.accentColor || "")))
+        artifacts.push({
+          type: "style",
+          field: "accentColor",
+          value: String(operation.palette.accentColor).toLowerCase(),
+        });
+      return artifacts;
+    }
+    if (operation.kind === "set_copy") {
+      const target = COPY_RENDER_TARGETS[operation.field];
+      if (!COPY_FIELDS.has(operation.field) || !target)
+        throw new Error(
+          `Cannot verify rendered copy for unsupported field: ${operation.field || "(missing)"}`,
+        );
+      return [
+        {
+          type: "text",
+          value: clean(config.copy?.[operation.field] ?? operation.value),
+          path: `copy.${operation.field}`,
+          field: operation.field,
+          ...target,
+          tags: [...target.tags],
+        },
+      ];
+    }
     if (operation.kind === "set_image")
       return [
         {
@@ -1479,8 +2197,41 @@ export function expectedArtifacts(operations, config) {
           target: operation.target,
         },
       ];
-    if (operation.kind === "set_copy")
-      return [{ type: "text", value: clean(operation.value) }];
+    if (operation.kind === "set_page_content") {
+      const brief = pageBriefFor(config, operation.routeId);
+      if (!brief)
+        throw new Error("Route-specific revision has no approved page brief.");
+      if (operation.field === "metadataDescription")
+        return [
+          {
+            type: "page-meta",
+            route: brief.path,
+            requirePageMap: true,
+            value: factText(operation.value.text, 1500),
+          },
+        ];
+      if (operation.field === "media")
+        return operation.value.map((media) => ({
+          type: "asset",
+          route: brief.path,
+          requirePageMap: true,
+          url: media.src,
+          placement: "page-context",
+        }));
+      const values =
+        operation.field === "introduction"
+          ? [operation.value.text]
+          : operation.field === "faqs"
+            ? operation.value.flatMap((faq) => [faq.question, faq.answer.text])
+            : operation.value.map((item) => item.text);
+      return values.map((value) => ({
+        type: "text",
+        route: brief.path,
+        requirePageMap: true,
+        value: factText(value, 1500),
+        path: `pageContent.${operation.routeId}.${operation.field}`,
+      }));
+    }
     if (operation.kind === "set_service_copy")
       return [{ type: "text", value: clean(operation.description) }];
     if (operation.kind === "set_process")
@@ -1558,67 +2309,212 @@ function sectionIdFor(config, type) {
 function renderedTextVariants(value) {
   const ampersands = String(value).replace(/&/gu, "&amp;");
   const markup = ampersands.replace(/</gu, "&lt;").replace(/>/gu, "&gt;");
-  return [...new Set([
-    markup,
-    markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#39;"),
-    markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#x27;"),
-    ...(!/[<>]/u.test(value) ? [ampersands] : []),
-  ])];
+  return [
+    ...new Set([
+      markup,
+      markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#39;"),
+      markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#x27;"),
+      ...(!/[<>]/u.test(value) ? [ampersands] : []),
+    ]),
+  ];
 }
 function elementBodies(html, tag) {
-  return [...html.matchAll(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "giu"))]
-    .map((match) => match[1]);
+  return [
+    ...html.matchAll(
+      new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "giu"),
+    ),
+  ].map((match) => match[1]);
 }
 function containsRenderedText(html, value) {
   return renderedTextVariants(value).some((variant) => html.includes(variant));
 }
 function containsTextInElement(html, tag, value) {
-  return elementBodies(html, tag).some((body) => containsRenderedText(body, value));
+  return elementBodies(html, tag).some((body) =>
+    containsRenderedText(body, value),
+  );
 }
 function containsTextInHero(html, tag, value) {
-  const sections = [...html.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/giu)];
+  const sections = [
+    ...html.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/giu),
+  ];
   const heroSections = sections
     .filter((match) => /hero/iu.test(match[1]))
     .map((match) => match[2]);
-  return heroSections.some((section) => containsTextInElement(section, tag, value));
+  return heroSections.some((section) =>
+    containsTextInElement(section, tag, value),
+  );
 }
-function containsArtifactText(html, artifact) {
+function htmlAttributeValue(attributes, name) {
+  const match = attributes.match(
+    new RegExp(`(?:^|\\s)${name}\\s*=\\s*(["'])(.*?)\\1`, "iu"),
+  );
+  return match?.[2] || "";
+}
+function containsTextInCopyTarget(html, artifact, config) {
+  const sectionTargets = new Set();
+  if (artifact.sectionType) {
+    const sectionId = sectionIdFor(config, artifact.sectionType);
+    if (sectionId) sectionTargets.add(sectionId);
+    sectionTargets.add(artifact.sectionType);
+    for (const alias of RENDERED_SECTION_ALIASES[artifact.sectionType] || [])
+      sectionTargets.add(alias);
+  }
+  const regions = [
+    ...html.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/giu),
+  ]
+    .filter(([_, attributes]) => {
+      if (artifact.sectionClass) {
+        const classes = htmlAttributeValue(attributes, "class").split(/\s+/u);
+        if (classes.includes(artifact.sectionClass)) return true;
+      }
+      if (sectionTargets.size) {
+        const id = htmlAttributeValue(attributes, "id");
+        const marker = htmlAttributeValue(attributes, "data-reference-section");
+        return sectionTargets.has(id) || sectionTargets.has(marker);
+      }
+      return false;
+    })
+    .map(([, , body]) => body);
+  return regions.some((region) =>
+    (artifact.tags || []).some((tag) =>
+      containsTextInElement(region, tag, artifact.value),
+    ),
+  );
+}
+function containsArtifactText(html, artifact, config) {
   if (!html) return false;
+  if (artifact.field) return containsTextInCopyTarget(html, artifact, config);
   if (artifact.placement === "hero-heading")
     return containsTextInHero(html, "h1", artifact.value);
   if (artifact.placement === "heading")
-    return ["h1", "h2", "h3"].some((tag) => containsTextInElement(html, tag, artifact.value));
+    return ["h1", "h2", "h3"].some((tag) =>
+      containsTextInElement(html, tag, artifact.value),
+    );
   if (artifact.placement === "hero-eyebrow")
-    return ["span", "p"].some((tag) => containsTextInHero(html, tag, artifact.value));
+    return ["span", "p"].some((tag) =>
+      containsTextInHero(html, tag, artifact.value),
+    );
   if (artifact.placement === "hero-copy")
     return containsTextInHero(html, "p", artifact.value);
-  if (artifact.placement === "service-description" || artifact.placement === "faq-answer" || artifact.placement === "proof-point")
+  if (
+    artifact.placement === "service-description" ||
+    artifact.placement === "faq-answer" ||
+    artifact.placement === "proof-point"
+  )
     return containsTextInElement(html, "p", artifact.value);
   if (artifact.placement === "process-step")
-    return containsTextInElement(html, "li", artifact.value) || containsTextInElement(html, "p", artifact.value);
+    return (
+      containsTextInElement(html, "li", artifact.value) ||
+      containsTextInElement(html, "p", artifact.value)
+    );
   if (artifact.placement === "faq-question")
     return containsTextInElement(html, "summary", artifact.value);
   return containsRenderedText(html, artifact.value);
 }
 function imageSourceMarkup(url) {
   const ampersands = String(url).replace(/&/gu, "&amp;");
-  return [`src=\"${url}\"`, `src='${url}'`, `src=\"${ampersands}\"`, `src='${ampersands}'`];
+  return [
+    `src=\"${url}\"`,
+    `src='${url}'`,
+    `src=\"${ampersands}\"`,
+    `src='${ampersands}'`,
+  ];
 }
 function assetPlacementHtml(html, placement) {
-  if (placement === "header")
-    return html.match(/<header\b[\s\S]*?<\/header>/iu)?.[0] || "";
-  if (["hero", "about", "gallery"].includes(placement)) {
-    const sections = [...html.matchAll(/<section\b([^>]*)>[\s\S]*?<\/section>/giu)];
-    return sections.find((match) => match[1].toLocaleLowerCase().includes(placement))?.[0] || "";
+  if (!placement) return html;
+  const stack = [];
+  const regions = [];
+  const voidTags = new Set([
+    "img",
+    "source",
+    "input",
+    "br",
+    "hr",
+    "meta",
+    "link",
+    "area",
+    "base",
+    "embed",
+    "param",
+    "track",
+    "wbr",
+  ]);
+  const markup = String(html)
+    .replace(/<script\b[\s\S]*?<\/script>/giu, "")
+    .replace(/<!--[\s\S]*?-->/gu, "");
+  for (const match of markup.matchAll(
+    /<(\/?)([a-z][a-z0-9:-]*)\b([^>]*)>/giu,
+  )) {
+    const [, closing, rawTag, attributes] = match;
+    const tag = rawTag.toLowerCase();
+    if (closing) {
+      const index = stack.findLastIndex((entry) => entry.tag === tag);
+      if (index < 0) continue;
+      for (const entry of stack.splice(index))
+        if (entry.matches)
+          regions.push(
+            markup.slice(entry.start, match.index + match[0].length),
+          );
+      continue;
+    }
+    if (voidTags.has(tag) || /\/\s*$/u.test(attributes)) continue;
+    const labels = [
+      htmlAttributeValue(attributes, "id"),
+      htmlAttributeValue(attributes, "class"),
+      htmlAttributeValue(attributes, "data-reference-section"),
+      htmlAttributeValue(attributes, "data-section-type"),
+    ]
+      .join(" ")
+      .toLowerCase();
+    const matches =
+      placement === "header"
+        ? tag === "header"
+        : (placement === "hero" &&
+            /\bdata-hero(?:\s|=|$)/iu.test(attributes)) ||
+          labels.split(/[^a-z0-9]+/u).includes(placement);
+    stack.push({ tag, start: match.index, matches });
   }
-  return html;
+  return regions.join("\n");
 }
 function containsAsset(html, artifact) {
   const region = assetPlacementHtml(html, artifact.placement);
-  return imageSourceMarkup(artifact.url).some((marker) => region.includes(marker));
+  return imageSourceMarkup(artifact.url).some((marker) =>
+    region.includes(marker),
+  );
 }
+function containsRequestedImage(html, artifact, config) {
+  const markup = String(html || "")
+    .replace(/<script\b[\s\S]*?<\/script>/giu, "")
+    .replace(/<!--[\s\S]*?-->/gu, "");
+  const placement = {
+    logo: "header",
+    hero: "hero",
+    secondary: "about",
+    tertiary: "gallery",
+    team: "team",
+  }[artifact.target];
+  let region = placement ? assetPlacementHtml(markup, placement) : markup;
+  // Older deterministic pages may have no section markers. Authored pages
+  // must prove the requested role, rather than merely serialize the URL.
+  if (
+    !region &&
+    config.design?.experience?.renderer !== "creative-candidate" &&
+    !/<section\b/iu.test(markup)
+  )
+    region = markup;
+  return [...region.matchAll(/<img\b[^>]*>/giu)].some(([image]) =>
+    imageSourceMarkup(artifact.path).some((source) => image.includes(source)),
+  );
+}
+
 /** @param {Record<string, string> | null} [htmlPages=null] */
-export function verifyRevision(config, report, html = "", allHtml = html, htmlPages = null) {
+export function verifyRevision(
+  config,
+  report,
+  html = "",
+  allHtml = html,
+  htmlPages = null,
+) {
   const failures = [];
   const selectedCandidateId = String(
     config.design?.experience?.candidateId || "",
@@ -1626,24 +2522,75 @@ export function verifyRevision(config, report, html = "", allHtml = html, htmlPa
   const verifiedCandidateId = String(
     report.creativeSourceRepairVerified?.candidateId || "",
   ).trim();
-  const creativeSourceVerified =
+  const creativeFeedbackResults = Array.isArray(report.results)
+    ? report.results.filter((result) => result.status === "creative")
+    : [];
+  const baseCreativeSourceVerified =
     report.creativeSourceRepairVerified?.pass === true &&
     Boolean(verifiedCandidateId) &&
     (!selectedCandidateId || verifiedCandidateId === selectedCandidateId);
+  const itemProofs = Array.isArray(
+    report.creativeSourceRepairVerified?.feedbackResults,
+  )
+    ? report.creativeSourceRepairVerified.feedbackResults
+    : [];
+  const itemProofsRequired =
+    creativeFeedbackResults.length > 1 || itemProofs.length > 0;
+  const expectedCreativeIndexes = new Set(
+    creativeFeedbackResults.map((result) => result.feedbackIndex),
+  );
+  const creativeIndexesValid =
+    expectedCreativeIndexes.size === creativeFeedbackResults.length &&
+    creativeFeedbackResults.every((result) =>
+      Number.isSafeInteger(result.feedbackIndex),
+    );
+  const itemProofByIndex = new Map();
+  let itemProofSetValid =
+    itemProofs.length === creativeFeedbackResults.length &&
+    expectedCreativeIndexes.size === creativeFeedbackResults.length;
+  for (const proof of itemProofs) {
+    const index = proof?.feedbackIndex;
+    const expectedResult = creativeFeedbackResults.find(
+      (result) => result.feedbackIndex === index,
+    );
+    if (
+      !Number.isSafeInteger(index) ||
+      !expectedCreativeIndexes.has(index) ||
+      itemProofByIndex.has(index) ||
+      proof?.verdict !== "pass" ||
+      typeof proof?.evidence !== "string" ||
+      !proof.evidence.trim() ||
+      !expectedResult?.feedback ||
+      String(proof?.feedback || "").trim() !==
+        String(expectedResult.feedback).trim() ||
+      (selectedCandidateId && proof?.candidateId !== selectedCandidateId)
+    ) {
+      itemProofSetValid = false;
+      continue;
+    }
+    itemProofByIndex.set(index, proof);
+  }
+  if (itemProofByIndex.size !== expectedCreativeIndexes.size)
+    itemProofSetValid = false;
+  const creativeSourceVerified =
+    baseCreativeSourceVerified &&
+    creativeIndexesValid &&
+    (!itemProofsRequired || itemProofSetValid);
   if (!Array.isArray(report.results) || !report.results.length)
     failures.push("Revision has no per-feedback results.");
-  if (
-    report.creativeSourceRepairRequired === true &&
-    !creativeSourceVerified
-  )
+  if (report.creativeSourceRepairRequired === true && !creativeSourceVerified)
     failures.push(
-      "Creative source repair was required but did not pass rendered human verification.",
+      itemProofsRequired && !itemProofSetValid
+        ? "Creative source repair requires separate rendered evidence for every creative feedback index."
+        : "Creative source repair was required but did not pass rendered human verification.",
     );
   for (const result of report.results || []) {
     const creativeVerified =
       result.status === "creative" &&
       report.creativeSourceRepairRequired === true &&
-      creativeSourceVerified;
+      baseCreativeSourceVerified &&
+      (!itemProofsRequired ||
+        (itemProofSetValid && itemProofByIndex.has(result.feedbackIndex)));
     if (result.status !== "fulfilled" && !creativeVerified)
       failures.push(
         `Feedback item ${result.feedbackIndex + 1} is ${result.status}: ${result.unresolved?.join(", ") || "unresolved"}.`,
@@ -1674,15 +2621,38 @@ export function verifyRevision(config, report, html = "", allHtml = html, htmlPa
       if (id && new RegExp(`<section[^>]+id=["']${id}["']`).test(html))
         failures.push(`Section should be absent: ${artifact.sectionType}`);
     }
-    const renderedPage = artifact.route
-      ? htmlPages
-        ? htmlPages[artifact.route] || ""
-        : artifact.route === "/" ? html : allHtml
-      : allHtml;
-    if (artifact.type === "text" && !containsArtifactText(renderedPage, artifact))
-      failures.push(`Missing rendered text at ${artifact.path || "the expected page"}: ${artifact.value.slice(0, 80)}`);
+    const renderedPage =
+      artifact.requirePageMap && !htmlPages
+        ? ""
+        : artifact.route
+          ? htmlPages
+            ? htmlPages[artifact.route] || ""
+            : artifact.route === "/"
+              ? html
+              : allHtml
+          : allHtml;
+    if (
+      artifact.type === "page-meta" &&
+      ![...renderedPage.matchAll(/<meta\b[^>]*>/giu)].some(
+        (match) =>
+          htmlAttributeValue(match[0], "name") === "description" &&
+          renderedTextVariants(artifact.value).includes(
+            htmlAttributeValue(match[0], "content"),
+          ),
+      )
+    )
+      failures.push(`Missing route-specific metadata at ${artifact.route}.`);
+    if (
+      artifact.type === "text" &&
+      !containsArtifactText(renderedPage, artifact, config)
+    )
+      failures.push(
+        `Missing rendered text at ${artifact.path || "the expected page"}: ${artifact.value.slice(0, 80)}`,
+      );
     if (artifact.type === "asset" && !containsAsset(renderedPage, artifact))
-      failures.push(`Missing rendered replacement asset at ${artifact.placement || "the expected page"}: ${artifact.url}`);
+      failures.push(
+        `Missing rendered replacement asset at ${artifact.placement || "the expected page"}: ${artifact.url}`,
+      );
     if (
       artifact.type === "style" &&
       !html.toLowerCase().includes(artifact.value)
@@ -1692,7 +2662,7 @@ export function verifyRevision(config, report, html = "", allHtml = html, htmlPa
       );
     if (
       artifact.type === "image" &&
-      !html.includes(artifact.path)
+      !containsRequestedImage(renderedPage, artifact, config)
     )
       failures.push(`Missing rendered image: ${artifact.path}`);
     if (

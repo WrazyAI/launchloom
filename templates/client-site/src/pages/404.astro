@@ -1,0 +1,25 @@
+---
+import site from "../lib/site";
+---
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Page not found | {site.business.name}</title>
+ </head>
+ <body data-ll-route="/404">
+  <main>
+   <h1>Page not found</h1>
+   <p>The page you requested is unavailable.</p>
+   <a href="/">Return to {site.business.name}</a>
+  </main>
+ </body>
+</html>
+<style>
+ body { margin: 0; background: #fff; color: #14201d; font: 1rem/1.5 system-ui, sans-serif; }
+ main { max-width: 40rem; margin: 4rem auto; padding: 1.5rem; }
+ a { color: #14201d; text-decoration: underline; }
+ a:focus-visible { outline: 3px solid #14201d; outline-offset: 4px; }
+</style>

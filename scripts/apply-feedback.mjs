@@ -12,6 +12,9 @@ import {
   planRevision,
   removeEmDashes,
 } from "./revision-engine.mjs";
+import { createCreativeRepairScopeDeclaration } from "./creative-revision-scope.mjs";
+
+import { bindCreativePalette } from "./creative-palette-bindings.mjs";
 
 const DEFAULT_ASSET_BASE_URL = "https://assets.launchloom.wrazyos.com";
 
@@ -96,6 +99,10 @@ if (stage === "client") {
 }
 const revised =
   stage === "client" ? planned.config : removeEmDashes(planned.config);
+// Keep previous overrides for image/copy-only revisions, but retire any whose
+// corresponding palette value was deliberately changed by this request.
+for (const [field, binding] of Object.entries(revised.style?.creativeColorOverrides || {}))
+  if (revised.style[field] !== binding.value) delete revised.style.creativeColorOverrides[field];
 const previousRevisionReport = config.revisionReport || {};
 const clientFeedbackContext = nextClientFeedbackContext(
   previousRevisionReport,
@@ -105,6 +112,34 @@ const clientFeedbackContext = nextClientFeedbackContext(
 );
 const creativeRenderer =
   revised.design?.experience?.renderer === "creative-candidate";
+if (
+  stage === "developer" &&
+  creativeRenderer &&
+  planned.operations.some((operation) => operation.requestedFields?.length)
+) {
+  const styles = await fs.readFile(
+    path.resolve(
+      path.dirname(configPath),
+      "generated-experiences/selected/styles.css",
+    ),
+    "utf8",
+  );
+  bindCreativePalette({
+    config: revised,
+    operations: planned.operations,
+    results: planned.results,
+    styles,
+  });
+}
+const {
+  required: creativeSourceRepairRequired,
+  declaration: creativeRepairScope,
+  feedbackText: revisionFeedbackText,
+} = createCreativeRepairScopeDeclaration({
+  creativeRenderer: stage !== "client" && creativeRenderer,
+  feedback: summaries,
+  results: planned.results,
+});
 const creativeIgnoredArtifactTypes = new Set([
   "section",
   "section-type",
@@ -121,30 +156,34 @@ revised.revisionReport = {
   clientFeedbackContext,
   operations: planned.operations,
   results: planned.results,
-  creativeSourceRepairRequired:
-    stage !== "client" && creativeRenderer &&
-    planned.results.some(
-      (result) =>
-        result.status === "creative" ||
-        result.intents?.some((intent) =>
-          ["layout", "color", "social-proof", "brand-name"].includes(intent),
-        ),
-    ),
+  creativeSourceRepairRequired,
+  creativeRepairScope,
   creativeSourceRepairVerified: null,
-  expectedArtifacts: expectedArtifacts(planned.operations, revised).filter(
-    (artifact) =>
-      stage === "client" || !creativeRenderer ||
-      (!creativeIgnoredArtifactTypes.has(artifact.type) &&
-        !(
-          artifact.type === "html" &&
-          artifact.marker === 'class="wordmark__name"'
-        )),
-  ),
+  expectedArtifacts: [
+    ...Object.entries(revised.style?.creativeColorOverrides || {}).map(
+      ([field, binding]) => ({
+        type: "creative-color",
+        field,
+        value: binding.value,
+        variable: binding.variable,
+      }),
+    ),
+    ...expectedArtifacts(planned.operations, revised).filter(
+      (artifact) =>
+        stage === "client" ||
+        !creativeRenderer ||
+        (!creativeIgnoredArtifactTypes.has(artifact.type) &&
+          !(
+            artifact.type === "html" &&
+            artifact.marker === 'class="wordmark__name"'
+          )),
+    ),
+  ],
 };
 if (process.env.FEEDBACK_SUMMARY_PATH)
   await fs.writeFile(
     process.env.FEEDBACK_SUMMARY_PATH,
-    summaries.join("\n\n").slice(0, 12_000),
+    revisionFeedbackText,
     "utf8",
   );
 if (process.env.FEEDBACK_OUTCOME_PATH)

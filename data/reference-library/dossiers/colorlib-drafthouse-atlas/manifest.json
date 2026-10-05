@@ -12,6 +12,10 @@
     "rightsEvidencePath": "rights/LICENSE",
     "assetEvidencePaths": [
       "rights/CREDITS.txt"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {
@@ -70,7 +74,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "2ad25dcc2f7ffe8fc19da0a39dabd7d5caa80ee11355b6d617e5e28a6ffca9f8"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -78,7 +83,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "776d5fa3a8225c7a536e766d3422fd7bba5edfba25c533527fb9688821ec5bca"
     }
   },
   "referenceDna": {
@@ -191,7 +197,17 @@
       "the project index is visually distinct from generic cards",
       "the enquiry path asks only useful briefing questions",
       "mobile project metadata remains readable beside its image"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "curated-open-license-pilot",

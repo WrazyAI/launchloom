@@ -12,6 +12,10 @@
     "rightsEvidencePath": "rights/LICENSE",
     "assetEvidencePaths": [
       "rights/ASSET-PROVENANCE.md"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {
@@ -88,7 +92,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "18f0ed2e9d18abf1a46f70a6ad36e37ab8556411373e679593697df98bad7b98"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -96,7 +101,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "34763dacb37bbdcc02d78d8f258ab3e2217c281bbce8768b63c2aed189da3481"
     }
   },
   "referenceDna": {
@@ -214,7 +220,17 @@
       "hero is legible at desktop 100 percent zoom",
       "all source art and identity are excluded from client deliverables",
       "mobile capture and rendered page have no horizontal overflow"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "curated-open-license-pilot",

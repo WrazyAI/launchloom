@@ -1,0 +1,87 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import Header from "../../components/Header.astro";
+import PageBriefSections from "../../components/PageBriefSections";
+import Footer from "../../components/Footer.astro";
+import ServicesIndexCandidateHost from "../../components/ServicesIndexCandidateHost";
+import site, { routePageBrief, phoneHref, routeIsRendered, serviceHref, approvedServices } from "../../lib/site";
+import { compileExperiencePack } from "../../lib/experience-pack";
+import { resolvePageRecipe } from "../../lib/page-recipe";
+import "../../styles/creative-runtime.css";
+import "../../generated-experiences/selected/styles.css";
+
+export function getStaticPaths() { return routeIsRendered("/services/") ? [{ params: { overview: undefined } }] : []; }
+
+const brief = routePageBrief("services-hub:");
+const supported = brief?.mode === "supported";
+const { recipe, treatment } = resolvePageRecipe(site);
+const creativeServicesIndex = Boolean(
+  site.design?.experience?.renderer === "creative-candidate" &&
+    site.design?.experience?.candidateId &&
+    site.design?.experience?.servicesIndex === true,
+);
+const experience = site.design?.experience?.packId || creativeServicesIndex
+  ? compileExperiencePack(site, recipe)
+  : null;
+const diagnostic = import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
+const creativeRuntime = {
+  candidateId: site.design?.experience?.candidateId || "selected",
+  diagnostic,
+  lead: {
+    apiUrl: diagnostic ? "" : site.lead?.apiUrl || "",
+    token: diagnostic ? "" : site.lead?.token || "",
+  },
+  reviews: {
+    apiUrl: site.socialProof?.google?.apiUrl || "",
+    token: site.socialProof?.google?.token || "",
+  },
+};
+---
+
+<SiteLayout title={supported ? brief.metadata.title : `Services | ${site.business.name}`} description={supported ? brief.metadata.description : `Explore confirmed services from ${site.business.name}. Contact the team to discuss the right next step.`}>
+  {creativeServicesIndex && experience ? (
+    <div
+      data-authored-page-host="true"
+      data-authored-page-kind="services-index"
+      data-creative-renderer="creative-candidate"
+      data-creative-candidate={creativeRuntime.candidateId}
+      data-creative-family={site.design?.experience?.familyId || "unknown"}
+    >
+      <ServicesIndexCandidateHost client:load content={experience.content} runtime={creativeRuntime} />
+      {supported && <><section class="section wrap"><p>{brief.introduction}</p></section><PageBriefSections brief={brief} /></>}
+    </div>
+  ) : (
+    <>
+      <Header />
+      <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`, `type-${treatment.typography}`]}>
+        <section class="inner-hero">
+          <div class="wrap inner-hero-grid">
+            <div>
+              <a class="breadcrumb" href="/">Home</a>
+              <span class="kicker">Services</span>
+              <h1>{site.copy?.servicesHeading || `Services from ${site.business.name}`}</h1>
+              <p>{supported ? brief.introduction : site.copy?.servicesIntro || `Review the services ${site.business.name} confirmed and contact the team about your needs.`}</p>
+              <div class="hero-actions">
+                <a class="cta" href="#services-list">Explore services</a>
+                {site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}
+              </div>
+            </div>
+            {site.images.hero && <img src={site.images.hero} alt={`${site.business.name} service context`} fetchpriority="high" />}
+          </div>
+        </section>
+        {supported && <PageBriefSections brief={brief} />}
+        <section class="section wrap" id="services-list">
+          <div class="section-heading"><span class="kicker">Confirmed services</span><h2>Choose the service that fits your need.</h2></div>
+          <div class="service-grid">
+            {approvedServices.map((service) => (
+              <a class="service-card" href={serviceHref(service.slug)}>
+                <h3>{service.name}</h3><p>{service.description}</p><b>View service details <i aria-hidden="true">↗</i></b>
+              </a>
+            ))}
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </>
+  )}
+</SiteLayout>

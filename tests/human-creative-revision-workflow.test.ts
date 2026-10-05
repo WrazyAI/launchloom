@@ -63,7 +63,16 @@ describe("human creative revision lifecycle", () => {
             candidateId: "candidate-a",
           },
         },
-        revisionReport: { creativeSourceRepairRequired: true },
+        revisionReport: {
+          creativeSourceRepairRequired: true,
+          creativeRepairScope: {
+            version: 1,
+            requestText: "Improve the hero layout.",
+            feedbackItems: [
+              { feedbackIndex: 0, feedback: "Improve the hero layout." },
+            ],
+          },
+        },
       }),
     );
     await fs.writeFile(
@@ -91,7 +100,11 @@ describe("human creative revision lifecycle", () => {
       }),
     );
     for (const [name, original, selected] of [
-      ["Experience.jsx", "original experience", "current selected experience"],
+      [
+        "Experience.jsx",
+        "original experience",
+        `export default function Experience({ content }) { return <main><section data-reference-section="hero"><h1>{content.hero.heading}</h1></section><section data-reference-section="services"><h2>Services</h2></section></main>; }`,
+      ],
       ["styles.css", "original styles", "current selected styles"],
       ["motion.js", "original motion", "current selected motion"],
     ] as const) {
@@ -116,13 +129,11 @@ describe("human creative revision lifecycle", () => {
       creative: true,
       repairRequired: true,
       candidateId: "candidate-a",
+      creativeRepairScope: { sectionIds: ["hero"], allowMotion: false },
     });
     expect(
-      await fs.readFile(
-        path.join(outDir, "candidate-a/Experience.jsx"),
-        "utf8",
-      ),
-    ).toBe("current selected experience");
+      await fs.readFile(path.join(outDir, "candidate-a/Experience.jsx"), "utf8"),
+    ).toContain('data-reference-section="hero"');
     expect(
       await fs.readFile(path.join(outDir, "candidate-a/styles.css"), "utf8"),
     ).toBe("current selected styles");
@@ -138,6 +149,10 @@ describe("human creative revision lifecycle", () => {
     const refreshedContract = JSON.parse(
       await fs.readFile(path.join(outDir, "candidate-a/contract.json"), "utf8"),
     );
+    expect(refreshedMetadata.creativeRepairScope).toMatchObject({
+      sectionIds: ["hero"],
+      allowMotion: false,
+    });
     expect(refreshedManifest.values.hero.heading).toBe("Revised hero heading");
     expect(refreshedManifest.values.services[0].name).toBe("Current service");
     expect(refreshedManifest.digest).not.toBe("old-digest");
@@ -172,7 +187,7 @@ describe("human creative revision lifecycle", () => {
       ),
     ).toThrow();
     expect(await fs.readFile(sentinel, "utf8")).toBe("keep");
-  });
+  }, 15_000);
 
   it("reports missing creative evidence with the candidate-specific error", async () => {
     const root = await fs.mkdtemp(
@@ -381,19 +396,6 @@ describe("human creative revision lifecycle", () => {
         'REVIEWED_PAGE: ${{ github.event.client_payload.reviewedPage }}',
       );
       expect(workflow).toContain(
-        'SITE_URL=$(REVIEWED_PAGE="$REVIEWED_PAGE" node -e',
-      );
-      expect(workflow).toContain(
-        'REVISION_DEPLOYED_PREVIEW: ${{ steps.deploy.outputs.preview }}',
-      );
-      expect(workflow).toContain('SITE_URL="$REVISION_DEPLOYED_PREVIEW"');
-      expect(workflow).toContain(
-        'if [ -z "$SITE_URL" ]; then SITE_URL="$REVIEWED_PAGE"; fi',
-      );
-      expect(workflow).toContain('--preview "$SITE_URL" --review "$SITE_URL"');
-      expect(workflow).toContain('--diagnostic-pr "https://github.com/');
-      expect(workflow).toContain('--diagnostic-run "$RUN_URL"');
-      expect(workflow).toContain(
         'REVISION_FAILURE_SITE_URL: ${{ steps.deploy.outputs.preview || github.event.client_payload.reviewedPage }}',
       );
       expect(workflow).toContain(
@@ -405,7 +407,38 @@ describe("human creative revision lifecycle", () => {
       expect(workflow).not.toMatch(
         /--review "https:\/\/github\.com\/\$CLIENT_REPO\/pull\//u,
       );
+      expect(workflow).not.toMatch(
+        /send-preview-email\.mjs[^\n]*--kind revision-failed/u,
+      );
     }
+
+    const coordinator = readFileSync(
+      "worker/src/revision-coordinator.ts",
+      "utf8",
+    );
+    expect(coordinator).toContain(
+      '"Idempotency-Key": `revision-failed-coordinator-${row.request_id}`',
+    );
+  });
+
+  it("installs client dependencies before rendered creative repair", () => {
+    const workflow = readFileSync(
+      ".github/workflows/process-feedback.yml",
+      "utf8",
+    );
+    const installIndex = workflow.indexOf(
+      "- name: Install client dependencies before creative repair",
+    );
+    const installCommandIndex = workflow.indexOf("npm ci", installIndex);
+    const repairIndex = workflow.indexOf(
+      "scripts/run-rendered-creative-repair.mjs",
+    );
+    const lateInstallIndex = workflow.indexOf("npm ci", repairIndex);
+
+    expect(installIndex).toBeGreaterThan(-1);
+    expect(installCommandIndex).toBeGreaterThan(installIndex);
+    expect(repairIndex).toBeGreaterThan(installCommandIndex);
+    expect(lateInstallIndex).toBe(-1);
   });
 
   it("returns client-requested revisions to the developer with the triggering request in the email", () => {

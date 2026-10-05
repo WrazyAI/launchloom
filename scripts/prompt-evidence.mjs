@@ -7,6 +7,13 @@ import sharp from "sharp";
 // those originals as data URLs makes the visual evidence dominate the model
 // context before the author can read the contract or return source. Keep the
 // evidence multimodal, but bound its visual footprint first.
+//
+// Bounding must preserve readability. Fitting a 1440x8356 capture inside both
+// bounds collapses it to a 310x1800 sliver, and a 390x13667 mobile capture to
+// a 51x1800 sliver, which removes every measurable scale cue from the
+// evidence. Resize by width instead, then keep the top window of the page.
+// The window is the composition-defining region (header, hero, opening
+// index); the Reference DNA text carries the lower-page structure.
 const MAX_WIDTH = 1200;
 const MAX_HEIGHT = 1800;
 const JPEG_QUALITY = 72;
@@ -58,9 +65,10 @@ function fallbackPromptImage(resolved, input) {
   };
 }
 
-async function preparePromptImage(filePath) {
+async function preparePromptImage(filePath, fit = "width") {
   const resolved = cacheKey(filePath);
-  const cached = preparedCache.get(resolved);
+  const cacheId = `${fit}:${resolved}`;
+  const cached = preparedCache.get(cacheId);
   if (cached) return cached;
 
   const input = await fs.readFile(resolved);
@@ -68,22 +76,41 @@ async function preparePromptImage(filePath) {
     if (input.length > MAX_BYTES)
       throw new Error(`Prompt evidence is not a supported image: ${resolved}`);
     const result = fallbackPromptImage(resolved, input);
-    preparedCache.set(resolved, result);
+    preparedCache.set(cacheId, result);
     return result;
   }
   let quality = JPEG_QUALITY;
-  let output;
-  try {
-    output = await sharp(input)
-      .rotate()
-      .resize({
-        width: MAX_WIDTH,
-        height: MAX_HEIGHT,
-        fit: "inside",
-        withoutEnlargement: true,
-      })
+  const metadata = await sharp(input).metadata();
+  if (!metadata.width || !metadata.height)
+    throw new Error(`Prompt evidence has no dimensions: ${resolved}`);
+  const widthScale = Math.min(1, MAX_WIDTH / metadata.width);
+  const readableWindowHeight = Math.floor(MAX_HEIGHT / widthScale);
+  const render = async () => {
+    let pipeline = sharp(input).rotate();
+    if (fit !== "page" && metadata.height > readableWindowHeight)
+      pipeline = pipeline.extract({
+        left: 0,
+        top: 0,
+        width: metadata.width,
+        height: readableWindowHeight,
+      });
+    pipeline = pipeline.resize(
+      fit === "page"
+        ? {
+            width: MAX_WIDTH,
+            height: MAX_HEIGHT,
+            fit: "inside",
+            withoutEnlargement: true,
+          }
+        : { width: MAX_WIDTH, withoutEnlargement: true },
+    );
+    return pipeline
       .jpeg({ quality, progressive: true, mozjpeg: true })
       .toBuffer();
+  };
+  let output;
+  try {
+    output = await render();
   } catch (error) {
     // A recognized image must never be sent under a mismatched MIME type.
     // Tiny non-image test fixtures still use the fallback above.
@@ -94,16 +121,7 @@ async function preparePromptImage(filePath) {
 
   while (output.length > MAX_BYTES && quality > 48) {
     quality -= 8;
-    output = await sharp(input)
-      .rotate()
-      .resize({
-        width: MAX_WIDTH,
-        height: MAX_HEIGHT,
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .jpeg({ quality, progressive: true, mozjpeg: true })
-      .toBuffer();
+    output = await render();
   }
 
   const result = {
@@ -112,7 +130,7 @@ async function preparePromptImage(filePath) {
     quality,
     sourcePath: resolved,
   };
-  preparedCache.set(resolved, result);
+  preparedCache.set(cacheId, result);
   return result;
 }
 
@@ -121,11 +139,18 @@ async function preparePromptImage(filePath) {
  * still supplied in the request context; only its transport representation is
  * reduced so the textual contract and authored source remain usable.
  *
+ * `fit` selects the bounding strategy. `width` keeps reference captures
+ * readable by trimming their top composition window. `page` keeps a complete
+ * long page visible, squashed, for section-order and rhythm judgments.
+ *
  * @param {string} filePath
- * @param {{ detail?: "low" | "high" }} [options]
+ * @param {{ detail?: "low" | "high", fit?: "width" | "page" }} [options]
  */
-export async function promptImagePart(filePath, { detail = "low" } = {}) {
-  const prepared = await preparePromptImage(filePath);
+export async function promptImagePart(
+  filePath,
+  { detail = "low", fit = "width" } = {},
+) {
+  const prepared = await preparePromptImage(filePath, fit);
   return {
     type: "image_url",
     image_url: { url: prepared.dataUrl, detail },

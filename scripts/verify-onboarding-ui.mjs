@@ -25,6 +25,7 @@ const contentTypes = {
   ".js": "text/javascript",
   ".svg": "image/svg+xml",
   ".png": "image/png",
+  ".woff2": "font/woff2",
   ".html": "text/html",
 };
 
@@ -127,6 +128,36 @@ try {
       body: JSON.stringify({ suggestions: ["Exterior painting", "Interior painting", "Cabinet refinishing", "Surface prep, priming and coating"], provenance: "model_suggestion_unconfirmed" }),
     });
   });
+  let coverageLookups = 0;
+  const coverageFixture = (radiusSelection) => ({
+    ok: true,
+    primary: { label: "Charleston, SC", city: "Charleston", state: "SC", country: "US", placeId: "city-charleston", latitude: 32.7765, longitude: -79.9311 },
+    radius: {
+      selection: radiusSelection,
+      miles: radiusSelection === "50+" ? 50 : Number(radiusSelection),
+      label: `${radiusSelection === "50+" ? 50 : Number(radiusSelection)} miles`,
+    },
+    candidates: [
+      { id: "city-north-charleston", name: "North Charleston", state: "SC", label: "North Charleston, SC", distanceMiles: 5.2 },
+      { id: "city-mount-pleasant", name: "Mount Pleasant", state: "SC", label: "Mount Pleasant, SC", distanceMiles: 6.8 },
+      { id: "city-summmerville", name: "Summerville", state: "SC", label: "Summerville, SC", distanceMiles: 18.4 },
+      ...(radiusSelection === "10" ? Array.from({length: 5}, (_, index) => ({id:`synthetic-${index}`, name:`Nearby ${index}`,state:"SC",label:`Nearby ${index}, SC`,distanceMiles:8 + index / 10})) : []),
+    ],
+    reference: "browser-fixture-coverage-reference",
+    source: "google_places_locality",
+    truncated: false,
+    partial: false,
+    warnings: [],
+  });
+  await page.route("**/api/coverage-areas", async (route) => {
+    coverageLookups += 1;
+    const body = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(coverageFixture(body.serviceRadius)),
+    });
+  });
   await page.route("**/api/intake", async (route) => {
     acceptedIntake = route.request().postDataJSON();
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, issue: 66 }) });
@@ -153,6 +184,9 @@ try {
     failures.push("The invitation email was not prefilled.");
   await page.locator('[name="phone"]').fill("(555) 555-0100");
   await page.locator('[name="address"]').fill("100 Test Street");
+  await page.locator('[name="addressVisibility"]').selectOption("private");
+  await page.locator('[name="hours"]').fill("Monday to Friday, 9 to 5");
+  await page.locator('[name="researchLanguageCode"]').selectOption("es");
   await page.getByRole("button", { name: "Continue" }).click();
 
   const stepText = await page.locator(".stepper").innerText();
@@ -228,6 +262,90 @@ try {
     .locator('[name="differentiators"]')
     .fill("Careful prep, tidy work, and clear communication.");
 
+  await page.locator(".coverage-pills").waitFor({ state: "visible" });
+  const coveragePills = page.locator(".coverage-pill");
+  if ((await coveragePills.count()) !== 3)
+    failures.push("Coverage discovery did not render the three nearby city pills.");
+  if (!(await page.locator(".coverage-primary").getByText("Charleston, SC", { exact: true }).isVisible()))
+    failures.push("Coverage review does not show the resolved primary city.");
+  const pillLabels = (await coveragePills.allInnerTexts()).join(" | ");
+  if (!pillLabels.includes("North Charleston") || !pillLabels.includes("Mount Pleasant"))
+    failures.push("Coverage pills do not use canonical city, state labels.");
+
+  const confirmBox = page.locator("#coverage-confirmation");
+  if (!(await confirmBox.isVisible()))
+    failures.push("Coverage review does not render the single confirmation checkbox.");
+  if (!(await coveragePills.first().getByRole("button", {name: /Remove/}).isVisible()))
+    failures.push("Suggested nearby cities did not start selected for review.");
+
+  // Leaving during the debounce must allow the same inputs to load on return.
+  await page.locator('[name="serviceRadius"]').selectOption("20");
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.locator(".coverage-pill").first().waitFor({ state: "visible", timeout: 5000 });
+
+  // Changing the radius refreshes suggestions and invalidates the confirmation.
+  const lookupsBeforeRadiusChange = coverageLookups;
+  await page.locator('[name="serviceRadius"]').selectOption("10");
+  await page.locator(".coverage-pill").first().waitFor({ state: "visible" });
+  if ((await coveragePills.count()) !== 5) failures.push("Discovery with more than five cities did not cap the prefilled pills at five.");
+  if (coverageLookups <= lookupsBeforeRadiusChange)
+    failures.push("Changing the travel radius did not refresh the nearby city lookup.");
+  if (await confirmBox.isChecked())
+    failures.push("Changing the travel radius kept the previous coverage confirmation.");
+  await page.locator('[name="serviceRadius"]').selectOption("30");
+  await page.locator(".coverage-pill").first().waitFor({ state: "visible" });
+
+  // The form cannot advance without explicit coverage confirmation.
+  await page.getByRole("button", { name: "Continue" }).click();
+  if (!(await page.getByText("Review and confirm the cities and towns you serve", { exact: false }).isVisible()))
+    failures.push("Continuing without confirming coverage did not surface a clear error.");
+  if (!(await page.locator(".stepper").innerText()).includes("Step 2 of 3"))
+    failures.push("The form advanced past coverage without explicit confirmation.");
+
+  // The city picker uses removable chips, keyboard entry and a five-place cap.
+  const entry = page.locator("#coverage-entry");
+  await entry.fill("Awendaw, SC");
+  await entry.press("Enter");
+  await entry.fill("Huger, SC");
+  await page.getByRole("button", { name: "Add place", exact: true }).click();
+  if ((await coveragePills.count()) !== 5 || !(await entry.isDisabled()))
+    failures.push("Additional-place entry did not enforce the five-place limit.");
+  await confirmBox.check();
+  await page.getByRole("button", { name: "Remove Huger, SC", exact: true }).click();
+  if (await confirmBox.isChecked()) failures.push("Removing a place did not invalidate confirmation.");
+  if (await entry.isDisabled()) failures.push("Removing a place did not re-enable entry.");
+  await page.getByRole("button", { name: "Remove Awendaw, SC", exact: true }).click();
+  const summmerville = page.getByRole("button", { name: "Remove Summerville, SC", exact: true });
+  await summmerville.focus();
+  await page.keyboard.press("Space");
+  if ((await coveragePills.count()) !== 2) failures.push("Keyboard did not remove the focused city pill.");
+  await entry.fill("Mount Pleasant ,SC");
+  await entry.press("Enter");
+  if ((await coveragePills.count()) !== 2) failures.push("Duplicate city was added to the selection.");
+  await entry.fill("Sparta, TN");
+  await entry.press("Enter");
+  if (!(await page.getByRole("button", {name:"Remove Sparta, TN",exact:true}).isVisible())) failures.push("Typed replacement did not become a removable city pill.");
+  await confirmBox.check();
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    window.scrollTo(0, 0);
+  });
+  await page.screenshot({
+    path: path.join(screenshotDir, "coverage-review-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(100);
+  const coverageMobileOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  if (coverageMobileOverflow > 1)
+    failures.push(`Coverage pills cause ${coverageMobileOverflow}px of horizontal overflow on mobile.`);
+  await page.screenshot({
+    path: path.join(screenshotDir, "coverage-review-mobile.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+
   const callNow = page.getByRole("radio", { name: "Call now", exact: true });
   if (await callNow.getAttribute("value") !== "Call now")
     failures.push("The Call now option label and submitted value do not match.");
@@ -256,6 +374,81 @@ try {
   await brandPicker.fill("#245a46");
   await page.locator('[name="leadEmail"]').fill("leads@example.com");
 
+  // Client typography and optional accent with the live specimen canvas.
+  const headingSelect = page.locator('[name="headingFont"]');
+  const bodySelect = page.locator('[name="bodyFont"]');
+  const accentHidden = page.locator('[name="accentColor"]');
+  if ((await headingSelect.count()) !== 1 || (await bodySelect.count()) !== 1)
+    failures.push("The Brand step does not offer heading and body font pickers.");
+  if ((await headingSelect.inputValue()) !== "" || (await bodySelect.inputValue()) !== "")
+    failures.push("Font pickers should default to automatic.");
+  const specimen = page.locator(".specimen-canvas");
+  if (!(await specimen.isVisible()))
+    failures.push("The live type specimen is not visible on the Brand step.");
+  if (await accentHidden.inputValue())
+    failures.push("An accent colour is submitted before the client opts in.");
+
+  await page.getByRole("button", { name: "Editorial contrast" }).click();
+  if (
+    (await headingSelect.inputValue()) !== "fraunces" ||
+    (await bodySelect.inputValue()) !== "inter"
+  )
+    failures.push("Choosing a suggested pairing did not set both font families.");
+  if (
+    !(await specimen.evaluate((element) =>
+      element.style.getPropertyValue("--specimen-heading"),
+    )).includes("Fraunces")
+  )
+    failures.push("The specimen did not adopt the chosen heading family.");
+  if (
+    !(await specimen.evaluate((element) =>
+      element.style.getPropertyValue("--specimen-body"),
+    )).includes("Inter")
+  )
+    failures.push("The specimen did not adopt the chosen body family.");
+
+  await headingSelect.selectOption("space-grotesk");
+  if (
+    !(await specimen.evaluate((element) =>
+      element.style.getPropertyValue("--specimen-heading"),
+    )).includes("Space Grotesk")
+  )
+    failures.push("Changing the heading font did not update the specimen.");
+
+  await page.evaluate(() => document.fonts.ready);
+  await page
+    .waitForFunction(() => document.fonts.check('700 16px "Space Grotesk"'), null, {
+      timeout: 10_000,
+    })
+    .catch(() => {});
+  if (
+    !(await page.evaluate(() => document.fonts.check('700 16px "Space Grotesk"')))
+  )
+    failures.push("The chosen self-hosted heading font did not load.");
+
+  const accentToggle = page.getByRole("checkbox", {
+    name: /Add a second accent colour/,
+  });
+  await accentToggle.check();
+  const accentSwatches = page.locator(".accent-swatch");
+  if ((await accentSwatches.count()) < 3)
+    failures.push("Accent suggestions did not render three swatches.");
+  await accentSwatches.first().click();
+  const chosenAccent = await accentHidden.inputValue();
+  if (!/^#[0-9a-f]{6}$/u.test(chosenAccent))
+    failures.push("Choosing an accent suggestion did not set the submitted accent colour.");
+
+  await page.getByRole("button", { name: "Dark" }).click();
+  if ((await page.locator(".specimen").getAttribute("data-theme")) !== "dark")
+    failures.push("The specimen dark toggle did not switch the canvas theme.");
+  await page.getByRole("button", { name: "Mobile" }).click();
+  if ((await page.locator(".specimen").getAttribute("data-narrow")) !== "true")
+    failures.push("The specimen mobile toggle did not narrow the canvas.");
+  await page.getByRole("button", { name: "Light" }).click();
+  await page.getByRole("button", { name: "Desktop" }).click();
+  if ((await page.locator(".specimen").getAttribute("data-narrow")) !== null)
+    failures.push("The specimen desktop toggle did not restore the wide canvas.");
+
   const logoInput = page.locator('input[name="logo"]');
   await logoInput.setInputFiles(uploadFixture);
   const preview = page.locator(".image-preview-card").first();
@@ -282,6 +475,15 @@ try {
   )
     failures.push("Confirmation does not show the service radius.");
 
+  const coverageReview = page
+    .locator("dl > div")
+    .filter({ has: page.getByText("Confirmed coverage", { exact: true }) })
+    .getByRole("definition");
+  if (!(await coverageReview.getByText("North Charleston, SC", { exact: false }).isVisible()))
+    failures.push("Confirmation does not show the confirmed nearby coverage list.");
+  if (await coverageReview.getByText("Summerville", { exact: false }).count())
+    failures.push("Confirmation still shows a deselected nearby city.");
+
   if (
     !(await page
       .locator("dl > div")
@@ -291,6 +493,34 @@ try {
       .isVisible())
   )
     failures.push("Confirmation does not show the selected existing brand colour.");
+
+  if (
+    !(await page
+      .locator("dl > div")
+      .filter({ has: page.getByText("Heading font", { exact: true }) })
+      .getByRole("definition")
+      .getByText("Space Grotesk", { exact: true })
+      .isVisible())
+  )
+    failures.push("Confirmation does not show the chosen heading font.");
+  if (
+    !(await page
+      .locator("dl > div")
+      .filter({ has: page.getByText("Body font", { exact: true }) })
+      .getByRole("definition")
+      .getByText("Inter", { exact: true })
+      .isVisible())
+  )
+    failures.push("Confirmation does not show the chosen body font.");
+  if (
+    !(await page
+      .locator("dl > div")
+      .filter({ has: page.getByText("Accent colour", { exact: true }) })
+      .getByRole("definition")
+      .getByText(chosenAccent, { exact: true })
+      .isVisible())
+  )
+    failures.push("Confirmation does not show the chosen accent colour.");
 
   if (
     !(await page
@@ -310,6 +540,15 @@ try {
     failures.push("Service choices were lost after backward navigation.");
   if ((await page.locator('[name="serviceRadius"]').inputValue()) !== "30")
     failures.push("Service radius was lost after backward navigation.");
+  if ((await page.locator('[name="headingFont"]').inputValue()) !== "space-grotesk")
+    failures.push("Font choices were lost after backward navigation.");
+  if ((await page.locator('[name="accentColor"]').inputValue()) !== chosenAccent)
+    failures.push("The accent colour was lost after backward navigation.");
+  if (!(await page.locator("#coverage-confirmation").isChecked()))
+    failures.push("Coverage confirmation was lost after backward navigation.");
+  if (await page.getByRole("button", { name: "Remove Summerville, SC", exact: true }).count())
+    failures.push("Coverage deselection was lost after backward navigation.");
+  if (!(await page.getByRole("button", { name: "Remove Sparta, TN", exact: true }).isVisible())) failures.push("Typed coverage was lost after backward navigation.");
   await page.getByRole("button", { name: "Continue" }).click();
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -362,6 +601,8 @@ try {
     failures.push("The accepted screen does not confirm that intake processing has started.");
   if (acceptedIntake?.intakeVersion !== "2" || acceptedIntake?.inviteToken !== inviteToken)
     failures.push("The accepted v2 intake did not include its invite proof and contract version.");
+  if (acceptedIntake?.addressVisibility !== "private" || acceptedIntake?.researchLanguageCode !== "es" || acceptedIntake?.hours !== "Monday to Friday, 9 to 5")
+    failures.push("Address visibility, business hours, or search language did not survive navigation and submission.");
   const acceptedFields = Object.keys(acceptedIntake || {}).sort();
   if (JSON.stringify(acceptedFields) !== JSON.stringify([...CLIENT_INTAKE_V2_SUBMISSION_FIELDS].sort()))
     failures.push(`The accepted v2 intake field set differs from the shared form contract: ${acceptedFields.join(", ")}.`);
@@ -369,8 +610,26 @@ try {
     failures.push("Only the client-selected core services should be submitted.");
   if (acceptedIntake?.brandColor !== "#245a46")
     failures.push("The client-supplied existing brand colour was not included in the intake.");
+  if (acceptedIntake?.headingFont !== "space-grotesk" || acceptedIntake?.bodyFont !== "inter")
+    failures.push("The intake did not carry the chosen heading and body fonts.");
+  if (acceptedIntake?.accentColor !== chosenAccent)
+    failures.push("The intake did not carry the chosen accent colour.");
   if (acceptedIntake?.serviceAreas !== "Charleston, SC" || acceptedIntake?.serviceRadius !== "30")
     failures.push("The intake did not preserve the client-confirmed city and travel radius.");
+  if (acceptedIntake?.primaryCity !== "Charleston, SC")
+    failures.push("The intake did not preserve the resolved primary city.");
+  if (acceptedIntake?.coverageAreas !== "Charleston, SC\nNorth Charleston, SC\nMount Pleasant, SC\nSparta, TN")
+    failures.push(`The intake did not persist exactly the confirmed coverage: ${JSON.stringify(acceptedIntake?.coverageAreas)}.`);
+  if ((acceptedIntake?.coverageAreas || "").includes("Summerville"))
+    failures.push("A deselected nearby city reached the submitted intake.");
+  const submittedCoverage = JSON.parse(acceptedIntake?.coverageSelection || "{}");
+  if (
+    submittedCoverage.status !== "confirmed" ||
+    submittedCoverage.reference !== "browser-fixture-coverage-reference" ||
+    JSON.stringify(submittedCoverage.manualAreas) !== JSON.stringify(["Sparta, TN"]) ||
+    submittedCoverage.selectedIds?.length !== 2
+  )
+    failures.push("The intake did not carry the explicit confirmed coverage selection and signed reference.");
 
   const retryPage = await browser.newPage({ viewport: { width: 390, height: 844 } });
   const retryInviteId = "browser-invite-retry-002";
@@ -388,6 +647,26 @@ try {
         : retryValidationCount === 1
           ? { valid: true, clientEmail: "retry@example.com" }
           : { valid: false, accepted: true }),
+    });
+  });
+  await retryPage.route("**/api/coverage-areas", async (route) => {
+    const body = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        primary: { label: "Tacoma, WA", city: "Tacoma", state: "WA", country: "US", placeId: "city-tacoma", latitude: 47.2529, longitude: -122.4443 },
+        radius: { selection: body.serviceRadius, miles: Number(body.serviceRadius), label: `${Number(body.serviceRadius)} miles` },
+        candidates: [
+          { id: "city-lakewood", name: "Lakewood", state: "WA", label: "Lakewood, WA", distanceMiles: 5.4 },
+        ],
+        reference: "browser-fixture-retry-coverage-reference",
+        source: "google_places_locality",
+        truncated: false,
+        partial: false,
+        warnings: [],
+      }),
     });
   });
   await retryPage.route("**/api/intake", async (route) => {
@@ -412,6 +691,8 @@ try {
   await retryPage.locator('[name="serviceAreas"]').fill("Tacoma, WA");
   await retryPage.locator('[name="serviceRadius"]').selectOption("20");
   await retryPage.locator('[name="differentiators"]').fill("Clear communication and careful work areas.");
+  await retryPage.locator(".coverage-pills").waitFor({ state: "visible" });
+  await retryPage.locator("#coverage-confirmation").check();
   await retryPage.getByRole("button", { name: "Continue" }).click();
   await retryPage.locator('[name="leadEmail"]').fill("leads-retry@example.com");
   await retryPage.locator('[name="confirmAccuracy"]').check();
@@ -424,6 +705,54 @@ try {
   else if (JSON.stringify(retryIntakes[0]) !== JSON.stringify(retryIntakes[1]))
     failures.push("An accepted intake retry changed the original submission payload.");
   await retryPage.close();
+
+  const fallbackPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const fallbackInviteId = "browser-invite-fallback-003";
+  const fallbackToken = `${Buffer.from(JSON.stringify({ inviteId: fallbackInviteId })).toString("base64url")}.browser-fixture-signature`;
+  await fallbackPage.route("**/api/onboarding-invites/validate", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ valid: true, clientEmail: "fallback@example.com" }),
+    }),
+  );
+  await fallbackPage.route("**/api/coverage-areas", (route) =>
+    route.fulfill({
+      status: 502,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: false,
+        code: "provider_failure",
+        message: "The map provider is unavailable right now. Retry or confirm only your main city.",
+        retryable: true,
+      }),
+    }),
+  );
+  await fallbackPage.goto(`${origin}/onboard/#invite=${encodeURIComponent(fallbackToken)}`, { waitUntil: "networkidle" });
+  await fallbackPage.getByRole("heading", { name: "Let’s meet the business." }).waitFor();
+  await fallbackPage.getByRole("button", { name: "Enter details manually" }).click();
+  await fallbackPage.locator('[name="businessName"]').fill("Offline Services");
+  await fallbackPage.locator('[name="contactName"]').fill("Alex Owner");
+  await fallbackPage.locator('[name="phone"]').fill("(555) 555-0103");
+  await fallbackPage.locator('[name="address"]').fill("9 Main Street, Columbia, SC");
+  await fallbackPage.getByRole("button", { name: "Continue" }).click();
+  const fallbackServiceEntry = fallbackPage.getByRole("textbox", { name: "Add a core service" });
+  await fallbackServiceEntry.fill("Drain cleaning");
+  await fallbackServiceEntry.press("Enter");
+  await fallbackPage.locator('[name="industry"]').selectOption("home-services");
+  await fallbackPage.locator('[name="serviceAreas"]').fill("Columbia, SC");
+  await fallbackPage.locator('[name="serviceRadius"]').selectOption("20");
+  await fallbackPage.locator('[name="differentiators"]').fill("Clear communication and careful work areas.");
+  await fallbackPage.getByText("Retry nearby places").waitFor({ state: "visible" });
+  if (!(await fallbackPage.getByText("The map provider is unavailable right now", { exact: false }).isVisible()))
+    failures.push("A provider failure did not stay visible with a retry action.");
+  await fallbackPage.locator("#coverage-confirmation").check();
+  await fallbackPage.getByRole("button", { name: "Continue" }).click();
+  if (!(await fallbackPage.locator(".stepper").innerText()).includes("Step 3 of 3"))
+    failures.push("A confirmed primary-city-only fallback could not continue.");
+  if (!(await fallbackPage.locator('[name="coverageSelection"]').inputValue()).includes("primary_city_only"))
+    failures.push("The primary-city-only fallback did not serialize an explicit confirmation.");
+  await fallbackPage.close();
 } finally {
   await browser.close();
   server.close();

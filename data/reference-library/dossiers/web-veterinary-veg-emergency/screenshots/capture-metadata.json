@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "sourceUrl": "https://www.veg.com/",
+  "captures": {
+    "desktop": {
+      "url": "https://www.veg.com/",
+      "finalUrl": "https://www.veg.com/",
+      "httpStatus": 200,
+      "title": "VEG ER for Pets | 24-hour Emergency Vet | Open Now",
+      "h1": [
+        "24-HOUR\nEMERGENCY\nVET HOSPITAL"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "image": {
+        "width": 1440,
+        "height": 6643
+      },
+      "documentWidth": 1440,
+      "documentHeight": 6643,
+      "scrollWidthOverflow": false,
+      "brokenImages": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [
+        "t(...).onClick is not a function"
+      ],
+      "fullPage": true,
+      "captureMethod": "Playwright Chromium fullPage after progressive scroll/lazy-media activation"
+    },
+    "mobile": {
+      "url": "https://www.veg.com/",
+      "finalUrl": "https://www.veg.com/",
+      "httpStatus": 200,
+      "title": "VEG ER for Pets | 24-hour Emergency Vet | Open Now",
+      "h1": [
+        "24-HOUR\nEMERGENCY\nVET HOSPITAL"
+      ],
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "image": {
+        "width": 390,
+        "height": 8381
+      },
+      "documentWidth": 390,
+      "documentHeight": 8381,
+      "scrollWidthOverflow": false,
+      "brokenImages": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [
+        "t(...).onClick is not a function"
+      ],
+      "fullPage": true,
+      "captureMethod": "Playwright Chromium fullPage after progressive scroll/lazy-media activation"
+    }
+  }
+}

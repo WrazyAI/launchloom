@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
+import { safeAuthorFailureText } from "./author-failure-evidence.mjs";
 import { parseModelJson } from "./model-json.mjs";
 import {
   assertModelPromptTextBudget,
@@ -12,7 +13,7 @@ import {
   referenceDossierPromptBlock,
 } from "./reference-dossier.mjs";
 import { typographyPalettePrompt } from "./creative-typography.mjs";
-import { authorExperienceCandidates } from "./production-experience-author.mjs";
+import { authorExperienceCandidates, creativeLocationPageShape, creativeServicePageShape } from "./production-experience-author.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
@@ -32,6 +33,8 @@ import {
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 import {
   AUTHORING_STAGE_BUDGETS,
+  CLIENT_PALETTE_ROLE_CONTRACT,
+  CLIENT_TYPOGRAPHY_CONTRACT,
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
   authoringCompletionDiagnostics,
@@ -84,7 +87,7 @@ const authorDeadline =
   Date.now() +
   Math.max(
     5 * 60_000,
-    Number(process.env.CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS || 45 * 60_000),
+    Number(process.env.CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS || 85 * 60_000),
   );
 const sharedAbortController = new AbortController();
 
@@ -101,7 +104,15 @@ const authorStageSchema = {
     properties: {
       stage: {
         type: "string",
-        enum: ["contract", "experience", "styles", "motion"],
+        enum: [
+          "contract",
+          "experience",
+          "service",
+          "location",
+          "service-index",
+          "styles",
+          "motion",
+        ],
       },
       designContract: { type: "string", maxLength: 12000 },
       designRationale: { type: "string", maxLength: 1600 },
@@ -132,7 +143,7 @@ ${request.contentTokens.join("\n")}
 RELEASE RULES
 ${request.rules}
 
-Transfer principles from the reference evidence, never source layout, copy, branding, code, imagery, or trade dress. The candidate must embody its assigned route and must not collapse toward a generic split hero, white pill navigation, card grid, or shared LaunchLoom template. Treat the family, Reference DNA, mobile behavior, and prohibited patterns as binding design constraints, not suggestions.
+Transfer principles from the reference evidence, never source layout, copy, branding, code, imagery, or trade dress. The candidate must embody its assigned route and must not collapse toward a generic split hero, white pill navigation, card grid, or shared LaunchLoom template. Treat the family, Reference DNA, normalized composition topology, mobile behavior, and prohibited patterns as binding design constraints, not suggestions. A data marker is a declaration, not proof: rendered copy and media boxes must have the spatial relationship required by compositionTopology.
 
 STRUCTURAL OUTPUT CHECK
 - The Experience.jsx source must contain literal id="services", id="faqs", and id="contact" attributes on the actual matching visible sections.
@@ -147,6 +158,7 @@ ${REFERENCE_PROVENANCE_OUTPUT_CONTRACT}
 - A tall desktop reference may be a full-page capture. Its image-height fractions are not CSS vh. Use the recorded source capture dimensions and adapt the composition so the complete desktop header and hero fit within 1536x864 while preserving the reference's hierarchy, crop, and overlap.
 - Do not use a generic split hero, generic card wall, or repeated accordion unless Reference DNA explicitly requires it.
 - Preserve assigned section rhythm, hero geometry, navigation geometry, service presentation, and interaction concept.
+- Implement the normalized compositionTopology exactly. Put data-hero-copy on the actual visible promise group and data-hero-media on each actual visual media panel so rendered geometry can be measured; do not place these markers on unrelated elements.
 - Include every required signature element and expose its data-reference-signature attribute in the rendered DOM.
 - Use one distinctive, purposeful interaction from the assigned family and provide its reduced-motion equivalent.
 - Keep business facts, SEO copy, contact details, and imagery bound to sealed content tokens. Never copy reference branding, copy, assets, or trade dress.
@@ -156,12 +168,13 @@ ${REFERENCE_PROVENANCE_OUTPUT_CONTRACT}
 STAGE SAFETY
 - Contract output defines the implementation but never contains source files.
 - Experience JSX owns semantic structure and sealed content bindings; it must use the shared LeadForm and no remote/network primitives.
-- CSS styles the authored markup without changing structure, remote assets, or viewport safety.
+- Service, location, and services-index JSX own their pages as additional pages of the same visual system and sealed bindings; each must use the shared LeadForm and no remote/network primitives.
+- CSS styles the authored markup without changing structure, remote assets, or viewport safety. One styles.css must cover every authored page.
 - motion.js exports mountExperienceMotion(runtime), uses reduced-motion fallbacks, and never creates a second experience implementation.
 - Every stage must preserve Reference DNA mechanics and the same route identity.
 - Every response uses the same shared JSON schema. Set stage to the current stage exactly.
 - For contract: fill designContract and designRationale; return content as an empty string.
-- For experience, styles, or motion: fill content; return designContract and designRationale as empty strings.`;
+- For experience, service, location, service-index, styles, or motion: fill content; return designContract and designRationale as empty strings.`;
 }
 
 function routePromptPrefix(request) {
@@ -179,6 +192,7 @@ function routePromptPrefix(request) {
       intent: request.route.intent,
       navigation: request.route.navigation,
       heroGeometry: request.route.heroGeometry,
+      compositionTopology: request.route.compositionTopology,
       servicePresentation: request.route.servicePresentation,
       sectionRhythm: request.route.sectionRhythm,
       typographyCategory: request.route.typographyCategory,
@@ -238,6 +252,10 @@ CLIENT VISUAL BRIEF
 ${JSON.stringify(request.visualBrief || {}, null, 2)}
 The visual brief is client intent, not source content. Use it to choose palette, surface treatment, typography mood, image treatment, and composition within the assigned route. Explicit named-reference or art-direction requests should remain visibly recognizable after adaptation.
 
+${CLIENT_PALETTE_ROLE_CONTRACT}
+
+${CLIENT_TYPOGRAPHY_CONTRACT}
+
 ${referenceMarkers}
 
 ${implementationChecklist}`;
@@ -255,12 +273,30 @@ ${request.previousSource}
 `;
 }
 
+function routeUsesUtilityPanel(request) {
+  const topologies = [
+    request.route?.compositionTopology,
+    request.route?.referenceDna?.compositionTopology,
+  ].filter(Boolean);
+  return topologies.some(
+    (topology) =>
+      topology.hero === "utility-panel" ||
+      topology.mobileHero === "utility-panel",
+  );
+}
+
+function leadFormPlacementInstruction(request) {
+  return routeUsesUtilityPanel(request)
+    ? 'Place exactly one <LeadForm content={content} runtime={runtime} /> in the assigned utility panel inside the hero. Keep the section with id="contact" and its contact details/links; do not add a second form.'
+    : 'Place exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". Do not put the form in the hero, nav, or promise band.';
+}
+
 function stagePromptSuffix(request) {
   const repair = boundedFormatRepair(request);
   if (request.stage === "contract")
     return `${repair}
 CONTRACT STAGE
-Return a precise implementation contract and a rationale under 220 words. The contract must specify the independent page narrative, DOM outline, exact section IDs, class vocabulary, navigation behavior, hero geometry, early conversion, non-card service treatment, section sequence, typography system, image placement using content.hero image tokens, compact-desktop behavior, mobile recomposition, one justified interaction strategy, reduced-motion behavior, and accessibility. Do not return source files.`;
+Return a precise implementation contract and a rationale under 220 words. The contract must specify the independent page narrative, DOM outline, exact section IDs, class vocabulary, navigation behavior, normalized hero compositionTopology, actual copy/media region relationship, hero geometry, early conversion, shared-form placement (put the single form inside a desktop or mobile utility-panel hero when either assigned topology requires it; otherwise put it in #contact), non-card service treatment, section sequence, typography system, image placement using content.hero image tokens, compact-desktop behavior, mobile recomposition, one justified interaction strategy, reduced-motion behavior, and accessibility. Do not return source files.`;
 
   if (request.stage === "experience")
     return `DESIGN CONTRACT
@@ -278,9 +314,90 @@ ${request.previousSource}
     : ""
 }
 EXPERIENCE STAGE
-Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". ${EARLY_CONVERSION_OUTPUT_CONTRACT} Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
+Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime. ${leadFormPlacementInstruction(request)} ${EARLY_CONVERSION_OUTPUT_CONTRACT} Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-hero-copy on its visible promise group, data-hero-media on each actual visual media panel required by compositionTopology, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
 
 Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the corresponding section or element. Add data-reference-section="<section sequence id>" to each major section so the compiler can verify the assigned rhythm. Do not invent values: use the slugs from Reference DNA.`;
+
+  if (request.stage === "service")
+    return `${repair}
+DESIGN CONTRACT
+${request.designContract}
+
+AUTHORED EXPERIENCE JSX
+${request.experienceSource}
+
+SERVICE PAGE STAGE
+Return complete ServicePage.jsx in content. Export default function ServicePage({ content, runtime, service }). The component renders one service detail page at /services/<service.slug>/ inside the same production site and must read as the same design system as Experience.jsx: same palette, surfaces, typography roles, spacing rhythm, borders, image treatment, navigation language, and responsive behavior. Reuse the class vocabulary already established for Experience.jsx where it fits and add classes as needed; the styles stage receives both files and must style both. Do not restate the homepage hero or repeat its sentences.
+
+SEALED SERVICE PAGE SHAPE
+${JSON.stringify(creativeServicePageShape(), null, 2)}
+
+SERVICE PAGE RULES
+- Import PageBriefSections from @launchloom/runtime and render <PageBriefSections brief={service.brief} /> within the main landmark after decision support and before contact. It emits only supported optional content, preserving the page recipe. Do not hide it or restate its paragraphs. Missing optional fields are omitted, never invented.
+- Render exactly one <h1> bound to service.name and the opening summary bound to service.description.
+- Render the three decision-support blocks bound to service.support.scope, service.support.preparation, and service.support.nextStep.
+- Render related services from service.related as real links with a trailing slash, for example href={\`/services/\${item.slug}/\`}. Never express a service link as a homepage fragment.
+- Render the process sequence from service.process and the questions from service.faqs when present, without repeating homepage sentences.
+- Include a contact region with id="contact" and exactly one <LeadForm content={content} runtime={runtime} /> from @launchloom/runtime.
+- Include a native <nav> or header with a visible link back to "/" labeled with content.brand.name, and keep the page's primary action visible near the opening.
+- Put data-service-page on the page root element (use a <main> landmark), data-service-hero on the opening section, data-service-support on the decision-support region, and data-service-related on the related-services region.
+- Use the supplied imagery tokens (service.images.context or content.hero.*) or an inline graphic treatment; every <img> needs a usable alt attribute.
+- Bind every visitor-facing business sentence to sealed tokens. Do not hardcode service names, prices, hours, guarantees, or marketing sentences.
+- No remote URLs, network calls, inline styles, <style> elements, canvas, Three.js, or a second lead endpoint.
+- Do not use em dashes.`;
+
+  if (request.stage === "location")
+    return `${repair}
+DESIGN CONTRACT
+${request.designContract}
+
+AUTHORED EXPERIENCE JSX
+${request.experienceSource}
+
+LOCATION PAGE STAGE
+Return complete LocationPage.jsx in content. Export default function LocationPage({ content, runtime, location }). The component renders one service-area page at /locations/<location.slug>/ inside the same production site and must read as the same design system as Experience.jsx and ServicePage.jsx: same palette, surfaces, typography roles, spacing rhythm, borders, image treatment, navigation language, and responsive behavior. Reuse the shared class vocabulary and add classes as needed; the styles stage receives every authored page and must style them all from one stylesheet. Coverage language must stay truthful: the business serves the area, it does not have an office there unless the sealed content says so.
+
+SEALED LOCATION PAGE SHAPE
+${JSON.stringify(creativeLocationPageShape(), null, 2)}
+
+LOCATION PAGE RULES
+- Import PageBriefSections from @launchloom/runtime and render <PageBriefSections brief={location.brief} /> within the main landmark before contact. This shared primitive renders supported local detail/questions/process using the current design tokens. Do not hide it or restate its paragraphs; missing information must not be filled with invented local claims.
+- Render exactly one <h1> bound to location.name and the opening summary bound to location.description.
+- Render the coverage note bound to location.localNote and keep it as availability language, never a promise about arrival, pricing, or a physical office.
+- Render the confirmed services from location.services as real links with a trailing slash, for example href={\`/services/\${item.slug}/\`}. Never express a service link as a homepage fragment.
+- Render other listed service areas from location.otherAreas as real links to /locations/<slug>/ when present, without claiming coverage beyond the listed areas.
+- Include a contact region with id="contact" and exactly one <LeadForm content={content} runtime={runtime} /> from @launchloom/runtime.
+- Include a native <nav> or header with a visible link back to "/" labeled with content.brand.name, and keep the page's primary action visible near the opening.
+- Put data-location-page on the page root element (use a <main> landmark), data-location-hero on the opening section, data-location-coverage on the coverage region, and data-location-related on the services or nearby-areas region.
+- Use the supplied imagery tokens (location.images.context or content.hero.*) or an inline graphic treatment; every <img> needs a usable alt attribute.
+- Bind every visitor-facing business sentence to sealed tokens. Do not hardcode service names, area names, prices, hours, guarantees, or marketing sentences.
+- No remote URLs, network calls, inline styles, <style> elements, canvas, Three.js, or a second lead endpoint.
+- Do not use em dashes.`;
+
+  if (request.stage === "service-index")
+    return `${repair}
+DESIGN CONTRACT
+${request.designContract}
+
+AUTHORED EXPERIENCE JSX
+${request.experienceSource}
+
+SERVICES INDEX STAGE
+Return complete ServicesIndexPage.jsx in content. Export default function ServicesIndexPage({ content, runtime }). The component renders the services index at /services/ inside the same production site and must read as the same design system as Experience.jsx and ServicePage.jsx: same palette, surfaces, typography roles, spacing rhythm, borders, image treatment, navigation language, and responsive behavior. Reuse the shared class vocabulary and add classes as needed; the styles stage receives every authored page and must style them all from one stylesheet.
+
+The page renders entirely from the sealed homepage content: the heading from content.copy.servicesHeading, the introduction from content.copy.servicesIntro, the confirmed list from content.services, and brand and imagery from content.brand and content.hero.
+
+SERVICES INDEX RULES
+- Render exactly one <h1> bound to content.copy.servicesHeading, with a neutral fallback when the sealed heading is empty.
+- Render the introduction bound to content.copy.servicesIntro.
+- Render every confirmed service from content.services as a real link with a trailing slash, for example href={\`/services/\${item.slug}/\`}. Never express a service link as a homepage fragment.
+- Include a contact region with id="contact" and exactly one <LeadForm content={content} runtime={runtime} /> from @launchloom/runtime.
+- Include a native <nav> or header with a visible link back to "/" labeled with content.brand.name, and keep the page's primary action visible near the opening.
+- Put data-services-index on the page root element (use a <main> landmark), data-services-index-hero on the opening section, and data-services-index-list on the services listing region.
+- Use the supplied imagery tokens (content.hero.image, content.hero.secondaryImage, content.hero.tertiaryImage) or an inline graphic treatment; every <img> needs a usable alt attribute.
+- Bind every visitor-facing business sentence to sealed tokens. Do not hardcode service names, prices, hours, guarantees, or marketing sentences.
+- No remote URLs, network calls, inline styles, <style> elements, canvas, Three.js, or a second lead endpoint.
+- Do not use em dashes.`;
 
   if (request.stage === "styles")
     return `${repair}
@@ -289,9 +406,9 @@ ${request.designContract}
 
 AUTHORED EXPERIENCE JSX
 ${request.experienceSource}
-
+${request.servicePageSource ? `\nAUTHORED SERVICE PAGE JSX\n${request.servicePageSource}\n` : ""}${request.locationPageSource ? `\nAUTHORED LOCATION PAGE JSX\n${request.locationPageSource}\n` : ""}${request.servicesIndexSource ? `\nAUTHORED SERVICES INDEX JSX\n${request.servicesIndexSource}\n` : ""}
 STYLES STAGE
-Return complete styles.css in content. Return CSS text only, never an HTML document, JSX, markdown fences, or script tags. Style the exact markup without changing its structure. The header plus hero must have a measured bounding bottom no greater than the viewport height at 1536x864 and 1366x768 at 100 percent zoom. Use a compact hero composition: one headline, short body, one early CTA, and the image treatment. Do not make the hero grow to accommodate a contact form, service list, or long copy. Avoid large fixed padding and min-heights that exceed the viewport; use min-height: 0 where content can wrap. Recompose for 390x844 without horizontal overflow. Include visible focus, adequate contrast, readable body type, and prefers-reduced-motion. Use no remote URLs.`;
+Return complete styles.css in content. Return CSS text only, never an HTML document, JSX, markdown fences, or script tags. One stylesheet must style every authored page (Experience.jsx, ServicePage.jsx, LocationPage.jsx, and ServicesIndexPage.jsx) without changing their structure. The homepage header plus hero must have a measured bounding bottom no greater than the viewport height at 1536x864 and 1366x768 at 100 percent zoom. Use a compact hero composition: one headline, short body, one early CTA, and the image treatment. ${routeUsesUtilityPanel(request) ? "The assigned utility-panel form belongs in the hero; keep that panel concise, usable, and within the viewport-fit contract." : "Do not make the hero grow to accommodate a contact form, service list, or long copy."} Every inner page opening must keep its H1, summary, and primary action readable at 1536x864 and must not overflow at 390x844; inner pages are allowed to be taller than one viewport. Avoid large fixed padding and min-heights that exceed the viewport; use min-height: 0 where content can wrap. Recompose for 390x844 without horizontal overflow. Include visible focus, adequate contrast, readable body type, and prefers-reduced-motion. Use no remote URLs.`;
 
   return `${repair}
 DESIGN CONTRACT
@@ -342,7 +459,11 @@ async function requestStage(request) {
     for (const screenshotPath of evidencePaths) {
       if (userContent.length >= 3) break;
       try {
-        userContent.push(await promptImagePart(path.resolve(screenshotPath)));
+        userContent.push(
+          await promptImagePart(path.resolve(screenshotPath), {
+            detail: "high",
+          }),
+        );
       } catch (error) {
         throw new Error(
           `Reference evidence could not be loaded for ${request.route.id}: ${screenshotPath}`,
@@ -639,6 +760,18 @@ async function writeResult(result) {
 }
 
 async function writeFailure(error) {
+  // Never turn an input/configuration failure into deletion of its workspace.
+  for (const protectedPath of [process.cwd(), configPath, inspirationPath]) {
+    const relative = path.relative(outputPath, protectedPath);
+    if (!relative || (relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative)))
+      throw new Error("Failure evidence output may not contain the workspace or input files.");
+  }
+  const destination = await fs.lstat(outputPath).catch((error) => {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  });
+  if (destination?.isSymbolicLink())
+    throw new Error("Failure evidence output may not be a symbolic link.");
   await fs.rm(outputPath, { recursive: true, force: true });
   await fs.mkdir(outputPath, { recursive: true });
   await fs.writeFile(
@@ -662,7 +795,8 @@ async function writeFailure(error) {
         model,
         creativeSession,
         reasoningEffort,
-        error: error instanceof Error ? error.message : String(error),
+        error: safeAuthorFailureText(error),
+        failures: error?.failures || [],
         usage,
         cacheSummary: aggregateCacheUsage(usage),
       },
@@ -719,9 +853,14 @@ try {
     );
 } catch (error) {
   sharedAbortController.abort();
-  if (failureMode !== "record") throw error;
   await writeFailure(error);
+  if (failureMode !== "record") {
+    const failure = new Error(safeAuthorFailureText(error));
+    if (typeof error?.stack === "string")
+      failure.stack = safeAuthorFailureText(error.stack, 6000);
+    throw failure;
+  }
   console.error(
-    `production_experience_status=failed ${error instanceof Error ? error.message : String(error)}`,
+    `production_experience_status=failed ${safeAuthorFailureText(error)}`,
   );
 }

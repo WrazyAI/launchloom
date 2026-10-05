@@ -306,6 +306,7 @@ jobs:
             --preview-url "$DIAGNOSTIC_URL" \
             --creative-repair-session "$OVERRIDE_SESSION_ID" \
             --token-only true)
+          echo "::add-mask::$TOKEN"
           REVIEW_URL="${LAUNCHLOOM_PLATFORM_URL:-https://launchloom.wrazyos.com}/review?token=$TOKEN"
           SEND_ANYWAY_URL="$DIAGNOSTIC_URL?review=$TOKEN"
           FINDINGS=$(jq -c '.findings // []' .launchloom/creative-recovery.json)
@@ -352,6 +353,7 @@ jobs:
             [[ "$FEEDBACK_ISSUE" =~ ^[1-9][0-9]*$ ]] || { echo "The signed feedback issue is required to issue the repaired developer review." >&2; exit 1; }
             ORIGINS="$PREVIEW_URL,https://$SITE_ID.pages.dev"
             TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage developer --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "$(git rev-parse HEAD)" --site "$SITE_ID" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$ORIGINS" --preview-url "$PREVIEW_URL" --token-only true)
+            echo "::add-mask::$TOKEN"
             REVIEW_URL="${LAUNCHLOOM_PLATFORM_URL:-https://launchloom.wrazyos.com}/review?token=$TOKEN"
             OUTCOME=passed
             RESULT_PREVIEW="$PREVIEW_URL"

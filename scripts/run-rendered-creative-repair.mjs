@@ -1,8 +1,26 @@
+import { createQaRepairCallBudget, initializeQaRepairReceipt } from "./creative-repair-experiment.mjs";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
-import { requestRepair } from "./creative-repair-loop.mjs";
+import {
+  applyCreativeRepairEdits,
+  requestRepair,
+  privateRepairRejectionEvidence,
+  inheritRepairRejectionEvidence,
+} from "./creative-repair-loop.mjs";
+import {
+  assertCreativeRevisionScope,
+  createCreativeRepairScopeDeclaration,
+  resolveCreativeRevisionScope,
+} from "./creative-revision-scope.mjs";
+
+export {
+  assertCreativeRevisionScope,
+  createCreativeRepairScopeDeclaration,
+  resolveCreativeRevisionScope,
+};
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import {
   restoreImageAltsFromOriginal,
@@ -12,9 +30,9 @@ import {
 } from "./production-experience-author.mjs";
 import { runHumanRevisionGate } from "./human-revision-gate.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
+import { RENDERED_REFERENCE_THRESHOLDS } from "./rendered-reference-fidelity.mjs";
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
-const REPAIR_FILES = ["Experience.jsx", "styles.css", "motion.js"];
 
 function cliArgs(argv) {
   return Object.fromEntries(
@@ -33,11 +51,43 @@ function cliArgs(argv) {
 function boundedCycles(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 2;
-  return Math.max(0, Math.min(2, Math.trunc(parsed)));
+  // Applied repairs are hill-climbed: a regressing cycle restores the best
+  // measured state, so the extra budget can only cost model spend.
+  return Math.max(0, Math.min(3, Math.trunc(parsed)));
 }
 
 function unique(values) {
   return [...new Set(values.filter(Boolean))];
+}
+
+function dimensionFindings(candidate) {
+  const audit = candidate?.renderedReferenceFidelity?.audit;
+  if (!audit) return [];
+  const findings = [];
+  const passing = [];
+  const overall = Number(audit.overallScore);
+  if (Number.isFinite(overall)) {
+    if (overall < RENDERED_REFERENCE_THRESHOLDS.overall)
+      findings.push(
+        `rendered-reference overall fidelity scored ${overall} and must reach ${RENDERED_REFERENCE_THRESHOLDS.overall}.`,
+      );
+    else passing.push(`overall ${overall}`);
+  }
+  for (const [key, value] of Object.entries(audit.scores || {})) {
+    const minimum = Number(RENDERED_REFERENCE_THRESHOLDS[key]);
+    const score = Number(value);
+    if (!Number.isFinite(minimum) || !Number.isFinite(score)) continue;
+    if (score < minimum)
+      findings.push(
+        `rendered-reference dimension ${key} scored ${score} and must reach ${minimum}.`,
+      );
+    else passing.push(`${key} ${score}`);
+  }
+  if (passing.length)
+    findings.push(
+      `Rendered-reference measurements already at their thresholds must not regress during this repair: ${passing.join(", ")}.`,
+    );
+  return findings;
 }
 
 function candidateFindings(candidate) {
@@ -50,7 +100,47 @@ function candidateFindings(candidate) {
     ...(candidate?.referenceFidelity?.renderedVisualFindings || []).map(
       (item) => item.message || item.code || "Reference contract mismatch.",
     ),
+    ...dimensionFindings(candidate),
   ]);
+}
+
+function candidateDiversityFinding(
+  report,
+  candidateId,
+  diversity = report?.visualDiversity,
+) {
+  if (!diversity) return "";
+  const pairs = (diversity.pairs || []).filter(
+    (pair) =>
+      (pair.left === candidateId || pair.right === candidateId) &&
+      (diversity.pass !== false || pair.pass === false),
+  );
+  if (!pairs.length && diversity.pass !== false) return "";
+  if (!pairs.length)
+    return `Rendered candidate diversity failed: ${diversity.summary || "the candidates share too much visual grammar"}. Preserve this candidate's assigned reference and make its composition distinct from its siblings.`;
+  return pairs
+    .map((pair) => {
+      const sibling = pair.left === candidateId ? pair.right : pair.left;
+      const reason =
+        pair.reason || diversity.summary || "the candidate set has converged";
+      return diversity.pass === false
+        ? `Rendered diversity failed at ${pair.distance ?? "unknown"}/100 against sibling ${sibling}. Make this candidate's reference-led composition more distinct; do not converge toward the sibling. Evidence: ${reason}`
+        : `Rendered diversity currently passes at ${pair.distance ?? "unknown"}/100 against sibling ${sibling}. Preserve or increase this candidate's distinct design grammar; do not converge toward the sibling. Evidence: ${reason}`;
+    })
+    .join("\n");
+}
+
+function previewDiversityEvidence(report) {
+  const preview = report?.previewDiversity;
+  const visual = report?.visualDiversity;
+  if (!preview) return visual;
+  return {
+    ...(visual || {}),
+    ...preview,
+    pass: preview.pass,
+    summary: preview.summary || visual?.summary || "",
+    pairs: visual?.pairs?.length ? visual.pairs : preview.pairs || [],
+  };
 }
 
 function gateFindings(report) {
@@ -86,8 +176,8 @@ function candidateNeedsRepair(candidate) {
   );
 }
 
-function diversityRepairTargets(report) {
-  if (report?.visualDiversity?.pass !== false) return [];
+function diversityRepairTargets(report, diversity = report?.visualDiversity) {
+  if (diversity?.pass !== false) return [];
   const findingsByCandidate = new Map();
   const add = (candidateId, finding) => {
     if (!candidateId) return;
@@ -95,7 +185,7 @@ function diversityRepairTargets(report) {
     if (!findings.includes(finding)) findings.push(finding);
     findingsByCandidate.set(candidateId, findings);
   };
-  for (const pair of report.visualDiversity.pairs || []) {
+  for (const pair of diversity.pairs || []) {
     if (pair.pass === false) {
       add(
         pair.left,
@@ -111,7 +201,7 @@ function diversityRepairTargets(report) {
     for (const candidate of report.candidates || [])
       add(
         candidate.candidateId,
-        report.visualDiversity.summary ||
+        diversity.summary ||
           "Rendered candidates are not visually distinct enough for production promotion. Preserve this candidate's assigned reference mechanics and move away from generic shared grammar.",
       );
   }
@@ -121,28 +211,250 @@ function diversityRepairTargets(report) {
   }));
 }
 
+function repairPriority(report, candidateId) {
+  const candidate = reportCandidate(report, candidateId);
+  const scores = [
+    candidate?.renderedReferenceFidelity?.score,
+    candidate?.referenceFidelity?.score,
+    candidate?.visualScore,
+  ].filter((score) => typeof score === "number" && Number.isFinite(score));
+  return scores.length ? Math.min(...scores) : Number.NEGATIVE_INFINITY;
+}
+
+/** Count of rendered measurements at or above their thresholds. */
+function passingDimensionCount(candidate) {
+  const audit = candidate?.renderedReferenceFidelity?.audit;
+  if (!audit || typeof audit !== "object") return 0;
+  let passing = 0;
+  for (const [key, value] of Object.entries(audit.scores || {})) {
+    const minimum = Number(RENDERED_REFERENCE_THRESHOLDS[key]);
+    const score = Number(value);
+    if (Number.isFinite(minimum) && Number.isFinite(score) && score >= minimum)
+      passing += 1;
+  }
+  const overall = Number(audit.overallScore);
+  if (
+    Number.isFinite(overall) &&
+    overall >= RENDERED_REFERENCE_THRESHOLDS.overall
+  )
+    passing += 1;
+  return passing;
+}
+
+/**
+ * Candidate states are compared by how many measurements pass first and by
+ * their weakest score second, so a state that fixes a dimension without
+ * dropping another is always preferred.
+ */
+function repairState(report, candidate) {
+  return {
+    metric: repairPriority(report, candidate?.candidateId),
+    passing: passingDimensionCount(candidate),
+  };
+}
+
+function isBetterState(next, existing) {
+  if (!existing) return true;
+  if (next.passing !== existing.passing) return next.passing > existing.passing;
+  return next.metric > existing.metric;
+}
+
+// The per-candidate repair budget is scarce, so the loop repairs the
+// candidate closest to passing the measured gates first. Repairing the
+// weakest candidate first historically spent every cycle on candidates that
+// could not close a twenty-point gap and left the leader unrepaired.
+function closestToPassingFirst(report, targets) {
+  return [...targets].sort((left, right) => {
+    const scoreDelta =
+      repairPriority(report, right.candidateId) -
+      repairPriority(report, left.candidateId);
+    return scoreDelta || left.candidateId.localeCompare(right.candidateId);
+  });
+}
+
+function closestFailedSibling(report, candidateId) {
+  const failedComparisons = [report?.visualDiversity, report?.previewDiversity]
+    .filter((diversity) => diversity?.pass === false)
+    .flatMap((diversity) => diversity.pairs || [])
+    .filter(
+      (pair) =>
+        pair?.pass === false &&
+        (pair.left === candidateId || pair.right === candidateId),
+    )
+    .map((pair) => ({
+      candidateId: pair.left === candidateId ? pair.right : pair.left,
+      distance:
+        typeof pair.distance === "number" && Number.isFinite(pair.distance)
+          ? pair.distance
+          : Number.POSITIVE_INFINITY,
+    }))
+    .filter((pair) => typeof pair.candidateId === "string" && pair.candidateId);
+
+  return failedComparisons.sort(
+    (left, right) =>
+      left.distance - right.distance ||
+      left.candidateId.localeCompare(right.candidateId),
+  )[0]?.candidateId;
+}
+
+async function comparisonScreenshotsFor(report, candidateId, screenshotsDir) {
+  const siblingCandidateId = closestFailedSibling(report, candidateId);
+  if (!siblingCandidateId) return [];
+  const captures = ["desktop", "mobile"].map((viewport) => ({
+    candidateId: siblingCandidateId,
+    viewport,
+    path: path.join(
+      screenshotsDir,
+      `${siblingCandidateId}-${viewport}-viewport.png`,
+    ),
+  }));
+  const available = new Set(
+    await collectAvailableScreenshots(captures.map((capture) => capture.path)),
+  );
+  return captures.filter((capture) => available.has(capture.path));
+}
+
 async function readJson(file) {
   return JSON.parse(await fs.readFile(file, "utf8"));
 }
 
+function creativeFeedbackItems(config, requestText) {
+  const revision = config.revisionReport || {};
+  const results = Array.isArray(revision.results) ? revision.results : [];
+  const scopedItems = Array.isArray(revision.creativeRepairScope?.feedbackItems)
+    ? revision.creativeRepairScope.feedbackItems
+    : [];
+  const creativeResults = results.filter(
+    (result) => result?.status === "creative",
+  );
+  const sourceItems = scopedItems.length
+    ? scopedItems
+    : creativeResults.length
+      ? creativeResults
+      : [{ feedbackIndex: 0, feedback: requestText }];
+  const feedbackItems = [];
+  const seen = new Set();
+  for (const item of sourceItems) {
+    const feedbackIndex = item?.feedbackIndex;
+    const feedback = String(item?.feedback || "").trim();
+    if (!Number.isSafeInteger(feedbackIndex) || feedbackIndex < 0 || !feedback)
+      throw new Error(
+        "Creative human verification requires an exact feedback index and request text for every item.",
+      );
+    if (seen.has(feedbackIndex))
+      throw new Error(
+        `Creative human verification received duplicate feedback index ${feedbackIndex}.`,
+      );
+    seen.add(feedbackIndex);
+    feedbackItems.push({ feedbackIndex, feedback });
+  }
+  for (const result of creativeResults) {
+    const item = feedbackItems.find(
+      (candidate) => candidate.feedbackIndex === result.feedbackIndex,
+    );
+    if (!item || String(result.feedback || "").trim() !== item.feedback)
+      throw new Error(
+        `Creative human verification is missing or mismatches revision feedback item ${result.feedbackIndex + 1}.`,
+      );
+  }
+  return feedbackItems.sort(
+    (left, right) => left.feedbackIndex - right.feedbackIndex,
+  );
+}
+
+function verifiedHumanFeedbackResults(audit, expectedItems, candidateId) {
+  if (!Array.isArray(audit?.feedbackResults))
+    throw new Error(
+      "Human revision gate returned an aggregate pass without per-feedbackIndex evidence.",
+    );
+  const expectedByIndex = new Map(
+    expectedItems.map((item) => [item.feedbackIndex, item]),
+  );
+  const seen = new Set();
+  const verified = [];
+  for (const result of audit.feedbackResults) {
+    const index = result?.feedbackIndex;
+    const expected = expectedByIndex.get(index);
+    if (
+      !Number.isSafeInteger(index) ||
+      !expected ||
+      seen.has(index) ||
+      result?.verdict !== "pass" ||
+      String(result?.feedback || "").trim() !== expected.feedback ||
+      typeof result?.evidence !== "string" ||
+      !result.evidence.trim() ||
+      result?.candidateId !== candidateId ||
+      !Array.isArray(result.findings) ||
+      result.findings.some((finding) =>
+        ["critical", "major"].includes(finding?.severity),
+      )
+    )
+      throw new Error(
+        `Human revision gate passed without valid candidate-bound evidence for feedback index ${Number.isSafeInteger(index) ? index : "unknown"}.`,
+      );
+    seen.add(index);
+    verified.push({
+      feedbackIndex: index,
+      feedback: expected.feedback,
+      verdict: "pass",
+      evidence: result.evidence.trim(),
+      candidateId,
+    });
+  }
+  if (seen.size !== expectedByIndex.size)
+    throw new Error(
+      "Human revision gate aggregate pass omitted evidence for one or more creative feedback indexes.",
+    );
+  return verified.sort(
+    (left, right) => left.feedbackIndex - right.feedbackIndex,
+  );
+}
+
 async function readCandidate(candidateDir) {
-  const [metadata, contentManifest, experience, styles, motion] =
-    await Promise.all([
-      readJson(path.join(candidateDir, "metadata.json")),
-      readJson(path.join(candidateDir, "content-manifest.json")),
-      fs.readFile(path.join(candidateDir, "Experience.jsx"), "utf8"),
-      fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
-      fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
-    ]);
+  const [
+    metadata,
+    contentManifest,
+    experience,
+    styles,
+    motion,
+    servicePage,
+    locationPage,
+    servicesIndexPage,
+  ] = await Promise.all([
+    readJson(path.join(candidateDir, "metadata.json")),
+    readJson(path.join(candidateDir, "content-manifest.json")),
+    fs.readFile(path.join(candidateDir, "Experience.jsx"), "utf8"),
+    fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
+    fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
+    fs.readFile(path.join(candidateDir, "ServicePage.jsx"), "utf8").catch(() => ""),
+    fs.readFile(path.join(candidateDir, "LocationPage.jsx"), "utf8").catch(() => ""),
+    fs.readFile(path.join(candidateDir, "ServicesIndexPage.jsx"), "utf8").catch(() => ""),
+  ]);
   return {
     metadata,
     contentManifest,
     content: contentManifest.values || {},
-    files: { experience, styles, motion },
+    files: {
+      experience,
+      styles,
+      motion,
+      ...(servicePage.trim() ? { servicePage } : {}),
+      ...(locationPage.trim() ? { locationPage } : {}),
+      ...(servicesIndexPage.trim() ? { servicesIndexPage } : {}),
+    },
   };
 }
 
-function normalizeRepair(value) {
+/**
+ * Normalize a complete-file repair response. The homepage files are required;
+ * authored inner pages fall back to their current source when the response
+ * omits them or returns an empty string.
+ *
+ * @param {Record<string, any>} value
+ * @param {Record<string, any>} [currentFiles]
+ * @returns {Record<string, string>}
+ */
+export function normalizeRepair(value, currentFiles = {}) {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("Creative repair returned an invalid file bundle.");
   const normalized = {};
@@ -150,6 +462,12 @@ function normalizeRepair(value) {
     if (typeof value[key] !== "string" || !value[key].trim())
       throw new Error(`Creative repair returned no ${key} source.`);
     normalized[key] = value[key].replace(/[—–]/gu, "-").trim();
+  }
+  for (const key of ["servicePage", "locationPage", "servicesIndexPage"]) {
+    if (typeof value[key] === "string" && value[key].trim())
+      normalized[key] = value[key].replace(/[—–]/gu, "-").trim();
+    else if (typeof currentFiles[key] === "string" && currentFiles[key].trim())
+      normalized[key] = currentFiles[key];
   }
   return normalized;
 }
@@ -160,7 +478,7 @@ function normalizeRepair(value) {
 
 /**
  * @param {string} candidateDir
- * @param {{experience?: string, styles?: string, motion?: string}} files
+ * @param {{experience?: string, styles?: string, motion?: string, servicePage?: string, locationPage?: string, servicesIndexPage?: string}} files
  * @param {{fsImpl?: RepairFs}} [options]
  * @returns {Promise<void>}
  */
@@ -183,6 +501,16 @@ export async function writeCandidate(
     "styles.css": files.styles,
     "motion.js": files.motion,
   };
+  if (typeof files.servicePage === "string" && files.servicePage.trim())
+    map["ServicePage.jsx"] = files.servicePage;
+  if (typeof files.locationPage === "string" && files.locationPage.trim())
+    map["LocationPage.jsx"] = files.locationPage;
+  if (
+    typeof files.servicesIndexPage === "string" &&
+    files.servicesIndexPage.trim()
+  )
+    map["ServicesIndexPage.jsx"] = files.servicesIndexPage;
+  const transactionFiles = Object.keys(map);
   const backedUp = [];
   const installed = [];
   let preserveBackup = false;
@@ -192,7 +520,7 @@ export async function writeCandidate(
     for (const [name, content] of Object.entries(map))
       await fsImpl.writeFile(path.join(staging, name), `${content.trim()}\n`);
 
-    for (const name of REPAIR_FILES) {
+    for (const name of transactionFiles) {
       await fsImpl.rename(
         path.join(candidateDir, name),
         path.join(backup, name),
@@ -200,7 +528,7 @@ export async function writeCandidate(
       backedUp.push(name);
     }
 
-    for (const name of REPAIR_FILES) {
+    for (const name of transactionFiles) {
       await fsImpl.rename(
         path.join(staging, name),
         path.join(candidateDir, name),
@@ -344,7 +672,41 @@ export async function runVisualGateProcess({
     throw new Error(
       `Creative visual gate produced no report (exit ${result.code}): ${result.stderr.slice(-1200)}`,
     );
-  if (result.code !== 0 || report.status === "error")
+  // Exit 2 is reserved for a successfully completed, blocked quality audit.
+  // It never denotes a pass; the caller must consume findings and rerender.
+  const audit = report.audit;
+  const findings = audit?.findings;
+  const blockers = report.blockers;
+  const blockedQualityReport =
+    result.code === 2 &&
+    report.version === 1 &&
+    report.mode === "verify" &&
+    report.status === "quality-blocked" &&
+    !report.error &&
+    report.changed === false &&
+    Array.isArray(report.appliedOperations) &&
+    report.appliedOperations.length === 0 &&
+    ["revise", "block"].includes(audit?.verdict) &&
+    Array.isArray(findings) &&
+    Array.isArray(audit?.operations) &&
+    findings.every(
+      (finding) =>
+        finding &&
+        ["critical", "major", "minor"].includes(finding.severity) &&
+        ["desktop", "compact", "mobile", "both"].includes(finding.viewport) &&
+        typeof finding.category === "string" &&
+        typeof finding.evidence === "string" &&
+        typeof finding.recommendation === "string",
+    ) &&
+    Array.isArray(blockers) &&
+    JSON.stringify(blockers) ===
+      JSON.stringify(
+        findings.filter((finding) =>
+          ["critical", "major"].includes(finding.severity),
+        ),
+      ) &&
+    (blockers.length > 0 || audit.verdict === "block");
+  if ((result.code !== 0 && !blockedQualityReport) || report.status === "error")
     throw new Error(
       `Creative visual gate could not run: ${report.error || result.stderr.slice(-1200) || `process exited ${result.code}`}`,
     );
@@ -402,12 +764,66 @@ async function validateCandidateReasoningBindings(
   return candidateCount;
 }
 
-async function defaultRepairCandidate({
+const PALETTE_FINDING_PATTERN =
+  /\bpalette|\bcolou?r|\bsurface|\bcontrast|\bbrand[-\s]?band/iu;
+
+function repairFindingText(finding) {
+  if (typeof finding === "string") return finding;
+  return [
+    finding?.category,
+    finding?.message,
+    finding?.evidence,
+    finding?.recommendation,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/**
+ * A repair may only repaint the candidate when a finding actually asks for a
+ * palette, color, surface, or contrast change. The non-regression instruction
+ * names passing measurements (including paletteAdherence) and must not count
+ * as such an ask.
+ */
+export function findingsRequirePaletteChange(findings) {
+  return (findings || []).some((finding) => {
+    // Human repairs are already constrained by the resolved section scope.
+    // Do not make requested design changes depend on palette keywords.
+    if (finding?.category === "human-review-feedback") return true;
+    // A rejected response's diagnostic wording is not a new design request.
+    if (finding?.category === "repair-output-rejected") return false;
+    const text = repairFindingText(finding);
+    if (/already at their thresholds must not regress/iu.test(text)) return false;
+    return PALETTE_FINDING_PATTERN.test(text);
+  });
+}
+
+/** Sorted color literals used to detect an unprompted repaint. */
+export function colorLiterals(source) {
+  return [
+    ...String(source || "").matchAll(
+      /#[0-9a-f]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)|\b(?:oklch|oklab|lab|lch|color-mix)\([^)]*\)/giu,
+    ),
+  ]
+    .map((match) => match[0].replace(/\s+/gu, "").toLowerCase())
+    .sort();
+}
+
+/**
+ * Validate and atomically persist one authored candidate repair.
+ * @param {{candidateDir: string, findings: any[], screenshots: string[], comparisonScreenshots?: Array<{candidateId: string, viewport: string, path: string}>, model: string, creativeSession?: Record<string, any> | null}} options
+ * @returns {Promise<{experience: string, styles: string, motion: string}>}
+ */
+export async function defaultRepairCandidate({
   candidateDir,
   findings,
   screenshots,
+  comparisonScreenshots = [],
   model,
   creativeSession = null,
+  automaticSpanRepair = false,
+  fetchImpl = fetch,
+  onUsage = null,
 } = {}) {
   const { metadata, contentManifest, content, files } =
     await readCandidate(candidateDir);
@@ -417,6 +833,17 @@ async function defaultRepairCandidate({
     throw new Error(
       `${metadata.candidateId || candidateDir} has no Reference DNA.`,
     );
+  const humanReview = (findings || []).some(
+    (finding) =>
+      finding &&
+      typeof finding === "object" &&
+      finding.category === "human-review-feedback",
+  );
+  const creativeRepairScope = humanReview ? metadata.creativeRepairScope : null;
+  if (humanReview && !creativeRepairScope)
+    throw repairOutputRejected(
+      new Error("Human repair candidate omitted its resolved section scope."),
+    );
   const repairResponse = await requestRepair({
     model,
     referenceDna,
@@ -425,12 +852,22 @@ async function defaultRepairCandidate({
     findings,
     files,
     screenshots,
+    comparisonScreenshots,
     contentManifest,
     creativeSession,
+    creativeRepairScope,
+    automaticSpanRepair, fetchImpl,
+    onUsage,
   });
   let validated;
   try {
-    const modelRepaired = normalizeRepair(repairResponse);
+    const modelRepaired = humanReview
+      ? applyCreativeRepairEdits(files, repairResponse?.edits, {
+          allowInnerPages: false,
+        })
+      : normalizeRepair(repairResponse, files);
+    if (humanReview)
+      assertCreativeRevisionScope(files, modelRepaired, creativeRepairScope);
     const repaired = {
       ...modelRepaired,
       experience: restoreImageAltsFromOriginal(
@@ -448,6 +885,16 @@ async function defaultRepairCandidate({
         content,
       ),
     };
+    if (!findingsRequirePaletteChange(findings)) {
+      const existing = new Set(colorLiterals(repaired.styles));
+      const removed = colorLiterals(files.styles).filter(
+        (value) => !existing.has(value),
+      );
+      if (removed.length)
+        throw new Error(
+          "Repair removed or replaced palette color declarations while no palette, surface, or contrast finding was failing. Restore the existing color values and change only what the failing findings require.",
+        );
+    }
     validated = validateProductionCandidateFiles({
       files: repaired,
       route: {
@@ -455,9 +902,12 @@ async function defaultRepairCandidate({
         referenceDna,
       },
       content,
+      visualBrief: contentManifest.visualBrief || {},
     });
+    if (humanReview)
+      assertCreativeRevisionScope(files, validated.files, creativeRepairScope);
   } catch (error) {
-    throw repairOutputRejected(error);
+    throw inheritRepairRejectionEvidence(repairOutputRejected(error), repairResponse, error?.message || String(error));
   }
   await writeCandidate(candidateDir, validated.files);
   return validated.files;
@@ -555,11 +1005,24 @@ async function persistRepairEvidence({
   );
 }
 
-function repairOutputRejected(error) {
-  const rejected = new Error(
-    `Creative repair output rejected by source validation: ${error?.message || String(error)}`,
-    { cause: error instanceof Error ? error : undefined },
-  );
+/** Persist raw rejection evidence only in the private client repair directory. */
+export async function persistPrivateRepairRejection({ outDir, round, candidateId, attempt, error }) {
+  const evidence = privateRepairRejectionEvidence(error);
+  if (!evidence) return null;
+  if (!/^candidate-[abc]$/.test(candidateId) || !Number.isSafeInteger(round) || round < 0 ||
+      !Number.isSafeInteger(attempt) || attempt < 1) throw new Error("Invalid private repair evidence identity.");
+  const directory = path.join(outDir, `round-${String(round).padStart(2, "0")}`, "repairs", "rejected");
+  await fs.mkdir(directory, { recursive: true });
+  const file = path.join(directory, `${candidateId}-attempt-${attempt}-${randomUUID()}.json`);
+  await fs.writeFile(file, JSON.stringify({ ...evidence, candidateId, attempt,
+    summary: error?.repairRejectionSummary || null }, null, 2) + "\n", { flag: "wx", mode: 0o600 });
+  return file;
+}
+
+function repairOutputRejected(_error) {
+  // Details may contain untrusted authored source. Only the private evidence
+  // map carries them; neither the message nor an enumerable cause may leak it.
+  const rejected = new Error("Creative repair output rejected by source validation.");
   rejected.code = "CREATIVE_REPAIR_OUTPUT_REJECTED";
   return rejected;
 }
@@ -587,6 +1050,8 @@ function safeRepairRejectionMessage(error) {
  *   model?: string,
  *   creativeSession?: Record<string, any> | null,
  *   maxCycles?: number,
+ *   qaRepairExperiment?: boolean,
+ *   fetchImpl?: typeof fetch,
  *   requireDiversity?: boolean,
  *   requestedFindings?: unknown[],
  *   visualGateScript?: string,
@@ -605,6 +1070,8 @@ export async function runRenderedCreativeRepair({
   model,
   creativeSession = null,
   maxCycles = 2,
+  qaRepairExperiment = false,
+  fetchImpl = fetch,
   requireDiversity = true,
   requestedFindings = [],
   visualGateScript,
@@ -622,8 +1089,35 @@ export async function runRenderedCreativeRepair({
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
   const evidenceRoot = path.resolve(root, outDir);
+  if (qaRepairExperiment) await initializeQaRepairReceipt(evidenceRoot);
+  if (qaRepairExperiment && (mode !== "preview" || Number(maxCycles) !== 1 || requestedFindings.length))
+    throw new Error("QA repair experiment requires one preview cycle without human feedback.");
+  const providerBudget = qaRepairExperiment ? createQaRepairCallBudget({ fetchImpl }) : null;
+  // Bounded per-run usage evidence for the generation cost ledger. Written
+  // next to the repair evidence; never changes repair behavior.
+  const repairUsage = [];
+  const persistRepairUsage = async () => {
+    if (!repairUsage.length) return;
+    await fs.writeFile(
+      path.join(evidenceRoot, "repair-usage.json"),
+      `${JSON.stringify(
+        { version: 1, model: resolvedModel, records: repairUsage },
+        null,
+        2,
+      )}\n`,
+    );
+  };
   const cycleLimit = boundedCycles(maxCycles);
   const cycleUse = new Map();
+  // Contract rejections (an unapplicable edit, a broken marker, an invalid
+  // edit count) write nothing to the candidate, so they must not consume the
+  // candidate's applied-repair cycles. They are bounded separately.
+  const rejectionUse = new Map();
+  // Hill-climbing baseline: keep each candidate's best measured state so a
+  // regressing repair never becomes the base for the next repair, and the
+  // final selection can fall back to it.
+  const bestState = new Map();
+  let restoredFinalState = false;
   const history = [];
   const requestedMode = mode === "promote" ? "promote" : "preview";
   const frozenCreativeSession = creativeSession
@@ -651,11 +1145,14 @@ export async function runRenderedCreativeRepair({
   if (humanFindings.length > 0 && !humanFeedback)
     throw new Error("Human feedback must contain non-empty request text.");
   let humanRepairPending = humanFindings.length > 0;
+  let verifiedHumanFeedback = null;
   const excludedCandidateIds = new Set();
   /** @type {Record<string, string>} */
   const rejectedCandidates = {};
-  await fs.rm(evidenceRoot, { recursive: true, force: true });
-  await fs.mkdir(evidenceRoot, { recursive: true });
+  if (!providerBudget) {
+    await fs.rm(evidenceRoot, { recursive: true, force: true });
+    await fs.mkdir(evidenceRoot, { recursive: true });
+  }
 
   async function repair(
     candidateId,
@@ -664,9 +1161,11 @@ export async function runRenderedCreativeRepair({
     round,
     screenshotsDir,
     candidateDirectory,
+    report,
   ) {
-    const used = cycleUse.get(candidateId) || 0;
-    if (used >= cycleLimit) return { status: "exhausted" };
+    const applied = cycleUse.get(candidateId) || 0;
+    if (applied >= cycleLimit) return { status: "exhausted" };
+    const rejections = rejectionUse.get(candidateId) || 0;
     const candidateDir = resolveCandidateDirectory(
       candidateRoot,
       candidateDirectory,
@@ -680,51 +1179,76 @@ export async function runRenderedCreativeRepair({
     const fullPageScreenshots = VIEWPORTS.map((viewport) =>
       path.join(screenshotsDir, `${candidateId}-${viewport}.png`),
     );
-    const screenshots = (await collectAvailableScreenshots(viewportScreenshots)).length === viewportScreenshots.length
-      ? [...viewportScreenshots, fullPageScreenshots[0]]
-      : fullPageScreenshots;
+    const currentViewports =
+      await collectAvailableScreenshots(viewportScreenshots);
+    const comparisonScreenshots = await comparisonScreenshotsFor(
+      report,
+      candidateId,
+      screenshotsDir,
+    );
+    const screenshots =
+      currentViewports.length === viewportScreenshots.length
+        ? comparisonScreenshots.length
+          ? currentViewports
+          : [...currentViewports, fullPageScreenshots[0]]
+        : fullPageScreenshots;
     // A build failure can legitimately leave an ENOENT screenshot, but
     // permissions and I/O errors must fail closed instead of weakening evidence.
     const availableScreenshots = await collectAvailableScreenshots(screenshots);
-    let attempt = used;
     let activeFindings = findings;
     const attempts = [];
-    while (attempt < cycleLimit) {
-      attempt += 1;
+    for (;;) {
       try {
         await repairCandidateImpl({
           candidateDir,
           candidateId,
           findings: activeFindings,
           screenshots: availableScreenshots,
+          comparisonScreenshots,
           model: resolvedModel,
           creativeSession: frozenCreativeSession,
-          cycle: attempt,
+          cycle: applied + 1,
           maxCycles: cycleLimit,
+          ...(providerBudget ? { automaticSpanRepair: true, fetchImpl: providerBudget.forCandidate(candidateId) } : {}),
+          onUsage: (record) => repairUsage.push(record),
         });
-        cycleUse.set(candidateId, attempt);
+        await persistRepairUsage();
+        cycleUse.set(candidateId, applied + 1);
+        if (providerBudget) await fs.writeFile(path.join(evidenceRoot, "qa-provider-calls.json"), JSON.stringify(providerBudget.snapshot(), null, 2) + "\n");
         await persistRepairEvidence({
           outDir: evidenceRoot,
           round,
           candidateId,
           reason,
           findings: activeFindings,
-          cyclesUsed: attempt,
+          cyclesUsed: applied + 1,
           attempts,
         });
         return { status: "repaired", attempts };
       } catch (error) {
-        const mayRetrySourceRejection =
+        await persistPrivateRepairRejection({ outDir: evidenceRoot, round, candidateId,
+          attempt: rejections + attempts.length + 1, error });
+        await persistRepairUsage();
+        if (providerBudget) {
+          await fs.writeFile(path.join(evidenceRoot, "qa-provider-calls.json"), JSON.stringify(providerBudget.snapshot(), null, 2) + "\n");
+          throw error;
+        }
+        const mayRetryRepairOutputRejection =
           requestedMode === "preview" &&
           !humanFeedback &&
           error?.code === "CREATIVE_REPAIR_OUTPUT_REJECTED";
-        if (!mayRetrySourceRejection) throw error;
+        if (!mayRetryRepairOutputRejection) throw error;
 
         const message = safeRepairRejectionMessage(error);
-        const status = attempt < cycleLimit ? "retrying" : "rejected";
-        attempts.push({ cycle: attempt, status, error: message });
-        cycleUse.set(candidateId, attempt);
-        if (attempt >= cycleLimit) {
+        const rejectionCount = rejections + attempts.length + 1;
+        rejectionUse.set(candidateId, rejectionCount);
+        const contractRetriesExhausted = rejectionCount >= cycleLimit;
+        attempts.push({
+          cycle: attempts.length + 1,
+          status: contractRetriesExhausted ? "rejected" : "retrying",
+          error: message,
+        });
+        if (contractRetriesExhausted) {
           excludedCandidateIds.add(candidateId);
           rejectedCandidates[candidateId] = message;
           await persistRepairEvidence({
@@ -733,7 +1257,7 @@ export async function runRenderedCreativeRepair({
             candidateId,
             reason,
             findings: activeFindings,
-            cyclesUsed: attempt,
+            cyclesUsed: applied,
             status: "rejected",
             error: message,
             attempts,
@@ -744,18 +1268,65 @@ export async function runRenderedCreativeRepair({
         activeFindings = [
           ...activeFindings,
           {
-            category: "source-validation-repair",
+            category: "repair-output-rejected",
             severity: "major",
             message:
-              "The previous repair output was rejected by deterministic source validation.",
+              "The previous repair output did not satisfy the bounded repair contract or deterministic source validation.",
             evidence: message,
             recommendation:
-              "Fix the reported source-validation error in this bounded retry. Preserve sealed content bindings, the contact-bound early-conversion anchor, required Reference DNA markers, and verified content. Do not remove required semantics or weaken safety checks to make validation pass.",
+              "Return a non-empty, bounded repair that fixes the reported output or source-validation issue. Preserve sealed content bindings, the contact-bound early-conversion anchor, required Reference DNA markers, and verified content. Do not remove required semantics or weaken safety checks to make validation pass.",
           },
         ];
       }
     }
-    return { status: "exhausted" };
+  }
+
+  async function rememberBestState(report, round) {
+    for (const candidate of report?.candidates || []) {
+      const state = repairState(report, candidate);
+      // Only states judged by the rendered measurements are comparable as
+      // repair baselines. The candidate is failing in this branch, so even a
+      // state at the overall bar can still be the best available baseline.
+      if (
+        !Number.isFinite(
+          Number(candidate?.renderedReferenceFidelity?.audit?.overallScore),
+        )
+      )
+        continue;
+      const existing = bestState.get(candidate.candidateId);
+      if (!isBetterState(state, existing)) continue;
+      const directory = resolveCandidateDirectory(
+        candidateRoot,
+        candidate.directory,
+      );
+      const snapshotDir = path.join(
+        evidenceRoot,
+        "best",
+        candidate.candidateId,
+      );
+      await fs.rm(snapshotDir, { recursive: true, force: true });
+      await fs.cp(directory, snapshotDir, { recursive: true });
+      bestState.set(candidate.candidateId, {
+        ...state,
+        directory: candidate.directory,
+        snapshotDir,
+        screenshotsDir: path.join(
+          evidenceRoot,
+          `round-${String(round).padStart(2, "0")}`,
+          "screenshots",
+        ),
+        findings: candidateFindings(candidate),
+      });
+    }
+  }
+
+  async function restoreBestState(candidateId) {
+    const best = bestState.get(candidateId);
+    if (!best) return false;
+    const target = resolveCandidateDirectory(candidateRoot, best.directory);
+    await fs.rm(target, { recursive: true, force: true });
+    await fs.cp(best.snapshotDir, target, { recursive: true });
+    return true;
   }
 
   for (let round = 0; round < maxRounds; round += 1) {
@@ -777,6 +1348,7 @@ export async function runRenderedCreativeRepair({
         promote: false,
         deferPromotion: true,
         requireDiversity,
+        allowContrastRepair: !humanFeedback,
         excludedCandidateIds: [...excludedCandidateIds].sort(),
       });
     } catch (error) {
@@ -804,12 +1376,12 @@ export async function runRenderedCreativeRepair({
         report.previewDiversity?.pass === undefined
           ? null
           : Boolean(report.previewDiversity.pass),
-      previewDiversityStrategy:
-        report.previewDiversity?.strategy || null,
+      previewDiversityStrategy: report.previewDiversity?.strategy || null,
       repairs: [],
       rejectedCandidates: [],
     };
     history.push(record);
+    await rememberBestState(report, round);
 
     if (humanRepairPending && (report.candidates || []).length !== 1)
       throw new Error(
@@ -818,64 +1390,103 @@ export async function runRenderedCreativeRepair({
 
     if (!report.selectedCandidateId) {
       const candidates = (report.candidates || []).filter(candidateNeedsRepair);
+      const previewDiversity =
+        requestedMode === "preview" ? previewDiversityEvidence(report) : null;
       const previewDiversityTargets =
-        requestedMode === "preview" &&
-        report.previewDiversity?.pass === false
-          ? diversityRepairTargets(report)
+        previewDiversity?.pass === false
+          ? diversityRepairTargets(report, previewDiversity)
           : [];
-      let repairedAny = false;
-      let rejectedAny = false;
-      for (const candidate of candidates) {
-        const findings = [
-          ...candidateFindings(candidate),
-          ...(humanRepairPending ? humanFindings : []),
-        ];
-        const repaired = await repair(
-          candidate.candidateId,
-          findings.length
-            ? findings
-            : ["Candidate did not pass rendered preview gates."],
-          humanRepairPending
-            ? "human-review-feedback"
-            : "candidate-render-failure",
-          round,
-          screenshotsDir,
-          candidate.directory,
-        );
-        if (repaired.status === "repaired") {
-          repairedAny = true;
-          record.repairs.push(candidate.candidateId);
-        } else if (repaired.status === "rejected") {
-          rejectedAny = true;
-          record.rejectedCandidates.push(candidate.candidateId);
+      const canRepair = (candidateId) =>
+        (cycleUse.get(candidateId) || 0) < cycleLimit &&
+        !excludedCandidateIds.has(candidateId);
+      const repairCandidates = candidates
+        .filter((candidate) => canRepair(candidate.candidateId))
+        .map((candidate) => ({
+          candidateId: candidate.candidateId,
+          directory: candidate.directory,
+          candidate,
+          finding: null,
+        }));
+      const repairTargets = repairCandidates.length
+        ? repairCandidates
+        : previewDiversityTargets
+            .filter((target) => canRepair(target.candidateId))
+            .map((target) => ({
+              ...target,
+              candidate: reportCandidate(report, target.candidateId),
+              directory: reportCandidate(report, target.candidateId)?.directory,
+            }))
+            .filter((target) => target.candidate);
+      const target = closestToPassingFirst(report, repairTargets)[0];
+      if (!target) {
+        // No candidate has repair budget left. Before giving up, put every
+        // candidate back to its best measured state and judge once more.
+        let restored = false;
+        for (const candidate of report.candidates || []) {
+          const best = bestState.get(candidate.candidateId);
+          if (
+            best &&
+            isBetterState(best, repairState(report, candidate)) &&
+            (await restoreBestState(candidate.candidateId))
+          )
+            restored = true;
         }
-      }
-      if (!candidates.length && previewDiversityTargets.length) {
-        for (const target of previewDiversityTargets) {
-          const candidate = reportCandidate(report, target.candidateId);
-          if (!candidate) continue;
-          const repaired = await repair(
-            target.candidateId,
-            [target.finding],
-            "rendered-diversity-preview",
-            round,
-            screenshotsDir,
-            candidate.directory,
-          );
-          if (repaired.status === "repaired") {
-            repairedAny = true;
-            record.repairs.push(target.candidateId);
-          } else if (repaired.status === "rejected") {
-            rejectedAny = true;
-            record.rejectedCandidates.push(target.candidateId);
-          }
+        if (restored && !restoredFinalState) {
+          restoredFinalState = true;
+          continue;
         }
-      }
-      if (repairedAny && humanRepairPending) humanRepairPending = false;
-      if (!repairedAny && !rejectedAny)
         throw new Error(
           `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
         );
+      }
+
+      const best = target.finding ? null : bestState.get(target.candidateId);
+      const regressed =
+        best && isBetterState(best, repairState(report, target.candidate));
+      if (regressed) await restoreBestState(target.candidateId);
+      const diversity =
+        previewDiversity?.pass === false
+          ? previewDiversity
+          : report.visualDiversity;
+      const diversityFinding = candidateDiversityFinding(
+        report,
+        target.candidateId,
+        diversity,
+      );
+      const findings = target.finding
+        ? [target.finding]
+        : [
+            ...(regressed
+              ? best.findings
+              : candidateFindings(target.candidate)),
+            ...(diversityFinding ? [diversityFinding] : []),
+            ...(humanRepairPending ? humanFindings : []),
+          ];
+      const repaired = await repair(
+        target.candidateId,
+        findings.length
+          ? findings
+          : ["Candidate did not pass rendered preview gates."],
+        target.finding
+          ? "rendered-diversity-preview"
+          : humanRepairPending
+            ? "human-review-feedback"
+            : "candidate-render-failure",
+        round,
+        regressed ? best.screenshotsDir : screenshotsDir,
+        target.directory,
+        report,
+      );
+      if (repaired.status === "repaired") {
+        record.repairs.push(target.candidateId);
+        if (humanRepairPending) humanRepairPending = false;
+      } else if (repaired.status === "rejected") {
+        record.rejectedCandidates.push(target.candidateId);
+      } else {
+        throw new Error(
+          `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
+        );
+      }
       continue;
     }
 
@@ -898,6 +1509,7 @@ export async function runRenderedCreativeRepair({
         round,
         screenshotsDir,
         selected.directory,
+        report,
       );
       if (repaired.status !== "repaired")
         throw new Error(
@@ -939,12 +1551,16 @@ export async function runRenderedCreativeRepair({
         selectedId,
         [
           ...candidateFindings(reportCandidate(report, selectedId)),
+          ...(candidateDiversityFinding(report, selectedId)
+            ? [candidateDiversityFinding(report, selectedId)]
+            : []),
           ...gateFindings(visualGate),
         ],
         "selected-visual-gate",
         round,
         screenshotsDir,
         selected.directory,
+        report,
       );
       if (repaired.status === "rejected") {
         record.rejectedCandidates.push(selectedId);
@@ -975,8 +1591,12 @@ export async function runRenderedCreativeRepair({
           selectedId,
           [
             ...humanFindings,
+            ...(candidateDiversityFinding(report, selectedId)
+              ? [candidateDiversityFinding(report, selectedId)]
+              : []),
             ...(humanGate.audit?.findings || []).map((finding) => ({
               category: finding.category,
+              feedbackIndex: finding.feedbackIndex,
               message: finding.evidence,
               evidence: finding.evidence,
               recommendation: finding.recommendation,
@@ -986,6 +1606,7 @@ export async function runRenderedCreativeRepair({
           round,
           screenshotsDir,
           selected.directory,
+          report,
         );
         if (repaired.status !== "repaired")
           throw new Error(
@@ -994,6 +1615,13 @@ export async function runRenderedCreativeRepair({
         record.repairs.push(selectedId);
         continue;
       }
+      const gateConfig = await readJson(gateConfigPath);
+      const expectedItems = creativeFeedbackItems(gateConfig, humanFeedback);
+      verifiedHumanFeedback = verifiedHumanFeedbackResults(
+        humanGate.audit,
+        expectedItems,
+        selectedId,
+      );
     }
 
     if (requestedMode === "promote" && !report.promotionReady) {
@@ -1008,25 +1636,30 @@ export async function runRenderedCreativeRepair({
             "Production promotion is not ready. Preserve the assigned Reference DNA and repair the selected candidate's remaining promotion blockers.",
         });
       }
-      let repairedAny = false;
-      for (const target of targets) {
-        const repaired = await repair(
-          target.candidateId,
-          [target.finding],
-          "rendered-diversity",
-          round,
-          screenshotsDir,
-          reportCandidate(report, target.candidateId)?.directory,
-        );
-        if (repaired.status === "repaired") {
-          repairedAny = true;
-          record.repairs.push(target.candidateId);
-        }
-      }
-      if (!repairedAny)
+      const target = closestToPassingFirst(
+        report,
+        targets.filter(
+          (item) => (cycleUse.get(item.candidateId) || 0) < cycleLimit,
+        ),
+      )[0];
+      if (!target)
         throw new Error(
           `Production promotion is not ready after the ${cycleLimit}-cycle per-candidate repair budget.`,
         );
+      const repaired = await repair(
+        target.candidateId,
+        [target.finding],
+        "rendered-diversity",
+        round,
+        screenshotsDir,
+        reportCandidate(report, target.candidateId)?.directory,
+        report,
+      );
+      if (repaired.status !== "repaired")
+        throw new Error(
+          `Production promotion is not ready after the ${cycleLimit}-cycle per-candidate repair budget.`,
+        );
+      record.repairs.push(target.candidateId);
       continue;
     }
 
@@ -1070,8 +1703,7 @@ export async function runRenderedCreativeRepair({
         report.previewDiversity?.pass === undefined
           ? null
           : Boolean(report.previewDiversity.pass),
-      previewDiversityStrategy:
-        report.previewDiversity?.strategy || null,
+      previewDiversityStrategy: report.previewDiversity?.strategy || null,
       repairCycles: Object.fromEntries(cycleUse),
       rejectedCandidates,
       history,
@@ -1125,6 +1757,7 @@ export async function runRenderedCreativeRepair({
         liveConfig.revisionReport.creativeSourceRepairVerified = {
           pass: true,
           candidateId: selectedId,
+          feedbackResults: verifiedHumanFeedback,
           repairCycles: Object.fromEntries(cycleUse),
         };
         await fs.writeFile(
@@ -1177,6 +1810,7 @@ async function main() {
       "openai/gpt-6-luna",
     creativeSession,
     maxCycles: args["max-cycles"] || 2,
+    qaRepairExperiment: args["qa-repair-experiment"] === "true",
     requireDiversity: args["require-diversity"] !== "false",
     requestedFindings,
     visualGateScript: args["visual-gate-script"],

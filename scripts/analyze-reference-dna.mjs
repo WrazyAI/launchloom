@@ -14,6 +14,19 @@ import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 
 const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-6-luna";
 
+// Bounded per-process usage evidence for the generation cost ledger. The
+// enriched inspiration pack output is unchanged.
+const modelUsageRecords = [];
+
+function recordModelUsage(label, usage) {
+  if (!usage || typeof usage !== "object") return;
+  modelUsageRecords.push({ label, model, usage });
+}
+
+export function getReferenceDnaUsageRecords() {
+  return modelUsageRecords.slice();
+}
+
 const schema = {
   name: "launchloom_reference_dna_analysis",
   strict: true,
@@ -203,7 +216,12 @@ function parseChoice(payload) {
   try {
     return JSON.parse(raw.replace(/^```(?:json)?\s*/iu, "").replace(/\s*```$/u, ""));
   } catch (error) {
-    throw new Error(`Reference analyzer returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
+    const parseError = new Error(
+      `Reference analyzer returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    parseError.code = "REFERENCE_ANALYZER_INVALID_JSON";
+    parseError.finishReason = payload?.choices?.[0]?.finish_reason || "unknown";
+    throw parseError;
   }
 }
 
@@ -284,8 +302,13 @@ Rules:
 - do not copy branding, copy, proprietary fonts, logos, or trade dress`
     },
     { type: "text", text: "Desktop reference:" },
-    await promptImagePart(desktop),
-    ...(mobile ? [{ type: "text", text: "Mobile reference:" }, await promptImagePart(mobile)] : [])
+    await promptImagePart(desktop, { detail: "high" }),
+    ...(mobile
+      ? [
+          { type: "text", text: "Mobile reference:" },
+          await promptImagePart(mobile, { detail: "high" }),
+        ]
+      : [])
   ];
   const sessionId = openRouterSessionId(
     "reference-dna",
@@ -297,12 +320,12 @@ Rules:
   );
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 180_000);
-  try {
+  const requestAnalysis = async (responseCache) => {
     const response = await openRouterChatCompletion({
       title: "LaunchLoom Reference DNA Analyzer",
       signal: controller.signal,
       sessionId,
-      responseCache: true,
+      responseCache,
       responseCacheTtlSeconds: 86_400,
       fetchImpl,
       body: {
@@ -314,7 +337,7 @@ Rules:
         messages: [
           {
             role: "system",
-            content: "Return JSON only. You are a senior visual systems designer extracting measurable, transferable design mechanics from screenshots."
+            content: "Return one syntactically valid JSON object only, matching the provided strict schema. Escape quotes and backslashes inside strings. Do not use markdown or surrounding prose. You are a senior visual systems designer extracting measurable, transferable design mechanics from screenshots."
           },
           { role: "user", content }
         ]
@@ -328,7 +351,26 @@ Rules:
     if (!response.ok)
       throw new Error(`Reference analyzer failed for ${route.id} (${response.status}): ${payload?.error?.message || "unknown error"}`);
     logOpenRouterCacheUsage("reference-dna", payload.usage);
-    return { ...parseChoice(payload), captureDimensions };
+    recordModelUsage("reference-dna", payload.usage);
+    return parseChoice(payload);
+  };
+  try {
+    try {
+      return { ...await requestAnalysis(true), captureDimensions };
+    } catch (error) {
+      if (error?.code !== "REFERENCE_ANALYZER_INVALID_JSON") throw error;
+      console.warn(
+        `reference_dna_retry route=${route.id} finish_reason=${error.finishReason} cache=bypassed`,
+      );
+      try {
+        return { ...await requestAnalysis(false), captureDimensions };
+      } catch (retryError) {
+        if (retryError?.code !== "REFERENCE_ANALYZER_INVALID_JSON") throw retryError;
+        throw new Error(
+          `Reference analyzer returned invalid JSON after one uncached retry (finish_reason=${retryError.finishReason}).`,
+        );
+      }
+    }
   } finally {
     clearTimeout(timeout);
   }
@@ -394,6 +436,11 @@ async function main() {
   const pack = JSON.parse(await fs.readFile(input, "utf8"));
   const enriched = await enrichInspirationPack(pack);
   await fs.writeFile(output, `${JSON.stringify(enriched, null, 2)}\n`);
+  if (args["usage-out"])
+    await fs.writeFile(
+      path.resolve(args["usage-out"]),
+      `${JSON.stringify({ version: 1, records: getReferenceDnaUsageRecords() }, null, 2)}\n`,
+    );
   console.log(JSON.stringify({ routes: enriched.routes.length, model, output }));
 }
 

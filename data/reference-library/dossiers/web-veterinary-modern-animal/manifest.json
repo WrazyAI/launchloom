@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "id": "web-veterinary-modern-animal",
+  "productionEligible": true,
+  "referenceName": "Digital-first veterinary membership with a care-location index",
+  "familyId": "veterinary-digital-membership-care",
+  "businessKinds": [
+    "veterinary clinic",
+    "animal hospital",
+    "pet wellness",
+    "urgent veterinary care",
+    "veterinary"
+  ],
+  "source": {
+    "name": "Modern Animal official website",
+    "url": "https://www.modernanimal.com/",
+    "sourceType": "official direct veterinary-business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-29 covers retaining the paired desktop/mobile full-page captures, deriving a design prompt, and using these captures as internal pipeline-model visual references. No source-owner grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "veterinary",
+      "animal hospital",
+      "pet wellness",
+      "urgent care",
+      "virtual veterinary care"
+    ],
+    "style": [
+      "warm digital hospitality",
+      "serif editorial headings",
+      "soft-color utility design",
+      "approachable technology"
+    ],
+    "composition": [
+      "locator-led opening",
+      "alternating editorial modules",
+      "expandable care list",
+      "long location index",
+      "integrated app chapter"
+    ],
+    "conversion": [
+      "find a clinic",
+      "book an appointment",
+      "virtual care entry",
+      "membership information"
+    ],
+    "motion": [
+      "restrained carousel",
+      "tap-safe disclosure",
+      "static content first",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "owner-and-pet portrait",
+      "clinic interiors",
+      "editorial care imagery",
+      "reference evidence only"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "sha256": "ec86e73a1d11837ea9a748815f492fe957933e752b40db0c7a8e09af0eabc1b8"
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sha256": "2d03c53589a0e154c6cc7f573baec1447019468aa6a7f37c6b96976f518460bc"
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A digital-first veterinary membership experience pairs a slim utility header with a friendly pet-and-person opening and a nearby-clinic finder. The page alternates warm neutral editorial sections and muted blue feature fields. Care expectations unfold as a compact disclosure list, member stories and location names create proof and wayfinding, and service categories are introduced beside a large contextual image. Later chapters explain plan value, the care team and the companion app before a dense newsletter footer. Transfer the locator-first conversion, alternating page rhythm, human scale, and app-as-service chapter, not this company's brand, photos, claims, prices, testimonials, or exact palette. The original long-page capture contains a blank tail below its footer; that is not a signature and should not be reproduced.",
+    "heroGeometry": {
+      "mode": "split editorial opening with pet portrait and adjacent clinic locator",
+      "alignment": "left-copy with image-led right field",
+      "viewport": "compact utility header, one concise promise, locator visible in first screen"
+    },
+    "navigationGeometry": {
+      "mode": "slim wordmark bar with grouped service navigation and one booking action",
+      "placement": "top edge",
+      "mobile": "compressed brand row with a direct booking control and menu disclosure"
+    },
+    "typography": {
+      "display": "warm editorial serif",
+      "body": "clear humanist sans",
+      "scale": "large but restrained opening with small uppercase wayfinding labels"
+    },
+    "palette": {
+      "surfaces": [
+        "warm paper",
+        "soft sky tint",
+        "neutral white"
+      ],
+      "ink": "deep readable charcoal",
+      "accents": [
+        "muted blue",
+        "quiet warm detail"
+      ],
+      "contrastIntent": "gentle surfaces with unmistakable controls and strong body-text contrast"
+    },
+    "imageTreatment": {
+      "mode": "documentary owner-and-pet photography mixed with calm clinic interiors",
+      "crop": "large rectangular hero and alternating editorial crops",
+      "focalPoint": "human-animal interaction remains visible; keep text in a separate calm field"
+    },
+    "sectionSequence": [
+      "hero and clinic locator",
+      "care expectation disclosures",
+      "member stories",
+      "location index",
+      "service index",
+      "membership plan",
+      "care team and app",
+      "newsletter footer"
+    ],
+    "servicePresentation": {
+      "pattern": "short expandable care expectations followed by a compact service index",
+      "interaction": "one answer opens per row; service names remain visible and link to their own detail"
+    },
+    "ctaPlacement": {
+      "primary": "find a nearby clinic or book",
+      "secondary": "virtual care",
+      "early": "locator embedded in the opening, before long-form proof"
+    },
+    "motion": {
+      "primitive": "horizontal member-story rail and small disclosure transitions",
+      "library": "native CSS or framework primitives; no source code transfer",
+      "reducedMotion": "show all story controls and disclosure content without timed movement"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the opening copy, locator, and photograph, then make each editorial module a single readable chapter",
+      "rules": [
+        "keep booking or location lookup near the opening",
+        "turn the location list into accessible disclosures",
+        "replace carousels with touch-safe controls and visible items",
+        "do not preserve the captured blank footer tail"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying Modern Animal branding, logo, images, exact copy, reviews, prices, or business claims",
+      "duplicating its palette as a brand kit",
+      "reproducing the blank area beneath the source footer",
+      "using an app or membership claim when the client has not verified one",
+      "generic repeated card walls"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "care-locator-opening",
+        "selector": "[data-reference-signature=care-locator-opening]",
+        "description": "A location or care-finding action is part of the opening composition, when the client actually serves a locatable area."
+      },
+      {
+        "id": "alternating-care-chapters",
+        "selector": "[data-reference-signature=alternating-care-chapters]",
+        "description": "At least two middle sections alternate between concise text and context imagery rather than repeating one card grid."
+      },
+      {
+        "id": "care-path-disclosure",
+        "selector": "[data-reference-signature=care-path-disclosure]",
+        "description": "A short, accessible disclosure explains care options or visit expectations."
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening conversion action is visible without scrolling on desktop and quickly reachable on mobile.",
+      "The page rhythm alternates locator, care explanation, service discovery, and proof instead of repeating uniform cards.",
+      "A real client app or membership is mentioned only when confirmed by intake.",
+      "Every disclosure and story control works with keyboard and reduced motion.",
+      "No blank capture artifact, source identity, unsupported rating, price, service area, or claim is transferred."
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "utility-panel",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "task-panel-in-opening",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-29",
+    "notes": "Official page returned HTTP 200 at both requested viewports. Full-page screenshots were inspected; no content-image failures remained in the cleaned capture. Browser logged a source-side querySelector error during scroll. Internal retention and model use remain requester-attested, not independently verified owner permission."
+  }
+}

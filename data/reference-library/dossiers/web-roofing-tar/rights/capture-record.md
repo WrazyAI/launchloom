@@ -6,3 +6,10 @@ Captured 2026-09-26 directly from https://tarroofing.com/ with a local Playwrigh
 - Mobile viewport: 390 x 844 CSS pixels at device scale 1. Full-page PNG: 390 x 6185 pixels at screenshots/mobile.png.
 - The PNG dimensions were read from the saved image headers. Both files cover the opening through the visible footer. Hidden carousel slides and third-party widgets may defer their own off-screen images.
 - No source HTML, stylesheet, script, standalone photo, logo, or font was retained. These screenshots are reference evidence, not client assets.
+
+## Screenshot checksums (SHA-256, verified 2026-09-29 UTC)
+
+| File | SHA-256 |
+|---|---|
+| `screenshots/desktop.png` | `c21a0b1f7e3427c7a0ef8b46dee8716cc1a05fe806c7532567a0659e51c4b604` |
+| `screenshots/mobile.png` | `5b65b63e79a75781e02a22cfd4b903625597108fb25f2079f40dd4bc66433226` |

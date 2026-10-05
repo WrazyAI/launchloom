@@ -1,3 +1,6 @@
+import { publicGenerationIntake, normalizeResearchLanguageCode } from "../templates/client-site/src/lib/business-facts.mjs";
+import { confirmedCoverageFromIntake, applyCoverageEnrichment } from "./confirmed-coverage.mjs";
+import { hasCompletedFallbackResearch } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import {
@@ -6,6 +9,7 @@ import {
   openRouterSessionId,
   readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
+import { parseServiceAreas } from "./service-area-input.mjs";
 
 const DEFAULT_MAX_TASKS = 16;
 const HARD_MAX_TASKS = 32;
@@ -18,6 +22,27 @@ const HARD_MAX_FALLBACK_SEARCH_QUERIES = 5;
 const DEFAULT_FALLBACK_MAX_USD = 0.05;
 const HARD_MAX_FALLBACK_USD = 0.25;
 const FALLBACK_RESULTS_PER_QUERY = 4;
+const GENERIC_BUSINESS_KINDS = new Set([
+  "general",
+  "business",
+  "local business",
+  "local service",
+  "local services",
+  "home services",
+  "professional services",
+  "health",
+  "healthcare",
+  "medical",
+  "wellness",
+  "care",
+  "other",
+]);
+const IMPLICIT_NICHE_SERVICE_TERMS = new Map([
+  ["auto repair", /\b(?:auto|car|vehicle|brake|engine|transmission|oil change|tire|alignment|mechanic)\b/u],
+  ["roofing", /\b(?:roof|roofer|shingle|gutter)\b/u],
+  ["painting", /\b(?:paint|painter|coating)\b/u],
+  ["hvac", /\b(?:hvac|heating|cooling|air conditioning|furnace|boiler|heat pump)\b/u],
+]);
 const US_STATE_NAMES = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
 };
@@ -36,11 +61,7 @@ const splitList = (value, limit = 20, splitCommas = false) => {
     .map((part) => text(part, 160))).filter(Boolean);
   return [...new Map(entries.map((item) => [item.toLocaleLowerCase(), item])).values()].slice(0, limit);
 };
-const areaList = (value, limit = 20) => {
-  const raw = Array.isArray(value) ? value : [value];
-  const entries = raw.flatMap((item) => text(item, 400).split(/\r?\n/u).map((part) => text(part, 160))).filter(Boolean);
-  return [...new Map(entries.map((item) => [item.toLocaleLowerCase(), item])).values()].slice(0, limit);
-};
+const areaList = (value, limit = 20) => parseServiceAreas(value, { limit });
 const finiteMetric = (value) => value === null || value === undefined || value === "" || !Number.isFinite(Number(value)) ? null : Number(value);
 const roundCost = (value) => Math.round((Number(value) || 0) * 100_000) / 100_000;
 const slugify = (value) => text(value, 180).toLocaleLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "").slice(0, 90);
@@ -62,14 +83,27 @@ function metricLocationForCity(city, fallback = process.env.SEO_RESEARCH_LOCATIO
 }
 
 export function normaliseSeoIntake(intake = {}) {
+  intake = publicGenerationIntake(intake);
   const legacy = text(intake.intakeVersion, 10) !== "2";
   const allConfirmedServices = splitList(intake.confirmedServices || intake.services, 100, legacy);
   const services = allConfirmedServices.slice(0, MAX_CORE_SERVICES);
   const omittedServices = allConfirmedServices.slice(MAX_CORE_SERVICES);
-  const primaryCity = text(intake.primaryCity, 160) || areaList(intake.serviceAreas, 20)[0] || "";
-  const coverageAreas = areaList(intake.coverageAreas, 20);
+  const primaryCity = areaList(intake.primaryCity, 1)[0] || areaList(intake.serviceAreas, 20)[0] || "";
+  const confirmedCoverage = confirmedCoverageFromIntake(intake);
+  const coverageAreas = confirmedCoverage?.coverageAreas || [...new Map(
+    [...areaList(intake.serviceAreas, 20), ...areaList(intake.coverageAreas, 20)]
+      .map((area) => [area.toLowerCase(), area]),
+  ).values()].slice(0, 20);
   if (!coverageAreas.length && primaryCity) coverageAreas.push(primaryCity);
   const serviceRadius = numericRadius(intake.serviceRadius);
+  const industry = text(intake.industry, 100);
+  const explicitBusinessKind = text(
+    intake.businessKind || intake.businessType || intake.business?.kind || intake.business?.businessKind,
+    100,
+  );
+  const businessKind = explicitBusinessKind || (
+    industry && !GENERIC_BUSINESS_KINDS.has(keywordKey(industry)) ? industry : ""
+  );
   const website = text(intake.website || intake.existingWebsite, 500);
   let websiteUrl = "";
   try {
@@ -78,29 +112,49 @@ export function normaliseSeoIntake(intake = {}) {
   } catch { /* no existing site to inspect */ }
   return {
     services,
+    languageCode: normalizeResearchLanguageCode(intake.researchLanguageCode),
     omittedServices,
     primaryCity,
     serviceRadius,
     coverageAreas,
+    coverageConfirmation: confirmedCoverage?.coverageConfirmation,
     metricLocation: text(intake.metricLocation, 180) || metricLocationForCity(primaryCity),
     labsLocation: text(intake.labsLocation, 180) || process.env.SEO_RESEARCH_LABS_LOCATION_NAME ||
       (metricLocationForCity(primaryCity).split(",").at(-1) || "United States").trim(),
     coverageEvidence: intake.coverageEvidence || { source: "client_supplied_primary_city", lookups: 0 },
     coverageWarnings: Array.isArray(intake.coverageWarnings) ? intake.coverageWarnings.map((item) => text(item, 300)) : [],
-    industry: text(intake.industry, 100),
+    businessKind,
+    industry,
     businessName: text(intake.businessName || intake.business?.name, 120),
     existingWebsite: websiteUrl,
     phraseProvenance: "confirmed_service_city",
   };
 }
 
+function searchServiceTerm(seo, service) {
+  const businessKind = keywordKey(seo.businessKind);
+  if (!businessKind || GENERIC_BUSINESS_KINDS.has(businessKind)) return service;
+  const serviceKey = keywordKey(service);
+  if (
+    serviceKey.includes(businessKind) ||
+    IMPLICIT_NICHE_SERVICE_TERMS.get(businessKind)?.test(serviceKey)
+  ) return service;
+  return `${businessKind} ${service.toLocaleLowerCase()}`;
+}
+
+function localServiceQuery(service, city) {
+  const cityTerm = text(city, 160).replace(/\s+/gu, " ").trim();
+  const cityKey = keywordKey(cityTerm);
+  return !cityKey || ` ${keywordKey(service)} `.includes(` ${cityKey} `) ? service : `${service} ${cityTerm}`;
+}
+
 function variantsFor(service, city, industry) {
   const variants = [service, `${service} near me`];
   const cityTerm = text(city, 160).replace(/,/gu, " ").replace(/\s+/gu, " ").trim();
-  if (cityTerm) variants.push(`${service} ${cityTerm}`);
+  if (cityTerm) variants.push(localServiceQuery(service, cityTerm));
   variants.push(`${service} cost`);
   const urgent = /plumb|drain|electric|hvac|water damage|restor|garage door|locksmith|roof leak|tree removal|pest/iu.test(`${service} ${industry}`);
-  if (urgent) variants.push(`emergency ${service}${cityTerm ? ` ${cityTerm}` : ""}`);
+  if (urgent) variants.push(`emergency ${localServiceQuery(service, cityTerm)}`);
   if (/home-services|professional-services/iu.test(industry) || /repair|installation|painting|restoration|tax preparation|bookkeeping/iu.test(service))
     variants.push(`${service} quote`);
   if (/wellness|care|health/iu.test(industry) && /consultation|treatment|therapy|session|care/iu.test(service))
@@ -109,7 +163,9 @@ function variantsFor(service, city, industry) {
 }
 
 function defaultSeeds(seo) {
-  return [...new Set(seo.services.flatMap((service) => variantsFor(service, seo.primaryCity, seo.industry)))].slice(0, MAX_CORE_SERVICES * MAX_SERVICE_VARIANTS);
+  return [...new Set(seo.services.flatMap((service) =>
+    variantsFor(searchServiceTerm(seo, service), seo.primaryCity, seo.industry),
+  ))].slice(0, MAX_CORE_SERVICES * MAX_SERVICE_VARIANTS);
 }
 
 function findService(query, services) {
@@ -158,7 +214,7 @@ function emptyMap(seo) {
       title: service,
       slug: `/services/${slugify(service)}/`,
       service,
-      primaryKeyword: { keyword: `${service}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`, volume: null, kd: null, cpc: null, competition: null, intent: null, provenance: "confirmed_service_city_not_measured" },
+      primaryKeyword: { keyword: `${searchServiceTerm(seo, service)}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`, volume: null, kd: null, cpc: null, competition: null, intent: null, provenance: "confirmed_service_city_not_measured" },
       supportingKeywords: [],
       fanOutQuestions: serviceQuestions(service, seo.industry),
       priority: "medium",
@@ -353,7 +409,7 @@ export function createOpenRouterWebSearchClient({
           model,
           messages: [{
             role: "user",
-            content: `Search the public web for this local-market query and return only a terse acknowledgement after searching: ${boundedQuery}`,
+            content: `Search the public web for this local-market query and return at most four concise source-backed observations. Include a direct citation for each observation using only a source returned by the search. If no relevant result is found, say no relevant source was returned. Do not claim keyword volume, rankings, difficulty, or CPC; this fallback collects qualitative source observations only. Query: ${boundedQuery}`,
           }],
           tools: [{
             type: "openrouter:web_search",
@@ -366,7 +422,7 @@ export function createOpenRouterWebSearchClient({
           }],
           max_tool_calls: 1,
           tool_choice: "required",
-          max_tokens: 32,
+          max_tokens: 256,
           temperature: 0,
         },
       });
@@ -405,8 +461,7 @@ async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnin
   const maxUsd = Math.max(0, Math.min(HARD_MAX_FALLBACK_USD, Number.isFinite(requestedUsd) ? requestedUsd : DEFAULT_FALLBACK_MAX_USD));
   const queries = [];
   for (const service of seo.services) {
-    const city = seo.primaryCity ? ` ${seo.primaryCity}` : "";
-    queries.push(`${service}${city}`.trim());
+    queries.push(localServiceQuery(searchServiceTerm(seo, service), seo.primaryCity));
   }
   if (seo.businessName && seo.primaryCity) queries.push(`${seo.businessName} ${seo.primaryCity}`);
   for (const seed of seeds) if (!queries.includes(seed)) queries.push(seed);
@@ -490,6 +545,73 @@ async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnin
 }
 
 export async function researchSiteContext(intake = {}, options = {}) {
+  const confirmed = confirmedCoverageFromIntake(intake);
+  if (!confirmed || confirmed.coverageAreas.length <= 1)
+    return researchSingleCity(intake, options);
+  const limits = boundedOptions(options);
+  const fallbackLimit = Math.max(0, Math.min(HARD_MAX_FALLBACK_USD, Number(options.maxFallbackUsd ?? DEFAULT_FALLBACK_MAX_USD)));
+  const queryLimit = Math.max(1, Math.min(HARD_MAX_FALLBACK_SEARCH_QUERIES, Number(options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES)));
+  const total = { tasks: 0, usd: 0, limitUsd: limits.maxUsd, complete: true, unreportedTasks: 0, overBudget: false, stageCosts: [] };
+  let fallbackUsd = 0;
+  let fallbackQueries = 0;
+  let fallbackCostComplete = true;
+  const cities = [];
+  for (const city of confirmed.coverageAreas) {
+    const hasMeasuredBudget = options.dataForSeo && total.complete && !total.overBudget && total.tasks < limits.maxTasks && limits.maxUsd - total.usd >= limits.reserveUsd;
+    const hasFallbackBudget = options.webSearch && fallbackCostComplete && fallbackQueries < queryLimit && fallbackUsd < fallbackLimit;
+    if (cities.length && !hasMeasuredBudget && !hasFallbackBudget) {
+      cities.push({ city, status: "pending", research: null, reason: "Shared research budget exhausted or provider spend unavailable." });
+      continue;
+    }
+    const research = await researchSingleCity({
+      ...intake,
+      primaryCity: city,
+      serviceAreas: city,
+      coverageAreas: [city],
+      coverageConfirmation: undefined,
+      metricLocation: metricLocationForCity(city),
+      website: cities.length ? "" : intake.website,
+      existingWebsite: cities.length ? "" : intake.existingWebsite,
+    }, {
+      ...options,
+      dataForSeo: hasMeasuredBudget ? options.dataForSeo : undefined,
+      webSearch: hasFallbackBudget ? options.webSearch : undefined,
+      maxTasks: Math.max(0, limits.maxTasks - total.tasks),
+      maxUsd: Math.max(0, roundCost(limits.maxUsd - total.usd)),
+      maxFallbackUsd: Math.max(0, roundCost(fallbackLimit - fallbackUsd)),
+      maxFallbackSearchQueries: Math.max(1, queryLimit - fallbackQueries),
+    });
+    cities.push({ city, status: research.publishReady ? "complete" : "partial", research });
+    total.tasks += research.cost.tasks;
+    total.usd = roundCost(total.usd + research.cost.usd);
+    total.complete = total.complete && research.cost.complete;
+    total.unreportedTasks += research.cost.unreportedTasks;
+    total.overBudget = total.overBudget || research.cost.overBudget;
+    total.stageCosts.push(...research.cost.stageCosts.map(stage => ({ ...stage, city })));
+    fallbackUsd = roundCost(fallbackUsd + research.fallbackSearch.costUsd);
+    fallbackQueries += research.fallbackSearch.queriesAttempted;
+    fallbackCostComplete = fallbackCostComplete && research.fallbackSearch.costComplete;
+  }
+  const primary = cities[0]?.research;
+  if (!primary) throw new Error("Primary-city research result is missing.");
+  const complete = cities.every(item => item.status === "complete");
+  const requireAll = options.requireAllCoverageCities === true;
+  const primaryReady = primary.publishReady && (primary.mode !== "researched" || (total.complete && !total.overBudget));
+  return {
+    ...primary,
+    coverageAreas: confirmed.coverageAreas,
+    coverageEvidence: confirmed.coverageEvidence,
+    coverageConfirmation: confirmed.coverageConfirmation,
+    coverageResearch: { version: 1, areas: confirmed.coverageAreas, complete, approvalPolicy: requireAll ? "all-confirmed-cities" : "primary-city", cities, fallbackCostUsd: fallbackUsd, fallbackQueries, fallbackCostComplete, fallbackMaxUsd: fallbackLimit, fallbackMaxQueries: queryLimit },
+    marketSnapshot: { ...primary.marketSnapshot, coverageAreas: confirmed.coverageAreas },
+    cost: total,
+    mode: primary.mode,
+    publishReady: primaryReady && (!requireAll || complete),
+    warnings: [...new Set([...primary.warnings, ...confirmed.warnings, ...cities.filter(item => item.status !== "complete").map(item => `${item.city}: coverage research ${item.status}; no completed or measured research is claimed for this city.`)])],
+  };
+}
+
+async function researchSingleCity(intake = {}, options = {}) {
   const seo = normaliseSeoIntake(intake);
   const limits = boundedOptions(options);
   const seeds = defaultSeeds(seo);
@@ -505,8 +627,11 @@ export async function researchSiteContext(intake = {}, options = {}) {
     publishReady: false,
     generatedAt: new Date().toISOString(),
     metricLocation: seo.metricLocation,
+    languageCode: seo.languageCode,
     labsMetricLocation: seo.labsLocation,
     coverageAreas: seo.coverageAreas,
+    coverageConfirmation: seo.coverageConfirmation,
+    coverageResearch: undefined,
     coverageEvidence: seo.coverageEvidence,
     seedQueries: seeds,
     validatedQueries: seeds.map((keyword) => ({ keyword, volume: null, kd: null, cpc: null, competition: null, intent: null, provenance: "dataforseo_unavailable", metricSources: { volume: null, kd: null, cpc: null, competition: null, intent: null } })),
@@ -534,7 +659,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
       budgetExhausted: false,
     },
     completeness: { keywordOverview: false, searchIntent: false, keywordDifficulty: false, serviceMetrics: [], serviceSerps: 0, serviceSerpsRequired: seo.services.length, competitors: 0 },
-    marketSnapshot: { primaryCity: seo.primaryCity, coverageAreas: seo.coverageAreas, confirmedServices: seo.services, metricLocation: seo.metricLocation, labsMetricLocation: seo.labsLocation, queriedKeywords: seeds.length, measuredKeywords: 0, competitorDomains: 0 },
+    marketSnapshot: { primaryCity: seo.primaryCity, coverageAreas: seo.coverageAreas, businessKind: seo.businessKind || null, confirmedServices: seo.services, metricLocation: seo.metricLocation, labsMetricLocation: seo.labsLocation, queriedKeywords: seeds.length, measuredKeywords: 0, competitorDomains: 0 },
     cost: { tasks: 0, usd: 0, limitUsd: limits.maxUsd, overBudget: false, complete: true, unreportedTasks: 0, stageCosts },
     warnings,
   };
@@ -554,6 +679,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
     const fallback = await collectFallbackWebEvidence(seo, seeds, options.webSearch, options, warnings);
     base.externalSearchEvidence = fallback.evidence;
     base.fallbackSearch = { ...fallback };
+    base.publishReady = hasCompletedFallbackResearch(base);
     base.evidence.push(...fallback.evidence.map((item) => ({
       type: "external_web_search",
       query: item.query,
@@ -565,7 +691,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
       provenance: item.provenance,
     })));
     if (fallback.evidence.length)
-      warnings.push("Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts or production SEO readiness.");
+      warnings.push("Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts.");
     else
       warnings.push("The online-search fallback returned no usable cited evidence; SEO research remains context-only and production approval stays blocked.");
     base.warnings = [...new Set(warnings)];
@@ -595,7 +721,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
         cost.unreportedTasks += 1;
         stoppedForBudget = true;
         stageCosts.push({ stage, tasks: 1, usd: null, status: "cost_unavailable" });
-        warnings.push(`${stage} returned data without provider-reported spend; no further paid tasks were started and production publishing remains blocked.`);
+        warnings.push(`${stage} returned data without provider-reported spend; no further paid tasks were started and measured SEO research remains incomplete.`);
         return { ok: true, skipped: false, value };
       }
       const providerCost = roundCost(rawCost);
@@ -617,7 +743,48 @@ export async function researchSiteContext(intake = {}, options = {}) {
     }
   }
 
-  function returnPartialResearch() {
+  async function attachFallbackEvidenceAfterProviderFailure() {
+    const hasProviderFailure = stageCosts.some((stage) =>
+      stage.status === "failed" || stage.status === "unavailable",
+    );
+    if (base.fallbackSearch.status !== "pending")
+      return;
+    if (!options.webSearch) {
+      base.fallbackSearch.status = "unavailable";
+      return;
+    }
+    if (!hasProviderFailure) {
+      base.fallbackSearch.status = "not-needed";
+      return;
+    }
+
+    const fallback = await collectFallbackWebEvidence(
+      seo,
+      seeds,
+      options.webSearch,
+      options,
+      warnings,
+    );
+    base.externalSearchEvidence = fallback.evidence;
+    base.fallbackSearch = { ...fallback };
+    base.publishReady = hasCompletedFallbackResearch(base);
+    base.evidence.push(...fallback.evidence.map((item) => ({
+      type: "external_web_search",
+      query: item.query,
+      sourceUrl: item.sourceUrl,
+      title: item.title,
+      snippet: item.snippet,
+      retrievedAt: item.retrievedAt,
+      provider: item.provider,
+      provenance: item.provenance,
+    })));
+    warnings.push(fallback.evidence.length
+      ? "Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts."
+      : "The online-search fallback returned no usable cited evidence; SEO research remains context-only and production approval stays blocked.");
+  }
+
+  async function returnPartialResearch() {
+    await attachFallbackEvidenceAfterProviderFailure();
     base.cost = { ...cost, limitUsd: limits.maxUsd, stageCosts };
     base.warnings = [...new Set(warnings)];
     return base;
@@ -626,6 +793,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
   const volumeStage = await paidTask("local_search_volume", options.dataForSeo.googleSearchVolume, {
     keywords: seeds,
     locationName: seo.metricLocation,
+    languageCode: seo.languageCode,
   });
   const volumeRows = volumeStage.ok ? flattenItems(volumeStage.value?.keywords || volumeStage.value?.items || []) : [];
   const volumeByKeyword = new Map(volumeRows.map((item) => {
@@ -661,7 +829,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
     };
   });
   base.marketSnapshot.measuredKeywords = base.validatedQueries.filter((item) => item.metricSources?.volume).length;
-  if (!volumeStage.ok) warnings.push("Required local keyword volume, CPC, and competition research is incomplete; publication remains blocked.");
+  if (!volumeStage.ok) warnings.push("Required local keyword volume, CPC, and competition research is incomplete.");
   if (volumeStage.ok && seeds.some((keyword) => !volumeByKeyword.has(keywordKey(keyword))))
     warnings.push("Some planned local keywords were absent from the provider response; their metrics remain null.");
   if (!volumeStage.ok || cost.overBudget || stoppedForBudget) return returnPartialResearch();
@@ -673,7 +841,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
     text(item.intent || item.keyword_intent?.label, 40) || null,
   ]).filter(([keyword]) => keyword));
   base.completeness.searchIntent = intentStage.ok && [...intentByKeyword.values()].some(Boolean);
-  if (!intentStage.ok) warnings.push("Required measured search intent research is incomplete; publication remains blocked.");
+  if (!intentStage.ok) warnings.push("Required measured search intent research is incomplete.");
   if (cost.overBudget || stoppedForBudget) {
     base.validatedQueries = seeds.map((keyword) => {
       const previous = base.validatedQueries.find((item) => keywordKey(item.keyword) === keywordKey(keyword));
@@ -692,12 +860,12 @@ export async function researchSiteContext(intake = {}, options = {}) {
   const difficultyStage = await paidTask("bulk_keyword_difficulty", options.dataForSeo.bulkKeywordDifficulty, {
     keywords: seeds,
     locationName: seo.labsLocation,
-    languageCode: "en",
+    languageCode: seo.languageCode,
   });
   const difficultyRows = difficultyStage.ok ? flattenItems(difficultyStage.value?.keywords || difficultyStage.value?.items || []) : [];
   const kdByKeyword = new Map(difficultyRows.map((item) => [keywordKey(item.keyword), finiteMetric(item.difficulty ?? item.keywordDifficulty ?? item.keyword_difficulty)]));
   base.completeness.keywordDifficulty = difficultyStage.ok && [...kdByKeyword.values()].some((value) => value !== null);
-  if (!difficultyStage.ok) warnings.push("Required Keyword Difficulty evidence is incomplete; publication remains blocked.");
+  if (!difficultyStage.ok) warnings.push("Required Keyword Difficulty evidence is incomplete.");
   const metrics = seeds.map((keyword) => {
     const local = volumeByKeyword.get(keywordKey(keyword));
     const intent = intentByKeyword.get(keywordKey(keyword)) ?? null;
@@ -734,17 +902,17 @@ export async function researchSiteContext(intake = {}, options = {}) {
   });
   base.completeness.serviceMetrics = serviceMetricCoverage;
   if (serviceMetricCoverage.some((item) => !item.complete))
-    warnings.push("One or more confirmed services lack a primary query with measured volume, CPC, competition, Keyword Difficulty, and intent; production publishing remains blocked.");
+    warnings.push("One or more confirmed services lack a primary query with measured volume, CPC, competition, Keyword Difficulty, and intent; measured SEO research remains incomplete.");
   if (cost.overBudget || stoppedForBudget) return returnPartialResearch();
 
   const allSerps = [];
   const servicesForSerp = seo.services.slice(0, 5);
   for (const service of servicesForSerp) {
-    const query = `${service}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`;
+    const query = localServiceQuery(service, seo.primaryCity);
     const stage = await paidTask(`organic_serp:${slugify(service)}`, options.dataForSeo.organicSerp, {
       keyword: query,
       locationName: metricLocationForCity(seo.primaryCity, seo.metricLocation),
-      languageCode: "en",
+      languageCode: seo.languageCode,
     });
     if (!stage.ok) continue;
     const value = stage.value || {};
@@ -770,11 +938,11 @@ export async function researchSiteContext(intake = {}, options = {}) {
   const relatedRows = [];
   for (const service of seo.services.slice(0, 5)) {
     if (stoppedForBudget) break;
-    const query = `${service}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`;
+    const query = localServiceQuery(service, seo.primaryCity);
     const stage = await paidTask(`related_keywords:${slugify(service)}`, options.dataForSeo.relatedKeywords, {
       keyword: query,
       locationName: seo.labsLocation,
-      languageCode: "en",
+      languageCode: seo.languageCode,
     });
     if (!stage.ok) continue;
     for (const item of flattenItems(stage.value?.keywords || stage.value?.items || [])) {
@@ -793,7 +961,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
     const stage = await paidTask("ranked_keywords", options.dataForSeo.rankedKeywords, {
       target: seo.existingWebsite,
       locationName: seo.labsLocation,
-      languageCode: "en",
+      languageCode: seo.languageCode,
     });
     if (stage.ok) {
       rankingStageComplete = true;
@@ -854,6 +1022,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
     ...relatedRows.map((item) => ({ type: "related_keyword", query: item.keyword, provenance: item.provenance })),
     ...(rankingStageComplete ? [{ type: "ranked_keywords", target: seo.existingWebsite, resultCount: quickWins.length, provenance: "DataForSEO" }] : []),
   ];
+  await attachFallbackEvidenceAfterProviderFailure();
   const requiredResearchComplete =
     Boolean(seo.primaryCity) &&
     base.completeness.keywordOverview &&
@@ -863,10 +1032,10 @@ export async function researchSiteContext(intake = {}, options = {}) {
     base.completeness.serviceSerps === seo.services.length &&
     base.completeness.competitors >= 3 &&
     !cost.overBudget && cost.complete && cost.unreportedTasks === 0;
-  base.publishReady = requiredResearchComplete;
+  base.publishReady = requiredResearchComplete || hasCompletedFallbackResearch(base);
   base.mode = requiredResearchComplete ? "researched" : "context-only";
   if (!requiredResearchComplete)
-    warnings.push("The complete measured market map is not ready for production publishing; this site may be reviewed but publish approval remains blocked.");
+    warnings.push("The complete measured market map is unavailable. Developer approval is available only if the bounded cited web research completed.");
   base.cost = { ...cost, limitUsd: limits.maxUsd, stageCosts };
   base.warnings = [...new Set(warnings)];
   return base;
@@ -885,6 +1054,14 @@ function safeHttpsUrl(value) {
 
 function safeDomain(value) {
   try { return new URL(text(value, 1000)).hostname; } catch { return ""; }
+}
+
+function googleAdsCompetition(item) {
+  const index = finiteMetric(item.competition_index);
+  // Google Ads emits a label plus a 0-100 index. Store its numeric index on
+  // the dossier's fractional scale; never infer a number from HIGH/MEDIUM/LOW.
+  if (index !== null) return index >= 0 && index <= 100 ? index / 100 : null;
+  return finiteMetric(item.competition);
 }
 
 export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
@@ -911,10 +1088,11 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
     language_code: languageCode || "en",
   });
   return {
-    async googleSearchVolume({ keywords, locationName }) {
+    async googleSearchVolume({ keywords, locationName, languageCode = "en" }) {
       const { task, cost } = await post("/v3/keywords_data/google_ads/search_volume/live", {
         keywords,
         location_name: locationName,
+        language_code: languageCode || "en",
       });
       return {
         cost,
@@ -922,7 +1100,7 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
           keyword: item.keyword,
           searchVolume: item.search_volume,
           cpc: item.cpc,
-          competition: item.competition,
+          competition: googleAdsCompetition(item),
         })),
       };
     },
@@ -1015,6 +1193,7 @@ export function renderSeoMapMarkdown(dossier) {
     "",
     `Research status: **${dossier.mode}**${dossier.publishReady ? " (ready for publication approval)" : " (publication blocked)"}`,
     `Metric location: ${dossier.metricLocation || "unavailable"}`,
+    `Research language: ${dossier.languageCode || "en"}`,
     "",
     "## A. Market snapshot",
     "",
@@ -1022,10 +1201,13 @@ export function renderSeoMapMarkdown(dossier) {
     `Coverage communities (facts, not automatic pages): ${(dossier.marketSnapshot?.coverageAreas || []).join(", ") || "primary city only"}`,
     `Keyword metrics measured: ${dossier.marketSnapshot?.measuredKeywords || 0}/${dossier.marketSnapshot?.queriedKeywords || 0}`,
     `DataForSEO provider-reported spend: ${spendSummary} (cap ${Number(dossier.cost?.limitUsd || 0).toFixed(2)}).`,
-    dossier.fallbackSearch?.status && dossier.fallbackSearch.status !== "unavailable"
-      ? `Fallback web search: ${dossier.fallbackSearch.status}; ${dossier.externalSearchEvidence?.length || 0} cited observation(s) from ${dossier.fallbackSearch.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(dossier.fallbackSearch.costUsd || 0).toFixed(5)} / USD ${Number(dossier.fallbackSearch.maxUsd || 0).toFixed(2)} cap${dossier.fallbackSearch.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}. These observations do not satisfy measured SEO publication requirements.`
+    dossier.fallbackSearch?.status === "not-needed"
+      ? "Fallback web search: not needed (no provider stage failed)."
+      : dossier.fallbackSearch?.status && dossier.fallbackSearch.status !== "unavailable"
+      ? `Fallback web search: ${dossier.fallbackSearch.status}; ${dossier.externalSearchEvidence?.length || 0} cited observation(s) from ${dossier.fallbackSearch.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(dossier.fallbackSearch.costUsd || 0).toFixed(5)} / USD ${Number(dossier.fallbackSearch.maxUsd || 0).toFixed(2)} cap${dossier.fallbackSearch.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}. These observations are qualitative research; measured SEO metrics remain unavailable.`
       : "Fallback web search: unavailable.",
     "",
+    ...(dossier.coverageResearch ? ["## Confirmed-city research", ...dossier.coverageResearch.cities.map(item => `- ${item.city}: ${item.status}${item.research ? ` (${item.research.mode}; metric location ${item.research.metricLocation})` : " - not researched"}`), ""] : []),
     "## B. Competitors and structural observations",
     "",
   ];
@@ -1076,18 +1258,16 @@ async function main() {
   const enrichmentFile = argumentValue("--enrichment");
   if (!source || !destination)
     throw new Error("Usage: node seo-research.mjs --source intake.md --out seo-research.json [--map-out seo-map.md] [--enrichment business-enrichment.json]");
-  const intake = extractIntake(await fs.readFile(source, "utf8"));
+  let intake = extractIntake(await fs.readFile(source, "utf8"));
   if (enrichmentFile) {
     const enrichment = JSON.parse(await fs.readFile(enrichmentFile, "utf8"));
-    intake.coverageAreas = enrichment.coverageAreas;
-    intake.coverageEvidence = enrichment.coverageEvidence;
-    intake.coverageWarnings = enrichment.warnings;
+    intake = applyCoverageEnrichment(intake, enrichment);
   }
   const login = process.env.DATAFORSEO_LOGIN || process.env.DATAFORSEO_USERNAME;
   const password = process.env.DATAFORSEO_PASSWORD;
   const dataForSeo = login && password ? createDataForSeoClient({ login, password }) : undefined;
   const openRouterKey = process.env.OPENROUTER_API_KEY;
-  const webSearch = !dataForSeo && openRouterKey ? createOpenRouterWebSearchClient({ apiKey: openRouterKey }) : undefined;
+  const webSearch = openRouterKey ? createOpenRouterWebSearchClient({ apiKey: openRouterKey }) : undefined;
   const dossier = await researchSiteContext(intake, {
     dataForSeo,
     webSearch,

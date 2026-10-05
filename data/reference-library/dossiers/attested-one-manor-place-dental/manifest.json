@@ -17,12 +17,10 @@
     "rights": "permission-cleared",
     "rightsEvidence": "Requester attestation on 2026-09-25 permits persistent desktop/mobile screenshots and use as pipeline-model visual reference. No owner license or grant file was uploaded; see the explicit scope and limitation in rights/requester-attestation.md.",
     "rightsEvidencePath": "rights/requester-attestation.md",
-    "assetEvidencePaths": [
-      "rights/requester-attestation.md"
-    ],
     "provenanceEvidencePaths": [
       "rights/source-observations.md",
-      "rights/capture-record.md"
+      "rights/capture-record.md",
+      "rights/business-verification.md"
     ]
   },
   "tags": {
@@ -66,7 +64,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "c002cdf2522d17246fa7d65bf50cead4b0182b7070982323acbc4b27a6a7b1b8"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -74,7 +73,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "86d11fb5d2f81eb81ef4d548ff46401afb4a74d55ae52a36cea7ca353e244e4d"
     }
   },
   "referenceDna": {
@@ -180,7 +180,17 @@
       "At 390 px the service list and nav remain touch-safe and no horizontal page overflow appears.",
       "Reference screenshots are sourced from the direct official URL, not Lapa's preview or thumbnails.",
       "New site copy and imagery do not reproduce One Manor Place's brand, claims, testimonials, or photos."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

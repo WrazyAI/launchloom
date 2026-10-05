@@ -6,3 +6,10 @@ Captured 2026-09-26 directly from https://www.avpainting.com/ with a local Playw
 - Mobile viewport: 390 x 844 CSS pixels at device scale 1. Full-page PNG: 390 x 8692 pixels at screenshots/mobile.png.
 - The PNG dimensions were read from the saved image headers. Both files cover the opening through the visible footer. Hidden carousel slides and third-party widgets may defer their own off-screen images.
 - No source HTML, stylesheet, script, standalone photo, logo, or font was retained. These screenshots are reference evidence, not client assets.
+
+## Screenshot checksums (SHA-256, verified 2026-09-29 UTC)
+
+| File | SHA-256 |
+|---|---|
+| `screenshots/desktop.png` | `78b7b6fc7042e09f0e6ad688543b69a053312eca7dd6b8b6651755e8d92c8875` |
+| `screenshots/mobile.png` | `089f3b117f494498b66f982832d21db09a47e9b66019bf59a45af75eef0cc19c` |

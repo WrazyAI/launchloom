@@ -17,11 +17,9 @@
     "rights": "permission-cleared",
     "rightsEvidence": "Requester attestation recorded 2026-09-25 permits internal retention of the full-page captures and their use as visual input to the LaunchLoom pipeline model. No source-owner grant or license was uploaded. See rights/requester-attestation.md.",
     "rightsEvidencePath": "rights/requester-attestation.md",
-    "assetEvidencePaths": [
-      "rights/requester-attestation.md"
-    ],
     "provenanceEvidencePaths": [
-      "rights/capture-record.md"
+      "rights/capture-record.md",
+      "rights/business-verification.md"
     ]
   },
   "tags": {
@@ -71,7 +69,8 @@
       "viewport": {
         "width": 1536,
         "height": 900
-      }
+      },
+      "sha256": "42a823822f054c61c790360ca2ab9b571a9113b6756ea1453458c078abda76f3"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -79,7 +78,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "61df43fdb6043ee9096a62c8b895c2cbf47a1b9bd218ba08030ec550a3e6ad30"
     }
   },
   "referenceDna": {
@@ -185,7 +185,17 @@
       "The mobile layout keeps image framing, navigation, article links, and contact details usable without width overflow.",
       "Any legal practice claims, case results, quotations, rankings, awards, office locations, and staff facts are independently verified for the client.",
       "Source imagery, identity, marks, exact words, cases, outcomes, and quotations never enter the client site."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

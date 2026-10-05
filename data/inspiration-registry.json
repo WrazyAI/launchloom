@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26",
+  "updatedAt": "2026-09-29",
   "records": [
     {
       "id": "kokoro-spatial-editorial",
@@ -8489,6 +8489,1151 @@
           "editorial-hair-transformation",
           "salon-atmosphere",
           "strong-image-to-white-space-contrast"
+        ]
+      }
+    },
+    {
+      "id": "web-real-estate-serhant-media-brokerage",
+      "name": "SERHANT: cinematic media and multi-market brokerage",
+      "referenceName": "SERHANT: cinematic media and multi-market brokerage",
+      "referenceFamilyId": "real-estate-media-brokerage",
+      "source": "SERHANT. official website",
+      "sourceUrl": "https://serhant.com/",
+      "rights": "permission-cleared",
+      "industries": [
+        "real estate",
+        "real-estate",
+        "real estate brokerage",
+        "luxury brokerage",
+        "property sales"
+      ],
+      "moods": [
+        "cinematic dark media",
+        "editorial white property index",
+        "high-energy brokerage brand"
+      ],
+      "navigation": "global cinematic mega menu",
+      "heroGeometry": "immersive media search stage",
+      "servicePresentation": "regional listing and agent atlas",
+      "sectionRhythm": "film hero -> region discovery -> featured property feed -> development showcase -> media studio chapter -> brokerage capabilities -> press editorial -> contact capture -> multi-column compliance footer",
+      "typographyCategory": "bold neo grotesk",
+      "imageStrategy": "filmic property montage",
+      "motionOpportunities": [
+        "film to listing scene transition",
+        "cinematic video chapters",
+        "horizontal property carousel",
+        "static-readable fallback"
+      ],
+      "familyId": "cinematic-stage",
+      "dossierPath": "data/reference-library/dossiers/web-real-estate-serhant-media-brokerage",
+      "mobileBehavior": "stacked media search and listing feed",
+      "prohibitedPatterns": [
+        "copying SERHANT. names, logos, video, people, properties, listing data, statistics, claims, or trademarks",
+        "reproducing the exact dark and electric-blue trade dress",
+        "making the page a generic card wall",
+        "allowing autoplay video to carry essential content",
+        "inventing agent credentials, market reach, sales totals, prices, or availability"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-real-estate-serhant-media-brokerage/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-real-estate-serhant-media-brokerage/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Real estate and property services. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "cinematic dark media",
+        "editorial white property index",
+        "high-energy brokerage brand"
+      ],
+      "sourceFonts": [
+        "bold neo grotesk"
+      ],
+      "referenceTags": {
+        "business": [
+          "real-estate",
+          "real estate brokerage",
+          "luxury brokerage",
+          "property sales"
+        ],
+        "style": [
+          "cinematic dark media",
+          "editorial white property index",
+          "high-energy brokerage brand"
+        ],
+        "composition": [
+          "film hero with embedded search",
+          "multi-market discovery",
+          "property feed",
+          "media divisions"
+        ],
+        "conversion": [
+          "property search",
+          "agent contact",
+          "brokerage recruitment",
+          "development inquiry"
+        ],
+        "motion": [
+          "cinematic video chapters",
+          "horizontal property carousel",
+          "static-readable fallback"
+        ],
+        "imagery": [
+          "agent and property film stills",
+          "wide development photography",
+          "property-card imagery"
+        ]
+      }
+    },
+    {
+      "id": "web-real-estate-stoebe-boutique-listings",
+      "name": "Stoebe & Co.: boutique market atlas and property-search panel",
+      "referenceName": "Stoebe & Co.: boutique market atlas and property-search panel",
+      "referenceFamilyId": "real-estate-boutique-search",
+      "source": "Stoebe & Co. official website",
+      "sourceUrl": "https://stoebeco.com/",
+      "rights": "permission-cleared",
+      "industries": [
+        "real estate",
+        "real-estate",
+        "real estate brokerage",
+        "luxury brokerage",
+        "property sales",
+        "boutique brokerage",
+        "luxury listings",
+        "rental and commercial property"
+      ],
+      "moods": [
+        "warm editorial luxury",
+        "thin-line frame system",
+        "serif property index"
+      ],
+      "navigation": "fine line dropdown property directory",
+      "heroGeometry": "diagonal image and wordmark cover",
+      "servicePresentation": "audience market taxonomy",
+      "sectionRhythm": "image wordmark cover -> floating address search -> sales proof measures -> editorial brokerage story -> market taxonomy tiles -> regional market index -> mobile product demonstration -> listing carousel -> testimonial interlude -> seller enquiry -> social gallery -> contact details",
+      "typographyCategory": "high contrast fashion serif",
+      "imageStrategy": "warm interior and listing editorial collage",
+      "motionOpportunities": [
+        "curated listing carousel with pagination",
+        "paginated listing carousel",
+        "subtle scene transitions",
+        "static-first content"
+      ],
+      "familyId": "editorial-monument",
+      "dossierPath": "data/reference-library/dossiers/web-real-estate-stoebe-boutique-listings",
+      "mobileBehavior": "single column listing catalogue and compact region menu",
+      "prohibitedPatterns": [
+        "copying Stoebe & Co. identity, logos, photography, property data, statistics, exact colors, testimonials, or copy",
+        "using its company or listing details as a client claim",
+        "converting the page into a uniform rounded-card wall",
+        "burying property search beneath a long brand essay",
+        "inventing client markets, rankings, transaction figures, or inventory"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-real-estate-stoebe-boutique-listings/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-real-estate-stoebe-boutique-listings/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Real estate and property services. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "warm editorial luxury",
+        "thin-line frame system",
+        "serif property index"
+      ],
+      "sourceFonts": [
+        "high contrast fashion serif"
+      ],
+      "referenceTags": {
+        "business": [
+          "real-estate",
+          "boutique brokerage",
+          "luxury listings",
+          "rental and commercial property"
+        ],
+        "style": [
+          "warm editorial luxury",
+          "thin-line frame system",
+          "serif property index"
+        ],
+        "composition": [
+          "diagonal image wordmark cover",
+          "floating property search",
+          "market taxonomy tiles",
+          "regional atlas"
+        ],
+        "conversion": [
+          "address search",
+          "buyer and seller paths",
+          "valuation inquiry",
+          "newsletter sign-up"
+        ],
+        "motion": [
+          "paginated listing carousel",
+          "subtle scene transitions",
+          "static-first content"
+        ],
+        "imagery": [
+          "warm interiors",
+          "coastal homes",
+          "regional property tiles",
+          "mobile product scene"
+        ]
+      }
+    },
+    {
+      "id": "web-real-estate-luv-estate-investment",
+      "name": "LUV Estate: architecture-led property and investment story",
+      "referenceName": "LUV Estate: architecture-led property and investment story",
+      "referenceFamilyId": "real-estate-integrated-investment",
+      "source": "LUV Estate official website",
+      "sourceUrl": "https://luv.estate/",
+      "rights": "permission-cleared",
+      "industries": [
+        "real estate",
+        "real-estate",
+        "property investment",
+        "property development",
+        "luxury real estate",
+        "architectural development",
+        "luxury property"
+      ],
+      "moods": [
+        "cinematic Mediterranean",
+        "warm mineral palette",
+        "quiet architecture editorial"
+      ],
+      "navigation": "transparent lifestyle wordmark nav",
+      "heroGeometry": "quiet architecture film title field",
+      "servicePresentation": "image led expertise chapters",
+      "sectionRhythm": "cinematic estate film -> property investment thesis -> image led expertise chapter -> vision statement -> integrated development process -> investor value chapter -> architecture quality chapter -> contact invitation -> expanded group footer",
+      "typographyCategory": "geometric modern sans with restrained editorial contrast",
+      "imageStrategy": "slow architectural film and project stills",
+      "motionOpportunities": [
+        "slow architectural film crossfade",
+        "ambient hero film",
+        "chapter carousel",
+        "poster fallback"
+      ],
+      "familyId": "cinematic-stage",
+      "dossierPath": "data/reference-library/dossiers/web-real-estate-luv-estate-investment",
+      "mobileBehavior": "cinematic stacked image and expertise story",
+      "prohibitedPatterns": [
+        "copying LUV name, marks, source media, properties, people, prices, claims, or exact trade dress",
+        "making an investment return, value, or performance guarantee",
+        "using a sourced investment chart as client proof",
+        "putting dense white text on moving video",
+        "replacing each expertise story with interchangeable service cards"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-real-estate-luv-estate-investment/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-real-estate-luv-estate-investment/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Real estate and property services. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "cinematic Mediterranean",
+        "warm mineral palette",
+        "quiet architecture editorial"
+      ],
+      "sourceFonts": [
+        "geometric modern sans with restrained editorial contrast"
+      ],
+      "referenceTags": {
+        "business": [
+          "real-estate",
+          "property investment",
+          "architectural development",
+          "luxury property"
+        ],
+        "style": [
+          "cinematic Mediterranean",
+          "warm mineral palette",
+          "quiet architecture editorial"
+        ],
+        "composition": [
+          "full-bleed coastal film",
+          "offset property thesis",
+          "expertise chapter rail",
+          "image-led closing invitation"
+        ],
+        "conversion": [
+          "property discovery inquiry",
+          "investment discussion",
+          "group navigation"
+        ],
+        "motion": [
+          "ambient hero film",
+          "chapter carousel",
+          "poster fallback"
+        ],
+        "imagery": [
+          "coastal architecture",
+          "landscape developments",
+          "construction and investment still life"
+        ]
+      }
+    },
+    {
+      "id": "web-real-estate-greystar-renter-discovery",
+      "name": "Greystar: renter search, apartment discovery, and city guides",
+      "referenceName": "Greystar: renter search, apartment discovery, and city guides",
+      "referenceFamilyId": "real-estate-renter-discovery",
+      "source": "Greystar official website",
+      "sourceUrl": "https://www.greystar.com/",
+      "rights": "permission-cleared",
+      "industries": [
+        "real estate",
+        "real-estate",
+        "property management",
+        "apartment rental",
+        "multifamily housing",
+        "apartment rentals"
+      ],
+      "moods": [
+        "bright renter utility",
+        "soft blue and sand",
+        "humanist product editorial"
+      ],
+      "navigation": "resident utility and business switcher",
+      "heroGeometry": "bright rental search console over domestic image",
+      "servicePresentation": "community carousel and rental advice",
+      "sectionRhythm": "renter search hero -> available communities carousel -> resident life rationale -> resident benefit triptych -> city discovery rail -> renter education articles -> management partnership invitation -> local apartment directories -> corporate footer",
+      "typographyCategory": "humanist product grotesk",
+      "imageStrategy": "everyday apartment and resident documentary",
+      "motionOpportunities": [
+        "touch safe community carousel",
+        "static search fallback",
+        "low emphasis image reveal"
+      ],
+      "familyId": "editorial-monument",
+      "dossierPath": "data/reference-library/dossiers/web-real-estate-greystar-renter-discovery",
+      "mobileBehavior": "renter search console then one column communities",
+      "prohibitedPatterns": [
+        "copying Greystar identity, apartment images, prices, community names, people, rates, or scale claims",
+        "presenting a managed property as the client's own without proof",
+        "inventing rent, fees, availability, amenities, or resident services",
+        "placing text over a busy resident photograph",
+        "turning search results or renter advice into one undifferentiated card wall"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-real-estate-greystar-renter-discovery/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-real-estate-greystar-renter-discovery/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Real estate and property services. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "bright renter utility",
+        "soft blue and sand",
+        "humanist product editorial"
+      ],
+      "sourceFonts": [
+        "humanist product grotesk"
+      ],
+      "referenceTags": {
+        "business": [
+          "real-estate",
+          "property management",
+          "apartment rentals",
+          "multifamily housing"
+        ],
+        "style": [
+          "bright renter utility",
+          "soft blue and sand",
+          "humanist product editorial"
+        ],
+        "composition": [
+          "rental search console",
+          "community carousel",
+          "benefit triptych",
+          "city discovery rail",
+          "renter advice"
+        ],
+        "conversion": [
+          "search by city",
+          "view community",
+          "schedule tour",
+          "resident help"
+        ],
+        "motion": [
+          "touch safe community carousel",
+          "static search fallback",
+          "low emphasis image reveal"
+        ],
+        "imagery": [
+          "apartment interiors",
+          "resident life",
+          "city panoramas",
+          "practical renter scenarios"
+        ]
+      }
+    },
+    {
+      "id": "web-real-estate-bosa-property-development",
+      "name": "Bosa Properties: sector-switching development portfolio",
+      "referenceName": "Bosa Properties: sector-switching development portfolio",
+      "referenceFamilyId": "real-estate-development-portfolio",
+      "source": "Bosa Properties official website",
+      "sourceUrl": "https://bosaproperties.com/",
+      "rights": "permission-cleared",
+      "industries": [
+        "real estate",
+        "real-estate",
+        "property development",
+        "residential development",
+        "commercial property",
+        "property management"
+      ],
+      "moods": [
+        "architectural corporate",
+        "panoramic urban photography",
+        "contemporary restrained"
+      ],
+      "navigation": "corporate sector mega navigation",
+      "heroGeometry": "panoramic urban development statement",
+      "servicePresentation": "sector and project portfolio index",
+      "sectionRhythm": "developer manifesto -> project portfolio filter -> residential portfolio -> commercial and industrial sectors -> property operating model -> built place story -> career invitation -> contact and locations -> subsidiary links",
+      "typographyCategory": "architectural neo grotesk",
+      "imageStrategy": "built environment renders and finished places",
+      "motionOpportunities": [
+        "slow project film transitions",
+        "project-film crossfade",
+        "filtered portfolio browse",
+        "reduced-motion still"
+      ],
+      "familyId": "archive-rail",
+      "dossierPath": "data/reference-library/dossiers/web-real-estate-bosa-property-development",
+      "mobileBehavior": "sector selector then vertically stacked project cards",
+      "prohibitedPatterns": [
+        "copying Bosa name, wordmark, project names, renderings, property facts, statistics, or public claims",
+        "inventing completed units, development totals, managed square footage, or environmental targets",
+        "presenting an active project as delivered without client confirmation",
+        "using residential property imagery as proof of client ownership",
+        "flattening distinct property sectors into repeated generic service cards"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-real-estate-bosa-property-development/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-real-estate-bosa-property-development/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Real estate and property services. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "architectural corporate",
+        "panoramic urban photography",
+        "contemporary restrained"
+      ],
+      "sourceFonts": [
+        "architectural neo grotesk"
+      ],
+      "referenceTags": {
+        "business": [
+          "real-estate",
+          "property development",
+          "residential development",
+          "commercial property",
+          "property management"
+        ],
+        "style": [
+          "architectural corporate",
+          "panoramic urban photography",
+          "contemporary restrained"
+        ],
+        "composition": [
+          "project portfolio filter",
+          "sector switcher",
+          "corporate mission statement",
+          "development narrative"
+        ],
+        "conversion": [
+          "browse development projects",
+          "leasing inquiry",
+          "corporate partnership",
+          "careers"
+        ],
+        "motion": [
+          "project-film crossfade",
+          "filtered portfolio browse",
+          "reduced-motion still"
+        ],
+        "imagery": [
+          "urban building renderings",
+          "residential project exteriors",
+          "finished place photography"
+        ]
+      }
+    },
+    {
+      "id": "web-real-estate-humahome-property-search",
+      "name": "HumaHome: guided buyer matching and personalized property selection",
+      "referenceName": "HumaHome: guided buyer matching and personalized property selection",
+      "referenceFamilyId": "real-estate-guided-buyer-search",
+      "source": "HumaHome official website",
+      "sourceUrl": "https://humahome.com/",
+      "rights": "permission-cleared",
+      "industries": [
+        "real estate",
+        "real-estate",
+        "property buying service",
+        "buyer's agent",
+        "residential property search",
+        "property search",
+        "home buying guidance",
+        "Barcelona property"
+      ],
+      "moods": [
+        "editorial residential",
+        "muted sage and terracotta",
+        "large contrast serif"
+      ],
+      "navigation": "rust segmented real estate channel bar",
+      "heroGeometry": "oversized editorial buyer promise over a home scene",
+      "servicePresentation": "guided buyer intake and matching process",
+      "sectionRhythm": "home search hero -> market scan explanation -> buyer step sequence -> fit criteria story -> market perspective band -> sample personalized selection -> service timing promise -> contact footer",
+      "typographyCategory": "editorial contrast serif",
+      "imageStrategy": "warm lived in architecture interiors with offset crops",
+      "motionOpportunities": [
+        "scroll linked matching sequence",
+        "asymmetric image offsets",
+        "static content fallback"
+      ],
+      "familyId": "guided-conversation",
+      "dossierPath": "data/reference-library/dossiers/web-real-estate-humahome-property-search",
+      "mobileBehavior": "buyer promise then compact matching steps and sample selection",
+      "prohibitedPatterns": [
+        "copying HumaHome identity, words, photographs, report design, local market details, prices, or exact terracotta palette",
+        "claiming a property search covers marketplaces or inventory not confirmed for the client",
+        "inventing buyer delivery times, selection frequency, access, or purchasing advice",
+        "using an inbox mockup to suggest client results that have not been verified",
+        "replacing the buyer journey with a generic listing-card wall"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-real-estate-humahome-property-search/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-real-estate-humahome-property-search/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Real estate and property services. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "editorial residential",
+        "muted sage and terracotta",
+        "large contrast serif"
+      ],
+      "sourceFonts": [
+        "editorial contrast serif"
+      ],
+      "referenceTags": {
+        "business": [
+          "real-estate",
+          "buyer's agent",
+          "property search",
+          "home buying guidance",
+          "Barcelona property"
+        ],
+        "style": [
+          "editorial residential",
+          "muted sage and terracotta",
+          "large contrast serif"
+        ],
+        "composition": [
+          "oversized image-led buyer promise",
+          "numbered matching process",
+          "sample buyer selection",
+          "conversion color bands"
+        ],
+        "conversion": [
+          "find a home",
+          "guided buyer form",
+          "seller inquiry",
+          "consultation"
+        ],
+        "motion": [
+          "scroll linked matching sequence",
+          "asymmetric image offsets",
+          "static content fallback"
+        ],
+        "imagery": [
+          "warm home interiors",
+          "buyer lifestyle photography",
+          "property report interface preview"
+        ]
+      }
+    },
+    {
+      "id": "web-veterinary-modern-animal",
+      "name": "Digital-first veterinary membership with a care-location index",
+      "referenceName": "Digital-first veterinary membership with a care-location index",
+      "referenceFamilyId": "veterinary-digital-membership-care",
+      "source": "Modern Animal official website",
+      "sourceUrl": "https://www.modernanimal.com/",
+      "rights": "permission-cleared",
+      "industries": [
+        "veterinary clinic",
+        "animal hospital",
+        "pet wellness",
+        "urgent veterinary care",
+        "veterinary",
+        "urgent care",
+        "virtual veterinary care"
+      ],
+      "moods": [
+        "warm digital hospitality",
+        "serif editorial headings",
+        "soft-color utility design",
+        "approachable technology"
+      ],
+      "navigation": "slim wordmark bar with grouped service navigation and one booking action",
+      "heroGeometry": "split editorial opening with pet portrait and adjacent clinic locator",
+      "servicePresentation": "short expandable care expectations followed by a compact service index",
+      "sectionRhythm": "hero and clinic locator -> care expectation disclosures -> member stories -> location index -> service index -> membership plan -> care team and app -> newsletter footer",
+      "typographyCategory": "warm editorial serif",
+      "imageStrategy": "documentary owner-and-pet photography mixed with calm clinic interiors",
+      "motionOpportunities": [
+        "horizontal member-story rail and small disclosure transitions",
+        "restrained carousel",
+        "tap-safe disclosure",
+        "static content first",
+        "reduced-motion complete"
+      ],
+      "familyId": "archive-rail",
+      "dossierPath": "data/reference-library/dossiers/web-veterinary-modern-animal",
+      "mobileBehavior": "stack the opening copy, locator, and photograph, then make each editorial module a single readable chapter",
+      "prohibitedPatterns": [
+        "copying Modern Animal branding, logo, images, exact copy, reviews, prices, or business claims",
+        "duplicating its palette as a brand kit",
+        "reproducing the blank area beneath the source footer",
+        "using an app or membership claim when the client has not verified one",
+        "generic repeated card walls"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-veterinary-modern-animal/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-veterinary-modern-animal/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Veterinary practices and animal hospitals. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "warm digital hospitality",
+        "serif editorial headings",
+        "soft-color utility design",
+        "approachable technology"
+      ],
+      "sourceFonts": [
+        "warm editorial serif"
+      ],
+      "referenceTags": {
+        "business": [
+          "veterinary",
+          "animal hospital",
+          "pet wellness",
+          "urgent care",
+          "virtual veterinary care"
+        ],
+        "style": [
+          "warm digital hospitality",
+          "serif editorial headings",
+          "soft-color utility design",
+          "approachable technology"
+        ],
+        "composition": [
+          "locator-led opening",
+          "alternating editorial modules",
+          "expandable care list",
+          "long location index",
+          "integrated app chapter"
+        ],
+        "conversion": [
+          "find a clinic",
+          "book an appointment",
+          "virtual care entry",
+          "membership information"
+        ],
+        "motion": [
+          "restrained carousel",
+          "tap-safe disclosure",
+          "static content first",
+          "reduced-motion complete"
+        ],
+        "imagery": [
+          "owner-and-pet portrait",
+          "clinic interiors",
+          "editorial care imagery",
+          "reference evidence only"
+        ]
+      }
+    },
+    {
+      "id": "web-veterinary-veg-emergency",
+      "name": "High-urgency animal emergency service with signal-red wayfinding",
+      "referenceName": "High-urgency animal emergency service with signal-red wayfinding",
+      "referenceFamilyId": "veterinary-emergency-signal-wayfinding",
+      "source": "VEG ER for Pets official website",
+      "sourceUrl": "https://www.veg.com/",
+      "rights": "permission-cleared",
+      "industries": [
+        "veterinary emergency hospital",
+        "urgent veterinary care",
+        "animal hospital",
+        "pet emergency clinic",
+        "veterinary",
+        "veterinary emergency",
+        "urgent pet care",
+        "after-hours veterinary"
+      ],
+      "moods": [
+        "high-contrast urgent utility",
+        "heavy condensed display",
+        "signal-color typography",
+        "bright white ground"
+      ],
+      "navigation": "small wordmark, compressed service links, and a simple mobile menu",
+      "heroGeometry": "emergency poster paired with a clinic scene and immediate location lookup",
+      "servicePresentation": "problem and care-scope explanation followed by four concise decision principles",
+      "sectionRhythm": "emergency poster and finder -> scope image chapter -> care principles -> evidence metric -> approach statement -> review rail -> external mention strip -> education articles -> contact footer",
+      "typographyCategory": "heavy compact grotesk",
+      "imageStrategy": "documentary care image with short supporting pet portraits",
+      "motionOpportunities": [
+        "limited horizontal testimonial or article navigation",
+        "horizontal review rail",
+        "minimal motion",
+        "reduced-motion complete"
+      ],
+      "familyId": "typographic-poster",
+      "dossierPath": "data/reference-library/dossiers/web-veterinary-veg-emergency",
+      "mobileBehavior": "collapse to emergency headline, locator, image, then short explanatory chapters",
+      "prohibitedPatterns": [
+        "copying the source wordmark, exact red treatment, photographs, reviews, press logos, statistics, copy, or claims",
+        "using emergency or 24-hour availability unless client facts confirm it",
+        "fake medical authority or urgency language",
+        "using external ratings as invented proof",
+        "decorative counters that imply business results"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-veterinary-veg-emergency/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-veterinary-veg-emergency/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Veterinary practices and animal hospitals. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "high-contrast urgent utility",
+        "heavy condensed display",
+        "signal-color typography",
+        "bright white ground"
+      ],
+      "sourceFonts": [
+        "heavy compact grotesk"
+      ],
+      "referenceTags": {
+        "business": [
+          "veterinary emergency",
+          "urgent pet care",
+          "animal hospital",
+          "after-hours veterinary",
+          "veterinary"
+        ],
+        "style": [
+          "high-contrast urgent utility",
+          "heavy condensed display",
+          "signal-color typography",
+          "bright white ground"
+        ],
+        "composition": [
+          "emergency-first hero",
+          "location finder",
+          "oversized metric chapter",
+          "reason-to-trust columns",
+          "review and editorial rails"
+        ],
+        "conversion": [
+          "find nearest emergency hospital",
+          "call or walk in",
+          "urgent service guide"
+        ],
+        "motion": [
+          "horizontal review rail",
+          "minimal motion",
+          "reduced-motion complete"
+        ],
+        "imagery": [
+          "real emergency-care scenes",
+          "pet portraits",
+          "compact editorial article cards",
+          "reference evidence only"
+        ]
+      }
+    },
+    {
+      "id": "web-veterinary-schwarzman-amc",
+      "name": "Institutional animal hospital with public education and specialty pathways",
+      "referenceName": "Institutional animal hospital with public education and specialty pathways",
+      "referenceFamilyId": "veterinary-institutional-specialty-atlas",
+      "source": "Schwarzman Animal Medical Center official website",
+      "sourceUrl": "https://www.amcny.org/",
+      "rights": "permission-cleared",
+      "industries": [
+        "animal medical center",
+        "specialty veterinary hospital",
+        "veterinary emergency hospital",
+        "veterinary clinic",
+        "veterinary",
+        "animal hospital",
+        "specialty veterinary",
+        "emergency veterinary",
+        "nonprofit animal medical center"
+      ],
+      "moods": [
+        "institutional editorial",
+        "classic serif titles",
+        "clinical navy utility",
+        "public-benefit storytelling"
+      ],
+      "navigation": "institutional utility bar plus audience switcher",
+      "heroGeometry": "full-width clinical-team photograph with a brief overlaid statement",
+      "servicePresentation": "specialty and care pathways organized as an information atlas, not a sales card grid",
+      "sectionRhythm": "audience utility navigation -> clinical-team hero -> two institutional features -> public education band -> latest updates -> social image triptych -> newsletter -> institutional sitemap",
+      "typographyCategory": "classic editorial serif",
+      "imageStrategy": "documentary team and animal-care images paired with editorial feature cards",
+      "motionOpportunities": [
+        "small news and social image carousel controls",
+        "static-first image chapters",
+        "small editorial carousels",
+        "reduced-motion complete"
+      ],
+      "familyId": "editorial-monument",
+      "dossierPath": "data/reference-library/dossiers/web-veterinary-schwarzman-amc",
+      "mobileBehavior": "compress utility navigation, then sequence image, action, feature stories, education, and news vertically",
+      "prohibitedPatterns": [
+        "copying institution wordmarks, team or patient photos, staff identities, awards, accreditation, research claims, ratings, or copy",
+        "implying specialty credentials or hospital capacity without client proof",
+        "burying practical care access under donor and education content",
+        "recreating inaccessible dense desktop navigation on mobile",
+        "using source content as medical advice"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-veterinary-schwarzman-amc/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-veterinary-schwarzman-amc/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Veterinary practices and animal hospitals. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "institutional editorial",
+        "classic serif titles",
+        "clinical navy utility",
+        "public-benefit storytelling"
+      ],
+      "sourceFonts": [
+        "classic editorial serif"
+      ],
+      "referenceTags": {
+        "business": [
+          "animal hospital",
+          "specialty veterinary",
+          "emergency veterinary",
+          "nonprofit animal medical center",
+          "veterinary"
+        ],
+        "style": [
+          "institutional editorial",
+          "classic serif titles",
+          "clinical navy utility",
+          "public-benefit storytelling"
+        ],
+        "composition": [
+          "multi-tier utility navigation",
+          "full-width team hero",
+          "paired feature stories",
+          "public education field",
+          "news index",
+          "social image strip"
+        ],
+        "conversion": [
+          "emergency contact",
+          "appointment pathway",
+          "specialty discovery",
+          "visit preparation"
+        ],
+        "motion": [
+          "static-first image chapters",
+          "small editorial carousels",
+          "reduced-motion complete"
+        ],
+        "imagery": [
+          "clinical-team documentary photography",
+          "patient stories",
+          "education imagery",
+          "reference evidence only"
+        ]
+      }
+    },
+    {
+      "id": "web-veterinary-lap-of-love",
+      "name": "At-home hospice support with a service compass and guided resources",
+      "referenceName": "At-home hospice support with a service compass and guided resources",
+      "referenceFamilyId": "veterinary-hospice-support-compass",
+      "source": "Lap of Love Veterinary Hospice official website",
+      "sourceUrl": "https://www.lapoflove.com/",
+      "rights": "permission-cleared",
+      "industries": [
+        "veterinary hospice",
+        "in-home veterinary care",
+        "pet aftercare",
+        "pet loss support",
+        "veterinary",
+        "in-home euthanasia",
+        "pet end-of-life care"
+      ],
+      "moods": [
+        "compassionate editorial",
+        "soft lilac wayfinding",
+        "gentle serif hierarchy",
+        "supportive resource design"
+      ],
+      "navigation": "quiet utility bar with compact category links and discrete appointment controls",
+      "heroGeometry": "soft two-field opening with service title and locator opposite an in-home photograph",
+      "servicePresentation": "icon-led service compass at the opening followed by a plain vertical service menu",
+      "sectionRhythm": "care identity and location finder -> service compass -> veterinarian profile -> service pathway index -> family testimonials -> support resource mosaic -> second finder and support callout -> quiet footer",
+      "typographyCategory": "compassionate high-contrast serif",
+      "imageStrategy": "home-context portraits and veterinarian photographs",
+      "motionOpportunities": [
+        "portrait and testimonial carousels with visible next/previous controls",
+        "controlled profile and testimonial rails",
+        "quiet disclosure",
+        "reduced-motion complete"
+      ],
+      "familyId": "market-collage",
+      "dossierPath": "data/reference-library/dossiers/web-veterinary-lap-of-love",
+      "mobileBehavior": "place location and care-finder actions before stacked service, profile, testimonial, and resource chapters",
+      "prohibitedPatterns": [
+        "using source hospice or end-of-life copy as medical guidance",
+        "reusing brand symbols, photos, veterinarians, testimonials, phone number, or client stories",
+        "making clinical or emotional outcomes sound guaranteed",
+        "duplicating overlapping fixed chat controls",
+        "borrowing service coverage or availability without client confirmation"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-veterinary-lap-of-love/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-veterinary-lap-of-love/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Veterinary practices and animal hospitals. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "compassionate editorial",
+        "soft lilac wayfinding",
+        "gentle serif hierarchy",
+        "supportive resource design"
+      ],
+      "sourceFonts": [
+        "compassionate high-contrast serif"
+      ],
+      "referenceTags": {
+        "business": [
+          "veterinary hospice",
+          "in-home euthanasia",
+          "pet end-of-life care",
+          "pet loss support",
+          "veterinary"
+        ],
+        "style": [
+          "compassionate editorial",
+          "soft lilac wayfinding",
+          "gentle serif hierarchy",
+          "supportive resource design"
+        ],
+        "composition": [
+          "service compass tiles",
+          "veterinarian profile carousel",
+          "vertical care menu",
+          "testimonial field",
+          "asymmetric resource mosaic"
+        ],
+        "conversion": [
+          "find a veterinarian",
+          "quality-of-life resources",
+          "call for guidance",
+          "service-specific next steps"
+        ],
+        "motion": [
+          "controlled profile and testimonial rails",
+          "quiet disclosure",
+          "reduced-motion complete"
+        ],
+        "imagery": [
+          "in-home pet and family imagery",
+          "veterinarian portraits",
+          "supportive resource photography",
+          "reference evidence only"
+        ]
+      }
+    },
+    {
+      "id": "web-veterinary-perry-paws-mobile",
+      "name": "Independent mobile veterinarian with service rows and at-home visit emphasis",
+      "referenceName": "Independent mobile veterinarian with service rows and at-home visit emphasis",
+      "referenceFamilyId": "veterinary-mobile-house-call",
+      "source": "Perry Paws Mobile official website",
+      "sourceUrl": "https://www.perrypawsmobile.com/",
+      "rights": "permission-cleared",
+      "industries": [
+        "mobile veterinarian",
+        "house-call veterinary service",
+        "in-home pet care",
+        "independent veterinary practice",
+        "veterinary",
+        "house-call vet",
+        "in-home veterinary care",
+        "pet behavior support"
+      ],
+      "moods": [
+        "independent practice",
+        "warm neutral minimalism",
+        "soft rounded photography",
+        "humanist sans"
+      ],
+      "navigation": "compact wordmark, plain topic links, and one pill booking action",
+      "heroGeometry": "copy-first at-home service opening beside one large rounded documentary image",
+      "servicePresentation": "two-column ruled service index on desktop, full-width labeled service rows on mobile",
+      "sectionRhythm": "promise and visit action -> care reassurance -> ruled service index -> client-proof chapter -> paired pet imagery -> service-area and contact footer",
+      "typographyCategory": "humanist sans with moderate weight",
+      "imageStrategy": "one personal home-visit photo and a small pair of pet portraits",
+      "motionOpportunities": [
+        "quiet link feedback and responsive menu disclosure",
+        "static-first editorial layout",
+        "simple navigation disclosure",
+        "reduced-motion complete"
+      ],
+      "familyId": "archive-rail",
+      "dossierPath": "data/reference-library/dossiers/web-veterinary-perry-paws-mobile",
+      "mobileBehavior": "move headline, promise, and action first, then stack the hero image and thin service rows",
+      "prohibitedPatterns": [
+        "claiming the new client offers mobile or in-home visits without proof",
+        "using Perry Paws logo, photos, domain, testimonials, certifications, exact copy, hours, prices, or coverage",
+        "reproducing the source color scheme as a fixed brand identity",
+        "inventing reviews or clinical outcomes",
+        "turning each service into a decorative card"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-veterinary-perry-paws-mobile/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-veterinary-perry-paws-mobile/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Veterinary practices and animal hospitals. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "independent practice",
+        "warm neutral minimalism",
+        "soft rounded photography",
+        "humanist sans"
+      ],
+      "sourceFonts": [
+        "humanist sans with moderate weight"
+      ],
+      "referenceTags": {
+        "business": [
+          "mobile veterinarian",
+          "house-call vet",
+          "in-home veterinary care",
+          "pet behavior support",
+          "veterinary"
+        ],
+        "style": [
+          "independent practice",
+          "warm neutral minimalism",
+          "soft rounded photography",
+          "humanist sans"
+        ],
+        "composition": [
+          "promise-before-photo hero",
+          "separate reassurance band",
+          "service rows",
+          "testimonial field",
+          "paired pet portrait close"
+        ],
+        "conversion": [
+          "request an at-home visit",
+          "confirm service area",
+          "explore services",
+          "pricing information"
+        ],
+        "motion": [
+          "static-first editorial layout",
+          "simple navigation disclosure",
+          "reduced-motion complete"
+        ],
+        "imagery": [
+          "in-home pet visit",
+          "pet portraits",
+          "calm domestic photography",
+          "reference evidence only"
+        ]
+      }
+    },
+    {
+      "id": "web-veterinary-cat-clinic-edinburgh",
+      "name": "Feline-only clinic with three-action service gateway and compact care sequence",
+      "referenceName": "Feline-only clinic with three-action service gateway and compact care sequence",
+      "referenceFamilyId": "veterinary-feline-calm-clinic",
+      "source": "The Cat Clinic Edinburgh official website",
+      "sourceUrl": "https://www.catclinic.co.uk/",
+      "rights": "permission-cleared",
+      "industries": [
+        "feline veterinary clinic",
+        "cat-only veterinary practice",
+        "independent veterinary clinic",
+        "cat hospital",
+        "veterinary",
+        "feline-only clinic",
+        "cat health",
+        "independent practice"
+      ],
+      "moods": [
+        "quiet feline specialist",
+        "classic serif and utility sans",
+        "deep blue and pale aqua",
+        "calm clinical clarity"
+      ],
+      "navigation": "two shallow navigation tiers separating patient actions from section links",
+      "heroGeometry": "negative-space desktop statement field and close pet-image mobile poster",
+      "servicePresentation": "three primary visit actions followed by three short care principles",
+      "sectionRhythm": "dual-tier patient navigation -> feline-first hero -> three patient actions -> numbered care principles -> client story chapter -> editorial clinic explanation -> urgent information band -> resource feature and footer",
+      "typographyCategory": "quiet traditional serif",
+      "imageStrategy": "close feline subject image within a calm environment",
+      "motionOpportunities": [
+        "optional client-story carousel with explicit previous, next, and position controls",
+        "controlled testimonial carousel",
+        "standard navigation menu",
+        "reduced-motion complete"
+      ],
+      "familyId": "typographic-poster",
+      "dossierPath": "data/reference-library/dossiers/web-veterinary-cat-clinic-edinburgh",
+      "mobileBehavior": "use a photographic feline opening, then stack three large actions and the care rationale",
+      "prohibitedPatterns": [
+        "claiming feline-only status, specialist credentials, awards, hours, or emergency services without client verification",
+        "reusing source logo, precise blue palette, cat photos, reviews, copy, or local partner ads",
+        "using source testimonials as proof for another practice",
+        "empty oversized desktop hero fields caused by unavailable media",
+        "decorative numbered service cards unrelated to an ordered decision process"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-veterinary-cat-clinic-edinburgh/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-veterinary-cat-clinic-edinburgh/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Veterinary practices and animal hospitals. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "quiet feline specialist",
+        "classic serif and utility sans",
+        "deep blue and pale aqua",
+        "calm clinical clarity"
+      ],
+      "sourceFonts": [
+        "quiet traditional serif"
+      ],
+      "referenceTags": {
+        "business": [
+          "veterinary",
+          "feline-only clinic",
+          "cat health",
+          "independent practice"
+        ],
+        "style": [
+          "quiet feline specialist",
+          "classic serif and utility sans",
+          "deep blue and pale aqua",
+          "calm clinical clarity"
+        ],
+        "composition": [
+          "photo-led mobile hero",
+          "three-action gateway",
+          "numbered care principles",
+          "testimonial chapter",
+          "coral urgent strip"
+        ],
+        "conversion": [
+          "register a patient",
+          "book an appointment",
+          "out-of-hours information",
+          "service discovery"
+        ],
+        "motion": [
+          "controlled testimonial carousel",
+          "standard navigation menu",
+          "reduced-motion complete"
+        ],
+        "imagery": [
+          "feline patient photography",
+          "cat-focused clinic context",
+          "reference evidence only"
         ]
       }
     }

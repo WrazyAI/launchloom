@@ -1,11 +1,61 @@
 {
   "schemaVersion": 1,
-  "id": "local-seo-core-84",
+  "id": "local-seo-core-96",
   "title": "LaunchLoom Local SEO Reference Core",
-  "updatedAt": "2026-09-26",
-  "selectionContract": "Each niche has exactly six unique, production-eligible, business-matched dossiers. The selector chooses three independent routes with seeded exposure balancing and fails closed rather than filling from another niche.",
+  "updatedAt": "2026-09-29",
+  "selectionContract": "Each niche has exactly six unique, production-eligible, business-matched dossiers. The selector chooses three independent routes with seeded exposure balancing. Explicit unsupportedBusinessKinds and uncovered kinds fail closed rather than filling from another niche.",
   "rightsContract": "Every listed dossier has a local rights/provenance record. Direct-site permission status reflects requester attestation and is not represented as independently verified source-owner permission.",
   "sourceDesignRule": "Transfer composition, information hierarchy, service mechanics, responsive behavior, and motion only. Source identities, copy, imagery, facts, claims, prices, credentials, and trade dress do not transfer to client sites.",
+  "unsupportedBusinessKinds": [
+    {
+      "id": "non-clinical-pet-services",
+      "label": "Non-clinical pet services",
+      "businessKinds": ["pet-care", "pet-services", "pet-grooming", "dog-grooming", "cat-grooming", "pet-boarding", "dog-boarding", "cat-boarding", "pet-sitting", "dog-sitting", "cat-sitting", "pet-walking", "dog-walking", "pet-daycare", "dog-daycare", "pet-training", "dog-training", "pet-supplies", "pet-store"],
+      "reason": "The veterinary core is limited to clinics and animal hospitals. It is not a substitute for grooming, boarding, sitting, walking, training, or pet retail references."
+    },
+    {
+      "id": "automotive-sales-and-ambiguous",
+      "label": "Automotive sales and unspecified automotive businesses",
+      "businessKinds": ["auto", "automotive", "auto-services", "auto-dealership", "car-dealership", "used-car-dealer", "vehicle-sales"],
+      "reason": "Select auto-repair for repair and diagnostics. The library has no vehicle-sales/dealership pool, and generic auto/automotive intake does not distinguish those journeys."
+    },
+    {
+      "id": "event-and-wedding-venues",
+      "label": "Event and wedding venues",
+      "businessKinds": ["events", "event-venue", "wedding", "wedding-venue", "wedding-planner", "event-services"],
+      "reason": "The library has no six-reference production pool for event venues or wedding services."
+    },
+    {
+      "id": "jewelry-and-independent-retail",
+      "label": "Jewelry and independent retail",
+      "businessKinds": ["jewelry", "jewellery", "jeweler", "jeweller", "fine-jewelry", "fine-jewellery", "luxury-retail", "independent-retail", "boutique-retail"],
+      "reason": "Archived jewelry and retail captures are not a verified six-business production pool."
+    },
+    {
+      "id": "general-design-studios",
+      "label": "General graphic and digital design studios",
+      "businessKinds": ["design-studio", "graphic-design", "branding-agency", "design-agency", "digital-design-studio"],
+      "reason": "Architecture and interior-design references do not stand in for branding, graphic design, or digital agencies."
+    },
+    {
+      "id": "medical-clinics",
+      "label": "Medical clinics and primary care",
+      "businessKinds": ["medical-clinic", "primary-care", "urgent-care", "medical-practice"],
+      "reason": "No six-reference production pool is curated for general medical or primary-care clinics."
+    },
+    {
+      "id": "industrial-contractors",
+      "label": "Industrial contractors and heavy civil services",
+      "businessKinds": ["industrial", "industrial-contractor", "industrial-services", "heavy-civil-engineering"],
+      "reason": "Residential local-trade references do not represent industrial procurement or heavy civil engineering."
+    },
+    {
+      "id": "bicycle-workshops-and-cycle-retail",
+      "label": "Bicycle workshops and cycle retail",
+      "businessKinds": ["bicycle-workshop", "bike-workshop", "bicycle-repair", "bike-repair", "cycle-repair", "cycle-workshop", "bicycle-repair-shop", "bike-repair-shop", "bicycle-shop", "bike-shop", "cycle-shop"],
+      "reason": "The archive contains only a one-off direct bicycle-workshop study, not six verified, permission-cleared businesses. It cannot support a production niche, and automotive repair references are not a substitute."
+    }
+  ],
   "niches": [
     {
       "id": "home-services-trades",
@@ -187,6 +237,32 @@
         "web-painting-mfl",
         "web-painting-novak",
         "web-painting-southern"
+      ]
+    },
+    {
+      "id": "real-estate-and-property",
+      "label": "Real estate and property services",
+      "businessKind": "real-estate",
+      "referenceIds": [
+        "web-real-estate-serhant-media-brokerage",
+        "web-real-estate-stoebe-boutique-listings",
+        "web-real-estate-luv-estate-investment",
+        "web-real-estate-greystar-renter-discovery",
+        "web-real-estate-bosa-property-development",
+        "web-real-estate-humahome-property-search"
+      ]
+    },
+    {
+      "id": "veterinary-and-pet-care",
+      "label": "Veterinary practices and animal hospitals",
+      "businessKind": "veterinary",
+      "referenceIds": [
+        "web-veterinary-modern-animal",
+        "web-veterinary-veg-emergency",
+        "web-veterinary-schwarzman-amc",
+        "web-veterinary-lap-of-love",
+        "web-veterinary-perry-paws-mobile",
+        "web-veterinary-cat-clinic-edinburgh"
       ]
     }
   ]

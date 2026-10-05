@@ -36,7 +36,9 @@
     "generate:client-site": "node scripts/verify-client-pipeline-fixtures.mjs",
     "test:watch": "vitest",
     "format": "prettier --write .",
-    "preflight:reasoning": "node scripts/run-reasoning-preflight.mjs"
+    "preflight:reasoning": "node scripts/run-reasoning-preflight.mjs",
+    "quality:contrast": "node scripts/verify-contrast.mjs",
+    "verify:site-route-fixtures": "node scripts/verify-site-route-fixtures.mjs"
   },
   "dependencies": {
     "@astrojs/react": "latest",
@@ -62,6 +64,7 @@
     "@types/react-dom": "latest",
     "msw": "^2.15.0",
     "playwright": "^1.63.0",
+    "postcss": "^8.5.26",
     "prettier": "latest",
     "tailwindcss": "latest",
     "typescript": "latest",

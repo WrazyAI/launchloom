@@ -1,3 +1,4 @@
+import fallback from "../fixtures/seo-research/fallback-complete.json";
 import { describe, expect, it } from "vitest";
 import {
   isAffirmativeConfirmation,
@@ -37,25 +38,143 @@ describe("SEO publication readiness", () => {
         keywordDifficulty: true,
         serviceSerps: 1,
         serviceSerpsRequired: 1,
-        serviceMetrics: [{ service: "Consultation", complete: true, primaryKeyword: "consultation Testville" }],
+        serviceMetrics: [
+          {
+            service: "Consultation",
+            complete: true,
+            primaryKeyword: "consultation Testville",
+          },
+        ],
       },
-      competitors: [{ domain: "one.test" }, { domain: "two.test" }, { domain: "three.test" }],
-      cost: { usd: 0.1, limitUsd: 0.25, overBudget: false, complete: true, unreportedTasks: 0 },
-      pageMap: ["home", "services-hub", "service", "about", "contact"].map((pageType) => ({
-        pageType,
-        service: pageType === "service" ? "Consultation" : undefined,
-        primaryKeyword: pageType === "service" ? {
-          keyword: "consultation Testville", volume: 90, kd: 41, cpc: 4.1, competition: 0.7,
-          intent: "commercial", provenance: "dataforseo",
-          metricSources: { volume: "dataforseo_google_ads_location", kd: "dataforseo_labs_bulk_keyword_difficulty", cpc: "dataforseo_google_ads_location", competition: "dataforseo_google_ads_location", intent: "dataforseo_labs_search_intent" },
-        } : undefined,
-      })),
+      competitors: [
+        { domain: "one.test" },
+        { domain: "two.test" },
+        { domain: "three.test" },
+      ],
+      cost: {
+        usd: 0.1,
+        limitUsd: 0.25,
+        overBudget: false,
+        complete: true,
+        unreportedTasks: 0,
+      },
+      pageMap: ["home", "services-hub", "service", "about", "contact"].map(
+        (pageType) => ({
+          pageType,
+          service: pageType === "service" ? "Consultation" : undefined,
+          primaryKeyword:
+            pageType === "service"
+              ? {
+                  keyword: "consultation Testville",
+                  volume: 90,
+                  kd: 41,
+                  cpc: 4.1,
+                  competition: 0.7,
+                  intent: "commercial",
+                  provenance: "dataforseo",
+                  metricSources: {
+                    volume: "dataforseo_google_ads_location",
+                    kd: "dataforseo_labs_bulk_keyword_difficulty",
+                    cpc: "dataforseo_google_ads_location",
+                    competition: "dataforseo_google_ads_location",
+                    intent: "dataforseo_labs_search_intent",
+                  },
+                }
+              : undefined,
+        }),
+      ),
     };
-    const config = { services: [{ name: "Consultation" }], seoResearch: v2Research };
-    expect(seoResearchReadiness(config)).toEqual({ allowed: true, mode: "researched" });
-    expect(seoResearchReadiness({ ...config, seoResearch: { ...v2Research, completeness: { ...v2Research.completeness, serviceMetrics: [] } } }).allowed).toBe(false);
-    expect(seoResearchReadiness({ ...config, seoResearch: { ...v2Research, cost: { ...v2Research.cost, overBudget: true } } }).allowed).toBe(false);
-    expect(seoResearchReadiness({ ...config, seoResearch: { ...v2Research, cost: { ...v2Research.cost, complete: false, unreportedTasks: 1 } } }).allowed).toBe(false);
+    const config = {
+      services: [{ name: "Consultation" }],
+      seoResearch: v2Research,
+    };
+    expect(seoResearchReadiness(config)).toEqual({
+      allowed: true,
+      mode: "researched",
+    });
+    expect(
+      seoResearchReadiness({
+        ...config,
+        seoResearch: {
+          ...v2Research,
+          completeness: { ...v2Research.completeness, serviceMetrics: [] },
+        },
+      }).allowed,
+    ).toBe(false);
+    expect(
+      seoResearchReadiness({
+        ...config,
+        seoResearch: {
+          ...v2Research,
+          cost: { ...v2Research.cost, overBudget: true },
+        },
+      }).allowed,
+    ).toBe(false);
+    expect(
+      seoResearchReadiness({
+        ...config,
+        seoResearch: {
+          ...v2Research,
+          cost: { ...v2Research.cost, complete: false, unreportedTasks: 1 },
+        },
+      }).allowed,
+    ).toBe(false);
+  });
+
+  it("allows completed cited fallback research with its own mode", () => {
+    expect(seoResearchReadiness({ seoResearch: fallback })).toEqual({
+      allowed: true,
+      mode: "context-only",
+    });
+  });
+
+  it.each(["partial", "failed", "empty", "pending", "unavailable"])(
+    "blocks %s fallback research",
+    (status) => {
+      expect(
+        seoResearchReadiness({
+          seoResearch: {
+            ...fallback,
+            publishReady: true,
+            fallbackSearch: { ...fallback.fallbackSearch, status },
+          },
+        }).allowed,
+      ).toBe(false);
+    },
+  );
+
+  it("does not trust a complete label without cited evidence and bounded reported cost", () => {
+    for (const change of [
+      { externalSearchEvidence: [] },
+      {
+        externalSearchEvidence: [
+          {
+            ...fallback.externalSearchEvidence[0],
+            sourceUrl: "javascript:alert(1)",
+          },
+        ],
+      },
+      {
+        externalSearchEvidence: [
+          { ...fallback.externalSearchEvidence[0], provenance: "reasoned_gap" },
+        ],
+      },
+      ...[
+        { costComplete: false },
+        { costUsd: 1 },
+        { costUsd: null },
+        { budgetExhausted: true },
+        { failedQueries: 1 },
+        { queriesAttempted: 0 },
+      ].map((change) => ({
+        fallbackSearch: { ...fallback.fallbackSearch, ...change },
+      })),
+    ])
+      expect(
+        seoResearchReadiness({
+          seoResearch: { ...fallback, publishReady: true, ...change },
+        }).allowed,
+      ).toBe(false);
   });
 
   it("accepts only explicit confirmation values", () => {
@@ -64,5 +183,177 @@ describe("SEO publication readiness", () => {
     expect(isAffirmativeConfirmation("on")).toBe(true);
     expect(isAffirmativeConfirmation("false")).toBe(false);
     expect(isAffirmativeConfirmation(false)).toBe(false);
+  });
+});
+
+it("requires completed research for every confirmed city even when the primary fallback is ready", () => {
+  const cityResearch = (city: string) => ({
+    ...fallback,
+    marketSnapshot: { primaryCity: city },
+  });
+  const areas = ["Cookeville, TN", "Algood, TN"];
+  const research = {
+    ...fallback,
+    publishReady: true,
+    coverageAreas: areas,
+    coverageResearch: {
+      version: 1,
+      areas,
+      complete: true,
+      approvalPolicy: "all-confirmed-cities",
+      cities: areas.map((city) => ({
+        city,
+        status: "complete",
+        research: cityResearch(city),
+      })),
+    },
+  };
+  expect(seoResearchReadiness({ seoResearch: research }).allowed).toBe(true);
+  for (const coverageResearch of [
+    { ...research.coverageResearch, complete: false },
+    { ...research.coverageResearch, cities: [null, null] },
+    {
+      ...research.coverageResearch,
+      cities: research.coverageResearch.cities.slice(0, 1),
+    },
+    {
+      ...research.coverageResearch,
+      cities: [
+        research.coverageResearch.cities[0],
+        { city: areas[1], status: "pending", research: null },
+      ],
+    },
+    {
+      ...research.coverageResearch,
+      cities: [
+        research.coverageResearch.cities[0],
+        {
+          city: areas[1],
+          status: "complete",
+          research: {
+            ...cityResearch(areas[1]),
+            fallbackSearch: { ...fallback.fallbackSearch, status: "failed" },
+          },
+        },
+      ],
+    },
+  ])
+    expect(
+      seoResearchReadiness({ seoResearch: { ...research, coverageResearch } })
+        .allowed,
+    ).toBe(false);
+});
+
+it("blocks a confirmed multi-city dossier whose per-city evidence was stripped", () => {
+  expect(
+    seoResearchReadiness({
+      seoResearch: {
+        ...fallback,
+        publishReady: true,
+        coverageAreas: ["Cookeville, TN", "Algood, TN"],
+        coverageConfirmation: { status: "confirmed", selectedCount: 1 },
+      },
+    }).allowed,
+  ).toBe(false);
+});
+
+it("preserves primary-city approval while reporting budget-pending secondary city research", () => {
+  const areas = ["Cookeville, TN", "Algood, TN"];
+  const research = {
+    ...fallback,
+    publishReady: true,
+    coverageAreas: areas,
+    coverageResearch: {
+      version: 1,
+      areas,
+      complete: false,
+      approvalPolicy: "primary-city",
+      cities: [
+        {
+          city: areas[0],
+          status: "complete",
+          research: { ...fallback, marketSnapshot: { primaryCity: areas[0] } },
+        },
+        { city: areas[1], status: "pending", research: null },
+      ],
+    },
+  };
+  expect(seoResearchReadiness({ seoResearch: research }).allowed).toBe(true);
+  expect(
+    seoResearchReadiness({
+      seoResearch: {
+        ...research,
+        coverageResearch: {
+          ...research.coverageResearch,
+          approvalPolicy: "all-confirmed-cities",
+        },
+      },
+    }).allowed,
+  ).toBe(false);
+});
+
+it("validates site route approval once without applying it to individual city evidence documents", () => {
+  const areas = ["Cookeville, TN", "Algood, TN"];
+  const config = {
+    business: {
+      description: "Client supplied business description.",
+      serviceAreas: areas,
+    },
+    services: [{ name: "Drain cleaning", slug: "drain-cleaning" }],
+    locations: [{ name: areas[0], slug: "cookeville" }],
+    routePolicy: {
+      version: 1,
+      decisions: [
+        {
+          pageType: "location",
+          target: areas[0],
+          status: "approved",
+          evidence: ["operator review"],
+          admission: {
+            services: ["Drain cleaning"],
+            visitorNeed: "Prepare property access.",
+            distinctValue: "Local client access instructions.",
+            localFacts: [
+              {
+                value: "Confirm side gate access.",
+                source: "client notes",
+                provenance: "client_supplied_local_information",
+              },
+            ],
+          },
+        },
+      ],
+    },
+    seoResearch: {
+      ...fallback,
+      publishReady: true,
+      coverageAreas: areas,
+      coverageResearch: {
+        version: 1,
+        areas,
+        complete: true,
+        approvalPolicy: "all-confirmed-cities",
+        cities: areas.map((city) => ({
+          city,
+          status: "complete",
+          research: { ...fallback, marketSnapshot: { primaryCity: city } },
+        })),
+      },
+    },
+  };
+  expect(seoResearchReadiness(config).allowed).toBe(true);
+  const missingContent = {
+    ...config,
+    routePolicy: {
+      version: 1,
+      decisions: [
+        ...config.routePolicy.decisions,
+        { pageType: "privacy", status: "approved" },
+      ],
+    },
+  };
+  expect(seoResearchReadiness(missingContent)).toMatchObject({
+    allowed: false,
+    code: "route_approval_required",
   });
 });

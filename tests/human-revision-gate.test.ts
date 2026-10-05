@@ -20,13 +20,15 @@ afterEach(async () => {
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
   await Promise.all(
-    roots.splice(0).map((root) =>
-      fs.rm(root, { recursive: true, force: true }),
-    ),
+    roots
+      .splice(0)
+      .map((root) => fs.rm(root, { recursive: true, force: true })),
   );
 });
 
-async function fixture() {
+async function fixture({
+  feedback = "Make the hero more cinematic and asymmetrical.",
+}: { feedback?: string } = {}) {
   const root = await fs.mkdtemp(
     path.join(os.tmpdir(), "launchloom-human-revision-gate-"),
   );
@@ -82,6 +84,7 @@ async function fixture() {
           {
             feedbackIndex: 0,
             status: "creative",
+            feedback,
             deferred: ["layout"],
           },
         ],
@@ -93,7 +96,9 @@ async function fixture() {
 
 describe("human revision rendered gate", () => {
   it("sends the exact triggering feedback and all rendered viewports to the judge", async () => {
-    const { screenshotsDir, configPath } = await fixture();
+    const feedback =
+      "Make the hero more cinematic and asymmetrical without changing the copy.";
+    const { screenshotsDir, configPath } = await fixture({ feedback });
     const fetchImpl = vi.fn(async (_url: string, _options: RequestInit) =>
       Response.json({
         choices: [
@@ -103,7 +108,15 @@ describe("human revision rendered gate", () => {
               content: JSON.stringify({
                 summary: "The requested asymmetry is visible.",
                 verdict: "pass",
-                findings: [],
+                feedbackResults: [
+                  {
+                    feedbackIndex: 0,
+                    verdict: "pass",
+                    evidence:
+                      "The desktop and mobile screenshots show the requested asymmetrical hero composition.",
+                    findings: [],
+                  },
+                ],
               }),
             },
           },
@@ -116,8 +129,7 @@ describe("human revision rendered gate", () => {
     const report = await runHumanRevisionGate({
       configPath,
       screenshotsDir,
-      feedback:
-        "Make the hero more cinematic and asymmetrical without changing the copy.",
+      feedback,
       reportPath: path.join(screenshotsDir, "human-gate.json"),
       fetchImpl: fetchImpl as any,
     });
@@ -131,6 +143,15 @@ describe("human revision rendered gate", () => {
       "Make the hero more cinematic and asymmetrical without changing the copy.",
     );
     expect(prompt).toContain('"status":"creative"');
+    expect(prompt).toContain('"feedbackIndex":0');
+    expect(report.audit.feedbackResults).toEqual([
+      expect.objectContaining({
+        feedbackIndex: 0,
+        verdict: "pass",
+        candidateId: "candidate-a",
+      }),
+    ]);
+    expect(report.audit.findings).toEqual([]);
     expect(user.filter((part: any) => part.type === "image_url")).toHaveLength(
       3,
     );
@@ -160,7 +181,14 @@ describe("human revision rendered gate", () => {
               content: JSON.stringify({
                 summary: "The request is satisfied.",
                 verdict: "pass",
-                findings: [],
+                feedbackResults: [
+                  {
+                    feedbackIndex: 0,
+                    verdict: "pass",
+                    evidence: "The requested visual change is present.",
+                    findings: [],
+                  },
+                ],
               }),
             },
           },
@@ -171,7 +199,7 @@ describe("human revision rendered gate", () => {
     await runHumanRevisionGate({
       configPath,
       screenshotsDir,
-      feedback: "Keep the visual change as requested.",
+      feedback: "Make the hero more cinematic and asymmetrical.",
       fetchImpl: fetchImpl as any,
     });
 
@@ -199,7 +227,9 @@ describe("human revision rendered gate", () => {
   });
 
   it("rejects a pass verdict that still contains a major request mismatch", async () => {
-    const { screenshotsDir, configPath } = await fixture();
+    const { screenshotsDir, configPath } = await fixture({
+      feedback: "Move the CTA below the gallery.",
+    });
     const fetchImpl = vi.fn(async () =>
       Response.json({
         choices: [
@@ -209,13 +239,20 @@ describe("human revision rendered gate", () => {
               content: JSON.stringify({
                 summary: "Not actually complete.",
                 verdict: "pass",
-                findings: [
+                feedbackResults: [
                   {
-                    category: "requirement-mismatch",
-                    severity: "major",
-                    viewport: "desktop",
-                    evidence: "The CTA is still above the gallery.",
-                    recommendation: "Move it below the gallery.",
+                    feedbackIndex: 0,
+                    verdict: "pass",
+                    evidence: "The CTA position was reviewed.",
+                    findings: [
+                      {
+                        category: "requirement-mismatch",
+                        severity: "major",
+                        viewport: "desktop",
+                        evidence: "The CTA is still above the gallery.",
+                        recommendation: "Move it below the gallery.",
+                      },
+                    ],
                   },
                 ],
               }),
@@ -232,6 +269,202 @@ describe("human revision rendered gate", () => {
         feedback: "Move the CTA below the gallery.",
         fetchImpl: fetchImpl as any,
       }),
-    ).rejects.toThrow(/cannot pass with critical or major findings/iu);
+    ).rejects.toThrow(
+      /cannot pass feedback index 0 with critical or major findings/iu,
+    );
+  });
+
+  it("requires distinct evidence for every creative feedback index in a batch", async () => {
+    const { screenshotsDir, configPath } = await fixture();
+    const config = JSON.parse(await fs.readFile(configPath, "utf8"));
+    config.revisionReport.results = [
+      {
+        feedbackIndex: 2,
+        feedback: "Make the hero more cinematic and asymmetrical.",
+        status: "creative",
+        deferred: ["layout"],
+      },
+      {
+        feedbackIndex: 5,
+        feedback: "Move the gallery before the service list.",
+        status: "creative",
+        deferred: ["layout"],
+      },
+    ];
+    config.revisionReport.creativeRepairScope = {
+      feedbackItems: [
+        {
+          feedbackIndex: 2,
+          feedback: "Make the hero more cinematic and asymmetrical.",
+        },
+        {
+          feedbackIndex: 5,
+          feedback: "Move the gallery before the service list.",
+        },
+      ],
+    };
+    await fs.writeFile(configPath, JSON.stringify(config));
+    const fetchImpl = vi.fn(async (_url: string, _options: RequestInit) =>
+      Response.json({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                summary: "Both requested changes are visible.",
+                verdict: "pass",
+                feedbackResults: [
+                  {
+                    feedbackIndex: 2,
+                    verdict: "pass",
+                    evidence:
+                      "Desktop and mobile screenshots show the hero with the requested cinematic asymmetric composition.",
+                    findings: [],
+                  },
+                  {
+                    feedbackIndex: 5,
+                    verdict: "pass",
+                    evidence:
+                      "The screenshots show the gallery section before the service list on desktop and mobile.",
+                    findings: [],
+                  },
+                ],
+              }),
+            },
+          },
+        ],
+        usage: { total_tokens: 88 },
+      }),
+    );
+
+    const report = await runHumanRevisionGate({
+      configPath,
+      screenshotsDir,
+      feedback:
+        "Make the hero more cinematic and asymmetrical.\n\nMove the gallery before the service list.",
+      fetchImpl: fetchImpl as any,
+    });
+
+    const body = JSON.parse(fetchImpl.mock.calls[0][1].body as string);
+    const prompt = body.messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(prompt).toContain('"feedbackIndex":2');
+    expect(prompt).toContain('"feedbackIndex":5');
+    expect(
+      report.audit.feedbackResults.map((item: any) => item.feedbackIndex),
+    ).toEqual([2, 5]);
+    expect(
+      report.audit.feedbackResults.every(
+        (item: any) => item.evidence.length > 0,
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects an aggregate pass that omits per-item verification", async () => {
+    const { screenshotsDir, configPath } = await fixture();
+    const fetchImpl = vi.fn(async () =>
+      Response.json({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                summary: "Everything looks good.",
+                verdict: "pass",
+                findings: [],
+              }),
+            },
+          },
+        ],
+      }),
+    );
+
+    await expect(
+      runHumanRevisionGate({
+        configPath,
+        screenshotsDir,
+        feedback: "Make the hero more cinematic and asymmetrical.",
+        fetchImpl: fetchImpl as any,
+      }),
+    ).rejects.toThrow(/feedbackResults|feedback index/iu);
+  });
+
+  it("keeps a failed item attached to its own feedback index", async () => {
+    const { screenshotsDir, configPath } = await fixture();
+    const config = JSON.parse(await fs.readFile(configPath, "utf8"));
+    config.revisionReport.results = [
+      {
+        feedbackIndex: 1,
+        feedback: "Make the hero more cinematic.",
+        status: "creative",
+      },
+      {
+        feedbackIndex: 4,
+        feedback: "Move the gallery before the services.",
+        status: "creative",
+      },
+    ];
+    await fs.writeFile(configPath, JSON.stringify(config));
+    const fetchImpl = vi.fn(async () =>
+      Response.json({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                summary: "One requested change remains incomplete.",
+                verdict: "revise",
+                feedbackResults: [
+                  {
+                    feedbackIndex: 1,
+                    verdict: "pass",
+                    evidence: "The hero composition is visibly more cinematic.",
+                    findings: [],
+                  },
+                  {
+                    feedbackIndex: 4,
+                    verdict: "revise",
+                    evidence:
+                      "The gallery still appears after the services section.",
+                    findings: [
+                      {
+                        category: "requirement-mismatch",
+                        severity: "major",
+                        viewport: "desktop",
+                        evidence:
+                          "The desktop screenshot shows services before the gallery.",
+                        recommendation:
+                          "Place the gallery before the services section.",
+                      },
+                    ],
+                  },
+                ],
+              }),
+            },
+          },
+        ],
+      }),
+    );
+
+    const report = await runHumanRevisionGate({
+      configPath,
+      screenshotsDir,
+      feedback:
+        "Make the hero more cinematic.\n\nMove the gallery before the services.",
+      fetchImpl: fetchImpl as any,
+    });
+
+    expect(report.audit.verdict).toBe("revise");
+    expect(
+      report.audit.feedbackResults.map((item: any) => item.feedbackIndex),
+    ).toEqual([1, 4]);
+    expect(report.audit.findings).toEqual([
+      expect.objectContaining({
+        feedbackIndex: 4,
+        evidence: "The desktop screenshot shows services before the gallery.",
+      }),
+    ]);
   });
 });

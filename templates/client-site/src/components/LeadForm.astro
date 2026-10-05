@@ -112,6 +112,16 @@ const unconfiguredMessage = site.business.phone
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "We could not send your request.");
         form.reset();
+        // Successful delivery clears submitted contact details even if browser
+        // autofill or a prefilled value changed an input's reset default.
+        for (const name of ["name", "phone", "email", "message"]) {
+          const field = form.elements.namedItem(name);
+          if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+            field.value = "";
+            field.defaultValue = "";
+            field.removeAttribute("value");
+          }
+        }
         started = false;
         if (guided) showStep(0, false);
         status.textContent = "Thank you. We will be in touch shortly.";

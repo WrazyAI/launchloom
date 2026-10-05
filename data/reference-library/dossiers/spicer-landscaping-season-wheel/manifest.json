@@ -14,7 +14,9 @@
       "rights/ASSET-PROVENANCE.md"
     ],
     "provenanceEvidencePaths": [
-      "rights/SOURCE-README.md"
+      "rights/SOURCE-README.md",
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {
@@ -84,7 +86,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "2bffc16780d30457a89638a23f05ab4c18f952a7217754cb64ef44b78ff9ff4a"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -92,7 +95,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "a83deb51ebc49367e53bc925876ceaf0eddce1775380f39cce41e2c0824631cd"
     }
   },
   "referenceDna": {
@@ -210,7 +214,17 @@
       "mobile capture has no horizontal page overflow and the plan comparison remains legible",
       "the original attribution appears in both screenshot footers",
       "the AI-generated hero art is never claimed to depict a real customer property"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "modular-image-field",
+      "mobileHero": "modular-image-field",
+      "mediaRelation": "coordinated-image-windows",
+      "mobileMediaRelation": "coordinated-image-windows",
+      "basis": "curated-screenshots",
+      "confidence": "medium",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": true
+    }
   },
   "review": {
     "status": "licensed-reference-pilot",

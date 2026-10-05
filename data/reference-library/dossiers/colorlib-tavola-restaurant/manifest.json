@@ -14,7 +14,9 @@
       "rights/CREDITS.txt"
     ],
     "provenanceEvidencePaths": [
-      "rights/PROVENANCE.md"
+      "rights/PROVENANCE.md",
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {
@@ -94,7 +96,8 @@
       "viewport": {
         "width": 1536,
         "height": 864
-      }
+      },
+      "sha256": "7965f8c75bb44db0df6dd29782b2a475e9f52fc5412e2e3f42c50445f542be09"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -102,7 +105,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "a0c81a00f17fcd3e44ae7f1c026f815ebdba2442aab2cc067b6662ae19645474"
     }
   },
   "referenceDna": {
@@ -208,7 +212,17 @@
       "all prices, hours, dietary claims, address, and reviews bind only to verified content tokens",
       "desktop and mobile preserve the menu-board hierarchy without horizontal overflow",
       "every visible image is client-provided or a subject-matched asset with recorded rights"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "curated-open-license-pilot",

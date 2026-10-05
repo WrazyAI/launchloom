@@ -51,10 +51,82 @@ before anything is published.
 
 ## Service suggestions and coverage lookup
 
+Generation cost and status tracking for the admin dashboard is documented in
+`docs/generation-tracking.md`. It is optional at deploy time: the
+`GENERATION_TRACKING_SECRET` repository secret enables it. The dashboard reads
+through the existing Access-covered `/api/admin/onboarding-invites*` prefix, so
+no Access application change is required; widening Access to `/api/admin/*`
+only enables the direct generation routes. Invite management keeps working
+without either.
+
 The Worker uses the existing `GOOGLE_PLACES_API_KEY` for Places category and
 location enrichment. The workflow also calls Google Geocoding to resolve
 nearby service communities. Enable Geocoding API on that key. A lookup failure
 retains the confirmed primary city and records a warning.
+
+## Confirmed service coverage
+
+The step 2 form resolves the client's main service city, enumerates nearby
+municipalities inside the selected travel radius and asks the client to confirm
+the places they truly serve. `POST /api/coverage-areas` (same onboarding origin
+and private-invite authorization as `/api/places`) performs the lookup and never
+consumes the invitation, creates an intake issue, dispatches generation or sends
+email.
+
+- Provider: Google Places API (New) Nearby Search with
+  `includedTypes: ["locality"]` and `rankPreference: DISTANCE` (canonical city
+  or town political entities, at most 20 results per call, no pagination token),
+  plus Google Geocoding API for the unambiguous primary city, state and country.
+  Both APIs must be enabled on `GOOGLE_PLACES_API_KEY`.
+- Distance rule: straight-line statute miles from the resolved primary-city
+  center to each municipality's representative coordinate. Driving distance,
+  counties, ZIP codes, businesses and state names are never substituted.
+- Radii: the existing 10/20/30/50/50+ options are preserved. 10/20/30 miles use
+  one exact-radius search. 50 and the bounded 50+ interpretation use the primary
+  circle plus eight overlapping 50 km satellite circles that provably cover the
+  full 50-mile disc; "more than 50 miles" is never presented as unlimited.
+- Honesty: a call that returns the provider maximum of 20 results sets
+  `truncated`, a failed satellite circle sets `partial`, and both are shown in
+  the form and recorded in the intake. Lookup failures are visible with retry
+  and an explicitly confirmed primary-city-only fallback.
+- Cost control: 600 ms debounce, in-memory and session caches keyed by city and
+  radius, stale-response discard via `AbortController`, 12-second provider
+  timeouts and a best-effort 40-lookups-per-10-minutes limit per invitation.
+
+The lookup response contains `primary`, `radius`, `candidates`, `truncated`,
+`partial`, `warnings` and a signed `reference`. The reference is an HMAC token
+over the resolved primary city, radius and candidate ids, bound to the
+invitation id and signed with `ONBOARDING_INVITE_SIGNING_SECRET`. The client
+returns it with the ids it confirmed; the Worker verifies the signature and
+rebuilds the confirmed coverage from the reference. Client-supplied labels,
+coordinates and verification flags are never trusted.
+
+### Intake coverage contract (v2)
+
+New v2 submissions include three hidden fields:
+
+- `primaryCity`: the resolved label (for example `Cookeville, TN`).
+- `coverageAreas`: the confirmed labels, primary city first, in provider
+  distance order.
+- `coverageSelection`: JSON with `status: "confirmed"`, the signed `reference`
+  and the selected `selectedIds`; or `status: "primary_city_only"` with a
+  `reason` for the explicitly confirmed fallback.
+
+The Worker replaces the submitted `coverageAreas` with server-derived labels
+and persists a `coverageConfirmation` record in the intake issue containing the
+status, source, primary city, radius, candidate/selected counts, selected ids,
+truncation/partial flags, a short reference hash and the reference issue time.
+The raw signed reference is never written to the issue. Stale or mismatched
+selections are rejected instead of silently downgraded.
+
+Backward compatibility: an older v2 intake with no `coverageSelection` remains
+accepted. Its `coverageAreas` defaults to the primary city only and
+`coverageConfirmation.status` is `legacy_unconfirmed` with source `unavailable`.
+Integrators must not treat `legacy_unconfirmed` or `primary_city_only` coverage
+as client-confirmed nearby coverage, and must not add cities the client
+excluded. SEO enrichment that merges its own discovered areas over
+`coverageAreas` must be updated before that path can be trusted for confirmed
+coverage.
 
 ## Deployment variables and checks
 
@@ -69,3 +141,15 @@ variables. The onboarding route is `noindex, nofollow`; public navigation does
 not link to it. The Worker denies validation, upload, and intake requests when
 the invite, origin, expiry, email binding, or persistent invite state is
 invalid.
+
+Confirmed coverage now reaches generation through the canonical-confirmation
+reader. Enrichment cannot re-add unselected cities. Per-city SEO results share
+the configured research budget. Existing primary-city approval rules remain in
+place, and pending secondary-city research is disclosed in the review banner. See
+`docs/seo-research-mvp.md` for the integrated evidence and readiness contract.
+
+### Editable additional places served
+
+The form prefills at most five nearby municipalities as removable pills, separate from the primary city. Clients can remove suggestions and type replacements using `City, State or Country`, then explicitly reconfirm the edited list. The combined number of fetched and typed additional places is limited to five in both form and intake validation. Existing stored dossiers with larger historical coverage are retained.
+
+Fetched selections still use the invitation-bound signed lookup reference; relabelled or invented provider IDs are rejected. Typed places are explicit client assertions and can override the suggested radius. They are validated as bounded labels, recorded in `coverageConfirmation.manualAreas` with source `client_confirmed_mixed_coverage`, and never claimed as provider-verified municipalities or physical offices. The client-submitted ordered coverage list must exactly match the signed selections followed by those manual assertions. Duplicates, primary-city duplication, control characters and over-limit submissions are rejected. Both kinds flow through the existing confirmed-coverage SEO budget and pending-city policy.

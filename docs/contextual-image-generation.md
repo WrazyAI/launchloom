@@ -43,8 +43,9 @@ The model and image/request budgets are set from LaunchLoom repository
 variables in `generate-client.yml` (`FAL_IMAGE_MODEL`,
 `FAL_IMAGE_MAX_IMAGES`, and `FAL_IMAGE_MAX_REQUESTS`). The timeout defaults to
 120 seconds and can be overridden through `FAL_IMAGE_TIMEOUT_MS` in a direct
-script environment. The key is a GitHub Actions secret, not a repository
-variable.
+script environment. FAL queue subscriptions receive the SDK's cancellation-aware
+timeout; image downloads use an abort signal. The key is a GitHub Actions
+secret, not a repository variable.
 
 ## Generation flow
 

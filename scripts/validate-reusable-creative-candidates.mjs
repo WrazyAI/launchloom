@@ -56,6 +56,37 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+/**
+ * Preserve frozen pre-branding manifests when the only schema additions are
+ * unrequested, empty font/accent defaults. Compare the entire historical shape
+ * and its recomputed digest; never rewrite saved manifests or their bindings.
+ */
+export function assertReusableContentManifest(manifest, config, route) {
+  const expected = buildCreativeContentManifest(config, route);
+  if (same(manifest, expected)) return expected;
+
+  const style = config?.style || {};
+  const explicitBranding = [style.headingFont, style.bodyFont, style.accentColor]
+    .some(value => String(value ?? "").trim().length > 0);
+  const missingFields = ["typography", "accent"].filter(
+    field => manifest?.visualBrief && !Object.hasOwn(manifest.visualBrief, field),
+  );
+  if (
+    !explicitBranding && missingFields.length > 0 &&
+    expected.visualBrief.typography.heading === null &&
+    expected.visualBrief.typography.body === null &&
+    expected.visualBrief.accent === null
+  ) {
+    const historical = structuredClone(expected);
+    delete historical.digest;
+    for (const field of missingFields) delete historical.visualBrief[field];
+    historical.digest = crypto.createHash("sha256")
+      .update(stableJson(historical)).digest("hex");
+    if (same(manifest, historical)) return historical;
+  }
+  throw new Error("Reusable content manifest does not match the supplied configuration.");
+}
+
 function dossierBinding(dossier) {
   if (!dossier || typeof dossier !== "object") return null;
   return {
@@ -72,6 +103,117 @@ function dossierBinding(dossier) {
     tags: dossier.tags || {},
     designPrompt: dossier.designPrompt || "",
   };
+}
+
+const ALL_CANDIDATE_NAMES = ["candidate-a", "candidate-b", "candidate-c"];
+const REQUIRED_AUTHORING_STAGES = ["contract", "experience", "styles", "motion"];
+const ALLOWED_AUTHORING_STAGES = [...REQUIRED_AUTHORING_STAGES, "service", "service-index", "location"];
+
+function candidateRouteIndex(candidateName) {
+  return ALL_CANDIDATE_NAMES.indexOf(candidateName);
+}
+
+/**
+ * Validate a complete or partial authored set without treating failed routes
+ * as authored candidates. Partial sets are preview inputs only; the rendered
+ * diversity and production gates remain authoritative later in the workflow.
+ */
+export function assertReusableCandidateSet(candidateNames, run, routes) {
+  assert(
+    Array.isArray(candidateNames) &&
+      candidateNames.length >= 1 &&
+      candidateNames.length <= ALL_CANDIDATE_NAMES.length &&
+      candidateNames.every((name) => ALL_CANDIDATE_NAMES.includes(name)) &&
+      new Set(candidateNames).size === candidateNames.length,
+    "Reusable candidates must include at least one unique candidate-a/b/c directory.",
+  );
+  assert(
+    Array.isArray(routes) && routes.length === ALL_CANDIDATE_NAMES.length,
+    "Reusable candidates require the complete ordered three-route Reference DNA pack.",
+  );
+  const metadata = Array.isArray(run?.candidates) ? run.candidates : [];
+  const candidateIds = metadata.map((candidate) => candidate?.candidateId);
+  assert(
+    same([...candidateIds].sort(), [...candidateNames].sort()),
+    "Reusable candidate directories do not match the authored-run candidate manifest.",
+  );
+  for (const candidate of metadata) {
+    const route = routes[candidateRouteIndex(candidate.candidateId)];
+    assert(
+      route && candidate.routeId === route.id,
+      `${candidate.candidateId} does not match its ordered inspiration route.`,
+    );
+  }
+  const failureIds = (Array.isArray(run?.failures) ? run.failures : []).map(
+    (failure) => failure?.candidateId,
+  );
+  assert(
+    failureIds.every((id) => ALL_CANDIDATE_NAMES.includes(id)) &&
+      new Set(failureIds).size === failureIds.length &&
+      !failureIds.some((id) => candidateIds.includes(id)) &&
+      same(
+        [...candidateIds, ...failureIds].sort(),
+        [...ALL_CANDIDATE_NAMES].sort(),
+      ),
+    "Reusable authored-run outcomes must account for all three candidates without overlap.",
+  );
+  return true;
+}
+
+/** Validate that every reusable model stage is bound to the supplied visual evidence. */
+export function assertReusablePromptEvidence(
+  promptEvidence,
+  { model, creativeSession, inspiration, candidateNames } = {},
+) {
+  assert(
+    promptEvidence?.version === 1 &&
+      promptEvidence.model === model &&
+      Array.isArray(promptEvidence.records),
+    "Reusable candidates require their versioned prompt-evidence manifest.",
+  );
+  const recordsByRoute = new Map();
+  const routesById = new Map(inspiration.routes.map((route) => [route.id, route]));
+  for (const record of promptEvidence.records) {
+    const route = routesById.get(record?.routeId);
+    assert(route, `Prompt evidence references unknown route '${record?.routeId}'.`);
+    assert(
+      record.referenceId === route.referenceDossier?.id &&
+        record.referenceDossierDigest === route.referenceDossier?.digest,
+      `Prompt evidence for ${record.routeId} is not bound to its validated dossier.`,
+    );
+    assert(
+      record.sessionId === creativeSession.sessionId &&
+        record.effort === creativeSession.reasoningEffort &&
+        ALLOWED_AUTHORING_STAGES.includes(record.stage),
+      `Prompt evidence for ${record.routeId} has an unexpected stage or frozen-session binding.`,
+    );
+    const suppliedEvidence = Array.isArray(record.evidence) ? record.evidence : [];
+    for (const viewport of ["desktopScreenshot", "mobileScreenshot"]) {
+      const reference = route.referenceDna?.evidence?.[viewport];
+      const supplied = suppliedEvidence.find((item) => item?.path === reference?.path);
+      assert(
+        reference?.available !== false &&
+          reference?.path &&
+          reference?.sha256 &&
+          supplied?.digest === reference.sha256,
+        `Prompt evidence for ${record.routeId}/${record.stage} is missing the assigned ${viewport} screenshot digest.`,
+      );
+    }
+    const routeRecords = recordsByRoute.get(record.routeId) || [];
+    routeRecords.push(record);
+    recordsByRoute.set(record.routeId, routeRecords);
+  }
+
+  for (const candidateName of candidateNames) {
+    const route = inspiration.routes[candidateRouteIndex(candidateName)];
+    const routeRecords = recordsByRoute.get(route.id) || [];
+    const representedStages = new Set(routeRecords.map((record) => record.stage));
+    assert(
+      REQUIRED_AUTHORING_STAGES.every((stage) => representedStages.has(stage)),
+      `Prompt evidence for ${candidateName} omits a required authoring stage.`,
+    );
+  }
+  return true;
 }
 
 /**
@@ -233,7 +375,7 @@ export async function validateAndCopyReusableCandidates({
       inspiration.routes.length === 3,
     "Reusable authored candidates require the complete three-route Reference DNA pack.",
   );
-  const candidateNames = ["candidate-a", "candidate-b", "candidate-c"];
+  const allCandidateNames = ALL_CANDIDATE_NAMES;
   const candidateFiles = [
     "Experience.jsx",
     "content-manifest.json",
@@ -242,19 +384,35 @@ export async function validateAndCopyReusableCandidates({
     "motion.js",
     "styles.css",
   ];
+  // Authored candidates may carry service, location, and services-index page
+  // companions from newer runs. They are validated when present but stay
+  // optional for older frozen runs.
+  const optionalCandidateFiles = [
+    "ServicePage.jsx",
+    "LocationPage.jsx",
+    "ServicesIndexPage.jsx",
+  ];
   const copiedRootFiles = [
     "creative-run.json",
     "content-manifest.json",
+    "prompt-evidence.json",
     "reasoning-preflight.json",
   ];
-  const allowedRootEntries = new Set([...candidateNames, ...copiedRootFiles]);
+  const allowedRootEntries = new Set([...allCandidateNames, ...copiedRootFiles]);
   const entries = await fs.readdir(candidatesPath, { withFileTypes: true });
   const unexpectedEntries = entries.filter(
     (entry) => !allowedRootEntries.has(entry.name),
   );
   assert(
-    unexpectedEntries.length === 0,
-    `Reusable candidate source contains unexpected top-level entries: ${unexpectedEntries.map((entry) => entry.name).join(", ")}`,
+      unexpectedEntries.length === 0,
+      `Reusable candidate source contains unexpected top-level entries: ${unexpectedEntries.map((entry) => entry.name).join(", ")}`,
+  );
+  const candidateNames = allCandidateNames.filter((name) =>
+    entries.some((entry) => entry.name === name && entry.isDirectory()),
+  );
+  assert(
+    candidateNames.length > 0,
+    "Reusable candidate source has no authored candidate directories.",
   );
   for (const file of copiedRootFiles) {
     const entry = entries.find((item) => item.name === file);
@@ -276,22 +434,19 @@ export async function validateAndCopyReusableCandidates({
       },
     );
     const unexpectedFiles = sourceFiles.filter(
-      (item) => !item.isFile() || !candidateFiles.includes(item.name),
+      (item) =>
+        !item.isFile() ||
+        (!candidateFiles.includes(item.name) &&
+          !optionalCandidateFiles.includes(item.name)),
     );
     assert(
       unexpectedFiles.length === 0 &&
-        same(
-          sourceFiles.map((item) => item.name).sort(),
-          [...candidateFiles].sort(),
+        candidateFiles.every((name) =>
+          sourceFiles.some((item) => item.name === name),
         ),
-      `${candidateName} must contain exactly the six validated candidate files.`,
+      `${candidateName} must contain the validated candidate files and no unexpected source.`,
     );
   }
-  assert(
-    same(candidateNames, ["candidate-a", "candidate-b", "candidate-c"]),
-    "Reusable candidate set must contain exactly candidate-a, candidate-b, and candidate-c.",
-  );
-
   const source = path.resolve(candidatesPath);
   const destination = path.resolve(outputPath);
   const relative = path.relative(source, destination);
@@ -324,7 +479,8 @@ export async function validateAndCopyReusableCandidates({
     for (const candidateName of candidateNames) {
       const stagedCandidate = path.join(staging, candidateName);
       await fs.mkdir(stagedCandidate);
-      for (const file of candidateFiles)
+      const names = await fs.readdir(path.join(source, candidateName));
+      for (const file of names)
         await fs.copyFile(
           path.join(source, candidateName, file),
           path.join(stagedCandidate, file),
@@ -349,29 +505,50 @@ export async function validateAndCopyReusableCandidates({
         same(rootSession, creativeSession),
       "Reusable candidate run does not match the supplied frozen reasoning session.",
     );
-    const expectedRootManifest = buildCreativeContentManifest(
-      config,
-      inspiration.routes[0],
+    assertReusableCandidateSet(candidateNames, run, inspiration.routes);
+    assertReusablePromptEvidence(
+      await readJson(path.join(staging, "prompt-evidence.json")),
+      { model, creativeSession, inspiration, candidateNames },
     );
+    const expectedRootManifest = assertReusableContentManifest(rootManifest, config);
     assert(
       same(rootManifest, expectedRootManifest) &&
         run.contentManifestDigest === expectedRootManifest.digest,
       "Reusable root content manifest does not match the supplied configuration.",
     );
 
-    for (const [index, candidateName] of candidateNames.entries()) {
+    for (const candidateName of candidateNames) {
+      const index = candidateRouteIndex(candidateName);
       const candidatePath = path.join(staging, candidateName);
-      const [metadata, contentManifest, contract, experience, styles, motion] =
-        await Promise.all([
-          readJson(path.join(candidatePath, "metadata.json")),
-          readJson(path.join(candidatePath, "content-manifest.json")),
-          readJson(path.join(candidatePath, "contract.json")),
-          fs.readFile(path.join(candidatePath, "Experience.jsx"), "utf8"),
-          fs.readFile(path.join(candidatePath, "styles.css"), "utf8"),
-          fs.readFile(path.join(candidatePath, "motion.js"), "utf8"),
-        ]);
+      const [
+        metadata,
+        contentManifest,
+        contract,
+        experience,
+        styles,
+        motion,
+        servicePage,
+        locationPage,
+        servicesIndexPage,
+      ] = await Promise.all([
+        readJson(path.join(candidatePath, "metadata.json")),
+        readJson(path.join(candidatePath, "content-manifest.json")),
+        readJson(path.join(candidatePath, "contract.json")),
+        fs.readFile(path.join(candidatePath, "Experience.jsx"), "utf8"),
+        fs.readFile(path.join(candidatePath, "styles.css"), "utf8"),
+        fs.readFile(path.join(candidatePath, "motion.js"), "utf8"),
+        fs
+          .readFile(path.join(candidatePath, "ServicePage.jsx"), "utf8")
+          .catch(() => ""),
+        fs
+          .readFile(path.join(candidatePath, "LocationPage.jsx"), "utf8")
+          .catch(() => ""),
+        fs
+          .readFile(path.join(candidatePath, "ServicesIndexPage.jsx"), "utf8")
+          .catch(() => ""),
+      ]);
       const route = inspiration.routes[index];
-      const expectedManifest = buildCreativeContentManifest(config, route);
+      const expectedManifest = assertReusableContentManifest(contentManifest, config, route);
       const expectedDna = withoutAnalysisTime(route.referenceDna);
       const candidateDna = withoutAnalysisTime(
         metadata.creativeManifest?.referenceDna || metadata.referenceDna,
@@ -426,7 +603,14 @@ export async function validateAndCopyReusableCandidates({
       );
       sessionBinding(metadata, creativeSession, candidateName);
       validateProductionCandidateFiles({
-        files: { experience, styles, motion },
+        files: {
+          experience,
+          styles,
+          motion,
+          ...(servicePage.trim() ? { servicePage } : {}),
+          ...(locationPage.trim() ? { locationPage } : {}),
+          ...(servicesIndexPage.trim() ? { servicesIndexPage } : {}),
+        },
         route: { ...route, referenceDna: route.referenceDna },
         content: contentManifest.values,
       });
@@ -436,8 +620,11 @@ export async function validateAndCopyReusableCandidates({
     return {
       validated: true,
       count: candidateNames.length,
-      routes: inspiration.routes.map((route) => route.id),
+      routes: candidateNames.map(
+        (name) => inspiration.routes[candidateRouteIndex(name)].id,
+      ),
       sessionId: creativeSession.sessionId,
+      complete: candidateNames.length === allCandidateNames.length,
     };
   } catch (error) {
     await fs.rm(staging, { recursive: true, force: true });
@@ -460,7 +647,7 @@ if (
       model: input.model,
     });
     console.log(
-      `reused_authored_candidates validated=${result.validated} count=${result.count} routes=${result.routes.join(",")} session_bound=true`,
+      `reused_authored_candidates validated=${result.validated} count=${result.count} complete=${result.complete} routes=${result.routes.join(",")} session_bound=true`,
     );
   } catch (error) {
     console.error(`Reusable creative candidates rejected: ${error.message}`);

@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "id": "web-dental-dentologie",
+  "productionEligible": false,
+  "referenceName": "Dentologie: airy neighborhood studio with warm color and service photography",
+  "familyId": "dentologie-modern-neighborhood-studio",
+  "businessKinds": [
+    "dental",
+    "dental practice",
+    "family dentistry",
+    "cosmetic dentistry"
+  ],
+  "source": {
+    "name": "Dentologie official website",
+    "url": "https://dentologie.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance for internal full-page desktop/mobile screenshot retention, derived prompts, and pipeline-model visual-reference use. No source-owner written grant was attached; see rights/requester-attestation.md.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/source-observations.md",
+      "rights/capture-record.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "dental",
+      "multi-location dental practice",
+      "general dentistry",
+      "family dentistry"
+    ],
+    "style": [
+      "airy editorial",
+      "neighborhood studio",
+      "warm neutral base",
+      "fresh contrasting color chapters"
+    ],
+    "composition": [
+      "centered editorial opening",
+      "paired appointment and call actions",
+      "asymmetric image-and-copy philosophy chapter",
+      "photo-led primary service selection",
+      "distinct tonal reassurance bands"
+    ],
+    "conversion": [
+      "book online near the opening",
+      "call as a secondary route",
+      "contextual appointment actions after service choices"
+    ],
+    "motion": [
+      "manual testimonial carousel",
+      "native FAQ disclosures",
+      "reduced-motion content remains complete"
+    ],
+    "imagery": [
+      "large practice interior image",
+      "small service photography choices",
+      "neighborhood-office imagery",
+      "direct-source full-page evidence only"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official multi-location dental-practice site uses a compact quiet header, a centered short editorial promise with appointment and call actions, then a large interior photograph. A brief philosophy chapter pairs a human-scale image with concise copy. Three photographic service choices lead into a manually controlled patient-review moment, a fresh-color reassurance band, an image-led neighborhood-office strip, a second narrative chapter, a compact secondary-services row, patient questions, and a dark contact close. Mobile turns the narrative into a single-column sequence and keeps each booking action close to its decision point. The brand, images, people, reviews, claims, office facts, and exact visual trade dress are source-only.",
+    "heroGeometry": {
+      "mode": "centered editorial promise, paired appointment/call controls, and a large practice image",
+      "alignment": "centered text opening followed by a wide image, then asymmetric narrative chapters",
+      "viewport": "compact navigation, short promise, service-area context, two actions, and first image form the opening"
+    },
+    "navigationGeometry": {
+      "mode": "small text-led navigation with booking action",
+      "placement": "quiet top edge above the centered opening",
+      "mobile": "compact logo and menu control with the booking route kept easy to reach"
+    },
+    "typography": {
+      "display": "high-contrast editorial serif with occasional italic emphasis",
+      "body": "compact neutral humanist sans-serif",
+      "scale": "short centered hero, quiet utility labels, comfortable paragraph measure, restrained chapter headings"
+    },
+    "palette": {
+      "surfaces": [
+        "warm ivory",
+        "soft neutral",
+        "fresh green-blue",
+        "muted terracotta"
+      ],
+      "ink": "near-black and muted charcoal",
+      "accents": [
+        "one fresh mid-tone",
+        "one warm contrasting chapter"
+      ],
+      "contrastIntent": "quiet text on light fields with saturated chapter surfaces used sparingly for hierarchy"
+    },
+    "imageTreatment": {
+      "mode": "large real-practice interior image followed by human-scale and service-photo crops",
+      "crop": "wide studio image, rounded medium image in paired chapters, compact service crops, panoramic location strip",
+      "focalPoint": "retain room architecture or the relevant service context while keeping overlaid copy on calm areas"
+    },
+    "sectionSequence": [
+      "quiet navigation and centered promise",
+      "practice-interior image",
+      "asymmetric practice-philosophy chapter",
+      "three photo-led primary services",
+      "patient proof or first-visit reassurance",
+      "distinct reassurance band",
+      "neighborhood/location image strip",
+      "secondary narrative chapter",
+      "compact secondary service index",
+      "patient FAQs",
+      "contact and footer close"
+    ],
+    "servicePresentation": {
+      "pattern": "a small photo-led primary service set followed by a compact secondary service index",
+      "interaction": "each primary choice links to its substantive service explanation and the next relevant action; secondary services remain scannable text links"
+    },
+    "ctaPlacement": {
+      "primary": "book online",
+      "secondary": "call the practice",
+      "early": "both routes appear beside the opening promise, with appointment actions repeated after service decisions"
+    },
+    "motion": {
+      "primitive": "manual review carousel with restrained image/section reveals",
+      "library": "native controls and CSS where sufficient; no source scripts transferred",
+      "reducedMotion": "render all content statically and retain direct carousel controls"
+    },
+    "mobileRecomposition": {
+      "strategy": "centered opening followed by single-column editorial chapters",
+      "rules": [
+        "place the hero image directly after the opening controls",
+        "stack philosophy image and copy without overlap",
+        "make one service item visible per carousel state with labeled controls",
+        "wrap insurance or trust marks only when verified and supplied",
+        "keep location imagery compact and prevent page-level horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying source brand, logo, copy, photographs, people, reviews, ratings, insurance marks, or exact trade dress",
+      "inventing office locations, services, insurance participation, prices, hours, credentials, appointment availability, or patient outcomes",
+      "a repeated wall of identical rounded cards",
+      "a privacy banner covering the hero",
+      "hidden content that depends on motion or autoplay",
+      "mobile carousels with inaccessible offscreen controls"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "centered-promise-practice-image",
+        "selector": "[data-reference-signature=centered-promise-practice-image]",
+        "description": "short centered editorial promise and two useful actions followed by one large practice image"
+      },
+      {
+        "id": "photo-led-service-choices",
+        "selector": "[data-reference-signature=photo-led-service-choices]",
+        "description": "a small set of primary service choices using contextual photography"
+      },
+      {
+        "id": "tonal-reassurance-band",
+        "selector": "[data-reference-signature=tonal-reassurance-band]",
+        "description": "one saturated surface chapter that resets the page rhythm before later decisions"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening shows a concise practice promise, a primary action, and a useful secondary route.",
+      "A large contextual practice image is separated from the text rather than used as a generic stock background.",
+      "Primary services are easy to distinguish and not repeated as a second identical card wall.",
+      "FAQs and contact remain distinct, directly navigable sections.",
+      "At 390 px, images, service choices, and controls fit with no horizontal page overflow.",
+      "No source identity, photo, patient statement, location, or unsupported medical claim is reused."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-27",
+    "notes": "Complete archive alternative retained outside the fixed six-reference dental production pool. Full-page screenshots were inspected after lazy media and offscreen sections were rendered; no broken images, page errors, or width overflow were observed. It is not part of the production core or registry. Requester-attested clearance is not represented as an independently verified source-owner grant."
+  }
+}

@@ -127,6 +127,9 @@ if (action === "create-empty") {
     "src/generated-experiences/selected/Experience.jsx",
     "src/generated-experiences/selected/styles.css",
     "src/generated-experiences/selected/motion.js",
+    "src/generated-experiences/selected/ServicePage.jsx",
+    "src/generated-experiences/selected/LocationPage.jsx",
+    "src/generated-experiences/selected/ServicesIndexPage.jsx",
     // Feedback replacements write content-hashed files here; validate the
     // destination chain before the revision can materialize any image.
     "public/images/feedback/preflight.webp",
@@ -179,12 +182,35 @@ if (action === "create-empty") {
     throw new Error(
       "Creative repair scope does not match the prepared revision state.",
     );
+  const selectedCandidateId = String(
+    config.design?.experience?.candidateId || "",
+  );
+  const repairVerification = config.revisionReport?.creativeSourceRepairVerified;
+  const repairVerified = Boolean(
+    repairRequired &&
+      repairVerification?.pass === true &&
+      selectedCandidateId &&
+      repairVerification.candidateId === selectedCandidateId,
+  );
+  if (repairRequired && !repairVerified)
+    throw new Error(
+      "Creative source repair is not verified for the selected candidate; authored files cannot enter the revision scope.",
+    );
   const candidates =
-    args["repair-required"] === "true"
+    repairVerified
       ? [
           "src/generated-experiences/selected/Experience.jsx",
           "src/generated-experiences/selected/styles.css",
           "src/generated-experiences/selected/motion.js",
+          ...(config.design?.experience?.servicePage === true
+            ? ["src/generated-experiences/selected/ServicePage.jsx"]
+            : []),
+          ...(config.design?.experience?.locationPage === true
+            ? ["src/generated-experiences/selected/LocationPage.jsx"]
+            : []),
+          ...(config.design?.experience?.servicesIndex === true
+            ? ["src/generated-experiences/selected/ServicesIndexPage.jsx"]
+            : []),
         ]
       : [];
   const manifest = {

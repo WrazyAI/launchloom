@@ -14,9 +14,9 @@ const out = path.resolve(root, args.out || "artifacts/creative-canary-kokoro");
 const imageDataUri = async (relativePath) =>
   `data:image/webp;base64,${(await fs.readFile(path.join(root, relativePath))).toString("base64")}`;
 const canaryImages = {
-  hero: await imageDataUri("data/inspiration-evidence/creative-probe-kokoro/assets/hero-atrium.webp"),
-  secondary: await imageDataUri("data/inspiration-evidence/creative-probe-kokoro/assets/ridge-house.webp"),
-  tertiary: await imageDataUri("data/inspiration-evidence/creative-probe-kokoro/assets/project-mosaic.webp"),
+  hero: await imageDataUri("data/creative-assets/architecture-canary/hero-atrium.webp"),
+  secondary: await imageDataUri("data/creative-assets/architecture-canary/ridge-house.webp"),
+  tertiary: await imageDataUri("data/creative-assets/architecture-canary/project-mosaic.webp"),
 };
 const registry = JSON.parse(await fs.readFile(path.join(root, "data/inspiration-registry.json"), "utf8"));
 const record = registry.records.find((item) => item.id === "kokoro-spatial-editorial");

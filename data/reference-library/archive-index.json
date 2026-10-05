@@ -1009,6 +1009,80 @@
           }
         ]
       }
+    },
+    {
+      "id": "web-dental-dentologie",
+      "dossierPath": "data/reference-library/dossiers/web-dental-dentologie",
+      "referenceName": "Dentologie: airy neighborhood studio with warm color and service photography",
+      "sourceUrl": "https://dentologie.com/",
+      "rights": "permission-cleared",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "six-reference-core-cap"
+        ],
+        "summary": "Complete permission-cleared dental alternative retained in the archive so the production dental pool remains exactly six references.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "productionEligible"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          },
+          {
+            "path": "manifest.json",
+            "field": "review.notes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "web-dental-vivid-specialized",
+      "dossierPath": "data/reference-library/dossiers/web-dental-vivid-specialized",
+      "referenceName": "Vivid Specialized Dentistry: cinematic specialty story and case-led chapters",
+      "sourceUrl": "https://www.vividdental.ca/",
+      "rights": "permission-cleared",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "six-reference-core-cap"
+        ],
+        "summary": "Complete permission-cleared specialist-dentistry alternative retained in the archive so the production dental pool remains exactly six references.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "productionEligible"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          },
+          {
+            "path": "manifest.json",
+            "field": "review.notes"
+          }
+        ]
+      }
     }
   ]
 }

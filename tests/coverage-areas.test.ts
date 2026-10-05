@@ -1,7 +1,41 @@
+import { confirmedCoverageFromIntake, applyCoverageEnrichment } from "../scripts/confirmed-coverage.mjs";
 import { describe, expect, it } from "vitest";
-import { discoverCoverageAreas } from "../scripts/coverage-areas.mjs";
+import {
+  discoverCoverageAreas,
+  primaryCityFromIntake,
+} from "../scripts/coverage-areas.mjs";
 
 describe("service coverage area discovery", () => {
+  it("uses the first semicolon-delimited service area as the primary geocoding city", () => {
+    expect(
+      primaryCityFromIntake({
+        serviceAreas:
+          "Portland, OR; Beaverton, OR; Lake Oswego, OR",
+      }),
+    ).toBe("Portland, OR");
+  });
+
+  it("retains only confirmed coverage when the submitted radius is unsupported", async () => {
+    let geocodingCalled = false;
+    const result = await discoverCoverageAreas({
+      primaryCity: "Portland, OR",
+      serviceRadius: "25",
+      geocodeCity: async () => {
+        geocodingCalled = true;
+        return { latitude: 45.5152, longitude: -122.6784 };
+      },
+      reverseGeocode: async () => [],
+    });
+
+    expect(geocodingCalled).toBe(false);
+    expect(result.primaryCity).toBe("Portland, OR");
+    expect(result.serviceRadiusMiles).toBeNull();
+    expect(result.coverageAreas).toEqual(["Portland, OR"]);
+    expect(result.warnings).toContain(
+      "A supported travel radius was not available; only the confirmed primary city is retained.",
+    );
+  });
+
   it("keeps only unique named communities whose returned center is within the confirmed radius", async () => {
     let call = 0;
     const result = await discoverCoverageAreas({
@@ -46,4 +80,15 @@ describe("service coverage area discovery", () => {
     expect(result.coverageEvidence.source).toBe("unavailable");
     expect(result.warnings).toContain("Coverage discovery was unavailable; the confirmed primary city is retained.");
   });
+});
+
+
+it("preserves confirmed coverage instead of discovery suggestions, including primary-only fallback", () => {
+  const intake = { primaryCity: "Cookeville, TN", serviceRadius: "10", coverageAreas: ["Cookeville, TN", "Algood, TN"], coverageConfirmation: { status: "confirmed", primaryCity: "Cookeville, TN", radiusSelection: "10", selectedCount: 1 } };
+  const enrichment = { coverageAreas: ["Cookeville, TN", "Baxter, TN"], coverageEvidence: {source:"google_geocoding"} };
+  expect(applyCoverageEnrichment(intake, enrichment).coverageAreas).toEqual(intake.coverageAreas);
+  expect(confirmedCoverageFromIntake(intake)!.coverageEvidence.source).toBe("client_confirmed_coverage");
+  const only = { ...intake, coverageAreas: [intake.primaryCity], coverageConfirmation: { ...intake.coverageConfirmation, status: "primary_city_only", selectedCount: 0 } };
+  expect(applyCoverageEnrichment(only, enrichment).coverageAreas).toEqual([intake.primaryCity]);
+  expect(() => confirmedCoverageFromIntake({...intake,serviceRadius:"20"})).toThrow(/confirmed city, radius/);
 });

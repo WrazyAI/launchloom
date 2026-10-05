@@ -8,6 +8,8 @@ The observed page flows through 1. dark hero and booking panel; 2. circular pric
 
 # Responsive translation
 
+Keep the mobile promise over the atmospheric shop image, then place the booking panel in the flow below that promise. Preserve the full-width copy-over-media opening rather than removing the image or making a side-by-side split. Use client-owned or approved contextual imagery, not the source shop photograph or its identity.
+
 At a 390 by 844 viewport, Move booking panel into the flow below the promise, make circular service units linear, and preserve image-strip reading order without tiny text. Recheck the opening at 1440 by 1000 so the main promise, first action and focal image are legible at normal zoom. On both sizes, use real links, an accessible menu, readable contrast, reachable form controls, and no horizontal overflow. Honor reduced-motion preference by presenting equivalent static information; a video or reveal may never be required to discover the next action.
 
 # Signature elements

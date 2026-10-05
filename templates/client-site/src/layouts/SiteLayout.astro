@@ -1,22 +1,56 @@
 ---
-import site from "../lib/site";
+import { resolvePalette, semanticColorCss } from "../lib/color-policy.mjs";
+import { fontFaceCss, resolveFontPairing } from "../lib/font-catalog.mjs";
+import site, { routeInventory, routePageBrief } from "../lib/site";
 import ReviewBanner from "../components/ReviewBanner.astro";
 import QuickAnswers from "../components/QuickAnswers.astro";
 import ExitOffer from "../components/ExitOffer.astro";
 import "../styles/site.css";
 
 const { title = site.business.name, description = site.business.description, schemas = [] } = Astro.props;
+const palette = resolvePalette(site.style);
+const pairing = resolveFontPairing(site.style);
+const bodyVars = [
+  `--brand:${palette.primaryColor}`,
+  `--on-brand:${palette.contrastColor || "#ffffff"}`,
+  `--brand-ink:${palette.brandTextColor || palette.primaryColor}`,
+  `--brand-surface:${palette.brandSurfaceColor || palette.primaryColor}`,
+  `--on-brand-surface:${palette.brandSurfaceTextColor || palette.contrastColor || "#ffffff"}`,
+  `--cream:${palette.surfaceColor || "#f8f6f0"}`,
+  `--hero-surface:${palette.heroColor || "#e8eee5"}`,
+  `--ink:${palette.inkColor || "#14201d"}`,
+  `--muted:${palette.mutedColor || "#5e6b66"}`,
+  `--line:${palette.lineColor || "#d8ded7"}`,
+  ...(pairing.headingStack ? [`--font-heading:${pairing.headingStack}`] : []),
+  ...(pairing.bodyStack ? [`--font-body:${pairing.bodyStack}`] : []),
+  ...(palette.accentColor
+    ? [
+        `--accent:${palette.accentColor}`,
+        `--accent-ink:${palette.accentTextColor || palette.accentColor}`,
+        `--on-accent:${palette.accentContrastColor || "#ffffff"}`,
+      ]
+    : []),
+].join(";");
+const colorRoles = semanticColorCss(palette) + `
+.recipe-care-editorial {--care-hero-muted:${palette.surfaces.hero.mutedText};}
+.service-card:hover p { color: ${palette.surfaces.cardHover.mutedText}; }
+.lead-form :is(input,textarea,select) {border-color:var(--ll-border,${palette.surfaces.light.border});}
+.split-section :is(a,button):focus-visible {outline:2px solid ${palette.surfaces.brand.focus};outline-offset:3px;}
+`;
 const diagnosticPreview = import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
-const noIndex = import.meta.env.PUBLIC_REVIEW_MODE === "true" || diagnosticPreview;
+const route = routeInventory.records.find(record => record.path === Astro.url.pathname);
+const noIndex = import.meta.env.PUBLIC_REVIEW_MODE === "true" || diagnosticPreview || route?.discovery.indexable === false;
 // The approved deployment origin is supplied at build time. A domain in the
 // intake is not necessarily connected to Pages and must not become canonical.
-const canonical = noIndex ? undefined : new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
-const openGraphImage = site.images.hero
-  ? new URL(site.images.hero, Astro.site ?? Astro.url).href
-  : undefined;
+const canonical = import.meta.env.PUBLIC_REVIEW_MODE === "true" || diagnosticPreview ? undefined : new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
+const brief = route ? routePageBrief(route.id) : null;
+const pageImage = brief?.mode === "supported" ? brief.media[0]?.src : site.images.hero;
+const openGraphImage = pageImage ? new URL(pageImage, Astro.site ?? Astro.url).href : undefined;
+const businessIdentity = new URL("/#business", Astro.site ?? Astro.url).href;
 const structuredData = {
   "@context": "https://schema.org",
   "@type": site.industry === "home-services" ? "HomeAndConstructionBusiness" : "LocalBusiness",
+  "@id": businessIdentity,
   name: site.business.name,
   description,
   telephone: site.business.phone || undefined,
@@ -41,17 +75,45 @@ const schemaBlocks = (Array.isArray(schemas) ? schemas : []).map((schema) =>
     <meta name="theme-color" content={site.style.primaryColor} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    {canonical && <meta property="og:url" content={canonical} />}
     <meta property="og:type" content="website" />
     {openGraphImage && <meta property="og:image" content={openGraphImage} />}
     {canonical && <link rel="canonical" href={canonical} />}
     <script is:inline type="application/ld+json" set:html={structuredDataJson} />
     {schemaBlocks.map((schema) => <script is:inline type="application/ld+json" set:html={schema} />)}
+    <style is:inline set:html={colorRoles} />
+    <style is:inline set:html={fontFaceCss()} />
     <title>{title}</title>
   </head>
-  <body style={`--brand:${site.style.primaryColor};--on-brand:${site.style.contrastColor || "#ffffff"};--brand-ink:${site.style.brandTextColor || site.style.primaryColor};--brand-surface:${site.style.brandSurfaceColor || site.style.primaryColor};--on-brand-surface:${site.style.brandSurfaceTextColor || site.style.contrastColor || "#ffffff"};--cream:${site.style.surfaceColor || "#f8f6f0"};--hero-surface:${site.style.heroColor || "#e8eee5"};--ink:${site.style.inkColor || "#14201d"};--muted:${site.style.mutedColor || "#5e6b66"};--line:${site.style.lineColor || "#d8ded7"}`}>
+  <body data-ll-route={Astro.url.pathname} style={bodyVars}>
+    {site.demoNotice && (
+      <aside class="ll-demo-notice" data-demo-notice role="note" aria-label={site.demoNotice}>
+        <strong>{site.demoNotice}</strong>
+        <span>This is not a real business or service offering.</span>
+      </aside>
+    )}
     <ReviewBanner diagnosticPreview={diagnosticPreview} />
     <slot />
     {!diagnosticPreview && <QuickAnswers />}
     {!diagnosticPreview && <ExitOffer />}
   </body>
 </html>
+
+<style>
+  .ll-demo-notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem 0.5rem;
+    padding: 0.4rem 1rem;
+    background: #14201d;
+    color: #fff;
+    font: 600 0.75rem/1.35 system-ui, sans-serif;
+    text-align: center;
+  }
+
+  .ll-demo-notice strong {
+    font-weight: 800;
+  }
+</style>

@@ -25,6 +25,10 @@
         "name": "ONBOARDING_INVITES",
         "class_name": "OnboardingInvites",
       },
+      {
+        "name": "GENERATION_LEDGER",
+        "class_name": "GenerationLedger",
+      },
     ],
   },
   "migrations": [
@@ -35,6 +39,10 @@
     {
       "tag": "v2-onboarding-invites",
       "new_sqlite_classes": ["OnboardingInvites"],
+    },
+    {
+      "tag": "v3-generation-ledger",
+      "new_sqlite_classes": ["GenerationLedger"],
     },
   ],
   "observability": {

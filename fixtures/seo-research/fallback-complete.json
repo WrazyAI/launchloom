@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "mode": "context-only",
+  "publishReady": false,
+  "fallbackSearch": {
+    "status": "complete",
+    "queriesAttempted": 1,
+    "failedQueries": 0,
+    "maxQueries": 3,
+    "maxResultsPerQuery": 4,
+    "costUsd": 0.002,
+    "maxUsd": 0.05,
+    "costComplete": true,
+    "budgetExhausted": false
+  },
+  "externalSearchEvidence": [
+    {
+      "query": "consultation Testville",
+      "sourceUrl": "https://example.test/consultation",
+      "title": "Observed consultation page",
+      "retrievedAt": "2026-10-01T00:00:00Z",
+      "provider": "OpenRouter web search (Parallel)",
+      "provenance": "external_search_observation"
+    }
+  ]
+}

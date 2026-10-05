@@ -11,6 +11,9 @@ import {
   restoreRequiredExperienceMarkers,
   restoreRequiredSectionIdsOnSemanticSections,
   validateProductionCandidateFiles,
+  validateLocationPage,
+  validateServicePage,
+  validateServicesIndexPage,
   type AuthorStageRequest,
 } from "../scripts/production-experience-author.mjs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
@@ -113,8 +116,51 @@ export default function Experience({ content, runtime }) {
     <main><section data-hero><h1>{content.hero.heading}</h1><p>{content.hero.body}</p><button data-early-conversion>{content.hero.primaryLabel}</button></section>
     <section id="services">{content.services.map((service) => <article key={service.name}><h2>{service.name}</h2><p>{service.description}</p></article>)}</section>
     <section id="faqs">{content.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>
-    <section id="contact"><LeadForm content={content} runtime={runtime} /><a href={content.brand.phone}>{content.brand.phone}</a></section></main>
+    <section id="contact"><LeadForm content={content} runtime={runtime} /><a href={"tel:" + content.brand.phone}>{content.brand.phone}</a></section></main>
   </div>;
+}`,
+    };
+  }
+  if (request.stage === "service") {
+    return {
+      content: `import { LeadForm } from "@launchloom/runtime";
+export default function ServicePage({ content, runtime, service }) {
+  return <main data-service-page data-service-slug={service.slug}>
+    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
+    <section data-service-hero><h1>{service.name}</h1><p>{service.description}</p><a href="#contact">{content.hero.primaryLabel}</a></section>
+    <section data-service-support><h2>{service.name}</h2><p>{service.support.scope}</p><p>{service.support.preparation}</p><p>{service.support.nextStep}</p></section>
+    <section data-service-related><ul>{service.related.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}</ul></section>
+    {service.process.length > 0 && <ol>{service.process.map((step) => <li key={step}>{step}</li>)}</ol>}
+    {service.faqs.length > 0 && <section>{service.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>}
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`,
+    };
+  }
+  if (request.stage === "service-index") {
+    return {
+      content: `import { LeadForm } from "@launchloom/runtime";
+export default function ServicesIndexPage({ content, runtime }) {
+  return <main data-services-index>
+    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
+    <section data-services-index-hero><h1>{content.copy.servicesHeading || content.hero.heading}</h1><p>{content.copy.servicesIntro}</p></section>
+    <section data-services-index-list><ul>{content.services.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}</ul></section>
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`,
+    };
+  }
+  if (request.stage === "location") {
+    return {
+      content: `import { LeadForm } from "@launchloom/runtime";
+export default function LocationPage({ content, runtime, location }) {
+  return <main data-location-page data-location-slug={location.slug}>
+    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
+    <section data-location-hero><h1>{location.name}</h1><p>{location.description}</p></section>
+    <section data-location-coverage><p>{location.localNote}</p></section>
+    <section data-location-related><ul>{location.services.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}{location.otherAreas.map((area) => <li key={area.slug}><a href={\`/locations/\${area.slug}/\`}>{area.name}</a></li>)}</ul></section>
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
 }`,
     };
   }
@@ -129,6 +175,451 @@ export default function Experience({ content, runtime }) {
 }
 
 describe("production experience author", () => {
+  it("rejects unsealed or non-navigation URL attributes", () => {
+    const route = { id: "route-url-safety" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const base = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const unsafeSources = [
+      base.replace(
+        "<section data-hero>",
+        '<section data-hero><svg><image href="/images/unsealed.svg" /></svg>',
+      ),
+      base.replace(
+        "<section data-hero>",
+        '<section data-hero><object data="data:text/html,hello" />',
+      ),
+      base.replace(
+        '<a href={"tel:" + content.brand.phone}>',
+        "<a href={content.brand.phone}>",
+      ),
+      base.replace(
+        "<section data-hero>",
+        '<section data-hero><img src="/images/unsealed.webp" alt="Unsealed" />',
+      ),
+    ];
+
+    for (const experience of unsafeSources)
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: { experience, styles, motion },
+          route,
+          content: {
+            hero: { image: "/images/hero.webp" },
+            brand: { phone: "+12125550186" },
+          },
+        }),
+      ).toThrow(
+        /unsafe URL attribute|image source must use a sealed image content token/iu,
+      );
+  });
+
+  it("allows local navigation, sealed image tokens, and prefixed contact tokens", () => {
+    const route = { id: "route-safe-url" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    ).replace(
+      "<section data-hero>",
+      '<section data-hero><img src={content.hero.image} alt="A reviewed image" /><a href="/services/repair/">Service details</a>',
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).not.toThrow();
+
+    const serviceDetail = experience.replace(
+      "<article key={service.name}>",
+      "<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>",
+    );
+    expect(serviceDetail).not.toBe(experience);
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: serviceDetail, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).not.toThrow();
+
+    const aliasedServiceDetail = serviceDetail
+      .replace(
+        "{content.services.map((service) =>",
+        "{(() => { const serviceItems = content.services; return serviceItems.map((service) =>",
+      )
+      .replace("</article>)}</section>", "</article>); })()}</section>");
+    expect(aliasedServiceDetail).toContain("serviceItems.map((service) =>");
+    expect(aliasedServiceDetail).not.toContain(
+      "content.services.map((service) =>",
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: aliasedServiceDetail, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).not.toThrow();
+
+    const unsealedServiceDetail = aliasedServiceDetail.replace(
+      "const serviceItems = content.services",
+      'const boundServices = content.services; const serviceItems = [{ slug: "outside-content" }]',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: unsealedServiceDetail, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).toThrow(/unsafe URL attribute/iu);
+
+    const shadowedServiceDetail = serviceDetail.replace(
+      "export default function Experience",
+      `const serviceItems = content.services;
+function UntrustedLinks() {
+  const serviceItems = [{ slug: "outside-content" }];
+  return serviceItems.map((service) => <a href={\`/services/\${service.slug}/\`}>{service.slug}</a>);
+}
+export default function Experience`,
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: shadowedServiceDetail, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).toThrow(/unsafe URL attribute/iu);
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles: `${styles}\n.hero { background-image: url('/images/unsealed.webp'); }`,
+          motion,
+        },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).toThrow(/CSS must use sealed image content tokens/iu);
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience: experience.replace(
+            '<a href="/services/repair/">',
+            "<a href={`tel:${content.brand.phone}`}>",
+          ),
+          styles,
+          motion,
+        },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).not.toThrow();
+  });
+
+  it("allows only a const phone href normalized from the sealed phone token", () => {
+    const route = { id: "route-normalized-phone" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const base = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const experience = base
+      .replace(
+        "export default function Experience({ content, runtime }) {",
+        'export default function Experience({ content, runtime }) {\n  const phoneHref = `tel:${content.brand.phone.replace(/[^\\d+]/g, "")}`;',
+      )
+      .replace(
+        '<a href={"tel:" + content.brand.phone}>',
+        "<a href={phoneHref}>",
+      );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: { brand: { phone: "+1 (212) 555-0186" } },
+      }),
+    ).not.toThrow();
+
+    const unsafe = experience.replace(
+      '`tel:${content.brand.phone.replace(/[^\\d+]/g, "")}`',
+      '"https://example.test/"',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: unsafe, styles, motion },
+        route,
+        content: { brand: { phone: "+1 (212) 555-0186" } },
+      }),
+    ).toThrow(/forbidden remote URL|unsafe URL attribute/iu);
+
+    const unsafeTransform = experience.replace(
+      String.raw`replace(/[^\d+]/g, "")`,
+      'replace(/./g, "x")',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: unsafeTransform, styles, motion },
+        route,
+        content: { brand: { phone: "+1 (212) 555-0186" } },
+      }),
+    ).toThrow(/unsafe URL attribute/iu);
+
+    const mutableAlias = experience.replace("const phoneHref", "let phoneHref");
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: mutableAlias, styles, motion },
+        route,
+        content: { brand: { phone: "+1 (212) 555-0186" } },
+      }),
+    ).toThrow(/unsafe URL attribute/iu);
+  });
+
+  it("accepts an empty optional image only when its sealed token guards rendering", () => {
+    const route = { id: "route-optional-image" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const base = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const guarded = base.replace(
+      "<section data-hero>",
+      '<section data-hero>{content.hero.secondaryImage && <img src={content.hero.secondaryImage} alt="" />}',
+    );
+    const content = {
+      hero: {
+        image: "/images/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+      brand: { phone: "+12125550186" },
+    };
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: guarded, styles, motion },
+        route,
+        content,
+      }),
+    ).not.toThrow();
+
+    const unguarded = guarded.replace(
+      '{content.hero.secondaryImage && <img src={content.hero.secondaryImage} alt="" />}',
+      '<img src={content.hero.secondaryImage} alt="" />',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: unguarded, styles, motion },
+        route,
+        content,
+      }),
+    ).toThrow(/optional image token.*conditionally render/iu);
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: guarded, styles, motion },
+        route,
+        content: {
+          ...content,
+          hero: {
+            ...content.hero,
+            secondaryImage: "https://example.test/remote.webp",
+          },
+        },
+      }),
+    ).toThrow(/safe local or LaunchLoom-hosted image asset/iu);
+  });
+
+  it("allows an absent optional logo only behind that same sealed logo guard", () => {
+    const route = { id: "route-optional-logo" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const base = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const guard =
+      '{content.brand.logo && <img src={content.brand.logo} alt="" />}';
+    const guarded = base.replace(
+      "<section data-hero>",
+      `<section data-hero>${guard}`,
+    );
+    const content = {
+      hero: { image: "/images/hero.webp" },
+      brand: { logo: "", phone: "+12125550186" },
+    };
+    const validate = (experience: string, logo = "") =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: { ...content, brand: { ...content.brand, logo } },
+      });
+    expect(() => validate(guarded)).not.toThrow();
+    expect(() => validate(guarded, "/images/client-logo.svg")).not.toThrow();
+    expect(() => validate(guarded, " ")).toThrow(
+      /safe local or LaunchLoom-hosted/iu,
+    );
+    expect(() => validate(guarded, true as any)).toThrow(
+      /safe local or LaunchLoom-hosted/iu,
+    );
+    expect(() =>
+      validate(guarded, "https://unapproved.test/logo.webp"),
+    ).toThrow(/safe local or LaunchLoom-hosted/iu);
+    const unguarded = guarded.replace(
+      guard,
+      '<img src={content.brand.logo} alt="" />',
+    );
+    expect(() => validate(unguarded)).toThrow(/conditionally render/iu);
+    const unrelatedGuard = guarded.replace(
+      "content.brand.logo &&",
+      "content.hero.image &&",
+    );
+    expect(() => validate(unrelatedGuard)).toThrow(/conditionally render/iu);
+  });
+
+  it("retries an empty optional image with the exact safe rendering rule", async () => {
+    const requests: AuthorStageRequest[] = [];
+    let retryRequest: AuthorStageRequest | undefined;
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        requests.push(request);
+        const base = safeStage(request);
+        if (request.route.id !== "route-02" || request.stage !== "experience")
+          return base;
+        if (request.validationError) {
+          retryRequest = request;
+          return base;
+        }
+        return {
+          content: String(base.content).replace(
+            "<section data-hero>",
+            '<section data-hero><img src={content.hero.secondaryImage} alt="" />',
+          ),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(retryRequest?.validationError).toMatch(
+      /optional image token content\.hero\.secondaryImage.*conditionally render/iu,
+    );
+    expect(
+      result.candidates.find(
+        (candidate) => candidate.metadata.routeId === "route-02",
+      )?.metadata.complianceRepaired,
+    ).toBe(true);
+    expect(
+      requests.every((request) =>
+        request.rules.includes("The sealed hero image tokens may be empty"),
+      ),
+    ).toBe(true);
+    expect(
+      requests.every((request) =>
+        request.rules.includes(
+          "Phone and email links must use their sealed tokens",
+        ),
+      ),
+    ).toBe(true);
+    expect(requests[0]?.rules).toContain(String.raw`replace(/[^\d+]/g, "")`);
+  });
+
+  it("retries unsafe candidate links with the deterministic validation finding", async () => {
+    let repairRequest: AuthorStageRequest | undefined;
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const base = safeStage(request);
+        if (request.route.id !== "route-01" || request.stage !== "experience")
+          return base;
+        if (request.validationError) {
+          repairRequest = request;
+          return base;
+        }
+        return {
+          content: String(base.content)
+            .replace(
+              "{content.services.map((service) =>",
+              "{(() => { const serviceItems = [{ slug: 'unsealed' }]; return serviceItems.map((service) =>",
+            )
+            .replace(
+              "<article key={service.name}>",
+              "<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>",
+            )
+            .replace("</article>)}</section>", "</article>); })()}</section>"),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(repairRequest?.validationError).toMatch(/unsafe URL attribute/iu);
+    const repairedCandidate = result.candidates.find(
+      (candidate) => candidate.metadata.routeId === "route-01",
+    );
+    expect(repairedCandidate?.metadata.complianceRepaired).toBe(true);
+    expect(repairedCandidate?.files["Experience.jsx"]).not.toContain(
+      "unsealed",
+    );
+  });
+
   it("keeps the client visual brief alongside sealed content", () => {
     const manifest = buildCreativeContentManifest({
       ...site,
@@ -159,6 +650,86 @@ describe("production experience author", () => {
     });
     expect(manifest.values).not.toHaveProperty("style");
   });
+
+  it("rejects silent hero-image reuse across distinct image roles", () => {
+    const route = { id: "route-image-role-reuse" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    ).replace(
+      "<section data-hero>",
+      '<section data-hero><img src={content.hero.image} alt="Primary" /><img src={content.hero.image} alt="Repeated one" /><img src={content.hero.image} alt="Repeated two" />',
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: {
+          hero: {
+            image: "/images/hero.webp",
+            secondaryImage: "",
+            tertiaryImage: "",
+          },
+        },
+      }),
+    ).toThrow(/reuses the primary hero image across distinct image roles/iu);
+  });
+
+  it("requires a dedicated stateful interaction when the client brief asks for one", () => {
+    const route = { id: "route-purposeful-interaction" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const visualBrief = {
+      artDirection:
+        "Use one purposeful interactive care guide to help visitors choose a next step.",
+    };
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        visualBrief,
+      }),
+    ).toThrow(/must implement the purposeful interaction requested/iu);
+
+    const guided = experience.replace(
+      '<section id="services">',
+      '<section id="services" data-purposeful-interaction><details><summary>{content.services[0].name}</summary><p>{content.services[0].description}</p></details>',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: guided, styles, motion },
+        route,
+        visualBrief,
+      }),
+    ).not.toThrow();
+  });
+
   it("accepts decorative empty alts but rejects missing or nullish alt values", () => {
     const route = { id: "route-decorative-alt" };
     const request = {
@@ -185,6 +756,10 @@ describe("production experience author", () => {
       validateProductionCandidateFiles({
         files: { experience: decorativeImage, styles, motion },
         route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
       }),
     ).not.toThrow();
 
@@ -208,6 +783,82 @@ describe("production experience author", () => {
           route,
         }),
       ).toThrow(/must have a usable alt attribute/iu);
+  });
+
+  it("allows the single shared LeadForm in a reference-mandated utility-panel hero", () => {
+    const route = {
+      id: "route-utility-form",
+      compositionTopology: {
+        hero: "utility-panel",
+        mobileHero: "utility-panel",
+      },
+    };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    )
+      .replace(
+        "<section data-hero>",
+        '<section data-hero><aside className="estimate-panel"><LeadForm content={content} runtime={runtime} /></aside>',
+      )
+      .replace(
+        '<section id="contact"><LeadForm content={content} runtime={runtime} />',
+        '<section id="contact">',
+      );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+  });
+
+  it("keeps the single shared LeadForm in contact when the reference has no utility-panel hero", () => {
+    const route = { id: "route-contact-form" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    )
+      .replace(
+        "<section data-hero>",
+        '<section data-hero><aside className="estimate-panel"><LeadForm content={content} runtime={runtime} /></aside>',
+      )
+      .replace(
+        '<section id="contact"><LeadForm content={content} runtime={runtime} />',
+        '<section id="contact">',
+      );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+      }),
+    ).toThrow(
+      /must render the shared LeadForm inside the contact section for this reference/iu,
+    );
   });
 
   it("requires FAQ navigation anchors inside nav even when an unrelated FAQ link remains", () => {
@@ -421,6 +1072,17 @@ describe("production experience author", () => {
       hiddenAnchor,
       spreadOverridesFalse,
       dynamicSpreadAfterFalse,
+    ])
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: { experience, styles, motion },
+          route,
+        }),
+      ).toThrow(
+        'Candidate route-hidden-navigation navigation must expose literal <a href="#services"> inside a visible native <nav>.',
+      );
+
+    for (const experience of [
       displayNoneNavigation,
       displayNoneAnchor,
       displayNoneSpread,
@@ -433,7 +1095,7 @@ describe("production experience author", () => {
           route,
         }),
       ).toThrow(
-        'Candidate route-hidden-navigation navigation must expose literal <a href="#services"> inside a visible native <nav>.',
+        "Candidate route-hidden-navigation contains forbidden inline styles; visual rules belong in styles.css.",
       );
 
     expect(() =>
@@ -763,23 +1425,36 @@ describe("production experience author", () => {
     );
   });
 
-  it("keeps shared creative form helper text on the candidate contrast palette", () => {
-    const styles = readFileSync(
-      "templates/client-site/src/styles/creative-runtime.css",
-      "utf8",
-    );
-
-    expect(styles).toContain(
-      '[data-creative-host="true"] .launchloom-lead-form {',
-    );
-    expect(styles).toContain("color: var(--ll-creative-ink, currentColor);");
-    expect(styles).toContain(
-      '[data-creative-host="true"] .launchloom-lead-form small {\n  color: var(--ll-creative-muted, currentColor);',
-    );
-    expect(styles).toContain('[data-creative-host="true"] {\n  width: 100%;');
-    expect(styles).toMatch(
-      /\[data-creative-host="true"\]\s*\{[^}]*overflow-x:\s*clip;/u,
-    );
+  it("keeps shared creative form helper text on the candidate contrast palette", async () => {
+    const { chromium } = await import("playwright");
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const page = await browser.newPage();
+      const styles = readFileSync(
+        "templates/client-site/src/styles/creative-runtime.css",
+        "utf8",
+      );
+      await page.setContent(
+        `<style>${styles}</style><body style="--ink:#14201d"><div data-creative-host="true" style="--ll-creative-ink:#ffffff;--ll-creative-muted:#cccccc;background:#14201d"><form class="launchloom-lead-form"><label>Name<input></label><small>Prepare for your visit</small></form></div></body>`,
+      );
+      expect(
+        await page
+          .locator("label")
+          .evaluate((el) => getComputedStyle(el).color),
+      ).toBe("rgb(255, 255, 255)");
+      expect(
+        await page
+          .locator("small")
+          .evaluate((el) => getComputedStyle(el).color),
+      ).toBe("rgb(204, 204, 204)");
+      expect(
+        await page
+          .locator("[data-creative-host]")
+          .evaluate((el) => getComputedStyle(el).overflowX),
+      ).toBe("clip");
+    } finally {
+      await browser.close();
+    }
   });
 
   it("fails closed when a repair route carries present-but-incomplete Reference DNA", () => {
@@ -819,6 +1494,25 @@ describe("production experience author", () => {
     expect(css).not.toContain("--ink:");
   });
 
+  it("namespaces candidate variables when comments precede their declarations", () => {
+    const css = namespaceCreativeCss(`
+      :root {
+        /* Palette chosen for this reference family. */
+        --primary: #14221d;
+        --accent: var(--primary);
+        /* --comment-only: #fff; */
+      }
+      .hero { color: var(--primary); background: var(--host-token); }
+    `);
+
+    expect(css).toContain("--ll-creative-primary: #14221d");
+    expect(css).toContain("--ll-creative-accent: var(--ll-creative-primary)");
+    expect(css).toContain("color: var(--ll-creative-primary)");
+    expect(css).toContain("background: var(--host-token)");
+    expect(css).toContain("--comment-only: #fff;");
+    expect(css).not.toContain("--primary:");
+  });
+
   it("authors three sealed and structurally independent candidate bundles", async () => {
     const result = await authorExperienceCandidates({
       site,
@@ -845,6 +1539,8 @@ describe("production experience author", () => {
     for (const candidate of result.candidates) {
       expect(Object.keys(candidate.files).sort()).toEqual([
         "Experience.jsx",
+        "ServicePage.jsx",
+        "ServicesIndexPage.jsx",
         "content-manifest.json",
         "contract.json",
         "metadata.json",
@@ -881,7 +1577,6 @@ describe("production experience author", () => {
         rightsEvidence:
           "Requester-attested permission covers screenshot retention and model reference use.",
         rightsEvidencePath: "rights/clearance.md",
-        assetEvidencePaths: ["rights/clearance.md"],
       },
       tags: { business: ["jewelry"], style: [`editorial-${index}`] },
       designPrompt: `# Reference implementation brief\n\nReference ${index}: ${"Preserve this route's own composition, image role, and service presentation mechanics without copying its identity. ".repeat(16)}`,
@@ -909,7 +1604,7 @@ describe("production experience author", () => {
       model: "test/model",
     });
 
-    expect(requests).toHaveLength(12);
+    expect(requests).toHaveLength(18);
     for (const request of requests)
       expect(request.route.referenceDossier).toEqual(
         dossiers.get(request.route.id),
@@ -1034,7 +1729,7 @@ describe("production experience author", () => {
       },
     });
 
-    expect(requests).toHaveLength(12);
+    expect(requests).toHaveLength(18);
     expect(
       new Set(requests.map((request) => request.route.signature)).size,
     ).toBe(3);
@@ -1056,12 +1751,13 @@ describe("production experience author", () => {
       ),
     ).toBe(true);
     expect(
-      requests.every((request) =>
-        request.rules.includes("EARLY CONVERSION INVARIANT") &&
-        request.rules.includes("native anchor to #contact") &&
-        request.rules.includes("data-early-conversion") &&
-        request.rules.includes("REFERENCE PROVENANCE BOUNDARY") &&
-        !request.rules.includes("anchor or button"),
+      requests.every(
+        (request) =>
+          request.rules.includes("EARLY CONVERSION INVARIANT") &&
+          request.rules.includes("native anchor to #contact") &&
+          request.rules.includes("data-early-conversion") &&
+          request.rules.includes("REFERENCE PROVENANCE BOUNDARY") &&
+          !request.rules.includes("anchor or button"),
       ),
     ).toBe(true);
   });
@@ -1080,6 +1776,35 @@ describe("production experience author", () => {
         },
       }),
     ).rejects.toThrow(/unapproved import axios/i);
+  });
+
+  it.each([
+    ["style elements", "<style></style>"],
+    ["inline style props", ""],
+  ])("keeps Experience.jsx free of %s", async (kind, prefix) => {
+    await expect(
+      authorExperienceCandidates({
+        site,
+        inspirationPack,
+        generate: async (request) => {
+          const value = safeStage(request);
+          if (request.stage !== "experience") return value;
+          if (kind === "style elements")
+            return {
+              content: String(value.content).replace(
+                "    <main>",
+                `    ${prefix}\n    <main>`,
+              ),
+            };
+          return {
+            content: String(value.content).replace(
+              "<div data-model-experience=",
+              '<div style="color:red" data-model-experience=',
+            ),
+          };
+        },
+      }),
+    ).rejects.toThrow(/inline styles; visual rules belong in styles\.css/iu);
   });
 
   it("accepts sealed content aliases created by ordinary React destructuring", async () => {
@@ -1172,6 +1897,31 @@ describe("production experience author", () => {
           "at validateProductionCandidateFiles (<workspace>/scripts/production-experience-author.mjs:1430:9)",
       },
     ]);
+  });
+
+  it("retains bounded per-route failures without credentials or image bytes when every author fails", async () => {
+    const error: any = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async () => {
+        throw new Error(
+          `Provider/source failure sk-or-v1-${"d".repeat(64)} data:image/webp;base64,${"A".repeat(16000)} ${"x".repeat(8000)}`,
+        );
+      },
+    }).catch((failure) => failure);
+    expect(error).toBeInstanceOf(Error);
+    expect(error.failures).toHaveLength(3);
+    expect(error.failures.map((failure: any) => failure.candidateId)).toEqual([
+      "candidate-a",
+      "candidate-b",
+      "candidate-c",
+    ]);
+    for (const failure of error.failures) {
+      expect(failure.error.length).toBeLessThanOrEqual(2000);
+      expect(failure.error).not.toContain("sk-or-v1-");
+      expect(failure.error).not.toContain("data:image");
+    }
+    expect(error.message.length).toBeLessThanOrEqual(4000);
   });
 
   it("accepts sealed content destructured in the component parameter", async () => {
@@ -1457,7 +2207,10 @@ describe("production experience author", () => {
 
   it("repairs malformed CSS wrappers while retaining decorative empty alts", async () => {
     const result = await authorExperienceCandidates({
-      site,
+      site: {
+        ...site,
+        assets: { ...site.assets, photoOne: site.assets.hero },
+      },
       inspirationPack,
       generate: async (request) => {
         const value = safeStage(request);
@@ -1621,6 +2374,11 @@ describe("production experience author", () => {
     expect(source).toContain("stagePromptDigest");
     expect(source).toContain("referenceDossierDigest");
     expect(source).toContain("evidenceManifest");
+    expect(source).toContain(
+      "compositionTopology: request.route.compositionTopology",
+    );
+    expect(source).toContain("data-hero-copy");
+    expect(source).toContain("data-hero-media");
   });
 
   it("persists generation inputs and authored candidates without success-run artifact duplication", () => {
@@ -1788,4 +2546,391 @@ describe("production experience author", () => {
     }
     expect(digests.size).toBe(3);
   });
+
+  it("authors a service detail page per candidate and hands it to the styles stage", async () => {
+    const requests: AuthorStageRequest[] = [];
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        requests.push(request);
+        return safeStage(request);
+      },
+    });
+
+    for (const candidate of result.candidates) {
+      expect(candidate.files["ServicePage.jsx"]).toContain("data-service-page");
+      expect(candidate.metadata.servicePageAuthored).toBe(true);
+      expect(candidate.files["ServicesIndexPage.jsx"]).toContain(
+        "data-services-index",
+      );
+      expect(candidate.metadata.servicesIndexAuthored).toBe(true);
+      expect(candidate.files["LocationPage.jsx"]).toBeUndefined();
+      expect(candidate.metadata.locationPageAuthored).toBe(false);
+    }
+    const serviceRequests = requests.filter(
+      (request) => request.stage === "service",
+    );
+    expect(serviceRequests).toHaveLength(3);
+    for (const request of serviceRequests)
+      expect(request.experienceSource).toContain("Experience");
+    const servicesIndexRequests = requests.filter(
+      (request) => request.stage === "service-index",
+    );
+    expect(servicesIndexRequests).toHaveLength(3);
+    for (const request of servicesIndexRequests) {
+      expect(request.experienceSource).toContain("Experience");
+      expect(request.servicePageSource).toContain("data-service-page");
+    }
+    const stylesRequests = requests.filter(
+      (request) => request.stage === "styles",
+    );
+    expect(stylesRequests).toHaveLength(3);
+    for (const request of stylesRequests) {
+      expect(request.servicePageSource).toContain("data-service-page");
+      expect(request.servicesIndexSource).toContain("data-services-index");
+    }
+  });
+
+  it("authors location pages only when the intake lists home-service areas", async () => {
+    const requests: AuthorStageRequest[] = [];
+    const locationSite = {
+      ...site,
+      industry: "home-services",
+      businessKind: "plumbing",
+      locations: [
+        {
+          name: "East Austin",
+          slug: "east-austin",
+          description: "Serving East Austin homes.",
+          localNote: "Same-week scheduling depends on the current route.",
+        },
+        {
+          name: "Cedar Park",
+          slug: "cedar-park",
+          description: "Serving Cedar Park homes.",
+        },
+      ],
+    };
+    const result = await authorExperienceCandidates({
+      site: locationSite,
+      inspirationPack,
+      generate: async (request) => {
+        requests.push(request);
+        return safeStage(request);
+      },
+    });
+
+    for (const candidate of result.candidates) {
+      expect(candidate.files["LocationPage.jsx"]).toContain(
+        "data-location-page",
+      );
+      expect(candidate.metadata.locationPageAuthored).toBe(true);
+    }
+    const locationRequests = requests.filter(
+      (request) => request.stage === "location",
+    );
+    expect(locationRequests).toHaveLength(3);
+    for (const request of locationRequests)
+      expect(request.servicePageSource).toContain("data-service-page");
+    const stylesRequests = requests.filter(
+      (request) => request.stage === "styles",
+    );
+    expect(stylesRequests).toHaveLength(3);
+    for (const request of stylesRequests) {
+      expect(request.locationPageSource).toContain("data-location-page");
+      expect(request.servicesIndexSource).toContain("data-services-index");
+    }
+  });
+
+  it("validates the authored service page contract", () => {
+    const route = { id: "route-service" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const valid = String(
+      safeStage({ ...request, stage: "service" }).content || "",
+    );
+    expect(() => validateServicePage(valid, route, {})).not.toThrow();
+
+    const missingRuntime = valid.replace(
+      'import { LeadForm } from "@launchloom/runtime";\n',
+      "",
+    );
+    expect(() => validateServicePage(missingRuntime, route, {})).toThrow(
+      /LeadForm/u,
+    );
+
+    const missingMarker = valid.replace(
+      "data-service-support",
+      "data-service-decisions",
+    );
+    expect(() => validateServicePage(missingMarker, route, {})).toThrow(
+      /data-service-support/u,
+    );
+
+    const missingRelated = valid.replace(/service\.related/gu, "service.items");
+    expect(() => validateServicePage(missingRelated, route, {})).toThrow(
+      /service\.related/u,
+    );
+
+    const remoteImage = valid.replace(
+      "</main>",
+      '<img src="https://example.com/service.png" alt="Service context" /></main>',
+    );
+    expect(() => validateServicePage(remoteImage, route, {})).toThrow(
+      /remote URL/u,
+    );
+
+    const missingContact = valid.replace('id="contact"', 'id="reach-us"');
+    expect(() => validateServicePage(missingContact, route, {})).toThrow(
+      /contact/u,
+    );
+
+    const destructured = `import { LeadForm } from "@launchloom/runtime";
+export default function ServicePage({ content, runtime, service: { name, slug, description, support, related, process, faqs } }) {
+  return <main data-service-page data-service-slug={slug}>
+    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
+    <section data-service-hero><h1>{name}</h1><p>{description}</p></section>
+    <section data-service-support><p>{support.scope}</p><p>{support.preparation}</p><p>{support.nextStep}</p></section>
+    <section data-service-related><ul>{related.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}</ul></section>
+    {process.length > 0 && <ol>{process.map((step) => <li key={step}>{step}</li>)}</ol>}
+    {faqs.length > 0 && <section>{faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>}
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`;
+    expect(() => validateServicePage(destructured, route, {})).not.toThrow();
+  });
+
+  it("validates the authored location and services-index page contracts", () => {
+    const route = { id: "route-inner-pages" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const locationPage = String(
+      safeStage({ ...request, stage: "location" }).content || "",
+    );
+    expect(() => validateLocationPage(locationPage, route, {})).not.toThrow();
+    expect(() =>
+      validateLocationPage(
+        locationPage.replace("data-location-coverage", "data-location-notes"),
+        route,
+        {},
+      ),
+    ).toThrow(/data-location-coverage/u);
+    expect(() =>
+      validateLocationPage(
+        locationPage.replace(/location\.localNote/gu, "location.summary"),
+        route,
+        {},
+      ),
+    ).toThrow(/location\.localNote/u);
+    expect(() =>
+      validateLocationPage(
+        locationPage.replace('id="contact"', 'id="reach-us"'),
+        route,
+        {},
+      ),
+    ).toThrow(/contact/u);
+
+    const servicesIndexPage = String(
+      safeStage({ ...request, stage: "service-index" }).content || "",
+    );
+    expect(() =>
+      validateServicesIndexPage(servicesIndexPage, route, {}),
+    ).not.toThrow();
+    expect(() =>
+      validateServicesIndexPage(
+        servicesIndexPage.replace(
+          "data-services-index-list",
+          "data-services-list",
+        ),
+        route,
+        {},
+      ),
+    ).toThrow(/data-services-index-list/u);
+    expect(() =>
+      validateServicesIndexPage(
+        servicesIndexPage.replace(
+          /content\.copy\.servicesIntro/gu,
+          "content.copy.servicesBody",
+        ),
+        route,
+        {},
+      ),
+    ).toThrow(/content\.copy\.servicesIntro/u);
+    expect(() =>
+      validateServicesIndexPage(
+        servicesIndexPage.replace(
+          "</main>",
+          '<img src="https://example.com/index.png" alt="Services" /></main>',
+        ),
+        route,
+        {},
+      ),
+    ).toThrow(/remote URL/u);
+  });
+});
+
+it("supplies safe local color pairings before creative authorship", () => {
+  const manifest = buildCreativeContentManifest({
+    ...site,
+    style: {
+      primaryColor: "#e8d590",
+      surfaceColor: "#ffffff",
+      inkColor: "#f8f6f0",
+    },
+  });
+  expect(manifest.visualBrief.palette).toHaveProperty("surfaces.nav");
+  expect(manifest.visualBrief.palette.inkColor).not.toBe("#f8f6f0");
+});
+it("preserves canonical semantic color properties while isolating arbitrary authored tokens", () => {
+  const css = namespaceCreativeCss(
+    '[data-ll-surface="nav"]{--ll-text:#14201d;--ink:white;color:var(--ll-text);background:var(--ink)}',
+  );
+  expect(css).toContain("color:var(--ll-text)");
+  expect(css).toContain("--ll-text:#14201d");
+  expect(css).toContain("--ll-creative-ink:white");
+});
+
+describe("client typography and accent conformance", () => {
+  it("carries chosen families and accent into the visual brief", () => {
+    const manifest = buildCreativeContentManifest({
+      ...site,
+      style: {
+        primaryColor: "#245a4c",
+        headingFont: "fraunces",
+        bodyFont: "inter",
+        accentColor: "#b45309",
+      },
+    });
+    expect(manifest.visualBrief.typography).toMatchObject({
+      heading: { id: "fraunces", name: "Fraunces" },
+      body: { id: "inter", name: "Inter" },
+    });
+    expect(String(manifest.visualBrief.typography.heading?.stack)).toContain(
+      "Fraunces",
+    );
+    expect(String(manifest.visualBrief.typography.body?.stack)).toContain(
+      "Inter",
+    );
+    expect(manifest.visualBrief.accent).toMatchObject({ color: "#b45309" });
+    expect(String(manifest.visualBrief.accent?.contrastColor)).toMatch(
+      /^#[a-f0-9]{6}$/u,
+    );
+  });
+
+  it("keeps typography and accent null when the client made no choice", () => {
+    const manifest = buildCreativeContentManifest({
+      ...site,
+      style: { primaryColor: "#245a4c" },
+    });
+    expect(manifest.visualBrief.typography).toEqual({
+      heading: null,
+      body: null,
+    });
+    expect(manifest.visualBrief.accent).toBeNull();
+  });
+
+  it("requires authored styles to bind chosen families through the shared variables", () => {
+    const route = { id: "route-font-binding" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const fontBrief = {
+      typography: {
+        heading: {
+          id: "fraunces",
+          name: "Fraunces",
+          stack: '"Fraunces", Georgia, serif',
+        },
+        body: {
+          id: "inter",
+          name: "Inter",
+          stack: '"Inter", Arial, sans-serif',
+        },
+      },
+    };
+    const content = {
+      hero: { image: "/images/hero.webp" },
+      brand: { phone: "+12125550186" },
+    };
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content,
+        visualBrief: fontBrief,
+      }),
+    ).toThrow(/font-heading/u);
+
+    const headingOnly = `${styles}\nh1 { font-family: var(--font-heading, Georgia, serif); }`;
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles: headingOnly, motion },
+        route,
+        content,
+        visualBrief: fontBrief,
+      }),
+    ).toThrow(/font-body/u);
+
+    const boundStyles = `${styles}\nh1, h2, h3 { font-family: var(--font-heading, "Iowan Old Style", Georgia, serif); }\nbody, p { font-family: var(--font-body, Avenir, Arial, sans-serif); }`;
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles: boundStyles, motion },
+        route,
+        content,
+        visualBrief: fontBrief,
+      }),
+    ).not.toThrow();
+
+    const redeclared = `${boundStyles}\n:root { --accent: #b45309; }`;
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles: redeclared, motion },
+        route,
+        content,
+        visualBrief: fontBrief,
+      }),
+    ).toThrow(/redeclare/u);
+  });
+});
+
+it("seals only route-approved location links in new explicit configurations", () => {
+  const config = {
+    business: { name: "Fixture", serviceAreas: ["Testville"] },
+    services: [],
+    locations: [{ name: "Testville", slug: "testville" }],
+    routePolicy: { version: 1, decisions: [] },
+  };
+  const manifest = buildCreativeContentManifest(config, { id: "fixture" });
+  expect(manifest.values.locations).toEqual([]);
+  expect(manifest.values.brand.serviceAreas).toEqual(["Testville"]);
+  expect(config.locations).toHaveLength(1);
+});
+
+it('requires the shared route-bound page primitive for a rich service source',()=>{
+ const rich=readFileSync('tests/fixtures/page-briefs/ServicePage.jsx.txt','utf8');
+ expect(()=>validateServicePage(rich,{id:'synthetic-rich'}, {pageBriefContractVersion:1})).not.toThrow();
+ expect(()=>validateServicePage(rich.replace('<PageBriefSections brief={service.brief} />',''),{id:'synthetic-rich'},{pageBriefContractVersion:1})).toThrow('PageBriefSections');
+ expect(()=>validateServicePage(rich.replace('brief={service.brief}','brief={content}'),{id:'synthetic-rich'},{pageBriefContractVersion:1})).toThrow('PageBriefSections');
+});
+it('requires the shared route-bound page primitive for a rich location source',()=>{
+ const rich=readFileSync('tests/fixtures/page-briefs/LocationPage.jsx.txt','utf8');
+ expect(()=>validateLocationPage(rich,{id:'synthetic-rich'},{pageBriefContractVersion:1})).not.toThrow();
+ expect(()=>validateLocationPage(rich.replace('<PageBriefSections brief={location.brief} />',''),{id:'synthetic-rich'},{pageBriefContractVersion:1})).toThrow('PageBriefSections');
 });

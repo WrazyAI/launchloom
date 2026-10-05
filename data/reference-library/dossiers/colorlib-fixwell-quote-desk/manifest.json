@@ -12,6 +12,10 @@
     "rightsEvidencePath": "rights/LICENSE",
     "assetEvidencePaths": [
       "rights/CREDITS.txt"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {
@@ -77,7 +81,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "0dcf7182b45a4cc62dc971f24eb3617705ef04bb26476f38021dfcdb0534833b"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -85,7 +90,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "d425c585aa4bcda5d7cdfe457750bcdbb74301fa28fb77baf4664dd40edf892b"
     }
   },
   "referenceDna": {
@@ -197,7 +203,20 @@
       "coverage is accurate and does not imply an unverified office",
       "reviews/work evidence are authentic and approved",
       "mobile form and service list fit at 390px with no horizontal overflow"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "utility-panel",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "task-panel-in-opening",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "medium",
+      "secondaryPatterns": [
+        "hybrid-hero-needs-human-review"
+      ],
+      "note": "Screenshot shows overlapping layout mechanics; preserve the hybrid treatment rather than flattening it to this primary topology.",
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "curated-open-license-pilot",

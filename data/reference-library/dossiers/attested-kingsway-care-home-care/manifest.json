@@ -17,11 +17,9 @@
     "rights": "permission-cleared",
     "rightsEvidence": "Requester attestation recorded 2026-09-25 permits internal retention of the full-page captures and their use as visual input to the LaunchLoom pipeline model. No source-owner grant or license was uploaded. See rights/requester-attestation.md.",
     "rightsEvidencePath": "rights/requester-attestation.md",
-    "assetEvidencePaths": [
-      "rights/requester-attestation.md"
-    ],
     "provenanceEvidencePaths": [
-      "rights/capture-record.md"
+      "rights/capture-record.md",
+      "rights/business-verification.md"
     ]
   },
   "tags": {
@@ -70,7 +68,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "c5d2207080923e7e060b9af4227448db73861b7d1975939e1234ebcdba66a92a"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -78,7 +77,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "734201a365f723af8fb228ea649aa3bb776fff9fd5507542d4b8415a3868024c"
     }
   },
   "referenceDna": {
@@ -188,7 +188,17 @@
       "The mobile layout preserves the opening action, scannable service rows, dignified image crops, and footer access.",
       "Any review, award, location, credential, staff identity, care outcome, or availability claim is supplied by the client before use.",
       "No source identity, original photography, exact copy, or branded proof appears in the generated site."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

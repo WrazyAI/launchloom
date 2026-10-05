@@ -313,7 +313,7 @@ async function notifyFailure(
       headers: {
         Authorization: `Bearer ${env.RESEND_API_KEY}`,
         "Content-Type": "application/json",
-        "Idempotency-Key": `revision-failed-${row.request_id}`,
+        "Idempotency-Key": `revision-failed-coordinator-${row.request_id}`,
       },
       body: JSON.stringify({
         from: env.LAUNCHLOOM_FROM_EMAIL,

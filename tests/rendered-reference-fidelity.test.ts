@@ -222,6 +222,161 @@ describe("rendered reference request retries", () => {
     },
   );
 
+  it("retries an affordability-limited diversity judge below the provider ceiling", async () => {
+    const requests: Record<string, any>[] = [];
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockImplementationOnce(async (_url, options) => {
+        requests.push(JSON.parse(String(options?.body || "{}")));
+        return failure(
+          402,
+          "This request requires more credits, or fewer max_tokens. You requested up to 12000 tokens, but can only afford 6670.",
+        );
+      })
+      .mockImplementationOnce(async (_url, options) => {
+        requests.push(JSON.parse(String(options?.body || "{}")));
+        return response({
+          overallDistinctiveness: 88,
+          genericFallbackDetected: false,
+          pairs: [
+            {
+              left: "candidate-a",
+              right: "candidate-b",
+              distance: 84,
+              reason: "Their rendered compositions differ.",
+            },
+          ],
+          summary: "The two visual systems are distinct.",
+        });
+      });
+
+    const result = await evaluateRenderedDiversity({
+      candidates: [
+        {
+          candidateId: "candidate-a",
+          desktop: files.candidateDesktop,
+          mobile: files.candidateMobile,
+        },
+        {
+          candidateId: "candidate-b",
+          desktop: files.secondDesktop,
+          mobile: files.secondMobile,
+        },
+      ],
+      fetchImpl,
+    });
+
+    expect(result.pass).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(requests.map((request) => request.max_tokens)).toEqual([
+      12_000, 5_646,
+    ]);
+    expect(requests.map((request) => request.reasoning.effort)).toEqual([
+      "medium",
+      "medium",
+    ]);
+  });
+
+  it("does not retry an affordability-limited judge below the safe output floor", async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        failure(
+          402,
+          "This request requires more credits, or fewer max_tokens. You requested up to 12000 tokens, but can only afford 2000.",
+        ),
+      );
+
+    await expect(
+      evaluateRenderedDiversity({
+        candidates: [
+          {
+            candidateId: "candidate-a",
+            desktop: files.candidateDesktop,
+            mobile: files.candidateMobile,
+          },
+          {
+            candidateId: "candidate-b",
+            desktop: files.secondDesktop,
+            mobile: files.secondMobile,
+          },
+        ],
+        fetchImpl,
+      }),
+    ).rejects.toThrow(/Rendered diversity judge failed \(402\)/u);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("backs off on the provider's transient in-flight credit response", async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        failure(
+          402,
+          "This request requires more credits, or fewer max_tokens. You requested up to 12000 tokens, but can only afford 6670.",
+        ),
+      )
+      .mockResolvedValueOnce(
+        failure(
+          402,
+          "This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.",
+        ),
+      )
+      .mockResolvedValueOnce(
+        failure(
+          402,
+          "This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.",
+        ),
+      )
+      .mockResolvedValueOnce(
+        response({
+          overallDistinctiveness: 88,
+          genericFallbackDetected: false,
+          pairs: [
+            {
+              left: "candidate-a",
+              right: "candidate-b",
+              distance: 84,
+              reason: "Their rendered compositions differ.",
+            },
+          ],
+          summary: "The two visual systems are distinct.",
+        }),
+      );
+
+    const pending = evaluateRenderedDiversity({
+      candidates: [
+        {
+          candidateId: "candidate-a",
+          desktop: files.candidateDesktop,
+          mobile: files.candidateMobile,
+        },
+        {
+          candidateId: "candidate-b",
+          desktop: files.secondDesktop,
+          mobile: files.secondMobile,
+        },
+      ],
+      fetchImpl,
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(1);
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    await vi.advanceTimersByTimeAsync(3_999);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    await vi.advanceTimersByTimeAsync(1);
+    expect((await pending).pass).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
+    const requestBodies = fetchImpl.mock.calls.map((call) =>
+      JSON.parse(String(call[1]?.body || "{}")),
+    );
+    expect(requestBodies.map((request) => request.max_tokens)).toEqual([
+      12_000, 5_646, 5_646, 5_646,
+    ]);
+  });
+
   it("stops after three attempts and preserves the final HTTP error", async () => {
     const fetchImpl = vi
       .fn<typeof fetch>()
@@ -320,14 +475,12 @@ describe("rendered reference request retries", () => {
       { choices: [{ message: { content: "invalid" } }] },
       "returned invalid JSON",
     ],
-    [
-      { choices: [{ finish_reason: "length", message: { content: "{}" } }] },
-      "was truncated",
-    ],
   ])("does not retry invalid model output: %j", async (payload, message) => {
     const fetchImpl = vi
       .fn<typeof fetch>()
-      .mockResolvedValue(new Response(JSON.stringify(payload)));
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify(payload))),
+      );
     await expect(evaluate(fetchImpl)).rejects.toThrow(
       `Rendered reference judge ${message}`,
     );
@@ -481,6 +634,14 @@ describe("rendered reference fidelity", () => {
     expect(textBlocks).toContain("CLIENT VISUAL BRIEF");
     expect(textBlocks).toContain("#f5f0e4");
     expect(textBlocks).toContain("Light tactile craft collage");
+    expect(textBlocks).toContain("CLIENT PALETTE ROLE CONTRACT");
+    expect(textBlocks).toContain("surfaceColor is the dominant page surface");
+    expect(textBlocks).toContain(
+      "Keep overallScore limited to the assigned reference mechanics",
+    );
+    expect(requests[0].messages[0].content).toContain(
+      "overallScore must measure assigned-reference mechanics only",
+    );
   });
 
   it("passes only from pixel-level reference scores, not DOM markers", async () => {
@@ -647,6 +808,112 @@ describe("rendered reference fidelity", () => {
 
     expect(requests[0].max_tokens).toBe(12_000);
     expect(result.pass).toBe(true);
+  });
+
+  it("retries a truncated visual judge with lower reasoning effort", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const requests: Record<string, any>[] = [];
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockImplementationOnce(async (_url, options) => {
+        requests.push(JSON.parse(String(options?.body || "{}")));
+        return new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "length",
+                message: { content: '{"overallDistinctiveness":' },
+              },
+            ],
+            usage: {
+              completion_tokens: 12_000,
+              completion_tokens_details: { reasoning_tokens: 11_800 },
+            },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      })
+      .mockImplementationOnce(async (_url, options) => {
+        requests.push(JSON.parse(String(options?.body || "{}")));
+        return response({
+          overallDistinctiveness: 90,
+          genericFallbackDetected: false,
+          pairs: [
+            {
+              left: "candidate-a",
+              right: "candidate-b",
+              distance: 90,
+              reason: "Their visible compositions differ.",
+            },
+          ],
+          summary: "The candidate compositions are distinct.",
+        });
+      });
+
+    const result = await evaluateRenderedDiversity({
+      candidates: [
+        {
+          candidateId: "candidate-a",
+          desktop: files.candidateDesktop,
+          mobile: files.candidateMobile,
+        },
+        {
+          candidateId: "candidate-b",
+          desktop: files.secondDesktop,
+          mobile: files.secondMobile,
+        },
+      ],
+      fetchImpl,
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(requests[0].reasoning.effort).toBe("medium");
+    expect(requests[1].reasoning.effort).toBe("low");
+    expect(requests[1].max_tokens).toBe(12_000);
+    expect(result.pass).toBe(true);
+  });
+
+  it("never treats a repeatedly truncated diversity judge as a pass", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const fetchImpl = vi.fn<typeof fetch>().mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "length",
+                message: { content: '{"overallDistinctiveness":' },
+              },
+            ],
+            usage: {
+              completion_tokens: 12_000,
+              completion_tokens_details: { reasoning_tokens: 11_800 },
+            },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
+
+    await expect(
+      evaluateRenderedDiversity({
+        candidates: [
+          {
+            candidateId: "candidate-a",
+            desktop: files.candidateDesktop,
+            mobile: files.candidateMobile,
+          },
+          {
+            candidateId: "candidate-b",
+            desktop: files.secondDesktop,
+            mobile: files.secondMobile,
+          },
+        ],
+        fetchImpl,
+      }),
+    ).rejects.toThrow(/Rendered diversity judge was truncated/u);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
   it("uses screenshot distance rather than route metadata for diversity", async () => {

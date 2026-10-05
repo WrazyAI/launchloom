@@ -7,6 +7,7 @@ import {
   RevisionCoordinator,
   type CreativeRepairFinding,
   type CreativeRepairSessionInput,
+  type CreativeRepairSessionView,
   type RevisionRequestInput,
 } from "./revision-coordinator";
 import {
@@ -30,12 +31,28 @@ import {
 } from "./seo-readiness";
 import { OnboardingInvites } from "./onboarding-invites";
 import {
+  GenerationLedger,
+  type GenerationCostKind,
+  type GenerationEventInput,
+  type GenerationRecordInput,
+} from "./generation-ledger";
+import { renderAdminDashboardHtml } from "./admin-dashboard";
+import {
   CLIENT_INTAKE_V2_ISSUE_FIELDS,
   normalizeClientIntake,
 } from "../../src/lib/client-intake-v2.mjs";
+import {
+  deriveCoverageConfirmation,
+  verifyCoverageReference,
+} from "../../src/lib/coverage-contract.mjs";
+import {
+  coverageLookupRateLimited,
+  lookupCoverageAreas,
+} from "./coverage-areas";
 
 export { RevisionCoordinator } from "./revision-coordinator";
 export { OnboardingInvites } from "./onboarding-invites";
+export { GenerationLedger } from "./generation-ledger";
 
 export interface Env {
   ASSETS: {
@@ -66,6 +83,8 @@ export interface Env {
   ONBOARDING_ADMIN_EMAILS?: string;
   ONBOARDING_ACCESS_AUD?: string;
   ONBOARDING_INVITES: DurableObjectNamespace<OnboardingInvites>;
+  GENERATION_LEDGER: DurableObjectNamespace<GenerationLedger>;
+  GENERATION_TRACKING_SECRET?: string;
   TURNSTILE_SECRET_KEY?: string;
   FAL_KEY?: string;
   FAL_IMAGE_MODEL?: string;
@@ -278,25 +297,19 @@ async function accessAdminEmail(ctx: ExecutionContext, env: Env) {
   return email && permitted.includes(email) ? email : "";
 }
 
-const onboardingAdminHtml = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>Private invitations | LaunchLoom</title><style>
-*{box-sizing:border-box}body{margin:0;background:#f4f2ea;color:#10251f;font:16px/1.5 system-ui,sans-serif}.shell{width:min(900px,calc(100% - 36px));margin:40px auto 80px}.card{padding:clamp(22px,5vw,48px);border:1px solid #d9ddd1;border-radius:24px;background:#fffefa;box-shadow:0 20px 70px #10251f1f}.eyebrow{color:#40695b;font-size:.7rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase}h1{margin:14px 0;font-size:clamp(2rem,5vw,3.6rem);letter-spacing:-.055em;line-height:1}p{color:#587069;line-height:1.65}.row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid #d9ddd1}.row small{display:block;color:#587069}.field{display:grid;gap:7px;margin:20px 0}.field input{width:100%;padding:12px;border:1px solid #d9ddd1;border-radius:12px;font:inherit}.button{display:inline-flex;align-items:center;justify-content:center;padding:13px 19px;border:0;border-radius:999px;background:#10251f;color:#fffef9;font:inherit;font-weight:750;cursor:pointer}.secondary{background:#d9f06b;color:#10251f}.linkrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}.linkrow input{min-width:0;padding:12px;border:1px solid #d9ddd1;border-radius:12px;font:inherit}.text-button{border:0;background:transparent;color:#356c5b;font:inherit;font-weight:700;cursor:pointer}.divider{border-top:1px solid #d9ddd1;margin:36px 0}button:disabled{opacity:.6;cursor:wait}[hidden]{display:none!important}@media(max-width:600px){.linkrow{grid-template-columns:1fr}.row{align-items:flex-start}}
-</style></head><body><main class="shell"><section class="card"><span class="eyebrow">Private invite management</span><h1>Invite a business owner.</h1><p>Create a private, one-use link. Bind it to the preview email or leave the email field blank.</p><form id="create"><label class="field">Client preview email (optional)<input type="email" name="clientEmail" autocomplete="email" placeholder="owner@example.com"></label><button class="button" type="submit">Create private link</button></form><p id="status" role="status" aria-live="polite"></p><section id="new" hidden><h2>New invitation</h2><p>The link is shown once. Copy it and send it directly to the business owner.</p><div class="linkrow"><input id="invite-link" readonly aria-label="New private invitation link"><button class="button secondary" id="copy" type="button">Copy link</button></div></section><div class="divider"></div><section><h2>Recent invitations</h2><button class="text-button" id="refresh" type="button">Refresh list</button><div id="invites" aria-live="polite"></div></section></section></main><script>
-(()=>{const endpoint="/api/admin/onboarding-invites",status=document.querySelector("#status"),list=document.querySelector("#invites");async function request(method="GET",body){const response=await fetch(endpoint,{method,headers:body?{"Content-Type":"application/json"}:{},body:body?JSON.stringify(body):undefined,credentials:"same-origin",cache:"no-store"});const result=await response.json().catch(()=>({}));if(!response.ok)throw Error(result.error||"Invite management is unavailable.");return result}async function refresh(){try{const result=await request();list.replaceChildren();for(const invite of result.invites||[]){const row=document.createElement("article");row.className="row";const details=document.createElement("div"),email=document.createElement("strong"),meta=document.createElement("small");email.textContent=invite.clientEmail||"Email not bound";meta.textContent=invite.status+" · expires "+new Date(invite.expiresAt).toLocaleString();details.append(email,meta);row.append(details);if(invite.status==="unused"){const button=document.createElement("button");button.className="text-button";button.type="button";button.textContent="Revoke";button.addEventListener("click",async()=>{button.disabled=true;try{await request("POST",{action:"revoke",inviteId:invite.inviteId});status.textContent="Invitation revoked.";await refresh()}catch(error){status.textContent=error.message;button.disabled=false}});row.append(button)}list.append(row)}if(!list.children.length)list.textContent="No invitations yet."}catch(error){status.textContent=error.message||"Invite list is unavailable."}}document.querySelector("#create").addEventListener("submit",async event=>{event.preventDefault();const button=event.currentTarget.querySelector("button");button.disabled=true;status.textContent="Creating invitation…";try{const form=new FormData(event.currentTarget),result=await request("POST",{action:"create",clientEmail:form.get("clientEmail")});document.querySelector("#invite-link").value=result.url;document.querySelector("#new").hidden=false;status.textContent="Private invitation created.";event.currentTarget.reset();await refresh()}catch(error){status.textContent=error.message||"Invitation could not be created."}finally{button.disabled=false}});document.querySelector("#copy").addEventListener("click",async()=>{await navigator.clipboard.writeText(document.querySelector("#invite-link").value);status.textContent="Invitation link copied."});document.querySelector("#refresh").addEventListener("click",refresh);void refresh()})();
-</script></body></html>`;
 
 async function onboardingAdminPage(request: Request, env: Env, ctx: ExecutionContext) {
   if (request.method !== "GET") return new Response("Method not allowed", { status: 405 });
   if (!(await accessAdminEmail(ctx, env)))
     return new Response("Access denied.", { status: 403, headers: { "Cache-Control": "no-store" } });
-  return new Response(onboardingAdminHtml, {
+  return new Response(renderAdminDashboardHtml(), {
     status: 200,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "no-referrer",
-      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
     },
   });
 }
@@ -381,6 +394,326 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
   } catch {
     return json({ error: "Could not create the invitation." }, 400, headers);
   }
+}
+
+const GENERATION_STATUSES = new Set([
+  "queued",
+  "generating",
+  "preview_ready",
+  "attention",
+  "failed",
+  "published",
+  "revision",
+]);
+const GENERATION_COST_KINDS = new Set(["actual", "estimated", "unreported"]);
+const GENERATION_ID_PATTERN = /^[a-z0-9][a-z0-9:_-]{5,119}$/;
+
+function generationLedger(env: Env) {
+  return env.GENERATION_LEDGER.getByName("launchloom-generations");
+}
+
+function boundedTimestamp(value: unknown) {
+  if (value === undefined || value === null || value === "") return null;
+  const number = Number(value);
+  // 2020-01-01 through roughly 2033, plus small clock skew allowance.
+  return Number.isFinite(number) && number >= 1_577_836_800_000 && number <= 2_000_000_000_000
+    ? Math.round(number)
+    : null;
+}
+
+function safeGenerationUrl(value: unknown) {
+  const raw = clean(value, 600);
+  if (!raw) return "";
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:") return "";
+    const host = url.hostname.toLowerCase();
+    const allowed =
+      host === "github.com" ||
+      host.endsWith(".pages.dev") ||
+      host === "launchloom.wrazyos.com" ||
+      host.endsWith(".wrazyos.com");
+    url.username = "";
+    url.password = "";
+    return allowed ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function generationInputFrom(
+  value: Record<string, unknown>,
+  fallbackId: string,
+): GenerationRecordInput | null {
+  const generationId = clean(value.generationId || fallbackId, 120).toLowerCase();
+  if (!GENERATION_ID_PATTERN.test(generationId)) return null;
+  const input: GenerationRecordInput = { generationId };
+  const submissionId = clean(value.submissionId, 100).toLowerCase();
+  if (submissionId) {
+    if (!/^[a-z0-9-]{12,100}$/u.test(submissionId)) return null;
+    input.submissionId = submissionId;
+  }
+  if (value.issueNumber !== undefined && value.issueNumber !== null && value.issueNumber !== "") {
+    const issue = Number(value.issueNumber);
+    if (!Number.isInteger(issue) || issue < 1 || issue > 10_000_000) return null;
+    input.issueNumber = issue;
+  }
+  const businessName = clean(value.businessName, 200);
+  if (businessName) input.businessName = businessName;
+  const slug = clean(value.slug, 80);
+  if (slug) input.slug = slug;
+  const siteId = clean(value.siteId, 63).toLowerCase();
+  if (siteId) {
+    if (!/^[a-z0-9][a-z0-9-]{0,62}$/u.test(siteId)) return null;
+    input.siteId = siteId;
+  }
+  const repo = clean(value.repo, 240);
+  if (repo) {
+    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(repo)) return null;
+    input.repo = repo;
+  }
+  const clientEmail = clean(value.clientEmail, 240).toLowerCase();
+  if (clientEmail) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(clientEmail)) return null;
+    input.clientEmail = clientEmail;
+  }
+  const status = clean(value.status, 40).toLowerCase();
+  if (status) {
+    if (!GENERATION_STATUSES.has(status)) return null;
+    input.status = status;
+  }
+  if (value.previewUrl !== undefined && value.previewUrl !== null && value.previewUrl !== "") {
+    const previewUrl = safeGenerationUrl(value.previewUrl);
+    if (!previewUrl) return null;
+    input.previewUrl = previewUrl;
+  }
+  if (
+    value.productionUrl !== undefined &&
+    value.productionUrl !== null &&
+    value.productionUrl !== ""
+  ) {
+    const productionUrl = safeGenerationUrl(value.productionUrl);
+    if (!productionUrl) return null;
+    input.productionUrl = productionUrl;
+  }
+  if (value.reviewPr !== undefined && value.reviewPr !== null && value.reviewPr !== "") {
+    const reviewPr = Number(value.reviewPr);
+    if (!Number.isInteger(reviewPr) || reviewPr < 1 || reviewPr > 10_000_000) return null;
+    input.reviewPr = reviewPr;
+  }
+  const reviewedSha = clean(value.reviewedSha, 40).toLowerCase();
+  if (reviewedSha) {
+    if (!/^[a-f0-9]{40}$/u.test(reviewedSha)) return null;
+    input.reviewedSha = reviewedSha;
+  }
+  const repairSessionId = clean(value.repairSessionId, 100).toLowerCase();
+  if (repairSessionId) {
+    if (!/^[a-z0-9-]{12,100}$/u.test(repairSessionId)) return null;
+    input.repairSessionId = repairSessionId;
+  }
+  if (value.failureReason !== undefined)
+    input.failureReason = clean(value.failureReason, 500) || null;
+  const startedAt = boundedTimestamp(value.startedAt);
+  if (startedAt) input.startedAt = startedAt;
+  const completedAt = boundedTimestamp(value.completedAt);
+  if (completedAt) input.completedAt = completedAt;
+  return input;
+}
+
+function generationEventsFrom(value: unknown): GenerationEventInput[] | null {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value) || value.length > 50) return null;
+  const events: GenerationEventInput[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+    const record = item as Record<string, unknown>;
+    const eventKey = clean(record.eventKey, 120).toLowerCase();
+    const stage = clean(record.stage, 40).toLowerCase();
+    const status = clean(record.status, 40).toLowerCase();
+    if (
+      !/^[a-z0-9][a-z0-9:._-]{0,119}$/u.test(eventKey) ||
+      !/^[a-z0-9_-]{1,40}$/u.test(stage) ||
+      !/^[a-z0-9_-]{1,40}$/u.test(status)
+    )
+      return null;
+    const costKind = clean(record.costKind, 20).toLowerCase() || "unreported";
+    if (!GENERATION_COST_KINDS.has(costKind)) return null;
+    let costUsd: number | null = null;
+    if (record.costUsd !== undefined && record.costUsd !== null && record.costUsd !== "") {
+      const amount = Number(record.costUsd);
+      if (!Number.isFinite(amount) || amount < 0 || amount > 1000) return null;
+      costUsd = Math.round(amount * 1_000_000) / 1_000_000;
+    }
+    let detail = "{}";
+    if (typeof record.detail === "string" && record.detail.trim())
+      detail = record.detail.slice(0, 8000);
+    else if (record.detail && typeof record.detail === "object")
+      detail = JSON.stringify(record.detail).slice(0, 8000);
+    events.push({
+      eventKey,
+      stage,
+      status,
+      provider: clean(record.provider, 120) || null,
+      model: clean(record.model, 120) || null,
+      costUsd,
+      costKind: costKind as GenerationCostKind,
+      detail,
+      createdAt: boundedTimestamp(record.createdAt) || Date.now(),
+    });
+  }
+  return events;
+}
+
+function internalSecretAuthorized(request: Request, secret?: string) {
+  const authorization = request.headers.get("Authorization") || "";
+  const supplied = authorization.startsWith("Bearer ")
+    ? authorization.slice(7)
+    : "";
+  return Boolean(secret && constantTimeEqual(supplied, secret));
+}
+
+async function generationIngest(request: Request, env: Env) {
+  if (request.method !== "POST")
+    return json({ error: "Method not allowed." }, 405);
+  if (!env.GENERATION_TRACKING_SECRET)
+    return json({ error: "Generation tracking is not configured." }, 503);
+  if (!internalSecretAuthorized(request, env.GENERATION_TRACKING_SECRET))
+    return json({ error: "Unauthorized." }, 401);
+  const raw = await request.text();
+  if (raw.length > 512_000) return json({ error: "Payload too large." }, 413);
+  let body: Record<string, unknown>;
+  try {
+    body = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return json({ error: "Invalid JSON." }, 400);
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body))
+    return json({ error: "Invalid payload." }, 400);
+  const action = clean(body.action, 20).toLowerCase() || "event";
+  if (!["start", "event", "complete"].includes(action))
+    return json({ error: "Unsupported action." }, 400);
+  const generationValue = (
+    body.generation && typeof body.generation === "object" && !Array.isArray(body.generation)
+      ? body.generation
+      : {}
+  ) as Record<string, unknown>;
+  const generationInput = generationInputFrom(
+    generationValue,
+    clean(body.generationId, 120).toLowerCase(),
+  );
+  if (!generationInput)
+    return json({ error: "Invalid generation fields." }, 400);
+  if (action === "start" && !generationInput.status)
+    generationInput.status = "generating";
+  if (action === "complete") {
+    if (!generationInput.status)
+      generationInput.status = generationInput.failureReason ? "failed" : "preview_ready";
+    if (!generationInput.completedAt) generationInput.completedAt = Date.now();
+  }
+  const events = generationEventsFrom(body.events);
+  if (events === null) return json({ error: "Invalid event fields." }, 400);
+  const ledger = generationLedger(env);
+  const result = await ledger.upsertGeneration(generationInput);
+  if (events.length) await ledger.recordEvents(generationInput.generationId, events);
+  return json({ ok: true, created: result.created, events: events.length });
+}
+
+async function generationHeroUpload(request: Request, env: Env) {
+  if (request.method !== "POST")
+    return json({ error: "Method not allowed." }, 405);
+  if (!env.GENERATION_TRACKING_SECRET)
+    return json({ error: "Generation tracking is not configured." }, 503);
+  if (!internalSecretAuthorized(request, env.GENERATION_TRACKING_SECRET))
+    return json({ error: "Unauthorized." }, 401);
+  const generationId = clean(
+    new URL(request.url).searchParams.get("id"),
+    120,
+  ).toLowerCase();
+  if (!GENERATION_ID_PATTERN.test(generationId))
+    return json({ error: "Invalid generation." }, 400);
+  const contentType = (request.headers.get("Content-Type") || "")
+    .split(";")[0]
+    .trim()
+    .toLowerCase();
+  if (!["image/webp", "image/png", "image/jpeg"].includes(contentType))
+    return json({ error: "Upload a WebP, PNG, or JPEG image." }, 415);
+  const declared = Number(request.headers.get("Content-Length") || 0);
+  if (declared && declared > 1_800_000)
+    return json({ error: "Hero image is too large." }, 413);
+  const bytes = await request.arrayBuffer();
+  if (!bytes.byteLength || bytes.byteLength > 1_800_000)
+    return json({ error: "Hero image is too large." }, 413);
+  await generationLedger(env).storeHero(generationId, contentType, bytes);
+  return json({ ok: true, bytes: bytes.byteLength });
+}
+
+async function adminGenerations(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+) {
+  const workerOrigin = new URL(request.url).origin;
+  const origin = request.headers.get("Origin") || "";
+  const sameOriginRequest = !origin || origin === workerOrigin;
+  const headers: Record<string, string> = {
+    "Cache-Control": "no-store",
+    Vary: "Origin",
+    ...(origin === workerOrigin
+      ? {
+          "Access-Control-Allow-Origin": workerOrigin,
+          "Access-Control-Allow-Credentials": "true",
+        }
+      : {}),
+  };
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: sameOriginRequest ? 204 : 403, headers });
+  if (origin && origin !== workerOrigin)
+    return json({ error: "Invalid request origin." }, 403, headers);
+  if (request.method !== "GET")
+    return json({ error: "Method not allowed." }, 405, headers);
+  if (!(await accessAdminEmail(ctx, env)))
+    return json({ error: "Access denied." }, 403, headers);
+  const id = clean(new URL(request.url).searchParams.get("id"), 120).toLowerCase();
+  if (id) {
+    if (!GENERATION_ID_PATTERN.test(id))
+      return json({ error: "Invalid generation." }, 400, headers);
+    const detail = await generationLedger(env).get(id);
+    if (!detail) return json({ error: "Generation not found." }, 404, headers);
+    return json(detail, 200, headers);
+  }
+  return json({ generations: await generationLedger(env).list(200) }, 200, headers);
+}
+
+async function adminGenerationHero(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+) {
+  const workerOrigin = new URL(request.url).origin;
+  const origin = request.headers.get("Origin") || "";
+  if (origin && origin !== workerOrigin)
+    return new Response("Forbidden", { status: 403, headers: { "Cache-Control": "no-store" } });
+  if (request.method !== "GET")
+    return new Response("Method not allowed", { status: 405 });
+  if (!(await accessAdminEmail(ctx, env)))
+    return new Response("Access denied.", {
+      status: 403,
+      headers: { "Cache-Control": "no-store" },
+    });
+  const id = clean(new URL(request.url).searchParams.get("id"), 120).toLowerCase();
+  if (!GENERATION_ID_PATTERN.test(id))
+    return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
+  const hero = await generationLedger(env).getHero(id);
+  if (!hero)
+    return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
+  return new Response(hero.bytes, {
+    status: 200,
+    headers: {
+      "Content-Type": hero.contentType,
+      "Cache-Control": "private, max-age=60",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 }
 
 function clean(value: unknown, limit = 8000) {
@@ -601,6 +934,60 @@ async function mergeReviewedPr(
   return mergeResult.sha;
 }
 
+/**
+ * Verify a submitted coverage selection against its signed lookup reference
+ * and replace the client-submitted coverage labels with server-derived ones.
+ * A v2 intake with no coverageSelection keeps the documented legacy contract.
+ */
+async function applyCoverageConfirmation(
+  normalized: ReturnType<typeof normalizeClientIntake>,
+  inviteId: string,
+  env: Env,
+) {
+  const selection = normalized.coverageSelection;
+  if (!selection) return { ok: true as const };
+  const serviceRadius =
+    normalized.serviceRadius === null ? "" : String(normalized.serviceRadius);
+  if (selection.status === "confirmed") {
+    const reference = await verifyCoverageReference(
+      selection.reference,
+      env.ONBOARDING_INVITE_SIGNING_SECRET || "",
+    );
+    if (!reference || clean(reference.i, 100) !== inviteId)
+      return {
+        ok: false as const,
+        code: "coverage_reference_invalid",
+        message:
+          "Your nearby city list expired. Refresh it and confirm your coverage again.",
+      };
+    const referenceHash = (await digest(selection.reference)).slice(0, 16);
+    const derived = deriveCoverageConfirmation({
+      selection,
+      reference,
+      primaryCity: normalized.primaryCity,
+      serviceRadius,
+      coverageAreas: normalized.coverageAreas,
+      referenceHash,
+    });
+    if (!derived.ok) return derived;
+    normalized.coverageAreas = derived.coverageAreas;
+    normalized.coverageConfirmation = derived.confirmation;
+    return { ok: true as const };
+  }
+  const derived = deriveCoverageConfirmation({
+    selection,
+    reference: null,
+    primaryCity: normalized.primaryCity,
+    serviceRadius,
+    coverageAreas: normalized.coverageAreas,
+    referenceHash: "",
+  });
+  if (!derived.ok) return derived;
+  normalized.coverageAreas = derived.coverageAreas;
+  normalized.coverageConfirmation = derived.confirmation;
+  return { ok: true as const };
+}
+
 async function intake(request: Request, env: Env) {
   const onboardingOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "");
   const allowed = onboardingOrigin ? [...platformOrigins(env), onboardingOrigin] : platformOrigins(env);
@@ -640,6 +1027,13 @@ async function intake(request: Request, env: Env) {
         headers,
       );
     }
+    const coverage = await applyCoverageConfirmation(
+      normalized,
+      invite.claims.inviteId,
+      env,
+    );
+    if (!coverage.ok)
+      return json({ error: coverage.message, code: coverage.code }, 400, headers);
     if (invite.clientEmail && invite.clientEmail.toLowerCase() !== normalized.email.toLowerCase())
       return json({ error: "Use the email address that received this invitation." }, 403, headers);
     const allowedIntakeFields = new Set(CLIENT_INTAKE_V2_ISSUE_FIELDS);
@@ -1159,6 +1553,76 @@ async function feedbackImage(request: Request, env: Env) {
             : "The image request failed. Please try again.",
       },
       status,
+      headers,
+    );
+  }
+}
+
+async function coverageAreas(request: Request, env: Env) {
+  const onboardingOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "");
+  const allowed = onboardingOrigin ? [...platformOrigins(env), onboardingOrigin] : platformOrigins(env);
+  const headers = cors(request, allowed);
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: 204, headers });
+  if (request.method !== "POST")
+    return new Response("Method not allowed", { status: 405, headers });
+  try {
+    assertOrigin(request, allowed);
+    const body = (await request.json().catch(() => ({}))) as {
+      inviteToken?: unknown;
+      primaryCity?: unknown;
+      serviceRadius?: unknown;
+    };
+    let invite: Awaited<ReturnType<typeof verifiedInvite>>;
+    try {
+      invite = await verifiedInvite(request, env, body.inviteToken);
+    } catch {
+      return json(
+        { ok: false, code: "invalid_invite", message: "This invitation is invalid or no longer available.", retryable: false },
+        403,
+        headers,
+      );
+    }
+    if (coverageLookupRateLimited(invite.claims.inviteId))
+      return json(
+        {
+          ok: false,
+          code: "rate_limited",
+          message: "Too many nearby-city lookups. Wait a moment, then retry.",
+          retryable: true,
+        },
+        429,
+        { ...headers, "Cache-Control": "no-store" },
+      );
+    const result = await lookupCoverageAreas({
+      env,
+      inviteId: invite.claims.inviteId,
+      primaryCity: clean(body.primaryCity, 160),
+      serviceRadius: body.serviceRadius,
+    });
+    const status = result.ok
+      ? 200
+      : result.code === "not_configured"
+        ? 503
+        : result.code === "unsupported_radius"
+          ? 400
+          : result.code === "provider_failure"
+            ? 502
+            : 200;
+    return json(result, status, { ...headers, "Cache-Control": "no-store" });
+  } catch (error) {
+    console.error(
+      "Coverage lookup failed",
+      error instanceof Error ? error.message : "Unknown error",
+    );
+    return json(
+      {
+        ok: false,
+        code: "provider_failure",
+        message: "The map provider is unavailable right now. Retry or confirm only your main city.",
+        retryable: true,
+      },
+      500,
       headers,
     );
   }
@@ -1747,6 +2211,122 @@ function validClientRepository(value: unknown) {
   return /^WrazyAI\/launchloom-[0-9]+-[a-z0-9-]+$/iu.test(repo);
 }
 
+// Feedback may follow a signed current review on the same deployed alias.
+// Publication and repair requests retain their original exact-head checks.
+async function currentDiagnosticFeedbackReview(
+  request: Request,
+  env: Env,
+  claims: ReviewClaims,
+  status: CreativeRepairSessionView,
+  pageUrl: string,
+  currentHead: string,
+) {
+  const coordinator = env.REVISION_COORDINATOR.getByName(
+    claims.repo.toLowerCase(),
+  );
+  const resolve = async (url: string) => {
+    try {
+      const resultUrl = new URL(url);
+      const token =
+        resultUrl.searchParams.get("token") ||
+        resultUrl.searchParams.get("review");
+      if (!token || token.length > 4096) return null;
+      const latest = await verifyHmac<ReviewClaims>(
+        token,
+        env.REVIEW_SIGNING_SECRET,
+      );
+      if (
+        latest.stage !== "developer" ||
+        latest.repo !== claims.repo ||
+        latest.pr !== claims.pr ||
+        latest.siteId !== claims.siteId ||
+        latest.feedbackIssue !== claims.feedbackIssue ||
+        latest.reviewerEmail.toLowerCase() !==
+          claims.reviewerEmail.toLowerCase() ||
+        latest.clientEmail.toLowerCase() !== claims.clientEmail.toLowerCase() ||
+        latest.headSha !== currentHead ||
+        latest.expiresAt < Date.now() ||
+        !/^[a-f0-9]{32}$/iu.test(latest.creativeRepairSessionId || "") ||
+        !latest.allowedOrigins?.length
+      )
+        return null;
+      assertClaimOrigin(request, latest.allowedOrigins, pageUrl);
+      const registered = await coordinator.getCreativeRepair(
+        latest.creativeRepairSessionId!,
+        latest.repo,
+        latest.pr!,
+        latest.headSha!,
+      );
+      if (
+        !registered?.previewUrl ||
+        ["dispatching", "queued", "running"].includes(registered.status)
+      )
+        return null;
+      const preview = new URL(registered.previewUrl);
+      const page = new URL(pageUrl);
+      const platformReview =
+        platformOrigins(env).includes(page.origin) &&
+        page.pathname === "/review";
+      const viewedPreview = platformReview
+        ? new URL(status.resultPreviewUrl || status.previewUrl || "")
+        : page;
+      if (
+        viewedPreview.origin !== preview.origin ||
+        viewedPreview.pathname !== preview.pathname
+      )
+        return null;
+      return { claims: latest, status: registered };
+    } catch {
+      return null;
+    }
+  };
+  if (status.status === "completed" && status.resultReviewUrl) {
+    const result = await resolve(status.resultReviewUrl);
+    if (result) return result;
+  }
+  // Regeneration can reuse the alias without completing the older repair.
+  // Only signed links from the private review handoff are candidates, and a
+  // registered deployed preview must match the actual page being reviewed.
+  try {
+    const route = `/repos/${claims.repo}/issues/${claims.pr}/comments`;
+    let response = await github(env, `${route}?per_page=100`);
+    let comments = (await response.json()) as Array<{ body?: string }>;
+    const last = response.headers
+      .get("Link")
+      ?.match(/<([^>]+)>;\s*rel="last"/u)?.[1];
+    if (last) {
+      const lastUrl = new URL(last);
+      const page = Number(lastUrl.searchParams.get("page"));
+      if (
+        lastUrl.origin === "https://api.github.com" &&
+        (lastUrl.pathname === route || /^\/repositories\/[1-9]\d*\/issues\/([1-9]\d*)\/comments$/u.exec(lastUrl.pathname)?.[1] === String(claims.pr)) &&
+        Number.isSafeInteger(page) &&
+        page > 1
+      ) {
+        response = await github(env, `${route}?per_page=100&page=${page}`);
+        comments = (await response.json()) as Array<{ body?: string }>;
+      }
+    }
+    const links = comments
+      .reverse()
+      .flatMap(({ body }) =>
+        String(body || "").includes("<!-- launchloom-creative-recovery -->")
+          ? String(body).match(
+              /https:\/\/[^\s)]+\?(?:token|review)=[A-Za-z0-9_.-]+/gu,
+            ) || []
+          : [],
+      )
+      .slice(0, 5);
+    for (const link of links) {
+      const result = await resolve(link);
+      if (result) return result;
+    }
+  } catch {
+    // No proven current link means no permission to rebind the request.
+  }
+  return null;
+}
+
 async function creativeRepair(request: Request, env: Env) {
   const headers = cors(request, platformOrigins(env));
   if (request.method === "OPTIONS")
@@ -1881,10 +2461,21 @@ async function creativeRepair(request: Request, env: Env) {
           cors(request, claims.allowedOrigins),
         );
       const current = await currentReviewPr(env, claims);
+      let feedbackClaims = claims;
+      let feedbackStatus = status;
+      if (current.state === "open" && !current.draft && current.head.sha !== reviewedHeadSha) {
+        const refreshed = await currentDiagnosticFeedbackReview(
+          request, env, claims, status, clean(body.pageUrl, 4_000), current.head.sha,
+        );
+        if (refreshed) {
+          feedbackClaims = refreshed.claims;
+          feedbackStatus = refreshed.status;
+        }
+      }
       if (
         current.state !== "open" ||
         current.draft ||
-        current.head.sha !== reviewedHeadSha
+        current.head.sha !== feedbackClaims.headSha
       )
         return json(
           {
@@ -1907,7 +2498,7 @@ async function creativeRepair(request: Request, env: Env) {
           ? `creative-feedback:${requestId}`
           : [
               claims.repo,
-              reviewedHeadSha,
+              feedbackClaims.headSha,
               note,
               category,
               reviewedPage,
@@ -1920,14 +2511,14 @@ async function creativeRepair(request: Request, env: Env) {
         stage: "developer",
         repo: claims.repo,
         pr: reviewedPr,
-        feedbackIssue: claims.feedbackIssue,
+        feedbackIssue: feedbackClaims.feedbackIssue,
         siteId: claims.siteId,
         clientEmail: claims.clientEmail,
         reviewedPage: clean(reviewedPage, 1_000),
         category,
         feedback: note,
         ...(structureJson ? { structure: structureJson } : {}),
-        creativeRepairSessionId: sessionId,
+        creativeRepairSessionId: feedbackClaims.creativeRepairSessionId,
       } satisfies RevisionRequestInput);
       if (!queued.ok)
         return json(
@@ -1936,12 +2527,12 @@ async function creativeRepair(request: Request, env: Env) {
           cors(request, claims.allowedOrigins),
         );
       await coordinator.recordCreativeDisposition({
-        decisionId: `feedback:${sessionId}:${requestId}`,
-        sessionId,
+        decisionId: `feedback:${feedbackClaims.creativeRepairSessionId}:${requestId}`,
+        sessionId: feedbackClaims.creativeRepairSessionId!,
         repo: claims.repo,
         pr: reviewedPr,
-        headSha: reviewedHeadSha,
-        candidateId: status.candidateId,
+        headSha: feedbackClaims.headSha!,
+        candidateId: feedbackStatus.candidateId,
         disposition: "accepted-with-feedback",
         reviewerEmail: claims.reviewerEmail,
         feedbackRequestId: queued.requestId,
@@ -2723,6 +3314,7 @@ export default {
     if (path === "/api/intake") return intake(request, env);
     if (path === "/api/upload") return upload(request, env);
     if (path === "/api/places") return places(request, env);
+    if (path === "/api/coverage-areas") return coverageAreas(request, env);
     if (path === "/api/service-suggestions") return serviceSuggestions(request, env);
     if (path === "/api/google-reviews") return googleReviews(request, env);
     if (path === "/api/feedback") return feedback(request, env);
@@ -2732,6 +3324,21 @@ export default {
       return revisionCoordinator(request, env);
     if (path === "/api/internal/creative-repairs")
       return creativeRepairCoordinator(request, env);
+    if (path === "/api/internal/generations")
+      return generationIngest(request, env);
+    if (path === "/api/internal/generations/hero")
+      return generationHeroUpload(request, env);
+    if (path === "/api/admin/generations")
+      return adminGenerations(request, env, ctx);
+    if (path === "/api/admin/generation-hero")
+      return adminGenerationHero(request, env, ctx);
+    // The dashboard reads through the already Access-protected invite path so
+    // no Access application change is needed. The clean paths above remain for
+    // when the Access policy covers /api/admin/* directly.
+    if (path === "/api/admin/onboarding-invites/generations")
+      return adminGenerations(request, env, ctx);
+    if (path === "/api/admin/onboarding-invites/generation-hero")
+      return adminGenerationHero(request, env, ctx);
     if (path === "/api/approval") return approval(request, env);
     if (path === "/api/lead") return lead(request, env);
     if (path === "/api/chat") return aiChat(request, env);
