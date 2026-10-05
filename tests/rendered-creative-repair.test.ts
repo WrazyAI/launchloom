@@ -1,3 +1,4 @@
+import { buildRepairSpanCatalog } from "../scripts/creative-repair-spans.mjs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
@@ -13,7 +14,8 @@ import {
   runVisualGateProcess,
   writeCandidate,
 } from "../scripts/run-rendered-creative-repair.mjs";
-import { requestRepair } from "../scripts/creative-repair-loop.mjs";
+import { inspect } from "node:util";
+import { requestRepair, privateRepairRejectionEvidence } from "../scripts/creative-repair-loop.mjs";
 import { RENDERED_REFERENCE_THRESHOLDS } from "../scripts/rendered-reference-fidelity.mjs";
 import { validateProductionCandidateFiles } from "../scripts/production-experience-author.mjs";
 import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
@@ -178,7 +180,8 @@ describe("rendered creative repair orchestration", () => {
     };
     const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => Response.json({
       choices: [{ finish_reason: "stop", message: { content: JSON.stringify({
-        edits: [{ file: "styles", find: "font-size: 4rem;", replace: "font-size: 3rem;" }],
+        edits: [{ spanId: buildRepairSpanCatalog(files).spans.find(span => span.file === "styles" && span.find.includes("font-size: 4rem;"))!.id,
+          replace: buildRepairSpanCatalog(files).spans.find(span => span.file === "styles" && span.find.includes("font-size: 4rem;"))!.find.replace("font-size: 4rem;", "font-size: 3rem;") }],
       }) } }],
     }));
     vi.stubGlobal("fetch", fetchMock);
@@ -195,7 +198,7 @@ describe("rendered creative repair orchestration", () => {
       logger: () => {},
     });
     const request = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    expect(request.response_format.json_schema.name).toBe("launchloom_creative_repair_edits");
+    expect(request.response_format.json_schema.name).toBe("launchloom_creative_repair_spans");
     const repaired = normalizeRepair(response, files);
     expect(repaired.styles).toBe(files.styles.replace("font-size: 4rem;", "font-size: 3rem;"));
     for (const key of ["experience", "motion", "servicePage"] as const)
@@ -415,20 +418,13 @@ export default function Experience({ content, runtime }) { return <main><section
       ),
     );
 
-    await expect(
-      defaultRepairCandidate({
-        candidateDir,
-        findings: [
-          {
-            category: "imagery",
-            message:
-              "A generic stock image appears on an image-independent reference.",
-          },
-        ],
-        screenshots: [],
-        model: "test/model",
-      }),
-    ).rejects.toThrow(/palette/iu);
+    const rejected = await defaultRepairCandidate({
+      candidateDir,
+      findings: [{ category: "imagery", message: "A generic stock image appears on an image-independent reference." }],
+      screenshots: [], model: "test/model",
+    }).catch(error => error);
+    expect(rejected).toMatchObject({ code: "CREATIVE_REPAIR_OUTPUT_REJECTED", message: "Creative repair output rejected by source validation." });
+    expect(privateRepairRejectionEvidence(rejected)?.validationMessage).toMatch(/palette/iu);
 
     expect(await fs.readFile(path.join(candidateDir, "styles.css"), "utf8")).toBe(
       originalFiles.styles,
@@ -2741,4 +2737,40 @@ process.exit(1);
     expect(hostGuardIndex).toBeGreaterThan(buildIndex);
     expect(candidateGuardIndex).toBeGreaterThan(buildIndex);
   });
+});
+
+
+it("keeps rejected source-validation details and provider source out of public errors", async () => {
+  const { root, candidates } = await fixture(["candidate-a"]);
+  process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+  const dir = path.join(candidates, "candidate-a");
+  const desktop = path.join(root, "reference.png"); await fs.writeFile(desktop, "evidence");
+  const metadata = JSON.parse(await fs.readFile(path.join(dir, "metadata.json"), "utf8"));
+  metadata.referenceDna.evidence = { desktopScreenshot: { path: desktop } };
+  metadata.referenceDna.sectionSequence = ["hero", "services", "faqs", "contact"];
+  await fs.writeFile(path.join(dir, "metadata.json"), JSON.stringify(metadata));
+  await fs.writeFile(path.join(dir, "content-manifest.json"), JSON.stringify({ values: {}, tokens: [] }));
+  const original = await fs.readFile(path.join(dir, "Experience.jsx"), "utf8");
+  const output = { experience: 'import x from "private@example.test"; export default () => null;', styles: "body{}", motion: "export function mountExperienceMotion(){ return () => {}; }" };
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify(output) } }] }))));
+  let error: any;
+  try { await defaultRepairCandidate({ candidateDir: dir, findings: ["contrast needs correction"], screenshots: [], model: "test/model" }); } catch (value) { error = value; }
+  expect(error?.code).toBe("CREATIVE_REPAIR_OUTPUT_REJECTED");
+  expect(error?.message).toBe("Creative repair output rejected by source validation.");
+  expect(inspect(error)).not.toContain("private@example.test");
+  expect(privateRepairRejectionEvidence(error)).toEqual(expect.objectContaining({ validationMessage: expect.any(String), payload: JSON.stringify(output) }));
+  expect(await fs.readFile(path.join(dir, "Experience.jsx"), "utf8")).toBe(original);
+});
+
+
+it("stops the QA experiment immediately on a contract rejection without retrying", async () => {
+  const { root, candidates } = await fixture();
+  const rejection = Object.assign(new Error("bounded contract rejected"), { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+  const repair = vi.fn(async (_options: any) => { throw rejection; });
+  await expect(runRenderedCreativeRepair({ siteDir: root, candidatesDir: candidates, outDir: "repair", qaRepairExperiment: true, maxCycles: 1,
+    runBakeoffImpl: async (options: any) => writeBakeoffEvidence(options, report({ selectedCandidateId: null, candidates: [candidate("candidate-a", { valid: false, eligible: false, failures: ["contrast"] }), candidate("candidate-b", { valid: false, eligible: false, failures: ["contrast"] })] })),
+    repairCandidateImpl: repair,
+  } as any)).rejects.toThrow("bounded contract rejected");
+  expect(repair).toHaveBeenCalledTimes(1);
+  expect(repair.mock.calls[0][0]).toEqual(expect.objectContaining({ automaticSpanRepair: true, fetchImpl: expect.any(Function) }));
 });

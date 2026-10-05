@@ -1,3 +1,9 @@
+import { buildRepairSpanCatalog } from "../scripts/creative-repair-spans.mjs";
+import * as renderedRepair from "../scripts/run-rendered-creative-repair.mjs";
+import * as repairModule from "../scripts/creative-repair-loop.mjs";
+import { CLIENT_PALETTE_ROLE_CONTRACT } from "../scripts/creative-authoring-output.mjs";
+import { inspect } from "node:util";
+import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -1784,9 +1790,10 @@ describe("creative repair loop", () => {
       motion: "export function mountExperienceMotion() { return () => {}; }",
       servicePage: '<main data-service-page><h1 className="service-old">Service</h1></main>',
     };
+    const pageSpan = buildRepairSpanCatalog(files).spans.find(span => span.file === "servicePage")!;
     vi.stubGlobal("fetch", vi.fn(async () => Response.json({
       choices: [{ finish_reason: "stop", message: { content: JSON.stringify({
-        edits: [{ file: "servicePage", find: 'className="service-old"', replace: 'className="service-new"' }],
+        edits: [{ spanId: pageSpan.id, replace: pageSpan.find.replace('className="service-old"', 'className="service-new"') }],
       }) } }],
     })));
     const referenceDna = {
@@ -2020,4 +2027,118 @@ describe("creative repair loop", () => {
     expect(result.authorAttempts).toBe(0);
     expect(result.generationFailures).toBe(2);
   });
+});
+
+
+describe("repair rejection ownership and privacy", () => {
+  it("explicitly prohibits declaring or registering host palette roles", () => {
+    expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain("read-only");
+    expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain("Never declare, assign, override, or register");
+    expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain("--ll-creative-*");
+  });
+
+  it.each([
+    [{ file: "styles", find: 42, replace: "safe" }, null, "invalid_find_type"],
+    [{ file: "styles", find: "", replace: "safe" }, null, "empty_find"],
+    [{ file: "styles", find: "x".repeat(6001), replace: "safe" }, null, "find_too_long"],
+    [{ file: "styles", find: "safe", replace: 42 }, null, "invalid_replace_type"],
+    [{ file: "styles", find: "safe", replace: "x".repeat(6001) }, null, "replace_too_long"],
+    [{ file: "styles", find: "safe", replace: "different" }, 0, "find_missing"],
+    [{ file: "styles", find: "safe", replace: "different" }, 2, "find_not_unique"],
+  ])("classifies rejected fragments without serializing their contents", (edit, occurrences, code) => {
+    const summary = (repairModule as any).repairRejectionSummary?.(edit, 0, occurrences);
+    expect(summary).toEqual(expect.objectContaining({ editIndex: 1, file: "styles", codes: expect.arrayContaining([code]) }));
+    expect(Object.keys(summary)).not.toContain("find");
+    expect(Object.keys(summary)).not.toContain("replace");
+  });
+
+  it("redacts unsupported file names and retains only safe type/length metrics", () => {
+    const summary = (repairModule as any).repairRejectionSummary?.({ file: "private@example.test", find: "PRIVATE_LITERAL", replace: "OTHER_PRIVATE_LITERAL" }, 0, 1);
+    expect(summary).toEqual(expect.objectContaining({ file: null, findType: "string", findLength: 15, replaceLength: 21 }));
+    expect(JSON.stringify(summary)).not.toMatch(/PRIVATE|private@example/);
+  });
+
+  it("retains truncated raw response privately without putting it on the thrown error", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-private-rejection-")); roots.push(root);
+    const desktop = path.join(root, "desktop.png"); await fs.writeFile(desktop, "evidence");
+    const raw = "PRIVATE_REPAIR_SENTINEL" + "x".repeat(300_000);
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ choices: [{ finish_reason: "length", message: { content: raw } }] }))));
+    let error: any;
+    try { await requestRepair({ model: "test/model", referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } }, files: { experience: "old", styles: "old", motion: "old" }, findings: [], screenshots: [], logger: () => {} }); } catch (value) { error = value; }
+    expect(error?.code).toBe("CREATIVE_REPAIR_OUTPUT_REJECTED");
+    const evidence = (repairModule as any).privateRepairRejectionEvidence?.(error);
+    expect(evidence).toEqual(expect.objectContaining({ totalChars: raw.length, storedChars: 256_000, truncated: true, sha256: createHash("sha256").update(raw).digest("hex") }));
+    expect(evidence.payload).toBe(raw.slice(0, 256_000));
+    const storedPath = await (renderedRepair as any).persistPrivateRepairRejection?.({ outDir: root, round: 1, candidateId: "candidate-a", attempt: 1, error });
+    expect(typeof storedPath).toBe("string");
+    expect(JSON.parse(await fs.readFile(storedPath, "utf8"))).toEqual(expect.objectContaining({ payload: raw.slice(0, 256_000), truncated: true }));
+    expect(inspect(error)).not.toContain("PRIVATE_REPAIR_SENTINEL");
+    expect(JSON.stringify(error)).not.toContain("PRIVATE_REPAIR_SENTINEL");
+  });
+});
+
+it("does not expose malformed provider output through a parsing cause", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-malformed-repair-")); roots.push(root);
+  const desktop = path.join(root, "desktop.png"); await fs.writeFile(desktop, "evidence");
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: "PRIVATE_REPAIR_SENTINEL" } }] }))));
+  let error: any; try { await requestRepair({ model: "test/model", referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } }, files: { experience: "old", styles: "old", motion: "old" }, findings: [], screenshots: [], logger: () => {} }); } catch (value) { error = value; }
+  expect(inspect(error)).not.toContain("PRIVATE_RE");
+  expect((repairModule as any).privateRepairRejectionEvidence?.(error)?.payload).toBe("PRIVATE_REPAIR_SENTINEL");
+});
+
+
+it("automatic span repair binds current sources without model-generated find text", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-span-request-")); roots.push(root);
+  const desktop = path.join(root, "desktop.png"); await fs.writeFile(desktop, "evidence");
+  const files = { experience: "export default () => null;\n", styles: ".hero{color:navy;}\n", motion: "export function mountExperienceMotion(){return ()=>{};}\n" };
+  const spanMod = await import("../scripts/creative-repair-spans.mjs");
+  const catalog = spanMod.buildRepairSpanCatalog(files); const style = catalog.spans.find(s => s.file === "styles")!;
+  const fetchImpl = vi.fn(async (_url: any, options: any) => {
+    const body = JSON.parse(options.body); const schema = body.response_format.json_schema;
+    expect(schema.name).toBe("launchloom_creative_repair_spans");
+    expect(schema.schema.properties.edits.items.required).toEqual(["spanId", "replace"]);
+    expect(schema.schema.properties.edits.items.properties.spanId.enum).toContain(style.id);
+    const text = body.messages[1].content.filter((x: any) => x.type === "text").map((x: any) => x.text).join("\n");
+    expect(text).toContain(files.experience); expect(text).toContain(files.styles); expect(text).toContain(files.motion);
+    expect(text).toContain("TRUSTED SOURCE SPANS"); expect(text).toContain("Do not generate find text");
+    return Response.json({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ edits: [{ spanId: style.id, replace: ".hero{color:white;}\n" }] }) } }] });
+  });
+  vi.stubGlobal("fetch", vi.fn(() => { throw Error("unexpected global provider call"); }));
+  const result = await requestRepair({ model: "test/model", referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } }, files, findings: ["contrast: hero"], screenshots: [], automaticSpanRepair: true, fetchImpl, logger: () => {} } as any);
+  expect(result).toEqual({ ...files, styles: ".hero{color:white;}\n" }); expect(fetchImpl).toHaveBeenCalledTimes(1);
+});
+
+
+it("an affordability retry cannot exceed the actual-fetch experiment ceiling", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-affordability-budget-")); roots.push(root);
+  const desktop = path.join(root, "desktop.png"); await fs.writeFile(desktop, "evidence");
+  const { createQaRepairCallBudget } = await import("../scripts/creative-repair-experiment.mjs");
+  const actual = vi.fn(async () => Response.json({ error: { message: "This request requires more credits, or fewer max_tokens. You requested up to 48000 tokens, but can only afford 14652." } }, { status: 402 }));
+  const budget = createQaRepairCallBudget({ fetchImpl: actual });
+  await expect(requestRepair({ model: "test/model", referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } }, files: { experience: "old", styles: ".hero{color:navy}", motion: "old" }, findings: ["contrast"], screenshots: [], logger: () => {}, automaticSpanRepair: true, fetchImpl: budget.forCandidate("candidate-a") } as any)).rejects.toMatchObject({ code: "QA_REPAIR_CALL_BUDGET_EXHAUSTED" });
+  expect(actual).toHaveBeenCalledTimes(1); expect(budget.snapshot().total).toBe(1);
+});
+
+it("keeps provider HTTP-error payload private instead of exposing authored text", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-provider-error-")); roots.push(root);
+  const desktop = path.join(root, "desktop.png"); await fs.writeFile(desktop, "evidence");
+  const payload = { error: { message: "PRIVATE_HTTP_SENTINEL private@example.test", code: "provider-error" } };
+  const fetchImpl = vi.fn(async () => Response.json(payload, { status: 400 }));
+  let error: any;
+  try { await requestRepair({ model: "test/model", referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } }, files: { experience: "old", styles: "old", motion: "old" }, findings: [], screenshots: [], logger: () => {}, fetchImpl } as any); } catch (value) { error = value; }
+  expect(error?.message).toBe("OpenRouter creative repair failed (400).");
+  expect(inspect(error)).not.toContain("PRIVATE_HTTP_SENTINEL");
+  expect(JSON.stringify(error)).not.toContain("private@example.test");
+  expect((repairModule as any).privateRepairRejectionEvidence(error)?.payload).toBe(JSON.stringify(payload));
+});
+
+
+it("does not expose an unexpected file name supplied by the provider", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-file-error-")); roots.push(root);
+  const desktop = path.join(root, "desktop.png"); await fs.writeFile(desktop, "evidence");
+  const fetchImpl = vi.fn(async () => Response.json({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ file: "PRIVATE_FILE_SENTINEL", source: "new" }) } }] }));
+  let error: any; try { await requestRepair({ model: "test/model", referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } }, files: { experience: "old", styles: "/*" + "x".repeat(21000) + "*/", motion: "old" }, findings: ["contrast needs correction"], screenshots: [], logger: () => {}, fetchImpl } as any); } catch (value) { error = value; }
+  expect(error?.code).toBe("CREATIVE_REPAIR_OUTPUT_REJECTED");
+  expect(inspect(error)).not.toContain("PRIVATE_FILE_SENTINEL");
+  expect((repairModule as any).privateRepairRejectionEvidence(error)?.payload).toContain("PRIVATE_FILE_SENTINEL");
 });

@@ -60,6 +60,19 @@ export function prepareInternalQaIntake(
   );
 }
 
+/** Experiments cannot run on a real client or an unproven candidate reuse. */
+export function assertQaRepairExperiment(experiment, options = {}) {
+  if (!experiment) return;
+  if (!options.enabled || !options.previewOnly || !options.reuseCandidates)
+    throw new Error("QA repair experiment requires verified preview-only frozen QA reuse.");
+  const { config, brief } = options.reusedCandidate || {};
+  if (config?.demoNotice !== "Fictional pipeline demo" || brief?.demoNotice !== "Fictional pipeline demo" ||
+      config?.business?.name !== brief?.businessTruth?.name || !String(brief?.submissionId || "").startsWith("demo-") ||
+      ![config?.business?.email, config?.business?.leadEmail, brief?.businessTruth?.previewEmail, brief?.businessTruth?.leadEmail]
+        .every(value => value === options.recipient))
+    throw new Error("QA repair experiment frozen identity and recipient are not verified.");
+}
+
 if (
   process.argv[1] &&
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
@@ -87,6 +100,11 @@ if (
       ),
     };
   }
+  assertQaRepairExperiment(process.env.QA_REPAIR_EXPERIMENT === "true", {
+    enabled: process.env.INTERNAL_QA_DELIVERY === "true",
+    previewOnly: process.env.PREVIEW_ONLY === "true", reuseCandidates, reusedCandidate,
+    recipient: (process.env.LAUNCHLOOM_INTERNAL_QA_RECIPIENT || "").trim().toLowerCase(),
+  });
   const updated = prepareInternalQaIntake(original, {
     enabled: process.env.INTERNAL_QA_DELIVERY === "true",
     previewOnly: process.env.PREVIEW_ONLY === "true",

@@ -29,6 +29,12 @@ on:
         type: boolean
         default: false
 
+      qa_repair_experiment:
+        description: One-call-per-candidate experiment on verified fictional frozen QA previews only
+        required: false
+        type: boolean
+        default: false
+
 permissions:
   contents: write
   issues: write
@@ -99,6 +105,7 @@ jobs:
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ (github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery && secrets.LAUNCHLOOM_INTERNAL_QA_RECIPIENT) || (!(github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery) && vars.LAUNCHLOOM_DEVELOPER_EMAIL) || '' }}
       LAUNCHLOOM_INTERNAL_QA_RECIPIENT: ${{ secrets.LAUNCHLOOM_INTERNAL_QA_RECIPIENT }}
+      QA_REPAIR_EXPERIMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.qa_repair_experiment || false }}
       INTERNAL_QA_DELIVERY: ${{ github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery || false }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
       REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
@@ -136,6 +143,13 @@ jobs:
             CANDIDATE_SOURCE="$RUNNER_TEMP/launchloom-candidate-source"
             gh repo clone "$REUSABLE_CANDIDATE_REPO" "$CANDIDATE_SOURCE" -- --branch review/initial --depth 1
             node scripts/internal-qa-intake.mjs /tmp/intake.md "$CANDIDATE_SOURCE"
+            if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
+              test -f "$CANDIDATE_SOURCE/.launchloom/generated-assets.json" || { echo "Frozen QA asset manifest missing"; exit 1; }
+              test -d "$CANDIDATE_SOURCE/public/images/generated" || { echo "Frozen QA asset directory missing"; exit 1; }
+              mkdir -p "$RUNNER_TEMP/frozen-qa-assets/images"
+              cp "$CANDIDATE_SOURCE/.launchloom/generated-assets.json" "$RUNNER_TEMP/frozen-qa-assets/manifest.json"
+              cp -R "$CANDIDATE_SOURCE/public/images/generated/." "$RUNNER_TEMP/frozen-qa-assets/images/"
+            fi
             for file in \
               src/site.config.json \
               .launchloom/seo-research.json \
@@ -404,11 +418,19 @@ jobs:
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           mkdir -p public/images/generated
-          node "$GITHUB_WORKSPACE/scripts/generate-contextual-assets.mjs" \
-            --config /tmp/site.config.json \
-            --inspiration /tmp/inspiration-pack.json \
-            --output "$PWD/public/images/generated" \
-            --manifest "$PWD/.launchloom/generated-assets.json"
+          if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
+            test -f "$RUNNER_TEMP/frozen-qa-assets/manifest.json" || { echo "Frozen QA asset snapshot missing"; exit 1; }
+            test -d "$RUNNER_TEMP/frozen-qa-assets/images" || { echo "Frozen QA asset snapshot directory missing"; exit 1; }
+            cp "$RUNNER_TEMP/frozen-qa-assets/manifest.json" .launchloom/generated-assets.json
+            cp -R "$RUNNER_TEMP/frozen-qa-assets/images/." public/images/generated/
+            echo "Frozen QA contextual assets retained; provider asset generation skipped."
+          else
+            node "$GITHUB_WORKSPACE/scripts/generate-contextual-assets.mjs" \
+              --config /tmp/site.config.json \
+              --inspiration /tmp/inspiration-pack.json \
+              --output "$PWD/public/images/generated" \
+              --manifest "$PWD/.launchloom/generated-assets.json"
+          fi
           cp /tmp/site.config.json src/site.config.json
           git add src/site.config.json public/images/generated .launchloom/generated-assets.json
           if ! git diff --cached --quiet; then
@@ -472,13 +494,17 @@ jobs:
           if [ -f "$PWD/.launchloom/reasoning-preflight.json" ]; then
             SESSION_ARGS=(--session "$PWD/.launchloom/reasoning-preflight.json")
           fi
+          REPAIR_ARGS=(--max-cycles 3)
+          if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
+            REPAIR_ARGS=(--max-cycles 1 --qa-repair-experiment true)
+          fi
           node "$GITHUB_WORKSPACE/scripts/run-rendered-creative-repair.mjs" \
             --site-dir "$PWD" \
             --candidates /tmp/generated-experiences \
             --out .launchloom/creative-repair \
             --mode "$CREATIVE_EXPERIENCE_MODE" \
             "${SESSION_ARGS[@]}" \
-            --max-cycles 3 \
+            "${REPAIR_ARGS[@]}" \
             --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs"
           cp .launchloom/creative-repair/final/creative-bakeoff.json .launchloom/creative-bakeoff.json
           rm -rf .launchloom/generated-experiences
