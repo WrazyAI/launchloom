@@ -2766,9 +2766,9 @@ it("keeps rejected source-validation details and provider source out of public e
 it("stops the QA experiment immediately on a contract rejection without retrying", async () => {
   const { root, candidates } = await fixture();
   const rejection = Object.assign(new Error("bounded contract rejected"), { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
-  const repair = vi.fn(async () => { throw rejection; });
+  const repair = vi.fn(async (_options: any) => { throw rejection; });
   await expect(runRenderedCreativeRepair({ siteDir: root, candidatesDir: candidates, outDir: "repair", qaRepairExperiment: true, maxCycles: 1,
-    runBakeoffImpl: async options => writeBakeoffEvidence(options, report({ selectedCandidateId: null, candidates: [candidate("candidate-a", { valid: false, eligible: false, failures: ["contrast"] }), candidate("candidate-b", { valid: false, eligible: false, failures: ["contrast"] })] })),
+    runBakeoffImpl: async (options: any) => writeBakeoffEvidence(options, report({ selectedCandidateId: null, candidates: [candidate("candidate-a", { valid: false, eligible: false, failures: ["contrast"] }), candidate("candidate-b", { valid: false, eligible: false, failures: ["contrast"] })] })),
     repairCandidateImpl: repair,
   } as any)).rejects.toThrow("bounded contract rejected");
   expect(repair).toHaveBeenCalledTimes(1);

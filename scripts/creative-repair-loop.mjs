@@ -261,7 +261,7 @@ function validateCandidateFileReplacement(response, file) {
     );
   if (response.file !== file)
     throw repairOutputRejection(
-      `Large creative repair requested ${file} but returned ${String(response.file || "no file")}.`,
+      `Large creative repair returned an unexpected file for ${file}.`,
     );
   if (
     typeof response.source !== "string" ||
@@ -1167,10 +1167,11 @@ Return a complete replacement for only this requested file. Keep source non-empt
         payload = await response.json().catch(() => ({}));
       }
     }
-    if (!response.ok)
-      throw new Error(
-        `OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
-      );
+    if (!response.ok) {
+      const error = new Error(`OpenRouter creative repair failed (${response.status}).`);
+      rememberPrivateRepairOutput(error, payload);
+      throw error;
+    }
     logOpenRouterCacheUsage("creative-repair", payload.usage);
     const responseContent = payload.choices?.[0]?.message?.content || "";
     const diagnostics = authoringCompletionDiagnostics({

@@ -1,3 +1,4 @@
+import { OPENROUTER_CHAT_COMPLETIONS_URL } from "./openrouter-client.mjs";
 /** Counts completion fetches before network, including failed calls and retries. */
 export function createQaRepairCallBudget({ fetchImpl = fetch } = {}) {
   let total = 0;
@@ -6,7 +7,7 @@ export function createQaRepairCallBudget({ fetchImpl = fetch } = {}) {
     forCandidate(candidateId) {
       if (!/^candidate-[abc]$/.test(candidateId)) throw new Error("Unknown QA candidate.");
       return async (url, options) => {
-        if (url !== "https://openrouter.ai/api/v1/chat/completions" || options?.method !== "POST")
+        if (url !== OPENROUTER_CHAT_COMPLETIONS_URL || options?.method !== "POST")
           throw new Error("QA repair fetch must target the completion endpoint.");
         const used = candidates.get(candidateId) || 0;
         if (used >= 1 || total >= 2) {

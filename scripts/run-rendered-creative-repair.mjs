@@ -1017,7 +1017,7 @@ export async function persistPrivateRepairRejection({ outDir, round, candidateId
   return file;
 }
 
-function repairOutputRejected(error) {
+function repairOutputRejected(_error) {
   // Details may contain untrusted authored source. Only the private evidence
   // map carries them; neither the message nor an enumerable cause may leak it.
   const rejected = new Error("Creative repair output rejected by source validation.");

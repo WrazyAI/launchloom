@@ -3,7 +3,7 @@ import { applyCreativeRepairEdits } from "../scripts/creative-repair-loop.mjs";
 const modulePath = "../scripts/creative-repair-spans.mjs";
 const spans = await import(modulePath).catch(() => ({})) as any;
 const files = { experience: "export default () => <main>Original</main>;\n", styles: ".hero { color: navy; }\n", motion: "export function mountExperienceMotion(){ return () => {}; }\n" };
-function catalog(value = files, options?: any) { return spans.buildRepairSpanCatalog(value, options); }
+function catalog(value: Record<string, string> = files, options?: any) { return spans.buildRepairSpanCatalog(value, options); }
 function compile(value: any, index: any, edits: any) { return spans.compileRepairSpanEdits(value, index, edits); }
 
 describe("trusted source-span repair", () => {

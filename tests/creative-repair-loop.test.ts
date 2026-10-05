@@ -2118,3 +2118,27 @@ it("an affordability retry cannot exceed the actual-fetch experiment ceiling", a
   await expect(requestRepair({ model: "test/model", referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } }, files: { experience: "old", styles: ".hero{color:navy}", motion: "old" }, findings: ["contrast"], screenshots: [], logger: () => {}, automaticSpanRepair: true, fetchImpl: budget.forCandidate("candidate-a") } as any)).rejects.toMatchObject({ code: "QA_REPAIR_CALL_BUDGET_EXHAUSTED" });
   expect(actual).toHaveBeenCalledTimes(1); expect(budget.snapshot().total).toBe(1);
 });
+
+it("keeps provider HTTP-error payload private instead of exposing authored text", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-provider-error-")); roots.push(root);
+  const desktop = path.join(root, "desktop.png"); await fs.writeFile(desktop, "evidence");
+  const payload = { error: { message: "PRIVATE_HTTP_SENTINEL private@example.test", code: "provider-error" } };
+  const fetchImpl = vi.fn(async () => Response.json(payload, { status: 400 }));
+  let error: any;
+  try { await requestRepair({ model: "test/model", referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } }, files: { experience: "old", styles: "old", motion: "old" }, findings: [], screenshots: [], logger: () => {}, fetchImpl } as any); } catch (value) { error = value; }
+  expect(error?.message).toBe("OpenRouter creative repair failed (400).");
+  expect(inspect(error)).not.toContain("PRIVATE_HTTP_SENTINEL");
+  expect(JSON.stringify(error)).not.toContain("private@example.test");
+  expect((repairModule as any).privateRepairRejectionEvidence(error)?.payload).toBe(JSON.stringify(payload));
+});
+
+
+it("does not expose an unexpected file name supplied by the provider", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-file-error-")); roots.push(root);
+  const desktop = path.join(root, "desktop.png"); await fs.writeFile(desktop, "evidence");
+  const fetchImpl = vi.fn(async () => Response.json({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ file: "PRIVATE_FILE_SENTINEL", source: "new" }) } }] }));
+  let error: any; try { await requestRepair({ model: "test/model", referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } }, files: { experience: "old", styles: "/*" + "x".repeat(21000) + "*/", motion: "old" }, findings: ["contrast needs correction"], screenshots: [], logger: () => {}, fetchImpl } as any); } catch (value) { error = value; }
+  expect(error?.code).toBe("CREATIVE_REPAIR_OUTPUT_REJECTED");
+  expect(inspect(error)).not.toContain("PRIVATE_FILE_SENTINEL");
+  expect((repairModule as any).privateRepairRejectionEvidence(error)?.payload).toContain("PRIVATE_FILE_SENTINEL");
+});
