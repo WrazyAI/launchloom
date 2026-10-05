@@ -51,6 +51,12 @@ before anything is published.
 
 ## Service suggestions and coverage lookup
 
+Generation cost and status tracking for the admin dashboard is documented in
+`docs/generation-tracking.md`. It is optional at deploy time: the
+`GENERATION_TRACKING_SECRET` repository secret enables it, and the Cloudflare
+Access application must cover `/api/admin/*` before the Generations tab can
+read it. Invite management keeps working without either.
+
 The Worker uses the existing `GOOGLE_PLACES_API_KEY` for Places category and
 location enrichment. The workflow also calls Google Geocoding to resolve
 nearby service communities. Enable Geocoding API on that key. A lookup failure

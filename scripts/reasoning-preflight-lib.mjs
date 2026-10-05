@@ -395,14 +395,20 @@ function usageSummary(usage) {
     pricePerMillion >= 0
       ? rounded((inputTokens / 1_000_000) * pricePerMillion, 8)
       : null;
+  const hasActualCost = Number.isFinite(actualCostUsd) && actualCostUsd >= 0;
   return {
     inputTokens: Number.isFinite(inputTokens) ? inputTokens : 0,
     outputTokens: Number.isFinite(outputTokens) ? outputTokens : 0,
     costUsd:
-      Number.isFinite(actualCostUsd) && actualCostUsd >= 0
+      hasActualCost
         ? rounded(actualCostUsd, 8)
         : estimatedCostUsd,
     estimatedCostUsd,
+    costSource: hasActualCost
+      ? "provider"
+      : estimatedCostUsd !== null
+        ? "estimated"
+        : "unreported",
     pricePerMillionInputUsd:
       Number.isFinite(pricePerMillion) && pricePerMillion >= 0
         ? pricePerMillion

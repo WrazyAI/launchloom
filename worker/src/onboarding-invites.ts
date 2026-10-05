@@ -226,6 +226,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
   }
 
   private async sendIntakeDispatch(task: OutboxRow) {
+    const invite = this.row(task.invite_id);
     const response = await fetch("https://api.github.com/repos/WrazyAI/launchloom/dispatches", {
       method: "POST",
       headers: {
@@ -237,7 +238,13 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       },
       body: JSON.stringify({
         event_type: "intake-submitted",
-        client_payload: { issue: task.issue_number, submission_id: task.submission_id },
+        client_payload: {
+          issue: task.issue_number,
+          submission_id: task.submission_id,
+          // The lifecycle email address lets the generation ledger attribute a
+          // run to the invited client without storing a second copy of it.
+          ...(invite?.client_email ? { client_email: invite.client_email } : {}),
+        },
       }),
     });
     if (!response.ok) throw new Error(`GitHub dispatch failed: ${response.status}`);

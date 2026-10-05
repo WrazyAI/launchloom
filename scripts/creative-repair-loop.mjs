@@ -796,6 +796,7 @@ export async function requestRepair({
   logger = console.log,
   automaticSpanRepair = false,
   fetchImpl = fetch,
+  onUsage = null,
 }) {
   const humanReview = (findings || []).some(
     (finding) =>
@@ -1180,6 +1181,14 @@ Return a complete replacement for only this requested file. Keep source non-empt
       throw error;
     }
     logOpenRouterCacheUsage("creative-repair", payload.usage);
+    if (typeof onUsage === "function")
+      onUsage({
+        label: "creative-repair",
+        model,
+        provider: payload.provider || null,
+        usage: payload.usage || null,
+        at: Date.now(),
+      });
     const responseContent = payload.choices?.[0]?.message?.content || "";
     const diagnostics = authoringCompletionDiagnostics({
       stage: "creative-repair",
