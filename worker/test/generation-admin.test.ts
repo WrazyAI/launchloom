@@ -92,7 +92,7 @@ describe("Access-protected generation tracking administration", () => {
     expect(html).toContain("Client generations");
     expect(html).toContain("Create private link");
     expect(html).toContain("Recent invitations");
-    expect(html).toContain("/api/admin/generations");
+    expect(html).toContain("/api/admin/onboarding-invites/generations");
     expect(page.headers.get("Cache-Control")).toBe("no-store");
     expect(page.headers.get("Content-Security-Policy")).toContain("img-src 'self'");
     expect(page.headers.get("Content-Security-Policy")).toContain(
@@ -165,6 +165,31 @@ describe("Access-protected generation tracking administration", () => {
       `${apiOrigin}/api/admin/generation-hero?id=${generationId}`,
     );
     expect(heroAnonymous.status).toBe(403);
+
+    // The dashboard reads through the Access-covered invite prefix so it works
+    // without widening the Cloudflare Access application.
+    const aliasListing = await worker.fetch(
+      new Request(`${apiOrigin}/api/admin/onboarding-invites/generations`, {
+        headers: { Origin: apiOrigin },
+      }),
+      testEnv,
+      context,
+    );
+    expect(aliasListing.status).toBe(200);
+    await expect(aliasListing.json()).resolves.toMatchObject({
+      generations: expect.arrayContaining([
+        expect.objectContaining({ generationId }),
+      ]),
+    });
+    const aliasHero = await worker.fetch(
+      new Request(
+        `${apiOrigin}/api/admin/onboarding-invites/generation-hero?id=${generationId}`,
+      ),
+      testEnv,
+      context,
+    );
+    expect(aliasHero.status).toBe(200);
+    expect(aliasHero.headers.get("Content-Type")).toBe("image/png");
   });
 
   it("keeps generation administration same-origin for writes and rejects cross-origin reads", async () => {

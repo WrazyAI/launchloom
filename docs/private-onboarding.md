@@ -53,9 +53,11 @@ before anything is published.
 
 Generation cost and status tracking for the admin dashboard is documented in
 `docs/generation-tracking.md`. It is optional at deploy time: the
-`GENERATION_TRACKING_SECRET` repository secret enables it, and the Cloudflare
-Access application must cover `/api/admin/*` before the Generations tab can
-read it. Invite management keeps working without either.
+`GENERATION_TRACKING_SECRET` repository secret enables it. The dashboard reads
+through the existing Access-covered `/api/admin/onboarding-invites*` prefix, so
+no Access application change is required; widening Access to `/api/admin/*`
+only enables the direct generation routes. Invite management keeps working
+without either.
 
 The Worker uses the existing `GOOGLE_PLACES_API_KEY` for Places category and
 location enrichment. The workflow also calls Google Geocoding to resolve

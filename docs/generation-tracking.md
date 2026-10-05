@@ -45,11 +45,12 @@ variable `FAL_IMAGE_USD_PER_IMAGE` to show a labeled image estimate.
    high-entropy value. `deploy-platform.yml` pushes it to the Worker when
    present. Until it is set the internal ingestion API reports itself
    unconfigured and generation continues unchanged.
-2. Extend the Cloudflare Access application for
-   `api.launchloom.wrazyos.com` to cover `/api/admin/*` (the generation list
-   and hero routes) in addition to the existing invite paths. Without this the
-   Worker fails closed and the Generations tab shows an access message; the
-   Invitations tab keeps working.
+2. No Cloudflare Access change is required for the dashboard: it reads through
+   `/api/admin/onboarding-invites/generations` and
+   `/api/admin/onboarding-invites/generation-hero`, which are already covered
+   by the existing `/api/admin/onboarding-invites*` Access path. The clean
+   `/api/admin/generations` and `/api/admin/generation-hero` routes stay
+   available for when the Access application is widened to `/api/admin/*`.
 3. Optional: set the repository variable `FAL_IMAGE_USD_PER_IMAGE` to the
    currently published per-image price of the configured `FAL_IMAGE_MODEL`.
 
@@ -60,10 +61,12 @@ variable `FAL_IMAGE_USD_PER_IMAGE` to show a labeled image estimate.
   actions with a bounded generation object and up to 50 idempotent events.
 - `POST /api/internal/generations/hero?id=<generation>` stores a WebP, PNG, or
   JPEG thumbnail up to 1.8 MB.
-- `GET /api/admin/generations` (list) and `?id=` (detail) require the verified
-  Cloudflare Access administrator identity.
-- `GET /api/admin/generation-hero?id=<generation>` streams the private hero
-  preview to the dashboard only.
+- `GET /api/admin/onboarding-invites/generations` (list) and `?id=` (detail),
+  plus `/api/admin/onboarding-invites/generation-hero?id=<generation>` for the
+  private hero preview, require the verified Cloudflare Access administrator
+  identity. The equivalent `/api/admin/generations` and
+  `/api/admin/generation-hero` routes exist for direct use once Access covers
+  them.
 
 ## Verification
 
