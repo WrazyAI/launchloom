@@ -184,9 +184,13 @@ describe("developer-triggered creative repair", () => {
         confirmed: true,
       });
     const responses = await Promise.all([release(), release()]);
-    expect(responses.map((response) => response.status).sort()).toEqual([
-      202, 409,
-    ]);
+    // Two interleavings are valid: the second request can hit the pre-queue
+    // guard and return 409, or reach the coordinator after the first request
+    // completed and receive the idempotent already-queued 200. The safety
+    // contract below still requires exactly one merge and one dispatch.
+    const statuses = responses.map((response) => response.status).sort();
+    expect(statuses.filter((status) => status === 202)).toHaveLength(1);
+    expect([200, 409]).toContain(statuses.find((status) => status !== 202));
     expect(mergeAttempts).toBe(1);
     expect(dispatches).toHaveLength(1);
     expect(dispatches[0]).toMatchObject({
