@@ -28,12 +28,12 @@
 
 ## Task 1: Explicit runtime ownership and exact rejection diagnostics
 
-**Files:** Modify `scripts/creative-authoring-output.mjs`, `scripts/creative-repair-loop.mjs`, `scripts/run-rendered-creative-repair.mjs`; test `tests/creative-repair-loop.test.ts`, `tests/reference-contract-compliance.test.ts`, `tests/rendered-creative-repair.test.ts`.
+**Files:** Modify `scripts/creative-authoring-output.mjs`, `scripts/creative-repair-loop.mjs`, `scripts/run-rendered-creative-repair.mjs`; test `tests/creative-repair-loop.test.ts`, `tests/reference-fidelity.test.ts`, `tests/rendered-creative-repair.test.ts`.
 
 **Interface:** Export `repairRejectionSummary(edit, index, occurrences)` from the repair module. Return only bounded codes, logical file name, index, find/replace types and lengths, and occurrence count. No literal text. Preserve the existing rejection code and fail-closed result.
 
 - [ ] Add RED tests for explicit read-only instructions and distinct diagnostics for nonstring, empty, over-6,000, missing and repeated find fragments. Retain the real validator tests proving all eight role reads pass and declarations/registrations fail.
-- [ ] Run `npx vitest run tests/creative-repair-loop.test.ts tests/reference-contract-compliance.test.ts tests/rendered-creative-repair.test.ts`; verify the new expectations fail before code changes.
+- [ ] Run `npx vitest run tests/creative-repair-loop.test.ts tests/reference-fidelity.test.ts tests/rendered-creative-repair.test.ts`; verify the new expectations fail before code changes.
 - [ ] State explicitly that runtime roles must never be declared, assigned or registered. Preserve rejected provider payloads only in the existing private repair artifact path, with a 256,000-character storage ceiling, digest and truncation flag; public output uses the summary interface only. No acceptance guard changes.
 - [ ] Run the same tests; expect all passing, including redaction, bounded retention and unchanged write isolation.
 - [ ] Commit this independently reviewable correction with its append-only progress evidence.

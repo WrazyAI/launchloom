@@ -233,3 +233,16 @@ export default function Experience({ content }) { return <main data-mobile-recom
     ]));
   });
 });
+
+
+describe("runtime palette ownership", () => {
+  const roles = ["surface", "text", "muted-text", "link", "action", "on-action", "border", "focus"];
+  it("permits reads of each runtime role while rejecting declarations and registrations", () => {
+    for (const role of roles) {
+      const check = (stylesSource: string) => validateReferenceCandidate({ referenceDna: dna, experienceSource: validExperience, stylesSource: validStyles + stylesSource, motionSource: validMotion });
+      expect(check(`.owned { color: var(--ll-${role}); }`).hardFindings).not.toContainEqual(expect.objectContaining({ code: "css-token-collision" }));
+      expect(check(`.owned { --ll-${role}: #fff; }`).hardFindings).toContainEqual(expect.objectContaining({ code: "css-token-collision" }));
+      expect(check(`@property --ll-${role} { syntax: "<color>"; inherits: true; initial-value: #fff; }`).hardFindings).toContainEqual(expect.objectContaining({ code: "css-token-collision" }));
+    }
+  });
+});

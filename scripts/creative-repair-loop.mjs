@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -292,6 +293,55 @@ function repairOutputRejection(message, cause) {
   return error;
 }
 
+// Private output must never become an enumerable Error property or cause.
+const privateRepairOutputs = new WeakMap();
+function rememberPrivateRepairOutput(value, payload) {
+  if (!value || typeof value !== "object") return value;
+  const raw = typeof payload === "string" ? payload : JSON.stringify(payload);
+  if (typeof raw !== "string") return value;
+  const retained = raw.slice(0, 256_000);
+  privateRepairOutputs.set(value, {
+    version: 1, sha256: createHash("sha256").update(raw).digest("hex"),
+    totalChars: raw.length, storedChars: retained.length,
+    truncated: retained.length < raw.length, payload: retained,
+  });
+  return value;
+}
+export function privateRepairRejectionEvidence(value) {
+  return value && typeof value === "object" ? privateRepairOutputs.get(value) || null : null;
+}
+export function inheritRepairRejectionEvidence(target, value, validationMessage) {
+  const evidence = privateRepairRejectionEvidence(value);
+  if (evidence && target && typeof target === "object") privateRepairOutputs.set(target, { ...evidence, ...(typeof validationMessage === "string" ? { validationMessage: validationMessage.slice(0, 6_000) } : {}) });
+  return target;
+}
+/** Public diagnostics contain types/counts only, never caller-provided source. */
+export function repairRejectionSummary(edit, index, occurrences = null) {
+  const type = value => value === null ? "null" : Array.isArray(value) ? "array" : typeof value;
+  const codes = [];
+  const file = REPAIR_EDITABLE_FILES.has(edit?.file) ? edit.file : null;
+  if (!file) codes.push("unsupported_file");
+  if (typeof edit?.find !== "string") codes.push("invalid_find_type");
+  else if (!edit.find.length) codes.push("empty_find");
+  else if (edit.find.length > MAX_REPAIR_EDIT_FRAGMENT_CHARS) codes.push("find_too_long");
+  if (typeof edit?.replace !== "string") codes.push("invalid_replace_type");
+  else if (edit.replace.length > MAX_REPAIR_EDIT_FRAGMENT_CHARS) codes.push("replace_too_long");
+  if (occurrences === 0) codes.push("find_missing");
+  else if (occurrences > 1) codes.push("find_not_unique");
+  return {
+    version: 1, editIndex: Number.isInteger(index) && index >= 0 && index < MAX_REPAIR_EDITS ? index + 1 : null,
+    file, codes, findType: type(edit?.find), replaceType: type(edit?.replace),
+    findLength: typeof edit?.find === "string" ? edit.find.length : null,
+    replaceLength: typeof edit?.replace === "string" ? edit.replace.length : null,
+    occurrences: Number.isSafeInteger(occurrences) && occurrences >= 0 ? occurrences : null,
+  };
+}
+function rejectedEdit(message, edit, index, occurrences = null) {
+  const error = repairOutputRejection(message);
+  error.repairRejectionSummary = repairRejectionSummary(edit, index, occurrences);
+  return error;
+}
+
 /** Apply exact, bounded source replacements; ambiguous edits fail closed. */
 export function applyCreativeRepairEdits(files, edits, { allowInnerPages = true } = {}) {
   if (!files || typeof files !== "object" || Array.isArray(files))
@@ -315,8 +365,8 @@ export function applyCreativeRepairEdits(files, edits, { allowInnerPages = true 
       !REPAIR_EDITABLE_FILES.has(edit.file) ||
       (!allowInnerPages && REPAIR_INNER_PAGE_KEYS.includes(edit.file))
     )
-      throw repairOutputRejection(
-        `${label} targets an unsupported candidate file.`,
+      throw rejectedEdit(
+        `${label} targets an unsupported candidate file.`, edit, index,
       );
     if (
       typeof edit.find !== "string" ||
@@ -325,13 +375,13 @@ export function applyCreativeRepairEdits(files, edits, { allowInnerPages = true 
       typeof edit.replace !== "string" ||
       edit.replace.length > MAX_REPAIR_EDIT_FRAGMENT_CHARS
     )
-      throw repairOutputRejection(
-        `${label} exceeds the bounded literal replacement contract.`,
+      throw rejectedEdit(
+        `${label} exceeds the bounded literal replacement contract.`, edit, index,
       );
     const replacement = edit.replace.replace(/[—–]/gu, "-");
     if (edit.find === replacement)
-      throw repairOutputRejection(
-        `${label} does not change the candidate source.`,
+      throw rejectedEdit(
+        `${label} does not change the candidate source.`, edit, index,
       );
     if (/data:image\//iu.test(edit.find) || /data:image\//iu.test(edit.replace))
       throw repairOutputRejection(`${label} cannot contain inline image data.`);
@@ -346,8 +396,9 @@ export function applyCreativeRepairEdits(files, edits, { allowInnerPages = true 
       throw new Error(`${label} targets a missing candidate file.`);
     const start = source.indexOf(edit.find);
     if (start < 0 || source.indexOf(edit.find, start + edit.find.length) >= 0)
-      throw repairOutputRejection(
-        `${label} source fragment must match exactly once in ${edit.file}.`,
+      throw rejectedEdit(
+        `${label} source fragment must match exactly once in ${edit.file}.`, edit, index,
+        start < 0 ? 0 : source.split(edit.find).length - 1,
       );
     repaired[edit.file] =
       source.slice(0, start) +
@@ -1123,35 +1174,41 @@ Return a complete replacement for only this requested file. Keep source non-empt
     logger(
       `creative_completion stage=creative-repair ${diagnosticText}${scopedHumanRepair ? " mode=bounded-edits" : targetFile ? ` mode=file-replacement file=${targetFile}` : ""}`,
     );
-    if (["length", "max_tokens"].includes(diagnostics.finishReason))
-      throw repairOutputRejection(
-        `Creative repair response was truncated (${diagnosticText}).`,
-      );
-    let parsed;
     try {
-      parsed = parseModelJson(responseContent);
-    } catch (cause) {
-      throw repairOutputRejection(
-        `Creative repair response was malformed (${diagnosticText}).`,
-        cause,
-      );
-    }
-    if (scopedHumanRepair || editsOnly) {
-      if (!isRepairEditSet(parsed))
+      if (["length", "max_tokens"].includes(diagnostics.finishReason))
         throw repairOutputRejection(
-          "Human creative repair must return bounded literal edits, not complete files.",
+          `Creative repair response was truncated (${diagnosticText}).`,
         );
-      applyCreativeRepairEdits(currentFiles, parsed.edits, { allowInnerPages: !scopedHumanRepair });
-      return parsed;
+      let parsed;
+      try {
+        parsed = parseModelJson(responseContent);
+      } catch (cause) {
+        throw repairOutputRejection(
+          `Creative repair response was malformed (${diagnosticText}).`,
+          new Error("Model JSON parsing failed."),
+        );
+      }
+      if (scopedHumanRepair || editsOnly) {
+        if (!isRepairEditSet(parsed))
+          throw repairOutputRejection(
+            "Human creative repair must return bounded literal edits, not complete files.",
+          );
+        applyCreativeRepairEdits(currentFiles, parsed.edits, { allowInnerPages: !scopedHumanRepair });
+        return rememberPrivateRepairOutput(parsed, responseContent);
+      }
+      if (targetFile) {
+        const source = validateCandidateFileReplacement(
+          parsed,
+          targetFile,
+        );
+        return rememberPrivateRepairOutput({ ...currentFiles, [targetFile]: source }, responseContent);
+      }
+      return rememberPrivateRepairOutput(parsed, responseContent);
+    } catch (error) {
+      rememberPrivateRepairOutput(error, responseContent);
+      if (error?.repairRejectionSummary) logger(JSON.stringify({ event: "creative_repair_output_rejected", summary: error.repairRejectionSummary }));
+      throw error;
     }
-    if (targetFile) {
-      const source = validateCandidateFileReplacement(
-        parsed,
-        targetFile,
-      );
-      return { ...currentFiles, [targetFile]: source };
-    }
-    return parsed;
   };
 
   const sourceChars = [...REPAIR_FILE_ORDER, ...REPAIR_INNER_PAGE_KEYS].reduce(
@@ -1166,7 +1223,7 @@ Return a complete replacement for only this requested file. Keep source non-empt
     const repair = await requestModelRepair(files, { editsOnly: true });
     // Automatic callers validate a complete bundle. Resolve the bounded patch
     // against the exact sources before handing it to either repair runner.
-    return applyCreativeRepairEdits(files, repair.edits);
+    return inheritRepairRejectionEvidence(applyCreativeRepairEdits(files, repair.edits), repair);
   }
   let currentFiles = { ...files };
   for (const targetFile of repairTargetFiles(findings)) {

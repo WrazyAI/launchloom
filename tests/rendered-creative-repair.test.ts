@@ -13,7 +13,8 @@ import {
   runVisualGateProcess,
   writeCandidate,
 } from "../scripts/run-rendered-creative-repair.mjs";
-import { requestRepair } from "../scripts/creative-repair-loop.mjs";
+import { inspect } from "node:util";
+import { requestRepair, privateRepairRejectionEvidence } from "../scripts/creative-repair-loop.mjs";
 import { RENDERED_REFERENCE_THRESHOLDS } from "../scripts/rendered-reference-fidelity.mjs";
 import { validateProductionCandidateFiles } from "../scripts/production-experience-author.mjs";
 import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
@@ -415,20 +416,13 @@ export default function Experience({ content, runtime }) { return <main><section
       ),
     );
 
-    await expect(
-      defaultRepairCandidate({
-        candidateDir,
-        findings: [
-          {
-            category: "imagery",
-            message:
-              "A generic stock image appears on an image-independent reference.",
-          },
-        ],
-        screenshots: [],
-        model: "test/model",
-      }),
-    ).rejects.toThrow(/palette/iu);
+    const rejected = await defaultRepairCandidate({
+      candidateDir,
+      findings: [{ category: "imagery", message: "A generic stock image appears on an image-independent reference." }],
+      screenshots: [], model: "test/model",
+    }).catch(error => error);
+    expect(rejected).toMatchObject({ code: "CREATIVE_REPAIR_OUTPUT_REJECTED", message: "Creative repair output rejected by source validation." });
+    expect(privateRepairRejectionEvidence(rejected)?.validationMessage).toMatch(/palette/iu);
 
     expect(await fs.readFile(path.join(candidateDir, "styles.css"), "utf8")).toBe(
       originalFiles.styles,
@@ -2741,4 +2735,27 @@ process.exit(1);
     expect(hostGuardIndex).toBeGreaterThan(buildIndex);
     expect(candidateGuardIndex).toBeGreaterThan(buildIndex);
   });
+});
+
+
+it("keeps rejected source-validation details and provider source out of public errors", async () => {
+  const { root, candidates } = await fixture(["candidate-a"]);
+  process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+  const dir = path.join(candidates, "candidate-a");
+  const desktop = path.join(root, "reference.png"); await fs.writeFile(desktop, "evidence");
+  const metadata = JSON.parse(await fs.readFile(path.join(dir, "metadata.json"), "utf8"));
+  metadata.referenceDna.evidence = { desktopScreenshot: { path: desktop } };
+  metadata.referenceDna.sectionSequence = ["hero", "services", "faqs", "contact"];
+  await fs.writeFile(path.join(dir, "metadata.json"), JSON.stringify(metadata));
+  await fs.writeFile(path.join(dir, "content-manifest.json"), JSON.stringify({ values: {}, tokens: [] }));
+  const original = await fs.readFile(path.join(dir, "Experience.jsx"), "utf8");
+  const output = { experience: 'import x from "private@example.test"; export default () => null;', styles: "body{}", motion: "export function mountExperienceMotion(){ return () => {}; }" };
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify(output) } }] }))));
+  let error: any;
+  try { await defaultRepairCandidate({ candidateDir: dir, findings: ["contrast needs correction"], screenshots: [], model: "test/model" }); } catch (value) { error = value; }
+  expect(error?.code).toBe("CREATIVE_REPAIR_OUTPUT_REJECTED");
+  expect(error?.message).toBe("Creative repair output rejected by source validation.");
+  expect(inspect(error)).not.toContain("private@example.test");
+  expect(privateRepairRejectionEvidence(error)).toEqual(expect.objectContaining({ validationMessage: expect.any(String), payload: JSON.stringify(output) }));
+  expect(await fs.readFile(path.join(dir, "Experience.jsx"), "utf8")).toBe(original);
 });

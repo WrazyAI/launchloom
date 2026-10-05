@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
@@ -5,6 +6,8 @@ import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
 import {
   applyCreativeRepairEdits,
   requestRepair,
+  privateRepairRejectionEvidence,
+  inheritRepairRejectionEvidence,
 } from "./creative-repair-loop.mjs";
 import {
   assertCreativeRevisionScope,
@@ -898,7 +901,7 @@ export async function defaultRepairCandidate({
     if (humanReview)
       assertCreativeRevisionScope(files, validated.files, creativeRepairScope);
   } catch (error) {
-    throw repairOutputRejected(error);
+    throw inheritRepairRejectionEvidence(repairOutputRejected(error), repairResponse, error?.message || String(error));
   }
   await writeCandidate(candidateDir, validated.files);
   return validated.files;
@@ -996,11 +999,24 @@ async function persistRepairEvidence({
   );
 }
 
+/** Persist raw rejection evidence only in the private client repair directory. */
+export async function persistPrivateRepairRejection({ outDir, round, candidateId, attempt, error }) {
+  const evidence = privateRepairRejectionEvidence(error);
+  if (!evidence) return null;
+  if (!/^candidate-[abc]$/.test(candidateId) || !Number.isSafeInteger(round) || round < 0 ||
+      !Number.isSafeInteger(attempt) || attempt < 1) throw new Error("Invalid private repair evidence identity.");
+  const directory = path.join(outDir, `round-${String(round).padStart(2, "0")}`, "repairs", "rejected");
+  await fs.mkdir(directory, { recursive: true });
+  const file = path.join(directory, `${candidateId}-attempt-${attempt}-${randomUUID()}.json`);
+  await fs.writeFile(file, JSON.stringify({ ...evidence, candidateId, attempt,
+    summary: error?.repairRejectionSummary || null }, null, 2) + "\n", { flag: "wx", mode: 0o600 });
+  return file;
+}
+
 function repairOutputRejected(error) {
-  const rejected = new Error(
-    `Creative repair output rejected by source validation: ${error?.message || String(error)}`,
-    { cause: error instanceof Error ? error : undefined },
-  );
+  // Details may contain untrusted authored source. Only the private evidence
+  // map carries them; neither the message nor an enumerable cause may leak it.
+  const rejected = new Error("Creative repair output rejected by source validation.");
   rejected.code = "CREATIVE_REPAIR_OUTPUT_REJECTED";
   return rejected;
 }
@@ -1176,6 +1192,8 @@ export async function runRenderedCreativeRepair({
         });
         return { status: "repaired", attempts };
       } catch (error) {
+        await persistPrivateRepairRejection({ outDir: evidenceRoot, round, candidateId,
+          attempt: rejections + attempts.length + 1, error });
         const mayRetryRepairOutputRejection =
           requestedMode === "preview" &&
           !humanFeedback &&
