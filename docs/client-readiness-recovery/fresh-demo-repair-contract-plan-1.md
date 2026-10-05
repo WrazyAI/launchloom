@@ -69,7 +69,7 @@
 
 **Consumes:** reviewed deployed repair implementation, same frozen QA sets, approved experiment ceiling and existing authorized client-recipient secret. **Produces:** two gated preview source/deployment records, browser submission evidence and correlated receiving-provider results, or a precise terminal blocker.
 
-- [ ] Re-read Nifty parent/delivery state. Verify original sealed identities/recipients, current private source hashes and reference assignments before dispatch.
+- [x] Re-read Nifty parent/delivery state. Verify original sealed identities/recipients, current private source hashes and reference assignments before dispatch.
 - [ ] Run the same two authored sets with one cycle and one provider call per candidate, at most two calls per run and four across the experiment. Stop immediately on a contract rejection or exhausted ceiling; retain private diagnostics. No new intake/authoring/SEO campaign or gate change.
 - [ ] For gate-passing previews, inspect final desktop/mobile identity, contextual imagery, readability, overflow, em dashes and configured routes. Verify deployed commit and signed recipient/project/origin. Use the actual form to prove simulated failure retention, then exactly one labelled real submission per site and successful reset.
 - [ ] Run read-only correlated provider verification. Report receiving-provider delivery separately from inbox placement. Missing read access, incomplete listing, bounce or unknown status remains unverified; do not substitute workflow success.
@@ -79,4 +79,4 @@
 
 Review Tasks 1–3 as the concrete repair-interface change, then authorize the single capped experiment in Task 4. Implementation estimate: 60–90 minutes plus approximately 20 minutes for full CI. Provider runtime is bounded by the existing workflow timeout and the stricter experiment ceiling, not promised as a short run.
 
-User approved execution. Tasks 1–2 are implemented and locally verified; Tasks 3–4 remain pending. No provider experiment has run.
+User approved execution. Tasks 1–3 shipped through PR #139 at `63f6f3e`, with final CI and deployed Pages/Worker readback. Task 4 dispatched the two approved runs (`37292020140`, `37292028303`) once; both stopped at reusable manifest validation before any repair-provider call. Actual repair calls and client form submissions remain zero. No restart. The workflow enrichment bug and bounded correction are recorded in [execution evidence](fresh-demo-repair-contract-execution.md); real preview/promotion/delivery remain unverified.
