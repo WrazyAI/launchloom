@@ -42,7 +42,7 @@ The smallest proposed trial is a conservative request budget for the opt-in expe
 
 Actual catalog profiles:134a F1,999/K3/worst23,997;134b F3,491/K2/worst18,982;135b F2,000/K3/worst24,000;135c F3,129/K2/worst18,258. This reduces each request's edit capacity; it may not fix enough findings in one cycle. Complete source/dossier/constraint/measurement context and all rendered/contrast/reference/promotion gates remain mandatory. Normal automatic and human-feedback behavior stay unchanged until separately validated for broader adoption.
 
-Original hard limits remain1–12 edits,6,000 per find/replacement,24,000 total,80,000 per full file and400,000 textual prompt. Same fictional identities, recipients, assets, source baselines and reference cohorts. A future approved experiment remains one cycle, one actual completion fetch per candidate,two/site,four total including failed fetches/retries; stop on any rejection. Success counts must also be committed into private client evidence, including explicit zero-call runs. No public payload/artifact upload. The [three-stage follow-up plan](fresh-demo-repair-budget-plan-2.md) is approved; implementation and offline proofs are complete, with final review fixes, shipping and the new capped experiment in progress.
+Original hard limits remain1–12 edits,6,000 per find/replacement,24,000 total,80,000 per full file and400,000 textual prompt. Same fictional identities, recipients, assets, source baselines and reference cohorts. A future approved experiment remains one cycle, one actual completion fetch per candidate,two/site,four total including failed fetches/retries; stop on any rejection. Success counts must also be committed into private client evidence, including explicit zero-call runs. No public payload/artifact upload. The [three-stage follow-up plan](fresh-demo-repair-budget-plan-2.md) is implemented and shipped through PR141 and the opt-in routing correction PR142. Its single approved experiment stopped at provider routing; actual client readiness remains unfinished.
 
 ## Remaining scope
 
@@ -60,3 +60,26 @@ Live [Luna endpoint metadata](https://openrouter.ai/api/v1/models/openai/gpt-6-l
 The bounded correction omits optional temperature only for the opt-in budget request; ordinary automatic and scoped-human requests retain0.35. Frozen reasoning, full source/dossier/measurement context, cache hints, token limits, provider.require_parameters, structured-output bounds and every local/rendered/promotion gate stay present. The new routing behavior is verified offline; actual provider acceptance requires a separately approved new experiment. No live provider success is claimed by the correction.
 
 Client promotion, actual desktop/mobile client acceptance, labelled real enquiries and correlated receiving-provider delivery remain unfinished. Nifty parent/delivery remain open; historical-client migration remains separate. No gate passing client proof can be inferred from platform or synthetic tests.
+
+
+## Verified corrective release and remaining authorization
+
+PR142 merged asb66f9eb88efb1f08be2ee0a185d79bde38953840. Final CI37320416119 passed1407application/111Worker tests,all three rendered recipe matrices,Astro301files0errors/0warnings/4hints,Worker check and build. TestSprite007c6e7d-9afb-4672-bf06-d7caac897b9b passed20/20 steps, native/contact and authored/service503→200 plus Testville locality; its intercepted server recorded0realDeliveries. Four complete frozen adapter/compiler/enrichment/reuse replays passed with0additional provider calls. Request generation fields fit at least one advertised endpoint profile; this is offline compatibility evidence, not an accepted live completion.
+
+Deployment37322871280 succeeded. Independent provider readback confirms platform Pages92f789af-ce74-41c0-8442-d7f51a6db3cc and onboarding Pages5b01486f-f64a-4f61-ac8c-e99928543227 both production/success/exactb66f9eb. Worker10002847-40fd-4ebb-9d77-8aa40f19dd66 is active100%. Live1440/390 platform/onboarding each returned200 without overflow/runtime errors/mutating requests; API GETlead returned405. Code shipping is verified. These platform and synthetic results do not qualify either fictional client for a real enquiry.
+
+The approved budget experiment remains terminated: issue134run37311100809 and issue135run37311108980,1candidate-b fetch/site,2total,0model responses. Current private heads59256448d701ffc1ffef1116dc44cd5b02143671 and1d5606e3c651b8601f4d73884568661d297075d6 retain exact receipts and raw routing errors. All10JSX/CSS/JS source files and3generated images per site, hero,brief,reference pack,session and recipient were verified unchanged. No new dispatch or real form enquiry. Nifty parent/delivery are open; a premature parent completion was corrected because only1of3subtasks was complete.
+
+Proposed next verification, **not executed or newly authorized**: one fresh capped pair on the same frozen issues134/135 after review of this deployed correction. Keep one cycle,one actual repair fetch per candidate,two/site,four total including failed attempts; stop on routing/schema/contract rejection and never restart automatically. Keep all source/content/contrast/reference/rendered/promotion gates. Only passing sites receive actual-preview desktop/mobile/route acceptance, followed by at most one labelled real enquiry/site to the already authorized recipient and correlated read-only receiving-provider verification. The previous unused call capacity does not authorize this new pair; the approved plan allowed exactly one dispatch per site.
+
+Execution rulings and costs if wrong:
+
+| Ruling | Reason | Cost if wrong |
+| --- | --- | --- |
+| Use Task headings in the plan | The execution helper recognizes TaskN | Bookkeeping ambiguity |
+| Enforce the derived edit ceiling locally for opt-in requests | Provider schema claims cannot replace the request contract | Rejecting otherwise globally valid QA patches |
+| Use the documented bounded replacement pattern | Native primary guidance positively lists pattern support | Endpoint refusal within the existing call ceiling |
+| Archive prior private evidence and initialize current counts before preflight/authoring | Stale counts must not become current-run evidence | Additional private storage |
+| Omit optional temperature only on the strict opt-in request | Every advertised Luna endpoint omits temperature support | Another routing refusal if other parameters remain incompatible |
+
+Independent final review's Important stale-receipt and Minor stale-status findings were fixed. No minor review finding is deferred. Provider acceptance, client promotion and real delivery remain explicit unverified dependencies.
