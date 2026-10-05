@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 
 // Run the actual publication shell with real local Git and real Chromium.
 // Redirect only provider/build boundaries; no deployment or email leaves this test.
-function publication(color: string, override: boolean) {
+function publication(color: string, override: boolean, routeFailure = "") {
   const root = mkdtempSync(path.join(os.tmpdir(), "ll-publish-contrast-"));
   try {
     const fixture = path.join(root, "fixture"),
@@ -74,10 +74,10 @@ function publication(color: string, override: boolean) {
     );
     executable(
       "node",
-      'case "$1" in\n */seo-release-gate.mjs) exit 0;;\n */create-review-link.mjs) printf "fixture-review-token\\n"; exit 0;;\n */send-preview-email.mjs) printf "sent\\n" > "$EMAIL_MARKER"; exit 0;;\n esac\nexec "$REAL_NODE" "$@"\n',
+      'case "$1" in\n */verify-site-routes.mjs) case " $* " in *" --destination "*) test "$ROUTE_FAILURE" != destination;; *) test "$ROUTE_FAILURE" != local;; esac; exit $?;;\n */seo-release-gate.mjs) exit 0;;\n */create-review-link.mjs) printf "fixture-review-token\\n"; exit 0;;\n */send-preview-email.mjs) printf "sent\\n" > "$EMAIL_MARKER"; exit 0;;\n esac\nexec "$REAL_NODE" "$@"\n',
     );
     const workflow = readFileSync(".github/workflows/publish-site.yml", "utf8");
-    const block = workflow.split("        run: |\n")[1];
+    const block = workflow.split("        run: |\n")[1]?.split("\n      - ")[0];
     expect(block).toBeTruthy();
     const shell = block
       .split("\n")
@@ -92,6 +92,7 @@ function publication(color: string, override: boolean) {
         ...process.env,
         PATH: bin + ":" + process.env.PATH,
         REAL_NODE: process.execPath,
+        ROUTE_FAILURE: routeFailure,
         FIXTURE_REPO: fixture,
         GITHUB_WORKSPACE: path.resolve("."),
         RUNNER_TEMP: runner,
@@ -125,6 +126,18 @@ function publication(color: string, override: boolean) {
 }
 
 describe("publication contrast guard", () => {
+  it("blocks deployment when approved-route verification fails", () => {
+    const result = publication("#14201d", false, "local");
+    expect(result.status).not.toBe(0);
+    expect(result.released).toBe(false);
+    expect(result.emailed).toBe(false);
+  }, 30000);
+  it("blocks client email when destination verification fails after upload", () => {
+    const result = publication("#14201d", false, "destination");
+    expect(result.status).not.toBe(0);
+    expect(result.released).toBe(true);
+    expect(result.emailed).toBe(false);
+  }, 30000);
   it.each([false, true])(
     "blocks deployment and delivery for pale text, visual override=%s",
     (override) => {

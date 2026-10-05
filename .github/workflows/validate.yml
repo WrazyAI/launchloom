@@ -32,3 +32,29 @@ jobs:
           npm run check:worker
       - name: Build production bundle
         run: npm run build
+  route-fixtures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install browser runtime
+        run: npx playwright install --with-deps chromium
+      - name: Verify synthetic approved-route matrix
+        run: npm run verify:site-route-fixtures
+      - name: Retain private fixture route evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-route-verification
+          path: |
+            artifacts/stage4/*/route-handoff.json
+            artifacts/stage4/*/screenshots
+          if-no-files-found: ignore
+          retention-days: 7

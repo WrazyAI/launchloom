@@ -10,7 +10,7 @@ export function getStaticPaths() { return routeIsRendered("/about/") ? [{ params
 
 ---
 
-<SiteLayout title={supported ? brief.metadata.title : `About ${site.business.name}`} description={supported ? brief.metadata.description : site.copy?.aboutBody || site.business.description}>
+<SiteLayout title={supported ? brief.metadata.title : `About ${site.business.name}`} description={supported ? brief.metadata.description : `About ${site.business.name}. ${site.copy?.aboutBody || site.business.description}`}>
   <Header />
   <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`]}>
     <section class="inner-hero">

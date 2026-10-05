@@ -37,7 +37,8 @@
     "test:watch": "vitest",
     "format": "prettier --write .",
     "preflight:reasoning": "node scripts/run-reasoning-preflight.mjs",
-    "quality:contrast": "node scripts/verify-contrast.mjs"
+    "quality:contrast": "node scripts/verify-contrast.mjs",
+    "verify:site-route-fixtures": "node scripts/verify-site-route-fixtures.mjs"
   },
   "dependencies": {
     "@astrojs/react": "latest",

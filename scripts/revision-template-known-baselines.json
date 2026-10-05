@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source": "LaunchLoom main 849ca939cef734fc19114dba1746669470cdb1f3; exact generated template bytes before creative palette bindings; also exact Stage 2 template bytes at 7e3992cc5a745d8465193023596a25ddaa72df46",
+  "source": "LaunchLoom main 849ca939cef734fc19114dba1746669470cdb1f3; exact generated template bytes before creative palette bindings; also exact Stage 2 template bytes at 7e3992cc5a745d8465193023596a25ddaa72df46; exact Stage 3 main template bytes at 0ad1400 for Stage 4 metadata migration",
   "files": {
     "src/lib/site.ts": [
       "5ef2cba26110bbc8ca3c0d2e6ee49d33751dfa2ce7a62622392b11d4ba4775a1",
@@ -13,7 +13,8 @@
     ],
     "src/layouts/SiteLayout.astro": [
       "ebc4d007ef8dfcbd8edbdd6004755a65336fe8a07f73f1b85b56396a4d673c28",
-      "0d2f4f5bb7ecfad886fa52ab6541c5c676a48463037fa0923d23442cb5422cfe"
+      "0d2f4f5bb7ecfad886fa52ab6541c5c676a48463037fa0923d23442cb5422cfe",
+      "67fc0c1096e0a4066a4dbc2cc18688b33f4ab2805df9f2c957ba4e30f4ee2ced"
     ],
     "src/styles/creative-runtime.css": [
       "fb2085fb02a589464e35f6a12d94c5d2737b65dc32a588a4a08c98d6b52e7ce7"
@@ -93,13 +94,17 @@
       "7cabeaaf02dfb44daf30ca6b785c39be92cae9825e17b5c04970ead2feb83abc"
     ],
     "src/pages/about/[...page].astro": [
-      "340e36eb7e865f4f8adc1db890124c4ae8c538a0c98723c8a4cf12ab197ba40d"
+      "340e36eb7e865f4f8adc1db890124c4ae8c538a0c98723c8a4cf12ab197ba40d",
+      "3bf65bf4d8c208ae7ae11f4a7fff23a9dc001c059b5148619ad505c31c581819"
     ],
     "src/pages/contact/[...page].astro": [
       "9e3f73e8bbd6f3ca57aba852f2afbe2d55a55c09a2b62ade02859d3e8d3d8f4d"
     ],
     "src/pages/services/[...overview].astro": [
       "4a95cdcef38a3f09291c9620130a35eab8838f0efec43c735c7dbeec0f8c57e3"
+    ],
+    "src/components/LeadForm.astro": [
+      "64aed1820f71bbdb87c5f918b442d69c98dda46c361cd930cc5250fc09044c39"
     ]
   }
 }
