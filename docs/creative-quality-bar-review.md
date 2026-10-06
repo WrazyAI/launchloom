@@ -107,11 +107,14 @@ artDirection up to 84 (80).
    Known next candidates: image-independence adherence during authorship, a
    stronger authoring or judge model, and multi-judge score averaging to
    reduce run to run variance.
-3. **Grade promotion instead of binary promotion.** Promote with open
+3. **Unapproved below-bar promotion proposal, separate from the implemented
+   minor-only rule.** Promote with open
    findings and a developer review link when overall is within a few points
    of the bar, and keep hard gates only for measurable failures (overflow,
    accessibility, broken forms). Still available as the durable product
-   answer.
+   answer. This below-bar proposal has not been approved or implemented. The
+   implemented minor-only rule above still requires every calibrated score
+   bar to be met.
 
 The recalibration does not lower any quality check other than the two
 measured bars, and it does not promote weak draws: a candidate must still
