@@ -18,6 +18,18 @@ beforeAll(async () => {
   );
 });
 
+function browserLayoutSource() {
+  return layoutSource
+    .replace(
+      "export function installQuickAnswersLayout",
+      "window.installQuickAnswersLayout = function",
+    )
+    .replace(
+      "export function focusQuickAnswersFallback(focusWasInside)",
+      "window.focusQuickAnswersFallback = function (focusWasInside)",
+    );
+}
+
 afterAll(async () => {
   await browser?.close();
 });
@@ -103,10 +115,7 @@ describe("quick-answer mobile layout", () => {
         </body>
       `);
       await page.addScriptTag({
-        content: layoutSource.replace(
-          "export function installQuickAnswersLayout",
-          "window.installQuickAnswersLayout = function",
-        ),
+        content: browserLayoutSource(),
       });
       await page.evaluate(() => {
         const launcher = document.querySelector<HTMLElement>(
@@ -142,6 +151,60 @@ describe("quick-answer mobile layout", () => {
         (initial) => (window as any).layoutRefreshCount > initial,
         initialRefreshes,
       );
+    } finally {
+      await page.close();
+    }
+  });
+});
+
+describe("quick-answer close focus", () => {
+  it("moves focus to page content before a colliding assistant becomes inert", async () => {
+    const page = await browser.newPage({
+      viewport: { width: 1440, height: 900 },
+    });
+    try {
+      await page.setContent(`
+        <style>${siteCss}</style>
+        <body style="--brand:#205d51;--on-brand:#fff;--ink:#14201d;--muted:#53605b;--line:#d8ded7;--cream:#f8f6f0;--hero-surface:#e8eee5">
+          <main><h1>Service information</h1><p>Visible page content.</p></main>
+          <aside class="quick-answers is-open">
+            <button class="quick-answers__launcher" aria-expanded="true">Got questions?</button>
+            <section class="quick-answers__panel"><button class="quick-answers__close" type="button">Close</button></section>
+          </aside>
+        </body>
+      `);
+      await page.addScriptTag({
+        content: browserLayoutSource(),
+      });
+      const state = await page.evaluate(() => {
+        const root = document.querySelector<HTMLElement>(".quick-answers")!;
+        const main = document.querySelector<HTMLElement>("main")!;
+        const panel = root.querySelector<HTMLElement>(".quick-answers__panel")!;
+        const close = root.querySelector<HTMLButtonElement>(
+          ".quick-answers__close",
+        )!;
+        const blocker = document.createElement("button");
+        blocker.style.cssText =
+          "position:fixed;inset:0;z-index:1000;margin:0;padding:0;border:0;background:transparent;color:transparent;pointer-events:none";
+        document.body.append(blocker);
+        const layout = (window as any).installQuickAnswersLayout(root);
+        close.focus();
+        const focusWasInside = root.contains(document.activeElement);
+        panel.hidden = true;
+        root.classList.remove("is-open");
+        (window as any).focusQuickAnswersFallback(focusWasInside);
+        layout.refresh();
+        return {
+          inert: root.inert,
+          focusInsideAssistant: root.contains(document.activeElement),
+          mainFocused: document.activeElement === main,
+        };
+      });
+      expect(state).toEqual({
+        inert: true,
+        focusInsideAssistant: false,
+        mainFocused: true,
+      });
     } finally {
       await page.close();
     }

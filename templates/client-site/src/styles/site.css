@@ -560,6 +560,9 @@ h2 {
   bottom: 24px;
   z-index: 16;
   isolation: isolate;
+  border-radius: 999px;
+  background: var(--brand-surface, var(--brand, #205d51));
+  color: var(--on-brand-surface, var(--on-brand, #fff));
   font-family: var(--font-body, Inter, Arial, sans-serif);
 }
 .quick-answers.is-colliding {
@@ -770,7 +773,7 @@ h2 {
 }
 .quick-answers__form input {
   min-width: 0;
-  border: 1px solid var(--line);
+  border: 1px solid var(--ink, #14201d);
   padding: 11px 12px;
   background: transparent;
   color: var(--ink, #14201d);

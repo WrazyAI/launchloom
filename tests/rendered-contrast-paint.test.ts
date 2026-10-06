@@ -99,6 +99,13 @@ describe("rendered contrast backdrop geometry", () => {
     expect(report.pass).toBe(false);
     expect(report.findings[0].status).toBe("unresolved");
   });
+  it("proves an inset focus ring inside a nested fixed pill above sibling paint", async () => {
+    const report = await scan(
+      '<style>body{background:white}.rear{position:relative;isolation:isolate;min-height:900px;background:#10211f}.shell{position:fixed;left:24px;bottom:24px;z-index:16;isolation:isolate;display:flex;border-radius:999px;background:#205d51}.shell button{position:relative;z-index:1;isolation:isolate;border:0;border-radius:999px;padding:12px 17px;background:#205d51;color:white}.shell button:focus-visible{outline:3px solid white;outline-offset:-5px}</style><div class="rear"></div><aside class="shell"><button type="button">Got questions?</button></aside>',
+      1440,
+    );
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+  });
   it("does not use a text-clipped background as an opaque plate", async () => {
     const report = await scan(
       "<style>body{background:white}p{color:white;background:black;background-clip:text}</style><p>White over white canvas</p>",

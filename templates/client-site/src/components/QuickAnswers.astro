@@ -38,7 +38,10 @@ const assistantLabel = "Got questions?";
 )}
 
 <script>
-  import { installQuickAnswersLayout } from "../lib/quick-answers-layout.mjs";
+  import {
+    focusQuickAnswersFallback,
+    installQuickAnswersLayout,
+  } from "../lib/quick-answers-layout.mjs";
 
   for (const root of document.querySelectorAll<HTMLElement>(".quick-answers")) {
     const launcher = root.querySelector<HTMLButtonElement>(".quick-answers__launcher");
@@ -56,6 +59,7 @@ const assistantLabel = "Got questions?";
     const layout = installQuickAnswersLayout(root);
     const setOpen = (open: boolean) => {
       const wasOpen = !panel?.hasAttribute("hidden");
+      const focusWasInside = root.contains(document.activeElement);
       panel?.toggleAttribute("hidden", !open);
       launcher?.setAttribute("aria-expanded", String(open));
       root.classList.toggle("is-open", open);
@@ -65,6 +69,7 @@ const assistantLabel = "Got questions?";
         layout.refresh();
         requestAnimationFrame(() => panel?.scrollIntoView({ block: "nearest", behavior: "auto" }));
       } else {
+        if (wasOpen) focusQuickAnswersFallback(focusWasInside);
         layout.refresh();
         if (wasOpen && !root.inert) launcher?.focus();
       }

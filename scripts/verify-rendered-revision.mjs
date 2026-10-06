@@ -301,8 +301,21 @@ try {
             path: path.join(screenshotDir, "desktop-quick-answers.png"),
           });
         await page.keyboard.press("Escape");
-        if (await panel.isVisible())
+        if (await panel.isVisible()) {
           failures.push("desktop: Escape did not close quick answers.");
+        } else {
+          const closeFocus = await quickAnswers.evaluate((root) => {
+            const launcher = root.querySelector(".quick-answers__launcher");
+            const main = document.querySelector("main");
+            return {
+              inert: root.inert,
+              launcherFocused: document.activeElement === launcher,
+              mainFocused: document.activeElement === main,
+            };
+          });
+          if (closeFocus.inert ? !closeFocus.mainFocused : !closeFocus.launcherFocused)
+            failures.push(`desktop: closing quick answers did not restore safe focus: ${JSON.stringify(closeFocus)}.`);
+        }
 
         // Add a contact/footer region after the shared assistant has mounted.
         // It must move to a clear slot or suppress itself instead of covering
@@ -393,6 +406,44 @@ try {
             window.dispatchEvent(new Event("resize"));
           }, hiddenShell);
           await page.waitForTimeout(100);
+
+          await quickAnswers.locator(".quick-answers__launcher").click();
+          await page.waitForFunction(() => {
+            const root = document.querySelector(".quick-answers");
+            return root && !root.inert && !root.querySelector(".quick-answers__panel")?.hidden;
+          });
+          await page.evaluate(() => {
+            const blocker = document.createElement("button");
+            blocker.dataset.quickAnswersFocusBlocker = "true";
+            blocker.textContent = "Focus collision blocker";
+            blocker.style.cssText = "position:fixed;inset:0;z-index:1000;margin:0;padding:0;border:0;background:transparent;color:transparent;pointer-events:none";
+            document.body.append(blocker);
+          });
+          await quickAnswers.locator(".quick-answers__close").click();
+          const blockedClose = await page
+            .waitForFunction(() => document.querySelector(".quick-answers")?.inert, null, { timeout: 1500 })
+            .then(() =>
+              page.evaluate(() => {
+                const root = document.querySelector(".quick-answers");
+                const main = document.querySelector("main");
+                return {
+                  inert: root?.inert,
+                  focusInsideAssistant: Boolean(root?.contains(document.activeElement)),
+                  mainFocused: document.activeElement === main,
+                };
+              }),
+            )
+            .catch(() => null);
+          if (!blockedClose?.inert || blockedClose.focusInsideAssistant || !blockedClose.mainFocused)
+            failures.push(`desktop: closing an assistant that must become inert did not move focus to page content: ${JSON.stringify(blockedClose)}.`);
+          await page.evaluate(() => {
+            document.querySelector("[data-quick-answers-focus-blocker]")?.remove();
+            window.dispatchEvent(new Event("resize"));
+          });
+          await page.waitForFunction(() => {
+            const root = document.querySelector(".quick-answers");
+            return root && !root.inert;
+          });
         }
       }
 
@@ -413,8 +464,21 @@ try {
             path: path.join(screenshotDir, "desktop-ai-chat.png"),
           });
         await page.keyboard.press("Escape");
-        if (await panel.isVisible())
+        if (await panel.isVisible()) {
           failures.push("desktop: Escape did not close AI chat.");
+        } else {
+          const closeFocus = await aiChat.evaluate((root) => {
+            const launcher = root.querySelector(".quick-answers__launcher");
+            const main = document.querySelector("main");
+            return {
+              inert: root.inert,
+              launcherFocused: document.activeElement === launcher,
+              mainFocused: document.activeElement === main,
+            };
+          });
+          if (closeFocus.inert ? !closeFocus.mainFocused : !closeFocus.launcherFocused)
+            failures.push(`desktop: closing AI chat did not restore safe focus: ${JSON.stringify(closeFocus)}.`);
+        }
       }
 
       const qualifier = page

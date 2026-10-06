@@ -127,4 +127,22 @@ describe("static homepage painted contrast", () => {
       expect(report.pass, JSON.stringify(report.findings)).toBe(true);
     },
   );
+
+  it("proves the closed floating assistant plate above a painted hero", async () => {
+    const report = await audit(
+      "local-trades",
+      `<section class="hero recipe-hero" style="position:relative;min-height:900px;background:#10211f"><p style="color:#fff">Service information remains readable.</p></section><aside class="quick-answers" data-conversion-feature="quick-answers"><button class="quick-answers__launcher" type="button" aria-expanded="false" aria-controls="quick-answers-panel"><span aria-hidden="true">?</span>Got questions?</button><section id="quick-answers-panel" class="quick-answers__panel" hidden aria-labelledby="quick-answers-title"><h2 id="quick-answers-title">Got questions?</h2></section></aside>`,
+      1440,
+    );
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+  });
+
+  it("keeps the expanded AI question field boundary at 3:1 or better", async () => {
+    const report = await audit(
+      "local-trades",
+      `<section class="hero recipe-hero" style="min-height:900px;background:#10211f"><p style="color:#fff">Service information remains readable.</p></section><aside class="quick-answers is-open" data-conversion-feature="ai-chat"><button class="quick-answers__launcher" type="button" aria-expanded="true" aria-controls="quick-answers-panel"><span aria-hidden="true">?</span>Got questions?</button><section id="quick-answers-panel" class="quick-answers__panel" aria-labelledby="quick-answers-title"><header><h2 id="quick-answers-title">Got questions?</h2><button class="quick-answers__close" type="button" aria-label="Close website assistant">×</button></header><form class="quick-answers__form"><label for="ai-chat-question">Ask a question</label><div><input id="ai-chat-question" name="question" placeholder="What would you like to know?" /><button type="button">Ask</button></div></form></section></aside>`,
+      1440,
+    );
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+  });
 });

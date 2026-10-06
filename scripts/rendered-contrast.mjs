@@ -298,7 +298,7 @@ export function collectContrastTargets({
         (color(ps.backgroundColor)?.[3] > 0 || ps.backgroundImage !== "none")
       );
     });
-  const opaqueRootPlate = (plate) => {
+  const opaquePlate = (plate) => {
     const s = styleFor(plate);
     return (
       color(s.backgroundColor)?.[3] === 1 &&
@@ -317,8 +317,6 @@ export function collectContrastTargets({
         s.filter,
         s.backdropFilter,
       ].every((value) => value === "none") &&
-      stackZ(plate) > 0 &&
-      rootContext(plate) === plate &&
       !hasPaintPseudo(plate) &&
       !animationsFor(plate).some(
         (animation) =>
@@ -326,6 +324,8 @@ export function collectContrastTargets({
       )
     );
   };
+  const opaqueRootPlate = (plate) =>
+    opaquePlate(plate) && stackZ(plate) > 0 && rootContext(plate) === plate;
   const roundedFillCovers = (plate, rect) => {
     const box = rectFor(plate),
       s = styleFor(plate);
@@ -416,11 +416,13 @@ export function collectContrastTargets({
       plate && plate !== document.documentElement;
       plate = plate.parentElement
     ) {
-      if (!opaqueRootPlate(plate)) continue;
+      if (!opaquePlate(plate)) continue;
+      const plateContext = rootContext(plate);
       if (
         ((ownRoundedContour && plate === el) ||
           roundedFillCovers(plate, rect)) &&
-        stackZ(layerContext) < stackZ(plate)
+        plateContext &&
+        stackZ(layerContext) < stackZ(plateContext)
       )
         return true;
     }

@@ -1,4 +1,24 @@
 /**
+ * Move focus outside the assistant before a close recalculates collision state.
+ * @param {boolean} focusWasInside
+ */
+export function focusQuickAnswersFallback(focusWasInside) {
+  if (!focusWasInside) return;
+  const main = document.querySelector("main");
+  const mainStyle = main && getComputedStyle(main);
+  const mainIsAvailable =
+    main &&
+    !main.closest("[hidden], [inert], [aria-hidden='true']") &&
+    mainStyle?.display !== "none" &&
+    mainStyle?.visibility !== "hidden" &&
+    Number(mainStyle?.opacity) !== 0;
+  const focusTarget = mainIsAvailable ? main : document.body;
+  if (!focusTarget.hasAttribute("tabindex"))
+    focusTarget.setAttribute("tabindex", "-1");
+  focusTarget.focus({ preventScroll: true });
+}
+
+/**
  * Keep the collapsed desktop assistant clear of visible copy and controls.
  * Small-screen and expanded layouts are handled by shared CSS in site.css.
  * @param {HTMLElement} root
