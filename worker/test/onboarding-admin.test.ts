@@ -1,9 +1,15 @@
-import { env, SELF } from "cloudflare:test";
+import { env, runInDurableObject, SELF } from "cloudflare:test";
+import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import worker, { type Env } from "../src/index";
+import type { OnboardingInvites } from "../src/onboarding-invites";
+import { network } from "./network";
 
 const apiOrigin = "https://api.launchloom.wrazyos.com";
 const testEnv = env as unknown as Env;
+const inviteNamespace = (env as unknown as {
+  ONBOARDING_INVITES: DurableObjectNamespace<OnboardingInvites>;
+}).ONBOARDING_INVITES;
 
 function accessContext(email: string, aud = "launchloom-local-onboarding-admin") {
   return {
@@ -49,7 +55,9 @@ describe("Access-protected invite administration", () => {
     expect(adminPage.status).toBe(200);
     expect(adminPage.headers.get("Cache-Control")).toBe("no-store");
     expect(adminPage.headers.get("Content-Security-Policy")).toContain("frame-ancestors 'none'");
-    expect(await adminPage.text()).toContain("Create private link");
+    const adminPageHtml = await adminPage.text();
+    expect(adminPageHtml).toContain("Create private link");
+    expect(adminPageHtml).toContain("Bind missing client emails");
 
     const created = await worker.fetch(
       new Request(`${apiOrigin}/api/admin/onboarding-invites`, {
@@ -195,5 +203,113 @@ describe("Access-protected invite administration", () => {
     expect(originlessGet.status).toBe(200);
     expect(originlessGet.headers.get("Access-Control-Allow-Origin")).toBeNull();
     expect(originlessGet.headers.get("Cache-Control")).toBe("no-store");
+  });
+
+  it("backfills missing client emails from stored intake issues", async () => {
+    const inviteId = "invite-backfill-001";
+    const issueNumber = 777;
+    const now = Date.now();
+    await runInDurableObject(
+      inviteNamespace.getByName("launchloom-onboarding-invites"),
+      async (_instance, state) => {
+        state.storage.sql.exec(
+          `INSERT INTO onboarding_invites
+             (invite_id, client_email, expires_at, allowed_origin, token_hash, status,
+              submission_id, submission_hash, issue_number, created_at, updated_at)
+           VALUES (?, NULL, ?, ?, ?, 'consumed', ?, ?, ?, ?, ?)`,
+          inviteId,
+          now + 30 * 60_000,
+          "https://onboard.example.test",
+          `hash-${inviteId}`,
+          `submission-${inviteId}`,
+          "submission-hash",
+          issueNumber,
+          now,
+          now,
+        );
+      },
+    );
+    const started = await SELF.fetch(
+      "https://api.launchloom.test/api/internal/generations",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer test-generation-tracking-secret",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "start",
+          generation: {
+            generationId: "issue-777-backfill",
+            issueNumber,
+            businessName: "Fern & Forge",
+          },
+        }),
+      },
+    );
+    expect(started.status).toBe(200);
+    network.use(
+      http.get(
+        `https://api.github.com/repos/WrazyAI/launchloom/issues/${issueNumber}`,
+        () =>
+          HttpResponse.json({
+            body: `<!-- launchloom-intake:submission-${inviteId} -->\n\n\`\`\`json\n{\n  "email": "owner@backfill.test"\n}\n\`\`\``,
+          }),
+      ),
+    );
+
+    const backfill = await worker.fetch(
+      new Request(`${apiOrigin}/api/admin/onboarding-invites`, {
+        method: "POST",
+        headers: { Origin: apiOrigin, "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "backfill" }),
+      }),
+      testEnv,
+      accessContext("admin@example.test"),
+    );
+    expect(backfill.status).toBe(200);
+    await expect(backfill.json()).resolves.toMatchObject({
+      ok: true,
+      backfilled: 1,
+    });
+
+    const listing = await worker.fetch(
+      new Request(`${apiOrigin}/api/admin/onboarding-invites`, {
+        headers: { Origin: apiOrigin },
+      }),
+      testEnv,
+      accessContext("admin@example.test"),
+    );
+    const inviteList = (await listing.json()) as {
+      invites: Array<Record<string, unknown>>;
+    };
+    expect(inviteList.invites).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          inviteId,
+          clientEmail: null,
+          submitterEmail: "owner@backfill.test",
+        }),
+      ]),
+    );
+
+    const generations = await worker.fetch(
+      new Request(`${apiOrigin}/api/admin/onboarding-invites/generations`, {
+        headers: { Origin: apiOrigin },
+      }),
+      testEnv,
+      accessContext("admin@example.test"),
+    );
+    const ledger = (await generations.json()) as {
+      generations: Array<Record<string, unknown>>;
+    };
+    expect(ledger.generations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          generationId: "issue-777-backfill",
+          clientEmail: "owner@backfill.test",
+        }),
+      ]),
+    );
   });
 });

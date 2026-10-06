@@ -34,7 +34,7 @@ export function renderAdminDashboardHtml() {
 <p id="status" role="status" aria-live="polite"></p>
 <section id="new" hidden><h2>New invitation</h2><p>The link is shown once. Copy it and send it directly to the business owner.</p><div class="linkrow"><input id="invite-link" readonly aria-label="New private invitation link"><button class="button secondary" id="copy" type="button">Copy link</button></div></section>
 <div class="divider"></div>
-<section><h2>Recent invitations</h2><button class="text-button" id="refresh" type="button">Refresh list</button><div id="invites" aria-live="polite"></div></section>
+<section><h2>Recent invitations</h2><button class="text-button" id="refresh" type="button">Refresh list</button><button class="text-button" id="backfill" type="button">Bind missing client emails</button><div id="invites" aria-live="polite"></div></section>
 </section>
 <div id="gen-backdrop" class="drawer-backdrop" hidden></div>
 <aside id="gen-drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
@@ -441,13 +441,13 @@ export function renderAdminDashboardHtml() {
           email.title = 'Open generation details';
           email.addEventListener('click', function () {
             if (window.LaunchLoomOpenGeneration)
-              window.LaunchLoomOpenGeneration(generationId, invite.clientEmail || ('issue #' + invite.issueNumber));
+              window.LaunchLoomOpenGeneration(generationId, invite.clientEmail || invite.submitterEmail || ('issue #' + invite.issueNumber));
             else
               status.textContent = 'Generation details are unavailable in this view.';
           });
         }
         var meta = document.createElement('small');
-        email.textContent = invite.clientEmail || 'Email not bound';
+        email.textContent = invite.clientEmail || invite.submitterEmail || 'Email not bound';
         meta.textContent = invite.status + (invite.issueNumber ? ' · issue #' + invite.issueNumber : '') + ' · expires ' + new Date(invite.expiresAt).toLocaleString();
         details.append(email, meta);
         row.append(details);
@@ -490,6 +490,22 @@ export function renderAdminDashboardHtml() {
     navigator.clipboard.writeText(document.getElementById('invite-link').value).then(function () { status.textContent = 'Invitation link copied.'; });
   });
   document.getElementById('refresh').addEventListener('click', function () { void refresh(); });
+  document.getElementById('backfill').addEventListener('click', function () {
+    var button = this;
+    button.disabled = true;
+    status.textContent = 'Binding client emails from stored intakes…';
+    request('POST', { action: 'backfill' })
+      .then(function (result) {
+        var bound = Number(result.backfilled) || 0;
+        var remaining = Number(result.remaining) || 0;
+        status.textContent = bound
+          ? 'Bound ' + bound + ' client email' + (bound === 1 ? '' : 's') + (remaining ? '; ' + remaining + ' still missing.' : '.')
+          : 'No client emails were available to bind.';
+        return refresh();
+      })
+      .catch(function (error) { status.textContent = error.message; })
+      .finally(function () { button.disabled = false; });
+  });
   void refresh();
 })();
 </script></body></html>`;

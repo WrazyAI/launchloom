@@ -213,6 +213,7 @@ jobs:
         continue-on-error: true
         env:
           SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
+          CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
         run: |
           node scripts/generation-cost-summary.mjs \
             --seo /tmp/seo-research.json \
@@ -221,6 +222,7 @@ jobs:
             --action event \
             --issue "${{ steps.intake.outputs.issue }}" \
             --submission-id "$SUBMISSION_ID" \
+            --client-email "$CLIENT_EMAIL" \
             --business "${{ steps.intake.outputs.business_name }}" \
             --slug "${{ steps.intake.outputs.slug }}" \
             --status generating \
@@ -769,6 +771,7 @@ jobs:
         continue-on-error: true
         env:
           SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
+          CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
         run: |
           STATUS=preview_ready
           if [ "${{ steps.creative_recovery.outputs.repair_available }}" = "true" ]; then STATUS=attention; fi
@@ -785,6 +788,7 @@ jobs:
             --action complete \
             --issue "${{ steps.intake.outputs.issue }}" \
             --submission-id "$SUBMISSION_ID" \
+            --client-email "$CLIENT_EMAIL" \
             --business "${{ steps.intake.outputs.business_name }}" \
             --slug "${{ steps.intake.outputs.slug }}" \
             --site "${{ steps.client.outputs.project }}" \
@@ -867,6 +871,7 @@ jobs:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
           SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
           REPAIR_AVAILABLE: ${{ steps.creative_repair_link.outputs.link != '' }}
+          CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
         run: |
           STATUS=failed
           FAILURE="Generation workflow ${{ github.run_id }} stopped before a preview was ready. Inspect the Actions run and the intake issue."
@@ -878,6 +883,7 @@ jobs:
             --action complete \
             --issue "$ISSUE" \
             --submission-id "$SUBMISSION_ID" \
+            --client-email "$CLIENT_EMAIL" \
             --status "$STATUS" \
             --failure "$FAILURE" \
             --completed-at "$(date +%s%3N)"
