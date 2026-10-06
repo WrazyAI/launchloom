@@ -66,8 +66,12 @@ export async function auditBuiltContrast({
   screenshotsDir,
   viewports = CONTRAST_VIEWPORTS,
   states = true,
+  routes: routeAllowlist = null,
 }) {
-  const routes = await htmlRoutes(dist);
+  const allRoutes = await htmlRoutes(dist);
+  const routes = routeAllowlist
+    ? allRoutes.filter((route) => routeAllowlist.includes(route))
+    : allRoutes;
   if (!routes.length)
     return {
       version: 1,
@@ -246,7 +250,9 @@ export function planContrastRepairs(
         paintProperty:
           f.paintProperty === "-webkit-text-fill-color"
             ? "-webkit-text-fill-color"
-            : "color",
+            : f.paintProperty === "outline-color"
+              ? "outline-color"
+              : "color",
         original: f.color,
         background: f.background,
         ratio: f.ratio,
@@ -462,6 +468,10 @@ export function contrastRepairCss(repairs) {
     "\n"
   );
 }
+/** Discovered built HTML routes, for callers that scope audits. */
+export async function builtRoutes(dist) {
+  return htmlRoutes(dist);
+}
 /** @param {{dist: string, stylesPath?: string, deployedStylesPath?: string, build?: () => unknown, reportPath?: string, browser?: import("playwright").Browser, screenshotsDir?: string, repair?: boolean, plates?: boolean}} options */
 export async function enforceBuiltContrast({
   dist,
@@ -473,10 +483,11 @@ export async function enforceBuiltContrast({
   screenshotsDir,
   repair = true,
   plates = false,
+  routes = null,
   maxPasses = 8,
   maxTotalCssChars = 98_304,
 }) {
-  const before = await auditBuiltContrast({ dist, browser, screenshotsDir: repair ? undefined : screenshotsDir });
+  const before = await auditBuiltContrast({ dist, browser, routes, screenshotsDir: repair ? undefined : screenshotsDir });
   let after = before;
   const repairs = [];
   if (repair && stylesPath) {
@@ -517,12 +528,12 @@ export async function enforceBuiltContrast({
       appliedCssChars += css.length;
       repairs.push(...fresh);
       await build();
-      after = await auditBuiltContrast({ dist, browser });
+      after = await auditBuiltContrast({ dist, browser, routes });
     }
     if (repairs.length && screenshotsDir)
-      after = await auditBuiltContrast({ dist, browser, screenshotsDir });
+      after = await auditBuiltContrast({ dist, browser, routes, screenshotsDir });
     else if (!repairs.length && screenshotsDir)
-      after = await auditBuiltContrast({ dist, browser, screenshotsDir });
+      after = await auditBuiltContrast({ dist, browser, routes, screenshotsDir });
   } else if (screenshotsDir && repair)
     after = await auditBuiltContrast({ dist, browser, screenshotsDir });
   const report = { version: 1, pass: after.pass, before, repairs, after };

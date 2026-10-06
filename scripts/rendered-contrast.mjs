@@ -825,7 +825,7 @@ export function collectContrastTargets({
         bg.issues.push("inset focus outline overlaps unmeasured border paint");
       if (s.outlineStyle === "none" || parseFloat(s.outlineWidth) === 0)
         bg.issues.push("focus indicator absent or uses unmeasured shadow");
-      add(el, "focus", label, s.outlineColor, bg, 3, rect);
+      add(el, "focus", label, s.outlineColor, bg, 3, rect, 1, "outline-color");
     }
   }
   return targets;

@@ -5,7 +5,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
-import { enforceBuiltContrast } from "./contrast-sweep.mjs";
+import { builtRoutes, enforceBuiltContrast } from "./contrast-sweep.mjs";
 import { chromium } from "playwright";
 import {
   CREATIVE_PROMOTION_THRESHOLDS,
@@ -759,9 +759,23 @@ export async function runCreativeBakeoff({
           preview: true,
         });
         await run("npm", ["run", "build"], root);
+        // Only the pages a creative candidate actually styles can carry its
+        // corrections: the homepage and the authored service, service-index,
+        // and location pages. Deterministic routes (contact, about, blog)
+        // never load the candidate stylesheet, so auditing them would block
+        // every candidate on findings no repair can reach.
+        const authored = (
+          await builtRoutes(path.join(root, "dist"))
+        ).filter(
+          (route) =>
+            route === "/" ||
+            route.startsWith("/services/") ||
+            route.startsWith("/locations/"),
+        );
         candidateResult.contrast = await enforceBuiltContrast({
           dist: path.join(root, "dist"),
           browser,
+          routes: authored.length ? authored : null,
           stylesPath: path.join(
             candidateRoot,
             candidate.directory,

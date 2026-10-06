@@ -344,6 +344,71 @@ describe("persisted bounded contrast sweep", () => {
     expect(mixed.length).toBeGreaterThan(0);
     expect(mixed.every((r: any) => r.kind === "plate")).toBe(true);
   });
+  it("repairs a failing focus indicator with an outline-color correction", async () => {
+    const module = await modulePromise;
+    const target = {
+      selector:
+        "body > main:nth-of-type(1) > section:nth-of-type(3) > form:nth-of-type(1) > button:nth-of-type(1)",
+      kind: "focus",
+      state: "focus",
+      status: "fail",
+      repairEligible: false,
+      color: "#ffffff",
+      background: "#f8f6f0",
+      foreground: [255, 255, 255, 1],
+      backgrounds: [[248, 246, 240, 1]],
+      minimum: 3,
+      paintProperty: "outline-color",
+      issues: [],
+      text: "Request a planning conversation",
+    };
+    const pages = [
+      {
+        route: "/services/",
+        viewport: module.CONTRAST_VIEWPORTS[0],
+        repairScopeVerified: true,
+        mediaConditions: null,
+        targets: [target],
+        findings: [target],
+      },
+    ];
+    const repairs = module.planContrastRepairs({ pages });
+    expect(repairs).toHaveLength(1);
+    expect(repairs[0].paintProperty).toBe("outline-color");
+    expect(module.contrastRepairCss(repairs)).toContain(
+      "outline-color:var(--ll-creative-auto-text)!important",
+    );
+  });
+  it("scopes an audit to an explicit route allowlist", async () => {
+    const module = await modulePromise;
+    const root = await mkdtemp(path.join(os.tmpdir(), "ll-contrast-scope-"));
+    try {
+      const dist = path.join(root, "dist");
+      await mkdir(path.join(dist, "contact"), { recursive: true });
+      await writeFile(
+        path.join(dist, "index.html"),
+        `<body data-ll-route="/"><p style="color:#111;background:#fff">Home</p></body>`,
+      );
+      await writeFile(
+        path.join(dist, "contact/index.html"),
+        `<body data-ll-route="/contact/"><p style="color:#eeeeee;background:#fff">Contact</p></body>`,
+      );
+      const all = await module.auditBuiltContrast({ dist, states: false });
+      expect([...all.routes].sort()).toEqual(["/", "/contact/"]);
+      expect(all.pass).toBe(false);
+      // Deterministic routes that never load the candidate stylesheet cannot
+      // receive corrections and must not gate an authored candidate.
+      const scoped = await module.auditBuiltContrast({
+        dist,
+        states: false,
+        routes: ["/"],
+      });
+      expect(scoped.routes).toEqual(["/"]);
+      expect(scoped.pass).toBe(true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 60000);
   it("adds plate repairs beside unrelated color sweeps and refuses unsafe plates", async () => {
     const module = await modulePromise;
     const colorTarget = {
