@@ -49,6 +49,17 @@ The receipt confirms that the details were received and processing has started;
 it is not the website preview. The developer reviews the generated preview
 before anything is published.
 
+Invitation attribution uses the client email in two steps. When the invite was
+created with a preview email, that address is authoritative and the intake
+must match it. For link-only invites, the email submitted with the intake is
+recorded on the invite as the submitter email and is carried into the
+generation dispatch and tracking events, so the admin dashboard and the
+generation ledger show who the invitation belongs to instead of `Email not
+bound`. Existing link-only invitations and their generation records can be
+attributed after the fact with "Bind missing client emails" on the admin
+page, which reads the stored intake issues and writes the submitted email
+back to the invite and the matching generation record.
+
 ## Business facts pickers
 
 The private form uses guided pickers for the facts that are easiest to get

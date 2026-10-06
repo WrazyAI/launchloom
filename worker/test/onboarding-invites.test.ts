@@ -696,4 +696,60 @@ describe("private onboarding invitations", () => {
     await expect(coordinator.reserveSubmission(inviteId, tokenHash, expiresAt, onboardingOrigin, submissionId, "payload-hash-a", "owner@example.test", now + 120_001))
       .resolves.toMatchObject({ accepted: false, reason: "revoked" });
   });
+
+  it("attributes a link-only invite to the email submitted with the intake", async () => {
+    const inviteId = "invite-attribution-001";
+    const submissionId = "submission-attribution-001";
+    const token = await registeredInvite(inviteId, null);
+    let dispatchPayload: Record<string, unknown> | undefined;
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () =>
+        HttpResponse.json([]),
+      ),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () =>
+        HttpResponse.json({ number: 993 }, { status: 201 }),
+      ),
+      http.post(
+        "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+        async ({ request }) => {
+          dispatchPayload = (await request.json()) as Record<string, unknown>;
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
+      http.post("https://api.resend.com/emails", () =>
+        HttpResponse.json({ id: "email-receipt-attribution" }),
+      ),
+    );
+
+    const response = await SELF.fetch("https://api.launchloom.test/api/intake", {
+      method: "POST",
+      headers: { Origin: onboardingOrigin, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        intakeVersion: "2", inviteToken: token, submissionId,
+        businessName: "Juniper Legal", contactName: "Ada Owner", email: "owner@link-only.test",
+        phone: "555-0102", address: "2 Main Street, Tacoma, WA", industry: "professional-services",
+        services: ["Estate planning"], primaryCity: "Tacoma, WA", serviceRadius: "20",
+        differentiators: "Plain-language guidance", primaryCta: "Request a consultation", confirmAccuracy: "yes",
+        leadEmail: "leads@link-only.test",
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(dispatchPayload).toMatchObject({
+      event_type: "intake-submitted",
+      client_payload: {
+        issue: 993,
+        submission_id: submissionId,
+        client_email: "owner@link-only.test",
+      },
+    });
+    const listed = await runInDurableObject(
+      inviteNamespace.getByName("launchloom-onboarding-invites"),
+      async (untypedInstance) =>
+        (untypedInstance as OnboardingInvites).list(Date.now()),
+    );
+    const invite = listed.find((item) => item.inviteId === inviteId);
+    expect(invite?.clientEmail).toBeNull();
+    expect(invite?.submitterEmail).toBe("owner@link-only.test");
+  });
 });

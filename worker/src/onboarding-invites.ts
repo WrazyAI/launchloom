@@ -25,6 +25,7 @@ export type InviteValidation = {
 type InviteRow = {
   invite_id: string;
   client_email: string | null;
+  submitter_email: string | null;
   expires_at: number;
   allowed_origin: string;
   token_hash: string;
@@ -106,6 +107,14 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       if (!columns.some((column) => column.name === "reservation_phase")) {
         ctx.storage.sql.exec(
           "ALTER TABLE onboarding_invites ADD COLUMN reservation_phase TEXT NOT NULL DEFAULT 'reserved'",
+        );
+      }
+      if (!columns.some((column) => column.name === "submitter_email")) {
+        // Link-only invites have no configured client email. The intake email
+        // the client actually submits is recorded here for attribution so the
+        // dashboard and generation ledger can show who the invite belongs to.
+        ctx.storage.sql.exec(
+          "ALTER TABLE onboarding_invites ADD COLUMN submitter_email TEXT",
         );
       }
     });
@@ -227,6 +236,9 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
 
   private async sendIntakeDispatch(task: OutboxRow) {
     const invite = this.row(task.invite_id);
+    // Prefer the inviter-configured email; fall back to the email the client
+    // submitted with the intake so link-only invites are still attributed.
+    const attributedEmail = invite?.client_email || invite?.submitter_email;
     const response = await fetch("https://api.github.com/repos/WrazyAI/launchloom/dispatches", {
       method: "POST",
       headers: {
@@ -243,7 +255,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
           submission_id: task.submission_id,
           // The lifecycle email address lets the generation ledger attribute a
           // run to the invited client without storing a second copy of it.
-          ...(invite?.client_email ? { client_email: invite.client_email } : {}),
+          ...(attributedEmail ? { client_email: attributedEmail } : {}),
         },
       }),
     });
@@ -389,11 +401,12 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       return { accepted: false as const, reason: "in_progress" as const };
     }
     this.ctx.storage.sql.exec(
-      `UPDATE onboarding_invites SET reserved_submission_id = ?, reserved_submission_hash = ?, reserved_at = ?, reservation_phase = 'reserved', updated_at = ?
+      `UPDATE onboarding_invites SET reserved_submission_id = ?, reserved_submission_hash = ?, reserved_at = ?, reservation_phase = 'reserved', submitter_email = COALESCE(submitter_email, ?), updated_at = ?
        WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id IS NULL`,
       submissionId,
       submissionHash,
       now,
+      clientEmail.trim().toLowerCase() || null,
       now,
       inviteId,
     );
@@ -493,14 +506,15 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       now,
     );
     return this.ctx.storage.sql
-      .exec<Pick<InviteRow, "invite_id" | "client_email" | "expires_at" | "status" | "created_at" | "updated_at" | "submission_id" | "issue_number">>(
-        `SELECT invite_id, client_email, expires_at, status, created_at, updated_at, submission_id, issue_number
+      .exec<Pick<InviteRow, "invite_id" | "client_email" | "submitter_email" | "expires_at" | "status" | "created_at" | "updated_at" | "submission_id" | "issue_number">>(
+        `SELECT invite_id, client_email, submitter_email, expires_at, status, created_at, updated_at, submission_id, issue_number
          FROM onboarding_invites ORDER BY created_at DESC LIMIT 100`,
       )
       .toArray()
       .map((row) => ({
         inviteId: row.invite_id,
         clientEmail: row.client_email,
+        submitterEmail: row.submitter_email,
         expiresAt: row.expires_at,
         status: row.status,
         createdAt: row.created_at,
@@ -508,5 +522,32 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         submissionId: row.submission_id,
         issueNumber: row.issue_number,
       }));
+  }
+
+  async listMissingAttribution(limit = 25) {
+    return this.ctx.storage.sql
+      .exec<{ invite_id: string; issue_number: number }>(
+        `SELECT invite_id, issue_number FROM onboarding_invites
+         WHERE issue_number IS NOT NULL
+           AND (client_email IS NULL OR client_email = '')
+           AND (submitter_email IS NULL OR submitter_email = '')
+         ORDER BY created_at DESC LIMIT ?`,
+        Math.max(1, Math.min(100, Math.floor(limit))),
+      )
+      .toArray()
+      .map((row) => ({ inviteId: row.invite_id, issueNumber: row.issue_number }));
+  }
+
+  async recordSubmitterEmail(inviteId: string, email: string, now = Date.now()) {
+    const normalized = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalized)) return false;
+    this.ctx.storage.sql.exec(
+      `UPDATE onboarding_invites SET submitter_email = ?, updated_at = ?
+       WHERE invite_id = ? AND (submitter_email IS NULL OR submitter_email = '')`,
+      normalized,
+      now,
+      inviteId,
+    );
+    return this.row(inviteId)?.submitter_email === normalized;
   }
 }
