@@ -363,7 +363,39 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
         ? json({ ok: true }, 200, headers)
         : json({ error: "Invitation cannot be revoked." }, 409, headers);
     }
-    if (action !== "create") return json({ error: "Choose create or revoke." }, 400, headers);
+    if (action === "backfill") {
+      // Link-only invites predate intake-email attribution. Read the stored
+      // intake issues and bind the submitted client email to the invite and
+      // the matching generation record.
+      const coordinator = inviteCoordinator(env);
+      const missing = await coordinator.listMissingAttribution(25);
+      const ledger = generationLedger(env);
+      const generationByIssue = new Map<number, string>();
+      if (missing.length) {
+        for (const record of await ledger.list(200)) {
+          if (record.issueNumber && !generationByIssue.has(record.issueNumber))
+            generationByIssue.set(record.issueNumber, record.generationId);
+        }
+      }
+      let backfilled = 0;
+      for (const item of missing) {
+        const email = await intakeIssueEmail(env, item.issueNumber);
+        if (!email) continue;
+        if (!(await coordinator.recordSubmitterEmail(item.inviteId, email))) continue;
+        backfilled += 1;
+        const generationId = generationByIssue.get(item.issueNumber);
+        if (generationId) {
+          try {
+            await ledger.upsertGeneration({ generationId, clientEmail: email });
+          } catch {
+            // The invite attribution succeeded; the ledger row is best-effort.
+          }
+        }
+      }
+      const remaining = (await coordinator.listMissingAttribution(100)).length;
+      return json({ ok: true, backfilled, remaining }, 200, headers);
+    }
+    if (action !== "create") return json({ error: "Choose create, revoke, or backfill." }, 400, headers);
     const clientEmail = clean(body.clientEmail, 240).toLowerCase();
     if (clientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(clientEmail))
       return json({ error: "Enter a valid client email." }, 400, headers);
@@ -815,6 +847,26 @@ async function findIntakeIssue(env: Env, marker: string) {
     (response) => response.json() as Promise<Array<{ body?: string; number: number }>>,
   );
   return issues.find((issue) => issue.body?.includes(marker))?.number || null;
+}
+
+/**
+ * Reads the client email from a stored intake issue. Used to backfill
+ * attribution for invites and generations that were created before the
+ * intake email was recorded on the invite.
+ */
+async function intakeIssueEmail(env: Env, issueNumber: number): Promise<string> {
+  try {
+    const issue = await github(env, `/repos/WrazyAI/launchloom/issues/${issueNumber}`).then(
+      (response) => response.json() as Promise<{ body?: string }>,
+    );
+    const match = String(issue.body || "").match(/```json\s*([\s\S]*?)```/u);
+    if (!match) return "";
+    const parsed = JSON.parse(match[1]) as Record<string, unknown>;
+    const email = String(parsed.email || "").trim().toLowerCase();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email) ? email : "";
+  } catch {
+    return "";
+  }
 }
 
 async function dispatch(
