@@ -83,6 +83,8 @@ export function revisionTemplatePaths(config) {
       "components/LocationMap.astro",
       "components/PageSections.astro",
       "components/QuickAnswers.astro",
+      "lib/quick-answers-layout.mjs",
+      "lib/quick-answers-layout.d.mts",
       "components/ExitOffer.astro",
       "components/Footer.astro",
       "lib/site.ts",
@@ -128,6 +130,8 @@ export function revisionTemplatePaths(config) {
   if (kinds.has("set_conversion_feature"))
     for (const relative of [
       "components/QuickAnswers.astro",
+      "lib/quick-answers-layout.mjs",
+      "lib/quick-answers-layout.d.mts",
       "components/ExitOffer.astro",
       "layouts/SiteLayout.astro",
       "lib/page-recipe.ts",

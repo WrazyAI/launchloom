@@ -189,8 +189,12 @@ successful.
 Quick answers may use only the site's verified FAQs, services, hours, offer,
 and next-step language. Never describe the scripted assistant as a live person.
 Exit offers appear at most once per browser session after meaningful
-engagement. Suppress conversion overlays after a lead starts, on small screens,
-and during developer or client review. Only one overlay may be open at a time.
+engagement. Suppress floating conversion offers after a lead starts, on small
+screens, and during developer or client review. Keep the quick-answer launcher
+in document flow on small screens, and expand its panel in document flow at
+every size without an internal height clip. A collapsed desktop launcher may
+float only in a slot that avoids visible text and controls; hide it when no
+clear slot exists. Only one overlay may be open at a time.
 
 ## Care and consultation language
 

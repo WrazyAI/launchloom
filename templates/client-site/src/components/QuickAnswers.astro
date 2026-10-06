@@ -38,6 +38,8 @@ const assistantLabel = "Got questions?";
 )}
 
 <script>
+  import { installQuickAnswersLayout } from "../lib/quick-answers-layout.mjs";
+
   for (const root of document.querySelectorAll<HTMLElement>(".quick-answers")) {
     const launcher = root.querySelector<HTMLButtonElement>(".quick-answers__launcher");
     const panel = root.querySelector<HTMLElement>(".quick-answers__panel");
@@ -51,14 +53,21 @@ const assistantLabel = "Got questions?";
     const aiApi = root.dataset.aiApi || "";
     const aiToken = root.dataset.aiToken || "";
     if (new URLSearchParams(window.location.search).has("review") && !aiApi) root.setAttribute("hidden", "");
+    const layout = installQuickAnswersLayout(root);
     const setOpen = (open: boolean) => {
       const wasOpen = !panel?.hasAttribute("hidden");
       panel?.toggleAttribute("hidden", !open);
       launcher?.setAttribute("aria-expanded", String(open));
+      root.classList.toggle("is-open", open);
       if (open) {
         window.dispatchEvent(new CustomEvent("launchloom:overlay-open", { detail: { id: "quick-answers" } }));
         close?.focus();
-      } else if (wasOpen) launcher?.focus();
+        layout.refresh();
+        requestAnimationFrame(() => panel?.scrollIntoView({ block: "nearest", behavior: "auto" }));
+      } else {
+        layout.refresh();
+        if (wasOpen && !root.inert) launcher?.focus();
+      }
     };
     const showMessage = (question: string, response: string, error = false) => {
       if (!messages) return;
@@ -123,19 +132,5 @@ const assistantLabel = "Got questions?";
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && !panel?.hasAttribute("hidden")) setOpen(false);
     });
-    const collisionZones = document.querySelectorAll(".contact-section, .footer");
-    if (collisionZones.length && "IntersectionObserver" in window) {
-      const visibleZones = new Set<Element>();
-      const observer = new IntersectionObserver((entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) visibleZones.add(entry.target);
-          else visibleZones.delete(entry.target);
-        }
-        const suppressed = visibleZones.size > 0;
-        root.classList.toggle("is-suppressed", suppressed);
-        if (suppressed) setOpen(false);
-      }, { threshold: 0.05 });
-      collisionZones.forEach((zone) => observer.observe(zone));
-    }
   }
 </script>

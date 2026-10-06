@@ -29,6 +29,25 @@ it("includes every shared template write destination without granting directory 
   expect(paths.some((entry) => entry.endsWith("/**"))).toBe(false);
 });
 
+it("syncs the quick-answer layout runtime with conversion-feature revisions", () => {
+  const conversionPaths = revisionTemplatePaths({
+    revisionReport: { operations: [{ kind: "set_conversion_feature" }] },
+  });
+  const directionsPaths = revisionTemplatePaths({
+    business: { primaryCta: "Get directions" },
+  });
+
+  for (const paths of [conversionPaths, directionsPaths])
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        "src/components/QuickAnswers.astro",
+        "src/lib/quick-answers-layout.mjs",
+        "src/lib/quick-answers-layout.d.mts",
+        "src/styles/site.css",
+      ]),
+    );
+});
+
 it("allows the legacy homepage only when social proof insertion can write it", () => {
   const withoutProof = revisionTemplateWritePaths({
     revisionReport: { operations: [] },

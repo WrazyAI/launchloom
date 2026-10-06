@@ -115,4 +115,16 @@ describe("static homepage painted contrast", () => {
       await page.close();
     }
   });
+
+  it.each([1440, 390])(
+    "proves the shared quick-answer shell in its expanded state at %i px",
+    async (width) => {
+      const report = await audit(
+        "care-editorial",
+        `<aside class="quick-answers is-open" data-conversion-feature="quick-answers"><button class="quick-answers__launcher" aria-expanded="true"><span aria-hidden="true">?</span>Got questions?</button><section class="quick-answers__panel" aria-labelledby="quick-answers-title"><header><div><span class="kicker">Website assistant</span><h2 id="quick-answers-title">Got questions?</h2></div><button class="quick-answers__close" type="button" aria-label="Close website assistant">×</button></header><p class="quick-answers__greeting">A practical answer before you contact us.</p><div class="quick-answers__choices"><button type="button" aria-pressed="false"><span>What happens first?</span><span aria-hidden="true">→</span></button></div></section></aside>`,
+        width,
+      );
+      expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+    },
+  );
 });
