@@ -1,4 +1,5 @@
 import { createHmac } from "node:crypto";
+import { isPublicHttpsUrl } from "../emails/render-email.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -29,6 +30,11 @@ const previewUrl = String(args["preview-url"] || "").trim();
 const base = (
   process.env.LAUNCHLOOM_PLATFORM_URL || "https://launchloom.wrazyos.com"
 ).replace(/\/$/, "");
+if (!isPublicHttpsUrl(base)) {
+  throw new Error(
+    `LAUNCHLOOM_PLATFORM_URL must be a public https origin; refusing to mint a review link with (${base}).`,
+  );
+}
 if (!reviewerEmail || !clientEmail)
   throw new Error("--email and --client-email are required.");
 const allowedOrigins = String(args.origins || "")

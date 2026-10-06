@@ -33,6 +33,61 @@ export function escapeEmailHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+/** LaunchLoom emails are read by clients and operators: a link back to a
+ * localhost preview is a broken delivery. Only public https destinations may
+ * reach a recipient. */
+function isPrivateHostname(hostname) {
+  const host = String(hostname || "")
+    .toLowerCase()
+    .replace(/^\[|\]$/g, "");
+  if (!host) return true;
+  if (host === "localhost" || host === "0.0.0.0" || host === "::1") return true;
+  if (
+    host.endsWith(".local") ||
+    host.endsWith(".localhost") ||
+    host.endsWith(".internal")
+  )
+    return true;
+  if (/^(?:127|10|169\.254)\./u.test(host)) return true;
+  if (/^192\.168\./u.test(host)) return true;
+  if (/^172\.(?:1[6-9]|2\d|3[01])\./u.test(host)) return true;
+  if (/^(?:fc|fd)[0-9a-f]{2}:/u.test(host)) return true;
+  if (/^fe[89ab][0-9a-f]:/u.test(host)) return true;
+  return false;
+}
+
+export function isPublicHttpsUrl(value) {
+  const raw = cleanEmailText(value, 4_000);
+  if (!raw) return false;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:" || url.username || url.password) return false;
+    return !isPrivateHostname(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+/** Action links are the point of the email: an unusable one fails the render
+ * instead of shipping a broken destination to a recipient. The original string
+ * is preserved so signed review URLs stay byte-exact. */
+function requirePublicActionUrl(value, field) {
+  const url = cleanEmailText(value, 4_000);
+  if (!url) return "";
+  if (!isPublicHttpsUrl(url)) {
+    throw new Error(
+      `${field} must be a public https URL; refusing to email a localhost or private link (${url.slice(0, 120)}).`,
+    );
+  }
+  return url;
+}
+
+/** Context links (the page a lead was submitted from) are optional. */
+function optionalPublicUrl(value) {
+  const url = cleanEmailText(value, 4_000);
+  return isPublicHttpsUrl(url) ? url : "";
+}
+
 function paragraphs(value) {
   return cleanEmailText(value)
     .split(/\n{2,}/)
@@ -113,11 +168,11 @@ export function renderLifecycleEmail(input) {
     : "client";
   const kind = cleanEmailLine(input.kind, 40) || "preview";
   const clientName = cleanEmailLine(input.clientName, 160) || "Your website";
-  const reviewUrl = cleanEmailText(input.reviewUrl || input.previewUrl, 4_000);
-  const previewUrl = cleanEmailText(input.previewUrl, 4_000);
-  const sendAnywayUrl = cleanEmailText(input.sendAnywayUrl, 4_000);
-  const diagnosticPrUrl = cleanEmailText(input.diagnosticPrUrl, 4_000);
-  const diagnosticRunUrl = cleanEmailText(input.diagnosticRunUrl, 4_000);
+  const reviewUrl = requirePublicActionUrl(input.reviewUrl || input.previewUrl, "reviewUrl");
+  const previewUrl = requirePublicActionUrl(input.previewUrl, "previewUrl");
+  const sendAnywayUrl = requirePublicActionUrl(input.sendAnywayUrl, "sendAnywayUrl");
+  const diagnosticPrUrl = requirePublicActionUrl(input.diagnosticPrUrl, "diagnosticPrUrl");
+  const diagnosticRunUrl = requirePublicActionUrl(input.diagnosticRunUrl, "diagnosticRunUrl");
   const feedback = cleanEmailText(input.clientFeedback, 12_000);
   const outcome = cleanEmailText(input.revisionOutcome, 1_000);
   const queuedFeedback = cleanEmailText(input.queuedFeedback, 12_000);
@@ -318,7 +373,7 @@ export function renderLeadEmail(input) {
   const email = cleanEmailLine(input.email, 240);
   const message = cleanEmailText(input.message, 4_000);
   const project = cleanEmailLine(input.project, 160) || "Website enquiry";
-  const pageUrl = cleanEmailText(input.pageUrl, 4_000);
+  const pageUrl = optionalPublicUrl(input.pageUrl);
   const consent = cleanEmailText(input.consent, 400);
   const { qualification, detailRows } = leadDetailRows(input);
   let rows = `<tr><td style="padding:0 32px 24px" class="mobile-pad"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">${detailRows}</table></td></tr>${textBlock("Message", message)}`;
