@@ -73,6 +73,70 @@ describe("creative repair loop", () => {
     ).toThrow(/inline image data/iu);
   });
 
+
+  it("applies a unique fragment that only drifted in indentation", () => {
+    const files = {
+      experience: `<main>
+      <section className="practice-index">
+        <article>
+          <h3>{service.name}</h3>
+        </article>
+      </section>
+    </main>`,
+      styles: "",
+      motion: "",
+    };
+    const result = applyCreativeRepairEdits(files, [
+      {
+        file: "experience",
+        find: `<section className="practice-index">
+  <article>
+    <h3>{service.name}</h3>`,
+        replace: `<section className="practice-index">
+  <article data-repair-row="true">
+    <h3>{service.name}</h3>`,
+      },
+    ]);
+
+    expect(result.experience).toContain('<article data-repair-row="true">');
+    expect(result.experience).toContain("</article>");
+  });
+
+
+  it.each([
+    ['.label::before { content: "care now"; }', 'content: "care    now";'],
+    ["const label = 'care now';", "const label = 'care    now';"],
+    ['const label = `care\n  now`;', 'const label = `care\n    now`;'],
+    ['function value() { return\n  selected; }', 'return selected;'],
+  ])("rejects semantic whitespace drift in repair fragments: %s", (source, find) => {
+    expect(() => applyCreativeRepairEdits({ styles: source }, [
+      { file: "styles", find, replace: "replacement" },
+    ])).toThrow(/must match exactly once/iu);
+  });
+
+  it("still fails closed when the drifted fragment is not unique", () => {
+    const files = {
+      experience: `<main>
+      <p>Same line</p>
+    </main>
+    <aside>
+        <p>Same line</p>
+    </aside>`,
+      styles: "",
+      motion: "",
+    };
+
+    expect(() =>
+      applyCreativeRepairEdits(files, [
+        {
+          file: "experience",
+          find: "<p>\n        Same line\n      </p>",
+          replace: "<p>Replaced</p>",
+        },
+      ]),
+    ).toThrow(/must match exactly once/iu);
+  });
+
   it("applies bounded edits to authored inner pages and keeps scoped human repairs on the homepage files", () => {
     const files = {
       experience: "<main>Experience</main>",
@@ -802,6 +866,7 @@ describe("creative repair loop", () => {
     expect(diagnostics.join(" ")).not.toContain("from=max to=xhigh");
   });
 
+
   it("marks an empty large-repair file replacement as a retryable model-output rejection", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-empty-repair-edits-"),
@@ -849,6 +914,7 @@ describe("creative repair loop", () => {
       message: expect.stringContaining("source must be non-empty"),
     });
   });
+
 
   it("classifies malformed non-truncated repair JSON with usage diagnostics", async () => {
     const root = await fs.mkdtemp(
@@ -1521,6 +1587,7 @@ describe("creative repair loop", () => {
     ).rejects.toThrow(/source must be non-empty/iu);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
 
   it("keeps reference provenance out of client copy and preserves the contact-bound early action", async () => {
     const root = await fs.mkdtemp(

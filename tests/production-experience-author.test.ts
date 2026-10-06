@@ -620,6 +620,120 @@ export default function Experience`,
     );
   });
 
+  it.each([
+    "const selectedService = content.services[0];",
+    "const firstService = content.services[0]; const selectedService = firstService;",
+    "const selectedService = content.services.length > 1 ? content.services[1] : content.services[0];",
+  ])("allows fragment anchors and sealed local service bindings: %s", (binding) => {
+    const route = { id: "route-service-links" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const base = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const experience = base
+      .replace(
+        "export default function Experience({ content, runtime }) {",
+        `export default function Experience({ content, runtime }) {\n  ${binding}`,
+      )
+      .replace(
+        "<article key={service.name}>",
+        "<article key={service.name}><a href={`#practice-${service.slug}`}>{service.name}</a>",
+      )
+      .replace(
+        '<section id="services">',
+        '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>',
+      );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "repair" }],
+        },
+      }),
+    ).not.toThrow();
+  });
+
+  it.each([
+    'content.services.length ? { slug: "fabricated" } : content.services[0]',
+    'content.services.map(() => ({ slug: "fabricated" }))[0]',
+    '({ slug: "fabricated", source: content.services })',
+    'makeService(content.services)',
+  ])("rejects service slug bindings that only mention sealed services: %s", (initializer) => {
+    const route = { id: "route-unsealed-binding" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(safeStage({ ...request, stage: "experience" }).content)
+      .replace("export default function Experience({ content, runtime }) {",
+        `export default function Experience({ content, runtime }) {\n const selectedService = ${initializer};`)
+      .replace('<section id="services">',
+        '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>');
+    expect(() => validateProductionCandidateFiles({
+      files: { experience, styles: String(safeStage({ ...request, stage: "styles" }).content),
+        motion: String(safeStage({ ...request, stage: "motion" }).content) },
+      route, content: { hero: { image: "/images/hero.webp" }, brand: { phone: "+12125550186" },
+        services: [{ slug: "repair", name: "repair" }] },
+    })).toThrow(/unsafe URL attribute/iu);
+  });
+
+  it("rejects mutable collection aliases that can replace sealed service records", () => {
+    const route = { id: "route-mutable-collection" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(safeStage({ ...request, stage: "experience" }).content)
+      .replace("export default function Experience({ content, runtime }) {",
+        'export default function Experience({ content, runtime }) {\n let serviceItems = content.services; serviceItems = [{ slug: "fabricated" }]; const selectedService = serviceItems[0];')
+      .replace('<section id="services">',
+        '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>');
+    expect(() => validateProductionCandidateFiles({
+      files: { experience, styles: String(safeStage({ ...request, stage: "styles" }).content),
+        motion: String(safeStage({ ...request, stage: "motion" }).content) },
+      route, content: { hero: { image: "/images/hero.webp" }, brand: { phone: "+12125550186" },
+        services: [{ slug: "repair", name: "repair" }] },
+    })).toThrow(/unsafe URL attribute/iu);
+  });
+
+  it("names the nearby source for a hardcoded sealed literal", () => {    const route = { id: "route-hardcode" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const sealedName = "Heirloom redesign services";
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    ).replace(
+      "<section data-hero>",
+      `<section data-hero><p>${sealedName}</p>`,
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "redesign", name: sealedName }],
+        },
+      }),
+    ).toThrow(
+      new RegExp(
+        `hardcodes sealed content.*${sealedName}.*Nearby source:.*${sealedName}`,
+        "iu",
+      ),
+    );
+  });
+
   it("keeps the client visual brief alongside sealed content", () => {
     const manifest = buildCreativeContentManifest({
       ...site,
