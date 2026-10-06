@@ -55,7 +55,9 @@ describe("Access-protected invite administration", () => {
     expect(adminPage.status).toBe(200);
     expect(adminPage.headers.get("Cache-Control")).toBe("no-store");
     expect(adminPage.headers.get("Content-Security-Policy")).toContain("frame-ancestors 'none'");
-    expect(await adminPage.text()).toContain("Create private link");
+    const adminPageHtml = await adminPage.text();
+    expect(adminPageHtml).toContain("Create private link");
+    expect(adminPageHtml).toContain("Bind missing client emails");
 
     const created = await worker.fetch(
       new Request(`${apiOrigin}/api/admin/onboarding-invites`, {
