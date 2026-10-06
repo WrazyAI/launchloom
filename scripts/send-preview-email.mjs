@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import {
   cleanEmailText,
+  isPublicHttpsUrl,
   renderLifecycleEmail,
 } from "../emails/render-email.mjs";
 
@@ -52,6 +53,18 @@ const queuedFeedback = queuedFeedbackFile
       .slice(0, 12_000)
   : "";
 if (!previewUrl) throw new Error("--preview is required.");
+// Never email a localhost or private link: recipients click these and land
+// nowhere. Fail before rendering so the operator sees the exact bad input.
+for (const [field, value] of [
+  ["--preview", previewUrl],
+  ["--review", reviewUrl],
+]) {
+  if (value && !isPublicHttpsUrl(value)) {
+    throw new Error(
+      `${field} must be a public https URL; refusing to email a localhost or private link (${value.slice(0, 120)}).`,
+    );
+  }
+}
 
 if (!recipient) throw new Error("--to is required.");
 const { subject, html, text } = renderLifecycleEmail({

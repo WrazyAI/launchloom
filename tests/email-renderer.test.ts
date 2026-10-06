@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { execFileSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   renderLeadConfirmationEmail,
   renderLeadEmail,
@@ -204,6 +207,123 @@ describe("LaunchLoom lifecycle emails", () => {
     expect(email.html).toContain("Replace the team photo.");
     expect(email.text).toContain("YOUR QUEUED REQUEST IS NOW IN PROGRESS");
     expect(email.html).not.toContain("—");
+  });
+});
+
+describe("LaunchLoom email link safety", () => {
+  it("refuses to render lifecycle emails with localhost or private action links", () => {
+    expect(() =>
+      renderLifecycleEmail({
+        audience: "developer",
+        kind: "initial",
+        clientName: "North Shore Care",
+        previewUrl: "http://localhost:4321/services",
+        reviewUrl: "http://localhost:4321/review?token=abc",
+      }),
+    ).toThrow(/public https URL/u);
+    expect(() =>
+      renderLifecycleEmail({
+        audience: "client",
+        kind: "published",
+        clientName: "North Shore Care",
+        previewUrl: "https://north-shore-care.pages.dev",
+        reviewUrl: "https://localhost/review?token=abc",
+      }),
+    ).toThrow(/public https URL/u);
+    expect(() =>
+      renderLifecycleEmail({
+        audience: "manual-attention",
+        kind: "revision-failed",
+        clientName: "North Shore Care",
+        previewUrl: "https://north-shore-care.pages.dev",
+        reviewUrl: "https://north-shore-care.pages.dev",
+        sendAnywayUrl: "http://127.0.0.1:8787/review?token=abc",
+      }),
+    ).toThrow(/public https URL/u);
+  });
+
+  it("omits a private enquiry-page link from lead emails", () => {
+    const email = renderLeadEmail({
+      name: "Ada Lovelace",
+      phone: "555-0100",
+      email: "ada@example.test",
+      message: "Please call me about repairs.",
+      project: "Harbor & Pine",
+      pageUrl: "http://localhost:4321/services",
+    });
+
+    expect(email.html).not.toContain("localhost");
+    expect(email.text).not.toContain("localhost");
+    expect(email.text).not.toContain("Website enquiry page");
+  });
+
+  it("keeps a public https action link byte-exact", () => {
+    const email = renderLifecycleEmail({
+      audience: "developer",
+      kind: "initial",
+      clientName: "North Shore Care",
+      previewUrl: "https://north-shore-care.pages.dev",
+      reviewUrl: signedReviewUrl,
+    });
+
+    expect(email.html.replace(/&amp;/g, "&")).toContain(signedReviewUrl);
+  });
+
+  it("refuses to mint review links from a localhost platform origin", () => {
+    const script = path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "../scripts/create-review-link.mjs",
+    );
+    const run = (extraEnv: Record<string, string>) => {
+      try {
+        const stdout = execFileSync(
+          process.execPath,
+          [
+            script,
+            "--stage",
+            "client",
+            "--repo",
+            "WrazyAI/launchloom-example",
+            "--site",
+            "launchloom-example",
+            "--email",
+            "david@maigreeks.com",
+            "--client-email",
+            "client@example.test",
+            "--feedback-issue",
+            "1",
+            "--origins",
+            "https://launchloom-example.pages.dev",
+          ],
+          {
+            env: {
+              ...process.env,
+              REVIEW_SIGNING_SECRET: "test-secret",
+              ...extraEnv,
+            },
+            encoding: "utf8",
+            stdio: "pipe",
+          },
+        );
+        return { ok: true, stdout, stderr: "" };
+      } catch (error) {
+        return {
+          ok: false,
+          stdout: "",
+          stderr: String((error as { stderr?: unknown }).stderr || ""),
+        };
+      }
+    };
+
+    const localhost = run({ LAUNCHLOOM_PLATFORM_URL: "http://localhost:4321" });
+    expect(localhost.ok).toBe(false);
+    expect(localhost.stderr).toMatch(/public https origin/u);
+
+    const official = run({});
+    expect(official.ok).toBe(true);
+    expect(official.stdout).toMatch(
+      /^https:\/\/launchloom\.wrazyos\.com\/review\?token=/u,
+    );
   });
 });
 
