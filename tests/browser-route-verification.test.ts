@@ -45,13 +45,15 @@ async function server(
     noForms?: boolean;
     fragmentLink?: boolean;
     relativeNavigation?: boolean;
-    preview?: "safe" | "hidden" | "no-marker" | "live-token" | "network";
+    preview?: "safe" | "hidden" | "no-marker" | "live-token" | "network" | "native-get" | "stale-status";
   } = {},
 ) {
   let mutations = 0;
+  let deliveries = 0;
   const s = http.createServer((req, res) => {
     if (req.method === "POST") mutations++;
     const route = new URL(req.url!, "http://localhost").pathname;
+    if (route === "/unexpected-submission") deliveries++;
     if (
       ![
         "/",
@@ -68,7 +70,8 @@ async function server(
     if (options.preview) {
       const base = html(route).replace(/<script>[\s\S]*?<\/script>/u, "");
       const body = base.replace('<form class="lead-form">', `<form class="lead-form" ${options.preview === "hidden" ? "hidden" : ""} ${options.preview === "no-marker" ? "" : 'data-lead-preview="true"'}><input type="hidden" name="lead-token" value="${options.preview === "live-token" ? "live-secret" : ""}">`);
-      res.end(body + `<script>document.querySelector('form').addEventListener('submit', async event => { event.preventDefault(); ${options.preview === "network" ? "await fetch('/unexpected-submission',{method:'POST'});" : ""} document.querySelector('form [role=status]').textContent='Test-only preview: submissions are disabled.'; });</script>`);
+      const diagnosticBody = options.preview === "native-get" ? body.replace('<form class="lead-form"', '<form method="get" action="/unexpected-submission" class="lead-form"') : options.preview === "stale-status" ? body.replace('<small role="status"></small>', '<small role="status">Test-only preview: submissions are disabled.</small>') : body;
+      res.end(diagnosticBody + `<script>document.querySelector('form').addEventListener('submit', async event => { ${options.preview === "native-get" ? "" : "event.preventDefault();"} ${options.preview === "network" ? "await fetch('/unexpected-submission',{method:'POST'});" : ""} ${options.preview === "stale-status" ? "" : "document.querySelector('form [role=status]').textContent='Test-only preview: submissions are disabled.';"} });</script>`);
       return;
     }
     if (options.fragmentLink || options.relativeNavigation) {
@@ -113,6 +116,7 @@ async function server(
   return {
     origin: "http://127.0.0.1:" + (s.address() as any).port,
     mutations: () => mutations,
+    deliveries: () => deliveries,
   };
 }
 it.each(["safe", "hidden", "no-marker", "live-token", "network"] as const)("verifies bounded diagnostic form behavior: %s", async (preview) => {
@@ -124,6 +128,13 @@ it.each(["safe", "hidden", "no-marker", "live-token", "network"] as const)("veri
     expect(report.routes.every((route: any) => route.profiles.every((profile: any) => profile.forms.every((form: any) => form.previewDisabled === "pass" && form.externalDelivery === "not_verified" && form.syntheticRequests === 0)))).toBe(true);
   }
   expect(s.mutations()).toBe(0);
+});
+it.each(["native-get", "stale-status"] as const)("rejects diagnostic native GET delivery or stale disabled status: %s", async (preview) => {
+  const s = await server({ preview });
+  const diagnosticConfig = { ...config, lead: { apiUrl: "", token: "" }, pipelineTest: { version: 1, profile: "seo-only", testOnly: true, sourceSha: "a".repeat(40), runId: "synthetic" } };
+  const report: any = await verifyApprovedRoutes({ config: diagnosticConfig, origin: s.origin, mode: "review", formMode: "test-preview", viewports: [{ name: "mobile", width: 390, height: 844 }], representativeViewports: [], timeout: 1500 });
+  expect(s.deliveries()).toBe(0);
+  expect(report.status).toBe("fail");
 });
 it.each(["production", "unmarked", "malformed", "live-config"])("refuses unauthorized diagnostic form relaxation: %s", async (variant) => {
   const s = await server({ preview: "safe" });

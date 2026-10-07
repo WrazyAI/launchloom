@@ -44,10 +44,13 @@ async function verifyDiagnosticForm(page, form, phase, requests, network, timeou
     }
     await page.evaluate(() => { window.__llQaPreviewSubmitted = 0; window.addEventListener("launchloom:lead-submitted", () => window.__llQaPreviewSubmitted++); });
     const before = requests.length + network.length;
+    const status = form.locator('[role=status]').last();
+    await status.evaluate(node => { node.textContent = ""; });
     phase.value = "preview-submit";
     await form.locator('button[type=submit]').click();
-    await form.locator('[role=status]').last().filter({ hasText: /(?:test-only preview|developer preview only).*(?:disabled|nothing was sent|not connected)/iu }).waitFor({ timeout });
-    await page.waitForTimeout(100);
+    await status.filter({ hasText: /(?:test-only preview|developer preview only).*(?:disabled|nothing was sent|not connected)/iu }).waitFor({ timeout });
+    // Keep the submission guard active during the bounded post-response observation.
+    await page.waitForTimeout(500);
     result.syntheticRequests = requests.length + network.length - before;
     if (result.syntheticRequests || await page.evaluate(() => window.__llQaPreviewSubmitted)) throw new Error("Diagnostic submission attempted network delivery or reported success.");
     result.previewDisabled = "pass";
@@ -334,7 +337,7 @@ export async function verifyApprovedRoutes({
           checks.push({ name, status: ok ? "pass" : "fail", detail });
         await context.route("**/*", async (intercepted) => {
           const req = intercepted.request();
-          if (formMode === "test-preview" && phase.value === "preview-submit" && ["fetch", "xhr"].includes(req.resourceType())) {
+          if (formMode === "test-preview" && phase.value === "preview-submit" && (["fetch", "xhr"].includes(req.resourceType()) || req.isNavigationRequest())) {
             network.push("Diagnostic submission attempted a network request.");
             await intercepted.abort();
             return;
@@ -532,6 +535,8 @@ export async function verifyApprovedRoutes({
               forms.every((form) => form.failures.length === 0),
             "Required service/location/contact forms must render and have terminal synthetic lifecycle evidence.",
           );
+          if (formMode === "test-preview" && forms.some(form => form.failures.length))
+            throw new Error(forms.flatMap(form => form.failures).join(" ") + " Close the page before navigation can replay a submission target.");
           const reload = await page.reload({ waitUntil: "networkidle" });
           add(
             "refresh",
