@@ -356,6 +356,88 @@ export default function Experience`,
         },
       }),
     ).not.toThrow();
+
+    const selectedServiceHref = experience
+      .replace(
+        "export default function Experience({ content, runtime }) {",
+        "export default function Experience({ content, runtime }) {\n  const selectedService = content.services.find((item) => item.slug === content.services[0].slug);",
+      )
+      .replace(
+        "<section data-hero>",
+        '<section data-hero><a href={`/services/${selectedService.slug}/`}>Selected service</a>',
+      );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: selectedServiceHref, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).not.toThrow();
+
+    const shadowedContentHref = experience.replace(
+      "export default function Experience({ content, runtime }) {",
+      `export default function Experience({ content, runtime }) {
+  function UntrustedLinks(content) {
+    const selectedService = content.services.find((item) => item.slug === "invented-route");
+    return <a href={\`/services/\${selectedService.slug}/\`}>Untrusted service</a>;
+  }`,
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: shadowedContentHref, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).toThrow(/unsafe URL attribute/iu);
+  });
+
+  it("rejects candidate files that exceed the rendered-repair source bound", () => {
+    const route = { id: "route-repairable-source-size" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(safeStage({ ...request, stage: "experience" }).content || "");
+    const styles = String(safeStage({ ...request, stage: "styles" }).content || "");
+    const motion = String(safeStage({ ...request, stage: "motion" }).content || "");
+    const oversizedStyles = `${styles}\n/*${"x".repeat(80_001)}*/`;
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles: oversizedStyles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).toThrow(/styles\.css exceeds the 80000-character repairable source limit/iu);
+  });
+
+  it("rejects CSS that only exceeds the repair bound after variable isolation", () => {
+    const route = { id: "route-namespaced-source-size" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(safeStage({ ...request, stage: "experience" }).content || "");
+    const motion = String(safeStage({ ...request, stage: "motion" }).content || "");
+    const styles = `.root{--x:1;}\n${"a{color:var(--x)}\n".repeat(3_000)}`;
+    expect(styles.length).toBeLessThan(80_000);
+    expect(namespaceCreativeCss(styles).length).toBeGreaterThan(80_000);
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).toThrow(/styles\.css exceeds the 80000-character repairable source limit/iu);
   });
 
   it("allows only a const phone href normalized from the sealed phone token", () => {
@@ -678,6 +760,39 @@ export default function Experience`,
         },
       }),
     ).not.toThrow();
+  });
+
+  it.each([
+    `content = { services: [{ slug: "invented-route" }] }; const selectedService = content.services[0];`,
+    `const selectedService = content.services[0]; selectedService.slug = "invented-route";`,
+    `const selectedService = content.services[0]; const aliasService = selectedService; aliasService.slug = "invented-route";`,
+    `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); const assign = Object.assign; assign(selectedService, { slug: "invented-route" });`,
+    `const selectedService = content.services.find((item) => { item.slug = "invented-route"; return true; });`,
+  ])("rejects service links after sealed provenance is mutated: %s", (setup) => {
+    const route = { id: "route-mutated-service-provenance" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(safeStage({ ...request, stage: "experience" }).content)
+      .replace(
+        "export default function Experience({ content, runtime }) {",
+        `export default function Experience({ content, runtime }) {\n ${setup}`,
+      )
+      .replace(
+        '<section id="services">',
+        '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>',
+      );
+    expect(() => validateProductionCandidateFiles({
+      files: {
+        experience,
+        styles: String(safeStage({ ...request, stage: "styles" }).content),
+        motion: String(safeStage({ ...request, stage: "motion" }).content),
+      },
+      route,
+      content: {
+        hero: { image: "/images/hero.webp" },
+        brand: { phone: "+12125550186" },
+        services: [{ slug: "repair", name: "repair" }],
+      },
+    })).toThrow(/unsafe URL attribute/iu);
   });
 
   it.each([
@@ -2368,6 +2483,27 @@ export default function Experience`,
         ),
       ),
     ).toBe(true);
+  });
+
+  it("retries an oversized authored stylesheet within the existing validation budget", async () => {
+    const retryErrors: string[] = [];
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        if (request.stage === "styles" && !request.validationError) {
+          return { content: `/*${"x".repeat(80_001)}*/\n${safeStage(request).content}` };
+        }
+        if (request.stage === "styles" && request.validationError)
+          retryErrors.push(request.validationError);
+        return safeStage(request);
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(retryErrors).toHaveLength(3);
+    expect(retryErrors.every((error) => /styles\.css exceeds the 80000-character repairable source limit/iu.test(error))).toBe(true);
+    expect(result.candidates.every((candidate) => candidate.files["styles.css"].length <= 80_000)).toBe(true);
   });
 
   it("repairs missing LeadForm content and anchor navigation bindings", async () => {
