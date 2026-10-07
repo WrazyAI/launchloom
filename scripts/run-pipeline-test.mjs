@@ -249,6 +249,27 @@ export async function command(
   });
 }
 
+// Retry only the same non-force evidence push, never the paid generation.
+export async function pushPipelineTestEvidence({
+  cwd,
+  branch,
+  push = () => command("git", ["push", "--set-upstream", "origin", branch], { cwd, capture: true }),
+  wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+}) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await push();
+      return { attempts: attempt + 1 };
+    } catch (error) {
+      const message = String(error?.message || error);
+      const permanent = /authentication failed|permission denied|non-fast-forward|large files|exceeds?.*limit/iu.test(message);
+      const transient = /internal server error|HTTP\s+50[0234]|returned error:\s*50[0234]|service unavailable|bad gateway|gateway timeout/iu.test(message);
+      if (permanent || !transient || attempt === 2) throw error;
+      await wait([1000, 3000][attempt]);
+    }
+  }
+}
+
 const readJson = async (file) => JSON.parse(await fs.readFile(file, "utf8"));
 const writeJson = async (file, value) => {
   await fs.mkdir(path.dirname(file), { recursive: true });
@@ -925,12 +946,11 @@ export function createCloudDependencies(
         ["commit", "-m", `Record ${input.profile} test ${report.verdict}`],
         { cwd: site },
       );
-      await command("git", ["push", "--set-upstream", "origin", branch], {
-        cwd: site,
-      });
+      const upload = await pushPipelineTestEvidence({ cwd: site, branch });
       return {
         artifact: ".launchloom/pipeline-test-report.json",
         repository: repo,
+        attempts: upload.attempts,
       };
     },
   };
@@ -956,6 +976,7 @@ if (
       verdict: report.verdict,
       previewDelivered: report.previewDelivered,
       previewUrl: report.previewUrl || null,
+      stages: Object.fromEntries(Object.entries(report.stages).map(([name, stage]) => [name, stage.status])),
     }),
   );
   if (

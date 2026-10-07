@@ -7,6 +7,7 @@ import {
   assertPipelineTestFacts,
   assertCompatibleTestAssets,
   pagesDeploymentUrl,
+  pushPipelineTestEvidence,
 } from "../scripts/run-pipeline-test.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { summarizeGenerationCosts } from "../scripts/generation-cost-summary.mjs";
@@ -48,6 +49,30 @@ function adapter(fail = "") {
   return { calls, dependencies };
 }
 describe("focused pipeline orchestration", () => {
+  it("retries a transient GitHub evidence push without regenerating the site", async () => {
+    let calls = 0;
+    const waits: number[] = [];
+    await pushPipelineTestEvidence({ cwd: "/unused", branch: "qa/seo-only/123-1",
+      push: async () => { if (++calls < 3) throw new Error("remote: Internal Server Error\nremote rejected: Internal Server Error"); },
+      wait: async (ms: number) => { waits.push(ms); },
+    });
+    expect(calls).toBe(3);
+    expect(waits).toEqual([1000, 3000]);
+  });
+  it.each(["Authentication failed", "Permission denied", "non-fast-forward", "large files exceed GitHub limit"])("does not retry unsafe or permanent evidence rejection: %s", async error => {
+    let calls = 0;
+    await expect(pushPipelineTestEvidence({ cwd: "/unused", branch: "qa/seo-only/123-1",
+      push: async () => { calls++; throw new Error(error); }, wait: async () => { throw new Error("Unexpected retry"); },
+    })).rejects.toThrow(error);
+    expect(calls).toBe(1);
+  });
+  it("bounds persistent GitHub evidence failures to three pushes", async () => {
+    let calls = 0;
+    await expect(pushPipelineTestEvidence({ cwd: "/unused", branch: "qa/creative-only/123-1",
+      push: async () => { calls++; throw new Error("RPC failed; HTTP 503"); }, wait: async () => {},
+    })).rejects.toThrow(/503/);
+    expect(calls).toBe(3);
+  });
   it("uses the provider's immutable URL rather than guessing a long branch alias", () => {
     expect(pagesDeploymentUrl("✨ Deployment complete! Take a peek over at https://abc123ef.example.pages.dev\n✨ Deployment alias URL: https://short.example.pages.dev")).toBe("https://abc123ef.example.pages.dev");
     expect(() => pagesDeploymentUrl("Upload pending https://wrong.pages.dev")).toThrow(/deployment/i);
