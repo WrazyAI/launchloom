@@ -332,12 +332,16 @@ export async function verifyApprovedRoutes({
         const consoleErrors = [];
         const network = [];
         const checks = [];
+        const forms = [];
         let snapshot = null;
         const add = (name, ok, detail) =>
           checks.push({ name, status: ok ? "pass" : "fail", detail });
         await context.route("**/*", async (intercepted) => {
           const req = intercepted.request();
-          if (formMode === "test-preview" && phase.value === "preview-submit" && (["fetch", "xhr"].includes(req.resourceType()) || req.isNavigationRequest())) {
+          // The disabled form must not initiate any network activity. The page
+          // is already network-idle before submit; guard every resource type,
+          // including image/ping GET beacons, throughout this bounded phase.
+          if (formMode === "test-preview" && phase.value === "preview-submit") {
             network.push("Diagnostic submission attempted a network request.");
             await intercepted.abort();
             return;
@@ -483,7 +487,6 @@ export async function verifyApprovedRoutes({
             )),
             "No horizontal overflow.",
           );
-          const forms = [];
           for (const form of await page
             .locator("main form.lead-form,main form.launchloom-lead-form")
             .all()) {
@@ -646,7 +649,7 @@ export async function verifyApprovedRoutes({
           route.profiles.push({
             viewport,
             checks,
-            forms: [],
+            forms,
             screenshot: snapshot,
             runtimeErrors: runtime,
             consoleErrors,
