@@ -58,6 +58,7 @@ jobs:
           git fetch origin "$APPROVED_SHA"
           git checkout --detach "$APPROVED_SHA"
           test "$(git rev-parse HEAD)" = "$APPROVED_SHA" || { echo "Approved commit checkout mismatch"; exit 1; }
+          node "$GITHUB_WORKSPACE/scripts/assert-production-site.mjs" --site "$RUNNER_TEMP/client" --approved-sha "$APPROVED_SHA"
           PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
           PRODUCTION="https://$PROJECT.pages.dev"
           npm ci

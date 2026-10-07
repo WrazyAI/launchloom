@@ -1,5 +1,7 @@
 ---
 import site from "../lib/site";
+import { hasPipelineTest } from "../lib/seo-readiness.mjs";
+const testPreview = hasPipelineTest(site);
 const { id = "lead-form" } = Astro.props;
 type LeadFormConfig = NonNullable<typeof site.leadForm>;
 const config = (site.leadForm || {}) as LeadFormConfig;
@@ -38,7 +40,7 @@ const privacyHref = config.privacyHref || "";
   data-step-count={String(stepCount)}
   data-qualification={JSON.stringify(questions.map((question) => question.name))}
 >
-  <input type="hidden" name="lead-token" value={site.lead?.token || ""} />
+  <input type="hidden" name="lead-token" value={testPreview ? "" : site.lead?.token || ""} />
   <input type="hidden" name="consent" value={consent} />
   <p class="honeypot"><label>Do not fill this out <input name="bot-field" tabindex="-1" autocomplete="off" /></label></p>
   <input type="hidden" name="lead-email" value={site.business.leadEmail} />
@@ -89,7 +91,7 @@ const privacyHref = config.privacyHref || "";
   <small class="lead-status" role="status"></small>
 </form>
 
-<script is:inline define:vars={{ apiUrl: site.lead?.apiUrl || "", unconfiguredMessage, successMessage, errorMessage }}>
+<script is:inline define:vars={{ apiUrl: testPreview ? "" : site.lead?.apiUrl || "", unconfiguredMessage: testPreview ? "Test-only preview: submissions are disabled." : unconfiguredMessage, successMessage, errorMessage }}>
   for (const form of document.querySelectorAll(".lead-form")) {
     const guided = form.dataset.guided === "true";
     const steps = [...form.querySelectorAll("[data-lead-step]")];

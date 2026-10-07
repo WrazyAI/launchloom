@@ -120,6 +120,13 @@ export type ExperiencePackId =
   | "guided-conversation"
   | "service-led";
 export type SiteConfig = {
+  pipelineTest?: {
+    version: 1;
+    profile: "seo-only" | "creative-only";
+    testOnly: true;
+    sourceSha: string;
+    runId: string;
+  };
   pageContent?: Record<string, any>;
   pageEvidence?: Array<Record<string, any>>;
   pageBriefs?: ReturnType<typeof compilePageBriefs>;

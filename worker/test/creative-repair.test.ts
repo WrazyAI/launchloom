@@ -114,6 +114,75 @@ function userRequest(
 }
 
 describe("developer-triggered creative repair", () => {
+  it.each(["seo-only", "creative-only"])(
+    "rejects send-anyway for %s without promotion",
+    async (profile) => {
+      let writes = 0;
+      const testSession =
+        profile === "seo-only" ? "a".repeat(32) : "b".repeat(32);
+      network.use(
+        http.get(`https://api.github.com/repos/${repo}/pulls/7`, () =>
+          HttpResponse.json({
+            head: { sha: reviewedSha },
+            state: "open",
+            draft: false,
+            merged: false,
+            merge_commit_sha: null,
+          }),
+        ),
+        http.get(
+          `https://api.github.com/repos/${repo}/contents/src/site.config.json`,
+          ({ request }) => {
+            expect(new URL(request.url).searchParams.get("ref")).toBe(
+              reviewedSha,
+            );
+            return HttpResponse.json({
+              encoding: "base64",
+              content: btoa(
+                JSON.stringify({
+                  pipelineTest: { profile, testOnly: true },
+                  seoResearch: { mode: "researched", publishReady: true },
+                }),
+              ),
+            });
+          },
+        ),
+        http.put(`https://api.github.com/repos/${repo}/pulls/7/merge`, () => {
+          writes++;
+          return HttpResponse.json({ merged: true, sha: "f".repeat(40) });
+        }),
+        http.post(
+          "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+          () => {
+            writes++;
+            return new HttpResponse(null, { status: 204 });
+          },
+        ),
+      );
+      expect((await registerSession(previewOrigin, testSession)).status).toBe(
+        200,
+      );
+      const token = await signedToken({ creativeRepairSessionId: testSession });
+      const response = await userRequest(
+        token,
+        "send-anyway",
+        "developer@example.com",
+        {
+          origin: previewOrigin,
+          pageUrl: `${previewOrigin}/?review=${token}`,
+          confirmed: true,
+        },
+      );
+      expect(response.status).toBe(409);
+      expect(await response.json()).toMatchObject({
+        code: "pipeline_test_only",
+      });
+      expect(writes).toBe(0);
+      expect(await (await userRequest(token, "status")).json()).toMatchObject({
+        humanDisposition: null,
+      });
+    },
+  );
   it("requires an explicit confirmation and queues one exact-head client override", async () => {
     let mergeAttempts = 0;
     const dispatches: Array<Record<string, any>> = [];
@@ -770,7 +839,6 @@ it("accepts feedback on a regenerated live alias only when a signed current revi
   expect(response.status).toBe(202);
   expect(dispatches).toHaveLength(1);
 });
-
 
 it("resolves the last handoff page from GitHub's canonical repository pagination URL", async () => {
   const { response } = await completedFeedbackScenario({ regenerated: true, lastPage: true });

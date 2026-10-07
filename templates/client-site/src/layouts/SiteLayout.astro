@@ -3,6 +3,7 @@ import { resolvePalette, semanticColorCss } from "../lib/color-policy.mjs";
 import { fontFaceCss, resolveFontPairing } from "../lib/font-catalog.mjs";
 import site, { routeInventory, routePageBrief } from "../lib/site";
 import ReviewBanner from "../components/ReviewBanner.astro";
+import { hasPipelineTest } from "../lib/seo-readiness.mjs";
 import QuickAnswers from "../components/QuickAnswers.astro";
 import ExitOffer from "../components/ExitOffer.astro";
 import "../styles/site.css";
@@ -37,7 +38,10 @@ const colorRoles = semanticColorCss(palette) + `
 .lead-form :is(input,textarea,select) {border-color:var(--ll-border,${palette.surfaces.light.border});}
 .split-section :is(a,button):focus-visible {outline:2px solid ${palette.surfaces.brand.focus};outline-offset:3px;}
 `;
-const diagnosticPreview = import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
+const testPreview = hasPipelineTest(site);
+const testProfile = site.pipelineTest?.profile;
+const skippedLane = testProfile === "seo-only" ? "Creative generation and visual promotion" : testProfile === "creative-only" ? "SEO research" : "Unknown pipeline lane";
+const diagnosticPreview = testPreview || import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 // Judge previews render the authored candidate only. Platform chrome such as
 // the floating website-assistant launcher and the exit offer must not appear
 // in the captures that authors and judges score.
@@ -96,7 +100,12 @@ const schemaBlocks = (Array.isArray(schemas) ? schemas : []).map((schema) =>
         <span>This is not a real business or service offering.</span>
       </aside>
     )}
-    <ReviewBanner diagnosticPreview={diagnosticPreview} />
+    {testPreview ? (
+      <aside class="ll-demo-notice" data-pipeline-test-preview role="note" aria-label="Test-only pipeline preview">
+        <strong>Test-only preview: {testProfile || "invalid profile"}</strong>
+        <span>{skippedLane} skipped. Approval, client release and form submissions are disabled.</span>
+      </aside>
+    ) : <ReviewBanner diagnosticPreview={diagnosticPreview} />}
     <slot />
     {!diagnosticPreview && !judgePreview && <QuickAnswers />}
     {!diagnosticPreview && !judgePreview && <ExitOffer />}
