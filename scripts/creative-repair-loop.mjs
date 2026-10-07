@@ -287,6 +287,46 @@ function repairOutputRejection(message, cause) {
   return error;
 }
 
+function locateUniqueFragment(source, fragment) {
+  const exact = source.indexOf(fragment);
+  if (exact >= 0 && source.indexOf(fragment, exact + fragment.length) < 0)
+    return { start: exact, end: exact + fragment.length };
+  const trimmed = String(fragment || "").trim();
+  if (!trimmed) return null;
+  const pattern = new RegExp(
+    trimmed
+      .split(/\r?\n/u)
+      .map((line) => line.replace(/^[\t ]+/u, "").replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"))
+      .join("\\r?\\n[\\t ]*"),
+    "gu",
+  );
+  const literalPattern = /"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'|`(?:\\[\s\S]|[^`\\])*`/gu;
+  const sourceLiterals = [...source.matchAll(literalPattern)];
+  const fragmentLiterals = [...trimmed.matchAll(literalPattern)].map((match) => match[0]);
+  const matches = [...source.matchAll(pattern)].filter((match) => {
+    const start = match.index;
+    const end = start + match[0].length;
+    // Never infer a formatting-only edit inside a literal, or across a
+    // template literal. Exact matches above remain supported in every file.
+    if (sourceLiterals.some((literal) => {
+      const literalEnd = literal.index + literal[0].length;
+      return literal.index < end && literalEnd > start && (
+        literal.index < start || literalEnd > end || literal[0].startsWith("`")
+      );
+    })) return false;
+    const matchedLiterals = [...match[0].matchAll(literalPattern)].map((literal) => literal[0]);
+    return JSON.stringify(matchedLiterals) === JSON.stringify(fragmentLiterals);
+  });
+  if (matches.length !== 1) return null;
+  const match = matches[0];
+  return { start: match.index, end: match.index + match[0].length };
+}
+
+/**
+ * Apply bounded source replacements. Fragments must still be unique: the
+ * fallback only rescues leading indentation drift, preserving newlines and
+ * literal contents exactly. Ambiguous or missing fragments fail closed.
+ */
 // Private output must never become an enumerable Error property or cause.
 const privateRepairOutputs = new WeakMap();
 function rememberPrivateRepairOutput(value, payload) {
@@ -382,22 +422,24 @@ export function applyCreativeRepairEdits(files, edits, { allowInnerPages = true 
     patchTextChars += edit.find.length + edit.replace.length;
     if (patchTextChars > MAX_REPAIR_PATCH_TEXT_CHARS)
       throw repairOutputRejection(
-        "Creative repair patch exceeds the bounded text budget.",
+        `Creative repair patch exceeds the bounded text budget of ${MAX_REPAIR_PATCH_TEXT_CHARS} characters. Split the repair into fewer or smaller edits and keep the total patch within the budget.`,
       );
 
     const source = repaired[edit.file];
     if (typeof source !== "string")
       throw new Error(`${label} targets a missing candidate file.`);
-    const start = source.indexOf(edit.find);
-    if (start < 0 || source.indexOf(edit.find, start + edit.find.length) >= 0)
+    const location = locateUniqueFragment(source, edit.find);
+    if (!location)
       throw rejectedEdit(
-        `${label} source fragment must match exactly once in ${edit.file}.`, edit, index,
-        start < 0 ? 0 : source.split(edit.find).length - 1,
+        `${label} source fragment must match exactly once in ${edit.file}.`,
+        edit,
+        index,
+        source.split(edit.find).length - 1,
       );
     repaired[edit.file] =
-      source.slice(0, start) +
+      source.slice(0, location.start) +
       replacement +
-      source.slice(start + edit.find.length);
+      source.slice(location.end);
   }
   return repaired;
 }
@@ -772,7 +814,7 @@ export function modelBoundRepairFindings(findings = []) {
  *   referenceDna?: Record<string, any>,
  *   referenceDossier?: Record<string, any>,
  *   findings?: any[],
- *   files?: {experience?: string, styles?: string, motion?: string},
+ *   files?: {experience?: string, styles?: string, motion?: string, servicePage?: string, locationPage?: string, servicesIndexPage?: string},
  *   screenshots?: string[],
  *   comparisonScreenshots?: Array<{candidateId: string, viewport: string, path: string}>,
  *   contentManifest?: Record<string, any>,

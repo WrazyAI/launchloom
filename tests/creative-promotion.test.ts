@@ -450,6 +450,20 @@ describe("creative candidate promotion", () => {
     ).rejects.toThrow(/inline styles; visual rules belong in styles\.css/iu);
   });
 
+  it.each([
+    ["style element", (source: string) => source.replace("<main>", "<main><style></style>")],
+    ["inline style", (source: string) => source.replace("<main>", '<main style="color:red">')],
+  ])("rejects a candidate with an Experience.jsx %s", async (_label, edit) => {
+    const root = await makeFixture();
+    const file = path.join(root, "candidate-a/Experience.jsx");
+    const source = await fs.readFile(file, "utf8");
+    await fs.writeFile(file, edit(source));
+
+    await expect(
+      promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" }),
+    ).rejects.toThrow(/inline styles; visual rules belong in styles\.css/iu);
+  });
+
   it("renders a candidate in the real Astro shell before reporting diversity fallback", async () => {
     const root = await makeFixture();
     const report = await runCreativeBakeoff({
@@ -774,6 +788,100 @@ describe("creative candidate promotion", () => {
       expect(blocked.promotionReady).toBe(false);
       const blockedConfig = JSON.parse(await fs.readFile(configPath, "utf8"));
       expect(blockedConfig).toEqual(JSON.parse(originalConfig));
+
+      const singleEligible = await runCreativeBakeoff({
+        siteDir: siteRoot,
+        candidatesDir: root,
+        reportPath: path.join(root, "v2-preview-single-eligible-report.json"),
+        screenshotsDir: path.join(
+          root,
+          "v2-preview-single-eligible-screenshots",
+        ),
+        preview: true,
+        deferPromotion: true,
+        renderedReferenceEvaluator: async (input: any) => {
+          if (String(input.candidateScreenshots.desktop).includes("candidate-b"))
+            return {
+              version: 1,
+              model: "test/model",
+              score: 54,
+              pass: false,
+              audit: {
+                scores: {
+                  heroGeometry: 54,
+                  typography: 54,
+                  spatialRhythm: 54,
+                  imagery: 54,
+                  servicePresentation: 54,
+                  navigation: 54,
+                  ctaPlacement: 54,
+                  mobileRecomposition: 54,
+                  interactionEvidence: 54,
+                  paletteAdherence: 54,
+                  artDirection: 54,
+                },
+                findings: [
+                  {
+                    severity: "major",
+                    category: "spatial-rhythm",
+                    viewport: "desktop",
+                    evidence: "The opening rhythm does not match the reference.",
+                    repair: "Restore the reference opening rhythm.",
+                  },
+                ],
+              },
+            };
+          return {
+            version: 1,
+            model: "test/model",
+            score: 100,
+            pass: true,
+            audit: {
+              scores: {
+                heroGeometry: 100,
+                typography: 100,
+                spatialRhythm: 100,
+                imagery: 100,
+                servicePresentation: 100,
+                navigation: 100,
+                ctaPlacement: 100,
+                mobileRecomposition: 100,
+                interactionEvidence: 100,
+                paletteAdherence: 100,
+                artDirection: 100,
+              },
+              findings: [],
+            },
+          };
+        },
+        renderedDiversityEvaluator: async () => ({
+          version: 1,
+          model: "test/model",
+          score: 40,
+          pass: false,
+          minimumPairDistance: 40,
+          audit: {
+            pairs: [
+              {
+                left: "candidate-a",
+                right: "candidate-b",
+                distance: 40,
+                pass: false,
+                reason: "Rendered compositions are too similar.",
+              },
+            ],
+            genericFallbackDetected: false,
+            summary: "Rendered heroes converged.",
+          },
+        }),
+      });
+      expect(singleEligible.selectedCandidateId).toBe("candidate-a");
+      expect(singleEligible.fallback).toBe(false);
+      expect(singleEligible.previewDiversity).toMatchObject({
+        pass: true,
+        strategy: "single-eligible",
+        eligibleCandidateIds: ["candidate-a"],
+      });
     } finally {
       await fs.writeFile(configPath, originalConfig);
       await fs.rm(selectedPath, { recursive: true, force: true });

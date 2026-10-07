@@ -469,6 +469,8 @@ export const CREATIVE_PROMOTION_THRESHOLDS = Object.freeze({
   distinctivenessScore: 70,
   minimumFingerprintDistance: 4,
   minimumUniqueDimensions: 4,
-  referenceFidelityScore: 80,
+  // Tracks the rendered-reference overall bar, recalibrated to 78 on
+  // 2026-10-01. The earlier 80 sat above the judge's own pass value.
+  referenceFidelityScore: 78,
   minimumPairwiseVisualDistance: 72,
 });

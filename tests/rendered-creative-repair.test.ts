@@ -341,6 +341,20 @@ describe("rendered creative repair orchestration", () => {
     ).toBe(false);
     expect(
       findingsRequirePaletteChange([
+        {
+          category: "imagery",
+          message:
+            "The pale, low-contrast background image loses the hero hierarchy.",
+        },
+      ]),
+    ).toBe(false);
+    expect(
+      findingsRequirePaletteChange([
+        { category: "palette-adherence", message: "The page floods the brand surface." },
+      ]),
+    ).toBe(true);
+    expect(
+      findingsRequirePaletteChange([
         "rendered-reference dimension paletteAdherence scored 32 and must reach 80.",
       ]),
     ).toBe(true);
@@ -576,6 +590,59 @@ export default function Experience({ content, runtime }) { return <main><section
     expect(repairCalls).toBe(3);
     expect(result.rejectedCandidates).toEqual({});
   });
+
+  it("repairs a selected candidate after the reference budget is spent", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let bakeoffCalls = 0;
+    let gateCalls = 0;
+    const repairs: any[][] = [];
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({
+                selectedCandidateId: null,
+                candidates: [
+                  candidate("candidate-a", {
+                    valid: false,
+                    eligible: false,
+                    failures: ["Rendered candidate needs repair."],
+                  }),
+                ],
+              })
+            : report({
+                selectedCandidateId: "candidate-a",
+                candidates: [candidate("candidate-a")],
+              }),
+        );
+      },
+      runVisualGateImpl: async (options: any) => {
+        gateCalls += 1;
+        return visualGate(options, gateCalls === 1 ? "revise" : "pass");
+      },
+      repairCandidateImpl: async ({ findings }: any) => {
+        repairs.push(findings);
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(bakeoffCalls).toBe(3);
+    expect(gateCalls).toBe(2);
+    expect(repairs).toHaveLength(2);
+    expect(
+      repairs[1].some((finding: any) => finding?.category === "hierarchy"),
+    ).toBe(true);
+  });
+
 
   it("repairs a regressed candidate from its best measured state", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
@@ -2470,7 +2537,7 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
           repairCalls += 1;
         },
       }),
-    ).rejects.toThrow(/still fails rendered visual QA after 2 repair cycles/iu);
+    ).rejects.toThrow(/still fails rendered visual QA after 2 gate repairs/iu);
 
     expect(repairCalls).toBe(2);
     expect(bakeoffCalls).toBe(3);

@@ -33,6 +33,10 @@ import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 import { RENDERED_REFERENCE_THRESHOLDS } from "./rendered-reference-fidelity.mjs";
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
+// Visual-gate repairs run after selection and outside the reference-fidelity
+// cycle budget: content-integrity blockers such as duplicated sections are
+// only observable once a selected candidate is rendered as the page.
+const MAX_GATE_REPAIRS = 2;
 
 function cliArgs(argv) {
   return Object.fromEntries(
@@ -764,9 +768,6 @@ async function validateCandidateReasoningBindings(
   return candidateCount;
 }
 
-const PALETTE_FINDING_PATTERN =
-  /\bpalette|\bcolou?r|\bsurface|\bcontrast|\bbrand[-\s]?band/iu;
-
 function repairFindingText(finding) {
   if (typeof finding === "string") return finding;
   return [
@@ -781,9 +782,14 @@ function repairFindingText(finding) {
 
 /**
  * A repair may only repaint the candidate when a finding actually asks for a
- * palette, color, surface, or contrast change. The non-regression instruction
- * names passing measurements (including paletteAdherence) and must not count
- * as such an ask.
+ * palette, color, surface, or contrast change. Only explicit palette signals
+ * count: a palette-adherence category, a failing paletteAdherence dimension
+ * line, or a finding category that names the palette concern itself.
+ * Incidental words such as "low-contrast" inside an imagery finding must not
+ * unlock color changes. The non-regression instruction names passing
+ * measurements (including paletteAdherence) and must not count as an ask.
+ * Human feedback is already constrained by the resolved section scope, and a
+ * rejected response's diagnostic wording is not a new design request.
  */
 export function findingsRequirePaletteChange(findings) {
   return (findings || []).some((finding) => {
@@ -792,9 +798,16 @@ export function findingsRequirePaletteChange(findings) {
     if (finding?.category === "human-review-feedback") return true;
     // A rejected response's diagnostic wording is not a new design request.
     if (finding?.category === "repair-output-rejected") return false;
+    const category =
+      finding && typeof finding === "object"
+        ? String(finding.category || "")
+        : "";
+    if (/palette-adherence|^palette$|^colou?r$|^contrast$/iu.test(category))
+      return true;
     const text = repairFindingText(finding);
-    if (/already at their thresholds must not regress/iu.test(text)) return false;
-    return PALETTE_FINDING_PATTERN.test(text);
+    if (/already at their thresholds must not regress/iu.test(text))
+      return false;
+    return /dimension paletteAdherence scored|palette-adherence/iu.test(text);
   });
 }
 
@@ -1113,6 +1126,7 @@ export async function runRenderedCreativeRepair({
   // edit count) write nothing to the candidate, so they must not consume the
   // candidate's applied-repair cycles. They are bounded separately.
   const rejectionUse = new Map();
+  const gateUse = new Map();
   // Hill-climbing baseline: keep each candidate's best measured state so a
   // regressing repair never becomes the base for the next repair, and the
   // final selection can fall back to it.
@@ -1162,9 +1176,13 @@ export async function runRenderedCreativeRepair({
     screenshotsDir,
     candidateDirectory,
     report,
+    { gate = false } = {},
   ) {
     const applied = cycleUse.get(candidateId) || 0;
-    if (applied >= cycleLimit) return { status: "exhausted" };
+    const gateApplied = gateUse.get(candidateId) || 0;
+    const appliedSoFar = gate ? gateApplied : applied;
+    const appliedLimit = gate ? MAX_GATE_REPAIRS : cycleLimit;
+    if (appliedSoFar >= appliedLimit) return { status: "exhausted" };
     const rejections = rejectionUse.get(candidateId) || 0;
     const candidateDir = resolveCandidateDirectory(
       candidateRoot,
@@ -1207,13 +1225,14 @@ export async function runRenderedCreativeRepair({
           comparisonScreenshots,
           model: resolvedModel,
           creativeSession: frozenCreativeSession,
-          cycle: applied + 1,
-          maxCycles: cycleLimit,
+          cycle: appliedSoFar + 1,
+          maxCycles: appliedLimit,
           ...(providerBudget ? { automaticSpanRepair: true, fetchImpl: providerBudget.forCandidate(candidateId) } : {}),
           onUsage: (record) => repairUsage.push(record),
         });
         await persistRepairUsage();
-        cycleUse.set(candidateId, applied + 1);
+        if (gate) gateUse.set(candidateId, appliedSoFar + 1);
+        else cycleUse.set(candidateId, appliedSoFar + 1);
         if (providerBudget) await fs.writeFile(path.join(evidenceRoot, "qa-provider-calls.json"), JSON.stringify(providerBudget.snapshot(), null, 2) + "\n");
         await persistRepairEvidence({
           outDir: evidenceRoot,
@@ -1221,7 +1240,7 @@ export async function runRenderedCreativeRepair({
           candidateId,
           reason,
           findings: activeFindings,
-          cyclesUsed: applied + 1,
+          cyclesUsed: appliedSoFar + 1,
           attempts,
         });
         return { status: "repaired", attempts };
@@ -1257,7 +1276,7 @@ export async function runRenderedCreativeRepair({
             candidateId,
             reason,
             findings: activeFindings,
-            cyclesUsed: applied,
+            cyclesUsed: appliedSoFar,
             status: "rejected",
             error: message,
             attempts,
@@ -1327,6 +1346,13 @@ export async function runRenderedCreativeRepair({
     await fs.rm(target, { recursive: true, force: true });
     await fs.cp(best.snapshotDir, target, { recursive: true });
     return true;
+  }
+
+  function combinedRepairCycles() {
+    const combined = new Map(cycleUse);
+    for (const [candidateId, count] of gateUse)
+      combined.set(candidateId, (combined.get(candidateId) || 0) + count);
+    return Object.fromEntries(combined);
   }
 
   for (let round = 0; round < maxRounds; round += 1) {
@@ -1561,6 +1587,7 @@ export async function runRenderedCreativeRepair({
         screenshotsDir,
         selected.directory,
         report,
+        { gate: true },
       );
       if (repaired.status === "rejected") {
         record.rejectedCandidates.push(selectedId);
@@ -1568,7 +1595,7 @@ export async function runRenderedCreativeRepair({
       }
       if (repaired.status !== "repaired")
         throw new Error(
-          `Selected candidate ${selectedId} still fails rendered visual QA after ${cycleLimit} repair cycles.`,
+          `Selected candidate ${selectedId} still fails rendered visual QA after ${MAX_GATE_REPAIRS} gate repairs.`,
         );
       record.repairs.push(selectedId);
       continue;
@@ -1704,7 +1731,7 @@ export async function runRenderedCreativeRepair({
           ? null
           : Boolean(report.previewDiversity.pass),
       previewDiversityStrategy: report.previewDiversity?.strategy || null,
-      repairCycles: Object.fromEntries(cycleUse),
+      repairCycles: combinedRepairCycles(),
       rejectedCandidates,
       history,
       final: {
@@ -1758,7 +1785,7 @@ export async function runRenderedCreativeRepair({
           pass: true,
           candidateId: selectedId,
           feedbackResults: verifiedHumanFeedback,
-          repairCycles: Object.fromEntries(cycleUse),
+          repairCycles: combinedRepairCycles(),
         };
         await fs.writeFile(
           liveConfigPath,
