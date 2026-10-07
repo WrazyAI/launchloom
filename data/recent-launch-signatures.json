@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-10-05T18:09:06.904Z",
+  "updatedAt": "2026-10-07T11:25:47.243Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -507,6 +507,41 @@
         "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri",
         "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
       ]
+    },
+    {
+      "id": "2026-10-07-juniper-grove-estate-law-attempt-93-run-37613635991-attempt-1",
+      "launchedAt": "2026-10-07T11:25:47.241Z",
+      "stage": "attempt",
+      "reservationKey": "93-run-37613635991-attempt-1",
+      "businessName": "Juniper Grove Estate Law",
+      "businessKind": "legal-services",
+      "recipe": "general-editorial",
+      "packId": "kinetic-poster",
+      "variantId": "full-bleed",
+      "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "editorial-monument",
+        "legal-dark-illustrated-statement-hero",
+        "legal-three-part-reassurance-strip",
+        "spicer-law-firm-results-ledger",
+        "utility-diagnostic"
+      ],
+      "heroArchetypes": [
+        "split-media-copy",
+        "text-led-editorial"
+      ],
+      "referenceIds": [
+        "spicer-law-firm-results-ledger",
+        "web-legal-chaudhry-law",
+        "web-legal-valemus-law"
+      ],
+      "routeSignatures": [
+        "Narrow white row with small firm emblem, subdued legal-topic links, contact rout|A wide cityscape banner with centered firm introduction leads into three slim va|Use image-and-copy splits for practice areas and people so a visitor can tell ex|Compact uppercase sans section labels, restrained gray body copy and centered ch|firm navigation -> cityscape introduction -> three-value overview -> charcoal ne|Cityscape first, then legal-work and meeting photographs beside text; brochure m",
+        "Oversized firm identity on the left, utility email above and a practice/team/awa|A two-tier white header fronts a deep illustrated hero; a centered all-caps decl|Keep practice-area navigation direct and do not inflate a short homepage into a |Strong uppercase sans display, readable serif supporting statement, and compact |identity and utility navigation -> illustrated centered hero -> firm mission on |A dark justice illustration supplies atmosphere; below it, logo-like recognition",
+        "thin-availability-line-with-square-corner-practice-nav|dark-practice-statement-balanced-with-results-ledger|numbered-practice-rows-followed-by-auditable-outcomes-table|measured-legal-serif-with-neutral-sans|utility-to-promise-to-practices-to-results-to-team-to-process-to-consultation|typographic-proof-and-geometric-monogram-plates"
+      ]
     }
   ],
   "launchesByBusinessKind": {
@@ -578,6 +613,41 @@
           "White nameplate navigation with slim gold and coral utility buttons before the m|A coral text half and London building photograph half create a strict split hero|Organize services by the visitor's family-law problem in a dark contrast band, w|Soft serif narrative type paired with direct small sans labels and dark navy pra|split introduction and dual action -> navy issue/service matrix -> recommendatio|Architecture, team and editorial insight photographs punctuate large typography",
           "clean-professional-navigation-with-search-action|angled-city-image-with-editorial-practice-statement|headline-led-practice-index-with-feature-story|large-clean-grotesk-with-editorial-serif-accent|city-hero-to-practice-index-to-feature-to-proof-to-contact|cityscape-and-editorial-portrait-crops",
           "utility-strip-and-restrained-practice-navigation|editorial-professional-statement-beside-portrait-image|two-column-ruled-practice-area-ledger|refined-serif-with-humanist-sans|positioning-to-practices-to-people-to-fees-to-enquiry|portrait-and-professional-detail-crops"
+        ]
+      },
+      {
+        "id": "2026-10-07-juniper-grove-estate-law-attempt-93-run-37613635991-attempt-1",
+        "launchedAt": "2026-10-07T11:25:47.241Z",
+        "stage": "attempt",
+        "reservationKey": "93-run-37613635991-attempt-1",
+        "businessName": "Juniper Grove Estate Law",
+        "businessKind": "legal-services",
+        "recipe": "general-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "editorial-monument",
+          "legal-dark-illustrated-statement-hero",
+          "legal-three-part-reassurance-strip",
+          "spicer-law-firm-results-ledger",
+          "utility-diagnostic"
+        ],
+        "heroArchetypes": [
+          "split-media-copy",
+          "text-led-editorial"
+        ],
+        "referenceIds": [
+          "spicer-law-firm-results-ledger",
+          "web-legal-chaudhry-law",
+          "web-legal-valemus-law"
+        ],
+        "routeSignatures": [
+          "Narrow white row with small firm emblem, subdued legal-topic links, contact rout|A wide cityscape banner with centered firm introduction leads into three slim va|Use image-and-copy splits for practice areas and people so a visitor can tell ex|Compact uppercase sans section labels, restrained gray body copy and centered ch|firm navigation -> cityscape introduction -> three-value overview -> charcoal ne|Cityscape first, then legal-work and meeting photographs beside text; brochure m",
+          "Oversized firm identity on the left, utility email above and a practice/team/awa|A two-tier white header fronts a deep illustrated hero; a centered all-caps decl|Keep practice-area navigation direct and do not inflate a short homepage into a |Strong uppercase sans display, readable serif supporting statement, and compact |identity and utility navigation -> illustrated centered hero -> firm mission on |A dark justice illustration supplies atmosphere; below it, logo-like recognition",
+          "thin-availability-line-with-square-corner-practice-nav|dark-practice-statement-balanced-with-results-ledger|numbered-practice-rows-followed-by-auditable-outcomes-table|measured-legal-serif-with-neutral-sans|utility-to-promise-to-practices-to-results-to-team-to-process-to-consultation|typographic-proof-and-geometric-monogram-plates"
         ]
       }
     ],
