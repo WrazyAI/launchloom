@@ -1219,6 +1219,23 @@ function assignmentTargetRoots(node) {
 
 const bindingMutationCache = new WeakMap();
 
+function staticMemberAccess(expression) {
+  const node = unwrapUrlExpression(expression);
+  if (!node) return null;
+  if (ts.isPropertyAccessExpression(node))
+    return { receiver: node.expression, name: node.name.text };
+  if (
+    ts.isElementAccessExpression(node) &&
+    node.argumentExpression &&
+    ts.isStringLiteral(node.argumentExpression)
+  )
+    return {
+      receiver: node.expression,
+      name: node.argumentExpression.text,
+    };
+  return null;
+}
+
 function isBindingMutated(bindingNode, file) {
   if (bindingMutationCache.has(bindingNode))
     return bindingMutationCache.get(bindingNode);
@@ -1269,12 +1286,12 @@ function isBindingMutated(bindingNode, file) {
   const isKnownMutatorCallee = (expression, seen = new Set()) => {
     const callee = unwrapUrlExpression(expression);
     if (!callee) return false;
+    const member = staticMemberAccess(callee);
     if (
-      ts.isPropertyAccessExpression(callee) &&
-      ((callee.expression.getText(file) === "Object" &&
-        ["assign", "defineProperty", "setPrototypeOf"].includes(callee.name.text)) ||
-        (callee.expression.getText(file) === "Reflect" &&
-          callee.name.text === "set"))
+      member &&
+      ((member.receiver.getText(file) === "Object" &&
+        ["assign", "defineProperty", "setPrototypeOf"].includes(member.name)) ||
+        (member.receiver.getText(file) === "Reflect" && member.name === "set"))
     )
       return true;
     if (!ts.isIdentifier(callee) || seen.has(callee.text)) return false;
@@ -1321,18 +1338,20 @@ function isBindingMutated(bindingNode, file) {
       mutated = true;
       return;
     }
+    const method = ts.isCallExpression(node)
+      ? staticMemberAccess(node.expression)
+      : null;
     if (
-      ts.isCallExpression(node) &&
-      ts.isPropertyAccessExpression(node.expression) &&
-      mutatingMethods.has(node.expression.name.text) &&
-      targetWritesBinding(node.expression.expression)
+      method &&
+      mutatingMethods.has(method.name) &&
+      targetWritesBinding(method.receiver)
     ) {
       mutated = true;
       return;
     }
     if (
       ts.isCallExpression(node) &&
-      ts.isPropertyAccessExpression(node.expression) &&
+      staticMemberAccess(node.expression) &&
       isKnownMutatorCallee(node.expression) &&
       node.arguments.some((argument) => targetWritesBinding(argument))
     ) {
