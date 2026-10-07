@@ -45,6 +45,7 @@ async function server(
     noForms?: boolean;
     fragmentLink?: boolean;
     relativeNavigation?: boolean;
+    preview?: "safe" | "hidden" | "no-marker" | "live-token" | "network";
   } = {},
 ) {
   let mutations = 0;
@@ -64,6 +65,12 @@ async function server(
       return;
     }
     res.setHeader("Content-Type", "text/html");
+    if (options.preview) {
+      const base = html(route).replace(/<script>[\s\S]*?<\/script>/u, "");
+      const body = base.replace('<form class="lead-form">', `<form class="lead-form" ${options.preview === "hidden" ? "hidden" : ""} ${options.preview === "no-marker" ? "" : 'data-lead-preview="true"'}><input type="hidden" name="lead-token" value="${options.preview === "live-token" ? "live-secret" : ""}">`);
+      res.end(body + `<script>document.querySelector('form').addEventListener('submit', async event => { event.preventDefault(); ${options.preview === "network" ? "await fetch('/unexpected-submission',{method:'POST'});" : ""} document.querySelector('form [role=status]').textContent='Test-only preview: submissions are disabled.'; });</script>`);
+      return;
+    }
     if (options.fragmentLink || options.relativeNavigation) {
       let body = html(route, options.broken);
       if (route !== "/" && options.relativeNavigation) {
@@ -108,6 +115,30 @@ async function server(
     mutations: () => mutations,
   };
 }
+it.each(["safe", "hidden", "no-marker", "live-token", "network"] as const)("verifies bounded diagnostic form behavior: %s", async (preview) => {
+  const s = await server({ preview });
+  const diagnosticConfig = { ...config, lead: { apiUrl: "", token: "" }, pipelineTest: { version: 1, profile: "seo-only", testOnly: true, sourceSha: "a".repeat(40), runId: "synthetic" } };
+  const report: any = await verifyApprovedRoutes({ config: diagnosticConfig, origin: s.origin, mode: "review", formMode: "test-preview", viewports: [{ name: "mobile", width: 390, height: 844 }], representativeViewports: [], timeout: 1500 });
+  expect(report.status).toBe(preview === "safe" ? "pass" : "fail");
+  if (preview === "safe") {
+    expect(report.routes.every((route: any) => route.profiles.every((profile: any) => profile.forms.every((form: any) => form.previewDisabled === "pass" && form.externalDelivery === "not_verified" && form.syntheticRequests === 0)))).toBe(true);
+  }
+  expect(s.mutations()).toBe(0);
+});
+it.each(["production", "unmarked", "malformed", "live-config"])("refuses unauthorized diagnostic form relaxation: %s", async (variant) => {
+  const s = await server({ preview: "safe" });
+  const diagnosticConfig: any = { ...config, lead: { apiUrl: "", token: "" }, pipelineTest: { version: 1, profile: "seo-only", testOnly: true, sourceSha: "a".repeat(40), runId: "synthetic" } };
+  if (variant === "unmarked") delete diagnosticConfig.pipelineTest;
+  if (variant === "malformed") diagnosticConfig.pipelineTest = { testOnly: true };
+  if (variant === "live-config") diagnosticConfig.lead = config.lead;
+  await expect(verifyApprovedRoutes({ config: diagnosticConfig, origin: s.origin, mode: variant === "production" ? "production" : "review", formMode: "test-preview", viewports: [{ name: "mobile", width: 390, height: 844 }], timeout: 500 })).rejects.toThrow(/test-preview|Diagnostic/);
+});
+it("retains terminal synthetic delivery requirements for preview-marked production forms", async () => {
+  const s = await server({ preview: "safe" });
+  const report: any = await verifyApprovedRoutes({ config, origin: s.origin, mode: "production", formMode: "mocked", viewports: [{ name: "mobile", width: 390, height: 844 }], representativeViewports: [], timeout: 1500 });
+  expect(report.status).toBe("fail");
+  expect(report.routes.some((route: any) => route.profiles.some((profile: any) => profile.forms.some((form: any) => form.failures.includes("Production forms require terminal synthetic lifecycle evidence."))))).toBe(true);
+});
 it("records every admitted route and synthetic success/failure delivery without external writes", async () => {
   const s = await server();
   const report: any = await verifyApprovedRoutes({

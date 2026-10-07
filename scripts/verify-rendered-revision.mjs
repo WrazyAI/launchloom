@@ -1,4 +1,4 @@
-import { verifyApprovedRoutes } from "./browser-route-verification.mjs";
+import { verifyApprovedRoutes, diagnosticFormMode } from "./browser-route-verification.mjs";
 import { sanitizeVerificationReport } from "./route-verification-handoff.mjs";
 import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { hasPipelineTest } from "../templates/client-site/src/lib/seo-readiness.mjs";
@@ -122,7 +122,7 @@ try {
     origin: url,
     mode: reviewMode ? "review" : "production",
     browser,
-    formMode: "mocked",
+    formMode: testPreview ? diagnosticFormMode(config, "review") : "mocked",
     screenshotsDir: path.join(screenshotDir, "approved-routes"),
   });
   await fs.writeFile(
