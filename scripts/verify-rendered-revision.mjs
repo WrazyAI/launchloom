@@ -239,7 +239,7 @@ try {
     if (testPreview) {
       const banner = page.locator("[data-pipeline-test-preview]");
       const profile = config.pipelineTest?.profile;
-      const skipped = profile === "seo-only" ? "Creative generation and visual promotion skipped" : profile === "creative-only" ? "SEO research skipped" : "Unknown pipeline lane skipped";
+      const skipped = profile === "seo-only" ? "Creative evaluation and visual promotion skipped" : profile === "creative-only" ? "SEO research skipped" : "Unknown pipeline lane skipped";
       if (!(await banner.isVisible()) || !(await banner.textContent())?.includes(profile || "invalid profile") || !(await banner.textContent())?.includes(skipped))
         failures.push(`${viewport.name}: test-only profile and skipped lane must be visible.`);
       if (await page.locator(".ll-approve, .ll-send-anyway").count())

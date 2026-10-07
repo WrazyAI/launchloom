@@ -6,6 +6,7 @@ import {
   currentRunCostInputs,
   assertPipelineTestFacts,
   assertCompatibleTestAssets,
+  pagesDeploymentUrl,
 } from "../scripts/run-pipeline-test.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { summarizeGenerationCosts } from "../scripts/generation-cost-summary.mjs";
@@ -46,6 +47,10 @@ function adapter(fail = "") {
   return { calls, dependencies };
 }
 describe("focused pipeline orchestration", () => {
+  it("uses the provider's immutable URL rather than guessing a long branch alias", () => {
+    expect(pagesDeploymentUrl("✨ Deployment complete! Take a peek over at https://abc123ef.example.pages.dev\n✨ Deployment alias URL: https://short.example.pages.dev")).toBe("https://abc123ef.example.pages.dev");
+    expect(() => pagesDeploymentUrl("Upload pending https://wrong.pages.dev")).toThrow(/deployment/i);
+  });
   it("rejects contradictory business facts before either lane can deliver", () => {
     expect(() => assertPipelineTestFacts({ factReadiness: { version: 1, launchReady: false } })).toThrow(/facts/i);
     expect(() => assertPipelineTestFacts({})).not.toThrow();

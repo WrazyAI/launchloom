@@ -3,8 +3,9 @@
 Use the Generate client site manual workflow with `test_profile` set to
 `seo-only` or `creative-only`. The `full` default retains normal generation.
 The reusable `test-generation.yml` workflow is reached through that dispatch.
-`skip_creative_author_checks` selects SEO-only; `skip_seo_addon` selects
-creative-only. Conflicting choices fail before generation.
+Manual dispatch exposes the `test_profile` selector. The runner CLI also
+accepts `--skip-creative-author-checks` for SEO-only and `--skip-seo-addon`
+for creative-only. Conflicting choices fail before generation.
 
 SEO-only refreshes coverage research, SEO research, canonical brief and real
 site configuration. It first looks for a private same-issue business repository
@@ -19,7 +20,7 @@ Creative-only writes an explicit skipped SEO research artifact and keeps
 normal rendered creative checks and bounded repair. It never calls external
 SEO research. Both profiles use authored rendering; there is no legacy fallback.
 
-Every attempt creates a separate private `WrazyAI/llqa-<issue>-<profile>-<run>-<attempt>`
+Every attempt creates a separate private `WrazyAI/llqa-<issue>-<seo|creative>-<run>-<attempt>`
 repository, `qa/<profile>/<run>-<attempt>` branch and Pages project. The active
 business repository and `review/initial` remain untouched. Diagnostic previews
 have noindex headers and robots rules, and notification goes only to the

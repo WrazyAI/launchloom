@@ -26,6 +26,12 @@ export function assertPipelineTestFacts(config) {
   if (!readiness.allowed) throw new Error(readiness.error || "Business facts are not ready.");
 }
 
+export function pagesDeploymentUrl(output) {
+  const matches = [...String(output).matchAll(/Deployment complete![^\r\n]*?(https:\/\/[a-z0-9.-]+\.pages\.dev)/giu)];
+  if (matches.length !== 1) throw new Error("Immutable Pages deployment URL was not returned.");
+  return new URL(matches[0][1]).href.replace(/\/$/u, "");
+}
+
 export async function assertCompatibleTestAssets(current, previous, manifest, publicRoot) {
   const canonical = (value) => JSON.stringify(Object.entries(value || {}).filter(([, v]) => Boolean(v)).sort(([a], [b]) => a.localeCompare(b)));
   if (canonical(current.assets) !== canonical(previous.assets)) throw new Error("Client assets changed; fresh authoring is required.");
@@ -867,7 +873,7 @@ export function createCloudDependencies(
         ["pages", "project", "create", slug, "--production-branch", "main"],
         { cwd: site },
       );
-      await command(
+      const deployed = await command(
         path.join(root, "node_modules/.bin/wrangler"),
         [
           "pages",
@@ -882,10 +888,9 @@ export function createCloudDependencies(
           "--commit-message",
           `Focused ${input.profile} diagnostic`,
         ],
-        { cwd: site },
+        { cwd: site, capture: true },
       );
-      const alias = branch.replace(/[^a-z0-9]/gu, "-");
-      const url = `https://${alias}.${slug}.pages.dev`;
+      const url = pagesDeploymentUrl(deployed);
       await node("wait-for-pages-preview.mjs", ["--url", url]);
       const response = await fetch(url);
       if (
