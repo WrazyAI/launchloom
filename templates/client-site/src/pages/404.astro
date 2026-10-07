@@ -1,5 +1,12 @@
 ---
 import site from "../lib/site";
+import { fontFaceCss, resolveFontPairing } from "../lib/font-catalog.mjs";
+
+const pairing = resolveFontPairing(site.style);
+const bodyVars = [
+  ...(pairing.headingStack ? [`--font-heading:${pairing.headingStack}`] : []),
+  ...(pairing.bodyStack ? [`--font-body:${pairing.bodyStack}`] : []),
+].join(";");
 ---
 <!doctype html>
 <html lang="en">
@@ -7,9 +14,10 @@ import site from "../lib/site";
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
+  <style is:inline set:html={fontFaceCss()} />
   <title>Page not found | {site.business.name}</title>
  </head>
- <body data-ll-route="/404">
+ <body data-ll-route="/404" style={bodyVars}>
   <main>
    <h1>Page not found</h1>
    <p>The page you requested is unavailable.</p>
@@ -18,8 +26,9 @@ import site from "../lib/site";
  </body>
 </html>
 <style>
- body { margin: 0; background: #fff; color: #14201d; font: 1rem/1.5 system-ui, sans-serif; }
+ body { margin: 0; background: #fff; color: #14201d; font: 1rem/1.5 var(--font-body, system-ui, sans-serif); }
  main { max-width: 40rem; margin: 4rem auto; padding: 1.5rem; }
+ h1 { font-family: var(--font-heading, system-ui, sans-serif); }
  a { color: #14201d; text-decoration: underline; }
  a:focus-visible { outline: 3px solid #14201d; outline-offset: 4px; }
 </style>

@@ -60,7 +60,7 @@ describe("client copy presentation", () => {
       /\.lead-form\s*\{[^}]*--ink:\s*#14201d;[^}]*--muted:\s*#53605b;[^}]*--line:\s*#d8ded7;/s,
     );
     expect(styles).toMatch(
-      /\.location-map-copy \.kicker\s*\{[^}]*color:\s*var\(--ink\);/s,
+      /\.location-map-copy \.kicker\s*\{[^}]*color:\s*var\(--ll-accent-text,\s*var\(--ink\)\);/s,
     );
   });
 });

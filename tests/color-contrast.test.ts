@@ -3,6 +3,7 @@ import { contrast, parseCssColor } from "../scripts/color-contrast.mjs";
 import {
   resolvePalette,
   rotateHue,
+  semanticColorCss,
   suggestAccentColors,
 } from "../scripts/palette-policy.mjs";
 
@@ -134,6 +135,49 @@ describe("optional accent color", () => {
     expect(
       contrast(palette.accentTextColor, palette.surfaceColor),
     ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("derives readable accent variants for hero, brand, and dark surfaces", () => {
+    const palette = resolvePalette({
+      primaryColor: "#205d51",
+      accentColor: "#f4e2a1",
+    });
+    expect(
+      contrast(palette.accentMarkColor, palette.surfaceColor),
+    ).toBeGreaterThanOrEqual(3);
+    expect(
+      contrast(palette.accentTextHero, palette.heroColor),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrast(palette.accentTextBrand, palette.brandSurfaceColor),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrast(palette.accentTextDark, "#14201d"),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(resolvePalette(palette)).toEqual(palette);
+  });
+
+  it("keeps the accent readable on the light pack and inner bands", () => {
+    const palette = resolvePalette({
+      primaryColor: "#205d51",
+      accentColor: "#f4e2a1",
+    });
+    for (const band of ["#f7f5ee", "#f6f3eb", "#e7e2d7", "#eef1ea"])
+      expect(
+        contrast(palette.accentTextLightBand, band),
+      ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("emits surface accent roles only when an accent is chosen", () => {
+    const plain = semanticColorCss({ primaryColor: "#205d51" });
+    expect(plain).not.toContain("--ll-accent-text:");
+    const withAccent = semanticColorCss({
+      primaryColor: "#205d51",
+      accentColor: "#f4e2a1",
+    });
+    expect(withAccent).toContain('[data-ll-surface="contact"]');
+    expect(withAccent).toContain("--ll-accent-text:");
+    expect(withAccent).toContain("--ll-accent:");
   });
 
   it("suggests deterministic complementary accents", () => {
