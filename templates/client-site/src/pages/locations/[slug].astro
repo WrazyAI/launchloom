@@ -7,6 +7,7 @@ import PageBriefSections from "../../components/PageBriefSections";
 import LocationCandidateHost from "../../components/LocationCandidateHost";
 import site, { serviceHref, phoneHref, approvedServices, routePageBrief, type Location } from "../../lib/site";
 import { compileExperiencePack } from "../../lib/experience-pack";
+import { hasPipelineTest } from "../../lib/seo-readiness.mjs";
 import { resolvePageRecipe } from "../../lib/page-recipe";
 import "../../styles/experience-packs.css";
 import "../../styles/creative-runtime.css";
@@ -33,7 +34,7 @@ const creativeLocationPage = Boolean(
 const experience = site.design?.experience?.packId || creativeLocationPage
   ? compileExperiencePack(site, recipe)
   : null;
-const diagnostic = import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
+const diagnostic = hasPipelineTest(site) || import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 const creativeRuntime = {
   candidateId: site.design?.experience?.candidateId || "selected",
   diagnostic,
