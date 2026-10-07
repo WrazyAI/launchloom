@@ -177,6 +177,15 @@ confirmation failure is logged and never turns a delivered lead into an
 error. New tokens default confirmations on and older tokens stay
 notification-only until the site is regenerated or its token is re-minted.
 
+Developer and diagnostic previews render the authored lead form for
+inspection. In a diagnostic preview the form carries
+`data-lead-preview="true"` and a visible developer-preview note, and it
+submits nothing: it exists so the developer can review the client-facing form
+before publication. Location maps render from the same sealed content as
+production, so a verified address or place ID shows the map in the preview
+too. Live lead forms remain rejected by the diagnostic verifier; only forms
+without the preview marker may deliver.
+
 ## Conversion tools
 
 New sites receive a guided qualifier, a scripted quick-answer assistant, and,

@@ -16,10 +16,12 @@ async function createDiagnosticSite({
   demoNotice,
   includeNotice,
   imageMarkup = "",
+  formMarkup = "",
 }: {
   demoNotice?: string;
   includeNotice: boolean;
   imageMarkup?: string;
+  formMarkup?: string;
 }) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-diagnostic-notice-"));
   roots.push(root);
@@ -34,7 +36,7 @@ async function createDiagnosticSite({
     : "";
   await fs.writeFile(
     path.join(root, "dist/index.html"),
-    `<!doctype html><html><head><meta name="robots" content="noindex, nofollow"><title>Test preview</title></head><body>${notice}<main data-creative-host="true" data-creative-diagnostic="true" data-creative-candidate="candidate-a" data-creative-renderer="creative-candidate"><section data-hero><h1>Test preview</h1></section>${imageMarkup}</main></body></html>`,
+    `<!doctype html><html><head><meta name="robots" content="noindex, nofollow"><title>Test preview</title></head><body>${notice}<main data-creative-host="true" data-creative-diagnostic="true" data-creative-candidate="candidate-a" data-creative-renderer="creative-candidate"><section data-hero><h1>Test preview</h1></section>${imageMarkup}${formMarkup}</main></body></html>`,
   );
   return root;
 }
@@ -93,5 +95,27 @@ describe("creative diagnostic preview verification", () => {
 
     expect(rejected.status).toBe(1);
     expect(rejected.stderr).toContain("image missing alt text");
+  }, 20_000);
+
+  it("allows a preview-marked lead form and rejects a live one", async () => {
+    const previewForm = await createDiagnosticSite({
+      includeNotice: false,
+      formMarkup:
+        '<form class="launchloom-lead-form" data-runtime="lead-form" data-lead-preview="true"><input name="name" /></form>',
+    });
+    const accepted = runVerifier(previewForm);
+
+    expect(accepted.status).toBe(0);
+    expect(accepted.stdout).toContain('"previewLeadForm":1');
+
+    const liveForm = await createDiagnosticSite({
+      includeNotice: false,
+      formMarkup:
+        '<form class="launchloom-lead-form" data-runtime="lead-form"><input name="name" /></form>',
+    });
+    const rejected = runVerifier(liveForm);
+
+    expect(rejected.status).toBe(1);
+    expect(rejected.stderr).toContain("live lead form is present");
   }, 20_000);
 });

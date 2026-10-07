@@ -91,9 +91,18 @@ try {
             Number(demoNoticeBounds?.top || 0) < innerHeight &&
             Number(demoNoticeBounds?.bottom || 0) > 0,
         ),
-        forms: [...document.forms].filter((form) => !form.closest("#ll-review")).length,
+        forms: [...document.forms].filter(
+          (form) =>
+            !form.closest("#ll-review") &&
+            form.getAttribute("data-lead-preview") !== "true",
+        ).length,
+        previewLeadForm: document.querySelectorAll(
+          '[data-runtime="lead-form"][data-lead-preview="true"]',
+        ).length,
         reviewForms: document.querySelectorAll("#ll-review .ll-feedback-form").length,
-        activeLeadForm: document.querySelectorAll('[data-runtime="lead-form"]').length,
+        activeLeadForm: document.querySelectorAll(
+          '[data-runtime="lead-form"]:not([data-lead-preview="true"])',
+        ).length,
         reviewControls: document.querySelectorAll("#ll-review, .ll-review").length,
         reviewControlsVisible: [...document.querySelectorAll("#ll-review, .ll-review")].some((element) => {
           const style = getComputedStyle(element);
