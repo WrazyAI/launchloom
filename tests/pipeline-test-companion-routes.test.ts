@@ -45,6 +45,14 @@ it.each(["seo-only", "creative-only", "full"])(
         stdio: "pipe",
       });
       server = await serveBuiltSite(path.join(root, "dist"));
+      // Deterministic shell pages must link to the authored homepage contract,
+      // not the legacy recipe's site-* IDs, regardless of focused/full mode.
+      for (const shellPath of ["about", "contact"]) {
+        const shellHtml = await fs.readFile(path.join(root, "dist", shellPath, "index.html"), "utf8");
+        for (const anchor of ["services", "faqs", "contact"])
+          expect(shellHtml).toContain(`href="/#${anchor}"`);
+        expect(shellHtml).not.toMatch(/href="\/#site-(?:services|faq|contact)"/u);
+      }
       browser = await chromium.launch();
       for (const viewport of [
         { width: 1440, height: 900 }, { width: 390, height: 844 },

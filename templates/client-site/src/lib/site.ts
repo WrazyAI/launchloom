@@ -439,7 +439,7 @@ export const homeSectionHref = (type: string) => {
   const section = resolvePageRecipe(site).sections.find(
     (section) => section.type === type,
   );
-  const id = site.design?.experience?.packId
+  const id = site.design?.experience?.packId || site.design?.experience?.renderer === "creative-candidate"
     ? type === "faq"
       ? "faqs"
       : type
