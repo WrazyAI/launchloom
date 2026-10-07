@@ -533,6 +533,23 @@ export default function Experience`,
     expect(() => validate(unrelatedGuard)).toThrow(/conditionally render/iu);
   });
 
+  it("authors only the first complete route for SEO-only without changing full defaults", async () => {
+    const routeIds = new Set<string>();
+    const result = await authorExperienceCandidates({
+      site, inspirationPack, testProfile: "seo-only",
+      generate: async (request) => { routeIds.add(request.route.id); return safeStage(request); },
+    });
+    expect(result.candidates).toHaveLength(1);
+    expect([...routeIds]).toEqual(["route-01"]);
+  });
+
+  it("still rejects incomplete inspiration contracts in an SEO-only authoring test", async () => {
+    await expect(authorExperienceCandidates({
+      site, inspirationPack: { ...inspirationPack, routes: inspirationPack.routes.slice(0, 1) }, testProfile: "seo-only",
+      generate: async (request) => safeStage(request),
+    })).rejects.toThrow(/exactly three/i);
+  });
+
   it("retries an empty optional image with the exact safe rendering rule", async () => {
     const requests: AuthorStageRequest[] = [];
     let retryRequest: AuthorStageRequest | undefined;

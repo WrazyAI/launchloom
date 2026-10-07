@@ -5,6 +5,7 @@ import { fontFamilyById, resolveFontPairing } from "./font-catalog.mjs";
 import crypto from "node:crypto";
 import { redactPromptValue } from "./author-prompt-budget.mjs";
 import { safeAuthorFailureText } from "./author-failure-evidence.mjs";
+import { resolvePipelineTestPolicy } from "./pipeline-test-policy.mjs";
 import postcss from "postcss";
 import ts from "typescript";
 import {
@@ -3287,6 +3288,7 @@ function safeAuthorFailureStack(error) {
  *   generate: (request: AuthorStageRequest) => Promise<Record<string, any>>;
  *   model?: string;
  *   creativeSession?: Record<string, any> | null;
+ *   testProfile?: "full" | "seo-only" | "creative-only";
  * }} input
  */
 export async function authorExperienceCandidates({
@@ -3295,13 +3297,17 @@ export async function authorExperienceCandidates({
   generate,
   model = "openai/gpt-6-luna",
   creativeSession = null,
+  testProfile = "full",
 }) {
   if (typeof generate !== "function")
     throw new Error("A generation adapter is required.");
   const contentManifest = buildCreativeContentManifest(site);
   const rules = authorRules();
 
-  const routes = assertInspirationPack(inspirationPack);
+  const policy = resolvePipelineTestPolicy({ profile: testProfile });
+  // Validate the complete reference contract first; a focused test limits
+  // provider work, not reference/source safety or normal intake diversity.
+  const routes = assertInspirationPack(inspirationPack).slice(0, policy.candidateCount);
   // OpenRouter's in-flight budget is shared across the account. Keep the
   // independent candidates, but never put more than two model stages in
   // flight at once. This protects the creative lane without falling back to a

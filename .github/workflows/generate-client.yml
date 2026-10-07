@@ -9,6 +9,12 @@ on:
         description: LaunchLoom intake issue number
         required: true
         type: string
+      test_profile:
+        description: Full generation or an isolated developer-only test preview
+        required: false
+        type: choice
+        options: [full, seo-only, creative-only]
+        default: full
       reuse_authored_candidates:
         description: Reuse a validated candidate set from an existing private client repository
         required: false
@@ -44,7 +50,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  focused_test:
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.test_profile == 'seo-only' || inputs.test_profile == 'creative-only') }}
+    uses: ./.github/workflows/test-generation.yml
+    with:
+      issue: ${{ inputs.issue }}
+      test_profile: ${{ inputs.test_profile }}
+      candidate_repository: ${{ inputs.candidate_repository || '' }}
+    secrets: inherit
+
   intake_handoff_check:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.test_profile == 'full' || inputs.test_profile == '' }}
     runs-on: ubuntu-latest
     outputs:
       completed: ${{ steps.marker.outputs.completed }}
@@ -67,7 +83,7 @@ jobs:
 
   generate:
     needs: intake_handoff_check
-    if: ${{ needs.intake_handoff_check.outputs.completed != 'true' || (github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates) }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.test_profile == 'full' || inputs.test_profile == '') && (needs.intake_handoff_check.outputs.completed != 'true' || (github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates)) }}
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
