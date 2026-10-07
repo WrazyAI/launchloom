@@ -46,21 +46,43 @@ permissions:
   issues: write
 
 concurrency:
-  group: launchloom-intake-${{ github.event.client_payload.issue || inputs.issue || github.run_id }}
+  group: launchloom-intake-${{ github.event.client_payload.issue || inputs.issue || github.run_id }}${{ github.event_name == 'workflow_dispatch' && (inputs.test_profile == 'seo-only' || inputs.test_profile == 'creative-only') && format('-test-{0}-{1}', inputs.test_profile, github.run_id) || '' }}
   cancel-in-progress: false
 
 jobs:
+  profile_policy:
+    runs-on: ubuntu-latest
+    outputs:
+      profile: ${{ steps.policy.outputs.profile }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22 }
+      - name: Resolve generation execution policy
+        id: policy
+        env:
+          REQUESTED_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.test_profile || 'full' }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { resolvePipelineTestPolicy } from './scripts/pipeline-test-policy.mjs';
+          const policy = resolvePipelineTestPolicy({profile: process.env.REQUESTED_PROFILE, eventName: process.env.GITHUB_EVENT_NAME});
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `profile=${policy.profile}\n`);
+          NODE
+
   focused_test:
-    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.test_profile == 'seo-only' || inputs.test_profile == 'creative-only') }}
+    needs: profile_policy
+    if: ${{ needs.profile_policy.outputs.profile != 'full' }}
     uses: ./.github/workflows/test-generation.yml
     with:
       issue: ${{ inputs.issue }}
-      test_profile: ${{ inputs.test_profile }}
+      test_profile: ${{ needs.profile_policy.outputs.profile }}
       candidate_repository: ${{ inputs.candidate_repository || '' }}
     secrets: inherit
 
   intake_handoff_check:
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.test_profile == 'full' || inputs.test_profile == '' }}
+    needs: profile_policy
+    if: ${{ needs.profile_policy.outputs.profile == 'full' }}
     runs-on: ubuntu-latest
     outputs:
       completed: ${{ steps.marker.outputs.completed }}
@@ -82,8 +104,8 @@ jobs:
           fi
 
   generate:
-    needs: intake_handoff_check
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.test_profile == 'full' || inputs.test_profile == '') && (needs.intake_handoff_check.outputs.completed != 'true' || (github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates)) }}
+    needs: [profile_policy, intake_handoff_check]
+    if: ${{ needs.profile_policy.outputs.profile == 'full' && (needs.intake_handoff_check.outputs.completed != 'true' || (github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates)) }}
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
