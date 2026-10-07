@@ -1,4 +1,7 @@
-/** One execution policy shared by workflow, author and focused runner. */
+/**
+ * One execution policy shared by workflow, author and focused runner.
+ * @param {{profile?: string, skipCreativeAuthorChecks?: boolean|string, skipSeoAddon?: boolean|string, eventName?: string}} [input]
+ */
 export function resolvePipelineTestPolicy({ profile, skipCreativeAuthorChecks = false, skipSeoAddon = false, eventName = "workflow_dispatch" } = {}) {
   const enabled = (value) => {
     if (value === true || value === "true") return true;

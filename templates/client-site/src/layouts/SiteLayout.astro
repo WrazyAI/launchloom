@@ -40,7 +40,7 @@ const colorRoles = semanticColorCss(palette) + `
 `;
 const testPreview = hasPipelineTest(site);
 const testProfile = site.pipelineTest?.profile;
-const skippedLane = testProfile === "seo-only" ? "Creative generation and visual promotion" : testProfile === "creative-only" ? "SEO research" : "Unknown pipeline lane";
+const skippedLane = testProfile === "seo-only" ? "Creative evaluation and visual promotion" : testProfile === "creative-only" ? "SEO research" : "Unknown pipeline lane";
 const diagnosticPreview = testPreview || import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 // Judge previews render the authored candidate only. Platform chrome such as
 // the floating website-assistant launcher and the exit offer must not appear

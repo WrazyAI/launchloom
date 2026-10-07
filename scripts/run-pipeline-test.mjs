@@ -2,10 +2,49 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   parsePipelineTestArgs,
   resolvePipelineTestPolicy,
 } from "./pipeline-test-policy.mjs";
+import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
+import { businessFactReadiness } from "../templates/client-site/src/lib/business-facts.mjs";
+
+// Research verdict only: never a production authorization. The persisted
+// provenance and every release guard retain the original, marked config.
+export function focusedSeoReadiness(config) {
+  const { pipelineTest: _testProvenance, ...researchConfig } = config;
+  return seoResearchReadiness(researchConfig);
+}
+
+export function currentRunCostInputs(costs, report) {
+  return { ...costs, creativeRun: report.stages.author.status === "not_run" ? null : costs.creativeRun };
+}
+
+export function assertPipelineTestFacts(config) {
+  const readiness = businessFactReadiness(config);
+  if (!readiness.allowed) throw new Error(readiness.error || "Business facts are not ready.");
+}
+
+export async function assertCompatibleTestAssets(current, previous, manifest, publicRoot) {
+  const canonical = (value) => JSON.stringify(Object.entries(value || {}).filter(([, v]) => Boolean(v)).sort(([a], [b]) => a.localeCompare(b)));
+  if (canonical(current.assets) !== canonical(previous.assets)) throw new Error("Client assets changed; fresh authoring is required.");
+  const paths = new Set();
+  const collect = (value) => {
+    if (typeof value === "string" && value.startsWith("/images/generated/")) paths.add(value);
+    else if (value && typeof value === "object") Object.values(value).forEach(collect);
+  };
+  collect(previous.creativeAssets);
+  for (const asset of paths) {
+    const entry = manifest?.placements?.find((item) => item.path === asset);
+    if (!entry || !/^[a-f0-9]{64}$/iu.test(entry.sha256 || "")) throw new Error("Generated asset provenance is missing.");
+    const root = await fs.realpath(publicRoot);
+    const file = await fs.realpath(path.resolve(root, `.${asset}`));
+    if (!file.startsWith(`${root}${path.sep}`)) throw new Error("Generated asset escaped its source root.");
+    const checksum = createHash("sha256").update(await fs.readFile(file)).digest("hex");
+    if (checksum !== entry.sha256.toLowerCase()) throw new Error("Generated asset checksum mismatch.");
+  }
+}
 
 const STAGES = [
   "prepare",
@@ -256,7 +295,7 @@ export function createCloudDependencies(
       minutes: (Date.now() - Date.parse(report.startedAt)) / 60000,
       usdPerMinute: process.env.RUNNER_USD_PER_MINUTE || null,
     };
-    return summarizeGenerationCosts(costs);
+    return summarizeGenerationCosts(currentRunCostInputs(costs, report));
   }
   async function initializeAuthorship() {
     await node("compile-inspiration-pack.mjs", [
@@ -445,6 +484,7 @@ export function createCloudDependencies(
         path.join(evidence, "site-config-usage.json"),
       ]);
       const current = await readJson(config);
+      assertPipelineTestFacts(current);
       current.pipelineTest = {
         version: 1,
         profile: input.profile,
@@ -561,6 +601,9 @@ export function createCloudDependencies(
           const previous = await readJson(
             path.join(source, "src/site.config.json"),
           );
+          await assertCompatibleTestAssets(current, previous,
+            await readJson(path.join(source, ".launchloom/generated-assets.json")).catch(() => ({})),
+            path.join(source, "public"));
           current.creativeAssets = previous.creativeAssets || {};
           const {
             buildCreativeContentManifest,
@@ -762,6 +805,7 @@ export function createCloudDependencies(
       return { candidate: path.basename(selected.directory) };
     },
     async technical() {
+      assertPipelineTestFacts(await readJson(config));
       await command("npm", ["ci"], { cwd: site });
       await command("npm", ["run", "check"], { cwd: site, env: reviewEnv });
       await command("npm", ["run", "build"], { cwd: site, env: reviewEnv });
@@ -798,9 +842,7 @@ export function createCloudDependencies(
         ],
         { env: reviewEnv },
       );
-      const { seoResearchReadiness } =
-        await import("../templates/client-site/src/lib/seo-readiness.mjs");
-      const readiness = seoResearchReadiness(await readJson(config));
+      const readiness = focusedSeoReadiness(await readJson(config));
       await writeJson(
         path.join(evidence, "seo-research-readiness.json"),
         readiness,

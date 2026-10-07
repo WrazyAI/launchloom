@@ -139,7 +139,7 @@ it.each(["seo-only", "creative-only", "full"])(
           expect(await banner.textContent()).toContain(profile);
           expect(await banner.textContent()).toContain(
             profile === "seo-only"
-              ? "Creative generation and visual promotion skipped"
+              ? "Creative evaluation and visual promotion skipped"
               : "SEO research skipped",
           );
           expect(

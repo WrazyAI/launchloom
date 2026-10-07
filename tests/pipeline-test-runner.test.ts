@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   runPipelineTest,
   sendPipelineTestNotification,
+  focusedSeoReadiness,
+  currentRunCostInputs,
+  assertPipelineTestFacts,
+  assertCompatibleTestAssets,
 } from "../scripts/run-pipeline-test.mjs";
+import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
+import { summarizeGenerationCosts } from "../scripts/generation-cost-summary.mjs";
 
 const input = {
   profile: "seo-only",
@@ -40,6 +46,32 @@ function adapter(fail = "") {
   return { calls, dependencies };
 }
 describe("focused pipeline orchestration", () => {
+  it("rejects contradictory business facts before either lane can deliver", () => {
+    expect(() => assertPipelineTestFacts({ factReadiness: { version: 1, launchReady: false } })).toThrow(/facts/i);
+    expect(() => assertPipelineTestFacts({})).not.toThrow();
+  });
+  it("rejects reuse when a client asset has been removed or replaced", async () => {
+    await expect(assertCompatibleTestAssets({ assets: {} }, { assets: { photoOne: "/images/client/old.webp" } }, {}, "/unused")).rejects.toThrow(/assets/i);
+    await expect(assertCompatibleTestAssets({ assets: { photoOne: "/images/new.webp" } }, { assets: { photoOne: "/images/old.webp" } }, {}, "/unused")).rejects.toThrow(/assets/i);
+  });
+  it("rejects generated reuse without image checksum provenance", async () => {
+    await expect(assertCompatibleTestAssets({ assets: {} }, { assets: {}, creativeAssets: { "route-01": { hero: "/images/generated/old.webp" } } }, { placements: [] }, "/unused")).rejects.toThrow(/provenance/i);
+    await expect(assertCompatibleTestAssets({ assets: {} }, { assets: {}, creativeAssets: {} }, { placements: [] }, "/unused")).resolves.toBeUndefined();
+  });
+  it("does not bill reused historical authoring as a current provider call", () => {
+    const costs = { creativeRun: { cacheSummary: { cost: 9 }, model: "previous-author" } };
+    const reused = { stages: { author: { status: "not_run" } } };
+    expect(summarizeGenerationCosts(currentRunCostInputs(costs, reused)).actualUsd).toBe(0);
+    expect(summarizeGenerationCosts(currentRunCostInputs(costs, { stages: { author: { status: "failed" } } })).actualUsd).toBe(9);
+    expect(costs.creativeRun.cacheSummary.cost).toBe(9);
+  });
+  it("evaluates SEO evidence separately while keeping original test provenance blocked for release", () => {
+    const config = { pipelineTest: { testOnly: true, profile: "seo-only" }, seoResearch: { version: 1, mode: "researched", publishReady: true } };
+    expect(focusedSeoReadiness(config).allowed).toBe(true);
+    expect(seoResearchReadiness(config).allowed).toBe(false);
+    expect(config.pipelineTest.testOnly).toBe(true);
+    expect(focusedSeoReadiness({ ...config, seoResearch: { version: 1, mode: "context-only", publishReady: false } }).allowed).toBe(false);
+  });
   it("sends developer diagnostic verdict without client approval language or link", async () => {
     let payload: any;
     const report = {
@@ -58,7 +90,7 @@ describe("focused pipeline orchestration", () => {
       to: "developer@example.com",
       from: "sender@example.com",
       key: "test-key",
-      send: async (_url: string, options: any) => {
+      send: async (_url: any, options: any) => {
         payload = JSON.parse(options.body);
         return new Response(JSON.stringify({ id: "mail-123" }), {
           status: 200,
