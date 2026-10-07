@@ -436,6 +436,17 @@ export async function verifyApprovedRoutes({
           for (const form of await page
             .locator("main form.lead-form,main form.launchloom-lead-form")
             .all()) {
+            if ((await form.getAttribute("data-lead-preview")) === "true") {
+              // Developer previews render the authored form for inspection
+              // without a live submission path; it has no lifecycle to verify.
+              forms.push({
+                renderer: "preview",
+                rendering: "pass",
+                delivery: { success: "not_verified", failure: "not_verified" },
+                failures: [],
+              });
+              continue;
+            }
             if (formMode === "mocked" && !runtime.length)
               forms.push(
                 await verifyForm(page, form, config, phase, requests, timeout),

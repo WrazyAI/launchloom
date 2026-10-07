@@ -156,20 +156,17 @@ type LeadFormProps = {
 };
 
 export function LeadForm(props: LeadFormProps) {
-  if (props.runtime?.diagnostic)
-    return (
-      <p className="launchloom-lead-form-note" data-runtime="lead-form-disabled" role="status">
-        Contact forms are disabled in this private design preview.
-      </p>
-    );
-  return <ConfiguredLeadForm {...props} />;
+  return (
+    <ConfiguredLeadForm {...props} preview={Boolean(props.runtime?.diagnostic)} />
+  );
 }
 
 function ConfiguredLeadForm({
   content,
   runtime,
   id = "creative-lead-form",
-}: LeadFormProps) {
+  preview = false,
+}: LeadFormProps & { preview?: boolean }) {
   const [status, setStatus] = useState("");
   const [pending, setPending] = useState(false);
   const initial = useMemo(
@@ -182,8 +179,15 @@ function ConfiguredLeadForm({
       id={id}
       className="launchloom-lead-form"
       data-runtime="lead-form"
+      data-lead-preview={preview ? "true" : undefined}
       onSubmit={(event) => {
         event.preventDefault();
+        if (preview) {
+          setStatus(
+            "Developer preview only: this form is not connected here, so nothing was sent.",
+          );
+          return;
+        }
         setPending(true);
         window.dispatchEvent(new CustomEvent("launchloom:lead-started"));
         const payload = {
@@ -262,6 +266,11 @@ function ConfiguredLeadForm({
       <button type="submit" disabled={pending}>
         {content.hero.primaryLabel}
       </button>
+      {preview && (
+        <small className="launchloom-lead-form-preview" data-runtime="lead-preview-note">
+          Developer preview: this form matches the client site, but submissions are disabled here.
+        </small>
+      )}
       <small role="status">{status || content.copy.formIntro || "We will follow up with the next useful step."}</small>
     </form>
   );
