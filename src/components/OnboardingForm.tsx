@@ -1722,7 +1722,7 @@ export default function OnboardingForm() {
                       ))}
                     </div>
                     <button
-                      className="text-button hours-link"
+                      className="hours-pill hours-expand"
                       type="button"
                       onClick={() => setHoursExpanded(false)}
                     >
@@ -1758,13 +1758,6 @@ export default function OnboardingForm() {
                         </option>
                       ))}
                     </select>
-                    <button
-                      className="text-button hours-link"
-                      type="button"
-                      onClick={() => setHoursExpanded(true)}
-                    >
-                      Set different hours per day
-                    </button>
                     {hoursDays.some((day) => !day.closed) && (
                       <button
                         className="text-button hours-link hours-clear"
@@ -1774,6 +1767,13 @@ export default function OnboardingForm() {
                         Clear
                       </button>
                     )}
+                    <button
+                      className="hours-pill hours-expand"
+                      type="button"
+                      onClick={() => setHoursExpanded(true)}
+                    >
+                      Set different hours per day
+                    </button>
                   </div>
                 )}
                 <input type="hidden" name="hours" value={hoursValue} readOnly />
