@@ -38,6 +38,10 @@ const colorRoles = semanticColorCss(palette) + `
 .split-section :is(a,button):focus-visible {outline:2px solid ${palette.surfaces.brand.focus};outline-offset:3px;}
 `;
 const diagnosticPreview = import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
+// Judge previews render the authored candidate only. Platform chrome such as
+// the floating website-assistant launcher and the exit offer must not appear
+// in the captures that authors and judges score.
+const judgePreview = import.meta.env.PUBLIC_CREATIVE_JUDGE === "true";
 const route = routeInventory.records.find(record => record.path === Astro.url.pathname);
 const noIndex = import.meta.env.PUBLIC_REVIEW_MODE === "true" || diagnosticPreview || route?.discovery.indexable === false;
 // The approved deployment origin is supplied at build time. A domain in the
@@ -86,7 +90,7 @@ const schemaBlocks = (Array.isArray(schemas) ? schemas : []).map((schema) =>
     <title>{title}</title>
   </head>
   <body data-ll-route={Astro.url.pathname} style={bodyVars}>
-    {site.demoNotice && (
+    {site.demoNotice && !judgePreview && (
       <aside class="ll-demo-notice" data-demo-notice role="note" aria-label={site.demoNotice}>
         <strong>{site.demoNotice}</strong>
         <span>This is not a real business or service offering.</span>
@@ -94,8 +98,8 @@ const schemaBlocks = (Array.isArray(schemas) ? schemas : []).map((schema) =>
     )}
     <ReviewBanner diagnosticPreview={diagnosticPreview} />
     <slot />
-    {!diagnosticPreview && <QuickAnswers />}
-    {!diagnosticPreview && <ExitOffer />}
+    {!diagnosticPreview && !judgePreview && <QuickAnswers />}
+    {!diagnosticPreview && !judgePreview && <ExitOffer />}
   </body>
 </html>
 

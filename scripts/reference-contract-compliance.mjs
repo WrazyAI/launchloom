@@ -409,7 +409,14 @@ export function validateReferenceContractCompliance({
     findings.push(finding("css-parse-error", "critical", `Candidate CSS could not be parsed: ${error.message}`));
   }
   const contentPaths = [...outputContentPaths(experienceSource)];
-  for (const token of ["content.hero.image", "content.services", "content.faqs"])
+  // An image-independent reference can function without photography, so the
+  // hero image token is optional there; services and FAQs always flow.
+  const imageIndependent = /without photography|image[- ]independent/iu.test(
+    String(referenceDna?.imageTreatment?.mode || ""),
+  );
+  const requiredOutputTokens = ["content.services", "content.faqs"];
+  if (!imageIndependent) requiredOutputTokens.unshift("content.hero.image");
+  for (const token of requiredOutputTokens)
     if (!contentPaths.some((path) => path === token || path.startsWith(`${token}.`)))
       findings.push(finding("unbound-content-token", "critical", `Required sealed token ${token} does not flow into output.`));
   const visualFindings = findings.filter((item) =>

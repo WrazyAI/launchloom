@@ -40,6 +40,8 @@ export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "- inkColor, mutedColor, and lineColor carry body type, secondary type, and rules.",
   "When the assigned reference's own surface direction conflicts with the client brief, the brief wins on surfaces while the reference keeps its composition, geometry, and hierarchy.",
   "A brand color used as the dominant page surface, or an inverted light/dark direction, fails the palette-adherence gate.",
+  "A bounded generated block marked `launchloom: bounded rendered contrast corrections` may be appended to the candidate stylesheet. It repairs only text backdrops that the deterministic audit cannot prove, using the local role variables, and it is part of the delivered design.",
+  "Preserve that block exactly in later edits: never rewrite it by hand, never duplicate it, and never delete it to resolve a finding. When authoring or repairing flagged text, prefer a real local surface or a clean wrapper over paint the audit cannot prove.",
 ].join("\n");
 
 export const CLIENT_TYPOGRAPHY_CONTRACT = [

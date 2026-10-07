@@ -220,6 +220,40 @@ export default function Experience({ content }) { return <main data-mobile-recom
     ]);
   });
 
+  it("does not require the hero image token when the reference is image-independent", () => {
+    const imageIndependentDna = {
+      ...dna,
+      compositionTopology: {
+        ...(dna.compositionTopology || {}),
+        hero: "type-led-statement",
+      },
+      imageTreatment: {
+        ...(dna.imageTreatment || {}),
+        mode: "proof-led page that can function without photography",
+      },
+    };
+    const withoutHeroImage = validExperience.replace(
+      "<img src={content.hero.image} />",
+      "",
+    );
+    const report = validateReferenceCandidate({
+      referenceDna: imageIndependentDna,
+      experienceSource: withoutHeroImage,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    });
+    expect(
+      report.findings.filter(
+        (item: any) => item.code === "unbound-content-token",
+      ),
+    ).toEqual([]);
+    expect(tokenFindings(withoutHeroImage)).toContainEqual(
+      expect.objectContaining({
+        message: expect.stringContaining("content.hero.image"),
+      }),
+    );
+  });
+
   it("rejects marker values that only contain the expected slug", () => {
     const mismatched = validExperience.replace(
       'data-hero-geometry="typographic-monument"',

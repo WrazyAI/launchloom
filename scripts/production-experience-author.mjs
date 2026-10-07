@@ -1509,6 +1509,7 @@ function isSealedServiceCollectionExpression(
   const bindingPath = bindingPathForName(binding.node.name, node.text);
   if (binding.kind === "parameter")
     return bindingPath?.join(".") === "content.services";
+  if (!(binding.node.parent.flags & ts.NodeFlags.Const)) return false;
   if (bindingPath?.join(".") === "services")
     return (
       ts.isIdentifier(binding.node.initializer) &&
@@ -1554,9 +1555,60 @@ function isSealedServiceSlug(expression, file) {
   return false;
 }
 
+/**
+ * Accept a `something.slug` route segment when the bound variable is
+ * initialized from a sealed service record, such as
+ * `const selectedService = content.services[0]`. Merely mentioning the
+ * collection in an initializer does not establish returned-value provenance.
+ */
+function isSealedServiceSlugBinding(expression, file) {
+  const node = unwrapUrlExpression(expression);
+  if (!node || !ts.isPropertyAccessExpression(node)) return false;
+  if (node.name.text !== "slug") return false;
+  const identifier = node.expression;
+  if (!ts.isIdentifier(identifier)) return false;
+  const binding = visibleBinding(identifier.text, identifier);
+  if (!binding || binding.kind !== "variable" ||
+      !ts.isIdentifier(binding.node.name) ||
+      !(binding.node.parent.flags & ts.NodeFlags.Const) ||
+      !binding.node.initializer)
+    return false;
+  return isSealedServiceRecordExpression(binding.node.initializer, file);
+}
+
+function isSealedServiceRecordExpression(expression, file, seen = new Set()) {
+  const node = unwrapUrlExpression(expression);
+  if (!node) return false;
+  if (ts.isElementAccessExpression(node))
+    return isSealedServiceCollectionExpression(node.expression, file);
+  if (ts.isConditionalExpression(node))
+    return (
+      isSealedServiceRecordExpression(node.whenTrue, file, new Set(seen)) &&
+      isSealedServiceRecordExpression(node.whenFalse, file, new Set(seen))
+    );
+  if (!ts.isIdentifier(node) || seen.has(node.text)) return false;
+  seen.add(node.text);
+  const binding = visibleBinding(node.text, node);
+  if (!binding || binding.kind !== "variable" ||
+      !ts.isIdentifier(binding.node.name) ||
+      !(binding.node.parent.flags & ts.NodeFlags.Const)) return false;
+  return isSealedServiceRecordExpression(binding.node.initializer, file, seen);
+}
+
 function isServiceRouteExpression(expression, file) {
   const node = unwrapUrlExpression(expression);
   if (!node) return false;
+  // Same-page fragment anchors such as `#practice-${service.slug}` cannot
+  // resolve to an external URL, so a fragment expression is acceptable.
+  if (ts.isTemplateExpression(node) && node.head.text.startsWith("#"))
+    return true;
+  if (
+    ts.isBinaryExpression(node) &&
+    node.operatorToken.kind === ts.SyntaxKind.PlusToken &&
+    ts.isStringLiteral(node.left) &&
+    node.left.text.startsWith("#")
+  )
+    return true;
   let valid = false;
   let slugExpression = null;
   if (ts.isTemplateExpression(node))
@@ -1577,7 +1629,14 @@ function isServiceRouteExpression(expression, file) {
       node.right.text === "/";
   if (valid && ts.isBinaryExpression(node) && ts.isBinaryExpression(node.left))
     slugExpression = node.left.right;
-  return valid && isSealedServiceSlug(slugExpression, file);
+  if (!valid || !slugExpression) return false;
+  // The literal /services/ prefix pins the route to this origin; the slug must
+  // still trace to sealed services, either as a sealed map parameter or as a
+  // binding initialized from the sealed service collection.
+  return (
+    isSealedServiceSlug(slugExpression, file) ||
+    isSealedServiceSlugBinding(slugExpression, file)
+  );
 }
 
 function staticSpreadUrlKey(property) {
@@ -2642,10 +2701,19 @@ function validateInnerPageSource({
   const embeddedFact = scalarContentValues(content).find((value) =>
     source.includes(value),
   );
-  if (embeddedFact)
+  if (embeddedFact) {
+    const matchAt = source.indexOf(embeddedFact);
+    const nearby = source
+      .slice(
+        Math.max(0, matchAt - 80),
+        matchAt + embeddedFact.length + 80,
+      )
+      .replace(/\s+/gu, " ")
+      .trim();
     throw new Error(
-      `Candidate ${route.id} ${file} hardcodes sealed content instead of using a token: ${embeddedFact}`,
+      `Candidate ${route.id} ${file} hardcodes sealed content instead of using a token: ${embeddedFact}. Replace that literal with the matching content binding. Nearby source: ${nearby}`,
     );
+  }
 }
 
 /**
@@ -2856,10 +2924,19 @@ function validateExperience(source, route, content, visualBrief = {}) {
   const embeddedFact = scalarContentValues(content).find((value) =>
     source.includes(value),
   );
-  if (embeddedFact)
+  if (embeddedFact) {
+    const matchAt = source.indexOf(embeddedFact);
+    const nearby = source
+      .slice(
+        Math.max(0, matchAt - 80),
+        matchAt + embeddedFact.length + 80,
+      )
+      .replace(/\s+/gu, " ")
+      .trim();
     throw new Error(
-      `Candidate ${route.id} hardcodes sealed content instead of using a token: ${embeddedFact}`,
+      `Candidate ${route.id} hardcodes sealed content instead of using a token: ${embeddedFact}. Replace that literal with the matching content binding. Nearby source: ${nearby}`,
     );
+  }
 }
 
 function validateStyles(source, route, visualBrief = {}) {

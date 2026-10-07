@@ -298,7 +298,7 @@ export function collectContrastTargets({
         (color(ps.backgroundColor)?.[3] > 0 || ps.backgroundImage !== "none")
       );
     });
-  const opaquePlate = (plate) => {
+  const opaquePlateSurface = (plate) => {
     const s = styleFor(plate);
     return (
       color(s.backgroundColor)?.[3] === 1 &&
@@ -325,7 +325,15 @@ export function collectContrastTargets({
     );
   };
   const opaqueRootPlate = (plate) =>
-    opaquePlate(plate) && stackZ(plate) > 0 && rootContext(plate) === plate;
+    opaquePlateSurface(plate) && stackZ(plate) > 0 && rootContext(plate) === plate;
+  // Context creators strictly between an element and a shared ancestor context
+  // govern how that element's paint is ordered inside the ancestor, so paint
+  // order may only be compared directly when neither side has one.
+  const interveningContexts = (el, root) => {
+    for (let p = el.parentElement; p && p !== root; p = p.parentElement)
+      if (createsContext(p)) return true;
+    return false;
+  };
   const roundedFillCovers = (plate, rect) => {
     const box = rectFor(plate),
       s = styleFor(plate);
@@ -416,13 +424,24 @@ export function collectContrastTargets({
       plate && plate !== document.documentElement;
       plate = plate.parentElement
     ) {
-      if (!opaquePlate(plate)) continue;
-      const plateContext = rootContext(plate);
+      if (!opaquePlateSurface(plate)) continue;
       if (
-        ((ownRoundedContour && plate === el) ||
-          roundedFillCovers(plate, rect)) &&
+        !((ownRoundedContour && plate === el) || roundedFillCovers(plate, rect))
+      )
+        continue;
+      const plateContext = rootContext(plate);
+      if (plateContext && stackZ(layerContext) < stackZ(plateContext))
+        return true;
+      // A plate and layer that share the same outermost context, with no
+      // intervening context creators, keep a valid z-order comparison inside
+      // that context even when an ancestor filter, isolation or transform
+      // created it.
+      if (
         plateContext &&
-        stackZ(layerContext) < stackZ(plateContext)
+        plateContext === layerContext &&
+        !interveningContexts(plate, plateContext) &&
+        !interveningContexts(layer, layerContext) &&
+        stackZ(layer) < stackZ(plate)
       )
         return true;
     }
@@ -546,6 +565,26 @@ export function collectContrastTargets({
     };
   };
   const targets = [];
+  // Client palette contract role colors are custom properties, which the
+  // cached computed-style map does not carry. Read them directly and cache
+  // per element so a repair can reuse the local surface/text pair.
+  const roleCache = new Map();
+  const roleHex = (el, name) => {
+    for (let p = el; p; p = p.parentElement) {
+      if (!roleCache.has(p)) {
+        const computed = getComputedStyle(p);
+        roleCache.set(p, {
+          "--ll-surface": String(
+            computed.getPropertyValue("--ll-surface") || "",
+          ).trim(),
+          "--ll-text": String(computed.getPropertyValue("--ll-text") || "").trim(),
+        });
+      }
+      const value = roleCache.get(p)[name];
+      if (value && /^#[0-9a-f]{6}$/iu.test(value)) return value.toLowerCase();
+    }
+    return null;
+  };
   const add = (
     el,
     kind,
@@ -560,6 +599,42 @@ export function collectContrastTargets({
     const s = styleFor(el);
     const rgba = color(foreground);
     if (rgba) rgba[3] *= alpha;
+    // A deterministic plate repair may only paint inside the element's own
+    // box, so it is safe only when no own effect would move, clip or blend
+    // that paint.
+    const plate =
+      kind === "text"
+        ? {
+            plateSurface: roleHex(el, "--ll-surface"),
+            plateText: roleHex(el, "--ll-text"),
+            platePseudo: ["::before", "::after"].some((pseudo) => {
+              const ps = styleFor(el, pseudo);
+              return (
+                ps.content !== "none" &&
+                ps.content !== "normal" &&
+                ps.display !== "none" &&
+                ps.visibility === "visible" &&
+                Number(ps.opacity) > 0 &&
+                (ps.backgroundImage !== "none" ||
+                  (color(ps.backgroundColor)?.[3] ?? 0) > 0)
+              );
+            }),
+            plateSafe:
+              Number(s.opacity) === 1 &&
+              s.mixBlendMode === "normal" &&
+              [
+                s.transform,
+                s.translate,
+                s.rotate,
+                s.scale,
+                s.perspective,
+                s.filter,
+                s.backdropFilter,
+                s.clipPath,
+                s.maskImage,
+              ].every((value) => !value || value === "none"),
+          }
+        : {};
     targets.push({
       paintProperty,
       route,
@@ -570,6 +645,7 @@ export function collectContrastTargets({
       foreground: rgba,
       ...bg,
       minimum,
+      ...plate,
       rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
       fontSize: parseFloat(s.fontSize),
       fontWeight: s.fontWeight,
@@ -748,7 +824,7 @@ export function collectContrastTargets({
         bg.issues.push("inset focus outline overlaps unmeasured border paint");
       if (s.outlineStyle === "none" || parseFloat(s.outlineWidth) === 0)
         bg.issues.push("focus indicator absent or uses unmeasured shadow");
-      add(el, "focus", label, s.outlineColor, bg, 3, rect);
+      add(el, "focus", label, s.outlineColor, bg, 3, rect, 1, "outline-color");
     }
   }
   return targets;

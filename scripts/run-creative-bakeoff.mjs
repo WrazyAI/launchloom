@@ -5,7 +5,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
-import { enforceBuiltContrast } from "./contrast-sweep.mjs";
+import { builtRoutes, enforceBuiltContrast } from "./contrast-sweep.mjs";
 import { chromium } from "playwright";
 import {
   CREATIVE_PROMOTION_THRESHOLDS,
@@ -49,7 +49,13 @@ function run(command, commandArgs, cwd) {
     const child = spawn(command, commandArgs, {
       cwd,
       stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env, PUBLIC_REVIEW_MODE: "true" },
+      // Judge builds must show the authored candidate, not platform chrome
+      // such as the floating website-assistant launcher and the exit offer.
+      env: {
+        ...process.env,
+        PUBLIC_REVIEW_MODE: "true",
+        PUBLIC_CREATIVE_JUDGE: "true",
+      },
     });
     const tails = { stdout: "", stderr: "" };
     const appendTail = (key, chunk) => {
@@ -753,9 +759,23 @@ export async function runCreativeBakeoff({
           preview: true,
         });
         await run("npm", ["run", "build"], root);
+        // Only the pages a creative candidate actually styles can carry its
+        // corrections: the homepage and the authored service, service-index,
+        // and location pages. Deterministic routes (contact, about, blog)
+        // never load the candidate stylesheet, so auditing them would block
+        // every candidate on findings no repair can reach.
+        const authored = (
+          await builtRoutes(path.join(root, "dist"))
+        ).filter(
+          (route) =>
+            route === "/" ||
+            route.startsWith("/services/") ||
+            route.startsWith("/locations/"),
+        );
         candidateResult.contrast = await enforceBuiltContrast({
           dist: path.join(root, "dist"),
           browser,
+          routes: authored.length ? authored : null,
           stylesPath: path.join(
             candidateRoot,
             candidate.directory,
@@ -770,6 +790,7 @@ export async function runCreativeBakeoff({
             `${candidate.manifest.candidateId}-contrast.json`,
           ),
           repair: allowContrastRepair,
+          plates: allowContrastRepair,
           build: () => run("npm", ["run", "build"], root),
         });
         if (!candidateResult.contrast.pass)
@@ -1407,7 +1428,7 @@ export async function runCreativeBakeoff({
       distinctCandidateIds,
       summary: visualDiversity.summary || "",
     };
-    if (requireDiversity && eligibleIds.length < 2) {
+    if (requireDiversity && eligibleIds.length === 0) {
       previewSelectionPool = [];
       previewDiversity = {
         ...previewDiversity,
@@ -1425,6 +1446,18 @@ export async function runCreativeBakeoff({
         pass: false,
         strategy: "generic-fallback-blocked",
         convergenceDetected: true,
+      };
+    } else if (requireDiversity && eligibleIds.length === 1) {
+      // Graded promotion (approved 2026-10-02): a single eligible candidate
+      // has no eligible sibling to converge with, so it may proceed to
+      // developer review. The generic-fallback block above still applies, and
+      // two or more eligible candidates still require distinct rendered
+      // grammar before one can be selected.
+      previewSelectionPool = versionTwoPreviewEligible;
+      previewDiversity = {
+        ...previewDiversity,
+        pass: true,
+        strategy: "single-eligible",
       };
     } else if (requireDiversity && allEligiblePairsPass) {
       previewSelectionPool = versionTwoPreviewEligible;
