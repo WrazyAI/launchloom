@@ -151,9 +151,12 @@ An optional second accent color is contrast-repaired by `resolvePalette`
 (`accentTextColor` readable on the page surface, `accentContrastColor`
 readable on the fill) and is limited to secondary marks such as kickers,
 underlines, and small highlights; it never replaces the primary action or
-carries a large surface. Revisions may add, change, or explicitly clear the
-accent (`role: "accent"` in structured colors); unrelated palette revisions
-preserve a configured accent, and font choices survive palette-only revisions.
+carries a large surface. Accent marks are re-derived per surface (page,
+hero, brand, dark bands, and the light pack and inner bands) so a light
+accent stays readable wherever it lands. Revisions may add, change, or
+explicitly clear the accent (`role: "accent"` in structured colors);
+unrelated palette revisions preserve a configured accent, and font choices
+survive palette-only revisions.
 
 ## Lead forms and delivery
 

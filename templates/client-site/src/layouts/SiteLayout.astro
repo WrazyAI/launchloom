@@ -29,6 +29,12 @@ const bodyVars = [
         `--accent:${palette.accentColor}`,
         `--accent-ink:${palette.accentTextColor || palette.accentColor}`,
         `--on-accent:${palette.accentContrastColor || "#ffffff"}`,
+        `--ll-accent:${palette.accentMarkColor}`,
+        `--ll-accent-text:${palette.accentTextColor}`,
+        `--ll-accent-text-on-hero:${palette.accentTextHero}`,
+        `--ll-accent-text-on-brand:${palette.accentTextBrand}`,
+        `--ll-accent-text-on-dark:${palette.accentTextDark}`,
+        `--ll-accent-text-on-light-band:${palette.accentTextLightBand}`,
       ]
     : []),
 ].join(";");
