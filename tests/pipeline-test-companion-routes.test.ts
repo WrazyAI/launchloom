@@ -21,6 +21,19 @@ it.each(["seo-only", "creative-only", "full"])(
       });
       await fs.symlink(path.join(repository, "node_modules"), path.join(root, "node_modules"), "dir");
       const config: any = pageBriefFixture("local-trades");
+      config.design.recipe = "general-editorial";
+      config.design.treatment = {
+        density: "spacious",
+        typography: "soft-sans",
+      };
+      config.business.primaryCta = "Request a planning conversation";
+      config.business.phone = "(919) 555-0147";
+      delete config.pageContent["about:"];
+      config.copy = {
+        ...config.copy,
+        aboutKicker: "About the practice",
+        aboutHeading: "Unhurried Conversations, Everyday Language",
+      };
       config.design.experience = {
         renderer: "creative-candidate", candidateId: "synthetic-companions",
         familyId: "synthetic", servicesIndex: true, servicePage: true, locationPage: true,
@@ -95,6 +108,37 @@ it.each(["seo-only", "creative-only", "full"])(
           await page.screenshot({ path: path.join(evidence, `${profile}-${routePath.replaceAll("/", "-")}-${viewport.width}.png`), fullPage: true });
           await page.close();
         }
+      }
+
+      const aboutPage = await browser.newPage({
+        viewport: { width: 390, height: 844 },
+      });
+      try {
+        await aboutPage.goto(server.origin + "/about/", {
+          waitUntil: "networkidle",
+        });
+        const actionLayout = await aboutPage.evaluate(() => {
+          const primary = document.querySelector<HTMLElement>(
+            ".inner-hero .hero-actions .cta",
+          );
+          const phone = document.querySelector<HTMLElement>(
+            ".inner-hero .hero-actions .call-link",
+          );
+          if (!primary || !phone) return null;
+          return {
+            horizontalOverflow:
+              document.documentElement.scrollWidth > innerWidth + 1,
+            phoneBelowPrimary:
+              phone.getBoundingClientRect().top >=
+              primary.getBoundingClientRect().bottom - 1,
+          };
+        });
+        expect(actionLayout).toEqual({
+          horizontalOverflow: false,
+          phoneBelowPrimary: true,
+        });
+      } finally {
+        await aboutPage.close();
       }
     } finally {
       await browser?.close();
