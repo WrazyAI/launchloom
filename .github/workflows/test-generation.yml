@@ -1,0 +1,80 @@
+name: Focused generation test
+
+on:
+  workflow_call:
+    inputs:
+      issue:
+        required: true
+        type: string
+      test_profile:
+        required: true
+        type: string
+      candidate_repository:
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: focused-generation-${{ inputs.issue }}-${{ inputs.test_profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  focused:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+      FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}
+      DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN }}
+      DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
+      GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+      TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY || secrets.JEV_API_KEY }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
+      LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
+      CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL == 'openai/gpt-5.6-luna' && 'openai/gpt-6-luna' || vars.CREATIVE_EXPERIENCE_MODEL || 'openai/gpt-6-luna' }}
+      CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'xhigh' }}
+      REASONING_PREFLIGHT_MODE: ${{ vars.REASONING_PREFLIGHT_MODE || 'shadow' }}
+      REASONING_PREFLIGHT_MODEL: ${{ vars.REASONING_PREFLIGHT_MODEL || 'jev-1.13.0' }}
+      SEO_RESEARCH_MAX_TASKS: ${{ vars.SEO_RESEARCH_MAX_TASKS || '16' }}
+      SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.25' }}
+      SEO_FALLBACK_MAX_QUERIES: ${{ vars.SEO_FALLBACK_MAX_QUERIES || '3' }}
+      SEO_FALLBACK_MAX_USD: ${{ vars.SEO_FALLBACK_MAX_USD || '0.05' }}
+      SEO_FALLBACK_SEARCH_MODEL: ${{ vars.SEO_FALLBACK_SEARCH_MODEL || 'openai/gpt-6-luna' }}
+      RUNNER_USD_PER_MINUTE: ${{ vars.RUNNER_USD_PER_MINUTE }}
+      PUBLIC_REVIEW_MODE: "true"
+      LAUNCHLOOM_READ_ONLY_HISTORY: "true"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install rendered acceptance browser
+        run: npx playwright install --with-deps chromium
+      - name: Configure private QA repository authentication
+        run: gh auth setup-git
+      - name: Run focused profile
+        env:
+          TEST_ISSUE: ${{ inputs.issue }}
+          TEST_PROFILE: ${{ inputs.test_profile }}
+          CANDIDATE_REPOSITORY: ${{ inputs.candidate_repository }}
+        run: |
+          ARGS=(--issue "$TEST_ISSUE" --test-profile "$TEST_PROFILE")
+          if [ -n "$CANDIDATE_REPOSITORY" ]; then
+            ARGS+=(--candidate-repository "$CANDIDATE_REPOSITORY")
+          fi
+          node scripts/run-pipeline-test.mjs "${ARGS[@]}"
+      # Evidence belongs in the isolated private QA repository. Never upload
+      # intake, model responses, screenshots or reports to public artifacts.
