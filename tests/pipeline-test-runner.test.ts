@@ -12,6 +12,7 @@ import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readi
 import { summarizeGenerationCosts } from "../scripts/generation-cost-summary.mjs";
 
 const input = {
+  eventName: "workflow_dispatch",
   profile: "seo-only",
   issue: "152",
   sourceSha: "a".repeat(40),
