@@ -149,7 +149,8 @@ it.each(["seo-only", "creative-only", "full"])(
             await page.locator('meta[name="robots"]').getAttribute("content"),
           ).toBe("noindex, nofollow");
           expect(await page.locator('link[rel="canonical"]').count()).toBe(0);
-          expect(html).not.toContain("synthetic-active-token");
+        expect(html).not.toContain("synthetic-active-token");
+        expect(await page.locator("form.lead-form").getAttribute("data-lead-preview")).toBe("true");
         } else {
           expect(await banner.count()).toBe(0);
           expect(await page.locator('link[rel="canonical"]').count()).toBe(1);

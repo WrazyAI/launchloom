@@ -35,6 +35,7 @@ const privacyHref = config.privacyHref || "";
 <form
   class:list={["lead-form", guided && "lead-form--guided"]}
   id={id}
+  data-lead-preview={testPreview ? "true" : undefined}
   data-guided={String(guided)}
   data-conversion-feature={guided ? "guided-qualifier" : undefined}
   data-step-count={String(stepCount)}
