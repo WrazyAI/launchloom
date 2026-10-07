@@ -768,6 +768,8 @@ export default function Experience`,
     `const selectedService = content.services[0]; const aliasService = selectedService; aliasService.slug = "invented-route";`,
     `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); const assign = Object.assign; assign(selectedService, { slug: "invented-route" });`,
     `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); const assign = Object["assign"]; assign(selectedService, { slug: "invented-route" });`,
+    `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); const { assign } = Object; assign(selectedService, { slug: "invented-route" });`,
+    `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); const { ["assign"]: assign } = Object; assign(selectedService, { slug: "invented-route" });`,
     `const selectedService = content.services.find((item) => { item.slug = "invented-route"; return true; });`,
   ])("rejects service links after sealed provenance is mutated: %s", (setup) => {
     const route = { id: "route-mutated-service-provenance" };

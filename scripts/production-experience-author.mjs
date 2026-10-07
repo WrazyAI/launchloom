@@ -1300,10 +1300,25 @@ function isBindingMutated(bindingNode, file) {
     if (
       !binding ||
       binding.kind !== "variable" ||
-      !ts.isIdentifier(binding.node.name) ||
       !(binding.node.parent.flags & ts.NodeFlags.Const)
     )
       return false;
+    const bindingPath = bindingPathForName(
+      binding.node.name,
+      callee.text,
+    )?.join(".");
+    const initializer = unwrapUrlExpression(binding.node.initializer);
+    if (
+      bindingPath &&
+      initializer &&
+      ts.isIdentifier(initializer) &&
+      ((initializer.text === "Object" &&
+        ["assign", "defineProperty", "setPrototypeOf"].includes(
+          bindingPath,
+        )) ||
+        (initializer.text === "Reflect" && bindingPath === "set"))
+    )
+      return true;
     return isKnownMutatorCallee(binding.node.initializer, seen);
   };
   const visit = (node) => {
@@ -1583,7 +1598,10 @@ function bindingPathForName(bindingName, name, prefix = []) {
     if (element.dotDotDotToken || ts.isOmittedExpression(element)) continue;
     const property = element.propertyName || element.name;
     const propertyName =
-      ts.isIdentifier(property) || ts.isStringLiteral(property)
+      ts.isComputedPropertyName(property) &&
+      ts.isStringLiteral(property.expression)
+        ? property.expression.text
+        : ts.isIdentifier(property) || ts.isStringLiteral(property)
         ? property.text
         : null;
     if (!propertyName) continue;
