@@ -797,9 +797,28 @@ button {
 }
 .hours-link {
   font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .hours-clear {
   color: var(--muted);
+}
+.hours-pill {
+  border: 1px solid #205d51;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #fff;
+  color: #205d51;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+.hours-pill:hover {
+  background: color-mix(in srgb, #205d51 8%, white);
+}
+.hours-expand {
+  margin-left: auto;
 }
 .hours-manual-link {
   justify-self: start;
