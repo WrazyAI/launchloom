@@ -64,6 +64,15 @@ const page = await browser.newPage({
 });
 const failures = [];
 
+async function waitForInputValue(locator, expected, timeout = 5000) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    if ((await locator.inputValue()) === expected) return true;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  return false;
+}
+
 try {
   await fs.mkdir(screenshotDir, { recursive: true });
   await page.goto(`${origin}/onboard/`, { waitUntil: "networkidle" });
@@ -225,7 +234,7 @@ try {
   const addressQuery = page.locator("#address-query");
   await addressQuery.fill("100 Test Street");
   await page.getByRole("option", { name: /100 Test Street/ }).click();
-  if ((await page.locator('[name="address"]').inputValue()) !== "100 Test Street, Charleston, SC 29401, USA")
+  if (!(await waitForInputValue(page.locator('[name="address"]'), "100 Test Street, Charleston, SC 29401, USA")))
     failures.push("Selecting an address suggestion did not store the verified formatted address.");
   if ((await page.locator('[name="serviceAreas"]').inputValue()) !== "Charleston, SC")
     failures.push("The main service city was not prefilled from the selected street address.");
@@ -234,18 +243,27 @@ try {
     failures.push("Manual address entry was not preserved when no suggestion was selected.");
   await page.locator('[name="addressVisibility"]').selectOption("private");
 
-  // Hours picker: preset, reversed-time validation, time zone, grouped value.
-  await page.getByRole("button", { name: "Weekdays 9-5" }).click();
-  await page.getByLabel("Monday opening time").selectOption("17:00");
-  await page.getByLabel("Monday closing time").selectOption("09:00");
+  // Hours picker: day chips, shared times, reversed-time validation, time zone.
+  for (const day of ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
+    await page.getByRole("button", { name: day, exact: true }).click();
+  await page.getByLabel("Opening time").selectOption("17:00");
+  await page.getByLabel("Closing time").selectOption("09:00");
   await page.getByRole("button", { name: "Continue" }).click();
   if (!(await page.locator(".form-message.error").isVisible()))
     failures.push("Reversed business hours did not show a clear validation error.");
-  await page.getByLabel("Monday opening time").selectOption("09:00");
-  await page.getByLabel("Monday closing time").selectOption("17:00");
+  await page.getByLabel("Opening time").selectOption("09:00");
+  await page.getByLabel("Closing time").selectOption("17:00");
   await page.locator("#hours-time-zone").selectOption("ET");
-  if ((await page.locator('[name="hours"]').inputValue()) !== "Mon-Fri: 9:00 AM - 5:00 PM ET")
+  if (!(await waitForInputValue(page.locator('[name="hours"]'), "Mon-Fri: 9:00 AM - 5:00 PM ET")))
     failures.push("The hours picker did not build the expected grouped hours string.");
+  await page.getByRole("button", { name: "Set different hours per day" }).click();
+  await page.getByLabel("Monday opening time").selectOption("10:00");
+  if (!(await waitForInputValue(page.locator('[name="hours"]'), "Mon: 10:00 AM - 5:00 PM ET; Tue-Fri: 9:00 AM - 5:00 PM ET")))
+    failures.push("Per-day hours editing did not update the grouped hours string.");
+  await page.getByLabel("Monday opening time").selectOption("09:00");
+  await page.getByRole("button", { name: "Use the same hours for every day" }).click();
+  if (!(await page.getByRole("button", { name: "Set different hours per day" }).isVisible()))
+    failures.push("Collapsing the per-day editor did not restore the compact hours control.");
   await page.locator('[name="researchLanguageCode"]').selectOption("es");
   await page.screenshot({
     path: path.join(screenshotDir, "simplified-business-desktop.png"),
@@ -272,8 +290,14 @@ try {
   const serviceEntry = page.getByRole("textbox", { name: "Add a core service" });
   if (!(await serviceEntry.evaluate((element) => element.required)))
     failures.push("The service picker does not require at least one confirmed service.");
+  if (await page.locator(".suggested-services").count())
+    failures.push("The suggestion panel is visible before requesting suggestions.");
+  await page.screenshot({
+    path: path.join(screenshotDir, "simplified-services-button-desktop.png"),
+    fullPage: true,
+  });
   await page.getByRole("button", { name: "Suggest services from my listing" }).click();
-  await page.getByText("Choose any suggested services you offer").waitFor();
+  await page.locator(".suggested-services").waitFor();
   if (await services.inputValue())
     failures.push("Model suggestions were silently added as confirmed services.");
   await page.getByLabel("Exterior painting", { exact: true }).check();

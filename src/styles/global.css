@@ -275,15 +275,14 @@ button {
   display: grid;
   justify-items: start;
   gap: 10px;
-  padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--paper) 55%, white);
 }
 .service-suggestion-box > p {
   margin: 0;
   color: var(--muted);
   line-height: 1.5;
+}
+.suggestion-status {
+  font-size: 0.88rem;
 }
 .suggested-services {
   width: 100%;
@@ -741,34 +740,69 @@ button {
 .hours-picker p {
   margin: 0;
 }
-.hours-manual-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #304c43;
-}
-.hours-toolbar {
+.hours-days-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
-  align-items: end;
+  gap: 10px;
+  align-items: center;
   justify-content: space-between;
 }
-.hours-zone {
-  display: grid;
-  gap: 7px;
-  font-size: 0.78rem;
-  font-weight: 750;
-  color: #304c43;
-  min-width: 220px;
+.hours-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
-.hours-presets {
+.hours-day {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #fff;
+  color: #304c43;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.hours-day:hover {
+  border-color: #205d51;
+}
+.hours-day.is-active {
+  background: #205d51;
+  border-color: #205d51;
+  color: #fffef9;
+}
+.hours-zone-select,
+.hours-shared-row select {
+  border: 1px solid #cfd8cf;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+}
+.hours-picker .hours-zone-select {
+  width: auto;
+  flex: 0 0 auto;
+  min-width: 210px;
+}
+.hours-shared-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+}
+.hours-shared-row select {
+  flex: 1 1 130px;
+  max-width: 200px;
+}
+.hours-link {
+  font-size: 0.85rem;
+}
+.hours-clear {
+  color: var(--muted);
+}
+.hours-manual-link {
+  justify-self: start;
 }
 .hours-grid {
   display: grid;
@@ -794,8 +828,7 @@ button {
   font-weight: 650;
   color: #304c43;
 }
-.hours-closed input[type="checkbox"],
-.hours-manual-toggle input[type="checkbox"] {
+.hours-closed input[type="checkbox"] {
   flex: 0 0 18px;
   width: 18px;
   height: 18px;
@@ -824,6 +857,10 @@ button {
 @media (max-width: 720px) {
   .address-state-row {
     grid-template-columns: 1fr;
+  }
+  .hours-picker .hours-zone-select {
+    width: 100%;
+    min-width: 0;
   }
   .hours-row {
     grid-template-columns: minmax(120px, 1fr) minmax(0, 1fr);

@@ -344,6 +344,8 @@ export default function OnboardingForm() {
   const [hoursTimeZone, setHoursTimeZone] = useState("");
   const [hoursManualMode, setHoursManualMode] = useState(false);
   const [hoursManual, setHoursManual] = useState("");
+  const [hoursExpanded, setHoursExpanded] = useState(false);
+  const [hoursShared, setHoursShared] = useState({ open: "09:00", close: "17:00" });
   const addressBoxRef = useRef<HTMLDivElement | null>(null);
   const addressInputRef = useRef<HTMLInputElement | null>(null);
   const addressRequestRef = useRef(0);
@@ -584,14 +586,26 @@ export default function OnboardingForm() {
     setError("");
   }
 
-  function applyHoursPreset(keys: string[], open: string, close: string) {
+  function toggleHoursDay(index: number) {
     setHoursDays((current) =>
-      current.map((day) => ({
-        ...day,
-        closed: !keys.includes(day.key),
-        open,
-        close,
-      })),
+      current.map((day, position) => {
+        if (position !== index) return day;
+        if (!day.closed) return { ...day, closed: true };
+        return {
+          ...day,
+          closed: false,
+          open: hoursShared.open,
+          close: hoursShared.close,
+        };
+      }),
+    );
+    setError("");
+  }
+
+  function setSharedHours(patch: Partial<{ open: string; close: string }>) {
+    setHoursShared((current) => ({ ...current, ...patch }));
+    setHoursDays((current) =>
+      current.map((day) => (day.closed ? day : { ...day, ...patch })),
     );
     setError("");
   }
@@ -1605,21 +1619,6 @@ export default function OnboardingForm() {
           </label>
           <div className="field full hours-picker">
             <span className="field-label">Business hours, if confirmed</span>
-            <p className="form-note">
-              Set the days and times customers can visit or call. Leave every
-              day closed if your hours are not confirmed yet; we never guess
-              hours.
-            </p>
-            <label className="hours-manual-toggle">
-              <input
-                type="checkbox"
-                checked={hoursManualMode}
-                onChange={(event) =>
-                  setHoursManualMode(event.currentTarget.checked)
-                }
-              />
-              Type hours manually instead
-            </label>
             {hoursManualMode ? (
               <input
                 name="hours"
@@ -1629,127 +1628,166 @@ export default function OnboardingForm() {
               />
             ) : (
               <>
-                <div className="hours-toolbar">
-                  <label className="hours-zone">
-                    Time zone
-                    <select
-                      id="hours-time-zone"
-                      value={hoursTimeZone}
-                      onChange={(event) => {
-                        timeZoneTouchedRef.current = true;
-                        setHoursTimeZone(event.currentTarget.value);
-                      }}
+                <div className="hours-days-row">
+                  <div className="hours-days" role="group" aria-label="Days open">
+                    {hoursDays.map((day, index) => (
+                      <button
+                        key={day.key}
+                        type="button"
+                        className={`hours-day${day.closed ? "" : " is-active"}`}
+                        aria-label={day.label}
+                        aria-pressed={!day.closed}
+                        onClick={() => toggleHoursDay(index)}
+                      >
+                        {day.label.slice(0, 3)}
+                      </button>
+                    ))}
+                  </div>
+                  <select
+                    id="hours-time-zone"
+                    className="hours-zone-select"
+                    aria-label="Time zone"
+                    value={hoursTimeZone}
+                    onChange={(event) => {
+                      timeZoneTouchedRef.current = true;
+                      setHoursTimeZone(event.currentTarget.value);
+                    }}
+                  >
+                    <option value="">Time zone</option>
+                    {US_TIME_ZONES.map((zone) => (
+                      <option key={zone.id} value={zone.id}>
+                        {zone.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {hoursExpanded ? (
+                  <>
+                    <div
+                      className="hours-grid"
+                      role="group"
+                      aria-label="Business hours by day"
                     >
-                      <option value="">Select time zone</option>
-                      {US_TIME_ZONES.map((zone) => (
-                        <option key={zone.id} value={zone.id}>
-                          {zone.label}
+                      {hoursDays.map((day, index) => (
+                        <div
+                          className={`hours-row${day.closed ? " is-closed" : ""}`}
+                          key={day.key}
+                        >
+                          <label className="hours-closed">
+                            <input
+                              type="checkbox"
+                              checked={!day.closed}
+                              onChange={(event) =>
+                                updateHoursDay(index, {
+                                  closed: !event.currentTarget.checked,
+                                })
+                              }
+                            />
+                            <span>{day.label}</span>
+                          </label>
+                          <select
+                            aria-label={`${day.label} opening time`}
+                            value={day.open}
+                            disabled={day.closed}
+                            onChange={(event) =>
+                              updateHoursDay(index, {
+                                open: event.currentTarget.value,
+                              })
+                            }
+                          >
+                            {TIME_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <span className="hours-sep">to</span>
+                          <select
+                            aria-label={`${day.label} closing time`}
+                            value={day.close}
+                            disabled={day.closed}
+                            onChange={(event) =>
+                              updateHoursDay(index, {
+                                close: event.currentTarget.value,
+                              })
+                            }
+                          >
+                            {TIME_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      className="text-button hours-link"
+                      type="button"
+                      onClick={() => setHoursExpanded(false)}
+                    >
+                      Use the same hours for every day
+                    </button>
+                  </>
+                ) : (
+                  <div className="hours-shared-row">
+                    <select
+                      aria-label="Opening time"
+                      value={hoursShared.open}
+                      onChange={(event) =>
+                        setSharedHours({ open: event.currentTarget.value })
+                      }
+                    >
+                      {TIME_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
                         </option>
                       ))}
                     </select>
-                  </label>
-                  <div className="hours-presets">
-                    <button
-                      type="button"
-                      className="button secondary small"
-                      onClick={() =>
-                        applyHoursPreset(
-                          ["mon", "tue", "wed", "thu", "fri"],
-                          "09:00",
-                          "17:00",
-                        )
+                    <span className="hours-sep">to</span>
+                    <select
+                      aria-label="Closing time"
+                      value={hoursShared.close}
+                      onChange={(event) =>
+                        setSharedHours({ close: event.currentTarget.value })
                       }
                     >
-                      Weekdays 9-5
-                    </button>
+                      {TIME_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                     <button
+                      className="text-button hours-link"
                       type="button"
-                      className="button secondary small"
-                      onClick={() =>
-                        applyHoursPreset(
-                          ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
-                          "09:00",
-                          "17:00",
-                        )
-                      }
+                      onClick={() => setHoursExpanded(true)}
                     >
-                      Every day 9-5
+                      Set different hours per day
                     </button>
-                    <button
-                      type="button"
-                      className="text-button"
-                      onClick={clearHours}
-                    >
-                      Clear hours
-                    </button>
+                    {hoursDays.some((day) => !day.closed) && (
+                      <button
+                        className="text-button hours-link hours-clear"
+                        type="button"
+                        onClick={clearHours}
+                      >
+                        Clear
+                      </button>
+                    )}
                   </div>
-                </div>
-                <div
-                  className="hours-grid"
-                  role="group"
-                  aria-label="Business hours by day"
-                >
-                  {hoursDays.map((day, index) => (
-                    <div
-                      className={`hours-row${day.closed ? " is-closed" : ""}`}
-                      key={day.key}
-                    >
-                      <label className="hours-closed">
-                        <input
-                          type="checkbox"
-                          checked={!day.closed}
-                          onChange={(event) =>
-                            updateHoursDay(index, {
-                              closed: !event.currentTarget.checked,
-                            })
-                          }
-                        />
-                        <span>{day.label}</span>
-                      </label>
-                      <select
-                        aria-label={`${day.label} opening time`}
-                        value={day.open}
-                        disabled={day.closed}
-                        onChange={(event) =>
-                          updateHoursDay(index, {
-                            open: event.currentTarget.value,
-                          })
-                        }
-                      >
-                        {TIME_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      <span className="hours-sep">to</span>
-                      <select
-                        aria-label={`${day.label} closing time`}
-                        value={day.close}
-                        disabled={day.closed}
-                        onChange={(event) =>
-                          updateHoursDay(index, {
-                            close: event.currentTarget.value,
-                          })
-                        }
-                      >
-                        {TIME_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
-                </div>
-                <input type="hidden" name="hours" value={hoursValue} readOnly />
-                {hoursValue && (
-                  <p className="field-note" role="status">
-                    Saved hours: {hoursValue}
-                  </p>
                 )}
+                <input type="hidden" name="hours" value={hoursValue} readOnly />
               </>
             )}
+            <button
+              className="text-button hours-link hours-manual-link"
+              type="button"
+              onClick={() => setHoursManualMode((current) => !current)}
+            >
+              {hoursManualMode
+                ? "Use the hours picker instead"
+                : "Type hours manually instead"}
+            </button>
           </div>
           <label className="field">
             Customer search language
@@ -1779,10 +1817,7 @@ export default function OnboardingForm() {
       >
         <span className="eyebrow">Your services and area</span>
         <h1>What should customers find you for?</h1>
-        <p>
-          Tell us what you actually offer and where you work. We&apos;ll learn
-          about the local market and plan the website after you submit.
-        </p>
+        <p>Tell us what you offer and where you work.</p>
         <div className="field-grid">
           <div className="field full service-picker">
             <label htmlFor="service-entry">
@@ -1790,7 +1825,7 @@ export default function OnboardingForm() {
             </label>
             <input type="hidden" name="services" value={servicesValue} />
             <div className="service-chips" role="list" aria-label="Confirmed services">
-              {selectedServices.length ? selectedServices.map((service) => (
+              {selectedServices.map((service) => (
                 <span className="service-chip" role="listitem" key={service}>
                   <span>{service}</span>
                   <button
@@ -1801,7 +1836,7 @@ export default function OnboardingForm() {
                     <span aria-hidden="true">×</span>
                   </button>
                 </span>
-              )) : <span className="service-chips-empty">Your confirmed services will appear here.</span>}
+              ))}
             </div>
             <div className="service-entry-row">
               <input
@@ -1835,18 +1870,21 @@ export default function OnboardingForm() {
               </button>
             </div>
             <small id="service-picker-help">
-              {selectedServices.length} of {MAX_INTAKE_SERVICES} selected. Three to five is a good target; put the most important first.
+              {selectedServices.length} of {MAX_INTAKE_SERVICES} selected. Most important first.
             </small>
           </div>
           <div className="service-suggestion-box field full">
             <button className="button secondary" type="button" onClick={suggestServices} disabled={suggestingServices}>
               {suggestingServices ? "Looking at your business details…" : "Suggest services from my listing"}
             </button>
-            <p className="form-note">Suggestions are not added unless you select them. Confirm that each one is a service you actually offer.</p>
-            {suggestionMessage && <p role="status">{suggestionMessage}</p>}
+            {suggestionMessage && (
+              <p className="suggestion-status" role="status">
+                {suggestionMessage}
+              </p>
+            )}
             {suggestedServices.length > 0 && (
               <fieldset className="suggested-services">
-                <legend>Choose any suggested services you offer</legend>
+                <legend>Suggested services</legend>
                 {selectedServices.length >= MAX_INTAKE_SERVICES && (
                   <p className="suggested-limit" role="status">
                     You already have five services. Remove one above to add a
