@@ -118,7 +118,7 @@
 .xp-folio__eyebrow,
 .xp-folio__services header > p,
 .xp-folio__faqs header > p {
-  color: var(--folio-brass);
+  color: var(--ll-accent-text-on-dark, var(--folio-brass));
   font-size: 0.66rem;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -128,7 +128,7 @@
 .xp-folio__hero > h1 {
   max-width: 13ch;
   margin: 1rem 0 clamp(2.5rem, 7vw, 6rem);
-  font: 400 clamp(4.6rem, 12vw, 12.5rem)/0.76 Georgia, serif;
+  font: 400 clamp(4.6rem, 12vw, 12.5rem)/0.76 var(--font-heading, Georgia, serif);
   letter-spacing: -0.075em;
 }
 
@@ -185,7 +185,7 @@
   place-items: center;
   border: 1px solid rgb(255 255 255 / 18%);
   color: var(--folio-brass);
-  font: 400 clamp(2rem, 6vw, 7rem)/1 Georgia, serif;
+  font: 400 clamp(2rem, 6vw, 7rem)/1 var(--font-heading, Georgia, serif);
 }
 
 .xp-folio__ribbon {
@@ -210,6 +210,9 @@
 .xp-folio__contact {
   padding: clamp(5rem, 9vw, 9rem) 6vw;
 }
+.xp-folio__contact .lead-form .kicker {
+  color: var(--ll-accent-text-on-dark, var(--folio-paper));
+}
 
 .xp-folio__services > header,
 .xp-folio__faqs > header {
@@ -227,7 +230,7 @@
 .xp-folio__contact h2 {
   max-width: 12ch;
   margin: 0;
-  font: 400 clamp(3rem, 6.8vw, 7.5rem)/0.88 Georgia, serif;
+  font: 400 clamp(3rem, 6.8vw, 7.5rem)/0.88 var(--font-heading, Georgia, serif);
   letter-spacing: -0.06em;
 }
 
@@ -260,7 +263,7 @@
 }
 
 .xp-folio__coverage .xp-folio__eyebrow {
-  color: var(--on-brand-surface);
+  color: var(--ll-accent-text-on-brand, var(--on-brand-surface));
 }
 
 .xp-folio__coverage > div > p:last-child {
@@ -286,7 +289,7 @@
 
 .xp-folio__service-index h3 {
   margin: 0;
-  font: 400 clamp(1.7rem, 3.2vw, 3.5rem)/0.95 Georgia, serif;
+  font: 400 clamp(1.7rem, 3.2vw, 3.5rem)/0.95 var(--font-heading, Georgia, serif);
 }
 
 .xp-folio__service-index p {
@@ -335,7 +338,7 @@
   margin: 0;
   padding: 2rem 3vw;
   border-right: 1px solid rgb(255 255 255 / 22%);
-  font: 400 clamp(1.2rem, 2vw, 2rem)/1.1 Georgia, serif;
+  font: 400 clamp(1.2rem, 2vw, 2rem)/1.1 var(--font-heading, Georgia, serif);
 }
 
 .xp-folio__faqs > div {
@@ -458,7 +461,7 @@
 
 .xp-guide__eyebrow {
   margin-bottom: 1rem;
-  color: var(--guide-accent);
+  color: var(--ll-accent-text-on-light-band, var(--guide-accent));
   font-size: 0.68rem;
   font-weight: 850;
   letter-spacing: 0.16em;
@@ -473,7 +476,7 @@
 .xp-guide__faqs h2,
 .xp-guide__contact h2 {
   margin: 0 0 1.5rem;
-  font: 400 clamp(3.5rem, 6.8vw, 7.2rem)/0.9 Georgia, serif;
+  font: 400 clamp(3.5rem, 6.8vw, 7.2rem)/0.9 var(--font-heading, Georgia, serif);
   letter-spacing: -0.065em;
 }
 
@@ -522,7 +525,7 @@
   place-items: center;
   border-radius: 12rem 12rem 1rem 1rem;
   background: var(--guide-mist);
-  font: 400 3rem/1 Georgia, serif;
+  font: 400 3rem/1 var(--font-heading, Georgia, serif);
 }
 
 .xp-guide__qualifier {
@@ -571,12 +574,12 @@
   height: 0.75rem;
   margin-bottom: auto;
   border-radius: 50%;
-  background: var(--brand);
+  background: var(--ll-accent, var(--brand));
 }
 
 .xp-guide__services h3 {
   margin: 5rem 0 1rem;
-  font: 400 clamp(1.8rem, 3vw, 3rem)/1 Georgia, serif;
+  font: 400 clamp(1.8rem, 3vw, 3rem)/1 var(--font-heading, Georgia, serif);
 }
 
 .xp-guide__services article p {
@@ -600,7 +603,7 @@
 }
 
 .xp-guide__coverage .xp-guide__eyebrow {
-  color: #fff;
+  color: var(--ll-accent-text-on-dark, #fff);
 }
 
 .xp-guide__coverage h2 {
@@ -694,9 +697,12 @@
   background: var(--brand-surface);
   color: var(--on-brand-surface);
 }
+.xp-guide__contact .lead-form .kicker {
+  color: var(--ll-accent-text-on-brand, var(--on-brand-surface));
+}
 
 .xp-guide__contact .xp-guide__eyebrow {
-  color: inherit;
+  color: var(--ll-accent-text-on-brand, currentColor);
 }
 
 .xp-guide__contact a {
@@ -787,7 +793,7 @@
 }
 
 .xp-service__eyebrow {
-  color: var(--brand-ink);
+  color: var(--ll-accent-text-on-light-band, var(--brand-ink));
   font-size: 0.66rem;
   font-weight: 900;
   letter-spacing: 0.17em;
@@ -801,7 +807,7 @@
 .xp-service__faqs h2,
 .xp-service__contact h2 {
   margin: 1rem 0 1.5rem;
-  font: 900 clamp(3.2rem, 6.5vw, 7rem)/0.86 Arial, sans-serif;
+  font: 900 clamp(3.2rem, 6.5vw, 7rem)/0.86 var(--font-heading, Arial, sans-serif);
   letter-spacing: -0.075em;
 }
 
@@ -868,7 +874,7 @@
 
 .xp-service__hero .xp-service__eyebrow,
 .xp-service__coverage .xp-service__eyebrow {
-  color: #ffc5a8;
+  color: var(--ll-accent-text-on-dark, #ffc5a8);
 }
 
 .xp-service__request a {
@@ -1007,6 +1013,9 @@
   gap: 5rem;
   background: #e7e2d7;
 }
+.xp-service__contact .lead-form .kicker {
+  color: var(--ll-accent-text-on-light-band, var(--ink));
+}
 
 .xp-service__contact > div > p:not(.xp-service__eyebrow) {
   color: #5d6662;
@@ -1095,6 +1104,18 @@
   border-top: 5px solid var(--brand-surface);
   background: #0b1b17;
   color: #fff;
+}
+
+/* Inner-hero kickers follow the hero's own readable ink and, when an accent is
+   chosen, the accent variant repaired for that band. */
+.inner-experience-cinematic-narrative .inner-hero .kicker {
+  color: var(--ll-accent-text-on-dark, #efece4);
+}
+.inner-experience-bold-utility .inner-hero .kicker {
+  color: var(--ll-accent-text-on-light-band, var(--brand-ink));
+}
+.inner-experience-kinetic-poster .inner-hero .kicker {
+  color: var(--ll-accent-text-on-dark, #fff);
 }
 
 .inner-experience-kinetic-poster .inner-hero p,

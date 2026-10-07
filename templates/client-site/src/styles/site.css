@@ -11,7 +11,6 @@
   --cream: #f8f6f0;
   --muted: #5e6b66;
   --line: #d8ded7;
-  font-family: var(--font-body, Inter, Arial, sans-serif);
   color: var(--ink);
   background: var(--cream);
 }
@@ -20,6 +19,10 @@
 }
 body {
   margin: 0;
+  /* The resolved palette and font pairing are applied as custom properties on
+     body; the inherited family must be declared here so --font-body resolves
+     where it is defined instead of falling back on the root element. */
+  font-family: var(--font-body, Inter, Arial, sans-serif);
   /* The resolved palette is applied as custom properties on body. Declaring
      the inherited color and background here keeps pages that rely on
      inheritance in step with that palette, including dark page surfaces. */
@@ -103,7 +106,7 @@ a {
   letter-spacing: 0.14em;
   font-size: 0.7rem;
   font-weight: 800;
-  color: var(--accent-ink, var(--brand-ink, var(--brand)));
+  color: var(--ll-accent-text, var(--accent-ink, var(--brand-ink, var(--brand))));
 }
 h1,
 h2,
@@ -148,8 +151,7 @@ h2 {
 }
 .hero-art span {
   font:
-    600 clamp(2rem, 5vw, 4.5rem)/0.95 Georgia,
-    serif;
+    600 clamp(2rem, 5vw, 4.5rem)/0.95 var(--font-heading, Georgia, serif);
 }
 .hero-art img {
   max-width: 75%;
@@ -251,8 +253,7 @@ h2 {
 }
 .service-card h3 {
   font:
-    500 1.65rem/1 Georgia,
-    serif;
+    500 1.65rem/1 var(--font-heading, Georgia, serif);
   letter-spacing: -0.04em;
   margin: 8px 0 10px;
 }
@@ -281,7 +282,7 @@ h2 {
   object-fit: cover;
 }
 .split-grid .kicker {
-  color: color-mix(in srgb, var(--on-brand-surface, #fff) 82%, transparent);
+  color: var(--ll-accent-text-on-brand, color-mix(in srgb, var(--on-brand-surface, #fff) 82%, transparent));
 }
 .split-grid p,
 .split-grid li {
@@ -307,8 +308,7 @@ h2 {
 .process-grid p {
   margin: 38px 0 0;
   font:
-    500 clamp(1.25rem, 2vw, 1.75rem)/1.05 Georgia,
-    serif;
+    500 clamp(1.25rem, 2vw, 1.75rem)/1.05 var(--font-heading, Georgia, serif);
   letter-spacing: -0.04em;
 }
 .image-gallery {
@@ -348,8 +348,7 @@ h2 {
 .faq-list summary {
   cursor: pointer;
   font:
-    500 1.35rem/1.2 Georgia,
-    serif;
+    500 1.35rem/1.2 var(--font-heading, Georgia, serif);
   letter-spacing: -0.035em;
 }
 .faq-list p {
@@ -387,7 +386,7 @@ h2 {
   color: var(--ink);
 }
 .lead-form .kicker {
-  color: var(--ink);
+  color: var(--ll-accent-text, var(--ink));
 }
 .lead-form--guided {
   min-height: 520px;
@@ -398,8 +397,7 @@ h2 {
 .qualifier-heading h3,
 .qualifier-step legend {
   font:
-    500 clamp(1.65rem, 3vw, 2.35rem)/1.08 Georgia,
-    serif;
+    500 clamp(1.65rem, 3vw, 2.35rem)/1.08 var(--font-heading, Georgia, serif);
   letter-spacing: -0.045em;
 }
 .qualifier-heading h3 {
@@ -505,9 +503,7 @@ h2 {
   background: transparent;
   color: var(--ink);
   font:
-    750 0.82rem/1 Inter,
-    Arial,
-    sans-serif;
+    750 0.82rem/1 var(--font-body, Inter, Arial, sans-serif);
   cursor: pointer;
 }
 .qualifier-back:before {
@@ -588,9 +584,7 @@ h2 {
   color: var(--on-brand-surface, var(--on-brand, #fff));
   box-shadow: none;
   font:
-    800 0.82rem/1 Inter,
-    Arial,
-    sans-serif;
+    800 0.82rem/1 var(--font-body, Inter, Arial, sans-serif);
   cursor: pointer;
 }
 .quick-answers__launcher span {
@@ -639,15 +633,13 @@ h2 {
   color: var(--ink, #14201d);
 }
 .quick-answers__panel header .kicker {
-  color: inherit;
+  color: var(--ll-accent-text, currentColor);
   opacity: 1;
 }
 .quick-answers__panel h2 {
   margin: 5px 0 0;
   font:
-    800 1.25rem/1.1 Inter,
-    Arial,
-    sans-serif;
+    800 1.25rem/1.1 var(--font-heading, Inter, Arial, sans-serif);
   letter-spacing: -0.025em;
 }
 .quick-answers__panel .quick-answers__close:focus-visible {
@@ -690,9 +682,7 @@ h2 {
   color: var(--ink, #14201d);
   text-align: left;
   font:
-    700 0.78rem/1.35 Inter,
-    Arial,
-    sans-serif;
+    700 0.78rem/1.35 var(--font-body, Inter, Arial, sans-serif);
   cursor: pointer;
 }
 .quick-answers__choices button[aria-pressed="true"] {
@@ -945,6 +935,9 @@ h2 {
 .recipe-hero {
   overflow: hidden;
 }
+.recipe-hero .kicker {
+  color: var(--ll-accent-text-on-hero, var(--brand-ink));
+}
 .recipe-care-editorial .recipe-hero {
   background: var(--hero-surface);
 }
@@ -993,7 +986,9 @@ h2 {
 .recipe-local-trades .hero-copy p {
   color: #d4dfdc;
 }
-.recipe-local-trades .kicker,
+.recipe-local-trades .kicker {
+  color: var(--ll-accent-text, color-mix(in srgb, var(--brand) 72%, #000));
+}
 .recipe-local-trades .trust-grid span,
 .recipe-local-trades .process-grid span {
   color: color-mix(in srgb, var(--brand) 72%, #000);
@@ -1001,7 +996,7 @@ h2 {
 .recipe-local-trades .recipe-hero .kicker,
 .recipe-local-trades .coverage-section .kicker,
 .recipe-local-trades .locality-band .kicker {
-  color: #f5a56f;
+  color: var(--ll-accent-text-on-dark, #f5a56f);
 }
 .recipe-local-trades .cta,
 .recipe-local-trades .lead-form button,
@@ -1079,9 +1074,7 @@ h2 {
   margin: 0;
   overflow-wrap: anywhere;
   font:
-    650 0.94rem/1.35 Inter,
-    Arial,
-    sans-serif;
+    650 0.94rem/1.35 var(--font-body, Inter, Arial, sans-serif);
 }
 .section-heading {
   max-width: 820px;
@@ -1144,7 +1137,7 @@ h2 {
   display: inline-flex;
   gap: 15px;
   padding-bottom: 5px;
-  border-bottom: 1px solid var(--accent, currentColor);
+  border-bottom: 1px solid var(--ll-accent, var(--accent, currentColor));
   font-weight: 800;
 }
 .recipe-local-trades .process-section {
@@ -1213,7 +1206,7 @@ h2 {
   margin: 18px 0;
 }
 .location-map-copy .kicker {
-  color: var(--ink);
+  color: var(--ll-accent-text, var(--ink));
 }
 .location-map-copy > p {
   max-width: 440px;
@@ -1248,8 +1241,7 @@ h2 {
 .faq-list summary span {
   color: var(--brand);
   font:
-    400 1.6rem/1 Arial,
-    sans-serif;
+    400 1.6rem/1 var(--font-body, Arial, sans-serif);
 }
 .contact-copy > p {
   max-width: 520px;
@@ -1320,8 +1312,7 @@ h2 {
 }
 .decision-grid h3 {
   font:
-    500 1.55rem/1.1 Georgia,
-    serif;
+    500 1.55rem/1.1 var(--font-heading, Georgia, serif);
 }
 .decision-grid p {
   color: var(--muted);
@@ -1331,9 +1322,15 @@ h2 {
   padding: 90px 0;
   background: var(--hero-surface);
 }
+.inner-band .kicker {
+  color: var(--ll-accent-text-on-hero, var(--brand-ink));
+}
 .locality-band {
   color: #fff;
   background: #10211f;
+}
+.locality-band .kicker {
+  color: var(--ll-accent-text-on-dark, #fff);
 }
 .locality-band .area-list a {
   color: #fff;
@@ -1353,7 +1350,7 @@ h2 {
 .social-proof .kicker {
   /* The band uses the hero surface, which can be darker than the page canvas
      the shared brand ink was measured against, so darken it for this surface. */
-  color: color-mix(in srgb, var(--brand-ink, var(--brand)) 72%, var(--ink));
+  color: var(--ll-accent-text-on-hero, color-mix(in srgb, var(--brand-ink, var(--brand)) 72%, var(--ink)));
 }
 .social-proof__intro {
   max-width: 670px;
@@ -1414,8 +1411,7 @@ h2 {
   margin: 14px 0 0;
   color: var(--muted);
   font:
-    700 0.75rem/1 Arial,
-    sans-serif;
+    700 0.75rem/1 var(--font-body, Arial, sans-serif);
 }
 .density-compact .section,
 .density-compact .contact-section,
@@ -1722,7 +1718,7 @@ h2 {
   background: var(--brand-surface);
 }
 .design-general-product-studio .recipe-hero .kicker {
-  color: color-mix(in srgb, var(--on-brand-surface) 78%, var(--brand));
+  color: var(--ll-accent-text-on-brand, color-mix(in srgb, var(--on-brand-surface) 78%, var(--brand)));
 }
 .design-general-product-studio .recipe-hero p {
   color: color-mix(in srgb, var(--on-brand-surface) 82%, transparent);
@@ -1743,7 +1739,9 @@ h2 {
   border: 1px solid var(--line);
   background: var(--cream);
 }
-.design-trades-craftsman .recipe-hero .kicker,
+.design-trades-craftsman .recipe-hero .kicker {
+  color: var(--ll-accent-text, var(--brand-ink));
+}
 .design-trades-craftsman .recipe-hero p {
   color: var(--brand-ink);
 }
@@ -2326,7 +2324,7 @@ h2 {
 .ll-page-media img { display:block; width:100%; max-width:64rem; height:auto; border-radius:var(--radius,0); }
 
 /* The trades inner hero owns a dark surface, including label and focus paint. */
-.recipe-local-trades .inner-hero .kicker { color: #d4dfdc; }
+.recipe-local-trades .inner-hero .kicker { color: var(--ll-accent-text-on-dark, #d4dfdc); }
 .recipe-local-trades .inner-hero :is(a,button):focus-visible {
   outline: 2px solid #d4dfdc;
   outline-offset: 3px;

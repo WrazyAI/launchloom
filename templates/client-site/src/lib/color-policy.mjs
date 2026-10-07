@@ -147,14 +147,38 @@ export function resolvePalette(input = {}) {
   );
   const brandSurface = readableSurface(requestedBrandSurfaceColor);
   const accentColor = safeHex(input.accentColor, "");
+  // Light pack and inner-page bands that sit below the page canvas. Repair the
+  // accent against the darkest of them so one variant stays readable on the
+  // guide canvas, service canvas and contact band, and the tinted hero mixes.
+  const lightBandSurfaces = [
+    ...(readableOn(surfaceColor) === "#000000" ? [surfaceColor] : []),
+    "#f7f5ee",
+    "#f6f3eb",
+    "#e7e2d7",
+    "#eef1ea",
+    mix(brandSurface.color, "#f7f4ec", 0.91),
+    mix(primaryColor, "#f1eee5", 0.91),
+  ];
+  const darkestLightBand = lightBandSurfaces.reduce((darkest, candidate) =>
+    contrast("#000000", candidate) < contrast("#000000", darkest)
+      ? candidate
+      : darkest,
+  );
   // The accent is optional: absent it, sites keep exactly the palette shape
   // they had before. When a client adopts one, text on the accent fill and
-  // accent-colored text on the page surface are both contrast-repaired.
+  // accent-colored text on the page surface are both contrast-repaired, and
+  // each recurring accent surface (hero, brand, dark bands, light pack bands)
+  // gets a readable variant so secondary marks stay legible wherever they land.
   const accent = accentColor
     ? {
         accentColor,
         accentTextColor: ensureContrast(accentColor, surfaceColor),
         accentContrastColor: readableOn(accentColor),
+        accentMarkColor: ensureContrast(accentColor, surfaceColor, 3),
+        accentTextHero: ensureContrast(accentColor, heroColor),
+        accentTextBrand: ensureContrast(accentColor, brandSurface.color),
+        accentTextDark: ensureContrast(accentColor, "#14201d"),
+        accentTextLightBand: ensureContrast(accentColor, darkestLightBand),
       }
     : {};
 
@@ -208,7 +232,9 @@ export function resolvePalette(input = {}) {
 }
 
 export function semanticColorCss(input = {}) {
-  const { surfaces } = resolvePalette(input);
+  const palette = resolvePalette(input);
+  const { surfaces } = palette;
+  const accentColor = palette.accentColor;
   return (
     Object.entries(surfaces)
       .map(([name, roles]) => {
@@ -218,7 +244,12 @@ export function semanticColorCss(input = {}) {
               `--ll-${role.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}:${value};`,
           )
           .join("");
-        return `[data-ll-surface="${name}"]{${declarations}background-color:var(--ll-surface);color:var(--ll-text);--ink:var(--ll-text);--muted:var(--ll-muted-text);--brand-ink:var(--ll-link);}`;
+        // Re-derive the accent for this surface so accent marks stay
+        // readable wherever a client accent lands (fills need 3:1, text 4.5:1).
+        const accentDeclarations = accentColor
+          ? `--ll-accent:${ensureContrast(accentColor, roles.surface, 3)};--ll-accent-text:${ensureContrast(accentColor, roles.surface)};`
+          : "";
+        return `[data-ll-surface="${name}"]{${declarations}${accentDeclarations}background-color:var(--ll-surface);color:var(--ll-text);--ink:var(--ll-text);--muted:var(--ll-muted-text);--brand-ink:var(--ll-link);}`;
       })
       .join("\n") +
     `
