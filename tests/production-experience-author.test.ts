@@ -798,6 +798,44 @@ export default function Experience`,
     })).toThrow(/unsafe URL attribute/iu);
   });
 
+  it("rejects service links when nested content.services is mutated after destructuring", () => {
+    const route = { id: "route-mutated-destructured-services" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const original = String(safeStage({ ...request, stage: "experience" }).content);
+    const experienceFor = (mutation = "") => original
+      .replace(
+        "export default function Experience({ content, runtime }) {",
+        `export default function Experience({ content, content: { hero, services, faqs, brand }, runtime }) {\n ${mutation}`,
+      )
+      .replaceAll("content.hero.", "hero.")
+      .replaceAll("content.services", "services")
+      .replaceAll("content.faqs", "faqs")
+      .replaceAll("content.brand.", "brand.")
+      .replace(
+        "<article key={service.name}>",
+        "<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>",
+      );
+
+    const validate = (experience) =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles: String(safeStage({ ...request, stage: "styles" }).content),
+          motion: String(safeStage({ ...request, stage: "motion" }).content),
+        },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "repair" }],
+        },
+      });
+
+    expect(() => validate(experienceFor())).not.toThrow();
+    expect(() => validate(experienceFor('services[0].slug = "invented-route";')))
+      .toThrow(/unsafe URL attribute/iu);
+  });
+
   it.each([
     'content.services.length ? { slug: "fabricated" } : content.services[0]',
     'content.services.map(() => ({ slug: "fabricated" }))[0]',

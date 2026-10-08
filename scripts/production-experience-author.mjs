@@ -1755,7 +1755,8 @@ function isSealedServiceCollectionExpression(
   if (binding.kind === "parameter")
     return (
       bindingPath?.join(".") === "content.services" &&
-      isRootExperienceFunction(binding.node.parent, file)
+      isRootExperienceFunction(binding.node.parent, file) &&
+      !isBindingMutated(binding.node, file)
     );
   if (!(binding.node.parent.flags & ts.NodeFlags.Const)) return false;
   if (isBindingMutated(binding.node, file)) return false;
