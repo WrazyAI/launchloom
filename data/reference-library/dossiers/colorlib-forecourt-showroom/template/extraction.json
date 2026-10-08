@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "colorlib-forecourt-showroom",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/forecourt",
+    "repository": "https://github.com/ColorlibHQ/bootstrap-templates",
+    "revision": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "templatePath": "forecourt/",
+    "retrievedAt": "2026-10-08T20:05:29.972Z",
+    "license": "MIT",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/base.css",
+      "bytes": 12208,
+      "sha256": "84662d517b2d223427a0d403a347cb8edf1a834ecaf160e5f4c8f8627c78b56c"
+    },
+    {
+      "path": "source/assets/css/style.css",
+      "bytes": 5849,
+      "sha256": "46b07a479f8d0b97fa373e72781f0732c855435e0be6815a6b49297353ecc8cd"
+    },
+    {
+      "path": "source/assets/js/base.js",
+      "bytes": 4182,
+      "sha256": "593e618719970dfe796d86f0707593498951c0e52a4fc7a18c87d6be2fef5819"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 3045,
+      "sha256": "8bf68e82c25a6055af603738e1a40f703ba78ae3efa38d0cf1228dbd777b9710"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap-utilities.metadata.json",
+      "bytes": 29007,
+      "sha256": "0aa89f21fbbf9555a3905382ef4cdf5f281f164eb727b7a8d446efaf01b310fa"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap.min.css",
+      "bytes": 357751,
+      "sha256": "1a17841f830ff69b686da298babbf8e5e3e8dfb33b7329f115e366deacccb380"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/js/bootstrap.bundle.min.js",
+      "bytes": 214643,
+      "sha256": "77d552c3e6a815efd143c8e782c480bc63225cefba51bc510e0875a934f23fe7"
+    },
+    {
+      "path": "source/CREDITS.txt",
+      "bytes": 1393,
+      "sha256": "3a66e85eeaddc9d21667e98622a28b7158f1b8a273fbe6da50239c3218d5e5fa"
+    },
+    {
+      "path": "source/img/car-1.jpg",
+      "bytes": 166060,
+      "sha256": "295110c72e866a24ebe20e38a13ee7f4641e87558bfaab4b65381f033fc8802f"
+    },
+    {
+      "path": "source/img/car-2.jpg",
+      "bytes": 112392,
+      "sha256": "138ad1b05bdd59f055acd7cb7b69acafa1c4b7b3e8275a458fec93194454bac2"
+    },
+    {
+      "path": "source/img/car-3.jpg",
+      "bytes": 155904,
+      "sha256": "5e0b7f5aae8d94bdff7b3956c02b07bc249ee56bf12adb61403dfbdc51aaf14a"
+    },
+    {
+      "path": "source/img/car-4.jpg",
+      "bytes": 166385,
+      "sha256": "dac6b14809331d8d94842808d11193191d9f102cff924317b6214ed37d6f47a0"
+    },
+    {
+      "path": "source/img/car-5.jpg",
+      "bytes": 194384,
+      "sha256": "cdb360f9758c86407ba3ad026a0d744be8bc77693e3d40543598e72b659b7eb1"
+    },
+    {
+      "path": "source/img/car-6.jpg",
+      "bytes": 123357,
+      "sha256": "7349572c8bbd200e8cc2ceeeab91ad4f8136ae21011359069fddbbb33d3c0540"
+    },
+    {
+      "path": "source/img/hero.jpg",
+      "bytes": 448668,
+      "sha256": "bc048e80a25464863d03f237889acc65836472be05584e539d67fb0075fe25b0"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 24845,
+      "sha256": "7126a07f8afb1db137a395343ce4685e34ffe6ca8ac1553b9dc0a805f18e5221"
+    },
+    {
+      "path": "source/template.json",
+      "bytes": 4105,
+      "sha256": "f70dcae74e503ceef05aaf868bf8ab15f4b9a7ba976de32e3456dd7ba7169b3b"
+    },
+    {
+      "path": "source/vehicle.html",
+      "bytes": 11325,
+      "sha256": "635493f7026a30a9b8378d7ed1e6c41a4e7170ece1f1352b0c1cf07c74ca6962"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://github.com/ColorlibHQ/bootstrap-templates/blob/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/forecourt/build.py",
+      "reason": "unsupported-extension"
+    }
+  ],
+  "notes": "Fetched 18 files from the pinned repository at f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf.",
+  "digest": "2d9994da68a63bddddac61af13e12209dacbcf9b7c86ed82dcc2a25de42ecb2c"
+}

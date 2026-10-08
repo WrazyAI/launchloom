@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "spicer-law-firm-results-ledger",
+  "status": "extracted",
+  "method": "zip-download",
+  "source": {
+    "url": "https://www.spicerdesigns.com/templates/law-firm",
+    "finalUrl": "https://www.spicerdesigns.com/downloads/law-firm-template-html.zip",
+    "archiveSha256": "277746ddd678ac54aa6fb644687666e5559ccc9f3c50d7772014725e545c9d5d",
+    "retrievedAt": "2026-10-08T20:05:53.533Z",
+    "license": "CC-BY-4.0",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/hero.webp",
+      "bytes": 50646,
+      "sha256": "1b4127e6ae8157d6b8a0e727cf35b386f8c41d7d0b9630c20eba3b074ebb6ecf"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 61746,
+      "sha256": "9ff61d84fcb96f01f3f7f2fe54407a4b82f2dd9fcaf5328baf8cd67661191f70"
+    },
+    {
+      "path": "source/README.md",
+      "bytes": 2711,
+      "sha256": "87267795e82b0b0d47e9a924b426ab15f405999dc89abe2b0ceda29cc613c402"
+    },
+    {
+      "path": "source/styles.css",
+      "bytes": 27142,
+      "sha256": "cb5f422fa0e31279b84afbae168a804af527af7b85f21357c1acada0b25efa4f"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.spicerdesigns.com/downloads/law-firm-template-html.zip#LICENSE",
+      "reason": "unsupported-extension"
+    }
+  ],
+  "notes": "Downloaded the official HTML build (4 files, archive SHA-256 277746ddd678ac54aa6fb644687666e5559ccc9f3c50d7772014725e545c9d5d). The template page footer also shows an MIT label; the retained LICENSE in rights/ records CC BY 4.0 with the footer attribution condition. Reconcile before any derivative publication.",
+  "digest": "634fc8862fcab74857d449a13e3f15f8fd2d999e52806cd0d23f7eb958e96bb4"
+}

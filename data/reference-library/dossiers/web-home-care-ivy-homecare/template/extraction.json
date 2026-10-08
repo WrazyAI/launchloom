@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-home-care-ivy-homecare",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://ivyhomecareservices.co.uk/",
+    "finalUrl": "https://ivyhomecareservices.co.uk/",
+    "httpStatus": 200,
+    "pageTitle": "Ivy Homecare Services - Domiciliary Care Provider London",
+    "retrievedAt": "2026-10-08T20:25:29.657Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 163002,
+      "sha256": "54e2ac3c72e18a168f11d4fe621c9658cd9f7dc7f9bea1642a2c09fb89ada446"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 50644,
+      "sha256": "13a8ef8d3dcf84292bd9ea127d8e6be7d98cf4687af72e1d91a25404de65437b"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 1584,
+      "sha256": "411edb1186e69ac5e55e0986e6c8c8cd1916ca2282d5816ab8b2c50cd079e689"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 55980,
+      "sha256": "8895b7de96798ed825d75e5964565bd1a3a29ab5b76c59e73d89783b8dca07a4"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 83015,
+      "sha256": "47c7bdd897d958f095447c03e1752dc3c746563dc4507f7babd083348bd1ead5"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 2979,
+      "sha256": "a3b9f5df6bf638a4cb583480bed6e18a84ad7141cc3d75b81094f91dd7b82f32"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 882,
+      "sha256": "a3c948a216530521f3cd0575e075c9f20308f610a9d2e0e2499f5c5ef30f58f9"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 776,
+      "sha256": "25825611ade7ceaed7df3862ec56dc91ad1d2be539966ef7bbe84306e51cfb08"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 22305,
+      "sha256": "d2bb3d8bcf4a3ee8f5cc5a90b4357f4205f356aaebffff9ea352b6ee255da7ae"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 54666,
+      "sha256": "0a5d398672e25dc7f020f69df92a985481b248a60e301fee232d0c8afd648dc5"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 1399,
+      "sha256": "7a88f1f1584c8363107f919ead1f8053bbbc50b4c2dd376017a6805b6f8e2901"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 1424,
+      "sha256": "91dfd6e49224ed5f9b3d8ba7cf4415024f9177324cf1e6d6fad1e2f1cd8221f7"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 317,
+      "sha256": "840e2bf773b5271d975b47a44a45d1e4b93ceb737f6cc364095af6fbfe7b47df"
+    },
+    {
+      "path": "source/styles/13.css",
+      "bytes": 63907,
+      "sha256": "9cb20736d35609441d21a0f4300999e4a3c658c828abc626e574a31a24c5bf70"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 34656,
+      "sha256": "87896e57312399d36cd4e1670d091f6f2bdb833343be84d2d94a00ed081a94b3"
+    },
+    {
+      "path": "source/styles/15.css",
+      "bytes": 22305,
+      "sha256": "d2bb3d8bcf4a3ee8f5cc5a90b4357f4205f356aaebffff9ea352b6ee255da7ae"
+    },
+    {
+      "path": "source/styles/16.css",
+      "bytes": 10255,
+      "sha256": "1b34d4c7324321e36db5d35f05bb011238a1326f89058a4399d028d1f6c47dd5"
+    },
+    {
+      "path": "source/styles/17.css",
+      "bytes": 5110,
+      "sha256": "91079644ee1e76145b30c207470b56866770b0564f0fbf1373ab8b11d94f8c9f"
+    },
+    {
+      "path": "source/styles/18.css",
+      "bytes": 732,
+      "sha256": "5009a34e30063ffb89185274681b359ae8c7dac19a606d5b1456ee3524cbc9b0"
+    },
+    {
+      "path": "source/styles/19.css",
+      "bytes": 72184,
+      "sha256": "d417b6ed49cb6ae3dfe2b0bab5d865472052cd0286a9478c74cbb09a02a56d0d"
+    },
+    {
+      "path": "source/styles/20.css",
+      "bytes": 727,
+      "sha256": "93cf6e96459e42f9f656e03ec4800578dc2c021dcde475c9e5e891a7780b0866"
+    },
+    {
+      "path": "source/styles/21.css",
+      "bytes": 105138,
+      "sha256": "eccaccb89cab75190c40183c2ff16ca61f261256892ea5f25902b582020674f6"
+    },
+    {
+      "path": "source/styles/22.css",
+      "bytes": 24066,
+      "sha256": "ee6e2b83561ca22e78a8b39b1929cbdb419cfa9dff52d3045c2a959f5f243098"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://ivyhomecareservices.co.uk/wp-content/uploads/2022/11/m2-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "http://ivyhomecareservices.co.uk/wp-content/uploads/2022/11/m2-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ivyhomecareservices.co.uk/wp-content/uploads/2022/11/m4.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "http://ivyhomecareservices.co.uk/wp-content/uploads/2022/11/m4.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ivyhomecareservices.co.uk/wp-content/uploads/2023/11/cropped-ivy-removebg-preview-91x89.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ivyhomecareservices.co.uk/wp-content/uploads/2023/11/cropped-ivy-removebg-preview-300x294.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ivyhomecareservices.co.uk/wp-content/uploads/2023/11/cropped-ivy-removebg-preview.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ivyhomecareservices.co.uk/wp-content/uploads/2023/12/AdobeStock_560062428-scaled.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ivyhomecareservices.co.uk/wp-content/uploads/2023/12/23-scaled.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ivyhomecareservices.co.uk/wp-content/uploads/2023/12/24-scaled.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ivyhomecareservices.co.uk/wp-content/uploads/2023/11/2-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ivyhomecareservices.co.uk/wp-content/uploads/2026/08/WhatsApp-Video-2026-08-03-at-11.01.32.mp4",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 22 of 23 stylesheets retained. Stylesheet issues: https://ivyhomecareservices.co.uk/wp-content/plugins/astra-addon/addons/nav-menu/assets/css/minified/magamenu-frontend.min.css?ver=4.13.10 (empty-or-unreadable).",
+  "digest": "ec762412c677686bfb17e68f691cbbb2c9849542156ff9a143e7c32a374bbb56"
+}

@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "attested-kingsway-care-home-care",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://kingswaycare.com/",
+    "finalUrl": "https://kingswaycare.com/",
+    "httpStatus": 200,
+    "pageTitle": "Compassionate Homecare in Brighton & Hove and Worthing — Kingsway Care",
+    "retrievedAt": "2026-10-08T20:13:35.944Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 128762,
+      "sha256": "0448b4406f2fb564a5fd207f21436cc8ab20be09a2b58542e9c66821cbdbbcd4"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 204519,
+      "sha256": "27aa7fb1a97aeef5269ac033f04c0e57de5d6f6c3959cca5406c8d7a8f5dced2"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://kingswaycare.com/uploads/kingsway-care-brighton-hove-home-care-2026-1783883894-1200w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/kingsway-care-brighton-hove-home-care-2026-1783883894.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/kingsway-care-brighton-hove-home-care-2026-1783883894-400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/kingsway-care-brighton-hove-home-care-2026-1783883894-800w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/kingsway-care-brighton-hove-home-care-2026-1783883894-1200w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/kingsway-care-brighton-hove-home-care-2026-1783883894.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/cqc-good-rating-logo.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/cqc-good-rating-logo-400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/cqc-good-rating-logo.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/Olly-Katy-Kingsway-Care-Brighton-Hove.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/Olly-Katy-Kingsway-Care-Brighton-Hove.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/brightonhovecareawards2026kingswaycarewinners-1789995876.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/brightonhovecareawards2026kingswaycarewinners-1789995876-400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/brightonhovecareawards2026kingswaycarewinners-1789995876-800w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/brightonhovecareawards2026kingswaycarewinners-1789995876.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/top-20-award-2026-1784105060.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/Brighton-Hove-Business-Awards-Highly-Commended-logo-Kingsway-Care.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/Brighton-Hove-Business-Awards-Highly-Commended-logo-Kingsway-Care-400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/Brighton-Hove-Business-Awards-Highly-Commended-logo-Kingsway-Care.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/GDBA-2024-logos_Flat-Winner-1200w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/GDBA-2024-logos_Flat-Winner.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/GDBA-2024-logos_Flat-Winner-400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/GDBA-2024-logos_Flat-Winner-800w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/GDBA-2024-logos_Flat-Winner-1200w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/GDBA-2024-logos_Flat-Winner.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/Leaders-in-care-awards-winner.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/Leaders-in-care-awards-winner-400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/Leaders-in-care-awards-winner.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/HCA_win_24_300-1200w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/HCA_win_24_300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/HCA_win_24_300-400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/HCA_win_24_300-800w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/HCA_win_24_300-1200w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/HCA_win_24_300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/SBA2023_winner_logo-small.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/SBA2023_winner_logo-small-400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/SBA2023_winner_logo-small.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/HCA_win_23_72-1.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/GDB-Awards-2023-Logo_Flat-Winner-1200w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/GDB-Awards-2023-Logo_Flat-Winner.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/GDB-Awards-2023-Logo_Flat-Winner-400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/GDB-Awards-2023-Logo_Flat-Winner-800w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/GDB-Awards-2023-Logo_Flat-Winner-1200w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/GDB-Awards-2023-Logo_Flat-Winner.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/HCA_win_22-e1652431853483.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/Leaders-in-care-awards-winner.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/petakerryandlisakatfoodandfriendship-1790250375-400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/winnersatbrightonhovecareawards-1789718921-400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/day4groupshotof12cyclistswithcheque-1789067969-400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/Olly-Katy-Kingsway-Care-Brighton-Hove-400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/Olly-Katy-Kingsway-Care-Brighton-Hove.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/WhoMatters.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/whocares_-720p-Mobile.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/uploads/HCA_win_22-e1652431853483.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/Kingsway-Care-Brighton-Hove-Home-Care-2026.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://kingswaycare.com/uploads/Bruce-and-Pat-pointing-at-Kingsway-Care.webp",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "f0cd8c9e3b7413aeb5c67a64c1d32fe9ed54f204592d39cb22d45bdae7879309"
+}

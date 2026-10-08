@@ -1,0 +1,347 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-veterinary-cat-clinic-edinburgh",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.catclinic.co.uk/",
+    "finalUrl": "https://www.catclinic.co.uk/",
+    "httpStatus": 200,
+    "pageTitle": "Compassionate Care for Cats - Independent Cat Vets Edinburgh",
+    "retrievedAt": "2026-10-08T20:36:08.340Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 229060,
+      "sha256": "5bb23b2c09141e9343660eb2c1d46072438cde2e28460c2aa6e1656fadaf1a75"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 3564,
+      "sha256": "ec2ae2aafdecf0f4a88fd1dd36700a040b24c41721f5269c301506d8b364dc3d"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.catclinic.co.uk/static/7ef81f457ce9e8a0e4414d3df0043c04/the_veterinary_cat_clinic-header-logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/39cb19279662ee5ab3495b91efc5bdd9/5c08f/The-cat-clinic-edinburgh-homepage-mbanner-L.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/39cb19279662ee5ab3495b91efc5bdd9/a1aa3/The-cat-clinic-edinburgh-homepage-mbanner-L.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/39cb19279662ee5ab3495b91efc5bdd9/5d79c/The-cat-clinic-edinburgh-homepage-mbanner-L.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/39cb19279662ee5ab3495b91efc5bdd9/c9c10/The-cat-clinic-edinburgh-homepage-mbanner-L.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/39cb19279662ee5ab3495b91efc5bdd9/a1aa3/The-cat-clinic-edinburgh-homepage-mbanner-L.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/42f65364152a4455a7c47a991f427e41/a1aa3/The-cat-clinic-edinburgh-homepage-mbanner-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/42f65364152a4455a7c47a991f427e41/5d79c/The-cat-clinic-edinburgh-homepage-mbanner-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/42f65364152a4455a7c47a991f427e41/c9c10/The-cat-clinic-edinburgh-homepage-mbanner-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/42f65364152a4455a7c47a991f427e41/a1aa3/The-cat-clinic-edinburgh-homepage-mbanner-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/b99480d5858b6904712f68106dba452c/51f14/icon-register-cat.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/b99480d5858b6904712f68106dba452c/b54f3/icon-register-cat.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/b99480d5858b6904712f68106dba452c/68f0c/icon-register-cat.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/b99480d5858b6904712f68106dba452c/8145b/icon-register-cat.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/b99480d5858b6904712f68106dba452c/b54f3/icon-register-cat.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/b99480d5858b6904712f68106dba452c/9657c/icon-register-cat.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/76b37962aa9d8a8f218dce89a033ec62/51f14/icon-book-appointment.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/76b37962aa9d8a8f218dce89a033ec62/b54f3/icon-book-appointment.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/76b37962aa9d8a8f218dce89a033ec62/68f0c/icon-book-appointment.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/76b37962aa9d8a8f218dce89a033ec62/8145b/icon-book-appointment.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/76b37962aa9d8a8f218dce89a033ec62/b54f3/icon-book-appointment.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/76b37962aa9d8a8f218dce89a033ec62/9657c/icon-book-appointment.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/d49e9eccc89503310c46d409aba765a1/51f14/icon-emergency-cat-care.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/d49e9eccc89503310c46d409aba765a1/b54f3/icon-emergency-cat-care.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/d49e9eccc89503310c46d409aba765a1/68f0c/icon-emergency-cat-care.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/d49e9eccc89503310c46d409aba765a1/8145b/icon-emergency-cat-care.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/d49e9eccc89503310c46d409aba765a1/b54f3/icon-emergency-cat-care.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/d49e9eccc89503310c46d409aba765a1/9657c/icon-emergency-cat-care.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/6844715be3cc1a481565382e2fb6323d/9efc0/home-the-cat-clinic-edinburgh-inpage.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/6844715be3cc1a481565382e2fb6323d/7e151/home-the-cat-clinic-edinburgh-inpage.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/6844715be3cc1a481565382e2fb6323d/3917f/home-the-cat-clinic-edinburgh-inpage.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/6844715be3cc1a481565382e2fb6323d/47e9e/home-the-cat-clinic-edinburgh-inpage.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/6844715be3cc1a481565382e2fb6323d/7e151/home-the-cat-clinic-edinburgh-inpage.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/522c57ab9577f9a4f4201b4b34a5d16f/5c08f/about-us-edinburgh-the-cat-clinic-mbanner.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/522c57ab9577f9a4f4201b4b34a5d16f/a1aa3/about-us-edinburgh-the-cat-clinic-mbanner.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/522c57ab9577f9a4f4201b4b34a5d16f/5d79c/about-us-edinburgh-the-cat-clinic-mbanner.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/522c57ab9577f9a4f4201b4b34a5d16f/c9c10/about-us-edinburgh-the-cat-clinic-mbanner.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/522c57ab9577f9a4f4201b4b34a5d16f/a1aa3/about-us-edinburgh-the-cat-clinic-mbanner.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/201ae2a73e975dbbdfb0b3b3dbd442d0/a8f74/Supports-their-long-healthy-lives.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/201ae2a73e975dbbdfb0b3b3dbd442d0/2ceaf/Supports-their-long-healthy-lives.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/201ae2a73e975dbbdfb0b3b3dbd442d0/f3ad2/Supports-their-long-healthy-lives.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/201ae2a73e975dbbdfb0b3b3dbd442d0/dbe23/Supports-their-long-healthy-lives.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/201ae2a73e975dbbdfb0b3b3dbd442d0/2ceaf/Supports-their-long-healthy-lives.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/15d5fe660bcf61741c3dc1a624be6caf/18802/footer-resized.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.catclinic.co.uk/static/15d5fe660bcf61741c3dc1a624be6caf/1f2ae/footer-resized.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/15d5fe660bcf61741c3dc1a624be6caf/f7511/footer-resized.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/15d5fe660bcf61741c3dc1a624be6caf/cf8be/footer-resized.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/15d5fe660bcf61741c3dc1a624be6caf/1f2ae/footer-resized.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/39cb19279662ee5ab3495b91efc5bdd9/fe003/The-cat-clinic-edinburgh-homepage-mbanner-L.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/39cb19279662ee5ab3495b91efc5bdd9/67cb7/The-cat-clinic-edinburgh-homepage-mbanner-L.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/39cb19279662ee5ab3495b91efc5bdd9/5c08f/The-cat-clinic-edinburgh-homepage-mbanner-L.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/42f65364152a4455a7c47a991f427e41/fe003/The-cat-clinic-edinburgh-homepage-mbanner-1.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/42f65364152a4455a7c47a991f427e41/67cb7/The-cat-clinic-edinburgh-homepage-mbanner-1.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/42f65364152a4455a7c47a991f427e41/5c08f/The-cat-clinic-edinburgh-homepage-mbanner-1.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/b99480d5858b6904712f68106dba452c/0b4a8/icon-register-cat.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/b99480d5858b6904712f68106dba452c/c2ce9/icon-register-cat.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/b99480d5858b6904712f68106dba452c/51f14/icon-register-cat.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/b99480d5858b6904712f68106dba452c/d2f92/icon-register-cat.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/76b37962aa9d8a8f218dce89a033ec62/0b4a8/icon-book-appointment.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/76b37962aa9d8a8f218dce89a033ec62/c2ce9/icon-book-appointment.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/76b37962aa9d8a8f218dce89a033ec62/51f14/icon-book-appointment.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/76b37962aa9d8a8f218dce89a033ec62/d2f92/icon-book-appointment.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/d49e9eccc89503310c46d409aba765a1/0b4a8/icon-emergency-cat-care.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/d49e9eccc89503310c46d409aba765a1/c2ce9/icon-emergency-cat-care.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/d49e9eccc89503310c46d409aba765a1/51f14/icon-emergency-cat-care.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/d49e9eccc89503310c46d409aba765a1/d2f92/icon-emergency-cat-care.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/6844715be3cc1a481565382e2fb6323d/279fb/home-the-cat-clinic-edinburgh-inpage.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/6844715be3cc1a481565382e2fb6323d/0b67b/home-the-cat-clinic-edinburgh-inpage.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/6844715be3cc1a481565382e2fb6323d/9efc0/home-the-cat-clinic-edinburgh-inpage.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/522c57ab9577f9a4f4201b4b34a5d16f/fe003/about-us-edinburgh-the-cat-clinic-mbanner.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/522c57ab9577f9a4f4201b4b34a5d16f/67cb7/about-us-edinburgh-the-cat-clinic-mbanner.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/522c57ab9577f9a4f4201b4b34a5d16f/5c08f/about-us-edinburgh-the-cat-clinic-mbanner.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/201ae2a73e975dbbdfb0b3b3dbd442d0/ee95f/Supports-their-long-healthy-lives.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/201ae2a73e975dbbdfb0b3b3dbd442d0/cfa83/Supports-their-long-healthy-lives.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/201ae2a73e975dbbdfb0b3b3dbd442d0/a8f74/Supports-their-long-healthy-lives.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/15d5fe660bcf61741c3dc1a624be6caf/a1db5/footer-resized.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/15d5fe660bcf61741c3dc1a624be6caf/9bb75/footer-resized.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/static/15d5fe660bcf61741c3dc1a624be6caf/18802/footer-resized.webp",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "63828d2535b8116c372fa44e0a35ed1577b3d80ba58a4926d82ddd4fcb7a5078"
+}

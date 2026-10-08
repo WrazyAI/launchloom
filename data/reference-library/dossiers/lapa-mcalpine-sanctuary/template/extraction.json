@@ -1,0 +1,360 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "lapa-mcalpine-sanctuary",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://mcalpinehouse.com/",
+    "finalUrl": "https://mcalpinehouse.com/",
+    "httpStatus": 200,
+    "pageTitle": "McALPINE",
+    "retrievedAt": "2026-10-08T20:19:47.594Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 103673,
+      "sha256": "fe27b8f605fb2da1f5b381aa59c4bada7f75e627df876f4aef3ac6ca2aed48da"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 134302,
+      "sha256": "2af2fb79781e691d5baf591f016a44a549f4662012e9829eec89c84887e804b9"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 32314,
+      "sha256": "75865d460dea22660d9f51e83200ee22fcc1c7a2b0444b0686fced6bf2df38e5"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://mcalpinehouse.com/uploads/2024/05/home-hero.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/2025/01/Screenshot-2025-01-09-at-1.07.16%E2%80%AFPM.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15859/McAlpine_Wellness_EntryExterior2-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15866/McAlpine_Wellness_FrontExterior1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15867/McAlpine_Wellness_Garage_Exterior2-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15086/McAlpine_Palace_Main_2-2-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15424/McAlpine_Portal_Main_2x-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14779/McAlpine_Portal_Chairs-1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15093/McAlpine_Idyll_Main_1-1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15095/McAlpine_Idyll_Palm-1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15120/AD_McGraw_Bahamas_0616126_Guest_Bedroom_330__-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15430/McAlpine_Goodness_Front2-e1731714393798-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14796/McAlpine_Goodness_Roof-e1722225468580-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14798/McAlpine_Goodness_Overview-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15433/McAlpine_Radiance_Conference1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14814/McAlpine_Radiance_Front-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14830/McAlpine_Radiance_Greenary-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14836/McAlpine_Joy_Exterior-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15422/McAlpine_Joy_Main_1x-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14838/McAlpine_Joy_Driveway-1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15436/McAlpine_Chambering_Front2-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14874/McAlpine_Chambering_Glass-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14872/McAlpine_Chambering_Fireplace-1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14915/McAlpine_Manse_Cover-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14749/McAlpine_Manse_Backyard-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14750/McAlpine_Manse_Yard-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14887/McAlpine_Exuberance_Roof-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14888/McAlpine_Exuberance_Front-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14889/McAlpine_Exuberance_Door-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15485/McAlpine_Hughes_Backyard2-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14925/McAlpine_Hughes_FrontDoor-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14924/McAlpine_Hughes_FrontDoor2-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14940/McAlpine_Rushton_Tree-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14943/McAlpine_Rushton_Side-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14942/McAlpine_Rushton_Door-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14957/McAlpine_BoothTravelersRidge_Outside-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14960/McAlpine_BoothTravelersRidge_Living-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14959/McAlpine_BoothTravelersRidge_Window-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15205/McAlpine_Prospect_Main-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15207/McAlpine_Prospect_Entrance-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15208/McAlpine_Prospect_Hall-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15084/McAlpine_Palace_Main_2-1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14771/McAlpine_Palace_Front1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14717/McAlpine_Palace_Chair-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15737/McALPINE-Heart-Main-Hero-Elevation2-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15725/McALPINE-HEART-entry-1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15765/McALPINE-HEART-front-porch-from-outside-1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15012/McAlpine_TurnerFischer_Front-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15015/McAlpine_TurnerFischer_Yard-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15014/McAlpine_TurnerFischer_Steps-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15822/McALPINE_PLACE_front_ele_FW-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15826/McALPINE_PLACE_entry_view1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15827/McALPINE_PLACE_entry_view2-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14968/McAlpine_MortonBham_Front-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14971/McAlpine_MortonBham_Living-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14972/McAlpine_MortonBham_Painting-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15919/McALPINE_PORCH_Pool_Side_Elevation3-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15802/McALPINE_PORCH_Console-Table-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15773/McALPINE_Porch_Livingroom-DR_1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15493/McAlpine_MaxwellNashville_Lawn1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14981/McAlpine_MaxwellNashville_Nature-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14980/McAlpine_MaxwellNashville_Lawn-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15104/McAlpine_Chambering_Main_1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14885/McAlpine_Chambering_Exterior1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14882/McAlpine_Chambering_FrontDoor-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14990/McAlpine_CroweBham_Front-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14991/McAlpine_CroweBham_Full-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/14992/McAlpine_CroweBham_Entrance-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15495/McAlpine_McStay_Back1-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15004/McAlpine_McStay_Door-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15005/McAlpine_McStay_Front-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15197/McAlpine_Fulmer_Main-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15199/McAlpine_Fulmer_Outdoors-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15200/McAlpine_Fulmer_Door-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15026/McAlpine_100Felder_Front-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15029/McAlpine_100Felder_Entrance-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mcalpinehouse.com/uploads/bis-images/15028/McAlpine_100Felder_Hallway-225x150-f50_50.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://player.vimeo.com/progressive_redirect/playback/1046552673/rendition/1080p/file.mp4?loc=external&log_user=0&signature=a91fc6a125f61e799d124bd21ddfd907a8e26a8f838c0c79fdd7eeac01bc918b",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://vimeo.com/1045156118",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://player.vimeo.com/progressive_redirect/playback/1045156118/rendition/1080p/file.mp4?loc=external&log_user=0&signature=5b3590afac5d7dca806c98af30249defbe579b6b2c6d825315e17aceaeb232ff",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained. Page errors observed: 1.",
+  "digest": "f069c54486771ef028d5be5a24712a2f45cf676f3797f21568295d685e53fc92"
+}

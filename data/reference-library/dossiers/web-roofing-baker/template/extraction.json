@@ -1,0 +1,330 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-roofing-baker",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://bakerroofing.com/",
+    "finalUrl": "https://bakerroofing.com/?utm_source=direct&utm_medium=%28none%29&utm_campaign=%28not+set%29&utm_term=&utm_content=",
+    "httpStatus": 200,
+    "pageTitle": "Baker Roofing | Commercial Roofing Contractor",
+    "retrievedAt": "2026-10-08T20:34:22.552Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 189032,
+      "sha256": "468ed442ce41aa5a33900cad83ac8939810d91620567f8cc9da6a13d9bda8984"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 2617,
+      "sha256": "a17ea513ab015464513e29876efa5cc1c1743e78bd4c83671e2146b33f2727e5"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 218054,
+      "sha256": "74da22d921c6a948544f9b0aa7704ec9ca2f9103d82412e08ee5a33108346921"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 65,
+      "sha256": "91885d67073f8b75afeb76ea2ea2c71ed568e4b94042399b7ac7f3920b660df1"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 2470,
+      "sha256": "23fbe3575c72739a0ecbcc6489be6b81872b55cff6f65435fffc8d85fde7ba1a"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn-cookieyes.com/assets/images/revisit.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-cookieyes.com/assets/images/close.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-cookieyes.com/assets/images/poweredbtcky.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/themes/baker-roofing-theme/assets/images/icons/service-request-alert.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/themes/baker-roofing-theme/assets/images/icons/search-figma.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/themes/baker-roofing-theme/assets/images/icons/search.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/themes/baker-roofing-theme/assets/images/brand/baker-logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/DJI_0481-768x576.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/DJI_0481-800x600.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/DJI_0481-300x225.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/DJI_0481-1024x768.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/DJI_0481-1536x1152.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/DJI_0481-2048x1536.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/DJI_0481-400x300.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/DJI_0481-1200x900.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/DJI_0481-1920x1440.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/themes/baker-roofing-theme/assets/images/icons/location-pin-black.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/themes/baker-roofing-theme/assets/images/homepage/over-100-years.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/MyrtleBeach_Training_2.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/icon-quality.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/icon-contact.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/icon-coverage.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/icon-reporting.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Baker-Drone-Capital-Square_Sway4-1-768x431.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Baker-Drone-Capital-Square_Sway4-1-800x449.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Baker-Drone-Capital-Square_Sway4-1-300x169.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Baker-Drone-Capital-Square_Sway4-1-1024x575.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Baker-Drone-Capital-Square_Sway4-1-1536x863.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Baker-Drone-Capital-Square_Sway4-1-2048x1150.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Baker-Drone-Capital-Square_Sway4-1-400x225.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Baker-Drone-Capital-Square_Sway4-1-1200x674.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Baker-Drone-Capital-Square_Sway4-1-1920x1079.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Akron-Pharma-4-1-768x575.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Akron-Pharma-4-1-800x599.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Akron-Pharma-4-1-300x225.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Akron-Pharma-4-1-1024x767.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Akron-Pharma-4-1-1536x1150.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Akron-Pharma-4-1-2048x1534.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Akron-Pharma-4-1-400x300.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Akron-Pharma-4-1-1200x899.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/07/Akron-Pharma-4-1-1920x1438.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/cta-banner-1024x683.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/cta-banner-scaled.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/cta-banner-300x200.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/cta-banner-768x512.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/cta-banner-1536x1024.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/cta-banner-2048x1365.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/blog_stormpropertymanager-768x510.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/blog_stormpropertymanager-800x531.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/blog_stormpropertymanager-300x199.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/blog_stormpropertymanager-1024x680.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/blog_stormpropertymanager-400x266.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/blog_stormpropertymanager-1200x797.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/blog_stormpropertymanager.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/themes/baker-roofing-theme/assets/images/icons/chevron-insights.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/brickwalls-768x480.jpeg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/brickwalls.jpeg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/brickwalls-300x188.jpeg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/brickwalls-400x250.jpeg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/The-Islander-255-768x575.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/The-Islander-255-800x599.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/The-Islander-255-300x225.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/The-Islander-255-1024x767.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/The-Islander-255-400x300.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/The-Islander-255-1200x899.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/The-Islander-255.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/themes/baker-roofing-theme/assets/images/brand/baker-logo-footer.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/baker-roofing-homepage-video.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bakerroofing.com/wp-content/uploads/2026/06/service-new-construction-scaled.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://embed.fillout.com/t/dEB6hRK1Nvus?fillout-embed-id=65990751404368&fillout-embed-type=standard&fillout-embed-parent-page=https%3A%2F%2Fbakerroofing.com%2F&fillout-embed-dynamic-resize=true",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 4 of 4 stylesheets retained.",
+  "digest": "0306300b0a08a4da72f4597a6a3af244f609c83a39c9f0f5680f6141b9c95230"
+}

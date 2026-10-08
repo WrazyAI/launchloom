@@ -1,0 +1,363 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-veterinary-modern-animal",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.modernanimal.com/",
+    "finalUrl": "https://www.modernanimal.com/",
+    "httpStatus": 200,
+    "pageTitle": "A Vet for The Animal People | Modern Animal",
+    "retrievedAt": "2026-10-08T20:36:52.900Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 272830,
+      "sha256": "939e9f2cd52cbb621aa73b4c2991416ad670ff2d9f9abe4e6b7a2dbeae67a5df"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 304821,
+      "sha256": "8dc676c4af2fc3816d720a390e869f32071abe30da04fdb411e1c3dafe7acafd"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68e194e91c1656ec773d0cbd_navbar-logo.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68c7a70b1081a0820a18a87c_home-header.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68c7a70b1081a0820a18a87c_home-header-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68c7a70b1081a0820a18a87c_home-header-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68c7a70b1081a0820a18a87c_home-header-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68d4e2a2b17ac77c9174a708_home-header-mobile.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68d4e2a2b17ac77c9174a708_home-header-mobile-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68bb6d56fd15750a1592b076_placeholder-video-thumbnail.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/6901427d1a5ece049240650f_Screenshot%202025-10-28%20at%203.23.47%E2%80%AFPM.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/6901427d1a5ece049240650f_Screenshot%202025-10-28%20at%203.23.47%E2%80%AFPM-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/6901427d1a5ece049240650f_Screenshot%202025-10-28%20at%203.23.47%E2%80%AFPM-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/690141f03abd482be9e00fd7_Screenshot%202025-10-28%20at%203.21.23%E2%80%AFPM.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/690141f03abd482be9e00fd7_Screenshot%202025-10-28%20at%203.21.23%E2%80%AFPM-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/690141f03abd482be9e00fd7_Screenshot%202025-10-28%20at%203.21.23%E2%80%AFPM-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/690140d1f7e43e6956299571_Nick.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/690140d1f7e43e6956299571_Nick-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/690140d1f7e43e6956299571_Nick-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/6901479829c2398abf09fb9e_meghan.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/6901479829c2398abf09fb9e_meghan-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/6901479829c2398abf09fb9e_meghan-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/69014a65a0f8463809533c98_Screenshot%202025-10-28%20at%203.57.29%E2%80%AFPM.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/69014a65a0f8463809533c98_Screenshot%202025-10-28%20at%203.57.29%E2%80%AFPM-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/69014a65a0f8463809533c98_Screenshot%202025-10-28%20at%203.57.29%E2%80%AFPM-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/690149f9878b0ae4d3019c73_lindsey.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/690149f9878b0ae4d3019c73_lindsey-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/690149f9878b0ae4d3019c73_lindsey-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/6901488b250b4ca4ae2f53ee_Screenshot%202025-10-28%20at%203.49.36%E2%80%AFPM.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bfc524bca510ffe2d11d59/6901488b250b4ca4ae2f53ee_Screenshot%202025-10-28%20at%203.49.36%E2%80%AFPM-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68cb0dbac8ad99d2ebb8a410_yelp.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68cb0e1d2949df56487c5d9e_stars.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68cb0e7416eb73cf3f39ec22_google.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68cb0e746db03c794a12b792_apple.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68c8037ef7333a00c91547ff_home-locations.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68c8037ef7333a00c91547ff_home-locations-p-500.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68c8037ef7333a00c91547ff_home-locations-p-800.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68c8037ef7333a00c91547ff_home-locations-p-1080.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68c8029846eb3d049643e3a7_Shot_04_Dave-Setup-02_000595.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68c8029846eb3d049643e3a7_Shot_04_Dave-Setup-02_000595-p-500.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68c8029846eb3d049643e3a7_Shot_04_Dave-Setup-02_000595-p-800.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68c8029846eb3d049643e3a7_Shot_04_Dave-Setup-02_000595-p-1080.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68f95e305849b08af0a94a49_nerinda.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68f95e305849b08af0a94a49_nerinda-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68f95e305849b08af0a94a49_nerinda-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68f95e305849b08af0a94a49_nerinda-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68faad4915bbc1bb724e8aef_425965e75ada6a7b3d151280510ec413_Phone_1440x900.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68faad4915bbc1bb724e8aef_425965e75ada6a7b3d151280510ec413_Phone_1440x900-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68faad4915bbc1bb724e8aef_425965e75ada6a7b3d151280510ec413_Phone_1440x900-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68faad4915bbc1bb724e8aef_425965e75ada6a7b3d151280510ec413_Phone_1440x900-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/69fa7c79dea81b9bc6faaa41_signup-background.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/68c694eb06e99be289203a73_logo-light.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/69c1a818ed04c7daf3086a9d_modern-animal-app-qr-code.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1/69c1a88ba97f659900e4eb51_app-modal-close.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bat.bing.com/action/0?ti=97226536&tm=gtm002&Ver=2&mid=55fa68f5-b47f-4572-89f6-c2bcaec86982&bo=2&sid=f12c0c70c35711f1aea07f5b09ee8b33&vid=f12c3e60c35711f18b5f7bdd99a30dbc&vids=1&msclkid=N&pi=0&lg=en-US&sw=1440&sh=900&sc=24&nwd=1&tl=A%20Vet%20for%20The%20Animal%20People%20%7C%20Modern%20Animal&p=https%3A%2F%2Fwww.modernanimal.com%2F&r=&lt=3024&evt=pageLoad&sv=2&asc=G&cdb=AQAS&rn=374587",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F6900f254620d9fc477e2567c_Book%20an%20appointment%20whenever-transcode.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F6900f254620d9fc477e2567c_Book%20an%20appointment%20whenever-transcode.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F6900f2e71dbf8ab65c93448f_great%20care%20from%20great%20people-transcode.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F6900f2e71dbf8ab65c93448f_great%20care%20from%20great%20people-transcode.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F6900f35392819303c4437123_Transparent%20Pricing-transcode.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F6900f35392819303c4437123_Transparent%20Pricing-transcode.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F6900f3b0f3c877065f549504_care%20that%20continues%20at%20home-transcode.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F6900f3b0f3c877065f549504_care%20that%20continues%20at%20home-transcode.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F69b104e1c967a5581f5c8cf6_Book%20an%20appointment%20whenever_mp4.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F69b104e1c967a5581f5c8cf6_Book%20an%20appointment%20whenever_webm.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F69b105138f83bba014eec187_great%20care%20from%20great%20people_mp4.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F69b105138f83bba014eec187_great%20care%20from%20great%20people_webm.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F69b105a6b4aff762d24fa0b8_Transparent%20Pricing_mp4.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F69b105a6b4aff762d24fa0b8_Transparent%20Pricing_webm.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F69b105dab166a3f3762e0367_care%20that%20continues%20at%20home_mp4.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F69b105dab166a3f3762e0367_care%20that%20continues%20at%20home_webm.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F69b106060eda43462c219b71_Website%20Refresh%20Header%20Export_16x9_1_mp4.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F69b106060eda43462c219b71_Website%20Refresh%20Header%20Export_16x9_1_webm.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F68cb006243829211fb9f67c8_195541_Yawning_Pet_Fur_Bed_By_Oleksandr_Ostapchuk_Artlist_HD-transcode.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68bb6d55fd15750a1592afe1%2F68cb006243829211fb9f67c8_195541_Yawning_Pet_Fur_Bed_By_Oleksandr_Ostapchuk_Artlist_HD-transcode.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.googletagmanager.com/ns.html?id=GTM-MHL8X3S",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "about:blank",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://player.vimeo.com/video/1150156342?app_id=122963",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://player.vimeo.com/video/1150156317?app_id=122963",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://player.vimeo.com/video/1150156558?app_id=122963",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://player.vimeo.com/video/1150156492?app_id=122963",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://player.vimeo.com/video/1150156376?app_id=122963",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://player.vimeo.com/video/1150156471?app_id=122963",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://player.vimeo.com/video/1150156268?app_id=122963",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "8759d96532d0ddccc7e5b2e5d526b6389e48c1f9fa59ca0de0c28570a2cf908b"
+}

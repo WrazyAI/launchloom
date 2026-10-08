@@ -1,0 +1,252 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "html5up-dental-dimension",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://html5up.net/dimension",
+    "repository": "https://github.com/zce/html5up",
+    "revision": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "dimension/",
+    "retrievedAt": "2026-10-08T20:04:57.967Z",
+    "license": "CC-BY-3.0",
+    "licenseEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/font-awesome.min.css",
+      "bytes": 31000,
+      "sha256": "799aeb25cc0373fdee0e1b1db7ad6c2f6a0e058dfadaa3379689f583213190bd"
+    },
+    {
+      "path": "source/assets/css/main.css",
+      "bytes": 34125,
+      "sha256": "b5ed0c2cbe225e54d57f6c5b6041a3a5e4bed8cbaf6956c4529accea953493da"
+    },
+    {
+      "path": "source/assets/css/noscript.css",
+      "bytes": 568,
+      "sha256": "7ab18d15321c41669e78641421ed93c5594afc78a4e18793a0be86a336037b93"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.eot",
+      "bytes": 165742,
+      "sha256": "7bfcab6db99d5cfbf1705ca0536ddc78585432cc5fa41bbd7ad0f009033b2979"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.svg",
+      "bytes": 444379,
+      "sha256": "ad6157926c1622ba4e1d03d478f1541368524bfc46f51e42fe0d945f7ef323e4"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.ttf",
+      "bytes": 165548,
+      "sha256": "aa58f33f239a0fb02f5c7a6c45c043d7a9ac9a093335806694ecd6d4edc0d6a8"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.woff",
+      "bytes": 98024,
+      "sha256": "ba0c59deb5450f5cb41b3f93609ee2d0d995415877ddfa223e8a8a7533474f07"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.woff2",
+      "bytes": 77160,
+      "sha256": "2adefcbc041e7d18fcf2d417879dc5a09997aa64d675b7a3c4b6ce33da13f3fe"
+    },
+    {
+      "path": "source/assets/fonts/FontAwesome.otf",
+      "bytes": 134808,
+      "sha256": "444dd4366615ffc4a16d012b2fa90137065d3ccb410fa6fd5e4ddd7b5e4ffcd5"
+    },
+    {
+      "path": "source/assets/js/breakpoints.min.js",
+      "bytes": 2439,
+      "sha256": "309febcd6d6e0cf092201532215f03a6a9f30b30f26203272a4861d704e7cd52"
+    },
+    {
+      "path": "source/assets/js/browser.min.js",
+      "bytes": 1851,
+      "sha256": "87910d5ed0053d90caf83230a2f1811d8679815da01f7bdec7548e776d7f04c4"
+    },
+    {
+      "path": "source/assets/js/jquery.min.js",
+      "bytes": 86927,
+      "sha256": "160a426ff2894252cd7cebbdd6d6b7da8fcd319c65b70468f10b6690c45d02ef"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 8435,
+      "sha256": "0f196286a85ffd823153db2b7f4a34f73fe7391b5b315f0de9f63d779f00e96f"
+    },
+    {
+      "path": "source/assets/js/util.js",
+      "bytes": 12433,
+      "sha256": "c2e1e72b0de356f6ce184e3af4fa8ab6590a2581162905a27d77886b2d960e00"
+    },
+    {
+      "path": "source/assets/sass/base/_page.scss",
+      "bytes": 879,
+      "sha256": "31e0a29cc663cf13bbe7805f3e3e1f0d7f5bee9006159b4975c2020e90b8310c"
+    },
+    {
+      "path": "source/assets/sass/base/_reset.scss",
+      "bytes": 1569,
+      "sha256": "e369674cac33cb46fbf16522f2bb10a9dae79a65bb3182f7f4c2c849bd6f2dc8"
+    },
+    {
+      "path": "source/assets/sass/base/_typography.scss",
+      "bytes": 3325,
+      "sha256": "171796060fa4e43cadce4bd6b54728ce4cb0b16d5fa8dd50e0950ba970189573"
+    },
+    {
+      "path": "source/assets/sass/components/_actions.scss",
+      "bytes": 1787,
+      "sha256": "42ac25d71bc2b21c35c84cb4c4ec7a797e9615ef68d62c34978fc610e94a112e"
+    },
+    {
+      "path": "source/assets/sass/components/_box.scss",
+      "bytes": 531,
+      "sha256": "d257aaaaa2da718e158f6cff98beb6b4d172394e279df97217b18ba90e9188ec"
+    },
+    {
+      "path": "source/assets/sass/components/_button.scss",
+      "bytes": 1851,
+      "sha256": "9038b96769f9c39d10a2fc0e4c49ae8d1be70b81de08252b274a2539b71c0eec"
+    },
+    {
+      "path": "source/assets/sass/components/_form.scss",
+      "bytes": 5923,
+      "sha256": "87ee4e5ce0faa4c783dbc2a2d3f1b1a512f6d10f195991c6e430bef71cb39592"
+    },
+    {
+      "path": "source/assets/sass/components/_icon.scss",
+      "bytes": 286,
+      "sha256": "a42bd2649e8e7699b4b5963db0c825c5f728b7c658e995939129187d9d2f2fc8"
+    },
+    {
+      "path": "source/assets/sass/components/_icons.scss",
+      "bytes": 701,
+      "sha256": "367bb4c16ef8bddbe0dd10ee018694d4f553a61a74bbda5043c701624f8bb8e8"
+    },
+    {
+      "path": "source/assets/sass/components/_image.scss",
+      "bytes": 1447,
+      "sha256": "f1c91febdd82a7aadce4bae13d939ed0ec8d36e620f4a1423a3373d062a494c8"
+    },
+    {
+      "path": "source/assets/sass/components/_list.scss",
+      "bytes": 908,
+      "sha256": "4147f3d6c6ce49f5ffc0489e3e3392bb81298c3519aed33d65004d5040aedc4b"
+    },
+    {
+      "path": "source/assets/sass/components/_table.scss",
+      "bytes": 1399,
+      "sha256": "c657315c9f64a1672a0e0c5ac7456336ed6038517c6f0e318400ec63ae220bcd"
+    },
+    {
+      "path": "source/assets/sass/layout/_bg.scss",
+      "bytes": 1616,
+      "sha256": "96ae7b5d35eb4c91cfa4b532d57b8f943f6c89de7fcf1a9a4e1c4b92a47ac131"
+    },
+    {
+      "path": "source/assets/sass/layout/_footer.scss",
+      "bytes": 812,
+      "sha256": "e5ec42f3ac1b1a074cbbfb3ac00bb9b04106eb6fdabd4ec1c5248eee0d39c6df"
+    },
+    {
+      "path": "source/assets/sass/layout/_header.scss",
+      "bytes": 5146,
+      "sha256": "c2b051ea01062d8ea10d90ea1a5f49b83559a1202f7c746e6e3dfbd4c8cdf7a5"
+    },
+    {
+      "path": "source/assets/sass/layout/_main.scss",
+      "bytes": 2631,
+      "sha256": "60d7fe08be52e0ffa97c93bdedda4891dd3126aa06ccc01b001df4fee429e873"
+    },
+    {
+      "path": "source/assets/sass/layout/_wrapper.scss",
+      "bytes": 730,
+      "sha256": "936629fc8aa3a283c62362916799a9c523d1c36653cfbe2c7906686480fb24b0"
+    },
+    {
+      "path": "source/assets/sass/libs/_breakpoints.scss",
+      "bytes": 4593,
+      "sha256": "69a8486c9bdc0b14358418cae6c4829b57fb0b6684634e1e72f5a2a27f732101"
+    },
+    {
+      "path": "source/assets/sass/libs/_functions.scss",
+      "bytes": 1957,
+      "sha256": "fc832d9ccc89117bb05beed1e5fb328e7f909845d2220a1060375142f51b7e5d"
+    },
+    {
+      "path": "source/assets/sass/libs/_mixins.scss",
+      "bytes": 1840,
+      "sha256": "1eadca47c82395e010637919c7684793711009b6413ebb3a087f7471a4e8bf41"
+    },
+    {
+      "path": "source/assets/sass/libs/_vars.scss",
+      "bytes": 867,
+      "sha256": "e5897d725966b93a5be793e3994cf70afd636aaa3d2283d53f9ddd7c85772f1d"
+    },
+    {
+      "path": "source/assets/sass/libs/_vendor.scss",
+      "bytes": 7356,
+      "sha256": "272b2a31ba214fbe7293e24c9e925c3965220c144d97fe9846ba095d7fce14d6"
+    },
+    {
+      "path": "source/assets/sass/main.scss",
+      "bytes": 1180,
+      "sha256": "9abf2c518f0b86ab99f181472edd7e84f6d87d9e768104438bc8da7a5b442d30"
+    },
+    {
+      "path": "source/assets/sass/noscript.scss",
+      "bytes": 738,
+      "sha256": "d2294670a160f63fa8978d40c1910562c8f952d9cfd454c1969de621e53b7bbc"
+    },
+    {
+      "path": "source/images/bg.jpg",
+      "bytes": 37864,
+      "sha256": "533c61be585ad42df2b56f6486a33a99db06c0fa089df1b28547913341d23af1"
+    },
+    {
+      "path": "source/images/overlay.png",
+      "bytes": 4385,
+      "sha256": "29104d8dba9179915cd8e216cd8b39dce3f9d66993429a9108d2ab3797782a43"
+    },
+    {
+      "path": "source/images/pic01.jpg",
+      "bytes": 10064,
+      "sha256": "bff30e8c01619571fac83fcb9877f1aabe06eaa4e9e9af032cfb5ed6ad4c1558"
+    },
+    {
+      "path": "source/images/pic02.jpg",
+      "bytes": 8904,
+      "sha256": "93af9523ef8986292e92496eb54ea3004303cc139e256d0cb4cdf34b0b9193ef"
+    },
+    {
+      "path": "source/images/pic03.jpg",
+      "bytes": 9697,
+      "sha256": "f2605d2596c9682b3d6f86c960891a2b84bca43da1dbaf70d4d3929b9da2f85b"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 14554,
+      "sha256": "d4a9051923829777441e3dd4d984a8907171ddb4a8c265f270767b5873f83e3e"
+    },
+    {
+      "path": "source/LICENSE.txt",
+      "bytes": 17128,
+      "sha256": "d7b98629668e4968281c7083336bc292ae55e2ca3a5469072b9657dd2c1a634e"
+    },
+    {
+      "path": "source/README.txt",
+      "bytes": 771,
+      "sha256": "506fdcc52f743bf57966d19825d07ea92cd483fd55212584936b6a40cf7fafc7"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Fetched 46 files from the pinned repository at f32c95cd40e42659857e2318b6deb1f6be43da5d.",
+  "digest": "7ee0e39f3af8754709d8707c3b3c51ebda2ba949afc68b1223c2d3f8c1453bb9"
+}

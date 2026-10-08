@@ -1,0 +1,983 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-architecture-studio-peake",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.studiopeake.com/",
+    "finalUrl": "https://www.studiopeake.com/",
+    "httpStatus": 200,
+    "pageTitle": "Studio Peake",
+    "retrievedAt": "2026-10-08T20:21:25.445Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 186805,
+      "sha256": "f4b0a8cab835b11d073766859faa65f5eb2d2def38034f83b2a403fc2f2e954e"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 13728,
+      "sha256": "2be67d829931067051705cabc083afb8507f2ba111f8825e7f3cd551ad41b88d"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 147972,
+      "sha256": "aa0a3064fd52ca395fb4daad0a18b45761bad3ab80a53b0ad35a184d0ada518c"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 177,
+      "sha256": "5973db3cb676132f963e0e43b85197faaa87595b259f58d4ea71fadb3a78edc9"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 30194,
+      "sha256": "c92ce138e3d3ceae320c8e5048e12ad317d8ced03c428d984b749812759d2438"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 1254,
+      "sha256": "03cbb77058cc56323ad39ccc9d2d677b37af75f7f833eac6e74f206bf049890f"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Aubergine.svg?v=1775291634&width=50",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Aubergine.svg?v=1775291634&width=116",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Aubergine.svg?v=1775291634&width=50",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Aubergine.svg?v=1775291634&width=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Clotted_Cream.png?v=1773999449&width=50",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Clotted_Cream.png?v=1773999449&width=486",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Clotted_Cream.png?v=1773999449&width=50",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Clotted_Cream.png?v=1773999449&width=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Clotted_Cream.svg?v=1773919475&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Clotted_Cream.svg?v=1773919475&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-contact-surrey-arts-and-craft-desktop_9c36954b-dd24-4b4a-91bb-8cb8b4726f8a.jpg?v=1774540460&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-contact-surrey-arts-and-craft-desktop_9c36954b-dd24-4b4a-91bb-8cb8b4726f8a.jpg?v=1774540460&width=982",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-contact-surrey-arts-and-craft-desktop_9c36954b-dd24-4b4a-91bb-8cb8b4726f8a.jpg?v=1774540460&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-contact-surrey-arts-and-craft-desktop_9c36954b-dd24-4b4a-91bb-8cb8b4726f8a.jpg?v=1774540460&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-contact-surrey-arts-and-craft-desktop_9c36954b-dd24-4b4a-91bb-8cb8b4726f8a.jpg?v=1774540460&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=1600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=2000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=700",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=1200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=1400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=1600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=1800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-hero-parsons-green.jpg?v=1777473778&width=2000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=1800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=3200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=1400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=1800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=2400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=3200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-kensington-townhouse-mobile.jpg?v=1773338066&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-kensington-townhouse-mobile.jpg?v=1773338066&width=919",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-kensington-townhouse-mobile.jpg?v=1773338066&width=200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-kensington-townhouse-mobile.jpg?v=1773338066&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-kensington-townhouse-mobile.jpg?v=1773338066&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-kensington-townhouse-mobile.jpg?v=1773338066&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-kensington-townhouse-mobile.jpg?v=1773338066&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-kensington-townhouse-mobile.jpg?v=1773338066&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-workshop-the-collection_40206a19-91dd-4d05-a228-9486f6070d19.jpg?v=1776173991&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-workshop-the-collection_40206a19-91dd-4d05-a228-9486f6070d19.jpg?v=1776173991&width=1333",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-workshop-the-collection_40206a19-91dd-4d05-a228-9486f6070d19.jpg?v=1776173991&width=200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-workshop-the-collection_40206a19-91dd-4d05-a228-9486f6070d19.jpg?v=1776173991&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-workshop-the-collection_40206a19-91dd-4d05-a228-9486f6070d19.jpg?v=1776173991&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-workshop-the-collection_40206a19-91dd-4d05-a228-9486f6070d19.jpg?v=1776173991&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-workshop-the-collection_40206a19-91dd-4d05-a228-9486f6070d19.jpg?v=1776173991&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-workshop-the-collection_40206a19-91dd-4d05-a228-9486f6070d19.jpg?v=1776173991&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-workshop-the-collection_40206a19-91dd-4d05-a228-9486f6070d19.jpg?v=1776173991&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-workshop-the-collection_40206a19-91dd-4d05-a228-9486f6070d19.jpg?v=1776173991&width=1200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-commercial.jpg?v=1773338054&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-commercial.jpg?v=1773338054&width=990",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-commercial.jpg?v=1773338054&width=200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-commercial.jpg?v=1773338054&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-commercial.jpg?v=1773338054&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-commercial.jpg?v=1773338054&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-commercial.jpg?v=1773338054&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-commercial.jpg?v=1773338054&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=2834",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=700",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=1200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=1400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=1600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=1800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=2000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=2200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=2400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=2600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-the-studio_7c69b472-5c3f-4876-b724-0f2b2c1627fa.jpg?v=1775027084&width=2800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-image-divider-schemes.jpg?v=1773338033&width=1400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-image-divider-schemes.jpg?v=1773338033&width=1500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-image-divider-schemes.jpg?v=1773338033&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-image-divider-schemes.jpg?v=1773338033&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-image-divider-schemes.jpg?v=1773338033&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-image-divider-schemes.jpg?v=1773338033&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-image-divider-schemes.jpg?v=1773338033&width=700",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-image-divider-schemes.jpg?v=1773338033&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-image-divider-schemes.jpg?v=1773338033&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-image-divider-schemes.jpg?v=1773338033&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-image-divider-schemes.jpg?v=1773338033&width=1200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-image-divider-schemes.jpg?v=1773338033&width=1400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-our-approach-interior-design_272fccc5-fad4-4cee-b780-f3aed9b97003.jpg?v=1775028255&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-our-approach-interior-design_272fccc5-fad4-4cee-b780-f3aed9b97003.jpg?v=1775028255&width=1500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-our-approach-interior-design_272fccc5-fad4-4cee-b780-f3aed9b97003.jpg?v=1775028255&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-our-approach-interior-design_272fccc5-fad4-4cee-b780-f3aed9b97003.jpg?v=1775028255&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-our-approach-interior-design_272fccc5-fad4-4cee-b780-f3aed9b97003.jpg?v=1775028255&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-our-approach-interior-design_272fccc5-fad4-4cee-b780-f3aed9b97003.jpg?v=1775028255&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-our-approach-interior-design_272fccc5-fad4-4cee-b780-f3aed9b97003.jpg?v=1775028255&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-our-approach-interior-design_272fccc5-fad4-4cee-b780-f3aed9b97003.jpg?v=1775028255&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-our-approach-interior-design_272fccc5-fad4-4cee-b780-f3aed9b97003.jpg?v=1775028255&width=1200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-our-approach-interior-design_272fccc5-fad4-4cee-b780-f3aed9b97003.jpg?v=1775028255&width=1400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-architectural-design.jpg?v=1773338043&width=1011",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-architectural-design.jpg?v=1773338043&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-architectural-design.jpg?v=1773338043&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-architectural-design.jpg?v=1773338043&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-architectural-design.jpg?v=1773338043&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-architectural-design.jpg?v=1773338043&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-architectural-design.jpg?v=1773338043&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-craftsmanship.jpg?v=1773338043&width=1011",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-craftsmanship.jpg?v=1773338043&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-craftsmanship.jpg?v=1773338043&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-craftsmanship.jpg?v=1773338043&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-craftsmanship.jpg?v=1773338043&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-craftsmanship.jpg?v=1773338043&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-craftsmanship.jpg?v=1773338043&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=1600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=2000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=700",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=1200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=1400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=1600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=1800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-projects-residential-kensington-townhouse-02.jpg?v=1773423939&width=2000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=1600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=2000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=700",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=1200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=1400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=1600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=1800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-desktop.jpg?v=1773338080&width=2000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=1600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=3000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=700",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=1200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=1400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=1600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=1800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=2000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=2200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=2400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=2600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=2800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-desktop.jpg?v=1773338081&width=3000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=1600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=3000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=700",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=1200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=1400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=1600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=1800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=2000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=2200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=2400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=2600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=2800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-desktop.jpg?v=1773338080&width=3000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-five-years-of-studio-peake_65f1b15c-5fd2-4363-a9be-bc8fef28d12f.jpg?v=1777981382&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-five-years-of-studio-peake_65f1b15c-5fd2-4363-a9be-bc8fef28d12f.jpg?v=1777981382&width=833",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-five-years-of-studio-peake_65f1b15c-5fd2-4363-a9be-bc8fef28d12f.jpg?v=1777981382&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-five-years-of-studio-peake_65f1b15c-5fd2-4363-a9be-bc8fef28d12f.jpg?v=1777981382&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-five-years-of-studio-peake_65f1b15c-5fd2-4363-a9be-bc8fef28d12f.jpg?v=1777981382&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-five-years-of-studio-peake_65f1b15c-5fd2-4363-a9be-bc8fef28d12f.jpg?v=1777981382&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-five-years-of-studio-peake_65f1b15c-5fd2-4363-a9be-bc8fef28d12f.jpg?v=1777981382&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-christopher-farr-collaboration-02_fd0fa9a3-75d8-4012-9c20-7afbe3db9020.jpg?v=1776864967&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-christopher-farr-collaboration-02_fd0fa9a3-75d8-4012-9c20-7afbe3db9020.jpg?v=1776864967&width=967",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-christopher-farr-collaboration-02_fd0fa9a3-75d8-4012-9c20-7afbe3db9020.jpg?v=1776864967&width=300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-christopher-farr-collaboration-02_fd0fa9a3-75d8-4012-9c20-7afbe3db9020.jpg?v=1776864967&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-christopher-farr-collaboration-02_fd0fa9a3-75d8-4012-9c20-7afbe3db9020.jpg?v=1776864967&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-christopher-farr-collaboration-02_fd0fa9a3-75d8-4012-9c20-7afbe3db9020.jpg?v=1776864967&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/articles/studiopeake-news-and-views-christopher-farr-collaboration-02_fd0fa9a3-75d8-4012-9c20-7afbe3db9020.jpg?v=1776864967&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=280",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=846",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=280",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Logo_Clotted_Cream.svg?v=1773769489&width=560",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-heading-parsons-green-mobile.jpg?v=1775027676&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-heading-parsons-green-mobile.jpg?v=1775027676&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-heading-parsons-green-mobile.jpg?v=1775027676&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-heading-parsons-green-mobile.jpg?v=1775027676&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Stacked_Logo_Clotted_Cream.png?v=1774384559&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Stacked_Logo_Clotted_Cream.png?v=1774384559&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Stacked_Logo_Clotted_Cream.png?v=1774384559&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/Studio_Peake_Stacked_Logo_Clotted_Cream.png?v=1774384559&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-kensington-townhouse-mobile.jpg?v=1773338066&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-mobile.jpg?v=1773338066&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-mobile.jpg?v=1773338066&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-mobile.jpg?v=1773338066&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-surrey-arts-and-craft-mobile.jpg?v=1773338066&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-mobile.jpg?v=1773338066&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-mobile.jpg?v=1773338066&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-mobile.jpg?v=1773338066&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-notting-hill-pied-a-tierre-mobile.jpg?v=1773338066&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-mobile.jpg?v=1773338065&width=400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-mobile.jpg?v=1773338065&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-mobile.jpg?v=1773338065&width=800",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//www.studiopeake.com/cdn/shop/files/studiopeake-home-chelsea-townhouse-mobile.jpg?v=1773338065&width=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.studiopeake.com/web-pixels@7ec887c8w14f9f074p854094e1m1370c602/custom/web-pixel-shopify-custom-pixel@0530/sandbox/modern/",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 5 of 5 stylesheets retained.",
+  "digest": "9f139ebe14e0fb5e889f0715abd311c92076f68a0958272ee0b8453a5d6d8df3"
+}

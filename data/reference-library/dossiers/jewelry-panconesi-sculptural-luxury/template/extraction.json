@@ -1,0 +1,1245 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "jewelry-panconesi-sculptural-luxury",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://marcopanconesi.com/",
+    "finalUrl": "https://marcopanconesi.com/",
+    "httpStatus": 200,
+    "pageTitle": "Panconesi",
+    "retrievedAt": "2026-10-08T20:19:16.963Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 732567,
+      "sha256": "64016e2c6a442604d103ccbc744b42641c954f46cbecb76b658a4d5d3e1d61eb"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 13728,
+      "sha256": "2be67d829931067051705cabc083afb8507f2ba111f8825e7f3cd551ad41b88d"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 18454,
+      "sha256": "74ca6aae5468dbc924790c3b4d219a089b90a34bad53a0f7ca3a73e73b6f5ab8"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 34404,
+      "sha256": "cc15af93d9b57eb94d928fda1bb108841d0a76823ed341251e605fe46495f874"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/collections/sdfg.jpg?v=1783170905&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/collections/sdfg.jpg?v=1783170905&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/collections/sdfg.jpg?v=1783170905&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/collections/0386_8231fb93-21de-423b-afbd-6186ac8b2234.jpg?v=1783093794&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/collections/0386_8231fb93-21de-423b-afbd-6186ac8b2234.jpg?v=1783093794&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/collections/0386_8231fb93-21de-423b-afbd-6186ac8b2234.jpg?v=1783093794&width=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/dddsssaa.jpg?v=1782931528&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/dddsssaa.jpg?v=1782931528&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/dddsssaa.jpg?v=1782931528&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/dddsssaa.jpg?v=1782931528&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/dfffff.jpg?v=1782931528&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/dfffff.jpg?v=1782931528&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/dfffff.jpg?v=1782931528&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/dfffff.jpg?v=1782931528&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/260712_panconesi_atelier_ck_01_R_40e3f32f-6161-4373-9cae-c800dbc2a271.jpg?v=1788786183&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/260712_panconesi_atelier_ck_01_R_40e3f32f-6161-4373-9cae-c800dbc2a271.jpg?v=1788786183&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/260712_panconesi_atelier_ck_01_R_40e3f32f-6161-4373-9cae-c800dbc2a271.jpg?v=1788786183&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/260712_panconesi_atelier_ck_01_R_40e3f32f-6161-4373-9cae-c800dbc2a271.jpg?v=1788786183&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/260616_panconesi_objects10556_R_42cf7bfa-a147-463a-8f43-bd93c54a4ba8.jpg?v=1783003644&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/260616_panconesi_objects10556_R_42cf7bfa-a147-463a-8f43-bd93c54a4ba8.jpg?v=1783003644&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/260616_panconesi_objects10556_R_42cf7bfa-a147-463a-8f43-bd93c54a4ba8.jpg?v=1783003644&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/260616_panconesi_objects10556_R_42cf7bfa-a147-463a-8f43-bd93c54a4ba8.jpg?v=1783003644&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/PANCONESI_LOV_V2_ng-60.jpg?v=1769950491&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/PANCONESI_LOV_V2_ng-60.jpg?v=1769950491&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/PANCONESI_LOV_V2_ng-60.jpg?v=1769950491&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/PANCONESI_LOV_V2_ng-60.jpg?v=1769950491&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/IMG_1683.jpg?v=1769693125&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1683.jpg?v=1769693125&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1683.jpg?v=1769693125&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1683.jpg?v=1769693125&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/IMG_2121.jpg?v=1769693448&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_2121.jpg?v=1769693448&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_2121.jpg?v=1769693448&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_2121.jpg?v=1769693448&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/IMG_1601.jpg?v=1769693565&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1601.jpg?v=1769693565&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1601.jpg?v=1769693565&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1601.jpg?v=1769693565&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/IMG_2085.jpg?v=1769693774&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_2085.jpg?v=1769693774&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_2085.jpg?v=1769693774&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_2085.jpg?v=1769693774&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/body-diamanti-chandelier-brooch.jpg?v=1769693703&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/body-diamanti-chandelier-brooch.jpg?v=1769693703&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/body-diamanti-chandelier-brooch.jpg?v=1769693703&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/body-diamanti-chandelier-brooch.jpg?v=1769693703&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/dfssss.jpg?v=1782931527&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/dfssss.jpg?v=1782931527&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/dfssss.jpg?v=1782931527&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/dfssss.jpg?v=1782931527&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/sdfg.jpg?v=1782931526&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/sdfg.jpg?v=1782931526&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/sdfg.jpg?v=1782931526&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/sdfg.jpg?v=1782931526&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/IMG_1490.jpg?v=1769693986&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1490.jpg?v=1769693986&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1490.jpg?v=1769693986&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1490.jpg?v=1769693986&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/new_blow_up_family.jpg?v=1769694116&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/new_blow_up_family.jpg?v=1769694116&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/new_blow_up_family.jpg?v=1769694116&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/new_blow_up_family.jpg?v=1769694116&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/IMG_1720-Edit.jpg?v=1769694217&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1720-Edit.jpg?v=1769694217&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1720-Edit.jpg?v=1769694217&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1720-Edit.jpg?v=1769694217&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/IMG_1929.jpg?v=1769694325&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1929.jpg?v=1769694325&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1929.jpg?v=1769694325&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1929.jpg?v=1769694325&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/IMG_1894.jpg?v=1769694407&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1894.jpg?v=1769694407&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1894.jpg?v=1769694407&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1894.jpg?v=1769694407&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/IMG_1971.jpg?v=1769694484&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1971.jpg?v=1769694484&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1971.jpg?v=1769694484&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1971.jpg?v=1769694484&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/IMG_1637_copy.jpg?v=1769694742&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1637_copy.jpg?v=1769694742&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1637_copy.jpg?v=1769694742&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1637_copy.jpg?v=1769694742&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/IMG_1923.jpg?v=1769694833&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1923.jpg?v=1769694833&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1923.jpg?v=1769694833&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1923.jpg?v=1769694833&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/IMG_1389.jpg?v=1769694993&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1389.jpg?v=1769694993&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1389.jpg?v=1769694993&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1389.jpg?v=1769694993&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/IMG_1727.jpg?v=1769695142&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1727.jpg?v=1769695142&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1727.jpg?v=1769695142&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/IMG_1727.jpg?v=1769695142&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Panconesi_VF2711.jpg?v=1769696196&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Panconesi_VF2711.jpg?v=1769696196&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Panconesi_VF2711.jpg?v=1769696196&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Panconesi_VF2711.jpg?v=1769696196&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/CONTACT.jpg?v=1753792366&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/CONTACT.jpg?v=1753792366&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/CONTACT.jpg?v=1753792366&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/CONTACT.jpg?v=1753792366&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/intro_savoir-faire_e13f5931-b3af-4c94-99a0-f00e2fc1a308.jpg?v=1753880262&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/intro_savoir-faire_e13f5931-b3af-4c94-99a0-f00e2fc1a308.jpg?v=1753880262&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/intro_savoir-faire_e13f5931-b3af-4c94-99a0-f00e2fc1a308.jpg?v=1753880262&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/intro_savoir-faire_e13f5931-b3af-4c94-99a0-f00e2fc1a308.jpg?v=1753880262&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/1653-05_copie.jpg?v=1753780045&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/1653-05_copie.jpg?v=1753780045&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/1653-05_copie.jpg?v=1753780045&width=832",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/1653-05_copie.jpg?v=1753780045&width=900",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/122.jpg?v=1783087410&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/122.jpg?v=1783087410&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/122.jpg?v=1783087410&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_12.jpg?v=1783087384&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_12.jpg?v=1783087384&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_12.jpg?v=1783087384&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/PANCONESI0746_40485159-05bf-4ca2-a331-88024bb6c701.jpg?v=1737107382&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/PANCONESI0746_40485159-05bf-4ca2-a331-88024bb6c701.jpg?v=1737107382&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/PANCONESI0746_40485159-05bf-4ca2-a331-88024bb6c701.jpg?v=1737107382&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/42-2.jpg?v=1754074017&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/42-2.jpg?v=1754074017&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/42-2.jpg?v=1754074017&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/PANCONESI0947-2.jpg?v=1753516294&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/PANCONESI0947-2.jpg?v=1753516294&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/PANCONESI0947-2.jpg?v=1753516294&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/PANCONESI0761-2.jpg?v=1754074062&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/PANCONESI0761-2.jpg?v=1754074062&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/PANCONESI0761-2.jpg?v=1754074062&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Panconesi-SS24-Packshots-_14.01.24_0142.jpg?v=1753516091&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Panconesi-SS24-Packshots-_14.01.24_0142.jpg?v=1753516091&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Panconesi-SS24-Packshots-_14.01.24_0142.jpg?v=1753516091&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/40_2.jpg?v=1754073950&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/40_2.jpg?v=1754073950&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/40_2.jpg?v=1754073950&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/81.jpg?v=1783070506&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/81.jpg?v=1783070506&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/81.jpg?v=1783070506&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_56.jpg?v=1783086170&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_56.jpg?v=1783086170&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_56.jpg?v=1783086170&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/110.jpg?v=1783072194&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/110.jpg?v=1783072194&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/110.jpg?v=1783072194&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_163.jpg?v=1783085814&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_163.jpg?v=1783085814&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_163.jpg?v=1783085814&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/102.jpg?v=1783070342&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/102.jpg?v=1783070342&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/102.jpg?v=1783070342&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/2137.jpg?v=1783351776&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/2137.jpg?v=1783351776&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/2137.jpg?v=1783351776&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/101_31d283d4-c051-42e1-8ef2-40d679a658d8.jpg?v=1783070193&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/101_31d283d4-c051-42e1-8ef2-40d679a658d8.jpg?v=1783070193&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/101_31d283d4-c051-42e1-8ef2-40d679a658d8.jpg?v=1783070193&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_173.jpg?v=1783085675&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_173.jpg?v=1783085675&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_173.jpg?v=1783085675&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/95.jpg?v=1783070117&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/95.jpg?v=1783070117&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/95.jpg?v=1783070117&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_146.jpg?v=1783085512&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_146.jpg?v=1783085512&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_146.jpg?v=1783085512&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/130.jpg?v=1783072991&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/130.jpg?v=1783072991&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/130.jpg?v=1783072991&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_101.jpg?v=1783082125&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_101.jpg?v=1783082125&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_101.jpg?v=1783082125&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/151.jpg?v=1783070654&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/151.jpg?v=1783070654&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/151.jpg?v=1783070654&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_63.jpg?v=1783086490&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_63.jpg?v=1783086490&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_63.jpg?v=1783086490&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/77.jpg?v=1783072308&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/77.jpg?v=1783072308&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/77.jpg?v=1783072308&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_65.jpg?v=1783086865&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_65.jpg?v=1783086865&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_65.jpg?v=1783086865&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/20260612PANCONESI0011.jpg?v=1785228458&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/20260612PANCONESI0011.jpg?v=1785228458&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/20260612PANCONESI0011.jpg?v=1785228458&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/168.jpg?v=1783072246&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/168.jpg?v=1783072246&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/168.jpg?v=1783072246&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/163_3b311237-6f0a-4120-9427-233dd0f667ab.jpg?v=1783069674&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/163_3b311237-6f0a-4120-9427-233dd0f667ab.jpg?v=1783069674&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/163_3b311237-6f0a-4120-9427-233dd0f667ab.jpg?v=1783069674&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_156.jpg?v=1783082532&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_156.jpg?v=1783082532&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_156.jpg?v=1783082532&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/172.jpg?v=1783069750&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/172.jpg?v=1783069750&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/172.jpg?v=1783069750&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_14.jpg?v=1783082986&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_14.jpg?v=1783082986&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_14.jpg?v=1783082986&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/132_aa6c4d3a-ce06-494a-8f9c-f662a7c3483f.jpg?v=1783072937&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/132_aa6c4d3a-ce06-494a-8f9c-f662a7c3483f.jpg?v=1783072937&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/132_aa6c4d3a-ce06-494a-8f9c-f662a7c3483f.jpg?v=1783072937&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_9.jpg?v=1783087348&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_9.jpg?v=1783087348&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_9.jpg?v=1783087348&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/128_a8315639-255e-40c9-bbcb-ea401b8acb41.jpg?v=1783069956&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/128_a8315639-255e-40c9-bbcb-ea401b8acb41.jpg?v=1783069956&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/128_a8315639-255e-40c9-bbcb-ea401b8acb41.jpg?v=1783069956&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_74.jpg?v=1783083358&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_74.jpg?v=1783083358&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_74.jpg?v=1783083358&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/131.jpg?v=1783072972&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/131.jpg?v=1783072972&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/131.jpg?v=1783072972&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_123.jpg?v=1783081722&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_123.jpg?v=1783081722&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_123.jpg?v=1783081722&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/162_99a203b8-13c3-4660-8579-9b3d7b6ae7c0.jpg?v=1783069706&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/162_99a203b8-13c3-4660-8579-9b3d7b6ae7c0.jpg?v=1783069706&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/162_99a203b8-13c3-4660-8579-9b3d7b6ae7c0.jpg?v=1783069706&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_70.jpg?v=1783082902&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_70.jpg?v=1783082902&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_70.jpg?v=1783082902&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/148.jpg?v=1783070613&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/148.jpg?v=1783070613&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/148.jpg?v=1783070613&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/152.jpg?v=1783070682&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/152.jpg?v=1783070682&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/152.jpg?v=1783070682&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/180_afddf503-3e35-4dd2-a08f-a50245751061.jpg?v=1783073204&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/180_afddf503-3e35-4dd2-a08f-a50245751061.jpg?v=1783073204&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/180_afddf503-3e35-4dd2-a08f-a50245751061.jpg?v=1783073204&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_43.jpg?v=1783087608&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_43.jpg?v=1783087608&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_43.jpg?v=1783087608&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/156.jpg?v=1783069649&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/156.jpg?v=1783069649&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/156.jpg?v=1783069649&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_110.jpg?v=1783082400&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_110.jpg?v=1783082400&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_110.jpg?v=1783082400&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/20260612PANCONESI0044.jpg?v=1785228602&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/20260612PANCONESI0044.jpg?v=1785228602&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/20260612PANCONESI0044.jpg?v=1785228602&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/116.jpg?v=1782981917&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/116.jpg?v=1782981917&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/116.jpg?v=1782981917&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/97_ac27fb8a-1ba2-4924-946c-1610489043c4.jpg?v=1783091434&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/97_ac27fb8a-1ba2-4924-946c-1610489043c4.jpg?v=1783091434&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/97_ac27fb8a-1ba2-4924-946c-1610489043c4.jpg?v=1783091434&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/0261_5c0bb378-2fc2-49b9-a390-305766ec3d3c.jpg?v=1768384484&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/0261_5c0bb378-2fc2-49b9-a390-305766ec3d3c.jpg?v=1768384484&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/0261_5c0bb378-2fc2-49b9-a390-305766ec3d3c.jpg?v=1768384484&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/99.jpg?v=1783072347&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/99.jpg?v=1783072347&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/99.jpg?v=1783072347&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_19.jpg?v=1783087070&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_19.jpg?v=1783087070&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_19.jpg?v=1783087070&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/165.jpg?v=1783072400&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/165.jpg?v=1783072400&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/165.jpg?v=1783072400&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_85.jpg?v=1783087239&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_85.jpg?v=1783087239&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_85.jpg?v=1783087239&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/153_878fbc51-6881-4668-a9bc-fb51a50b2b01.jpg?v=1783069571&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/153_878fbc51-6881-4668-a9bc-fb51a50b2b01.jpg?v=1783069571&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/153_878fbc51-6881-4668-a9bc-fb51a50b2b01.jpg?v=1783069571&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_54.jpg?v=1783082260&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_54.jpg?v=1783082260&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_54.jpg?v=1783082260&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/166.jpg?v=1783072380&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/166.jpg?v=1783072380&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/166.jpg?v=1783072380&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_175.jpg?v=1783087191&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_175.jpg?v=1783087191&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_175.jpg?v=1783087191&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/159_9253ccfd-37cf-4fec-8d7d-129d5aba2b69.jpg?v=1782982021&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/159_9253ccfd-37cf-4fec-8d7d-129d5aba2b69.jpg?v=1782982021&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/159_9253ccfd-37cf-4fec-8d7d-129d5aba2b69.jpg?v=1782982021&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Cropped_143.jpg?v=1783086665&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_143.jpg?v=1783086665&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Cropped_143.jpg?v=1783086665&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/127_f46b325d-8e96-434d-89ab-e9c9ec2c6de6.jpg?v=1783072861&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/127_f46b325d-8e96-434d-89ab-e9c9ec2c6de6.jpg?v=1783072861&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/127_f46b325d-8e96-434d-89ab-e9c9ec2c6de6.jpg?v=1783072861&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/108.jpg?v=1783072812&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/108.jpg?v=1783072812&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/108.jpg?v=1783072812&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/144_8b8a55aa-e6c1-4c7a-9520-95c4fb3c8f99.jpg?v=1783073094&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/144_8b8a55aa-e6c1-4c7a-9520-95c4fb3c8f99.jpg?v=1783073094&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/144_8b8a55aa-e6c1-4c7a-9520-95c4fb3c8f99.jpg?v=1783073094&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/Panconesiapres-midi0160.jpg?v=1753512380&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Panconesiapres-midi0160.jpg?v=1753512380&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/Panconesiapres-midi0160.jpg?v=1753512380&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/126_de9ddee1-ddd4-4c6b-8921-9d02554ef767.jpg?v=1783072907&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/126_de9ddee1-ddd4-4c6b-8921-9d02554ef767.jpg?v=1783072907&width=352",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//marcopanconesi.com/cdn/shop/files/126_de9ddee1-ddd4-4c6b-8921-9d02554ef767.jpg?v=1783072907&width=600",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://marcopanconesi.com/cdn/shop/files/107.jpg?v=1783072782&width=600",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained. Page errors observed: 3.",
+  "digest": "7bec585bd49e251a8c81a56364e7d290593faee2a79b98c1f67066d8400a2ade"
+}

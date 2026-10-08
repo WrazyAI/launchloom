@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-accounting-taxace",
+  "status": "failed",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.taxace.co.uk/",
+    "repository": null,
+    "retrievedAt": "2026-10-08T20:40:48.716Z",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "reason": "navigation returned HTTP 403"
+}

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-architecture-indie-interiors",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://indieinteriors.co.uk/",
+    "finalUrl": "https://indieinteriors.co.uk/",
+    "httpStatus": 200,
+    "pageTitle": "Luxury Interior Designer London | Award-Winning | Indie Interiors",
+    "retrievedAt": "2026-10-08T20:20:41.275Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 60846,
+      "sha256": "04d7535a7f3578994a109f763a60d3e8437ad82b6851bbdd53b997cb5c2e1e8e"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 8920,
+      "sha256": "682346d7114e345de211db9e7c1250b1bf7db445321eaef0c1412cb9d95927a5"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 55522,
+      "sha256": "28b4c5c949bf53b79235cb7623e28d719e7e3b8587b1af376cadf89b7b865ac5"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 7977,
+      "sha256": "931a6506a910b1f35a069478be4ee73c70e33d1f5694dbc7edf75bc2d99c9645"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://static.showit.co/file/afXXbvhSxXzQuEDp3e942Q/shared/cover_video.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://player.vimeo.com/video/1126580778?api=1&loop=1&title=0&byline=0&portrait=0&autoplay=1&autopause=0&muted=1",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "e875eb6d3c6f47ac03b9418c1c85d97afade6d9ed31d5e68b13e7c9040fd61d7"
+}

@@ -1,0 +1,1052 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-hospitality-six-bells-inn",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://thesixbellshotel.com/",
+    "finalUrl": "https://thesixbellshotel.com/",
+    "httpStatus": 200,
+    "pageTitle": "The Six Bells Inn | A Cozy Countryside Getaway",
+    "retrievedAt": "2026-10-08T20:27:33.709Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 116383,
+      "sha256": "36a2a1c72dc54ed247cd75db8e6fb5820ed50e8e9ef83fa33d23f7967e14580f"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 52359,
+      "sha256": "7c5f7192cecb0718250e3a43cd71397b7977c4ca4d6d1921a9809a8cfb382db6"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 9304,
+      "sha256": "2c5a21a94ce66454e4db389eb322441a7e6f2a1833facc357f6d8fff6b14814d"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://thesixbellshotel.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=16&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=32&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=48&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=64&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=96&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=128&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo-short.78cb9648.png&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/image?url=%2Fmichelin-key-2025.webp&w=128&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/image?url=%2Fmichelin-key-2025.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=16&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=32&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=48&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=64&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=96&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=128&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fmichelin-key-2025.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-desktop.8b939b13.jpg&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-desktop.8b939b13.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-desktop.8b939b13.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-desktop.8b939b13.jpg&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-desktop.8b939b13.jpg&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-desktop.8b939b13.jpg&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-desktop.8b939b13.jpg&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-desktop.8b939b13.jpg&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-desktop.8b939b13.jpg&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-desktop.8b939b13.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-mobile.07001d56.jpg&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-mobile.07001d56.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-mobile.07001d56.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-mobile.07001d56.jpg&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-mobile.07001d56.jpg&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-mobile.07001d56.jpg&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-mobile.07001d56.jpg&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-mobile.07001d56.jpg&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-mobile.07001d56.jpg&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fheader-image-mobile.07001d56.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/static/media/decorative-star.f68ab13e.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/4LmO8ifboI8LX2uCmJ8lxm/42b805059a730a0b4da8fad9c56adef1/Innkeeper_1.jpg?w=640&q=70&fm=webp&h=640&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/4LmO8ifboI8LX2uCmJ8lxm/42b805059a730a0b4da8fad9c56adef1/Innkeeper_1.jpg?w=3840&q=70&fm=webp&h=3840&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/4LmO8ifboI8LX2uCmJ8lxm/42b805059a730a0b4da8fad9c56adef1/Innkeeper_1.jpg?w=384&q=70&fm=webp&h=384&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/4LmO8ifboI8LX2uCmJ8lxm/42b805059a730a0b4da8fad9c56adef1/Innkeeper_1.jpg?w=750&q=70&fm=webp&h=750&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/4LmO8ifboI8LX2uCmJ8lxm/42b805059a730a0b4da8fad9c56adef1/Innkeeper_1.jpg?w=828&q=70&fm=webp&h=828&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/4LmO8ifboI8LX2uCmJ8lxm/42b805059a730a0b4da8fad9c56adef1/Innkeeper_1.jpg?w=1080&q=70&fm=webp&h=1080&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/4LmO8ifboI8LX2uCmJ8lxm/42b805059a730a0b4da8fad9c56adef1/Innkeeper_1.jpg?w=1200&q=70&fm=webp&h=1200&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/4LmO8ifboI8LX2uCmJ8lxm/42b805059a730a0b4da8fad9c56adef1/Innkeeper_1.jpg?w=1920&q=70&fm=webp&h=1920&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/4LmO8ifboI8LX2uCmJ8lxm/42b805059a730a0b4da8fad9c56adef1/Innkeeper_1.jpg?w=2048&q=70&fm=webp&h=2048&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2K8ePEo9T1QXR5eoSxoQlc/ab7583d386daed4e75241e3dd73f9ad4/Mants_Crake_20250527_KateSJordan_TheSixBellsHotel_P2_8999RT.jpg?w=640&q=70&fm=webp&h=640&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2K8ePEo9T1QXR5eoSxoQlc/ab7583d386daed4e75241e3dd73f9ad4/Mants_Crake_20250527_KateSJordan_TheSixBellsHotel_P2_8999RT.jpg?w=3840&q=70&fm=webp&h=3840&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2K8ePEo9T1QXR5eoSxoQlc/ab7583d386daed4e75241e3dd73f9ad4/Mants_Crake_20250527_KateSJordan_TheSixBellsHotel_P2_8999RT.jpg?w=384&q=70&fm=webp&h=384&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2K8ePEo9T1QXR5eoSxoQlc/ab7583d386daed4e75241e3dd73f9ad4/Mants_Crake_20250527_KateSJordan_TheSixBellsHotel_P2_8999RT.jpg?w=750&q=70&fm=webp&h=750&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2K8ePEo9T1QXR5eoSxoQlc/ab7583d386daed4e75241e3dd73f9ad4/Mants_Crake_20250527_KateSJordan_TheSixBellsHotel_P2_8999RT.jpg?w=828&q=70&fm=webp&h=828&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2K8ePEo9T1QXR5eoSxoQlc/ab7583d386daed4e75241e3dd73f9ad4/Mants_Crake_20250527_KateSJordan_TheSixBellsHotel_P2_8999RT.jpg?w=1080&q=70&fm=webp&h=1080&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2K8ePEo9T1QXR5eoSxoQlc/ab7583d386daed4e75241e3dd73f9ad4/Mants_Crake_20250527_KateSJordan_TheSixBellsHotel_P2_8999RT.jpg?w=1200&q=70&fm=webp&h=1200&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2K8ePEo9T1QXR5eoSxoQlc/ab7583d386daed4e75241e3dd73f9ad4/Mants_Crake_20250527_KateSJordan_TheSixBellsHotel_P2_8999RT.jpg?w=1920&q=70&fm=webp&h=1920&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2K8ePEo9T1QXR5eoSxoQlc/ab7583d386daed4e75241e3dd73f9ad4/Mants_Crake_20250527_KateSJordan_TheSixBellsHotel_P2_8999RT.jpg?w=2048&q=70&fm=webp&h=2048&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2fOPZy5D2ePBb3wMb2YG8T/18505f663df78ae34decb08af7ad9844/The_Penny_Queen_Bed_20250527_KateSJordan_TheSixBellsHotel_P2_9203RT.jpg?w=640&q=70&fm=webp&h=640&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2fOPZy5D2ePBb3wMb2YG8T/18505f663df78ae34decb08af7ad9844/The_Penny_Queen_Bed_20250527_KateSJordan_TheSixBellsHotel_P2_9203RT.jpg?w=3840&q=70&fm=webp&h=3840&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2fOPZy5D2ePBb3wMb2YG8T/18505f663df78ae34decb08af7ad9844/The_Penny_Queen_Bed_20250527_KateSJordan_TheSixBellsHotel_P2_9203RT.jpg?w=384&q=70&fm=webp&h=384&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2fOPZy5D2ePBb3wMb2YG8T/18505f663df78ae34decb08af7ad9844/The_Penny_Queen_Bed_20250527_KateSJordan_TheSixBellsHotel_P2_9203RT.jpg?w=750&q=70&fm=webp&h=750&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2fOPZy5D2ePBb3wMb2YG8T/18505f663df78ae34decb08af7ad9844/The_Penny_Queen_Bed_20250527_KateSJordan_TheSixBellsHotel_P2_9203RT.jpg?w=828&q=70&fm=webp&h=828&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2fOPZy5D2ePBb3wMb2YG8T/18505f663df78ae34decb08af7ad9844/The_Penny_Queen_Bed_20250527_KateSJordan_TheSixBellsHotel_P2_9203RT.jpg?w=1080&q=70&fm=webp&h=1080&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2fOPZy5D2ePBb3wMb2YG8T/18505f663df78ae34decb08af7ad9844/The_Penny_Queen_Bed_20250527_KateSJordan_TheSixBellsHotel_P2_9203RT.jpg?w=1200&q=70&fm=webp&h=1200&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2fOPZy5D2ePBb3wMb2YG8T/18505f663df78ae34decb08af7ad9844/The_Penny_Queen_Bed_20250527_KateSJordan_TheSixBellsHotel_P2_9203RT.jpg?w=1920&q=70&fm=webp&h=1920&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2fOPZy5D2ePBb3wMb2YG8T/18505f663df78ae34decb08af7ad9844/The_Penny_Queen_Bed_20250527_KateSJordan_TheSixBellsHotel_P2_9203RT.jpg?w=2048&q=70&fm=webp&h=2048&fit=fill&f=center",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=256&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=3840&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=16&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=32&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=48&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=64&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=96&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=128&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=384&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=640&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=750&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=828&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=1080&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=1200&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=1920&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/2SqoPH12bktIA43nx5zzIO/bb42a90e0e98eb4c827102a5c7876490/Vogue_Poland-Logo.wine.svg?w=2048&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=256&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=3840&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=16&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=32&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=48&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=64&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=96&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=128&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=384&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=640&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=750&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=828&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=1080&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=1200&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=1920&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5ak0Y8qt3f4MXcz7EBDTMD/9b125e205021ce43d013a2d20e5be3eb/Untitled_design__17_.png?w=2048&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=256&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=3840&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=16&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=32&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=48&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=64&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=96&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=128&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=384&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=640&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=750&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=828&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=1080&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=1200&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=1920&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/66zzfOxXpUhpDpTTIoRF5g/1d2f9323a94e92ec4f557fc9904cc9aa/michelin_2025_1_key_e-label_1-1__1_.jpg?w=2048&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=256&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=3840&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=16&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=32&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=48&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=64&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=96&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=128&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=384&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=640&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=750&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=828&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=1080&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=1200&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=1920&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/36Lmd1nkt9UPJnpKUmVhn5/8ef9448f79aab389b01208f15993c6bb/michelin_2025_1_key_e-label_1-1.jpg?w=2048&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=256&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=3840&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=16&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=32&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=48&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=64&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=96&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=128&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=384&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=640&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=750&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=828&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=1080&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=1200&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=1920&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/3ZQsGX05189Zvo3frn5boK/eb06a4ea53b00b76d5978c1defca6536/866b9194-d162-450c-9ae0-867aaa96bebe__1_.jpg?w=2048&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/image?url=%2Fnew-york-magazine.png&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/image?url=%2Fnew-york-magazine.png&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=16&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=32&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=48&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=64&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=96&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=128&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fnew-york-magazine.png&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/new-york-times.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/static/media/the-feathers-logo.27c9f937.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1aVR6poGyErCWLxPZJUR5P/8b7eb43e5ff90320ae0b309843489ea6/The_Feathers_Tavern_20250527_KateSJordan_TheSixBellsHotel_P2_9531_copyRT.jpg?w=750&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1aVR6poGyErCWLxPZJUR5P/8b7eb43e5ff90320ae0b309843489ea6/The_Feathers_Tavern_20250527_KateSJordan_TheSixBellsHotel_P2_9531_copyRT.jpg?w=3840&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1aVR6poGyErCWLxPZJUR5P/8b7eb43e5ff90320ae0b309843489ea6/The_Feathers_Tavern_20250527_KateSJordan_TheSixBellsHotel_P2_9531_copyRT.jpg?w=384&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1aVR6poGyErCWLxPZJUR5P/8b7eb43e5ff90320ae0b309843489ea6/The_Feathers_Tavern_20250527_KateSJordan_TheSixBellsHotel_P2_9531_copyRT.jpg?w=640&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1aVR6poGyErCWLxPZJUR5P/8b7eb43e5ff90320ae0b309843489ea6/The_Feathers_Tavern_20250527_KateSJordan_TheSixBellsHotel_P2_9531_copyRT.jpg?w=828&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1aVR6poGyErCWLxPZJUR5P/8b7eb43e5ff90320ae0b309843489ea6/The_Feathers_Tavern_20250527_KateSJordan_TheSixBellsHotel_P2_9531_copyRT.jpg?w=1080&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1aVR6poGyErCWLxPZJUR5P/8b7eb43e5ff90320ae0b309843489ea6/The_Feathers_Tavern_20250527_KateSJordan_TheSixBellsHotel_P2_9531_copyRT.jpg?w=1200&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1aVR6poGyErCWLxPZJUR5P/8b7eb43e5ff90320ae0b309843489ea6/The_Feathers_Tavern_20250527_KateSJordan_TheSixBellsHotel_P2_9531_copyRT.jpg?w=1920&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1aVR6poGyErCWLxPZJUR5P/8b7eb43e5ff90320ae0b309843489ea6/The_Feathers_Tavern_20250527_KateSJordan_TheSixBellsHotel_P2_9531_copyRT.jpg?w=2048&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5PIetmQXYz9tJDit6Wc1Zq/16dc439e0092148c5f32b1475ff97014/25_20251002_McLaughlin_Six-bells_PATIO_EVENTSPACE_543_R5_FINAL.jpg?w=750&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5PIetmQXYz9tJDit6Wc1Zq/16dc439e0092148c5f32b1475ff97014/25_20251002_McLaughlin_Six-bells_PATIO_EVENTSPACE_543_R5_FINAL.jpg?w=3840&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5PIetmQXYz9tJDit6Wc1Zq/16dc439e0092148c5f32b1475ff97014/25_20251002_McLaughlin_Six-bells_PATIO_EVENTSPACE_543_R5_FINAL.jpg?w=384&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5PIetmQXYz9tJDit6Wc1Zq/16dc439e0092148c5f32b1475ff97014/25_20251002_McLaughlin_Six-bells_PATIO_EVENTSPACE_543_R5_FINAL.jpg?w=640&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5PIetmQXYz9tJDit6Wc1Zq/16dc439e0092148c5f32b1475ff97014/25_20251002_McLaughlin_Six-bells_PATIO_EVENTSPACE_543_R5_FINAL.jpg?w=828&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5PIetmQXYz9tJDit6Wc1Zq/16dc439e0092148c5f32b1475ff97014/25_20251002_McLaughlin_Six-bells_PATIO_EVENTSPACE_543_R5_FINAL.jpg?w=1080&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5PIetmQXYz9tJDit6Wc1Zq/16dc439e0092148c5f32b1475ff97014/25_20251002_McLaughlin_Six-bells_PATIO_EVENTSPACE_543_R5_FINAL.jpg?w=1200&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5PIetmQXYz9tJDit6Wc1Zq/16dc439e0092148c5f32b1475ff97014/25_20251002_McLaughlin_Six-bells_PATIO_EVENTSPACE_543_R5_FINAL.jpg?w=1920&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/5PIetmQXYz9tJDit6Wc1Zq/16dc439e0092148c5f32b1475ff97014/25_20251002_McLaughlin_Six-bells_PATIO_EVENTSPACE_543_R5_FINAL.jpg?w=2048&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/6lA9nPPYZBAaO0VnriQD1d/881905ebecb2a80878ae15e94b8be07a/Travel-Leisure-Logogallery.png?w=640&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/6lA9nPPYZBAaO0VnriQD1d/881905ebecb2a80878ae15e94b8be07a/Travel-Leisure-Logogallery.png?w=3840&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/6lA9nPPYZBAaO0VnriQD1d/881905ebecb2a80878ae15e94b8be07a/Travel-Leisure-Logogallery.png?w=256&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/6lA9nPPYZBAaO0VnriQD1d/881905ebecb2a80878ae15e94b8be07a/Travel-Leisure-Logogallery.png?w=384&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/6lA9nPPYZBAaO0VnriQD1d/881905ebecb2a80878ae15e94b8be07a/Travel-Leisure-Logogallery.png?w=750&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/6lA9nPPYZBAaO0VnriQD1d/881905ebecb2a80878ae15e94b8be07a/Travel-Leisure-Logogallery.png?w=828&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/6lA9nPPYZBAaO0VnriQD1d/881905ebecb2a80878ae15e94b8be07a/Travel-Leisure-Logogallery.png?w=1080&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/6lA9nPPYZBAaO0VnriQD1d/881905ebecb2a80878ae15e94b8be07a/Travel-Leisure-Logogallery.png?w=1200&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/6lA9nPPYZBAaO0VnriQD1d/881905ebecb2a80878ae15e94b8be07a/Travel-Leisure-Logogallery.png?w=1920&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/6lA9nPPYZBAaO0VnriQD1d/881905ebecb2a80878ae15e94b8be07a/Travel-Leisure-Logogallery.png?w=2048&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1sXhYmndslQgSWZRqqDnHU/82275c5ed9fd9584a06d3b79f4d7942b/new-york-times-logo.png?w=640&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1sXhYmndslQgSWZRqqDnHU/82275c5ed9fd9584a06d3b79f4d7942b/new-york-times-logo.png?w=3840&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1sXhYmndslQgSWZRqqDnHU/82275c5ed9fd9584a06d3b79f4d7942b/new-york-times-logo.png?w=256&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1sXhYmndslQgSWZRqqDnHU/82275c5ed9fd9584a06d3b79f4d7942b/new-york-times-logo.png?w=384&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1sXhYmndslQgSWZRqqDnHU/82275c5ed9fd9584a06d3b79f4d7942b/new-york-times-logo.png?w=750&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1sXhYmndslQgSWZRqqDnHU/82275c5ed9fd9584a06d3b79f4d7942b/new-york-times-logo.png?w=828&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1sXhYmndslQgSWZRqqDnHU/82275c5ed9fd9584a06d3b79f4d7942b/new-york-times-logo.png?w=1080&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1sXhYmndslQgSWZRqqDnHU/82275c5ed9fd9584a06d3b79f4d7942b/new-york-times-logo.png?w=1200&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1sXhYmndslQgSWZRqqDnHU/82275c5ed9fd9584a06d3b79f4d7942b/new-york-times-logo.png?w=1920&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/1sXhYmndslQgSWZRqqDnHU/82275c5ed9fd9584a06d3b79f4d7942b/new-york-times-logo.png?w=2048&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/131XKlhT9Z1d7vOl9k6tr2/a2843c98ad09f23ac89a474c0fee5f2b/Retail_Store_20250527_KateSJordan_TheSixBellsHotel_P2_9399_copyRT1.jpg?w=750&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/131XKlhT9Z1d7vOl9k6tr2/a2843c98ad09f23ac89a474c0fee5f2b/Retail_Store_20250527_KateSJordan_TheSixBellsHotel_P2_9399_copyRT1.jpg?w=3840&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/131XKlhT9Z1d7vOl9k6tr2/a2843c98ad09f23ac89a474c0fee5f2b/Retail_Store_20250527_KateSJordan_TheSixBellsHotel_P2_9399_copyRT1.jpg?w=384&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/131XKlhT9Z1d7vOl9k6tr2/a2843c98ad09f23ac89a474c0fee5f2b/Retail_Store_20250527_KateSJordan_TheSixBellsHotel_P2_9399_copyRT1.jpg?w=640&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/131XKlhT9Z1d7vOl9k6tr2/a2843c98ad09f23ac89a474c0fee5f2b/Retail_Store_20250527_KateSJordan_TheSixBellsHotel_P2_9399_copyRT1.jpg?w=828&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/131XKlhT9Z1d7vOl9k6tr2/a2843c98ad09f23ac89a474c0fee5f2b/Retail_Store_20250527_KateSJordan_TheSixBellsHotel_P2_9399_copyRT1.jpg?w=1080&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/131XKlhT9Z1d7vOl9k6tr2/a2843c98ad09f23ac89a474c0fee5f2b/Retail_Store_20250527_KateSJordan_TheSixBellsHotel_P2_9399_copyRT1.jpg?w=1200&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/131XKlhT9Z1d7vOl9k6tr2/a2843c98ad09f23ac89a474c0fee5f2b/Retail_Store_20250527_KateSJordan_TheSixBellsHotel_P2_9399_copyRT1.jpg?w=1920&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.ctfassets.net/eo03qid8u0tb/131XKlhT9Z1d7vOl9k6tr2/a2843c98ad09f23ac89a474c0fee5f2b/Retail_Store_20250527_KateSJordan_TheSixBellsHotel_P2_9399_copyRT1.jpg?w=2048&q=70&fm=webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/static/media/bell-wreath.57a882eb.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/static/media/house.767ee982.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/static/media/flowers.3b0fa77d.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/static/media/bell-emblem.585c5299.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/static/media/emblem.822d7934.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/static/media/Tik-Tok.93872f2e.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/static/media/Facebook.74ac046d.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/static/media/Instagram.8960f4f0.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/static/media/Pinterest.53c060d0.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo.2cfbad5b.png&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo.2cfbad5b.png&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo.2cfbad5b.png&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo.2cfbad5b.png&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo.2cfbad5b.png&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo.2cfbad5b.png&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo.2cfbad5b.png&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo.2cfbad5b.png&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo.2cfbad5b.png&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo.2cfbad5b.png&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/hero/hero-desktop.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/hero/hero-desktop.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://thesixbellshotel.com/hero/hero-desktop-poster.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "a6ac17a8dbc4677f61beb9cc6ba807fbd6791182d77d24ab2cf77362981a0f23"
+}

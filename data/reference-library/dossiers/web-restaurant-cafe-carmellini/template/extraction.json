@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-restaurant-cafe-carmellini",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.cafecarmellini.com/",
+    "finalUrl": "https://www.cafecarmellini.com/",
+    "httpStatus": 200,
+    "pageTitle": "Café Carmellini | Fine Dining Restaurant in New York City",
+    "retrievedAt": "2026-10-08T20:33:48.353Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 93809,
+      "sha256": "3a463e3376976fdd4f2d19dac15a46acd8cfb23ae182544ed8aa35827c6a684a"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 102217,
+      "sha256": "0934b1fc0d3a766d41d3adf5e7a115875e66e98ebba408d965a41cf3d2cb4ab5"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 214135,
+      "sha256": "3eeac2a4f637d4fd51f56ef5cc3d47376807f5114690346881392ec89c5493df"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 12372,
+      "sha256": "a91fb6fdc51b2d740ba00b321de3c853d89f4df01157030607b5791e409ce751"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 73257,
+      "sha256": "7fad2c90bd9d38df9e7119e20aa59f240aa11c02b0578f64004848c0fc2cbde1"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/31179cc-cream.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/231027_CafeCarmellini_MainLogoANIM_Crop.gif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/80883Lobster_Cannelloni_au_Caviar_ES.jpg?w=1800&fit=crop&auto=compress,format&cs=origin&crop=focalpoint&fp-x=0.5&fp-y=0.5",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/80883Lobster_Cannelloni_au_Caviar_ES.jpg?w=1200&fit=crop&auto=compress,format&cs=origin&crop=focalpoint&fp-x=0.5&fp-y=0.5",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/31382Cafe%C3%8C_Carmellini_Interior_Hero_WA.jpeg?w=1800&fit=crop&auto=compress,format&cs=origin&crop=focalpoint&fp-x=0.5&fp-y=0.5",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/31382CafeÌ_Carmellini_Interior_Hero_WA.jpeg?w=1200&fit=crop&auto=compress,format&cs=origin&crop=focalpoint&fp-x=0.5&fp-y=0.5",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/80883Lobster_Cannelloni_au_Caviar_ES.jpg?w=1000&fit=crop&auto=compress",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format&cs=origin&crop=focalpoint&fp-x=0.5&fp-y=0.5",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/80883Lobster_Cannelloni_au_Caviar_ES.jpg?w=1200&fit=crop&auto=compress",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/80883Lobster_Cannelloni_au_Caviar_ES.jpg?w=1400&fit=crop&auto=compress",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/80883Lobster_Cannelloni_au_Caviar_ES.jpg?w=1800&fit=crop&auto=compress",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/31382CafeÌ_Carmellini_Interior_Hero_WA.jpeg?w=1000&fit=crop&auto=compress",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/31382CafeÌ_Carmellini_Interior_Hero_WA.jpeg?w=1200&fit=crop&auto=compress",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/31382CafeÌ_Carmellini_Interior_Hero_WA.jpeg?w=1400&fit=crop&auto=compress",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/b2adc7202c613d8d32788fbe45e0627f/media/images/31382CafeÌ_Carmellini_Interior_Hero_WA.jpeg?w=1800&fit=crop&auto=compress",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6Ldh0uwrAAAAABZNEucYwqZZ3oOahk4lRhONMg5a&co=aHR0cHM6Ly93d3cuY2FmZWNhcm1lbGxpbmkuY29tOjQ0Mw..&hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&size=invisible&anchor-ms=20000&execute-ms=30000&cb=x22ceg95junb",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 4 of 4 stylesheets retained.",
+  "digest": "c83ff265f2b542ffb46df2a9e2d4e43338526ceecba36ecf4fb72c340289127a"
+}

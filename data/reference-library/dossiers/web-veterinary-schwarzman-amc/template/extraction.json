@@ -1,0 +1,1167 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-veterinary-schwarzman-amc",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.amcny.org/",
+    "finalUrl": "https://www.amcny.org/",
+    "httpStatus": 200,
+    "pageTitle": "The Animal Medical Center - 24/7 Emergency, Urgent, and Specialty Care",
+    "retrievedAt": "2026-10-08T20:37:20.002Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 216424,
+      "sha256": "61e29d2927f2e48d8155a8b9da88073a01b5d7390533d797eb8de9feee41a955"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 2739,
+      "sha256": "02e8e72c518a73011c8949b88ee638657a1b115d9773b0768801a5ced8405172"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 42223,
+      "sha256": "2983301575fce4f4cf0f4e65811ff02676e3deb626606220fd78fb78d0de4d7d"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 1406,
+      "sha256": "b0623d8764f0c496c367061195156427f6a13d0ce1a55a1d74772c9438c1ba32"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 57095,
+      "sha256": "59a1460df6cb458204ec993345ff4964fa7e1a77da4ab7137e50fce8434c1d6a"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 185912,
+      "sha256": "e843f8a74c778cbd6da08965257da275f8a5f61291e3565806174e48987cc0ba"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 99504,
+      "sha256": "0f07ae3df465d20139f961349f7bec3f5d75287f59945374065fbf2dfd903cac"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 90090,
+      "sha256": "d682d081a94a1f56a8c1ba40a4a1ac5ba9a6f2bb217f07f47947e23801441e22"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 54303,
+      "sha256": "ee3797f361e643276c331f2e5b1415016caed9c1c4cb6b58e758485de903557b"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 1860,
+      "sha256": "6fb1c6a79b67fb064faeb452d11e1044b4f9cc4150997c2c87be2a3f683830f0"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 150969,
+      "sha256": "8c9ca316479d5a5e82f9caddaf078f70552827822dfcfb61f4c7d653c3a35c36"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 31000,
+      "sha256": "799aeb25cc0373fdee0e1b1db7ad6c2f6a0e058dfadaa3379689f583213190bd"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 22644,
+      "sha256": "aa7172f296b0076148f1300f0118dda32861d0ed081fd24967330e22ef4f3422"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 724,
+      "sha256": "0ffc00fad072b76a8a74fd75c383a37fe7ce5dd668d704dbea7556135ba2b826"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2022/03/SchwarzmanAMC_Logo_RGB.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/Hospital-Visit-4-17-14-148-of-2912-e1557938261400.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/Hospital-Visit-4-17-14-148-of-2912-294x198.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/Hospital-Visit-4-17-14-148-of-2912-e1557938261400-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/Hospital-Visit-4-17-14-148-of-2912-340x230.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/00334-e1594417872358.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/00334-e1594417872358-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/00334-e1594417872358-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/00334-e1594417872358-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/00334-e1594417872358-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/00334-e1594417872358-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-190220-1732-Edit-scaled-e1594419148686.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-190220-1732-Edit-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-190220-1732-Edit-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-190220-1732-Edit-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-190220-1732-Edit-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-190220-1732-Edit-1536x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-190220-1732-Edit-2048x1365.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-190220-1732-Edit-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-190220-1732-Edit-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-190220-1732-Edit-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-190220-1732-Edit-552x366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/Small-Dog-for-Financial-Assistance-Menu.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/Small-Dog-for-Financial-Assistance-Menu-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/AMC-Financial-Aid-Menu-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/AMC-Financial-Aid-Menu-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/AMC-Financial-Aid-Menu-294x198.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/AMC-Financial-Aid-Menu-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/AMC-Financial-Aid-Menu-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/AMC-Financial-Aid-Menu.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/Outside-Sources-of-Financial-Aid-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/Outside-Sources-of-Financial-Aid-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/Outside-Sources-of-Financial-Aid-294x198.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/Outside-Sources-of-Financial-Aid-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/Outside-Sources-of-Financial-Aid-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/09/Outside-Sources-of-Financial-Aid.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/EJL-180926-1526-e1557761394273.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/EJL-180926-1526-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/EJL-180926-1526-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/EJL-180926-1526-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/EJL-180926-1526-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/EJL-180926-1526-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/EJL-180926-1526-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/EJL-180926-1526-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/EJL-180926-1526-552x366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/08/Ann-Hohenhaus-examining-a-dog.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/08/Ann-Hohenhaus-examining-a-dog-300x199.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/08/Ann-Hohenhaus-examining-a-dog-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/08/Ann-Hohenhaus-examining-a-dog-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/08/Ann-Hohenhaus-examining-a-dog-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/Oliver-e1557948049707.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/08/eric-ward-610868-unsplash-294x198.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/08/eric-ward-610868-unsplash-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/08/eric-ward-610868-unsplash-340x230.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/08/eric-ward-610868-unsplash-808x544.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/12/Usdan-Dog-Menu-Photo-225x150.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/12/Usdan-Dog-Menu-Photo-440x293.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/12/Usdan-Dog-Menu-Photo-202x135.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/12/Usdan-Dog-Menu-Photo-358x238.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/09/Pet-Health-Library-Menu-Photo-225x150.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/09/Pet-Health-Library-Menu-Photo-300x200.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/09/Pet-Health-Library-Menu-Photo-1024x682.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/09/Pet-Health-Library-Menu-Photo-768x512.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/09/Pet-Health-Library-Menu-Photo-1536x1024.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/09/Pet-Health-Library-Menu-Photo-2048x1365.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/09/Pet-Health-Library-Menu-Photo-440x293.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/09/Pet-Health-Library-Menu-Photo-202x135.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/09/Pet-Health-Library-Menu-Photo-358x238.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/09/Pet-Health-Library-Menu-Photo-552x366.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/09/Pet-Health-Library-Menu-Photo-554x367.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/09/Pet-Health-Library-Menu-Photo-808x544.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/IMG_0627-e1557763114747-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/IMG_0627-e1557763114747-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/06/St-Vincent1-3-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/06/St-Vincent1-3-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/06/St-Vincent1-3-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/06/St-Vincent1-3-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/06/St-Vincent1-3-294x198.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/06/St-Vincent1-3-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/06/St-Vincent1-3-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/06/St-Vincent1-3-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/06/St-Vincent1-3-552x366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/06/St-Vincent1-3-554x367.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/06/St-Vincent1-3-e1559679702592.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/02/Referral-Coordinators-Final1-1-e1582911722762.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/02/Referral-Coordinators-Final1-1-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/02/Referral-Coordinators-Final1-1-294x198.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/02/Referral-Coordinators-Final1-1-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/02/Referral-Coordinators-Final1-1-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/02/Referral-Coordinators-Final1-1-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/02/Referral-Coordinators-Final1-1-552x366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/02/Referral-Coordinators-Final1-1-554x367.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/02/Referral-Coordinators-Final1-1-808x544.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2022/01/Retrieving-a-Dog-in-AMCs-Makeshift-Waiting-Room-crop-202x135.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2022/01/Retrieving-a-Dog-in-AMCs-Makeshift-Waiting-Room-crop-294x198.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2022/01/Retrieving-a-Dog-in-AMCs-Makeshift-Waiting-Room-crop-440x293.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2022/01/Retrieving-a-Dog-in-AMCs-Makeshift-Waiting-Room-crop-225x150.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2022/01/Retrieving-a-Dog-in-AMCs-Makeshift-Waiting-Room-crop-358x238.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-e1594418618843.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-1536x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-2048x1365.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-294x198.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-552x366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-554x367.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/07/EJL-180926-1773-808x544.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2020/03/Usdan-Audience-Macina-PPT2-e1557764507933-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/rvdm_image-e1557764702879.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/rvdm_image-202x135.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/rvdm_image-294x198.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/rvdm_image-440x293.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/rvdm_image-225x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/rvdm_image-358x238.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/rvdm_image-552x366.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/rvdm_image-554x367.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2022/01/Research-294x198.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2022/01/Research-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-e1616774717624.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-1536x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-2048x1365.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-294x198.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-552x366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-554x367.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/03/AMC-Research-808x544.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/01/20180406_110819-e1548625896386.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/01/20180406_110819-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/01/20180406_110819-294x198.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/01/20180406_110819-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/01/20180406_110819-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/01/20180406_110819-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/01/20180406_110819-552x366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/01/20180406_110819-554x367.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2024/03/LVT-Director-with-a-Dog-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2024/03/LVT-Director-with-a-Dog-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2024/03/LVT-Director-with-a-Dog-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2024/03/LVT-Director-with-a-Dog-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2024/03/LVT-Director-with-a-Dog-552x366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/11/Dr-Allyson-Berent-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/11/Dr-Allyson-Berent-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/11/Dr-Allyson-Berent-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/11/Dr-Allyson-Berent-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/11/Dr-Allyson-Berent-1536x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/11/Dr-Allyson-Berent-scaled.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/11/Dr-Allyson-Berent-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/11/Dr-Allyson-Berent-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/11/Dr-Allyson-Berent-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/11/Dr-Allyson-Berent-552x366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/06/1991-Interns-e1686587930306-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/06/1991-Interns-e1686587930306-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/06/1991-Interns-e1686587930306-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/06/1991-Interns-e1686587930306-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/06/1991-Interns-e1686587930306-552x366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/12/2026-Pet-Health-Holidays-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/12/2026-Pet-Health-Holidays-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/12/2026-Pet-Health-Holidays-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/12/2026-Pet-Health-Holidays-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/12/2026-Pet-Health-Holidays-552x366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_7435f-e1557868481494.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_7435f-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_7435f-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_7435f-768x513.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_7435f-1024x684.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_7435f-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_7435f-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_7435f-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_7435f-552x366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/06/Chocolate-Fancy-Felines-e1624566839269.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/06/Chocolate-Fancy-Felines-e1624566839269-440x293.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/06/Chocolate-Fancy-Felines-e1624566839269-300x200.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/06/Chocolate-Fancy-Felines-e1624566839269-225x150.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/06/Chocolate-Fancy-Felines-e1624566839269-202x135.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/06/Chocolate-Fancy-Felines-e1624566839269-358x238.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/01/EJL-180926-1872-e1548625514161-294x198.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/01/EJL-180926-1872-e1548625514161-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_8461-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_8461-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_8461-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_8461-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_8461-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_8461-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_8461-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_8461-552x366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_8461-e1558467165712.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/05/living-legend-archie-e1747920854636-440x293.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/05/living-legend-archie-e1747920854636-300x199.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/05/living-legend-archie-e1747920854636-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/05/living-legend-archie-e1747920854636-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/05/living-legend-archie-e1747920854636-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/05/living-legend-archie-e1747920854636.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_0733-e1556832145399.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_0733-e1556832145399-440x292.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_0733-e1556832145399-300x199.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_0733-e1556832145399-225x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_0733-e1556832145399-202x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2019/05/DSC_0733-e1556832145399-358x238.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/11/AMC-Exterior-Rendering-11-30-552x366-1-440x293.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/11/AMC-Exterior-Rendering-11-30-552x366-1-300x199.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/11/AMC-Exterior-Rendering-11-30-552x366-1-225x150.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/11/AMC-Exterior-Rendering-11-30-552x366-1-202x135.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/11/AMC-Exterior-Rendering-11-30-552x366-1-358x238.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2021/11/AMC-Exterior-Rendering-11-30-552x366-1.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2023/10/aaha-sm.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/03/2025-Impact-Report-Homepage-Image-768x464.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/03/2025-Impact-Report-Homepage-Image-scaled.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/03/2025-Impact-Report-Homepage-Image-300x181.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/03/2025-Impact-Report-Homepage-Image-1024x619.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/03/2025-Impact-Report-Homepage-Image-1536x928.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/12/24-7-Emergency-Veterinarians-at-AMC-aspect-ratio-536-324.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/12/24-7-Emergency-Veterinarians-at-AMC-aspect-ratio-536-324-300x181.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/lexi_dog_dr-richa-dheendsa_veterinarian_internal-medicine_march-2026_2-277x277.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/lexi_dog_dr-richa-dheendsa_veterinarian_internal-medicine_march-2026_2-150x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/lexi_dog_dr-richa-dheendsa_veterinarian_internal-medicine_march-2026_2-125x125.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/lexi_dog_dr-richa-dheendsa_veterinarian_internal-medicine_march-2026_2-148x148.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/lexi_dog_dr-richa-dheendsa_veterinarian_internal-medicine_march-2026_2-135x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/lexi_dog_dr-richa-dheendsa_veterinarian_internal-medicine_march-2026_2-134x134.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/cat-coughing-277x277.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/cat-coughing-300x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/cat-coughing-1024x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/cat-coughing-150x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/cat-coughing-768x768.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/cat-coughing-1536x1536.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/cat-coughing-125x125.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/cat-coughing-148x148.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/cat-coughing-135x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/cat-coughing-134x134.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/cat-coughing.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/Fresh-pet-food-vs-kibble-125x125.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/Fresh-pet-food-vs-kibble-150x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/Fresh-pet-food-vs-kibble-148x148.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/Fresh-pet-food-vs-kibble-135x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/Fresh-pet-food-vs-kibble-134x134.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/Vet-Techs-at-AMC-125x125.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/Vet-Techs-at-AMC-150x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/Vet-Techs-at-AMC-148x148.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/Vet-Techs-at-AMC-135x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2025/10/Vet-Techs-at-AMC-134x134.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/memorial_dhs_tia_dufour-125x125.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/memorial_dhs_tia_dufour-150x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/memorial_dhs_tia_dufour-148x148.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/memorial_dhs_tia_dufour-135x135.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2026/09/memorial_dhs_tia_dufour-134x134.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/sb-instagram-feed-images/841436858_18630742672012689_2434262994672508173_nfull.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/sb-instagram-feed-images/838501447_18630123094012689_63238448915922053_nfull.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/sb-instagram-feed-images/838158931_18629801032012689_6199777780346294327_nfull.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://app.icontact.com/icp/core/signup/tracking.gif?id=null&cid=425849&lid=64378",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2022/03/AMC_logo_white.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/themes/amc/images/rate_us.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2024/04/footer-badges-update-300x169.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2024/04/footer-badges-update-1024x578.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2024/04/footer-badges-update-768x433.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.amcny.org/wp-content/uploads/2024/04/footer-badges-update.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/anchor?ar=1&k=6LeCZCcUAAAAALhxcQ5fN80W6Wa2K3GqRQK6WRjA&co=aHR0cHM6Ly93d3cuYW1jbnkub3JnOjQ0Mw..&hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&size=invisible&anchor-ms=20000&execute-ms=30000&cb=1iwabvati8mm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "about:blank",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/anchor?ar=1&k=6LdIJPIqAAAAADFe_RNGcjIs_kU9r5JAx2ozy6kG&co=aHR0cHM6Ly93d3cuYW1jbnkub3JnOjQ0Mw..&hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&size=invisible&anchor-ms=20000&execute-ms=30000&cb=va729clw2gys",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/bframe?hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&k=6LeCZCcUAAAAALhxcQ5fN80W6Wa2K3GqRQK6WRjA&bft=0dAFcWeA6O_mrtBXXAqO1k1c-MpwnYhu45P0PKOVpJocb2GyPTzq4OIG-dJqeW07f4gPZpugsa27j_S7WH7Orlj0IPvWIUqgP3nQ",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 13 of 14 stylesheets retained. Stylesheet issues: https://www.amcny.org/wp-content/themes/amc/css/static.css?ver=2026-10-08 (empty-or-unreadable). Page errors observed: 1.",
+  "digest": "f2e6cd155e3452adac87c7ef67832ff88f1c02b91b702fdfe10e9a0056408c15"
+}

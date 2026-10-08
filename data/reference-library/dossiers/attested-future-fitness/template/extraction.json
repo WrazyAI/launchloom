@@ -1,0 +1,498 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "attested-future-fitness",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://future.co/",
+    "finalUrl": "https://future.co/",
+    "httpStatus": 200,
+    "pageTitle": "Future | Custom, 1-on-1 Personal Training",
+    "retrievedAt": "2026-10-08T20:13:27.015Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 198663,
+      "sha256": "d3b6ce1fe34f6d28228ab8aba0fd552ffddc56ba52c49a3330f199600c937e99"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 6121,
+      "sha256": "10e4011d34005ca712473ca364cc69f729b01c929410c650ded1c0ec446cbb58"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 188051,
+      "sha256": "8488e8128ec008b107a6caa7ac6ae613d250c33dd2d8d7631c9bfd5da3a4a1d2"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 4855,
+      "sha256": "276e4bccc724809b6962b34ae35e4e2567a8489218b871e24e3d043859e03343"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 85,
+      "sha256": "d166f8ddc9438d6e975e6787e6fbea80d9a2224aa1db15f137e0ad82a2b96147"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_3840/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-mobile-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_640/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-mobile-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_750/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-mobile-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_828/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-mobile-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1080/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-mobile-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1200/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-mobile-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1920/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-mobile-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_2048/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-mobile-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_3840/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-mobile-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_1920/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-desktop-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_3840/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-desktop-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_640/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-desktop-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_750/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-desktop-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_828/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-desktop-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1080/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-desktop-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1200/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-desktop-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1920/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-desktop-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_2048/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-desktop-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_3840/f_auto/q_90/v1/https://future.co/images/pro-homepage/hero/pro-hero-desktop-v3.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_640/f_auto/q_auto/v1/https://future.co/images/pro-homepage/hero/pro-hero-video-still.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_828/f_auto/q_auto/v1/https://future.co/images/pro-homepage/hero/pro-hero-video-still.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_640/f_auto/q_auto/v1/https://future.co/images/pro-homepage/hero/pro-hero-video-still.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_828/f_auto/q_auto/v1/https://future.co/images/pro-homepage/hero/pro-hero-video-still.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_640/f_auto/q_90/v1/https://future.co/images/pro-homepage/workout-cards/exercise-images.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_828/f_auto/q_90/v1/https://future.co/images/pro-homepage/workout-cards/exercise-images.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_640/f_auto/q_90/v1/https://future.co/images/pro-homepage/workout-cards/exercise-images.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_828/f_auto/q_90/v1/https://future.co/images/pro-homepage/workout-cards/exercise-images.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_640/f_auto/q_auto/v1/https://future.co/images/pro-homepage/workout-cards/workout-move-interface.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_1080/f_auto/q_auto/v1/https://future.co/images/pro-homepage/workout-cards/workout-move-interface.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_640/f_auto/q_auto/v1/https://future.co/images/pro-homepage/workout-cards/workout-move-interface.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1080/f_auto/q_auto/v1/https://future.co/images/pro-homepage/workout-cards/workout-move-interface.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_640/f_auto/q_auto/v1/https://future.co/images/pro-homepage/workout-cards/apple-watch-series-11.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_1080/f_auto/q_auto/v1/https://future.co/images/pro-homepage/workout-cards/apple-watch-series-11.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_640/f_auto/q_auto/v1/https://future.co/images/pro-homepage/workout-cards/apple-watch-series-11.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1080/f_auto/q_auto/v1/https://future.co/images/pro-homepage/workout-cards/apple-watch-series-11.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_1920/f_auto/q_auto/v1/https://future.co/images/pro-homepage/workout-cards/pro-carousel-workout-still.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_640/f_auto/q_auto/v1/https://future.co/images/pro-homepage/workout-cards/pro-carousel-workout-still.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1920/f_auto/q_auto/v1/https://future.co/images/pro-homepage/workout-cards/pro-carousel-workout-still.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_828/f_auto/q_90/v1/https://future.co/images/pro-homepage/coach-check-in/coach-check-in-phone-still.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_1920/f_auto/q_90/v1/https://future.co/images/pro-homepage/coach-check-in/coach-check-in-phone-still.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_828/f_auto/q_90/v1/https://future.co/images/pro-homepage/coach-check-in/coach-check-in-phone-still.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1920/f_auto/q_90/v1/https://future.co/images/pro-homepage/coach-check-in/coach-check-in-phone-still.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_3840/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-mobile-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_640/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-mobile-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_750/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-mobile-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_828/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-mobile-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1080/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-mobile-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1200/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-mobile-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1920/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-mobile-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_2048/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-mobile-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_3840/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-mobile-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_1920/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-desktop-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_3840/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-desktop-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_640/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-desktop-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_750/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-desktop-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_828/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-desktop-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1080/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-desktop-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1200/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-desktop-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1920/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-desktop-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_2048/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-desktop-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_3840/f_auto/q_90/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-desktop-bg.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_96/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_3840/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_32/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_48/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_64/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_96/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_128/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_256/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_384/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_640/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_750/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_828/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1080/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1200/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1920/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_2048/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_3840/f_auto/q_auto/v1/https://future.co/images/pro-homepage/fitness-roadmap/pro-roadmap-michelle-portrait.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://future.co/_next/image?url=%2Fimages%2Fpro-homepage%2Ftestimonials%2Flaura.jpg&w=640&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://future.co/_next/image?url=%2Fimages%2Fpro-homepage%2Ftestimonials%2Flaura.jpg&w=1080&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fpro-homepage%2Ftestimonials%2Flaura.jpg&w=640&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fpro-homepage%2Ftestimonials%2Flaura.jpg&w=1080&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://future.co/_next/image?url=%2Fimages%2Fpro-homepage%2Ftestimonials%2Frohan.jpg&w=640&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://future.co/_next/image?url=%2Fimages%2Fpro-homepage%2Ftestimonials%2Frohan.jpg&w=1080&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fpro-homepage%2Ftestimonials%2Frohan.jpg&w=640&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fpro-homepage%2Ftestimonials%2Frohan.jpg&w=1080&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://future.co/_next/image?url=%2Fimages%2Fpro-homepage%2Ftestimonials%2Fdeanna.jpg&w=640&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://future.co/_next/image?url=%2Fimages%2Fpro-homepage%2Ftestimonials%2Fdeanna.jpg&w=1080&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fpro-homepage%2Ftestimonials%2Fdeanna.jpg&w=640&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fpro-homepage%2Ftestimonials%2Fdeanna.jpg&w=1080&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_1920/f_auto/q_auto/v1/https://future.co/images/footer/pro-footer.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_3840/f_auto/q_auto/v1/https://future.co/images/footer/pro-footer.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_640/f_auto/q_auto/v1/https://future.co/images/footer/pro-footer.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_750/f_auto/q_auto/v1/https://future.co/images/footer/pro-footer.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_828/f_auto/q_auto/v1/https://future.co/images/footer/pro-footer.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1080/f_auto/q_auto/v1/https://future.co/images/footer/pro-footer.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1200/f_auto/q_auto/v1/https://future.co/images/footer/pro-footer.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_1920/f_auto/q_auto/v1/https://future.co/images/footer/pro-footer.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_2048/f_auto/q_auto/v1/https://future.co/images/footer/pro-footer.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_3840/f_auto/q_auto/v1/https://future.co/images/footer/pro-footer.jpg?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_256/f_auto/q_auto/v1/https://future.co/images/app-store/future-pro-app-qr-code.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/future-web3/image/fetch/c_limit,w_384/f_auto/q_auto/v1/https://future.co/images/app-store/future-pro-app-qr-code.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_256/f_auto/q_auto/v1/https://future.co/images/app-store/future-pro-app-qr-code.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w_384/f_auto/q_auto/v1/https://future.co/images/app-store/future-pro-app-qr-code.png?_a=BAVHyiE80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://tvspix.com/t.png?l=tvscientific-pix-o-cf48d1a8-5f57-4916-a3a4-93a555cc96c0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ojrq.net/p/?return=&cid=13946&tpsync=no&auth=",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bat.bing.com/action/0?ti=343275762&tm=gtm002&Ver=2&mid=30cbf2ab-473b-49d1-a41c-46b73423e950&bo=1&sid=aeff4e30c35411f1b2fde1dbbc5dd40e&vid=aeff6c00c35411f1919125bb374a7841&vids=1&msclkid=N&pi=0&lg=en-US&sw=1440&sh=900&sc=24&nwd=1&tl=Future%20%7C%20Custom,%201-on-1%20Personal%20Training&kw=personal%20training,fitness%20coaching,online%20personal%20trainer,workout%20plans,fitness%20app,personal%20coach,exercise%20program,fitness%20goals,health%20coaching,Future%20Fit&p=https%3A%2F%2Ffuture.",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://future.co/images/pro-homepage/hero/pro-hero-video.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://future.co/images/pro-homepage/workout-cards/future-pro-exercise-video.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://future.co/images/pro-homepage/coach-check-in/andrew-pro-homepage-video.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://future.co/images/pro-homepage/coach-check-in/coach-check-in-phone-still.png",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 4 of 5 stylesheets retained. Stylesheet issues: https://future.co/_next/static/chunks/1z_mbvpkjhpd5.css (empty-or-unreadable).",
+  "digest": "b07a8794855a1b2408d591a1fc4c1bebb36121cc0f9c28ad5bb841011073e4a0"
+}

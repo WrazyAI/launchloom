@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "spicer-barber-walk-in-queue",
+  "status": "extracted",
+  "method": "zip-download",
+  "source": {
+    "url": "https://www.spicerdesigns.com/templates/barber-shop",
+    "finalUrl": "https://www.spicerdesigns.com/downloads/barber-shop-template-html.zip",
+    "archiveSha256": "bc2a8da132aee05c736ba5f889c5fca286432c2dafe4a7a39a32d3cd64cecd35",
+    "retrievedAt": "2026-10-08T20:05:51.828Z",
+    "license": "CC-BY-4.0",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/hero.webp",
+      "bytes": 122526,
+      "sha256": "52329d7fbe9bc7758484a2ffbcf89321ac26012dad0533be1acd7a66c3b08182"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 25796,
+      "sha256": "a4b2dd79c95de6995106fc21f3f9386b10ccf61f61d3ce12fe6b8e3af678e743"
+    },
+    {
+      "path": "source/README.md",
+      "bytes": 2714,
+      "sha256": "31781026d4f52c21abfc8bc104e6e29e2edcfa16f28748d7b2f8ffe5c8dd55c0"
+    },
+    {
+      "path": "source/styles.css",
+      "bytes": 26145,
+      "sha256": "08bd12790f5d994264724055e7b8d494e0165a2354cef55331e0d76eda3116c0"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.spicerdesigns.com/downloads/barber-shop-template-html.zip#LICENSE",
+      "reason": "unsupported-extension"
+    }
+  ],
+  "notes": "Downloaded the official HTML build (4 files, archive SHA-256 bc2a8da132aee05c736ba5f889c5fca286432c2dafe4a7a39a32d3cd64cecd35). The template page footer also shows an MIT label; the retained LICENSE in rights/ records CC BY 4.0 with the footer attribution condition. Reconcile before any derivative publication.",
+  "digest": "dd14f1a402637c2ce9e8ad56bc9c3ec2c859bcaf7389057a42bd107a24ac94e4"
+}

@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "direct-casa-cedo-boutique-hotel",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.casacedo.com/",
+    "finalUrl": "https://www.casacedo.com/",
+    "httpStatus": 200,
+    "pageTitle": "Casa Cedo · A Boutique Design Hotel in Central Porto",
+    "retrievedAt": "2026-10-08T20:14:10.724Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 139929,
+      "sha256": "5b8fefed05bd6eee35fadddf6b5aa775eddf58c73494bb08270c5d17f1a40070"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 120594,
+      "sha256": "fa37326732420455550d30358a382ea79e7c3f220f435930ccd29f96c77a804f"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 4135,
+      "sha256": "b053dced254e1481cb36ccb3b21a465f6faa86775d337ce94074bc7dafbfb574"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/69394ccd2ac6cf3bc721867b_FXT50004.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/69394ccd2ac6cf3bc721867b_FXT50004-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/69394ccd2ac6cf3bc721867b_FXT50004-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/69394ccd2ac6cf3bc721867b_FXT50004-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/69414481e1adb31fdde042c3_L1150384.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/69414481e1adb31fdde042c3_L1150384-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/69414481e1adb31fdde042c3_L1150384-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/69414481e1adb31fdde042c3_L1150384-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6941448b813351899ffb40e1_L1160116.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6941448b813351899ffb40e1_L1160116-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6941448b813351899ffb40e1_L1160116-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6941448b813351899ffb40e1_L1160116-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/694146476acd3128d64420eb_L1150458.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/694146476acd3128d64420eb_L1150458-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/694146476acd3128d64420eb_L1150458-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/694146476acd3128d64420eb_L1150458-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/69395025ecfb9355bc17ae5a_Placeholder.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/69395025ecfb9355bc17ae5a_Placeholder-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/69395025ecfb9355bc17ae5a_Placeholder-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/69395025ecfb9355bc17ae5a_Placeholder-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/69395025ecfb9355bc17ae5a_Placeholder-p-1600.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6a3ebe372095865d7c556829_Casa-Cedo-Boutique-hotel-porto-fireplace-lounge-detail-garden.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6a3ebe372095865d7c556829_Casa-Cedo-Boutique-hotel-porto-fireplace-lounge-detail-garden-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6a3ebe372095865d7c556829_Casa-Cedo-Boutique-hotel-porto-fireplace-lounge-detail-garden-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/69394cbe10c6c9f469b36408_L1150034.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/69394cbe10c6c9f469b36408_L1150034-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/69394cbe10c6c9f469b36408_L1150034-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/69394cbe10c6c9f469b36408_L1150034-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/69394cbe10c6c9f469b36408_L1150034-p-1600.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6a7709b92080f00d79ade43d_Vogue-Adria.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6a32b747a6f3e8d71a4862ab_Casa%20Cedo%20adults-only%20boutique%20guesthouse%20in%20Porto%20Portugal.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6a32b747a6f3e8d71a4862ab_Casa%20Cedo%20adults-only%20boutique%20guesthouse%20in%20Porto%20Portugal-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6a32b747a6f3e8d71a4862ab_Casa%20Cedo%20adults-only%20boutique%20guesthouse%20in%20Porto%20Portugal-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6a32b747a6f3e8d71a4862ab_Casa%20Cedo%20adults-only%20boutique%20guesthouse%20in%20Porto%20Portugal-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6a81851f16fa97f5ffa65292_HTSI%20Financial%20Times%20Casa%20Cedo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6a81851f16fa97f5ffa65292_HTSI%20Financial%20Times%20Casa%20Cedo-p-500.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6a81851f16fa97f5ffa65292_HTSI%20Financial%20Times%20Casa%20Cedo-p-800.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6a81851f16fa97f5ffa65292_HTSI%20Financial%20Times%20Casa%20Cedo-p-1080.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6a81851f16fa97f5ffa65292_HTSI%20Financial%20Times%20Casa%20Cedo-p-1600.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6a71cffe2fd637fdc7dd1fab_Casa-Cedo-Secret-Garden-Botanical-Boutique-Hotel-Porto.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6a71cffe2fd637fdc7dd1fab_Casa-Cedo-Secret-Garden-Botanical-Boutique-Hotel-Porto-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6a71cffe2fd637fdc7dd1fab_Casa-Cedo-Secret-Garden-Botanical-Boutique-Hotel-Porto-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6a71cffe2fd637fdc7dd1fab_Casa-Cedo-Secret-Garden-Botanical-Boutique-Hotel-Porto-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6908ce6505141a635a3bec55_ff4a8b1fd3d84b3a50edf30148dba45b_signature.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6a4e3e953bc0fc5e631ac6b7_CasaCedo_Porto_Landing_Page_9.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/69413563fedf7438b7a81f70_HomeN09.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/69413563fedf7438b7a81f70_HomeN09-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/69413563fedf7438b7a81f70_HomeN09-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec66/6939483a2028268b04f5c85b_HomeN07.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6a832bf142dab4e87832e9ed_house-garden-logo-png_seeklogo-301669.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6a832bf142dab4e87832e9ed_house-garden-logo-png_seeklogo-301669-p-500.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6939474cd3a4a48dc55f661e_HomeN08.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6939474cd3a4a48dc55f661e_HomeN08-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6939474cd3a4a48dc55f661e_HomeN08-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6939474cd3a4a48dc55f661e_HomeN08-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6908ce6505141a635a3bec51/6939474cd3a4a48dc55f661e_HomeN08-p-1600.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://manoamanoclub.com/clients/casacedo/video-hero.mp4",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "b989af03502d5e612e8b027a723785f9fc20f4a4baf64de5e2b2d1e447e9f867"
+}

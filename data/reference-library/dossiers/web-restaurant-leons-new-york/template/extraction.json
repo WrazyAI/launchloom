@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-restaurant-leons-new-york",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.leonsnyc.com/",
+    "finalUrl": "https://www.leonsnyc.com/",
+    "httpStatus": 200,
+    "pageTitle": "Leon's | Italian Restaurant in New York, NY",
+    "retrievedAt": "2026-10-08T20:34:01.508Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 40662,
+      "sha256": "5dd99ec9f2b4ffc080dc1d18abaa1ef764db01824184dbe06bbc6c574a40fb28"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 352574,
+      "sha256": "f37fd7e217dfb515e1777c8d3d71b07541527ddae4046df6fde53d6151b392a1"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 102217,
+      "sha256": "0934b1fc0d3a766d41d3adf5e7a115875e66e98ebba408d965a41cf3d2cb4ab5"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 210615,
+      "sha256": "2904ff66169951a3b1501ac27559244cef4bae49d31675713169bbd4ad518016"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://images.getbento.com/accounts/01359332439a404c173142d8ce66adcf/media/images/68955LeonsLogo_Verdigris.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6Ldh0uwrAAAAABZNEucYwqZZ3oOahk4lRhONMg5a&co=aHR0cHM6Ly93d3cubGVvbnNueWMuY29tOjQ0Mw..&hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&size=invisible&anchor-ms=20000&execute-ms=30000&cb=vdu2h7cyspe9",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "f6058a821d8452ea79f6bd7dbc26b23c2b1da3d0acc41985ba446663a4c5d1b1"
+}

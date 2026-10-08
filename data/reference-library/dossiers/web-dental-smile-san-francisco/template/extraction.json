@@ -1,0 +1,253 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-dental-smile-san-francisco",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://smilesanfrancisco.com/",
+    "finalUrl": "https://smilesanfrancisco.com/",
+    "httpStatus": 200,
+    "pageTitle": "Smile! San Francisco | Dr. Courtney Hain, DDS",
+    "retrievedAt": "2026-10-08T20:24:06.160Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 44634,
+      "sha256": "7fd0f6f741922f53fc5d1763a705675ae9f43ed49d3944cf2bc1011c0dbb4d26"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 9142,
+      "sha256": "5e34b6bf2bf7640e6d530b8cb8854960e9639a71f9a8d1cb15e464c35a1cb8a0"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 653,
+      "sha256": "5a7c7e98ad17724d6cb0aa0425bd23f91138515bf67ceaae0e4f130f78a5678b"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 42005,
+      "sha256": "1bdaf3e364988caa20ca16e56e5f67673d4fa5373bdfe64a748afad5386e7bd5"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://smilesanfrancisco.com/_astro/nav-logo.BbKi-64_.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://smilesanfrancisco.com/_astro/dr-hain-welcoming-patient.DL-d4ADt_Z2o5257.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://smilesanfrancisco.com/_astro/dr-hain-welcoming-patient.DL-d4ADt_ZrexXX.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-welcoming-patient.DL-d4ADt_2uib2s.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-welcoming-patient.DL-d4ADt_Z1a4oSM.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-welcoming-patient.DL-d4ADt_Z2jal2M.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-welcoming-patient.DL-d4ADt_Z2o5257.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-welcoming-patient.DL-d4ADt_Z1UlEdL.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-welcoming-patient.DL-d4ADt_16R5zB.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-welcoming-patient.DL-d4ADt_ZrexXX.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://smilesanfrancisco.com/_astro/dr-hain-sitting-vertical.BkB5sKCZ_e0C8D.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-sitting-vertical.BkB5sKCZ_1uN5v6.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-sitting-vertical.BkB5sKCZ_Z28bJq5.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-sitting-vertical.BkB5sKCZ_e0C8D.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://smilesanfrancisco.com/_astro/office-operatory-3-horizontal.DDhBjWaM_1LoVT7.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-operatory-3-horizontal.DDhBjWaM_1PYBW9.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-operatory-3-horizontal.DDhBjWaM_HkqHe.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-operatory-3-horizontal.DDhBjWaM_1LoVT7.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://smilesanfrancisco.com/_astro/patient-arrival-horizontal.DSTemuIR_Zvi1tC.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://smilesanfrancisco.com/_astro/patient-arrival-horizontal.DSTemuIR_Z1Nt6Kl.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/patient-arrival-horizontal.DSTemuIR_1xCHGj.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/patient-arrival-horizontal.DSTemuIR_2bON3F.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/patient-arrival-horizontal.DSTemuIR_ZVyDJ6.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/patient-arrival-horizontal.DSTemuIR_Zvi1tC.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/patient-arrival-horizontal.DSTemuIR_S3b73.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/patient-arrival-horizontal.DSTemuIR_Z2hG19o.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/patient-arrival-horizontal.DSTemuIR_Z1Nt6Kl.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://smilesanfrancisco.com/_astro/dr-hain-patient-explaining-vertical.CqigJ74l_ZaeAiE.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-patient-explaining-vertical.CqigJ74l_ZDuQaa.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-patient-explaining-vertical.CqigJ74l_ZbYfi.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-patient-explaining-vertical.CqigJ74l_ZaeAiE.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://smilesanfrancisco.com/_astro/dr-hain-sitting-vertical-closeup.B58OlIH3_NSWqD.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-sitting-vertical-closeup.B58OlIH3_c5f2N.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-sitting-vertical-closeup.B58OlIH3_15HBe0.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/dr-hain-sitting-vertical-closeup.B58OlIH3_NSWqD.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://smilesanfrancisco.com/_astro/office-main-desk-with-practice-logo-horizontal.BsO5VeAv_Z1vAdrK.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-main-desk-with-practice-logo-horizontal.BsO5VeAv_11XW5J.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-main-desk-with-practice-logo-horizontal.BsO5VeAv_Z1Aro9m.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-main-desk-with-practice-logo-horizontal.BsO5VeAv_Z1vAdrK.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://smilesanfrancisco.com/_astro/office-operatories-wide-view-horizontal.DQqVnNtq_Z10DD0g.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-operatories-wide-view-horizontal.DQqVnNtq_Z1U9B0T.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-operatories-wide-view-horizontal.DQqVnNtq_RoBa.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-operatories-wide-view-horizontal.DQqVnNtq_Z10DD0g.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://smilesanfrancisco.com/_astro/office-waiting-room-horizontal.D66LCLtC_Z148ITI.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-waiting-room-horizontal.D66LCLtC_Z2eoqAb.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-waiting-room-horizontal.D66LCLtC_1LuKIz.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-waiting-room-horizontal.D66LCLtC_Z148ITI.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://smilesanfrancisco.com/_astro/office-operatory-view-horizontal.DSoegpUu_iijEB.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-operatory-view-horizontal.DSoegpUu_Z2c3vRI.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-operatory-view-horizontal.DSoegpUu_1AKvLK.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_astro/office-operatory-view-horizontal.DSoegpUu_iijEB.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/maps/embed/v1/place?q=place_id:ChIJOXkOOOWBhYARRm1vz1CFlrU&key=AIzaSyBqIzC-dLx0Am-lT_qb38E5S4Ys-vb6_hA",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "1692ee1d922c01b930916a90fada6f36280a0fec6a385252bb2e0c725d4fa198"
+}

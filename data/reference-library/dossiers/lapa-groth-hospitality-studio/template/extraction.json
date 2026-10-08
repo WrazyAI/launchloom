@@ -1,0 +1,267 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "lapa-groth-hospitality-studio",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.groth.studio/",
+    "finalUrl": "https://www.groth.studio/",
+    "httpStatus": 200,
+    "pageTitle": "Hospitality & Interior Design – Barcelona & NYC | Groth Studio",
+    "retrievedAt": "2026-10-08T20:19:34.892Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 49072,
+      "sha256": "01dfac365098959e6ec75d7f9d8a7f3bca521c3c636f3981b3c4680cba51b2b4"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 102955,
+      "sha256": "d47155be394e80fa159384e5ebd7fdbf7971c481675295a83c5cde61bc168a36"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/663a8cec29f13cfb5cc0a57d_groth.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/663a8cecc06ab0c519c34d12_text.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6647c98228eaea7d59a0c261_groth-text-wide.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/66339b73ff90dd39cd456597_logo-groth.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/69067215597b1fed5d098682_Catskills%20kitchen%20teaser%20image%2002.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/69067215597b1fed5d098682_Catskills%20kitchen%20teaser%20image%2002-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/69067215597b1fed5d098682_Catskills%20kitchen%20teaser%20image%2002-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/69067215597b1fed5d098682_Catskills%20kitchen%20teaser%20image%2002-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6913902d8581ee71973e79b9_251111%20site%20preview.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6913902d8581ee71973e79b9_251111%20site%20preview-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6913902d8581ee71973e79b9_251111%20site%20preview-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6913902d8581ee71973e79b9_251111%20site%20preview-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6914b36a46780c221d13fd24_251112%20site%20preview%20render.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6914b36a46780c221d13fd24_251112%20site%20preview%20render-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6914b36a46780c221d13fd24_251112%20site%20preview%20render-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6914b36a46780c221d13fd24_251112%20site%20preview%20render-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/68019eda954e09849e4ffa79_a2be53c1a21eda71d8e704861a0cb2c9_CORNERS%20COVER.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/663b30790c90ec4d3ee9390a_corners-cover%402x.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/663b30790c90ec4d3ee9390a_corners-cover%402x-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/663b30790c90ec4d3ee9390a_corners-cover%402x-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6801a65da6f72e46735f82b4_b282ccc50aff21301612d3494ce04e53_ERNESTOS%20COVER.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/680182948c4be08929f9d9a4_ernestos%20cover.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/680182948c4be08929f9d9a4_ernestos%20cover-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/680182948c4be08929f9d9a4_ernestos%20cover-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/680182948c4be08929f9d9a4_ernestos%20cover-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6802dfda45b909da33240b1f_a754f31e959a415111936ad41bca7cf7_DONNA%20COVER.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6801828bd19a962963590ddd_donna%20cover.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6801828bd19a962963590ddd_donna%20cover-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6801828bd19a962963590ddd_donna%20cover-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6801828bd19a962963590ddd_donna%20cover-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/68019c917556345332017821_a265f25b9c30058db1e13485752eb57f_RONAN_COVER.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6801829d7395f7e1599140e0_e97b1dcfe006ae1dfa480b88aca3e5f3_ronan%20cover.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6801829d7395f7e1599140e0_e97b1dcfe006ae1dfa480b88aca3e5f3_ronan%20cover-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6801829d7395f7e1599140e0_e97b1dcfe006ae1dfa480b88aca3e5f3_ronan%20cover-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6801829d7395f7e1599140e0_e97b1dcfe006ae1dfa480b88aca3e5f3_ronan%20cover-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6802dfd49c927a1f7515da32_7818f5cd36960135dc707ab407a0a857_ERNESTOS%20CAFE%20COVER.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/680182796127289b15c23de7_ernestos%20cafe%20cover.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/680182796127289b15c23de7_ernestos%20cafe%20cover-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/680182796127289b15c23de7_ernestos%20cafe%20cover-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/680182796127289b15c23de7_ernestos%20cafe%20cover-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/6803006073b33c22b69e1015_BALKAN%20COVER.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/68018282e63fa5cdc45dc0fd_balkan%20cover.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/68018282e63fa5cdc45dc0fd_balkan%20cover-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/68018282e63fa5cdc45dc0fd_balkan%20cover-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/68018282e63fa5cdc45dc0fd_balkan%20cover-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/664749db25c0b56a1e09b501/680bf1633a0f0d1c4c06db37_mycelium%20main.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/664749db25c0b56a1e09b501/680bf1633a0f0d1c4c06db37_mycelium%20main-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/664749db25c0b56a1e09b501/680bf1633a0f0d1c4c06db37_mycelium%20main-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/664749db25c0b56a1e09b501/680bf1633a0f0d1c4c06db37_mycelium%20main-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/664749db25c0b56a1e09b501/680bf0b6caf9bde73c6e25f9_Copy%20of%20E50%20camilo%20crooked%20grind-Recovered.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/664749db25c0b56a1e09b501/680bf0b6caf9bde73c6e25f9_Copy%20of%20E50%20camilo%20crooked%20grind-Recovered-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/664749db25c0b56a1e09b501/67ee0ce917480c20a804206f_bentwood%20concept%20render%2001%20bw.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/664749db25c0b56a1e09b501/67ee0ce917480c20a804206f_bentwood%20concept%20render%2001%20bw-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/664749db25c0b56a1e09b501/67ee0ce917480c20a804206f_bentwood%20concept%20render%2001%20bw-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/664749db25c0b56a1e09b501/67ee0ce917480c20a804206f_bentwood%20concept%20render%2001%20bw-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/663382afc3ba15f9e5129095_groth-logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/6632bf67ec9f77f3c8147f67/663384417c360e1b7ba64b5c_footer-icon%402x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.googletagmanager.com/ns.html?id=GTM-TLWQ29S5",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "66108bfccd5eb13280d2977a13614ea49c7e3c47ee60d0f21898ac6d43d62164"
+}

@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "colorlib-bedrock-industrial-contractor",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/bedrock",
+    "repository": "https://github.com/ColorlibHQ/bootstrap-templates",
+    "revision": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "templatePath": "bedrock/",
+    "retrievedAt": "2026-10-08T20:05:21.998Z",
+    "license": "MIT",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/base.css",
+      "bytes": 12208,
+      "sha256": "84662d517b2d223427a0d403a347cb8edf1a834ecaf160e5f4c8f8627c78b56c"
+    },
+    {
+      "path": "source/assets/css/style.css",
+      "bytes": 5651,
+      "sha256": "99e4ff58486b920554e6a090dea9f583b86a064dfc85e0d7d644d0d10b0b48f4"
+    },
+    {
+      "path": "source/assets/js/base.js",
+      "bytes": 4182,
+      "sha256": "593e618719970dfe796d86f0707593498951c0e52a4fc7a18c87d6be2fef5819"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 1679,
+      "sha256": "7845d18454e664da025958fb3696f7e9611f96ea76edcd8f222498fb7c56a21f"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap-utilities.metadata.json",
+      "bytes": 29007,
+      "sha256": "0aa89f21fbbf9555a3905382ef4cdf5f281f164eb727b7a8d446efaf01b310fa"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap.min.css",
+      "bytes": 357751,
+      "sha256": "1a17841f830ff69b686da298babbf8e5e3e8dfb33b7329f115e366deacccb380"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/js/bootstrap.bundle.min.js",
+      "bytes": 214643,
+      "sha256": "77d552c3e6a815efd143c8e782c480bc63225cefba51bc510e0875a934f23fe7"
+    },
+    {
+      "path": "source/CREDITS.txt",
+      "bytes": 943,
+      "sha256": "f1bd77533d4e6d79014d0b9b50794d3e88814d3189a04ef51145931b818a18d9"
+    },
+    {
+      "path": "source/img/hero.jpg",
+      "bytes": 222931,
+      "sha256": "ce82a655d8b5091a66bce311065da2b0f56151fb0d51394367bc32d2f3e56678"
+    },
+    {
+      "path": "source/img/proj-1.jpg",
+      "bytes": 129267,
+      "sha256": "ed687f8b621ba68dc4de6ab3cbff442d8cddac6bddc71f400366cf83bf9f96b6"
+    },
+    {
+      "path": "source/img/proj-2.jpg",
+      "bytes": 137981,
+      "sha256": "61481a4a9eca2915531624473546638487d39f3c60e99507fe0a1c3599897691"
+    },
+    {
+      "path": "source/img/proj-3.jpg",
+      "bytes": 182824,
+      "sha256": "5dab3052d2ce8f07bc3ad74a09b07168db7b934b663dea6bcf06f0b1ddce042f"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 23792,
+      "sha256": "4b092327e123a280c6a0f059da1b0bd72ce2b6fa8753bc054e4a2471b6c04ba2"
+    },
+    {
+      "path": "source/project.html",
+      "bytes": 9983,
+      "sha256": "9eb22c1cafd334fe6be517150f441839b4cb585de4faab9c6dee7f100a73f12d"
+    },
+    {
+      "path": "source/template.json",
+      "bytes": 3548,
+      "sha256": "9c1f7a23db3dc17de3487f30d605716ae39cc01a681d6240005ccbce07a1b897"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Fetched 15 files from the pinned repository at f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf.",
+  "digest": "fb22968c464eac699f51444eabf37fbeab01fe447782993cb3c7e0073a775732"
+}

@@ -1,0 +1,881 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-hvac-alamo-austin-air",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.alamoaustinair.com/",
+    "finalUrl": "https://www.alamoaustinair.com/",
+    "httpStatus": 200,
+    "pageTitle": "Alamo Austin Air | Heating & Cooling Services | Austin, TX",
+    "retrievedAt": "2026-10-08T20:28:02.502Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 452376,
+      "sha256": "9133c90b01749d72eab6052e0984d2cf78551e7bd27ae4d003043febf89417da"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 3361,
+      "sha256": "22a4181afd253acb93f3e461e6f4e6f50ebde8aebc6e7a5b5c308ce996a78e10"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 16956,
+      "sha256": "c0392426ecab47d182343ed9561f704f03ad9832d155ed04141e38f78f991540"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 88908,
+      "sha256": "2c76178a4b4d474b587e996b04b9e6e22d17bc797d03d8712e951dd00a77c5e3"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 5485,
+      "sha256": "5c7608f4cba633d72995cec002ce7226417bb77bdc1265d639028115ab8235cd"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 5788,
+      "sha256": "b698d7d63c8c236cda0499131978654fa884f24df6755f7b6909e5d784e096db"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 33298,
+      "sha256": "bd50b70e3642a50203a916136fd4707d4ab1647c2a067d5368a100cc69b348b6"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 14488,
+      "sha256": "649edb8a4996ae8eefd90bd316d6eb4d9b293aadcb605b9399a979463f9f41fa"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 121412,
+      "sha256": "c28eb8900abce3c478234e62390838556d839c10b7073b2ba42bcbae20d6e2fc"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 66043,
+      "sha256": "c212540ebe32a4dffff18e5aaa7f0e78fbd6abffeb879f563af32d895f51d399"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 222,
+      "sha256": "d8273c5dc83050cc9f129213ae0708d7874c960e5af6f64b14f294740b3363dd"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 5888,
+      "sha256": "a613951c4838c13e51d52d585b260d1caaed20c71a81173d7fa46bd56fa93fc5"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 23262,
+      "sha256": "aec102d6b1dd0598dcc13f0f2a7b290e10a3555f90319a4503c16fc489e8280e"
+    },
+    {
+      "path": "source/styles/13.css",
+      "bytes": 1526,
+      "sha256": "f4194c4f6a96cedadd793f13eca44b25fec06f923b61db60172318a5d3b8e249"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 701,
+      "sha256": "639670bd6ada0794589b2ab5664ad5fca797f78e8beb75c691f8eba8a5cf8256"
+    },
+    {
+      "path": "source/styles/15.css",
+      "bytes": 20542,
+      "sha256": "a91e7b10e7efb0d57a85f0ff6a49011a0619d9592b07705f6bfd991ed2d96cc8"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn.userway.org/widgetapp/images/spin_wh.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.userway.org/widgetapp/images/body_wh.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Alamo-Logo-Rev.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service_Heating.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service_Heating-Hvr.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service_Cooling.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service_Cooling-Hvr.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service_Maint.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service_Maint-Hvr.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service_IAQ.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service_IAQ-Hvr.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Edge-2-1536x193.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Edge-2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Edge-2-300x38.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Edge-2-1024x129.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Edge-2-1536x193.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Edge-2-2048x258.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Edge-2-300x38@2x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Icon.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Icon.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Icon-283x300.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO-1536x806.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO-300x158.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO-1024x538.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO-1536x806.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO-300x158@2x.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5-1536x806.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5-300x158.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5-1024x538.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5-1536x806.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5-300x158@2x.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Specials-Edge-2-1536x190.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Specials-Edge-2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Specials-Edge-2-300x37.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Specials-Edge-2-1024x126.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Specials-Edge-2-1536x190.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Specials-Edge-2-2048x253.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Specials-Edge-2-300x37@2x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/HP_A_037.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/HP_A_037.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/HP_A_037-300x200.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/HP_A_037-300x200@2x.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/IAQ_A_018.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/IAQ_A_018.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/IAQ_A_018-300x200.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/IAQ_A_018-300x200@2x.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/IAQ_A_023.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/IAQ_A_023.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/IAQ_A_023-300x200.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/IAQ_A_023-300x200@2x.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/AC_A_065.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/AC_A_065.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/AC_A_065-300x207.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/AC_A_065-300x207@2x.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Edge-2-1536x224.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Edge-2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Edge-2-300x44.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Edge-2-1024x149.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Edge-2-1536x224.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Edge-2-2048x298.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Edge-2-300x44@2x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2-1536x1098.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2-300x215.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2-1024x732.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2-1536x1098.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2-300x215@2x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/home-page-FAD-and-unit.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/home-page-FAD-and-unit.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/home-page-FAD-and-unit-300x221.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/home-page-FAD-and-unit-300x221@2x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ServiceArea-Map-Mobile.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ServiceArea-Map-Mobile.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ServiceArea-Map-Mobile-272x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ServiceArea-Map-Mobile-929x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ServiceArea-Map-Mobile-272x300@2x.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck-1536x699.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck-300x137.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck-1024x466.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck-1536x699.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck-300x137@2x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Brands-Edge-2-1536x209.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Brands-Edge-2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Brands-Edge-2-300x41.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Brands-Edge-2-1024x139.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Brands-Edge-2-1536x209.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Brands-Edge-2-2048x278.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Brands-Edge-2-300x41@2x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Carrier-Factory-Authorized-Dealer-Logo.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Carrier-Factory-Authorized-Dealer-Logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-ACCA-300x178.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-ACCA-300x178.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-ACCA.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-NATE-297x300.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-NATE-297x300.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-NATE.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-260130-OT.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-260130-OT.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-BBB-300x220.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-BBB-300x220.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-BBB.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-AustinChamber-300x249.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-AustinChamber-300x249.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-AustinChamber.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Alamo_Logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Soc_FB.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Soc_Google.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Soc_IG.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Edge-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Edge-2-300x38.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Edge-2-1024x129.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Edge-2-2048x258.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Edge-2-300x38@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/About-Icon-283x300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO-300x158.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO-1024x538.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO-300x158@2x.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO-300x158.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO-1024x538.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO-1536x806.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-10partsreplacement-CO-300x158@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5-300x158.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5-1024x538.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5-300x158@2x.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5-300x158.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5-1024x538.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5-1536x806.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ALA-20240311-CO5-300x158@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Specials-Edge-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Specials-Edge-2-300x37.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Specials-Edge-2-1024x126.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Specials-Edge-2-2048x253.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Specials-Edge-2-300x37@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/HP_A_037-300x200.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/HP_A_037-300x200@2x.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/IAQ_A_018-300x200.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/IAQ_A_018-300x200@2x.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/IAQ_A_023-300x200.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/IAQ_A_023-300x200@2x.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/AC_A_065-300x207.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/AC_A_065-300x207@2x.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Edge-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Edge-2-300x44.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Edge-2-1024x149.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Edge-2-2048x298.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Edge-2-300x44@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2-300x215.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2-1024x732.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2-300x215@2x.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2-300x215.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2-1024x732.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2-1536x1098.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Maint-Truck-2-300x215@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/home-page-FAD-and-unit-300x221.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/home-page-FAD-and-unit-300x221@2x.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/home-page-FAD-and-unit.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/home-page-FAD-and-unit-300x221.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/home-page-FAD-and-unit-300x221@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ServiceArea-Map-Mobile-272x300.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ServiceArea-Map-Mobile-929x1024.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ServiceArea-Map-Mobile-272x300@2x.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ServiceArea-Map-Mobile.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ServiceArea-Map-Mobile-272x300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ServiceArea-Map-Mobile-929x1024.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/ServiceArea-Map-Mobile-272x300@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck-300x137.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck-1024x466.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck-300x137@2x.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck-300x137.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck-1024x466.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck-1536x699.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Service-Truck-300x137@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Brands-Edge-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Brands-Edge-2-300x41.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Brands-Edge-2-1024x139.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Brands-Edge-2-2048x278.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Brands-Edge-2-300x41@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Carrier-Factory-Authorized-Dealer-Logo.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-ACCA.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-NATE.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-NATE-297x300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-NATE.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.alamoaustinair.com/wp-content/uploads/Award-AustinChamber.webp",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 15 of 15 stylesheets retained.",
+  "digest": "d46d1f545c62d69b11cf177f5367e017f690652f47771a957db6de32387c9d74"
+}

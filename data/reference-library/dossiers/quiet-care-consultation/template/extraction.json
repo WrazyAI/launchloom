@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "quiet-care-consultation",
+  "status": "extracted",
+  "method": "owned-artifact",
+  "source": {
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/quiet-care-consultation",
+    "artifactPath": "a1-design-showcase/quiet-practice.html",
+    "generator": "scripts/build-a1-design-showcase.mjs",
+    "retrievedAt": "2026-10-08T20:06:09.985Z",
+    "license": "owned",
+    "attestationPath": null
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 6884,
+      "sha256": "e712bf578ed878d132253b473edc7bc7a58b4caaa3d60c63d8649abea3138811"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Copied 1 files from the local build artifact at a1-design-showcase/quiet-practice.html. The artifact directory is gitignored; regenerate it with scripts/build-a1-design-showcase.mjs when the owned prototype source changes.",
+  "digest": "8739a57a581f2c727486f103ced6f53d97296ae37b6b257630264735b02e3e12"
+}

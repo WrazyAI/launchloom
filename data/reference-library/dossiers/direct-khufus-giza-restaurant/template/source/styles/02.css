@@ -1,0 +1,190 @@
+@font-face {
+	font-family: "IvyOraDisplay";
+	src: url("https://khufus.monarqtesting.com/wp-content/uploads/2026/02/IvyOraDisplay-Light.woff2") format("woff2");
+	font-weight: 300;
+	font-style: normal;
+	font-display: swap;
+}
+
+html.khf-mask body > *:not(#khufusIntro) {
+	visibility: hidden !important;
+}
+
+#khufusIntro {
+	position: fixed;
+	inset: 0;
+	height: 100svh;
+	width: 100%;
+	z-index: 2147483647;
+	background: #5C472B;
+	display: none;
+	overflow: hidden;
+	opacity: 1;
+	transform: scale(1);
+	will-change: opacity, transform;
+	backface-visibility: hidden;
+}
+
+#khufusIntro.is-visible {
+	display: block;
+}
+
+#khufusIntro.is-exiting {
+	opacity: 0;
+	transform: scale(1.01);
+	transition:
+		opacity 420ms cubic-bezier(.4, 0, .2, 1),
+		transform 420ms cubic-bezier(.4, 0, .2, 1);
+}
+
+#khufusIntro .khf-inner {
+	position: relative;
+	height: 100svh;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+
+#khufusIntro .khf-text {
+	position: relative;
+	width: min(1200px, 92vw);
+	min-height: 3.6em;
+}
+
+#khufusIntro .khf-line {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	color: #fff;
+	font-family: "IvyOraDisplay", serif;
+	font-weight: 300;
+	font-style: normal;
+	font-synthesis: none;
+	font-size: clamp(22px, 2.35vw, 40px);
+	line-height: 1.25;
+	opacity: 0;
+	transform: translate3d(0, 16px, 0);
+	white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+	#khufusIntro .khf-text {
+		width: 92vw;
+		min-height: 5.2em;
+	}
+
+	#khufusIntro .khf-line {
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
+}
+
+@keyframes khfLineIn {
+	0% {
+		opacity: 0;
+		transform: translate3d(0, 16px, 0);
+	}
+
+	100% {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+	}
+}
+
+@keyframes khfLineOut {
+	0% {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+	}
+
+	100% {
+		opacity: 0;
+		transform: translate3d(0, -12px, 0);
+	}
+}
+
+#khufusIntro .khf-line.is-in {
+	animation: khfLineIn 600ms cubic-bezier(.18, .92, .18, 1) both;
+}
+
+#khufusIntro .khf-line.is-out {
+	animation: khfLineOut 500ms cubic-bezier(.18, .92, .18, 1) both;
+}
+
+#khufusIntro .khf-word {
+	display: inline-block;
+	opacity: 0;
+	transform: translate3d(0, 10px, 0);
+	animation: khfWordIn 600ms cubic-bezier(.18, .92, .18, 1) forwards;
+	animation-delay: var(--d, 0ms);
+}
+
+@keyframes khfWordIn {
+	0% {
+		opacity: 0;
+		transform: translate3d(0, 10px, 0);
+	}
+
+	100% {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+	}
+}
+
+#khufusIntro .khf-lead {
+	font-style: italic;
+	text-shadow:
+		0.35px 0 0 rgba(255, 255, 255, .95),
+		0.75px 0 0 rgba(255, 255, 255, .55);
+}
+
+#khufusIntro .khf-skip {
+	position: absolute;
+	left: 50%;
+	bottom: 32px;
+	transform: translate3d(-50%, 0, 0);
+	background: transparent;
+	border: 1px solid rgba(255, 255, 255, .55);
+	color: #fff;
+	font-family: "IvyOraDisplay", serif;
+	font-weight: 300;
+	font-size: 16px;
+	padding: 12px 18px;
+	border-radius: 999px;
+	cursor: pointer;
+}
+
+html.khf-lock,
+body.khf-lock {
+	overflow: hidden !important;
+	height: 100% !important;
+}
+
+#khufusIntro .khf-logo-wrapper {
+	position: absolute;
+	top: 30px;
+	left: 50%;
+	transform: translateX(-50%);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	margin: 0;
+}
+
+#khufusIntro .khf-logo-wrapper img {
+	width: 50px;
+	height: auto;
+}
+
+#khufusIntro .khf-logo-divider {
+	width: 1px;
+	height: 40px;
+	background-color: rgba(255, 255, 255, .7);
+	margin-top: 18px;
+	border: 0;
+}

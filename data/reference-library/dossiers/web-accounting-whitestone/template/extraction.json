@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-accounting-whitestone",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.whitestoneaccounting.co.uk/",
+    "finalUrl": "https://www.whitestoneaccounting.co.uk/",
+    "httpStatus": 200,
+    "pageTitle": "Accounting Advice and Services You Can Trust | Whitestone Accounting",
+    "retrievedAt": "2026-10-08T20:20:13.595Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 148614,
+      "sha256": "e6dbe649578f7b5a71b441d9376e36f183cf2f9076b336d87dff9aed95c03434"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 3106,
+      "sha256": "fbe820b6140ad28e86f34ffae507d807cf591a22697a05b71958f2014e96a9e4"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 27249,
+      "sha256": "655ae452d922f501b62c7028fc35e238138de989387381cc1ed9cea9085864db"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 13245,
+      "sha256": "f5664ebe85adb158bfee2a03e94443ed0ceb23ac870b2ee917a4dd750429ddd3"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 484758,
+      "sha256": "18fd322583b992be8df5cc0713fee5fc2ec1f43004f1d838cfe1a76d49cb8f4a"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 3860,
+      "sha256": "d70d9853ff87464d69a8174e3a76633bf29e45aaafcbccb214c10722b2b9714c"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 83159,
+      "sha256": "60185ba5f328c91103a2b7e6d798841923c2ff50b9c38f7c1a1d10d9121c0a98"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 30750,
+      "sha256": "dc699951ac63a66264d0a33df63389f8682df8f1ffa89457990a459a37675980"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 8407,
+      "sha256": "81556f38ccd763884270a287d8602759ecca85ec4f93548631550b4514393d46"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 277264,
+      "sha256": "8a08b849899c75e7f514c0cfbf5801205b55d46bc31995b681ebf39c0beebe5c"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 24481,
+      "sha256": "3980c30cae0f87c0d25badb258c59ad589dc03071867965a9615bad8cbbb02e5"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 21139,
+      "sha256": "27516d54549a5ca087894663795f59f28f07bb0d760c0da3f4af500a6d055498"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 188,
+      "sha256": "baaa53853107fc37ea7cc7d6b106a7bef2b2cc4703cdfcc00e1214a00e1e8e21"
+    },
+    {
+      "path": "source/styles/13.css",
+      "bytes": 27639,
+      "sha256": "4354449ab7a164ef5486d12020f3bc403b8ff104a8da73e9f9332106b86b061c"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 13362,
+      "sha256": "9a31d5c9c0b108e9c1d8ccd47780a975d44ed8665a3be8a37b2c3614ad5fc157"
+    },
+    {
+      "path": "source/styles/15.css",
+      "bytes": 9312,
+      "sha256": "1799f5f4c1ef63cf01499e15a4cc47beaa351c2661b4d1c4f6b9443e66ddef8e"
+    },
+    {
+      "path": "source/styles/16.css",
+      "bytes": 64572,
+      "sha256": "fb653f58a95463521f3aec5773f320246c12e0c8ef2ddcc67e6426ea7413a23b"
+    },
+    {
+      "path": "source/styles/17.css",
+      "bytes": 160,
+      "sha256": "bf5381516cc928bb6295b47f1fb4e943fecdfd092d77e210afee8d4847e90f9e"
+    },
+    {
+      "path": "source/styles/18.css",
+      "bytes": 838,
+      "sha256": "bc9924626a70304b31bb3e84b754b409c397916719f7ca8c268bb1b5642ea226"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/WhitestoneLogo-1-e1589719401154.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/shutterstock_68504584-711x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/shutterstock_68504584-208x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/shutterstock_68504584-1066x1536.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/shutterstock_68504584-1422x2048.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/shutterstock_68504584-scaled-e1589719090361.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/05/download-300x143.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/05/download.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/ICAEW_Authorised_Training_Employer_UK_BLK-300x131.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/ICAEW_Authorised_Training_Employer_UK_BLK-1024x448.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/ICAEW_Authorised_Training_Employer_UK_BLK-1536x672.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/ICAEW_Authorised_Training_Employer_UK_BLK-2048x896.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/icpa.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/Sage-partner-logo-300x82.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/Sage-partner-logo.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/Xero-300x173.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/Xero-1024x591.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/Xero.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/freeagent-partner-badge-website-002-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/freeagent-partner-badge-website-002-350x350.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.whitestoneaccounting.co.uk/wp-content/uploads/2020/04/freeagent-partner-badge-website-002-600x600.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://sidebar.bugherd.com/sidebar/embed_html?apikey=w1xd8zcnhnapqsfj6yfx1a",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 18 of 18 stylesheets retained.",
+  "digest": "b63014132861a1d96451da1f03d5b4b0ea3bf32aaf63a600e9981e13025aed3c"
+}

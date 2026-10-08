@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-homeservices-roto-rooter",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.rotorooter.com/",
+    "finalUrl": "https://www.rotorooter.com/",
+    "httpStatus": 200,
+    "pageTitle": "Roto-Rooter® | Plumbing, Drains & Water Cleanup",
+    "retrievedAt": "2026-10-08T20:27:13.048Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 2464101,
+      "sha256": "7f9c9a0f920a0661af95ac591fc2365f1d45aca8fcc2db35302c656fab9b92b1"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 238253,
+      "sha256": "448aeea6a2b797dbf9da6fa04a60dc9aa371e9b49a3487a44d624cb595ccb56b"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 2450,
+      "sha256": "f073b58c0b3745c45b63120d1979c76b77a585ecb48aa1193a2cc952b84c9fb1"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn.rotorootercdn.com/images/images/homepage/home-hero-dsk-test.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.rotorootercdn.com/images/images/home/plumbingdrain.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.rotorootercdn.com/images/images/home/waterheaters.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.rotorootercdn.com/images/images/home/emergencyservice.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.rotorootercdn.com/images/images/home/waterdamage.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.rotorootercdn.com/images/images/homepage/new-why-choose-video-thumbnail.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.rotorootercdn.com/images/images/homepage/new-why-choose-supporting-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.rotorootercdn.com/images/images/local-page/baltimore/faq_technicians_grouped_2023.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.rotorootercdn.com/images/images/mobile-app/get-it-on-google-play.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.cookielaw.org/logos/29b11303-85dc-4c03-baeb-447b1cc23af8/019369c3-279a-783c-af1c-2cdfe572a0db/602df01c-8714-48b6-acf6-85f651d2b3df/Roto-Rooter_new.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.cookielaw.org/logos/static/powered_by_logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://segment.prod.bidr.io/associate-segment?buzz_key=tatari&segment_key=tatari-15736&value=&uncacheplz=4119644066",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.googleadservices.com/pagead/conversion/10823287/?label=cheq-0&guid=ON&script=0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.googleadservices.com/pagead/conversion/995657100/?label=NAU7CJq7m7scEIyL4toD&guid=ON&script=0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.googleadservices.com/pagead/conversion/1014926686/?label=x7TfCNDrobscEN6a-uMD&guid=ON&script=0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.googleadservices.com/pagead/conversion/1063454818/?label=cs_bCKuNobscEOKQjPsD&guid=ON&script=0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bat.bing.net/action/0?ti=151017859&Ver=2&mid=1baaa98d-8f8a-404d-9830-2a513a19b63b&bo=4&pi=0&lg=en-US&sw=1440&sh=900&sc=24&nwd=1&tl=Roto-Rooter%C2%AE%20%7C%20Plumbing,%20Drains%20%26%20Water%20Cleanup&kw=residential%20plumbing,%20emergency%20plumber,%20commercial%20plumbing,%20drain%20services&p=https%3A%2F%2Fwww.rotorooter.com%2F&r=&lt=2713&evt=pageLoad&sv=2&asc=D&cdb=AQER&rn=384343",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bat.bing.net/action/0?ti=151017859&Ver=2&mid=1baaa98d-8f8a-404d-9830-2a513a19b63b&bo=5&ec=CHEQ&el=Invalid_Users&ev=0&ea=Invalid_Users&en=Y&p=https%3A%2F%2Fwww.rotorooter.com%2F&sw=1440&sh=900&sc=24&nwd=1&evt=custom&asc=D&cdb=AQER&rn=575084",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "18f758cfefcf4183e163be85ac6f3c44950772b84c4b3e5745bda5e622a0c54e"
+}

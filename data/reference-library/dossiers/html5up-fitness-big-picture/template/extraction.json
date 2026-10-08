@@ -1,0 +1,347 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "html5up-fitness-big-picture",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://html5up.net/big-picture",
+    "repository": "https://github.com/zce/html5up",
+    "revision": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "big-picture/",
+    "retrievedAt": "2026-10-08T20:05:41.661Z",
+    "license": "CC-BY-3.0",
+    "licenseEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/font-awesome.min.css",
+      "bytes": 31000,
+      "sha256": "799aeb25cc0373fdee0e1b1db7ad6c2f6a0e058dfadaa3379689f583213190bd"
+    },
+    {
+      "path": "source/assets/css/images/arrow.svg",
+      "bytes": 420,
+      "sha256": "18653e4725f2469a2698f542ddffd65d7419606fa99fae2c58f39189d67d2047"
+    },
+    {
+      "path": "source/assets/css/images/dark-arrow.svg",
+      "bytes": 403,
+      "sha256": "9d8bddb4be222a0fdcb4c6773e4675e8fd51b3d52c0e1915bff09d9ec2c4c94e"
+    },
+    {
+      "path": "source/assets/css/images/overlay.png",
+      "bytes": 1175,
+      "sha256": "f2f998dd4f7f38213ea16cf5cf6d1625ec39dfd69bbc073c8b773e1a54919a62"
+    },
+    {
+      "path": "source/assets/css/images/poptrox-closer.svg",
+      "bytes": 315,
+      "sha256": "68797b91a6805c8dd944585e6c282949d6480c6ef2c4cda84936298b615bbc20"
+    },
+    {
+      "path": "source/assets/css/images/poptrox-nav.svg",
+      "bytes": 318,
+      "sha256": "3528f58438851e1677f806b661f4e994803d23814a243fc12b2c5ff6e03604af"
+    },
+    {
+      "path": "source/assets/css/main.css",
+      "bytes": 45925,
+      "sha256": "8f77b7b91f85ea54e0ff6664609d1ae38852935ac6a7f77bca06150883d02565"
+    },
+    {
+      "path": "source/assets/css/noscript.css",
+      "bytes": 200,
+      "sha256": "b349bb08e4eabfce5fdd2940ae658f165316953b0fade2c93d2eb8db98396c8e"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.eot",
+      "bytes": 165742,
+      "sha256": "7bfcab6db99d5cfbf1705ca0536ddc78585432cc5fa41bbd7ad0f009033b2979"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.svg",
+      "bytes": 444379,
+      "sha256": "ad6157926c1622ba4e1d03d478f1541368524bfc46f51e42fe0d945f7ef323e4"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.ttf",
+      "bytes": 165548,
+      "sha256": "aa58f33f239a0fb02f5c7a6c45c043d7a9ac9a093335806694ecd6d4edc0d6a8"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.woff",
+      "bytes": 98024,
+      "sha256": "ba0c59deb5450f5cb41b3f93609ee2d0d995415877ddfa223e8a8a7533474f07"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.woff2",
+      "bytes": 77160,
+      "sha256": "2adefcbc041e7d18fcf2d417879dc5a09997aa64d675b7a3c4b6ce33da13f3fe"
+    },
+    {
+      "path": "source/assets/fonts/FontAwesome.otf",
+      "bytes": 134808,
+      "sha256": "444dd4366615ffc4a16d012b2fa90137065d3ccb410fa6fd5e4ddd7b5e4ffcd5"
+    },
+    {
+      "path": "source/assets/js/breakpoints.min.js",
+      "bytes": 2439,
+      "sha256": "309febcd6d6e0cf092201532215f03a6a9f30b30f26203272a4861d704e7cd52"
+    },
+    {
+      "path": "source/assets/js/browser.min.js",
+      "bytes": 1851,
+      "sha256": "87910d5ed0053d90caf83230a2f1811d8679815da01f7bdec7548e776d7f04c4"
+    },
+    {
+      "path": "source/assets/js/jquery.min.js",
+      "bytes": 86927,
+      "sha256": "160a426ff2894252cd7cebbdd6d6b7da8fcd319c65b70468f10b6690c45d02ef"
+    },
+    {
+      "path": "source/assets/js/jquery.poptrox.min.js",
+      "bytes": 12085,
+      "sha256": "bd321f5c2c9a3617d93534874ffac4eef3048d9c9c7bf53849b656aeac5106c1"
+    },
+    {
+      "path": "source/assets/js/jquery.scrollex.min.js",
+      "bytes": 2257,
+      "sha256": "fc25b75fb3fc8b42756413be387e0d7a602813125283d2384551961d73ea784e"
+    },
+    {
+      "path": "source/assets/js/jquery.scrolly.min.js",
+      "bytes": 831,
+      "sha256": "8b6571ea2c3631ff50bb4b96e7f9081c6e33ebaadef9cb2ca5955d5e0b625a02"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 4961,
+      "sha256": "9b7a9bd78f4e7b9f3a6761eae72af108186f2dd2495280c9c7a96c2e5ff9872d"
+    },
+    {
+      "path": "source/assets/js/util.js",
+      "bytes": 12433,
+      "sha256": "c2e1e72b0de356f6ce184e3af4fa8ab6590a2581162905a27d77886b2d960e00"
+    },
+    {
+      "path": "source/assets/sass/base/_page.scss",
+      "bytes": 3198,
+      "sha256": "a09a2bde114af23727dc0bb3e930e866ecfce145284697bd8c35f12ef5037d54"
+    },
+    {
+      "path": "source/assets/sass/base/_reset.scss",
+      "bytes": 1571,
+      "sha256": "b3082474ca5a2f2de8fc67265869be2722268aef432d9fcc0d7cabb368bd5e9e"
+    },
+    {
+      "path": "source/assets/sass/base/_typography.scss",
+      "bytes": 1682,
+      "sha256": "2cab1190200dde94e5cf50c7eb891fdd98d1062aa455cf8bbc277e10e9853170"
+    },
+    {
+      "path": "source/assets/sass/components/_actions.scss",
+      "bytes": 1790,
+      "sha256": "08c49183de8aadd3bbd943bea31b354b73d2defe1083f1542e98c1ed4091577d"
+    },
+    {
+      "path": "source/assets/sass/components/_box.scss",
+      "bytes": 541,
+      "sha256": "6365a157f02480b8bc3fb0d48ab7197c2e23a4cf0221d3471bf7392fa2a04c44"
+    },
+    {
+      "path": "source/assets/sass/components/_button.scss",
+      "bytes": 1696,
+      "sha256": "b1cca7b823291343fb34cfa731d3f2c2cacd79b05914ea14aa42504c7a2b54f4"
+    },
+    {
+      "path": "source/assets/sass/components/_form.scss",
+      "bytes": 2582,
+      "sha256": "cc354611f16e3e23ba6d0d44fda125082fa8a974602392a61239342f26ae7c28"
+    },
+    {
+      "path": "source/assets/sass/components/_gallery.scss",
+      "bytes": 1454,
+      "sha256": "deed21316ba6b0a44354ce6d28f44bbb6fb0bb2b9d611832cee285070e6b434a"
+    },
+    {
+      "path": "source/assets/sass/components/_icon.scss",
+      "bytes": 527,
+      "sha256": "692258dc6d25ba25bf5eec41bdb4a316124ed22f9dcb1c23a77eb58d25a38972"
+    },
+    {
+      "path": "source/assets/sass/components/_icons.scss",
+      "bytes": 384,
+      "sha256": "d2b74586b75bbfcc6057e3be31e4aaa2c9f07441886e6e4d7e9d77707f1a9266"
+    },
+    {
+      "path": "source/assets/sass/components/_image.scss",
+      "bytes": 774,
+      "sha256": "f72cd8aab45ce594102e56f9caac335ea1f2dbd0819021e1f4f30e7c23032b78"
+    },
+    {
+      "path": "source/assets/sass/components/_list.scss",
+      "bytes": 703,
+      "sha256": "40cdcdfead23dc5bd322a8afd83b8ec142fd11223645b4118cf9e70ed79e85a9"
+    },
+    {
+      "path": "source/assets/sass/components/_poptrox-popup.scss",
+      "bytes": 3510,
+      "sha256": "711963179c5676e630fbeae3881c35cedfcdeb654a31de63be07b6ac311813bc"
+    },
+    {
+      "path": "source/assets/sass/components/_section.scss",
+      "bytes": 339,
+      "sha256": "74ef423194b798bbba8d52b7f0f0362253aef34811abf1cbf6b2ac00f50608db"
+    },
+    {
+      "path": "source/assets/sass/components/_table.scss",
+      "bytes": 616,
+      "sha256": "6fdc24929ed69215daad9d42b7baf60f5fb2721a073fd268884e1d2fd3fcd50e"
+    },
+    {
+      "path": "source/assets/sass/layout/_footer.scss",
+      "bytes": 1354,
+      "sha256": "0eafe64d2c48c459d9b6208f5b88f3aaab2d80fb9fa746f3b991ff6bd5e500c8"
+    },
+    {
+      "path": "source/assets/sass/layout/_header.scss",
+      "bytes": 1403,
+      "sha256": "fb192107244762181d6a7d08ef2194c7b17244c7a3bd7cb019b50bdbb70f94cd"
+    },
+    {
+      "path": "source/assets/sass/layout/_main.scss",
+      "bytes": 3493,
+      "sha256": "f5e8969616cdaa312651d1e3f162da7af6f5f9a611ec96211b666462c099bef7"
+    },
+    {
+      "path": "source/assets/sass/libs/_breakpoints.scss",
+      "bytes": 4593,
+      "sha256": "69a8486c9bdc0b14358418cae6c4829b57fb0b6684634e1e72f5a2a27f732101"
+    },
+    {
+      "path": "source/assets/sass/libs/_functions.scss",
+      "bytes": 1957,
+      "sha256": "fc832d9ccc89117bb05beed1e5fb328e7f909845d2220a1060375142f51b7e5d"
+    },
+    {
+      "path": "source/assets/sass/libs/_mixins.scss",
+      "bytes": 1840,
+      "sha256": "1eadca47c82395e010637919c7684793711009b6413ebb3a087f7471a4e8bf41"
+    },
+    {
+      "path": "source/assets/sass/libs/_vars.scss",
+      "bytes": 892,
+      "sha256": "bc31ad7385155a63457bba2daeddb4d5e65f7d58b1d50fd975cf11f69bc9afe3"
+    },
+    {
+      "path": "source/assets/sass/libs/_vendor.scss",
+      "bytes": 7356,
+      "sha256": "272b2a31ba214fbe7293e24c9e925c3965220c144d97fe9846ba095d7fce14d6"
+    },
+    {
+      "path": "source/assets/sass/main.scss",
+      "bytes": 2364,
+      "sha256": "dc54d3648b91e6cacb62c7df652c0f960c993154164acad5fd33a8373b82be63"
+    },
+    {
+      "path": "source/assets/sass/noscript.scss",
+      "bytes": 330,
+      "sha256": "4da70d755dd757739281352533ac94a7ffd01881df9d070306ab23e7df41aaae"
+    },
+    {
+      "path": "source/images/fulls/01.jpg",
+      "bytes": 28726,
+      "sha256": "ef5eec7292597287cc86f5ca67292009d2fbd52092b1b154c774785efb6a4932"
+    },
+    {
+      "path": "source/images/fulls/02.jpg",
+      "bytes": 54014,
+      "sha256": "cebceff9635b0b8239f31c49ffd7dfc6a853e83e64027bb2047510f4555a12de"
+    },
+    {
+      "path": "source/images/fulls/03.jpg",
+      "bytes": 52490,
+      "sha256": "9e19a493fa21e8022ddadcee299dec6b89d6464327aad1033c45156b5faf2370"
+    },
+    {
+      "path": "source/images/fulls/04.jpg",
+      "bytes": 35084,
+      "sha256": "1f4f0112964602605822fa725925d81f633e0a08ab6a73017f02498660c89fac"
+    },
+    {
+      "path": "source/images/fulls/05.jpg",
+      "bytes": 34165,
+      "sha256": "b6a70450076118a3d763288bf040f13130be1c81de07f84e1f950079f4dfcade"
+    },
+    {
+      "path": "source/images/fulls/06.jpg",
+      "bytes": 55548,
+      "sha256": "09fb3c4e4ee8715f3caff7c2cffbcde94d6a27e0f18a7f5c547cf2be57443559"
+    },
+    {
+      "path": "source/images/intro.jpg",
+      "bytes": 75576,
+      "sha256": "69f0201610be4557d0b4fe61180e52377d73b4ab1bde15dc09846f572f1acf39"
+    },
+    {
+      "path": "source/images/one.jpg",
+      "bytes": 80316,
+      "sha256": "95ec4d66f7f18248d767408e7f3d4f0fe2f304a63f895c7f5597185ddd65eb90"
+    },
+    {
+      "path": "source/images/thumbs/01.jpg",
+      "bytes": 10172,
+      "sha256": "c2bfb060770a6bde941b1db1297a830e7640506a782874c154024f90c42c59a2"
+    },
+    {
+      "path": "source/images/thumbs/02.jpg",
+      "bytes": 11149,
+      "sha256": "c7b9ddbeb9c0e8b361c41dc5eeb78e7e3da39d80485cdabe6e316d9d9d036d98"
+    },
+    {
+      "path": "source/images/thumbs/03.jpg",
+      "bytes": 11036,
+      "sha256": "0795939e53c625212897bd50659c328a533beac4478734eb16291ef36dbee995"
+    },
+    {
+      "path": "source/images/thumbs/04.jpg",
+      "bytes": 11071,
+      "sha256": "7d671a58ec241a573e445d098f8d190ce9408c77ef8a8a5a8d9325dd97432596"
+    },
+    {
+      "path": "source/images/thumbs/05.jpg",
+      "bytes": 10754,
+      "sha256": "7dc267f90d068ca6429099c199fd27a044b597ea4003703e7207cc42b3c5ca25"
+    },
+    {
+      "path": "source/images/thumbs/06.jpg",
+      "bytes": 10462,
+      "sha256": "cfd4c1ed354f7b5c80e0477bca2daa661538ef1a3b4703f143f0f50d1a65ecde"
+    },
+    {
+      "path": "source/images/two.jpg",
+      "bytes": 77905,
+      "sha256": "b51d899069e167b8f454d22ab2bfb4fd77df0b3cd50132fdcfa661606f719b45"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 6187,
+      "sha256": "0ce7e1330eb0a8c948e625220756a25132b2c30e7425c95dcafcacc4e367844d"
+    },
+    {
+      "path": "source/LICENSE.txt",
+      "bytes": 17128,
+      "sha256": "d7b98629668e4968281c7083336bc292ae55e2ca3a5469072b9657dd2c1a634e"
+    },
+    {
+      "path": "source/README.txt",
+      "bytes": 5073,
+      "sha256": "f80725169c4c8c51be568d61ba0439602b3767fe1670b05532bfd06bee74d816"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Fetched 65 files from the pinned repository at f32c95cd40e42659857e2318b6deb1f6be43da5d.",
+  "digest": "b66afa482a304c3d49edac4c4dbe9da7cd30d0904cb0ab391c7376862feacd14"
+}

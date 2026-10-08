@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-real-estate-humahome-property-search",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://humahome.com/",
+    "finalUrl": "https://humahome.com/",
+    "httpStatus": 200,
+    "pageTitle": "Humahome — homes for sale in Barcelona, chosen for how you live",
+    "retrievedAt": "2026-10-08T20:32:40.961Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 15305,
+      "sha256": "faf7e56d7d7e239e06a67a8133f369b9a5b355fd16fe5414efe2fd12b1ab1e95"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 18021,
+      "sha256": "4d45809b148ee5a58feed4ce1da5b0ec1c413f15f93d342c13ed5b7b24fbc804"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 8052,
+      "sha256": "43da9ec0e09b046754153af7eaed481a0c208e5cd16c1aecd3ac06c0d2775ae3"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 21023,
+      "sha256": "1f4b2d240cbe5f7c12b4055391c97e03d701c1ef4536453df9b16aed123d51be"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://humahome.com/assets/property-couple.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://humahome.com/assets/logo-footer.svg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "092c26a6d9cb7c5c79a4226071a5cb7e9512fce4052cc4e71e33d9cd59281d78"
+}

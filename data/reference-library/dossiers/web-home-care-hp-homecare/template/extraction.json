@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-home-care-hp-homecare",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.hphomecare.co.uk/",
+    "finalUrl": "https://www.hphomecare.co.uk/",
+    "httpStatus": 200,
+    "pageTitle": "Best Private Home Care in London | CQC-Registered | HP Homecare | HP Homecare",
+    "retrievedAt": "2026-10-08T20:25:17.621Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 161843,
+      "sha256": "40d589905e23559cfd3797b3a873b112b29b0954f47adbcf37d10f0a1a82fe90"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 167667,
+      "sha256": "8d34d5e8643c7f1d1d79eb64de329fa5f729d6b1db727598cf41a4e44f028ef6"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 209,
+      "sha256": "4865f422b699c8a65dfb8e8f116266d91b9813cd9d4b50f9c903146d9b1d4785"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 209,
+      "sha256": "89de204d25d585bf0d356cdb23050fee8933b0e91f9b7926a3b2410eaa506798"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 244,
+      "sha256": "bd87f1bd0e86f3e5ad8bb41e1e9278160bd0cb198de77ec1057529b434cd0b62"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 209,
+      "sha256": "ec2312caf4733cef3058ce52d01df5ca7d980fee62837ef85ef3e77e8bf6569e"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 5933,
+      "sha256": "a1b3d36f2990c5ed3dcdf6f6e551e0bd2963f9d838ec645ffead1fd1815441c8"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 379,
+      "sha256": "e3056846b7e1f77935b8b12e7f5ebc70ec5ec54a8d6392a373160faf9289e5f5"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.hphomecare.co.uk/hphomecare_logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/hero-chelsea-selected.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/img/awards/LB%20Awards%20Graphic%204.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/img/care-services/cancer_care.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/img/care-services/cardiac_care.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/doctor-talking.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/img/care-services/diabetes_management.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/img/care-services/multiple_sclerosis_management.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/img/care-services/parkinsons-disease.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/img/care-services/post_hospital_care.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/img/care-services/post_stroke_rehabilitation.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/img/care_at_home_nurse_taking_blood_presure.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/img/care_at_home_nurse-listening_patiently.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/img/laoise_midwife.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/img/london-skyline.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.hphomecare.co.uk/logo-cqc.webp",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 7 of 7 stylesheets retained.",
+  "digest": "fcd785eea3d0e52c3bdd5970a07c63e6c51a3a3c842805efc9a829c4adc52aed"
+}

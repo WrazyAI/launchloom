@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "direct-grlica-law",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://grlicalaw.com/",
+    "finalUrl": "https://grlicalaw.com/",
+    "httpStatus": 200,
+    "pageTitle": "GRLICALAW",
+    "retrievedAt": "2026-10-08T20:16:11.950Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 57454,
+      "sha256": "4f5514d49bf03dd6999c942e3cdc5cc206114243e59c734f5317a6c46b19bcef"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 37488,
+      "sha256": "fa11342f0b4771ac9813ab46f3152bc0223b72152a435700a684764608910391"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://grlicalaw.com/img/team/Ivo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://grlicalaw.com/img/team/Snezana.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://grlicalaw.com/img/team/Nejc.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://grlicalaw.com/img/team/Jus.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://grlicalaw.com/img/team/Lara.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://grlicalaw.com/img/team/Manca.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://grlicalaw.com/img/contact/ok.png",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "adcb739c3ec7d29975ce546a7f4c07f16fc9300990f361d907d5f4bdf8819453"
+}

@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-veterinary-lap-of-love",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.lapoflove.com/",
+    "finalUrl": "https://www.lapoflove.com/",
+    "httpStatus": 200,
+    "pageTitle": "Home | Lap of Love",
+    "retrievedAt": "2026-10-08T20:36:22.473Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 327037,
+      "sha256": "485ce13ce52c787fd0394445549cc5bac82ccea91c51d7b2f186e29eb4c17e66"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 28268,
+      "sha256": "be3c4f8c12f8e90821d49c533211895162e463a4cb795326a8916abca579b11c"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 31000,
+      "sha256": "799aeb25cc0373fdee0e1b1db7ad6c2f6a0e058dfadaa3379689f583213190bd"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 4699,
+      "sha256": "86815552a6ac093a94dde24b65658c956fd3d91415541dc467368fbc8ebd7e8a"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 90343,
+      "sha256": "87c1382f37c6660a61e380ea3285b6cfefff1493b0693b0c95f30ee4eaa72205"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 30735,
+      "sha256": "7952d863f139c28bfc7b5bb7b0d911e819b051c6c9a56b9070d700d2df202ead"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 33262,
+      "sha256": "f42a9524b7728b47882203056993208b638b3da58d36aea9be1f409fad2ebe7b"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.lapoflove.com/dist/ClientApp/images/extended-logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.lapoflove.com/dist/ClientApp/images/content/homepage.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.lapoflove.com/dist/ClientApp/images/aftercare.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.lapoflove.com/api/resize?src=https%3A%2F%2Flapoflovestaticuploads.s3.us-east-2.amazonaws.com%2Ffiles%2Fe9f89be1-fad0-43bd-8eb0-9529ead1c104%2FCarling-Sitterley-DVM-Lap-of-Love-Veterinary-Hospice-and-In-Home-Euthanasia-SouthCentral-PA-w.png&maxWidth=325",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.lapoflove.com/files/c3820fa9-8093-468b-9353-4c23f94d29a7/Cassie-Smead-DVM-Lap-of-Love-Veterinary-Hospice-and-In-Home-Euthanasia-Indianapolis-IN-w.png?width=325",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.lapoflove.com/files/2be8c15a-76f3-4a8e-ba17-fcddf6579a1b/Lucy-Thomason-DVM-Lap-of-Love-Veterinary-Hospice-and-In-Home-Euthanasia-Nashville-TN-w.png?width=325",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.lapoflove.com/files/9f12e85f-3ff2-4525-8ae5-9ef8fe585a42/Danielle-Contreras-DVM-Lap-of-Love-Veterinary-Hospice-and-In-Home-Euthanasia-SeaTac-WA-w.png?width=325",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.lapoflove.com/dist/ClientApp/images/in-home.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.lapoflove.com/dist/ClientApp/images/teleadvice.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.lapoflove.com/dist/ClientApp/images/pet-loss-heart.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.lapoflove.com/testimonialimg/Merari_Cruz_%20DVM_Holiday_Florida_1700_Lap_of_Love_Veterinary_Hospice_Euthanasia_thumbnail.jpg?height=500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.lapoflove.com/dist/ClientApp/images/content/block-rich-resources/How-will-I-know-its-time.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.lapoflove.com/dist/ClientApp/images/content/block-rich-resources/Roger-UngarDumont-NJ.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.lapoflove.com/dist/ClientApp/images/content/block-rich-resources/Bohdi5-fixed.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bat.bing.com/action/0?ti=343153047&tm=gtm002&Ver=2&mid=33620884-02a1-43cf-a547-907c75a0330b&bo=1&sid=e8448370c35711f1bf266367dc0272c4&vid=e8448c00c35711f1819a05b942243d13&vids=1&msclkid=N&pi=0&lg=en-US&sw=1440&sh=900&sc=24&nwd=1&tl=Home%20%7C%20Lap%20of%20Love&p=https%3A%2F%2Fwww.lapoflove.com%2F&r=&lt=1951&evt=pageLoad&sv=2&cdb=AQAQ&rn=703327",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/dist/ClientApp/images/content/mobile/homepage.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.youtube.com/embed/7kZkKVy2v9g?si=Zt9tKSMIcMjakzha&cc_load_policy=1&cc_lang_pref=en",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://insight.adsrvr.org/track/cei?advertiser_id=7o3m7jw&cookie_sync=1&upv=3.0.0&upid=fj87db8&ref=https%3A%2F%2Fwww.lapoflove.com%2F",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 6 of 6 stylesheets retained.",
+  "digest": "1cf01a36094209085d8f975b5c5fbf6042d93fbc820f9eca22b1a5dcb07ce51c"
+}

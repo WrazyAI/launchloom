@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-painting-house-doctor",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://housedoctorpainting.com/",
+    "finalUrl": "https://housedoctorpainting.com/",
+    "httpStatus": 200,
+    "pageTitle": "San Jose Painting Contractors – House Doctor Painting",
+    "retrievedAt": "2026-10-08T20:31:16.668Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 57647,
+      "sha256": "5bfdee882a1debd317bf5d852ed4ba63d3fad6c4b1ce59fbc9a247983dcb06ca"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 30425,
+      "sha256": "6f5f531b50b2a00fa9d89e744a6e7fc4a10e2712bf0baaa3373f62d55163ae60"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://housedoctorpainting.com/wp-content/uploads/2026/07/house-doctor-logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://housedoctorpainting.com/wp-content/uploads/2026/07/interior.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://housedoctorpainting.com/wp-content/uploads/2026/07/residential.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://housedoctorpainting.com/wp-content/uploads/2026/07/commercial.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://housedoctorpainting.com/wp-content/uploads/2026/07/award-angies-2019.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://housedoctorpainting.com/wp-content/uploads/2026/07/award-homeadvisor-2020.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://housedoctorpainting.com/wp-content/uploads/2026/07/recent-project-15.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://housedoctorpainting.com/wp-content/uploads/2026/07/recent-project-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://housedoctorpainting.com/wp-content/uploads/2026/07/hayes-mansion-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://housedoctorpainting.com/wp-content/uploads/2026/07/commercial-crew.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://housedoctorpainting.com/wp-content/uploads/2026/07/recent-project-14.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://housedoctorpainting.com/",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://housedoctorpainting.com/wp-content/uploads/2026/07/toyota-project-1.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "04c7063bca2d31d746780a08a9c8a20c2e0231990e560387539d057c7e08c504"
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "spicer-gym-timetable-first",
+  "status": "extracted",
+  "method": "zip-download",
+  "source": {
+    "url": "https://www.spicerdesigns.com/templates/gym",
+    "finalUrl": "https://www.spicerdesigns.com/downloads/gym-template-html.zip",
+    "archiveSha256": "e7059bc6b667394c4b2d18f5b4d44e23cbe4f767d145f39e19d36b3c484b003e",
+    "retrievedAt": "2026-10-08T20:05:52.330Z",
+    "license": "CC-BY-4.0",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/hero.webp",
+      "bytes": 93970,
+      "sha256": "cafa2a84e9b025082e1e5ffb146d2bc3b8e6a4b05572bb3c742919a775f7cb90"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 29448,
+      "sha256": "c4883a390ea398328fc605176c9f0a41bec7ad5889bbc47cb3f3a053249b01cc"
+    },
+    {
+      "path": "source/README.md",
+      "bytes": 2706,
+      "sha256": "92ef531883ac1cb7ac0a80c1d015f73def9809031aac241ea9554facd26570cb"
+    },
+    {
+      "path": "source/styles.css",
+      "bytes": 26882,
+      "sha256": "f7a56b6685c8819f7793c93b4a398154254a2ca277872bdd20774e84d35609a3"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.spicerdesigns.com/downloads/gym-template-html.zip#LICENSE",
+      "reason": "unsupported-extension"
+    }
+  ],
+  "notes": "Downloaded the official HTML build (4 files, archive SHA-256 e7059bc6b667394c4b2d18f5b4d44e23cbe4f767d145f39e19d36b3c484b003e). The template page footer also shows an MIT label; the retained LICENSE in rights/ records CC BY 4.0 with the footer attribution condition. Reconcile before any derivative publication.",
+  "digest": "016a51cabe5a6d514ce5c30d8fea2cd6464b630c2bce20d6415ced35076f2265"
+}

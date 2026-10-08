@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-home-care-kome-care",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.komecare.co.uk/",
+    "finalUrl": "https://www.komecare.co.uk/",
+    "httpStatus": 200,
+    "pageTitle": "Nurse-Led Home Care London | CQC Registered | Kome Care",
+    "retrievedAt": "2026-10-08T20:25:39.463Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 137481,
+      "sha256": "bdaebc77c1510d4b5900ba75faba672c793552cc4e377ace8bf95c315f280ec9"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 18514,
+      "sha256": "1e07ccf95d9b5a194657fc531dcab0cfed1152334f4bf46dd2e0bd03779ddb28"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 832547,
+      "sha256": "92dd8663d8e50943f12d600349b59276b93b200a2a5ac509ce0629ab8d3e0c9b"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 465639,
+      "sha256": "6609e3e6e623416285ea9b5363f4021d853364d84b84471ca7fae03e0d277406"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 2949,
+      "sha256": "d4d66dadce8d01ce7326273e58919b26894d38f81517662b1b613b8b11c18d65"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.komecare.co.uk/assets/img/logo/logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.komecare.co.uk/assets/img/services/services-thumb-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.komecare.co.uk/assets/img/services/services-thumb-5.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.komecare.co.uk/uploads/blog/enabling-a-client-to-continue-travel-plans-through-timely-wound-care-1787228141.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.komecare.co.uk/uploads/blog/supporting-independence-and-communication-for-a-non-verbal-autistic-client-1787227733.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.komecare.co.uk/uploads/blog/supporting-a-client-with-peg-feeding-and-limited-mobility-1787227123.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.komecare.co.uk/assets/img/brand/cqc-logo-sm.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.komecare.co.uk/assets/img/logo/preloader/preloader-icon.png",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 4 of 4 stylesheets retained.",
+  "digest": "75fd8f84dc74263822f1c039010cf0a88da0c45df7b2310097a1a7a8d85af1a6"
+}

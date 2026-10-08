@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "spicer-auto-repair-digital-inspection",
+  "status": "extracted",
+  "method": "zip-download",
+  "source": {
+    "url": "https://www.spicerdesigns.com/templates/auto-repair",
+    "finalUrl": "https://www.spicerdesigns.com/downloads/auto-repair-template-html.zip",
+    "archiveSha256": "5b60237bcf2553f19662231c4e2122baf3aac80f0408b520dad640f36bacb5a8",
+    "retrievedAt": "2026-10-08T20:05:50.576Z",
+    "license": "CC-BY-4.0",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/hero.webp",
+      "bytes": 50166,
+      "sha256": "a53e58ca84e73889a832dfefe11ff30ebb78891bb2dfd4c7eb0f5ffe450eb465"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 27198,
+      "sha256": "2a439a180946f65234a413777364854f73d558e99a7541540266fad530fcd857"
+    },
+    {
+      "path": "source/README.md",
+      "bytes": 2714,
+      "sha256": "ab0f39bb4f61f5a89e03c9616883d29446371d7fb2c8ae60e5af02f86790cdea"
+    },
+    {
+      "path": "source/styles.css",
+      "bytes": 24806,
+      "sha256": "ddea2ededc7fb87010aaee5b7996d8f54cab7fb148e5c80c4ea31a5cb30dd3af"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.spicerdesigns.com/downloads/auto-repair-template-html.zip#LICENSE",
+      "reason": "unsupported-extension"
+    }
+  ],
+  "notes": "Downloaded the official HTML build (4 files, archive SHA-256 5b60237bcf2553f19662231c4e2122baf3aac80f0408b520dad640f36bacb5a8). The template page footer also shows an MIT label; the retained LICENSE in rights/ records CC BY 4.0 with the footer attribution condition. Reconcile before any derivative publication.",
+  "digest": "190d0e7a3d6c496377b556389aa79bfa496c221a7c04b56c3d5a0b7f0b9103d4"
+}

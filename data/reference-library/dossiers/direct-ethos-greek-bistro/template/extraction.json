@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "direct-ethos-greek-bistro",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.ethosbistro.com/",
+    "finalUrl": "https://www.ethosbistro.com/",
+    "httpStatus": 200,
+    "pageTitle": "ethos Greek Bistro | Greek Restaurants Fort Lauderdale | Coconut Creek",
+    "retrievedAt": "2026-10-08T20:14:43.915Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 199739,
+      "sha256": "c2eb9e4034614d2f6fe1f8c15ec31b562bfa578270ed6f901583499b0edcf8d7"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 6209,
+      "sha256": "8f44e78863b6002df7b58898e2782ecc95c3dc3601e5b191a2bf49a232aec5c7"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 3212,
+      "sha256": "a224a34e8cb6819eb726b8dad67d40b8b6083669dbcab33be3ecf40ce49390f6"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 20542,
+      "sha256": "a91e7b10e7efb0d57a85f0ff6a49011a0619d9592b07705f6bfd991ed2d96cc8"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn.userway.org/widgetapp/images/spin_wh.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.userway.org/widgetapp/images/wheel_left_wh.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/logo-header-wht.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/ethos-catering-logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/apple-app-store.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/google-play-store.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/icon-facebook.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/icon-instagram.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/icon-youtube.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/gold_2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/steak-salad.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/20231208_ethos_coconutcreek_2201.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/grill-for-2.jpg?786",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/ethos0482.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/20231208_ethos_coconutcreek_2138.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/logo-hero.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/ethos-take-out-greek.jpeg?170",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/greek-catering-fort-lauderdale.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/career-restaurant-coconut-creek-home.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ebl-demenagement/google-star.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/greek-salad.jpg?1915",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/gyros-pita.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/spanakopita-greek-spinach-pie.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/tzatziki.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/feta-olives.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/calamari-squid.jpg?1186",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/lamb-chops-greek.jpg?1151",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/Gyro-Pita-Fort-Lauderdale.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/4.jpeg?814",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/9.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/6.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/2.jpeg?116",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/5.jpeg?176",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/12.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/16.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/17.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/3.jpeg?232",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/fort-lauderdale-greek-restaurant-3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/coconut-creek-greek-restaurant-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/18.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/10.jpeg?997",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/coconut-creek-greek-restaurant-1.jpg?1631",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/8.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/14.jpeg?397",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/images/gallery/20.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/footer-logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/icon-facebook-ft.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/icon-instagram-ft.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/icon-youtube-ft.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/instagram.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://uploads.bettysuite.com/ethosbistro/greek-restaurant-video.mp4",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained. Page errors observed: 1.",
+  "digest": "9dde3cdf103a567114c7bc9460cc9c14fcda6eede97b36660ebf501e29e33c36"
+}

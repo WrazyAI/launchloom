@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "kinetic-club-program-bands",
+  "status": "extracted",
+  "method": "owned-artifact",
+  "source": {
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/kinetic-club-program-bands",
+    "artifactPath": "a1-design-showcase/kinetic-club.html",
+    "generator": "scripts/build-a1-design-showcase.mjs",
+    "retrievedAt": "2026-10-08T20:06:09.904Z",
+    "license": "owned",
+    "attestationPath": null
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 6675,
+      "sha256": "0e846e77bd90a98ddd0d42225a63489b89932f5b4273baaa2e1b26655ee4e649"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Copied 1 files from the local build artifact at a1-design-showcase/kinetic-club.html. The artifact directory is gitignored; regenerate it with scripts/build-a1-design-showcase.mjs when the owned prototype source changes.",
+  "digest": "a6f6005e6ad04a1caf1334c733390b5e7a9f4bda58045a0a26609c9869b7d8ff"
+}

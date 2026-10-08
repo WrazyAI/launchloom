@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-hospitality-wm-farmer-and-sons",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.wmfarmerandsons.com/",
+    "finalUrl": "https://www.wmfarmerandsons.com/",
+    "httpStatus": 200,
+    "pageTitle": "Wm. Farmer & Sons | Boarding & Barroom",
+    "retrievedAt": "2026-10-08T20:27:46.032Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 26079,
+      "sha256": "a437df439ddfbc2a46a7f306acef93bb06d9aabcf8fcda43016f8c06a588ff5f"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 13594,
+      "sha256": "f1356097745bb7888e3d5f1ce09a2e63fec1d99ff5b69c6b4e0556aee83318f1"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 102217,
+      "sha256": "0934b1fc0d3a766d41d3adf5e7a115875e66e98ebba408d965a41cf3d2cb4ab5"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 211227,
+      "sha256": "59d93ded122e9d126bd9ec124faae5a2b3ace857f48c05f9f45b318cd6233f81"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://images.getbento.com/accounts/6526603c6cb8aa9cd98f92fa409e3836/media/images/33765logo-new.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.getbento.com/accounts/6526603c6cb8aa9cd98f92fa409e3836/media/images/1747688408820.png?w=1000&fit=max&auto=compress,format&cs=origin&h=1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6Ldh0uwrAAAAABZNEucYwqZZ3oOahk4lRhONMg5a&co=aHR0cHM6Ly93d3cud21mYXJtZXJhbmRzb25zLmNvbTo0NDM.&hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&size=invisible&anchor-ms=20000&execute-ms=30000&cb=4in9i01fqe9f",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "3e605b51696b1408ef9a2fe5ef13e048ba83e1687bbae8cd47f43e1052097998"
+}

@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "colorlib-caseworth-legal-ledger",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/caseworth",
+    "repository": "https://github.com/ColorlibHQ/bootstrap-templates",
+    "revision": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "templatePath": "caseworth/",
+    "retrievedAt": "2026-10-08T20:05:23.865Z",
+    "license": "MIT",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/base.css",
+      "bytes": 12208,
+      "sha256": "84662d517b2d223427a0d403a347cb8edf1a834ecaf160e5f4c8f8627c78b56c"
+    },
+    {
+      "path": "source/assets/css/style.css",
+      "bytes": 4701,
+      "sha256": "120b57675ae11552bf4aba8e7b7cc4d87f114755af6f473bc7eaca690f5320b0"
+    },
+    {
+      "path": "source/assets/js/base.js",
+      "bytes": 4182,
+      "sha256": "593e618719970dfe796d86f0707593498951c0e52a4fc7a18c87d6be2fef5819"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 1277,
+      "sha256": "b3b651c47a4fea3db35e95683003fb254edcfefdc8f44f1ed0b049e0c99af4d5"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap-utilities.metadata.json",
+      "bytes": 29007,
+      "sha256": "0aa89f21fbbf9555a3905382ef4cdf5f281f164eb727b7a8d446efaf01b310fa"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap.min.css",
+      "bytes": 357751,
+      "sha256": "1a17841f830ff69b686da298babbf8e5e3e8dfb33b7329f115e366deacccb380"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/js/bootstrap.bundle.min.js",
+      "bytes": 214643,
+      "sha256": "77d552c3e6a815efd143c8e782c480bc63225cefba51bc510e0875a934f23fe7"
+    },
+    {
+      "path": "source/CREDITS.txt",
+      "bytes": 9075,
+      "sha256": "babeae7bc8064f7ffe00743ba7d7fba8e93bfc5b8c19a33d8b28ce97cc849772"
+    },
+    {
+      "path": "source/img/office.jpg",
+      "bytes": 127282,
+      "sha256": "278865e8a7b33c40e5b364e6d50a654e6cd0d347398ce9c7acbcd9c1f5276837"
+    },
+    {
+      "path": "source/img/person-1.jpg",
+      "bytes": 48978,
+      "sha256": "1a5f763ed9d322e640b2bcc4b8efbb77d61c77171b417f95bfbb3a6269ef750c"
+    },
+    {
+      "path": "source/img/person-2.jpg",
+      "bytes": 48978,
+      "sha256": "1a5f763ed9d322e640b2bcc4b8efbb77d61c77171b417f95bfbb3a6269ef750c"
+    },
+    {
+      "path": "source/img/person-3.jpg",
+      "bytes": 48978,
+      "sha256": "1a5f763ed9d322e640b2bcc4b8efbb77d61c77171b417f95bfbb3a6269ef750c"
+    },
+    {
+      "path": "source/img/person-4.jpg",
+      "bytes": 53143,
+      "sha256": "6503f6e02d78ec7bba48c4b0eed73aef0add04e9b3856f51a47425a40cb66edf"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 26393,
+      "sha256": "e8b1eb60a620f4d386d36d05df4684f4a604e73252eb9a27be5a5f4642696459"
+    },
+    {
+      "path": "source/practice.html",
+      "bytes": 12965,
+      "sha256": "f1e5aad23d44c0e2a46d24e96bb3f96a850d7a468bc8ae0b0705b66543ed18af"
+    },
+    {
+      "path": "source/template.json",
+      "bytes": 3868,
+      "sha256": "9e1e6c9153650fd7822b1385e6c9a3e8d6f05d40baeea4acbd6acdabff264b6b"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Fetched 16 files from the pinned repository at f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf.",
+  "digest": "9757ffcb6b5c9e4d366487a0587867cf4bfef6bc0bfcfbbd7d67e38a23ef5ac1"
+}

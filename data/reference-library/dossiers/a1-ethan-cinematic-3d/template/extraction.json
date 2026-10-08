@@ -1,0 +1,401 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "a1-ethan-cinematic-3d",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.ethansuero.com/",
+    "finalUrl": "https://www.ethansuero.com/",
+    "httpStatus": 200,
+    "pageTitle": "Ethan Suero — Webflow Websites & Branding for B2B Marketing Teams",
+    "retrievedAt": "2026-10-08T20:11:20.341Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 299182,
+      "sha256": "cfd821dde51946f2be72f1fef7873dbf07ee73b4c07deb81532a378a82233f19"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 520586,
+      "sha256": "0311bef5c9ce70883b0e851a26959367c7199d5ba96c8ec4bf3617899fc10541"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 8162,
+      "sha256": "a2b764c54fbeacdf13cd5e3dfd6752a1f97ee56e60b2e10c36b120038318036b"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 5489,
+      "sha256": "947bb1defe12bf09340e7e746765e77ae600ec94259478dbd893e31a56222a9a"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.ethansuero.com/assets/ethan-portrait-96.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/694294a0da9b63995b09502f_button-arrow.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/69de26b462428fa5fe7fca15_premium_partner_badge_blue.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6932f27c2ae98c274187fc97_RAIN-DELAY.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6932f2923c3f0d0e3d8217a5_YAHOO.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6932f420d4aae9ac3e41a11a_AIRCARBON.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6932f455c83fbc317d29451e_DIGITAL-GURUS.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6932f469b6d48e9125f75355_AIRBUS.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6932f4862267e008bf657d21_MONEDA.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6932f49c52b2761305e36898_IMMERSITY.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/primary-ventures.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6932f4b96844ed32e3bcfe1b_RENSCENE.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6937001f905801510f1ee161_GNG.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6932f4ea714ec7c2122b125d_PERMISSION.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6932f536bfb13ac89dd20d34_VELOCE.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6932f5583aba467dd6d862e0_STREAMLINE.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6932f57fc97b68cc14802adc_YONDER.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/abatable.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/legl.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/uniserve.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/abatable-cover-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/abatable-cover.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/abatable-cover-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/abatable-cover-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/abatable-cover.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/69aaca9704891c88f5706000_abcs-cover.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69aaca9704891c88f5706000_abcs-cover-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69aaca9704891c88f5706000_abcs-cover.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/69aaba24b88ebd1334172706_moneda-cover.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69aaba24b88ebd1334172706_moneda-cover-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69aaba24b88ebd1334172706_moneda-cover.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/uniserve-cover-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/uniserve-cover.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/uniserve-cover-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/uniserve-cover-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/uniserve-cover.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6995a9a7779036fa6a3c7a37_quoti-cover.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/6995a9a7779036fa6a3c7a37_quoti-cover-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/6995a9a7779036fa6a3c7a37_quoti-cover.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/699355e856b6eb57f7f82b77_felix-cover-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/699355e856b6eb57f7f82b77_felix-cover.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/699355e856b6eb57f7f82b77_felix-cover-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/699355e856b6eb57f7f82b77_felix-cover-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/699355e856b6eb57f7f82b77_felix-cover.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/still-abatable.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/still-abatable-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/still-abatable-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/still-abatable.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/69b7ca2de3dd00a777672b97_still-abcs.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b7ca2de3dd00a777672b97_still-abcs-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b7ca2de3dd00a777672b97_still-abcs-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b7ca2de3dd00a777672b97_still-abcs.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/69b7ca8357feda2ce0c78b3b_still-moneda.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b7ca8357feda2ce0c78b3b_still-moneda-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b7ca8357feda2ce0c78b3b_still-moneda-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b7ca8357feda2ce0c78b3b_still-moneda.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/still-uniserve.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/still-uniserve-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/still-uniserve-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/still-uniserve.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/69b7ca8ef7b53af98144b8a4_still-quoti.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b7ca8ef7b53af98144b8a4_still-quoti-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b7ca8ef7b53af98144b8a4_still-quoti-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b7ca8ef7b53af98144b8a4_still-quoti.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/69b7cad2d032e02874b94cd6_still-fn.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b7cad2d032e02874b94cd6_still-fn-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b7cad2d032e02874b94cd6_still-fn-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b7cad2d032e02874b94cd6_still-fn-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b7cad2d032e02874b94cd6_still-fn.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/69b16483d73b62d606625bbe_DSC_8699-dithered.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b16483d73b62d606625bbe_DSC_8699-dithered-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b16483d73b62d606625bbe_DSC_8699-dithered-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b16483d73b62d606625bbe_DSC_8699-dithered-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b16483d73b62d606625bbe_DSC_8699-dithered-p-2000.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/69b16483d73b62d606625bbe_DSC_8699-dithered.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6942a75bd5ee63b543cd0e6f_browsing-book-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.ethansuero.com/assets/6942a75bd5ee63b543cd0e6f_browsing-book.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/6942a75bd5ee63b543cd0e6f_browsing-book-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/6942a75bd5ee63b543cd0e6f_browsing-book-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/6942a75bd5ee63b543cd0e6f_browsing-book-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/6942a75bd5ee63b543cd0e6f_browsing-book-p-1600.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/6942a75bd5ee63b543cd0e6f_browsing-book.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "blob:https://www.ethansuero.com/980b97b0-b8de-4d06-ad89-b42e697d9a85",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://suero-studio.b-cdn.net/website/abatable/abatable-web-loader.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://suero-studio.b-cdn.net/website/abcs/abcs_scroll-main.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://suero-studio.b-cdn.net/website/moneda/moneda_scroll-main.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://suero-studio.b-cdn.net/website/uniserve/uniserve-web-showcase.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://suero-studio.b-cdn.net/website/quoti/quoti_scroll-main.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://suero-studio.b-cdn.net/website/fn/fn_scroll-main.mp4",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "5d037356a7d2020f2d719d6f8bc802b1d63dbfec4a1ba3d883901a8b2ab83f3b"
+}

@@ -1,0 +1,265 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-fitness-one-ldn",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.oneldn.com/",
+    "finalUrl": "https://www.oneldn.com/",
+    "httpStatus": 200,
+    "pageTitle": "ONE LDN | High-Performance Gym, Classes and Elite Coaches in London",
+    "retrievedAt": "2026-10-08T20:25:05.136Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 485778,
+      "sha256": "f21f7d2ff011b31fcf6d846395b84e928e1b0d0a863400dc2f0d474847a3cbbe"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 105,
+      "sha256": "62851efff91ee5fe72cea604fca72bbd29cfe282a517f1cbca5ba647285a1b65"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 12029,
+      "sha256": "ecb4d6d01d535788189bc6ea40c9e2e3bba6adcfc7f5a79aa69fc76fa64c9b68"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 102,
+      "sha256": "82ec99aa241ab44565cd0cd2c7b0c7529f501b0fad9cbe303279d6f1722178b2"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 1087,
+      "sha256": "1ae84d9f9687b4d101a7e87382c7a11b8029157df95de292ad48ac87f209f912"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 95,
+      "sha256": "16728fc007853637c7768b0c79c377bcc59811904609cfa1954475b58a32c109"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 3522,
+      "sha256": "7a84177f9e7c09cd17f6d698962e53cc8bc2871146935c17e50e9e633aecdb66"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 98,
+      "sha256": "79cf11e511b4d35a376b07a268e704c15d8f8935b64de4c3a152f5ceb05cf96a"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 1268902,
+      "sha256": "2a313456df66faefb136ce3633493cfb023f957079e874fbdb4dd11e57985750"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 467125,
+      "sha256": "84c8cef704077c39326360d98375b0fc93877e3def2f883844d26b17e2104122"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 8811,
+      "sha256": "a2f094cab0fd98c7a429fe4cc6303c8dd16252a14b4b75312eeef661ededbb0c"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 14761,
+      "sha256": "aecbbb82a3f1f565c7fd764f886cb63a2c64c87025198626b8d33c2b98d27c8e"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 6716,
+      "sha256": "d8cae737f697df325e0796811642f2d5b0566404fb749b5cc88036a2931be58c"
+    },
+    {
+      "path": "source/styles/13.css",
+      "bytes": 25629,
+      "sha256": "0e5e47c85a0b452da561b75fbedfae3d8398f54a7de67419efba318d529f7db1"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 5621,
+      "sha256": "0ff709d81c238e4bd4205ce9957ffba981b4870ae9d1fa42da5b1b6b69380259"
+    },
+    {
+      "path": "source/styles/15.css",
+      "bytes": 84274,
+      "sha256": "ccae962fcaa720bcae37205aad1125070c8c6121c8fd215166ba04334dc6df54"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/41ad76db-45cc-4767-83c8-8a02cfb69784/OneLdn+logo.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/1710168989123-VWU1721CS63VLA75T5PD/THE+PLAYGROUND+.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/8b55d70c-9391-4c76-b575-749fafcbadc0/Untitled+design+%281%29.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/7002f95d-f12f-4c43-95d3-2e609a8598e1/20241129-Ger-JAC02704.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/d9dd0197-0487-4ad6-8df9-9225a228cd07/WhatsApp+Image+2026-09-14+at+16.55.19.jpeg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/bbbd8396-9855-4486-a3bf-13f6596a9b3d/Untitled+design+%282%29.png?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/bbbd8396-9855-4486-a3bf-13f6596a9b3d/Untitled+design+%282%29.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/bbbd8396-9855-4486-a3bf-13f6596a9b3d/Untitled+design+%282%29.png?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/bbbd8396-9855-4486-a3bf-13f6596a9b3d/Untitled+design+%282%29.png?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/bbbd8396-9855-4486-a3bf-13f6596a9b3d/Untitled+design+%282%29.png?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/bbbd8396-9855-4486-a3bf-13f6596a9b3d/Untitled+design+%282%29.png?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/bbbd8396-9855-4486-a3bf-13f6596a9b3d/Untitled+design+%282%29.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/bbbd8396-9855-4486-a3bf-13f6596a9b3d/Untitled+design+%282%29.png?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/c2fb3e19-c9c0-4833-87f6-15ba9563a886/Logo-nike-1.png?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/c2fb3e19-c9c0-4833-87f6-15ba9563a886/Logo-nike-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/c2fb3e19-c9c0-4833-87f6-15ba9563a886/Logo-nike-1.png?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/c2fb3e19-c9c0-4833-87f6-15ba9563a886/Logo-nike-1.png?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/c2fb3e19-c9c0-4833-87f6-15ba9563a886/Logo-nike-1.png?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/c2fb3e19-c9c0-4833-87f6-15ba9563a886/Logo-nike-1.png?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/c2fb3e19-c9c0-4833-87f6-15ba9563a886/Logo-nike-1.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/c2fb3e19-c9c0-4833-87f6-15ba9563a886/Logo-nike-1.png?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/67735981-07b0-4d44-83f0-067a62730e15/Logo-Hyrox-1.png?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/67735981-07b0-4d44-83f0-067a62730e15/Logo-Hyrox-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/67735981-07b0-4d44-83f0-067a62730e15/Logo-Hyrox-1.png?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/67735981-07b0-4d44-83f0-067a62730e15/Logo-Hyrox-1.png?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/67735981-07b0-4d44-83f0-067a62730e15/Logo-Hyrox-1.png?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/67735981-07b0-4d44-83f0-067a62730e15/Logo-Hyrox-1.png?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/67735981-07b0-4d44-83f0-067a62730e15/Logo-Hyrox-1.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/67735981-07b0-4d44-83f0-067a62730e15/Logo-Hyrox-1.png?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/7b321c23-b06a-4d03-b131-0079edaa0e55/Logo-Classpass-1.png?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/7b321c23-b06a-4d03-b131-0079edaa0e55/Logo-Classpass-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/7b321c23-b06a-4d03-b131-0079edaa0e55/Logo-Classpass-1.png?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/7b321c23-b06a-4d03-b131-0079edaa0e55/Logo-Classpass-1.png?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/7b321c23-b06a-4d03-b131-0079edaa0e55/Logo-Classpass-1.png?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/7b321c23-b06a-4d03-b131-0079edaa0e55/Logo-Classpass-1.png?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/7b321c23-b06a-4d03-b131-0079edaa0e55/Logo-Classpass-1.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/5daedc99ae72575df5d8d8f9/7b321c23-b06a-4d03-b131-0079edaa0e55/Logo-Classpass-1.png?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/4.1.4/flags/4x3/gb.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d3k81ch9hvuctc.cloudfront.net/company/WqLfMd/images/0edf911f-44be-4f54-8053-a6bbb7cc2109.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "blob:https://www.oneldn.com/753cc75b-e860-4691-8953-b74d4f876827",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 15 of 15 stylesheets retained.",
+  "digest": "2dc497e591f6b3d403fe53976af1d2a5667a7ec1a60834e799eacccbfe7b4af7"
+}

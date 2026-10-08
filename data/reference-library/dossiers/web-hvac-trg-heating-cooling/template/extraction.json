@@ -1,0 +1,482 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-hvac-trg-heating-cooling",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://trgheatingandcooling.com/",
+    "finalUrl": "https://trgheatingandcooling.com/",
+    "httpStatus": 200,
+    "pageTitle": "TRG Heating & Cooling: Expert HVAC Services in Chicago, IL",
+    "retrievedAt": "2026-10-08T20:29:11.512Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 185232,
+      "sha256": "5b9066f555e58aeca1e7bfd90883711d2cd1ad0d0edc219886eb65ea31017ff1"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/FullColor_1024x1024_300dpi-01.jpg/:/rs=w:314,h:147,cg:true,m/cr=w:314,h:147/qt=q:95",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/FullColor_1024x1024_300dpi-01.jpg/:/rs=h:147,cg:true,m/qt=q:95",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/FullColor_1024x1024_300dpi-01.jpg/:/rs=w:314",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:147",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "m/cr=w:314",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:147/qt=q:95",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/FullColor_1024x1024_300dpi-01.jpg/:/rs=w:627",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:294",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "m/cr=w:627",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:294/qt=q:95",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/FullColor_1024x1024_300dpi-01.jpg/:/rs=w:941",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:441",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "m/cr=w:941",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:441/qt=q:95",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Untitled%20design%20(22).png/:/cr=t:3.56%25,l:16%25,w:73.53%25,h:73.53%25/rs=w:889,h:500,cg:true,m",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Untitled%20design%20(22).png/:/cr=t:3.56%25,l:16%25,w:73.53%25,h:73.53%25/rs=h:500,cg:true,m",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Untitled%20design%20(22).png/:/cr=t:3.56%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "l:16%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w:73.53%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:73.53%25/rs=w:889",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:500",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "m",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:73.53%25/rs=w:1778",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:1000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:73.53%25/rs=w:1920",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:1080",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Evanston.png/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=w:105,h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Evanston.png/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Evanston.png/:/cr=t:0%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "l:0%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w:100%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:105",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:210",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:230",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:219",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/1%20LFLB%20COC%20HORIZ.jpg/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/20230310_020611000_iOS-86d7f6f.jpg/:/cr=t:0%25,l:1.62%25,w:98.38%25,h:98.38%25/rs=w:203,h:100,cg:true,m",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/20230310_020611000_iOS-86d7f6f.jpg/:/cr=t:0%25,l:1.62%25,w:98.38%25,h:98.38%25/rs=h:100,cg:true,m",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/20230310_020611000_iOS-86d7f6f.jpg/:/cr=t:0%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "l:1.62%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "w:98.38%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:98.38%25/rs=w:203",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:98.38%25/rs=w:407",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:98.38%25/rs=w:610",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/My%20project%20(2).jpg/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/My%20project%20(2).jpg/:/cr=t:0%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:150",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:300",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:450",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjXf7sMx7001OKQpsXCHdPkj7HK7NP7fw994KLb_Tj2huU-N2sX6LQ=s120-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a/ACg8ocLnAiez4mVsE-wVl85yTuPGwtM2kOSc3iyEGZ7CLaCqBPcICg=s120-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjVGAWjBkMaUn7Lk4sMHA5Qow6Hdw_XVVtQAxUf8HrE6ClFVcgd9=s120-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/BBB.png/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=w:136,h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/BBB.png/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/BBB.png/:/cr=t:0%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:136",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:273",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:409",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/WOSB.png/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=w:148,h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/WOSB.png/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/WOSB.png/:/cr=t:0%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:148",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:296",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:444",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/carrier-residential-factory-authorized-dealer.png/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=w:106,h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/carrier-residential-factory-authorized-dealer.png/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/carrier-residential-factory-authorized-dealer.png/:/cr=t:0%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:106",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:211",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:317",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/napoleon-dealer-300x139.webp/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=w:216,h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/napoleon-dealer-300x139.webp/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/napoleon-dealer-300x139.webp/:/cr=t:0%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:216",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:139",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/B889B9ED-5354-42BD-890A-CA75998D2A51.jpeg/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=w:489,h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/B889B9ED-5354-42BD-890A-CA75998D2A51.jpeg/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/B889B9ED-5354-42BD-890A-CA75998D2A51.jpeg/:/cr=t:0%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:489",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:977",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:1466",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/ecobee-for-Pro-GREY-Stacked.png/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=w:207,h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/ecobee-for-Pro-GREY-Stacked.png/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/ecobee-for-Pro-GREY-Stacked.png/:/cr=t:0%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:207",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:414",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:601",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:290",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Interplay.png/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=w:358,h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Interplay.png/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Interplay.png/:/cr=t:0%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:358",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:716",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:1021",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:285",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Nate.png/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=h:100,cg:true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Nate.png/:/cr=t:0%25",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:102",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:204",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "h:100%25/rs=w:306",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Wisetack%20(mint%2C%20rectangle).png/:/rs=h:100,cg:true,m",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Wisetack%20(mint%2C%20rectangle).png/:/rs=w:190",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "m/cr=w:190",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Wisetack%20(mint%2C%20rectangle).png/:/rs=w:381",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "m/cr=w:381",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//img1.wsimg.com/isteam/ip/243e8cc0-3361-4971-bc55-c581be33cffe/Wisetack%20(mint%2C%20rectangle).png/:/rs=w:571",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "m/cr=w:571",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://youtube.com/embed/hLXtT6PJnVE?rel=0&showinfo=0&autoplay=0&loop=0&muted=0&controls=1",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "javascript: window.frameElement.getAttribute(\"srcdoc\");",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 0 of 0 stylesheets retained.",
+  "digest": "865c332bb8e54276c681d5e333522f5aa865e2ef09a5679f314391f62a496b1b"
+}

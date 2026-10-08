@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "colorlib-meridian-clinic",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/meridian",
+    "repository": "https://github.com/ColorlibHQ/bootstrap-templates",
+    "revision": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "templatePath": "meridian/",
+    "retrievedAt": "2026-10-08T20:05:34.335Z",
+    "license": "MIT",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/base.css",
+      "bytes": 12208,
+      "sha256": "84662d517b2d223427a0d403a347cb8edf1a834ecaf160e5f4c8f8627c78b56c"
+    },
+    {
+      "path": "source/assets/css/style.css",
+      "bytes": 1579,
+      "sha256": "4df0bac292c9942e8147e8d73f18736101c860c7be7c1b9fa656b95ec4a00de4"
+    },
+    {
+      "path": "source/assets/js/base.js",
+      "bytes": 4182,
+      "sha256": "593e618719970dfe796d86f0707593498951c0e52a4fc7a18c87d6be2fef5819"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 119,
+      "sha256": "7eb517da07fac1eeb30ec6045d78da37121486046e156bf11b0285ea1375f1f3"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap-utilities.metadata.json",
+      "bytes": 29007,
+      "sha256": "0aa89f21fbbf9555a3905382ef4cdf5f281f164eb727b7a8d446efaf01b310fa"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap.min.css",
+      "bytes": 357751,
+      "sha256": "1a17841f830ff69b686da298babbf8e5e3e8dfb33b7329f115e366deacccb380"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/js/bootstrap.bundle.min.js",
+      "bytes": 214643,
+      "sha256": "77d552c3e6a815efd143c8e782c480bc63225cefba51bc510e0875a934f23fe7"
+    },
+    {
+      "path": "source/CREDITS.txt",
+      "bytes": 562,
+      "sha256": "6fd501a7d5c2e74ebba4c597d3fa35d4e627533c671bc818788e0e214166d019"
+    },
+    {
+      "path": "source/img/hero.jpg",
+      "bytes": 354439,
+      "sha256": "6e14c6db06bf1a57c1df4022f51187f0ac4a398d38ebb53232248cffae79bbcd"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 24784,
+      "sha256": "c9998bf1f0b74a74337162ceda77778f012e9e31b87d85b59590d78fc568a657"
+    },
+    {
+      "path": "source/service.html",
+      "bytes": 13464,
+      "sha256": "e9485264decc4d9e8a8601d5c5b7281e9d20713c503ce53960bf23055e4341de"
+    },
+    {
+      "path": "source/template.json",
+      "bytes": 2851,
+      "sha256": "171caa19a0d6f846675b5a5bcb40f2087de1230104d6e90fd06c38e47543067b"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Fetched 12 files from the pinned repository at f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf.",
+  "digest": "56c9fe13cc689dbe9f87781e9fae2a6860cd201aa5230601fe7b46c586a9dfae"
+}

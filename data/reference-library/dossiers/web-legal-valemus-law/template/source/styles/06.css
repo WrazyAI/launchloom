@@ -1,0 +1,26 @@
+/*
+Theme Name: Avada Child
+Description: Child theme for Avada theme
+Author: ThemeFusion
+Author URI: https://theme-fusion.com
+Template: Avada
+Version: 1.0.0
+Text Domain:  Avada
+*/
+.fusion-footer-widget-area{padding-bottom:30px !important;}
+.single-post .flexslider .slides img{width:auto;max-height:400px;}
+.hide{display:none;}
+.fusion-separator{margin:0 !important;display:none !important;}
+.fusion-social-networks.boxed-icons .fusion-social-network-icon:not(.custom) {	background-color: #000080 !important;}
+.fusion-logo img{width:128px !important;}
+.fusion-footer-widget-area{border-top:0 !important;}
+.social-footer li{display:inline-block;margin-right:15px;}
+.address-footer i{margin-right: 8px;margin-top: 5px;}
+.social-footer{margin-left:50px !important;}
+.homeblog .blog-shortcode-post-title a{color: #333 !important;font-size: 22px;line-height: 22px !important;}
+.homeblog .blog-shortcode-post-title a:hover{color:#d8425f !important;}
+#cookie-law-info-again{box-shadow: #9b9b9b 1px 1px 5px 0px !important;}
+.contact_page_form .fusion-form-form-wrapper .fusion-form-field label{color:#fff !important;}
+@media screen and (max-width: 1024px) {
+.mobile_imgcontainer{background-color:#f5f5f5 !important;background-image: none !important;}
+}

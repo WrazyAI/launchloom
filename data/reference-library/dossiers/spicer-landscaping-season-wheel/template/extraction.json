@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "spicer-landscaping-season-wheel",
+  "status": "extracted",
+  "method": "zip-download",
+  "source": {
+    "url": "https://www.spicerdesigns.com/templates/landscaping",
+    "finalUrl": "https://www.spicerdesigns.com/downloads/landscaping-template-html.zip",
+    "archiveSha256": "fe077fa8c1f5868bc7358487d9760c8342d7c41003bb41af90dcc229ed52a426",
+    "retrievedAt": "2026-10-08T20:05:53.424Z",
+    "license": "CC-BY-4.0",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/hero.webp",
+      "bytes": 216734,
+      "sha256": "7bd83caf9cc2ff45aff397aeb6ee077638b3539e205e27f211198b1f7d4e26b0"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 165918,
+      "sha256": "4d884f03157eb596912a075b961cf01e123885253ff1b2947eb0d593ea760099"
+    },
+    {
+      "path": "source/README.md",
+      "bytes": 2714,
+      "sha256": "23497614ac8781aae5846263367d274e06adc2638c3fe030b6139cd3f6661bf6"
+    },
+    {
+      "path": "source/styles.css",
+      "bytes": 35795,
+      "sha256": "18afcd914fdcfcb8bba96ee81897e25ad42c6ba8625755191bffda1123d3576c"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.spicerdesigns.com/downloads/landscaping-template-html.zip#LICENSE",
+      "reason": "unsupported-extension"
+    }
+  ],
+  "notes": "Downloaded the official HTML build (4 files, archive SHA-256 fe077fa8c1f5868bc7358487d9760c8342d7c41003bb41af90dcc229ed52a426). The template page footer also shows an MIT label; the retained LICENSE in rights/ records CC BY 4.0 with the footer attribution condition. Reconcile before any derivative publication.",
+  "digest": "8218e9631b9d114568939d39b17e4c97b9bf2b302f1dcc505304f860cde82b79"
+}

@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-hospitality-long-story-short-hudson",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.longstoryshortny.com/",
+    "finalUrl": "https://www.longstoryshortny.com/",
+    "httpStatus": 200,
+    "pageTitle": "Long Story Short | Private Petite Hotel in Hudson, NY",
+    "retrievedAt": "2026-10-08T20:27:21.944Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 9371,
+      "sha256": "886159e20ce194dbef412758a1616e674d506f662e59fcf81374805c6a4c90da"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 22296,
+      "sha256": "e24bc1b5ddefb821b7a878fdd5106254f765e93a96a9b0c66ebe0ff0101dfdcc"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.longstoryshortny.com/assets/images/logo-lss-red-transparent.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.longstoryshortny.com/assets/images/opt/hero-living-room.webp?v=2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.longstoryshortny.com/assets/images/opt/living-room-1.webp?v=2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.longstoryshortny.com/assets/images/opt/bedroom-1.webp?v=2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.longstoryshortny.com/assets/images/opt/lounge-1.webp?v=2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.longstoryshortny.com/assets/images/opt/hall.webp?v=2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.longstoryshortny.com/assets/images/opt/living-room-2.webp?v=2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.longstoryshortny.com/assets/images/opt/dining-1.webp?v=2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.longstoryshortny.com/assets/images/opt/entry.webp?v=2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.longstoryshortny.com/assets/images/opt/dining-2.webp?v=2",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "114db50e4e57ceddff6c9a943ea1e4a9a4811c93e7bbc2ec3a8c57cee43b778b"
+}

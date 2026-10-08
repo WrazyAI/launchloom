@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-restaurant-zuni-cafe",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://zunicafe.com/",
+    "finalUrl": "https://zunicafe.com/",
+    "httpStatus": 200,
+    "pageTitle": "Zuni Café - San Francisco",
+    "retrievedAt": "2026-10-08T20:10:23.067Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 40718,
+      "sha256": "42f247083e52d264066944f97c2875dcc8b96c191f8a9bd304dcf67c1489d916"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 31689,
+      "sha256": "4578d7313cd36de14e3b5da15ed70190376d47dadb678c09effdcf175af77f4d"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 20542,
+      "sha256": "a91e7b10e7efb0d57a85f0ff6a49011a0619d9592b07705f6bfd991ed2d96cc8"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn.userway.org/widgetapp/images/spin_bl.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.userway.org/widgetapp/images/body_bl.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/hero3-1400x934.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/hero2-1400x940.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/zuni-10-1400x934.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/zuni-8-1400x934.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/zuni-1-2-1400x934.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/Zuni-Favorites-6-1400x934.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/Adriene-e1544055937609.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/zuni-12-1400x934.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/Alej-apron.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/zuni-gallery-1-2-1400x934.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/zuni-11-1400x934.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/Figs.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/Zuni-Rose-600x800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/ot.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "http://zunicafe.com/wp-content/uploads/ot.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/Zuni-corner-inside-crop.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/Gilbert-crop-600x702.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/Quang-crop-600x806.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://zunicafe.com/wp-content/uploads/Zuni-outside-with-RG-crop-e1525309620884.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "cd2d12ed2ba07bb81be3edc919ad9d92ec1edf232f325e2665adb54c2c80dd36"
+}

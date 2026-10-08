@@ -1,0 +1,1 @@
+.modal-backdrop-enter-active,.modal-backdrop-leave-active{transition:opacity .26s}.modal-backdrop-enter-from,.modal-backdrop-leave-to{opacity:0}.modal-pop-enter-active,.modal-pop-leave-active{will-change:transform,opacity;transition:transform .26s,opacity .26s}.modal-pop-enter-from{opacity:.9;transform:scale(.9)}.modal-pop-leave-to{opacity:0;transform:scale(.9)}

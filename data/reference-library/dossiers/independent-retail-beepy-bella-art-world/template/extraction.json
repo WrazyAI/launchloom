@@ -1,0 +1,443 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "independent-retail-beepy-bella-art-world",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://beepybella.world/",
+    "finalUrl": "https://beepybella.world/",
+    "httpStatus": 200,
+    "pageTitle": "Beepy Bella",
+    "retrievedAt": "2026-10-08T20:18:46.736Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 246446,
+      "sha256": "924659f8c5d8f2c54a7004bc35646cf0b5397763a5a55847ea59b01babab0b21"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 173441,
+      "sha256": "e936515ae07ba476d3c944c305e183a2fa85bce06425b9cf99935d52a4f37ea4"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 3645,
+      "sha256": "35c221dd5ed68aa903c37bfa4307843293d224916d40989d32a42ca089af9a62"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 1367,
+      "sha256": "04a179890e16a6572660afed0fd6605268ede08deaeeacc4ec92c42bfed1eaca"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 1797,
+      "sha256": "8eef2ef6cf882d5e2e9167cb7c8b0ebbeb75b28a698835488733d149326fab4f"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 34536,
+      "sha256": "31e938a0b167e2127c429de4edee42c16aadbc43c99b5dba15a85e49f4a9d617"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 13728,
+      "sha256": "2be67d829931067051705cabc083afb8507f2ba111f8825e7f3cd551ad41b88d"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 3960,
+      "sha256": "4d59279ab3a6f306dc6b830d3bf6f84bbd986b7ae268a232ca57da595be65559"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 43936,
+      "sha256": "4b325f3a2ad7e673163075797441e6302bd482d7010a943b2f44a4bb352512dd"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 59426,
+      "sha256": "64fdff19ecc0514c0ee46327e8324bd8c72687b90cdb59a52d8b71bdd89ed027"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://beepybella.world/cdn/shop/files/Screenshot_2026-03-26_at_12.56.19_AM_1080x.png?v=1774483005",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/files/Screenshot_2026-03-26_at_12.56.19_AM_300x300.png?v=1774483005",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/Screenshot_2026-03-26_at_12.56.19_AM_360x.png?v=1774483005",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/Screenshot_2026-03-26_at_12.56.19_AM_540x.png?v=1774483005",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/Screenshot_2026-03-26_at_12.56.19_AM_720x.png?v=1774483005",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/Screenshot_2026-03-26_at_12.56.19_AM_900x.png?v=1774483005",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/Screenshot_2026-03-26_at_12.56.19_AM_1080x.png?v=1774483005",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/Screenshot_2026-03-26_at_12.56.19_AM_1296x.png?v=1774483005",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/Screenshot_2026-03-26_at_12.56.19_AM_1512x.png?v=1774483005",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/Screenshot_2026-03-26_at_12.56.19_AM_1728x.png?v=1774483005",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/Screenshot_2026-03-26_at_12.56.19_AM_1944x.png?v=1774483005",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/Screenshot_2026-03-26_at_12.56.19_AM_2048x.png?v=1774483005",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/files/hat_540x.gif?v=1658887421",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/files/hat_300x300.gif?v=1658887421",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/hat_360x.gif?v=1658887421",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/hat_540x.gif?v=1658887421",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/hat_720x.gif?v=1658887421",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/hat_900x.gif?v=1658887421",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/hat_1080x.gif?v=1658887421",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/hat_1296x.gif?v=1658887421",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/hat_1512x.gif?v=1658887421",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/hat_1728x.gif?v=1658887421",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/hat_1944x.gif?v=1658887421",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/hat_2048x.gif?v=1658887421",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/files/c97324f97ab17e6f019256770f631c2e_360x.gif?v=1781298210",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/files/c97324f97ab17e6f019256770f631c2e_300x300.gif?v=1781298210",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/c97324f97ab17e6f019256770f631c2e_360x.gif?v=1781298210",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/c97324f97ab17e6f019256770f631c2e_540x.gif?v=1781298210",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/c97324f97ab17e6f019256770f631c2e_720x.gif?v=1781298210",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/c97324f97ab17e6f019256770f631c2e_900x.gif?v=1781298210",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/c97324f97ab17e6f019256770f631c2e_1080x.gif?v=1781298210",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/c97324f97ab17e6f019256770f631c2e_1296x.gif?v=1781298210",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/c97324f97ab17e6f019256770f631c2e_1512x.gif?v=1781298210",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/c97324f97ab17e6f019256770f631c2e_1728x.gif?v=1781298210",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/c97324f97ab17e6f019256770f631c2e_1944x.gif?v=1781298210",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/c97324f97ab17e6f019256770f631c2e_2048x.gif?v=1781298210",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/products/img2_b483d05d-6262-405a-99fd-5c29fa3b97b1_360x.jpg?v=1658855139",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img2_b483d05d-6262-405a-99fd-5c29fa3b97b1_360x.jpg?v=1658855139",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img2_b483d05d-6262-405a-99fd-5c29fa3b97b1_540x.jpg?v=1658855139",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img2_b483d05d-6262-405a-99fd-5c29fa3b97b1_720x.jpg?v=1658855139",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img2_b483d05d-6262-405a-99fd-5c29fa3b97b1_900x.jpg?v=1658855139",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img2_b483d05d-6262-405a-99fd-5c29fa3b97b1_1080x.jpg?v=1658855139",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img2_b483d05d-6262-405a-99fd-5c29fa3b97b1_1296x.jpg?v=1658855139",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img2_b483d05d-6262-405a-99fd-5c29fa3b97b1_1512x.jpg?v=1658855139",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img2_b483d05d-6262-405a-99fd-5c29fa3b97b1_1728x.jpg?v=1658855139",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img2_b483d05d-6262-405a-99fd-5c29fa3b97b1_1944x.jpg?v=1658855139",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img2_b483d05d-6262-405a-99fd-5c29fa3b97b1_2048x.jpg?v=1658855139",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img2_b483d05d-6262-405a-99fd-5c29fa3b97b1_4472x.jpg?v=1658855139",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/products/img1_ec713ca2-0708-4815-8f2c-eb4a842a7dd9_360x.jpg?v=1658855047",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img1_ec713ca2-0708-4815-8f2c-eb4a842a7dd9_360x.jpg?v=1658855047",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img1_ec713ca2-0708-4815-8f2c-eb4a842a7dd9_540x.jpg?v=1658855047",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img1_ec713ca2-0708-4815-8f2c-eb4a842a7dd9_720x.jpg?v=1658855047",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img1_ec713ca2-0708-4815-8f2c-eb4a842a7dd9_900x.jpg?v=1658855047",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img1_ec713ca2-0708-4815-8f2c-eb4a842a7dd9_1080x.jpg?v=1658855047",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img1_ec713ca2-0708-4815-8f2c-eb4a842a7dd9_1296x.jpg?v=1658855047",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img1_ec713ca2-0708-4815-8f2c-eb4a842a7dd9_1512x.jpg?v=1658855047",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img1_ec713ca2-0708-4815-8f2c-eb4a842a7dd9_1728x.jpg?v=1658855047",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img1_ec713ca2-0708-4815-8f2c-eb4a842a7dd9_1944x.jpg?v=1658855047",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img1_ec713ca2-0708-4815-8f2c-eb4a842a7dd9_2048x.jpg?v=1658855047",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img1_ec713ca2-0708-4815-8f2c-eb4a842a7dd9_4472x.jpg?v=1658855047",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/products/img3_7_360x.jpg?v=1670002632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img3_7_360x.jpg?v=1670002632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img3_7_540x.jpg?v=1670002632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img3_7_720x.jpg?v=1670002632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img3_7_900x.jpg?v=1670002632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img3_7_1080x.jpg?v=1670002632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img3_7_1296x.jpg?v=1670002632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img3_7_1512x.jpg?v=1670002632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img3_7_1728x.jpg?v=1670002632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img3_7_1944x.jpg?v=1670002632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img3_7_2048x.jpg?v=1670002632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/products/img3_7_4472x.jpg?v=1670002632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/files/2c72f83eedbbcc593ca71389729bbe98_360x.jpg?v=1781298193",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/files/2c72f83eedbbcc593ca71389729bbe98_300x300.jpg?v=1781298193",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/2c72f83eedbbcc593ca71389729bbe98_360x.jpg?v=1781298193",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/2c72f83eedbbcc593ca71389729bbe98_540x.jpg?v=1781298193",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/2c72f83eedbbcc593ca71389729bbe98_720x.jpg?v=1781298193",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/2c72f83eedbbcc593ca71389729bbe98_900x.jpg?v=1781298193",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/2c72f83eedbbcc593ca71389729bbe98_1080x.jpg?v=1781298193",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/2c72f83eedbbcc593ca71389729bbe98_1296x.jpg?v=1781298193",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/2c72f83eedbbcc593ca71389729bbe98_1512x.jpg?v=1781298193",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/2c72f83eedbbcc593ca71389729bbe98_1728x.jpg?v=1781298193",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/2c72f83eedbbcc593ca71389729bbe98_1944x.jpg?v=1781298193",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//beepybella.world/cdn/shop/files/2c72f83eedbbcc593ca71389729bbe98_2048x.jpg?v=1781298193",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/files/hand_copy_300x300.jpg?v=1773138506",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/files/IMG_3502_300x300.jpg?v=1638390148",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/files/low_re1s_300x300.jpg?v=1644263942",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/files/Screen_Shot_2021-12-01_at_4.03.18_PM_300x300.png?v=1638392642",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/cdn/shop/t/4/assets/fairy.png?v=97330272554682913021638948790",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://player.vimeo.com/video/733846013?loop=true&autoplay=true&muted=false&gesture=media&playsinline=true&byline=false&portrait=false&title=false&speed=true&transparent=false&customControls=true",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://beepybella.world/web-pixels@7ec887c8w14f9f074p854094e1m1370c602/custom/web-pixel-shopify-custom-pixel@0530/sandbox/modern/",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 9 of 9 stylesheets retained. Page errors observed: 1.",
+  "digest": "49c7de1a4d7598320e102b687294804257d6f619c9d7bae53155bb1753ab48ac"
+}

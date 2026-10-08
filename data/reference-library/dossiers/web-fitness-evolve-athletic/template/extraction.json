@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-fitness-evolve-athletic",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://evolveathletic.com/",
+    "finalUrl": "https://evolveathletic.com/",
+    "httpStatus": 200,
+    "pageTitle": "Evolve Athletic — Independent gym in Hackney Downs",
+    "retrievedAt": "2026-10-08T20:24:34.947Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 57792,
+      "sha256": "b5fc5e287df570459fe2ad12f8f066a5ae9951659b93aa7cddf59a1c1bea2adb"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 5247,
+      "sha256": "086f9d8b3495bb9d76850855cc76621a268eb6d427e88cf24d54b6161763bf9d"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://evolveathletic.com/hero%20photo-surf-idris.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://evolveathletic.com/Calisthenics%20Team%20Evolve%20Athletic.JPG",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://evolveathletic.com/Idris%20Owen%20portrait.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://evolveathletic.com/Coach%20Mahmut%20Portrait.JPG",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://evolveathletic.com/Anna%20Bluman%20portrait.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://evolveathletic.com/Toby%20Harris%20portrait.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://evolveathletic.com/Sangita%20Headshot.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://evolveathletic.com/Cleo%20Headshot.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://app.glofox.com/portal/#/branch/66a21f8034d47934ce0025f4/classes-day-view",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.google.com/maps?q=loc:51.5550580,-0.0665046(Evolve+Athletic)&t=m&z=17&output=embed",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "465519e76f1587e65300f1b1e111f243104df3129db9003b62ca754484fdeee9"
+}

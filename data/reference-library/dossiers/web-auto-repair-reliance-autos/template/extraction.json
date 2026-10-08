@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-auto-repair-reliance-autos",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.relianceautos.co.uk/",
+    "finalUrl": "https://www.relianceautos.co.uk/",
+    "httpStatus": 200,
+    "pageTitle": "Car Garage in Bow, East London | MOT, Servicing & Repairs | Reliance Autos",
+    "retrievedAt": "2026-10-08T20:22:28.300Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 76124,
+      "sha256": "1e050bfc3dd30833ad94f5d6a628dba4b3360e32571154c50d97aa7dcfbad831"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 39385,
+      "sha256": "33d232d6a91bfb568b374d4a984daae1dac6dcde25964f3c61ba8c580c054b5f"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://res.cloudinary.com/dxvbes11v/image/upload/q_auto/f_auto/v1781012789/ChatGPT_Image_May_20_2026_at_12_10_31_PM_ny4ggs-removebg-preview_jiehf7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/dxvbes11v/image/upload/q_auto/f_auto/v1779216028/Reliance_3_dxofcn.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/dxvbes11v/image/upload/q_auto/f_auto/v1779216021/Reliance_1_fbhhdf.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/dxvbes11v/image/upload/q_auto/f_auto/v1779216025/Reliance_2_uhyydn.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2482.8!2d-0.022!3d51.528!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48761b4fe91a0001%3A0x0!2s553+Arnold+Rd%2C+Bow%2C+London+E3+4NR!5e0!3m2!1sen!2suk!4v1",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "f32ff9d6edfc52c98bc788c6f23714f5f9ff92cb6ee0bdb11d991459c82f81a4"
+}

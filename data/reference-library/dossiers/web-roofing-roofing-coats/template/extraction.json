@@ -1,0 +1,432 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-roofing-roofing-coats",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.roofingcoats.com/",
+    "finalUrl": "https://www.roofingcoats.com/",
+    "httpStatus": 200,
+    "pageTitle": "Residential Roofing Repair & Installation in Chicago, IL - Roofing Coats Inc",
+    "retrievedAt": "2026-10-08T20:35:41.188Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 238306,
+      "sha256": "6b6541574c8cb24121e4ed339a473f932b66f8deb0306d6e6beda038ae80fb6b"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 50644,
+      "sha256": "13a8ef8d3dcf84292bd9ea127d8e6be7d98cf4687af72e1d91a25404de65437b"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 3246,
+      "sha256": "50ef2e20ac722d808f934dc4c2114756ad502657b4746807e453d6e9f674e158"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 283,
+      "sha256": "4d0ad6ef2f09a0dcd2bf8efc7dc5665eb3ad5d8dbd5e4b8145d5d32437377f23"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 737,
+      "sha256": "7f06935959c3d37d3cc09d600c3b31c3d54d8518819af6c024b85c917f86b38f"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 17899,
+      "sha256": "f9e39026c9dc79a25b5555ce6857906c81600dafd796ee3a616a39a50e7f41bc"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 65702,
+      "sha256": "b34f597d7c5aea520ff5ec7f6cfbeb8fb005a4ecbefd8545054ab7215716611b"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 54666,
+      "sha256": "0a5d398672e25dc7f020f69df92a985481b248a60e301fee232d0c8afd648dc5"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 7746,
+      "sha256": "96102022182a1acb5f4755104dd3f246c5826140767d6da628271ba0e2b0068e"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 13364,
+      "sha256": "d65a8c1b602256f1dcaacf113b7c6a935e5ac5fb00747cfd14074311240a366d"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 22258,
+      "sha256": "c6b4e990dd45cb5fa574c9bca8163ceefa9cc933ec70f086d29817235b3ab64f"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 1402,
+      "sha256": "2e51aa493467ec563d7ad92a4753d316c2b5639bd994a4efff2a9a8ea4b608d2"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 59344,
+      "sha256": "d87ddf917b7a1449ab45e2b8e3c98354629bdd65b6659c37e6023bbea1ce1386"
+    },
+    {
+      "path": "source/styles/13.css",
+      "bytes": 26702,
+      "sha256": "c55902832fb84522d02ea1a60a30747403a140d8651fa748f13ba398b0c0df3a"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 560,
+      "sha256": "f68e889145cb0e47b7b190b2fdf087a9213a264ad33951512880c9f8bb6d0cd8"
+    },
+    {
+      "path": "source/styles/15.css",
+      "bytes": 4258,
+      "sha256": "f042f3243af9c3e339447b3aa8acf5776c9c12bf03b67e87013750ca5ad7fb0a"
+    },
+    {
+      "path": "source/styles/16.css",
+      "bytes": 214,
+      "sha256": "fb8690e594b2f9b841585895d811e8cb839667a1a63963d1a1cdea11e2aa2abb"
+    },
+    {
+      "path": "source/styles/17.css",
+      "bytes": 4726,
+      "sha256": "398e2425ac154b75384c55af3fcb40cf68ef50e15714b9dda11bf54ee0b9fc35"
+    },
+    {
+      "path": "source/styles/18.css",
+      "bytes": 10255,
+      "sha256": "1b34d4c7324321e36db5d35f05bb011238a1326f89058a4399d028d1f6c47dd5"
+    },
+    {
+      "path": "source/styles/19.css",
+      "bytes": 77,
+      "sha256": "d9c370831c74b1850d70f5b1c99453d6cda21e5099428a3f21c43bd96c3acb5d"
+    },
+    {
+      "path": "source/styles/20.css",
+      "bytes": 16471,
+      "sha256": "c57e64fcb72bddafa9c38de574441c3e69ac6c961df96b0cad34da83658bd196"
+    },
+    {
+      "path": "source/styles/21.css",
+      "bytes": 5486,
+      "sha256": "196f351ce1a780302b50e7b2404023102d7f555aa518d62ec678829c4b7b1185"
+    },
+    {
+      "path": "source/styles/22.css",
+      "bytes": 342,
+      "sha256": "26da5f73e4bb1559c1f4865fa414fed4630a978addcb437dca43c5392a42e564"
+    },
+    {
+      "path": "source/styles/23.css",
+      "bytes": 1657,
+      "sha256": "7738ac41dae333c277ec1132c7ffa496457af424a623cbf02b56fea00adaaf1a"
+    },
+    {
+      "path": "source/styles/24.css",
+      "bytes": 71010,
+      "sha256": "0421574f604b3cd44b04417e68c679e84d4ea71ef62d34826f86a9d63d4bc55c"
+    },
+    {
+      "path": "source/styles/25.css",
+      "bytes": 4403,
+      "sha256": "8154d5371d9e9c13ca59bd16644cd3179922f6bda65a6c6ba8da924165242d4b"
+    },
+    {
+      "path": "source/styles/26.css",
+      "bytes": 108054,
+      "sha256": "165b5b97aefec16da70bfa2b4bb64d93c3b8133f9e749f5d9a1b171f76d2d858"
+    },
+    {
+      "path": "source/styles/27.css",
+      "bytes": 25200,
+      "sha256": "75e9c40c1a806b0d457500453fc0dc0b418f1442c763f010fcaae542addf1f33"
+    },
+    {
+      "path": "source/styles/28.css",
+      "bytes": 1351,
+      "sha256": "4c410b2904b06ec1d6017f0b0a9286ed6ec8f3dc4e32fcc0730f332a381b6b6a"
+    },
+    {
+      "path": "source/styles/29.css",
+      "bytes": 16872,
+      "sha256": "fb547ab7ea6b85fcf769a38ad280997caff73b3778a94aeb0e53a574bd951f75"
+    },
+    {
+      "path": "source/styles/30.css",
+      "bytes": 58071,
+      "sha256": "fafc4160788beca657ec3e3041976281fb6d54a0e82bb4d22a433f7c6bb8b1d6"
+    },
+    {
+      "path": "source/styles/31.css",
+      "bytes": 669,
+      "sha256": "37bab6cd583982e8eff58501a99d7c5c4d63664c1ca34f9e3b7cf526c5b73ae2"
+    },
+    {
+      "path": "source/styles/32.css",
+      "bytes": 677,
+      "sha256": "eea3d6ccda7f6503078cce9dc41176c1357af1c93a5b3625131ef7cf21c9d7c4"
+    },
+    {
+      "path": "source/styles/33.css",
+      "bytes": 675,
+      "sha256": "9cd63b8cea25045c14623c538d26752518a58c0c682795ce6ad3078976c65a37"
+    },
+    {
+      "path": "source/styles/34.css",
+      "bytes": 73549,
+      "sha256": "8cdbb9ce66e382d34f2794df7695f3971095c6fbc321fe91b680b04c937cb7d0"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2024/05/cropped-Roofing-Coats-in-Chicago-IL-197x91.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2024/05/cropped-Roofing-Coats-in-Chicago-IL-300x139.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2024/05/cropped-Roofing-Coats-in-Chicago-IL-768x355.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2024/05/cropped-Roofing-Coats-in-Chicago-IL.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/08/Roof-Installation-Chicago-Illinois.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/08/Roof-Installation-Chicago-Illinois-300x223.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/08/Roof-Installation-Chicago-Illinois-1024x762.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/08/Roof-Installation-Chicago-Illinois-768x572.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2024/03/roofing-finance-in-chicago.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2025/01/Gutter-Repair-near-Chicago-IL.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2025/01/Home-Depot-Referal.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2025/01/Gutter-Installation-Chicago.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/elementor/thumbs/Soffit-Repair-in-Chicago-qbjrxz5fur2lns4tppv2hxsmokiw0k6h6t9sm8car4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/elementor/thumbs/Roofing-Installation-in-Chicago-IL-r0l6hhpfdrip543w914aft9xaf89m6of4ke8ydmd80.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/elementor/thumbs/Gutter-repair-in-Dolton-Illinois-qs7vezykxlzw7z59tmz1pqkvbcvq8mlxs9xfdnp568.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Roof-Installation-Chicago-Illinois.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Roof-Installation-Chicago-Illinois-1024x533.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Roof-Installation-Chicago-Illinois-300x156.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Roof-Installation-Chicago-Illinois-768x400.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/08/Roof-Replacement-Chicago-1024x494.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/08/Roof-Replacement-Chicago-300x145.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/08/Roof-Replacement-Chicago-768x370.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/08/Roof-Replacement-Chicago-1536x741.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/08/Roof-Replacement-Chicago.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Roofing-Replacement-Chicago-Illinois.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Roofing-Replacement-Chicago-Illinois-300x146.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Roofing-Replacement-Chicago-Illinois-768x374.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Rooftop-Snow-Removal-Chicago-Illinois.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Rooftop-Snow-Removal-Chicago-Illinois-300x163.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Rooftop-Snow-Removal-Chicago-Illinois-768x418.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Gutter-Installation-in-Chicago-Illinois.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Gutter-Installation-in-Chicago-Illinois-300x154.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Gutter-Installation-in-Chicago-Illinois-768x394.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Siding-Replacement-in-Chicago-illinois-1024x494.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Siding-Replacement-in-Chicago-illinois-300x145.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Siding-Replacement-in-Chicago-illinois-768x370.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Siding-Replacement-in-Chicago-illinois-1536x741.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.roofingcoats.com/wp-content/uploads/2023/10/Siding-Replacement-in-Chicago-illinois.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.trustindex.io/assets/platform/Google/star/f.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.trustindex.io/assets/platform/Google/icon.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjVbUsNWTXKqV5cffjd2PFstBbi7EOPQVA0n7s0JYhy8-41tomOA=w40-h40-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjVbUsNWTXKqV5cffjd2PFstBbi7EOPQVA0n7s0JYhy8-41tomOA=w80-h80-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjVjiobv3fKbDF1ZobuYvxZgjrdKgz4nA3si6lLHONyCocJ5SEC7ZA=w40-h40-c-rp-mo-ba12-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjVjiobv3fKbDF1ZobuYvxZgjrdKgz4nA3si6lLHONyCocJ5SEC7ZA=w80-h80-c-rp-mo-ba12-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjVKzdnDD8c-Yx9nAgq6dJX1Q2zxxWln7FFGE1szWZ50EK5vojw=w40-h40-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjVKzdnDD8c-Yx9nAgq6dJX1Q2zxxWln7FFGE1szWZ50EK5vojw=w80-h80-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjVWHJeq3OZOhBT2LCWb6Bn_e0S_p_GiIy52X9SeRPCl6pkdy8Gz=w40-h40-c-rp-mo-ba12-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjVWHJeq3OZOhBT2LCWb6Bn_e0S_p_GiIy52X9SeRPCl6pkdy8Gz=w80-h80-c-rp-mo-ba12-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjXmRy-d884b3Ah3TZr67o-bPB9xOCtM6W6DR8n-eQjEuI0PbGTA=w40-h40-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjXmRy-d884b3Ah3TZr67o-bPB9xOCtM6W6DR8n-eQjEuI0PbGTA=w80-h80-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a/ACg8ocJDY3wbL1uHUN_LoG97_UHm8jn9z280fGpkZvCBR7umhuaIWQ=w40-h40-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a/ACg8ocJDY3wbL1uHUN_LoG97_UHm8jn9z280fGpkZvCBR7umhuaIWQ=w80-h80-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a/ACg8ocKn7mNdRa1fVDEGRibvHS1OIPVuJeU1AW1umKxjvHNZsysa5g=w40-h40-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a/ACg8ocKn7mNdRa1fVDEGRibvHS1OIPVuJeU1AW1umKxjvHNZsysa5g=w80-h80-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a/ACg8ocIldiCr1OgMq7Dug7YHHjZFC_Uiw0eCGEv_ciAq_rGta7v_9g=w40-h40-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a/ACg8ocIldiCr1OgMq7Dug7YHHjZFC_Uiw0eCGEv_ciAq_rGta7v_9g=w80-h80-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a/ACg8ocJXlqkY8TeFDKnRFmTjBXn680AqjXJ7SHU7-m3ITuZUXWgaGQ=w40-h40-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a/ACg8ocJXlqkY8TeFDKnRFmTjBXn680AqjXJ7SHU7-m3ITuZUXWgaGQ=w80-h80-c-rp-mo-br100",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 34 of 34 stylesheets retained. Page errors observed: 1.",
+  "digest": "c2ec49f6a3189200766e84192c783e1679ce703e30087daac8eede638ebee126"
+}

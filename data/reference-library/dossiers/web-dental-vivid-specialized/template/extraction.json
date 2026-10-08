@@ -1,0 +1,542 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-dental-vivid-specialized",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.vividdental.ca/",
+    "finalUrl": "https://www.vividdental.ca/",
+    "httpStatus": 200,
+    "pageTitle": "Prosthodontist & Dental Implant Specialist in Edmonton, AB",
+    "retrievedAt": "2026-10-08T20:24:21.943Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 302788,
+      "sha256": "2ca413ae9657a9dad2894d46094cb8695f4d7c450f171c41f78faf9d9b6676be"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 5829,
+      "sha256": "72eaeaf7ea81956ddf733ceac890269ab63e0aec77558bfaf045a5facd0bb6d4"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 5827,
+      "sha256": "d5c91a4cfdd98dba2870eeb3699e5ae57ad54203eef5fbe46accaee6b678d7df"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 7534,
+      "sha256": "d4428ab6d474bf08e6d95cb1beafc2ebc48ee97d229b7d07295c4e89be053b93"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 54666,
+      "sha256": "0a5d398672e25dc7f020f69df92a985481b248a60e301fee232d0c8afd648dc5"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 1443,
+      "sha256": "53e0af1dd042a03200f4377e481caa65875389125c7801fc5eac05d968200dca"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 214,
+      "sha256": "fb8690e594b2f9b841585895d811e8cb839667a1a63963d1a1cdea11e2aa2abb"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 27363,
+      "sha256": "791f0ea4dc6a3218593e97a0819b2daa687cbb84d1e79595653630785d15f750"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 162,
+      "sha256": "6f0b2e96bd88c2d8512dfd204adaf2251376467a1f834a51c66ce85f0051979d"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 77,
+      "sha256": "d9c370831c74b1850d70f5b1c99453d6cda21e5099428a3f21c43bd96c3acb5d"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 560,
+      "sha256": "f68e889145cb0e47b7b190b2fdf087a9213a264ad33951512880c9f8bb6d0cd8"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 5110,
+      "sha256": "91079644ee1e76145b30c207470b56866770b0564f0fbf1373ab8b11d94f8c9f"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 6713,
+      "sha256": "cf502b45ef8bcae37a65822f78546f6cc7db74faf8f48850bf8a860262817fe6"
+    },
+    {
+      "path": "source/styles/13.css",
+      "bytes": 4726,
+      "sha256": "398e2425ac154b75384c55af3fcb40cf68ef50e15714b9dda11bf54ee0b9fc35"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 137,
+      "sha256": "13037a61480cee3d2149c59c4f6ddddce6cec4653016cb189bc6bedd42aca2fd"
+    },
+    {
+      "path": "source/styles/15.css",
+      "bytes": 995,
+      "sha256": "3e86e49c78cd2befb9c7e7b27ee263298290728f7489b17077f00c25e37a5838"
+    },
+    {
+      "path": "source/styles/16.css",
+      "bytes": 753,
+      "sha256": "3d61aa64c53c42ed5d6366393b5bf38f2a62f65d0b0047f86eae3a6a8db173d1"
+    },
+    {
+      "path": "source/styles/17.css",
+      "bytes": 16471,
+      "sha256": "c57e64fcb72bddafa9c38de574441c3e69ac6c961df96b0cad34da83658bd196"
+    },
+    {
+      "path": "source/styles/18.css",
+      "bytes": 5486,
+      "sha256": "196f351ce1a780302b50e7b2404023102d7f555aa518d62ec678829c4b7b1185"
+    },
+    {
+      "path": "source/styles/19.css",
+      "bytes": 9760,
+      "sha256": "d16daf7eb35fb7038664266a0434f1c3e6f37ac32bf4a8c0db04fb932beb4241"
+    },
+    {
+      "path": "source/styles/20.css",
+      "bytes": 778,
+      "sha256": "830e206b42444c7bad7bf3ce729c00a11e0f4cb76b01f94f2d5d2c4578f7ee79"
+    },
+    {
+      "path": "source/styles/21.css",
+      "bytes": 11659,
+      "sha256": "d8a0e9fb5ac7b59a6901fe7e2613467e28bc76dc2287c6767fe5b68d1b05a052"
+    },
+    {
+      "path": "source/styles/22.css",
+      "bytes": 14818,
+      "sha256": "39f994a027202143ede7e722637e60901de7a07eb84ee84553dfac645406ea64"
+    },
+    {
+      "path": "source/styles/23.css",
+      "bytes": 19691,
+      "sha256": "1869d6111552fb3346994051d190d78325976a0a3950689463477854c537f79d"
+    },
+    {
+      "path": "source/styles/24.css",
+      "bytes": 3846,
+      "sha256": "f3189f1bb92c1e0edcda429b51af5f322405b01e1b6e8cd241e842681c9398ee"
+    },
+    {
+      "path": "source/styles/25.css",
+      "bytes": 11861,
+      "sha256": "592dc0eab7b5b0101a7d862cb9957d8feea1a24c0dd3d1098cb4ddb22de36650"
+    },
+    {
+      "path": "source/styles/26.css",
+      "bytes": 5206,
+      "sha256": "4ada91f83b55c0318229073b7d8c1a5439d8bab52a6b7199003b5a0a759f416f"
+    },
+    {
+      "path": "source/styles/27.css",
+      "bytes": 168243,
+      "sha256": "030bc57374494efb9ea1e54403559ecfd760ea91b8f7487fefacbb40c3b978ff"
+    },
+    {
+      "path": "source/styles/28.css",
+      "bytes": 23681,
+      "sha256": "5b70689a5c752537348986e58caac675246b020a5bac00d67d0ae4b1fc2b2b05"
+    },
+    {
+      "path": "source/styles/29.css",
+      "bytes": 27324,
+      "sha256": "637fede86ac941ede37df7d55613e501488a3ed5e1d229eed2fc76b674f4565d"
+    },
+    {
+      "path": "source/styles/30.css",
+      "bytes": 30999,
+      "sha256": "c4047043368afb4baf1aed25d358a5c2a333842a3b436b58491ab36aeee65b9d"
+    },
+    {
+      "path": "source/styles/31.css",
+      "bytes": 31240,
+      "sha256": "ff32e2b5c132f8bf2ec7ad660ce6bf527e000363c4165bf073e169072da75640"
+    },
+    {
+      "path": "source/styles/32.css",
+      "bytes": 11957,
+      "sha256": "67a1142edbd51cb561b704d2073e01861737d3852bde5f8cfee8841bcaf767b0"
+    },
+    {
+      "path": "source/styles/33.css",
+      "bytes": 6954,
+      "sha256": "693e93b3c1b08f7b0833f92465afa42874fb01da04065f1ab9717ab6d80f0a80"
+    },
+    {
+      "path": "source/styles/34.css",
+      "bytes": 568,
+      "sha256": "36f39fc7c0aa8953e37112c0e0d2b392f22b8c669246ab1e404e4654d57abdaa"
+    },
+    {
+      "path": "source/styles/35.css",
+      "bytes": 100422,
+      "sha256": "33c951b402c9bea213649f907555b538120f0509587981a8bc90b27b6d0d5828"
+    },
+    {
+      "path": "source/styles/36.css",
+      "bytes": 22365,
+      "sha256": "275c64f303c8e9a0320bc267c893cdae309afadde9750bebbe4e838040bd4cde"
+    },
+    {
+      "path": "source/styles/37.css",
+      "bytes": 6544,
+      "sha256": "52093e3d093c518c3661e804c49449b956d217592e9edc59db9766f1d50ddb9d"
+    },
+    {
+      "path": "source/styles/38.css",
+      "bytes": 836,
+      "sha256": "9d59f87166c66f6397c572b37e1df50ec02ee3d868c25968ecda54498afafc5e"
+    },
+    {
+      "path": "source/styles/39.css",
+      "bytes": 30016,
+      "sha256": "bf970b91f2726f17adb817589c20232b4be6aae29546494abdc4aecbb51c6233"
+    },
+    {
+      "path": "source/styles/40.css",
+      "bytes": 20542,
+      "sha256": "a91e7b10e7efb0d57a85f0ff6a49011a0619d9592b07705f6bfd991ed2d96cc8"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn.userway.org/widgetapp/images/spin_bl.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.userway.org/widgetapp/images/body_bl.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/logo-mobile.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/alberta-trust-badge.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/alberta-academy-of-periodontics.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/08/acp-american-college-of-prosthodontists.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/alberta-academy-of-prosthodontics.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/alberta-academy-of-prosthodontics-294x300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/alberta-dental-association.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/cdsa.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/rcdc.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/image-01.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/image-01-135x300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/dr-arif-and-patient-vivid-specialized-dentistry.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/dr-arif-and-patient-vivid-specialized-dentistry-135x300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/image-03.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/image-03-135x300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/scanner-853x1024.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/scanner-250x300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/scanner-768x922.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/scanner-1279x1536.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/scanner.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/smilecloud.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/smilecloud-300x267.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/cadcmd-image-vivid-site.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/cadcmd-image-vivid-site-300x267.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/in-house-lab-vivid-image-682x1024.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/in-house-lab-vivid-image-200x300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/in-house-lab-vivid-image-768x1152.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/in-house-lab-vivid-image-1024x1536.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/in-house-lab-vivid-image.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/btl-853x1024.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/btl-250x300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/btl-768x922.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/btl-1279x1536.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/btl.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/gloria-prfo2.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/gloria-prfo2-236x300.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/before-1.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/before-1-300x134.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/before-1-768x344.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/before-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/before-2-300x134.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/before-2-768x344.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/andrew-after-title-card.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/andrew-after-title-card-236x300.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/d8639c_8ec37697fd964ec1a7fbbb7b51194701mv2-1536x688.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/d8639c_8ec37697fd964ec1a7fbbb7b51194701mv2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/d8639c_8ec37697fd964ec1a7fbbb7b51194701mv2-300x134.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/d8639c_8ec37697fd964ec1a7fbbb7b51194701mv2-1024x459.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/d8639c_8ec37697fd964ec1a7fbbb7b51194701mv2-768x344.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/d8639c_8ec37697fd964ec1a7fbbb7b51194701mv2-2048x918.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/d8639c_d42205b5296d413fbf24584ac7442554mv2-1536x688.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/d8639c_d42205b5296d413fbf24584ac7442554mv2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/d8639c_d42205b5296d413fbf24584ac7442554mv2-300x134.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/d8639c_d42205b5296d413fbf24584ac7442554mv2-1024x459.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/d8639c_d42205b5296d413fbf24584ac7442554mv2-768x344.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/04/d8639c_d42205b5296d413fbf24584ac7442554mv2-2048x918.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/george-s-headshot.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/george-s-headshot-236x300.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/before-5.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/before-5-300x134.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/before-5-768x344.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/after-img-5.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/after-img-5-300x134.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/after-img-5-768x344.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/loud-headshot.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/loud-headshot-236x300.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/before-4.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/before-4-300x134.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/before-4-768x344.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/after-img-4.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/after-img-4-300x134.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/after-img-4-768x344.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/02/logo-white-bg.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.vividdental.ca/wp-content/uploads/2026/06/vivid-specialized-densitry-website-banner2026-v2-light.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://snazzymaps.com/embed/776089",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/anchor?ar=1&k=6LcczMYsAAAAAI_AHzUagn5vBU4lTZnpI8sk-QSd&co=aHR0cHM6Ly93d3cudml2aWRkZW50YWwuY2E6NDQz&hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&size=invisible&anchor-ms=20000&execute-ms=30000&cb=m6vpxb2el2in",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 40 of 40 stylesheets retained.",
+  "digest": "b14e5515ee2f4a0b6215cc7ec6ab80dcef1d9e56ec6d1143d06315f5cb61d634"
+}

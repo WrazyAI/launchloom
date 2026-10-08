@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+
+# This is a fictional review prototype. Production sites replace this file.

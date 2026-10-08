@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-painting-mfl",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://mflpainting.com/",
+    "finalUrl": "https://mflpainting.com/",
+    "httpStatus": 200,
+    "pageTitle": "MFL Painting — Painting Contractor & House Painter in San Diego, La Jolla, La Mesa, El Cajon & Poway",
+    "retrievedAt": "2026-10-08T20:31:32.040Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 83030,
+      "sha256": "2312ba51172a972b14dd253dd7403035fb3a46e2357a114a281cc08cbf747463"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 20604,
+      "sha256": "98ee577e90931f487aa469452bffcaf9cf9791f55a6ce7bd546c228dd4cd7032"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 48788,
+      "sha256": "af28dd3bd179af944d5b81724f13c9dd873913f58097490da2fd6846eac918bc"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://mflpainting.com/brand/logo-transparent.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mflpainting.com/photos/hero-finish.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mflpainting.com/photos/projects/16310-oak-springs-dr/01.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mflpainting.com/photos/projects/3072-myrtle-ave/01.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mflpainting.com/photos/projects/3976-t-st/01.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.localmarketingmanager.com/api/local-posts/mfl-painting-local-posts-widget",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "a3284290423d7b0ecdff933205469bafc10413cd672fd85f0a77d5837497a6cb"
+}

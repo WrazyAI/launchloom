@@ -1,0 +1,582 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-auto-repair-urban-autocare",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.urbanautocare.com/",
+    "finalUrl": "https://www.urbanautocare.com/",
+    "httpStatus": 200,
+    "pageTitle": "Denver’s Premier Auto Repair Shop - Schedule A Service Today!",
+    "retrievedAt": "2026-10-08T20:22:50.234Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 189548,
+      "sha256": "95c4fd9b66fe7cf4255abcad60f3ebae0d69d9bff8beccad2e084d00dad3a4da"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 122541,
+      "sha256": "416dfabb1ba6878336a0cc23a509cc20cd2203ba0c9e31de37bd64410d18cb8f"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 10317,
+      "sha256": "e94d720449fd37c54620434749e46867be54d0ad27998a57dfe7e028c6dfd0aa"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 127837,
+      "sha256": "af1a5e0b7b4ea3acd2c644a8c8dd996a72a224cee6ff8e032284645bca32dbcf"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 59305,
+      "sha256": "99464ceb71bc9bbdcc72275faefe44f98eb5cbb6b5d8ee665b87b35376f1a96e"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 26702,
+      "sha256": "8fe2f1cb7bc41c640ad3ea24449cfa1ba5291e16dbbbab0ef61bfe43f3212910"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 19508,
+      "sha256": "09696d0bf5be7a592450a862b5cced3e249f137004a7302fae4984a81ebc2f1d"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 81485,
+      "sha256": "7f805c74b5955c9a6c8e3d2ebc1e5a3edba7132e8228bc2144ec63924378eb00"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 5788,
+      "sha256": "b698d7d63c8c236cda0499131978654fa884f24df6755f7b6909e5d784e096db"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 48426,
+      "sha256": "1e8dcaec98f99c2b1b43ff8b8655680b69bbf150470b20ecbdd1cb45570a0587"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 64927,
+      "sha256": "67f0e0d5a0e3fbf84a5242721c6d7d83e9fe305c958e95306bc9392cdea953bf"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 714,
+      "sha256": "06a403636c35b31ba48fb3013e68ed82a59044bd72d9819ef43775b86c4afeae"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 235,
+      "sha256": "10f10045c99aaccac4aa93604c0a1c8a6eebd9a15d32778e67422a03d5be8737"
+    },
+    {
+      "path": "source/styles/13.css",
+      "bytes": 1078,
+      "sha256": "60ec5eacd7c8d4630f1ba547d93a8cabf572f5e0d85614a9eb0a0b92aa168dfb"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 52789,
+      "sha256": "8fe3fa119255adb5e0c12479331f9e092e85bcff56ab6ecc0510bfa2056b898d"
+    },
+    {
+      "path": "source/styles/15.css",
+      "bytes": 23100,
+      "sha256": "c0584c37880e00ed738d147fbb97d88fe202fb722e4cbf1c3260db4674bec245"
+    },
+    {
+      "path": "source/styles/16.css",
+      "bytes": 23100,
+      "sha256": "c0584c37880e00ed738d147fbb97d88fe202fb722e4cbf1c3260db4674bec245"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2020/10/6DF28080-DE2A-4BB1-9867-9953C886023F.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://urbanautocare.com/wp-content/uploads/2019/02/urbanaclogo2-5c76c51203fe9.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://urbanautocare.com/wp-content/uploads/2015/12/uac-reviews-imagebutton.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/01/No-Unnecessary-Repairs.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/01/No-Unnecessary-Repairs-300x300.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/01/No-Unnecessary-Repairs-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/01/No-Unnecessary-Repairs-768x768.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/01/Prioritize-Estimates-1-300x300.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/01/Prioritize-Estimates-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/01/Prioritize-Estimates-1-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/01/Prioritize-Estimates-1-768x768.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/04/4-Year-Warranty-Badge-300x300.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/04/4-Year-Warranty-Badge.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/04/4-Year-Warranty-Badge-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/04/4-Year-Warranty-Badge-768x768.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2022/07/Badge-3-300x300.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2022/07/Badge-3.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2022/07/Badge-3-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2022/07/Badge-2-300x300.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2022/07/Badge-2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2022/07/Badge-2-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2022/07/Badge-1-300x300.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2022/07/Badge-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2022/07/Badge-1-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2020/01/DENVER-homepage-5e17655167725.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2020/01/DENVER-homepage-5e17655167725-300x133.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2025/04/S-Denver-exterior.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2025/04/S-Denver-exterior-300x133.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2025/04/denver-highlands-exterior.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2025/04/denver-highlands-exterior-300x133.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2020/01/LAKEWOOD-homepage-5e176554c3178.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2020/01/LAKEWOOD-homepage-5e176554c3178-300x133.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2025/04/littleton-exterior.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2025/04/littleton-exterior-300x133.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2025/04/Untitled-design-26.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2025/04/Untitled-design-26-300x133.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2026/03/Radical-Generosity-Award-300x300.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2026/03/Radical-Generosity-Award-1024x1024.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2026/03/Radical-Generosity-Award-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2026/03/Radical-Generosity-Award-768x768.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2026/03/Radical-Generosity-Award.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2025/10/FullSizeRender-2-Edited-225x300.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2025/10/FullSizeRender-2-Edited-768x1024.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2025/10/FullSizeRender-2-Edited-1152x1536.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2025/10/FullSizeRender-2-Edited.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://urbanautocare.com/wp-content/uploads/2019/02/googlereview1-5c07f746882711-5c142849e53f1-5c756b88e868c-5c75ad3ce0711.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://urbanautocare.com/wp-content/uploads/2019/02/fbreview1-3-5c07f8f539ea61-5c14291198cdc-5c756c148aaaf-5c75ad772fb88.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://urbanautocare.com/wp-content/uploads/2019/03/bbb-5c90ebd314d6c.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://urbanautocare.com/wp-content/uploads/2019/02/fbreview1-3-5c07f8f539ea61-5c14291198cdc1-5c76ec4d91b81.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2022/05/UrbanAuto-26-scaled.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/06/Screen-Shot-2024-06-07-at-10.21.36-AM-768x505.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/06/Screen-Shot-2024-06-07-at-10.21.36-AM.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/06/Screen-Shot-2024-06-07-at-10.21.36-AM-300x197.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/06/Screen-Shot-2024-06-07-at-10.21.36-AM-1024x673.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2024/06/Screen-Shot-2024-06-07-at-10.21.36-AM-1536x1010.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2019/07/Orange-subaru-367x182-5d3a09ec9c4ec.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2019/07/Chevy-Camaro-red-367x182-2-5d3a0b09c29cb.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2019/07/VW-golf-367x182-5d3a0ce409385.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-15-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-15-scaled.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-15-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-15-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-15-1536x1025.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-15-2048x1366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-22-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-22-scaled.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-22-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-22-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-22-1536x1025.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-22-2048x1366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-25-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-25-scaled.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-25-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-25-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-25-1536x1025.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-25-2048x1366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/11/UrbanAuto-21-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/11/UrbanAuto-21-scaled.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/11/UrbanAuto-21-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/11/UrbanAuto-21-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/11/UrbanAuto-21-1536x1025.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/11/UrbanAuto-21-2048x1366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/Urban-Autocare-Lakewood-Tech-1-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/Urban-Autocare-Lakewood-Tech-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/Urban-Autocare-Lakewood-Tech-1-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/Urban-Autocare-Lakewood-Tech-1-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/Urban-Autocare-Lakewood-Tech-1-1536x1025.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/12/HP-CTA-Pic-6-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/12/HP-CTA-Pic-6-1-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/10/Urban-Auto-3162AM_05012024-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/10/Urban-Auto-3162AM_05012024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/10/Urban-Auto-3162AM_05012024-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/10/Urban-Auto-3162AM_05012024-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/10/Urban-Auto-3162AM_05012024-1536x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/Hero-Image-768x400.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/Hero-Image.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/Hero-Image-300x156.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/Hero-Image-1024x533.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/Hero-Image-1536x800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-16-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-16-scaled.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-16-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-16-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-16-1536x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.urbanautocare.com/wp-content/uploads/2023/09/UrbanAuto-16-2048x1366.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s3.amazonaws.com/topratedlocal/rating_src/boxlogo-yellow-pages.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s3.amazonaws.com/topratedlocal/rating_src/boxlogo-google.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s3.amazonaws.com/topratedlocal/rating_src/boxlogo-trl.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bat.bing.com/action/0?ti=56276030&tm=gtm002&Ver=2&mid=5e01596a-f854-4300-8c25-bab6a40dc7c3&bo=1&sid=01852630c35611f1acba3b94a371c4e2&vid=01859660c35611f1993917f3d3318bd4&vids=1&msclkid=N&pi=0&lg=en-US&sw=1440&sh=900&sc=24&nwd=1&tl=Denver%E2%80%99s%20Premier%20Auto%20Repair%20Shop%20-%20Schedule%20A%20Service%20Today!&p=https%3A%2F%2Fwww.urbanautocare.com%2F&r=&lt=6465&evt=pageLoad&sv=2&cdb=AQAQ&rn=421808",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://portal.autoops.com/?apiKey=key_cl_grp_a7b5588a2e5547dba243cfa4ab343cbb&bookingPage=www.urbanautocare.com%2F",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://portal.autoops.com/chat?apiKey=key_cl_grp_a7b5588a2e5547dba243cfa4ab343cbb",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.youtube.com/embed/bD44ME15nqM?si=5D8OOjFFj-_AIKYl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4252.599342400678!2d-105.0401752!3d39.76967!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x876b87126e8d9233%3A0x2c0e4308b3d461c9!2sUrban%20Autocare!5e1!3m2!1sen!2sus!4v1745442332767!5m2!1sen!2sus",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4253.540442511877!2d-105.11106110000001!3d39.7544327!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x876b868e55bdea3f%3A0xc931a1e530beccef!2sUrban%20Autocare!5e1!3m2!1sen!2sus!4v1745441668413!5m2!1sen!2sus",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d8508.429491146862!2d-104.965178!3d39.743512100000004!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x876c793501cbb2bf%3A0xaadda91cebc8a944!2sUrban%20Autocare!5e1!3m2!1sen!2sus!4v1745441842874!5m2!1sen!2sus",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4260.965724519115!2d-105.10940439999999!3d39.63403900000001!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x876b7f5b7857f38b%3A0xefe3736315f4cdfb!2sUrban%20Autocare!5e1!3m2!1sen!2sus!4v1745441728166!5m2!1sen!2sus",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d8516.418022573873!2d-104.97905899999999!3d39.678771999999995!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x876c7e361d3758b7%3A0x2418027ace57d8d4!2sUrban%20Autocare!5e1!3m2!1sen!2sus!4v1745441785272!5m2!1sen!2sus",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d8502.531461293534!2d-105.1374994!3d39.791254099999996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x876b85f6de218deb%3A0x5d8b7d0551360527!2sUrban%20Autocare!5e1!3m2!1sen!2sus!4v1745441318383!5m2!1sen!2sus",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 16 of 16 stylesheets retained.",
+  "digest": "692847b4f3a5703a16732ff5eae45ea6f72aa84de3e6ded64e4c6ce69fb14c75"
+}

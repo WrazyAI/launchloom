@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "nightjar-cinematic-salon",
+  "status": "extracted",
+  "method": "owned-artifact",
+  "source": {
+    "url": "https://nightjar-cinematic-prototype.pages.dev/",
+    "artifactPath": "nightjar-cinematic-prototype/dist",
+    "generator": "artifacts/nightjar-cinematic-prototype",
+    "retrievedAt": "2026-10-08T20:06:09.948Z",
+    "license": "owned",
+    "attestationPath": null
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/index-Bi2uFylS.css",
+      "bytes": 15833,
+      "sha256": "5e876667d653340b67eabc4b4c13b0959d69aefa1658feb49b1eae8f55a61136"
+    },
+    {
+      "path": "source/assets/index-CyZ5WcZQ.js",
+      "bytes": 207055,
+      "sha256": "9f8c487a471e7766ce8d961f008f680ff7a54f51426e19217f298e344a38b48f"
+    },
+    {
+      "path": "source/images/nightjar-collection.png",
+      "bytes": 1850807,
+      "sha256": "a64a5c839b33d185f787827df921f94503a63f253c09b72e4d45fb135570c1aa"
+    },
+    {
+      "path": "source/images/nightjar-collection.webp",
+      "bytes": 113454,
+      "sha256": "27b08aaec922597707294934770f5d0a19e1f105f3ba99edb6d3d67b43db083e"
+    },
+    {
+      "path": "source/images/nightjar-hero.png",
+      "bytes": 1741060,
+      "sha256": "1c6265bbf6066ff9cfb36fb71ca6d4660162a4ea7f2f3fd42aece04685768f94"
+    },
+    {
+      "path": "source/images/nightjar-hero.webp",
+      "bytes": 89168,
+      "sha256": "740942364b561a02f7efa1882904b19fc6304ecb52f1d430f868cf1cc39ad547"
+    },
+    {
+      "path": "source/images/nightjar-session.png",
+      "bytes": 1644945,
+      "sha256": "4e57d14894f7437702eb6a137a3e14b1fd708912daaf112ae0e87d9ab3d21eb6"
+    },
+    {
+      "path": "source/images/nightjar-session.webp",
+      "bytes": 61332,
+      "sha256": "8e87e5eb7302a25de31a6d701fbbfd109f93d0a14bab9828dafd31a5d42fc586"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 3121,
+      "sha256": "ebf234a7d501f9adeab5b221206b38644fad08763cc64bb6f3a48da4a4082aae"
+    },
+    {
+      "path": "source/nightjar-mark.svg",
+      "bytes": 1222,
+      "sha256": "9243cab44a4c8220f8f81dd27cf77a1d34c99f6749bb6121db88130ad0c4c81e"
+    },
+    {
+      "path": "source/robots.txt",
+      "bytes": 103,
+      "sha256": "b3f6a0a2cbb60384db30f6f92d9f89fe233768245638c3655345490ba2629e01"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Copied 11 files from the local build artifact at nightjar-cinematic-prototype/dist. The artifact directory is gitignored; regenerate it with artifacts/nightjar-cinematic-prototype when the owned prototype source changes.",
+  "digest": "3d0d7f7e3353979529617d4a866e054a24920d80718453d0a34ff16610597762"
+}

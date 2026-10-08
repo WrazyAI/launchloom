@@ -1,0 +1,664 @@
+@charset "UTF-8";
+.c-header {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+}
+
+.c-header > div {
+  padding-right: 3px;
+}
+
+/**
+ * @since 2.0.62
+ */
+.f12-captcha .captcha-audio-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 10;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  margin-top: 4px;
+}
+.f12-captcha .c-audio {
+  position: relative;
+}
+.f12-captcha .c-audio:hover .captcha-audio-tooltip {
+  display: block;
+}
+
+.f12-captcha {
+  display: block;
+  width: 100%;
+}
+
+.f12-captcha.template-1 {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 10px 15px 15px 15px;
+  position: relative;
+  border-radius: 3px;
+}
+.f12-captcha.template-1 .c-label {
+  left: 10px;
+  font-size: 12px;
+  color: #777;
+}
+.f12-captcha.template-1 .c-data {
+  font-size: 1.05rem;
+}
+.f12-captcha.template-1 .c-input {
+  display: flex;
+  flex-flow: row nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.f12-captcha.template-1 .c-header {
+  border: 1px solid #ccc;
+  padding: 5px 5px 5px 10px;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background-color: #fff;
+  border-radius: 3px;
+}
+.f12-captcha.template-1 .c-hint {
+  font-size: 12px;
+  margin-left: -10px;
+  color: #777;
+  line-height: 100%;
+}
+.f12-captcha.template-1 .c-reload {
+  padding: 0;
+}
+.f12-captcha.template-1 .c-reload a img {
+  border: 0;
+}
+.f12-captcha.template-1 input.f12c {
+  display: block;
+  border: 0px solid #ccc;
+  margin-left: -10px;
+  background-color: #fff;
+  font-size: 1.05rem;
+  padding: 3px;
+  max-width: 100px;
+  height: 24px;
+}
+.f12-captcha.template-1 input.f12c:focus {
+  border: 0;
+  outline: 0;
+}
+
+.f12-captcha-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.f12-captcha-overlay::after {
+  content: "";
+  width: 24px;
+  height: 24px;
+  border: 3px solid #ccc;
+  border-top: 3px solid #333;
+  border-radius: 50%;
+  animation: f12-spin 0.8s linear infinite;
+}
+
+@keyframes f12-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+/**
+ * Dark template overlay fix
+ * @since 2.1.0
+ */
+.f12-captcha.template-3 .f12-captcha-overlay,
+.f12-captcha.template-4 .f12-captcha-overlay,
+.f12-captcha.template-8 .f12-captcha-overlay,
+.f12-captcha.template-9 .f12-captcha-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.f12-captcha.template-3 .f12-captcha-overlay::after,
+.f12-captcha.template-4 .f12-captcha-overlay::after,
+.f12-captcha.template-8 .f12-captcha-overlay::after,
+.f12-captcha.template-9 .f12-captcha-overlay::after {
+  border-color: rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
+}
+
+/**
+ * Template 3 – Dark Card (legacy)
+ * @since 2.1.0
+ */
+.f12-captcha.template-3 {
+  background-color: #2b3a42;
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+}
+.f12-captcha.template-3 .c-header {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.f12-captcha.template-3 .c-data {
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+}
+.f12-captcha.template-3 .c-data .captcha-calculation {
+  font-family: "Courier New", monospace;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  letter-spacing: 2px;
+}
+.f12-captcha.template-3 .c-label label {
+  color: #c8d6de;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+.f12-captcha.template-3 .c-reload {
+  padding: 0;
+}
+.f12-captcha.template-3 .c-reload a, .f12-captcha.template-3 .c-reload button {
+  color: #c8d6de;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.f12-captcha.template-3 .c-reload a:hover, .f12-captcha.template-3 .c-reload button:hover {
+  opacity: 1;
+}
+.f12-captcha.template-3 .c-audio .captcha-audio-btn {
+  color: #c8d6de;
+  opacity: 0.7;
+  background: transparent;
+}
+.f12-captcha.template-3 .c-audio .captcha-audio-btn:hover {
+  opacity: 1;
+}
+.f12-captcha.template-3 input.f12c {
+  display: block;
+  width: 100%;
+  background-color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  color: #333;
+  box-sizing: border-box;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.f12-captcha.template-3 input.f12c::placeholder {
+  color: #999;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.f12-captcha.template-3 input.f12c:focus {
+  outline: 2px solid rgba(100, 180, 220, 0.6);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+/**
+ * Template 4 – Gradient Dark (legacy)
+ * @since 2.1.0
+ */
+.f12-captcha.template-4 {
+  background: linear-gradient(145deg, #1e2d3a, #16232e);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+}
+.f12-captcha.template-4 .c-header {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.f12-captcha.template-4 .c-data {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  min-height: 40px;
+}
+.f12-captcha.template-4 .c-data .captcha-calculation {
+  font-family: "Courier New", monospace;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #e0e8ef;
+  letter-spacing: 2px;
+}
+.f12-captcha.template-4 .c-data .captcha-image img {
+  border-radius: 4px;
+}
+.f12-captcha.template-4 .c-label label {
+  color: #8a9baa;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+.f12-captcha.template-4 .c-reload {
+  padding: 0;
+}
+.f12-captcha.template-4 .c-reload a, .f12-captcha.template-4 .c-reload button {
+  color: #8a9baa;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.f12-captcha.template-4 .c-reload a:hover, .f12-captcha.template-4 .c-reload button:hover {
+  opacity: 1;
+}
+.f12-captcha.template-4 .c-audio .captcha-audio-btn {
+  color: #8a9baa;
+  background: transparent;
+  opacity: 0.7;
+}
+.f12-captcha.template-4 .c-audio .captcha-audio-btn:hover {
+  opacity: 1;
+}
+.f12-captcha.template-4 input.f12c {
+  display: block;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  color: #d0dbe4;
+  box-sizing: border-box;
+}
+.f12-captcha.template-4 input.f12c::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+.f12-captcha.template-4 input.f12c:focus {
+  outline: 2px solid rgba(100, 180, 220, 0.5);
+  outline-offset: 1px;
+  border-color: rgba(100, 180, 220, 0.3);
+}
+
+/* ================================================================== */
+/*  V2 TEMPLATES (5-9) — new design with SVG icons                    */
+/* ================================================================== */
+/**
+ * Shared v2 base styles — SVG reload & audio buttons
+ */
+.f12-captcha.template-5 .c-header,
+.f12-captcha.template-6 .c-header,
+.f12-captcha.template-7 .c-header {
+  gap: 6px;
+}
+.f12-captcha.template-5 .c-reload,
+.f12-captcha.template-6 .c-reload,
+.f12-captcha.template-7 .c-reload {
+  padding: 0;
+}
+.f12-captcha.template-5 .c-reload a,
+.f12-captcha.template-6 .c-reload a,
+.f12-captcha.template-7 .c-reload a {
+  color: #9ca3af;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.f12-captcha.template-5 .c-reload a:hover,
+.f12-captcha.template-6 .c-reload a:hover,
+.f12-captcha.template-7 .c-reload a:hover {
+  color: #6b7280;
+}
+.f12-captcha.template-5 .c-reload a svg,
+.f12-captcha.template-6 .c-reload a svg,
+.f12-captcha.template-7 .c-reload a svg {
+  display: block;
+}
+.f12-captcha.template-5 .c-audio .captcha-audio-btn,
+.f12-captcha.template-6 .c-audio .captcha-audio-btn,
+.f12-captcha.template-7 .c-audio .captcha-audio-btn {
+  color: #9ca3af;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+.f12-captcha.template-5 .c-audio .captcha-audio-btn:hover,
+.f12-captcha.template-6 .c-audio .captcha-audio-btn:hover,
+.f12-captcha.template-7 .c-audio .captcha-audio-btn:hover {
+  color: #6b7280;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Template 5 – Standard (v2)                                         */
+/* ------------------------------------------------------------------ */
+.f12-captcha.template-5 .c-header {
+  margin-bottom: 6px;
+}
+.f12-captcha.template-5 .c-data {
+  background-color: #f3f4f6;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+.f12-captcha.template-5 .c-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Template 6 – Compact (v2)                                          */
+/* ------------------------------------------------------------------ */
+.f12-captcha.template-6 {
+  background-color: #fff;
+  border: 1px solid #e5e7eb;
+  padding: 10px 15px 15px 15px;
+  position: relative;
+  border-radius: 6px;
+}
+.f12-captcha.template-6 .c-label {
+  font-size: 12px;
+  color: #9ca3af;
+}
+.f12-captcha.template-6 .c-data {
+  font-size: 1.05rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.f12-captcha.template-6 .c-data img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 125px;
+}
+.f12-captcha.template-6 .c-input {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+.f12-captcha.template-6 .c-input > div:not(.c-data) {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+.f12-captcha.template-6 .c-header {
+  border: 1px solid #e5e7eb;
+  padding: 5px 10px;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background-color: #fff;
+  border-radius: 6px;
+}
+.f12-captcha.template-6 .c-hint {
+  font-size: 11px;
+  color: #9ca3af;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.f12-captcha.template-6 .c-reload {
+  padding: 0;
+  line-height: 0;
+  display: flex;
+  align-items: center;
+}
+.f12-captcha.template-6 .c-reload a {
+  line-height: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.f12-captcha.template-6 .c-audio {
+  line-height: 0;
+  display: flex;
+  align-items: center;
+}
+.f12-captcha.template-6 input.f12c {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background-color: #fff;
+  font-size: 1rem;
+  padding: 4px 8px;
+  height: 28px;
+}
+.f12-captcha.template-6 input.f12c:focus {
+  border-color: #9ca3af;
+  outline: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Template 7 – Clean (v2)                                            */
+/* ------------------------------------------------------------------ */
+.f12-captcha.template-7 .c-header {
+  margin-bottom: 6px;
+}
+.f12-captcha.template-7 .c-data {
+  background-color: #f9fafb;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+.f12-captcha.template-7 .c-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+.f12-captcha.template-7 .c-label label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Template 8 – Dark Card (v2)                                        */
+/* ------------------------------------------------------------------ */
+.f12-captcha.template-8 {
+  background-color: #2b3a42;
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+}
+.f12-captcha.template-8 .c-header {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.f12-captcha.template-8 .c-data {
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+}
+.f12-captcha.template-8 .c-data .captcha-calculation {
+  font-family: "Courier New", monospace;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  letter-spacing: 2px;
+}
+.f12-captcha.template-8 .c-label label {
+  color: #c8d6de;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+.f12-captcha.template-8 .c-reload {
+  padding: 0;
+}
+.f12-captcha.template-8 .c-reload a {
+  color: #c8d6de;
+  opacity: 0.7;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.f12-captcha.template-8 .c-reload a:hover {
+  opacity: 1;
+}
+.f12-captcha.template-8 .c-reload a svg {
+  display: block;
+}
+.f12-captcha.template-8 .c-audio .captcha-audio-btn {
+  color: #c8d6de;
+  opacity: 0.7;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.f12-captcha.template-8 .c-audio .captcha-audio-btn:hover {
+  opacity: 1;
+}
+.f12-captcha.template-8 input.f12c {
+  display: block;
+  width: 100%;
+  background-color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  color: #333;
+  box-sizing: border-box;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.f12-captcha.template-8 input.f12c::placeholder {
+  color: #999;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.f12-captcha.template-8 input.f12c:focus {
+  outline: 2px solid rgba(100, 180, 220, 0.6);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Template 9 – Gradient Dark (v2)                                    */
+/* ------------------------------------------------------------------ */
+.f12-captcha.template-9 {
+  background: linear-gradient(145deg, #1e2d3a, #16232e);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+}
+.f12-captcha.template-9 .c-header {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.f12-captcha.template-9 .c-data {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  min-height: 40px;
+}
+.f12-captcha.template-9 .c-data .captcha-calculation {
+  font-family: "Courier New", monospace;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #e0e8ef;
+  letter-spacing: 2px;
+}
+.f12-captcha.template-9 .c-data .captcha-image img {
+  border-radius: 4px;
+}
+.f12-captcha.template-9 .c-label label {
+  color: #8a9baa;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+.f12-captcha.template-9 .c-reload {
+  padding: 0;
+}
+.f12-captcha.template-9 .c-reload a {
+  color: #8a9baa;
+  opacity: 0.7;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.f12-captcha.template-9 .c-reload a:hover {
+  opacity: 1;
+}
+.f12-captcha.template-9 .c-reload a svg {
+  display: block;
+}
+.f12-captcha.template-9 .c-audio .captcha-audio-btn {
+  color: #8a9baa;
+  background: transparent;
+  border: none;
+  opacity: 0.7;
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.f12-captcha.template-9 .c-audio .captcha-audio-btn:hover {
+  opacity: 1;
+}
+.f12-captcha.template-9 input.f12c {
+  display: block;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  color: #d0dbe4;
+  box-sizing: border-box;
+}
+.f12-captcha.template-9 input.f12c::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+.f12-captcha.template-9 input.f12c:focus {
+  outline: 2px solid rgba(100, 180, 220, 0.5);
+  outline-offset: 1px;
+  border-color: rgba(100, 180, 220, 0.3);
+}

@@ -1,0 +1,520 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "direct-fogo-island-inn-hospitality",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://fogoislandinn.ca/",
+    "finalUrl": "https://fogoislandinn.ca/",
+    "httpStatus": 200,
+    "pageTitle": "Fogo Island Inn | All-Inclusive Hospitality & Regenerative Travel",
+    "retrievedAt": "2026-10-08T20:15:15.220Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 97219,
+      "sha256": "7c22b4ba43c580ef05cf834abbf747f0f59294e332cecbe5e921f26560cb2297"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 32645,
+      "sha256": "e01bd4315f6901c8e3418838e642876cdb933d177f8b970954903171fc5d24f8"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 2171,
+      "sha256": "e9b5f741c3d15706108b1c1f04bb88d84a174079eba3679c57077db0ad40e980"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 1947,
+      "sha256": "e5b289b70dc3f84d650972f2be88c3aaaf9a76bb45f7cdb3394c2b20df1bfdb4"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 3871,
+      "sha256": "d83d2964606c559f6bb4d5de4fb09e884a8945f9edc3c38151f9ebe97a5453da"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 3846,
+      "sha256": "fe80303bcc2103ecd4b65c78ec2a1f2daef94d9d89dba83ba4e32b1b9d0d1c8a"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 3808,
+      "sha256": "b28e1f91b4fbeae1613c25e926fc5c29c06de6368b8be215a3d04a46e58c30e0"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 2920,
+      "sha256": "1eba19fb225259b6bed2dc044a65d10b8e6e1021178360e259460f9a324473b8"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 5081,
+      "sha256": "1ce5f75d0f522291aeaa07178a4865aa4b961cae3888b91dfc870b5f9e8cb36c"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 70577,
+      "sha256": "e6e00940f43cf3d7013f05ef0e10aaec488b5dff860a8ce1f0713d0fea9a3170"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 41291,
+      "sha256": "91d26a7c651c12b71bc7f7619ba88b6b518818fa5dce70b870c18d1374c6f7d2"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 33143,
+      "sha256": "c87c59c178b720795bfbb19699f02a5edc162b551e831331b1a635638ed328f8"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 1598,
+      "sha256": "46d7c21cfd25a56e9453647d96f9acc766da746866195185ab48aaa38e3f92a9"
+    },
+    {
+      "path": "source/styles/13.css",
+      "bytes": 18777,
+      "sha256": "0e65a18a51af5b4caaa899493e25e88f5061e830e3ed4d1bcc9b0e735a9ba989"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 80986,
+      "sha256": "087ce2cb3e95f3da526a2206a463c05b60e885758a8fc01f5b18a68c898a4951"
+    },
+    {
+      "path": "source/styles/15.css",
+      "bytes": 29166,
+      "sha256": "64dd1614bd8b1b8786247984ebd1470513c722283a9e63f7448e9baca4e3e0ec"
+    },
+    {
+      "path": "source/styles/16.css",
+      "bytes": 13752,
+      "sha256": "fa820fb3b18a3f4061f14db782614bd5286144c354601bd786b2b62f46f36ce8"
+    },
+    {
+      "path": "source/styles/17.css",
+      "bytes": 39858,
+      "sha256": "376e94eddb10e5668d051821d9c0102b860b1fa04139bd5f5f355185318c6dd9"
+    },
+    {
+      "path": "source/styles/18.css",
+      "bytes": 6506,
+      "sha256": "f909b0bbff94cd76a9a09f973b81c444d14eabc363ee528e560c580663010d0f"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2024/02/Fogo-Island-Inn-Logo-White.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2024/06/FIW-Mark.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2024/07/FIW_Wordmark_Reg_Pos_0d8789d7-e88a-4d54-b4ae-dbe92a20b8ba-1536x171.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2024/07/FIW_Wordmark_Reg_Pos_0d8789d7-e88a-4d54-b4ae-dbe92a20b8ba-scaled.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2024/07/FIW_Wordmark_Reg_Pos_0d8789d7-e88a-4d54-b4ae-dbe92a20b8ba-300x33.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2024/07/FIW_Wordmark_Reg_Pos_0d8789d7-e88a-4d54-b4ae-dbe92a20b8ba-1024x114.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2024/07/FIW_Wordmark_Reg_Pos_0d8789d7-e88a-4d54-b4ae-dbe92a20b8ba-768x85.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2024/07/FIW_Wordmark_Reg_Pos_0d8789d7-e88a-4d54-b4ae-dbe92a20b8ba-2048x228.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Logo-Tilting-Harbour-Blue.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2024/07/relais-white-logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2024/07/relais-white-logo-288x300.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/09/Michelin-2026-Three-Keys-Fogo-Island-Inn-Red.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/09/Michelin-2026-Three-Keys-Fogo-Island-Inn-Red-600x600.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/09/Michelin-2026-Three-Keys-Fogo-Island-Inn-Red-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/09/Michelin-2026-Three-Keys-Fogo-Island-Inn-Red-768x768.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Transparent-Background-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Transparent-Background-1-300x258.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Transparent-Background-1-768x661.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Suite-Left-Photo-1536x1152.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Suite-Left-Photo.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Suite-Left-Photo-300x225.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Suite-Left-Photo-1024x768.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Suite-Left-Photo-768x576.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/06/P.FII_Room_22_3-1423x1067.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/06/P.FII_Room_22_3-600x450.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/06/P.FII_Room_22_3-768x576.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/06/P.FII_Room_22_3-1536x1152.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/06/P.FII_Room_22_3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Lobster-in-the-Shed.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Lobster-in-the-Shed-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Moose-Supper.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Moose-Supper-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/07/Fogo-Island-Inn-Summer-Lunch-Menu-Shrimp.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/07/Fogo-Island-Inn-Summer-Lunch-Menu-Shrimp-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Dining-in-the-Shed-Fogo-Island-Inn.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Dining-in-the-Shed-Fogo-Island-Inn-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/06/Fogo-Island-Inn-Foodways-2025-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/06/Fogo-Island-Inn-Foodways-2025-2-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/06/Fogo-Island-Inn-Foodways-2025.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/06/Fogo-Island-Inn-Foodways-2025-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/06/Fogo-Island-Inn-Foodways-2025-3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/06/Fogo-Island-Inn-Foodways-2025-3-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/271709184_5392958157397377_5677037173765559172_n-1-6-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/271709184_5392958157397377_5677037173765559172_n-1-6-1-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/07/Fogo-Island-Inn-Summer-Lunch-Menu-Garden-Salad.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/07/Fogo-Island-Inn-Summer-Lunch-Menu-Garden-Salad-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Crab-in-the-Pot-Fogo-Island-Inn.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Crab-in-the-Pot-Fogo-Island-Inn-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fresh-Veg-Fogo-Island-Inn.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fresh-Veg-Fogo-Island-Inn-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/271709184_5392958157397377_5677037173765559172_n-1-9-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/271709184_5392958157397377_5677037173765559172_n-1-9-1-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Cocktails.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Cocktails-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/271709184_5392958157397377_5677037173765559172_n-1-8-1-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/271709184_5392958157397377_5677037173765559172_n-1-8-1-1-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Dessert.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Dessert-194x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/09/P.FII_Alf_Coffen_In_the_Garden_Radish_Roots_1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/09/P.FII_Alf_Coffen_In_the_Garden_Radish_Roots_1-600x400.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/09/P.FII_Alf_Coffen_In_the_Garden_Radish_Roots_1-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/09/P.Fogo-Island-Inn-Exterior_Northern-Lights-1536x1023.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/09/P.Fogo-Island-Inn-Exterior_Northern-Lights.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/09/P.Fogo-Island-Inn-Exterior_Northern-Lights-600x400.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/09/P.Fogo-Island-Inn-Exterior_Northern-Lights-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/06/P.FII_Caribou-Herd_Rocky-Hills-1536x1020.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/06/P.FII_Caribou-Herd_Rocky-Hills.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/06/P.FII_Caribou-Herd_Rocky-Hills-300x199.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/06/P.FII_Caribou-Herd_Rocky-Hills-1024x680.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/06/P.FII_Caribou-Herd_Rocky-Hills-768x510.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/07/P.FII_Inn_Exterior_and_Coastline-1536x864.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/07/P.FII_Inn_Exterior_and_Coastline.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/07/P.FII_Inn_Exterior_and_Coastline-600x338.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/07/P.FII_Inn_Exterior_and_Coastline-768x432.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/06/P.SF_Wade_Collins_Lobster_in_Trap_7-1536x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/06/P.SF_Wade_Collins_Lobster_in_Trap_7.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/06/P.SF_Wade_Collins_Lobster_in_Trap_7-600x400.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/06/P.SF_Wade_Collins_Lobster_in_Trap_7-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/06/Fogo_Island_Landscapes_2854-1536x1025.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/06/Fogo_Island_Landscapes_2854.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/06/Fogo_Island_Landscapes_2854-600x401.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/06/Fogo_Island_Landscapes_2854-768x513.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/2Af9-448E-8Bcc-Aa04c285ecba-no-audio.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Homepage-Hero-Video-Still.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Sunset-Video-Loop-For-Website-Compressed-29.5rf.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/FII-Sunset.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2026/05/V.Fii-Activity-Kayaking-Outdoor-Adventure-Guide-1.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Biking-On-Fogo-Island-Fogo-Island-Inn-Top-Down-Drone-Footage-Vertical-Video-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Hiking-29rf.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Things-to-Do-Hiking-576x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Puffin-Swimming-Slowww-1.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Things-to-Do-Wildlife-576x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Hot-Tubs-29rf.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Things-to-Do-Roof-Top-Hot-Tubs.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Fogo-Island-Inn-Island-Orientation-29rf.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Island-Orientation-576x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Bushcraft-Fogo-Island-Inn-29rf.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fogoislandinn.ca/wp-content/uploads/2025/04/Bushcraft-Fogo-Island-Inn-Image-for-Video-1-576x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/anchor?ar=1&k=6LeMBgMrAAAAACkSsgbmgI-FGPXyGlGzwrbq-33x&co=aHR0cHM6Ly9mb2dvaXNsYW5kaW5uLmNhOjQ0Mw..&hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&size=invisible&anchor-ms=20000&execute-ms=30000&cb=19vjhxi1wv7i",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://app.namastay.io/en/413468e3731e4ffdb548f609392cdcbchxtlqll0y4jpnu2n?",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 18 of 18 stylesheets retained.",
+  "digest": "631fce221d79f371acee0a0c00105364d6f3b714f329b5adf45d6c66d615e04f"
+}

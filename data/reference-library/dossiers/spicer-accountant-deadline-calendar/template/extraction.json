@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "spicer-accountant-deadline-calendar",
+  "status": "extracted",
+  "method": "zip-download",
+  "source": {
+    "url": "https://www.spicerdesigns.com/templates/accountant",
+    "finalUrl": "https://www.spicerdesigns.com/downloads/accountant-template-html.zip",
+    "archiveSha256": "736fbb8488546145e238df74a4b92b6e130f10fb5cf8a8e56a22bdb67a40b1c3",
+    "retrievedAt": "2026-10-08T20:05:50.085Z",
+    "license": "CC-BY-4.0",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/hero.webp",
+      "bytes": 48864,
+      "sha256": "342c09be40f27f32aeffa7e53ed8f2a56cd261d60dcc62ab5d6d1994ec0b0098"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 32833,
+      "sha256": "47cb14e6183b597693aaea119e4959ab27b2dee93ec9a5ace02768b41c9f4e06"
+    },
+    {
+      "path": "source/README.md",
+      "bytes": 2713,
+      "sha256": "1b93f656de97999e69d4edbccff22264196859e1348247a8f38178dce9cf77cc"
+    },
+    {
+      "path": "source/styles.css",
+      "bytes": 27165,
+      "sha256": "14da0e2066c852f006a9e70effb8ed0bc3142e0b94c8e14bcee2e4cb112c8fc6"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.spicerdesigns.com/downloads/accountant-template-html.zip#LICENSE",
+      "reason": "unsupported-extension"
+    }
+  ],
+  "notes": "Downloaded the official HTML build (4 files, archive SHA-256 736fbb8488546145e238df74a4b92b6e130f10fb5cf8a8e56a22bdb67a40b1c3). The template page footer also shows an MIT label; the retained LICENSE in rights/ records CC BY 4.0 with the footer attribution condition. Reconcile before any derivative publication.",
+  "digest": "c41ae241ae8f0fd316c40236445f1fbd619e21ba6b134fa543f555f4a4c81952"
+}

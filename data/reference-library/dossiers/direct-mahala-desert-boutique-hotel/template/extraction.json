@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "direct-mahala-desert-boutique-hotel",
+  "status": "failed",
+  "method": "live-site",
+  "source": {
+    "url": "https://mahalahotel.com/",
+    "repository": null,
+    "retrievedAt": "2026-10-08T20:40:44.772Z",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "reason": "navigation failed: page.goto: Timeout 120000ms exceeded. Call log: \u001b[2m - navigating to \"https://mahalahotel.com/\", waiting until \"domcontentloaded\"\u001b[22m "
+}

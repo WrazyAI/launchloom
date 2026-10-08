@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "care-image-mosaic",
+  "status": "extracted",
+  "method": "owned-artifact",
+  "source": {
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/care-image-mosaic",
+    "artifactPath": "design-family-demos/image-mosaic",
+    "generator": "scripts/build-design-family-demos.mjs",
+    "retrievedAt": "2026-10-08T20:06:09.829Z",
+    "license": "owned",
+    "attestationPath": null
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/_astro/Footer.C67EIklv.css",
+      "bytes": 34822,
+      "sha256": "79d93918cd13f5629673311c93ae31e3ca0fe4f0bc316b1f29381074638ef3f8"
+    },
+    {
+      "path": "source/_astro/index.IEDAeAGZ.css",
+      "bytes": 14532,
+      "sha256": "8c7c91f3d215cdf44d4c602e346cf387a6b145208462e724c53906c8c9cbfc2d"
+    },
+    {
+      "path": "source/images/packs/professional-services-advisory-v1.png",
+      "bytes": 1854057,
+      "sha256": "05ac63dadaa171f14f340e4b7158bf3bd81c462c41d9f277a89f2305b5734b3b"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 34234,
+      "sha256": "c028de2635313219a181ddc50699ee3c79461de5b64e22fe070534024c20c099"
+    },
+    {
+      "path": "source/services/companion-care/index.html",
+      "bytes": 29708,
+      "sha256": "e8caab5875a64f746a2f037362ef1f54f28147db75aa05c750564dc38d958059"
+    },
+    {
+      "path": "source/services/personal-care/index.html",
+      "bytes": 29799,
+      "sha256": "1d32bcb746819c8d096c2751a8165133b08cfc790e73869a54cf9986c2753ab6"
+    },
+    {
+      "path": "source/services/respite-care/index.html",
+      "bytes": 29688,
+      "sha256": "a86ed40599fc334579276079c5a6bd3ca90098ba81eacf4df94c6f6ed2ff399f"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Copied 7 files from the local build artifact at design-family-demos/image-mosaic. The artifact directory is gitignored; regenerate it with scripts/build-design-family-demos.mjs when the owned prototype source changes.",
+  "digest": "8c7bf0c3bace8322607e9fa2d4a5252d0c0196cb9c1e7a76d364d0d72be0ab1a"
+}

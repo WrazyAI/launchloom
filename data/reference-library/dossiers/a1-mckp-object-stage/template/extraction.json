@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "a1-mckp-object-stage",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://mckp.live/",
+    "finalUrl": "https://mckp.live/",
+    "httpStatus": 200,
+    "pageTitle": "mckp.live — Interactive Mockups That Move",
+    "retrievedAt": "2026-10-08T20:11:32.665Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 118225,
+      "sha256": "51e82b1685f6c9eec3f2c17251260d073e035c0addea235f4db836751dfa1609"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 8249,
+      "sha256": "45226aa6b105829b030500bcae29ef940ac44e9c4a205c6e0d09a26965a1763c"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 10658,
+      "sha256": "c2cbc364f0f87ba108f14092cca3b51f5ecf2ceebb1280862e002e92ec76a5f6"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 28242,
+      "sha256": "99a47be77d4aa9fbb1f4e2e5a88e2a3c5e0304f84a549dd40bd516997a7345c8"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 17679,
+      "sha256": "38c64c28be013bdbacff5a009d15cac30a1775b3ea9582a5e1d0c8e89d7b90de"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://mckp.live/logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp.live/hero-studio-poster-v2.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp.live/hero-studio-poster-v2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp.live/progressive-lite.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp.live/progressive-lite.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp.live/progressive-full.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp.live/progressive-full.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp.live/icons/dribbble.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp.live/icons/framer.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp.live/icons/webflow.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp.live/icons/instagram.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp.live/icons/behance.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp.live/icons/mckp-logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/hero-studio-poster-v2.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-landing.b-cdn.net/videos/studio/studio-v2-1280-av1.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-landing.b-cdn.net/videos/studio/studio-v2-1280-h264.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-landing.b-cdn.net/videos/studio/studio-v2-2400-av1.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-landing.b-cdn.net/videos/studio/studio-v2-2400-h264.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-landing.b-cdn.net/videos/origin/origin-v3-1280-av1.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-landing.b-cdn.net/videos/origin/origin-v3-1280-h264.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-landing.b-cdn.net/videos/origin/origin-v3-2400-av1.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-landing.b-cdn.net/videos/origin/origin-v3-2400-h264.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/progressive-lite.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/progressive-full.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp.live/hero-phone-poster.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-landing.b-cdn.net/videos/studio/studio-v2-poster.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/8b4f526a-bbf7-4691-8caa-98cf8ac889e2.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/c00bd897-be12-481e-95a6-3d536f45572b?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/6c0c06fa-40cd-4a9f-99b2-90b3b30cecdb.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/b99606fc-a215-435f-ad24-7c5c202f87ba?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/35e414f0-e457-4d31-8a44-a1ecb0119c2f.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/102b630f-3918-4b7d-b44d-047a4cf0b101?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/d773851b-f0a0-44d4-826b-253d8d9b75d8.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/1383fac2-6bcc-4e15-9d66-304bee62bfad?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/fbd4aad8-99d4-40c5-b19f-4c63583d317d.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/a9aa5a77-acbf-4967-be9f-e09193c21493?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/9b2c3263-30e7-4062-b968-86a259091e3d.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/b50525b7-c280-485a-9d95-9eda614660b3?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/3f044d1b-2112-4532-8154-483afa52f02f.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/785ee47b-6355-4d68-80e0-8fd40c8025db?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/929d80ad-9e2e-4b7c-acdf-1699b4af1d6a.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/bfc85892-19cf-4bbc-b6f5-874af436bde4?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/6cfb35a2-d412-43fa-b070-df8ac8c7ccdb?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/2fc6e323-c71f-41f8-946e-6270964cdb06?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/10553dce-103b-4f00-a00c-4ed51d727548?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/3572813a-d541-4b00-a43d-735880052afc?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/499cbe82-a4bc-4263-bce5-223ce609997c?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/920d19db-be58-43fd-a0e6-3b5da347f007?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://directus.mckp.live/assets/7a306efb-8b44-4fb5-8af7-b9051aa4fc42?key=800-600-webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-landing.b-cdn.net/videos/origin/origin-v3-poster.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/719ab1d9-9d9d-47b1-88ec-8ef7a09911f4.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/cf4c6c87-10ba-4656-bea2-40828b08ffa9.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/d7211c9e-557e-4222-9e70-481821651320.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/239dd3c1-3136-4928-9649-1d2a800c3149.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/49846491-247e-47b7-8428-8218bc0bcd7f.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/5a71642f-9e68-451a-9ff2-7cf3ce16fff0.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/9e51c8c9-a2c1-4672-9776-2ff01c661743.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-s3-directus.b-cdn.net/5174bd32-a5e9-4b3a-9646-b5db12fe8c56.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://mckp-live-landing.b-cdn.net/animation-types/live-effects/follow.mp4",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 4 of 4 stylesheets retained.",
+  "digest": "18a81ba2e4d257fdd74accc1fca23f1ee2799129e9eb67c5fe31a6e045355194"
+}

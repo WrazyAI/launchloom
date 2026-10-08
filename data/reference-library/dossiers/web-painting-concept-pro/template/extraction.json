@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-painting-concept-pro",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.conceptpropainting.com/",
+    "finalUrl": "https://www.conceptpropainting.com/",
+    "httpStatus": 200,
+    "pageTitle": "Concept Pro Painting, High-End Interior & Exterior Painters in South Florida",
+    "retrievedAt": "2026-10-08T20:30:47.314Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 91213,
+      "sha256": "14b0f208d1380cd9d0dc72a47fce588b223eced879b367630d52fece688961f5"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 11703,
+      "sha256": "2f43dbd4f94cd81ff0f58ea24a45da28fe280a0a2404ca38edc144722bd857ca"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 18454,
+      "sha256": "74ca6aae5468dbc924790c3b4d219a089b90a34bad53a0f7ca3a73e73b6f5ab8"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 45708,
+      "sha256": "1ac2b18242e96c72e59335312365539e32bb9169261fd534031a13539616633e"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/logo-white.png?v=cp2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/svc-interior.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/svc-exterior.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/svc-cabinet.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/svc-drywall.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/after-luxo.jpg?v=3",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/before-luxo.jpg?v=3",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/ba-thumb1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/ba-thumb2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/ba-thumb3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/ba-thumb4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cta-bg.jpg?v=4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/work-4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/work-5.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/work-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/work-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/work-3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/reviews/r2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/reviews/r3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/reviews/r4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/reviews/r5.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/reviews/r6.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/reviews/r7.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/reviews/r8.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/reviews/r9.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/reviews/r10.jpg?v=2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/reviews/r11.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/reviews/r12.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/reviews/r1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/logo-mark.jpg?v=cp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/pronta.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/faq-exterior.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/videos/hero-cover.mp4?v=1",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/hero-cover-poster.jpg?v=2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/videos/card-clip2.mp4?v=2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/videos/card-oc1.mp4?v=1",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/slide-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/videos/card-oc2.mp4?v=1",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.conceptpropainting.com/assets/img/cp/slide-3.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "92daf45681cbda306567a789252c92711e0ae16eb10ba12b3ee09a333e87823f"
+}

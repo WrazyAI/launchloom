@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "attested-one-manor-place-dental",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://omp.dentist/",
+    "finalUrl": "https://omp.dentist/",
+    "httpStatus": 200,
+    "pageTitle": "One Manor Place",
+    "retrievedAt": "2026-10-08T20:13:43.068Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 79087,
+      "sha256": "7c6d275b25e8055209b330e147aaca58bb0bcca65d1539d28a024ae32377e992"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 31878,
+      "sha256": "8fa2c250f50f5039cdbb57df1c9e0e8b2b7863229da64a58c116e45841714c0e"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://omp.dentist/media/pages/home/7cfc7f84bc-1707221487/omp-banner-1200x-q80.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://omp.dentist/media/pages/home/63c70a7f5e-1707299228/dental-practice-stoneybatter-1200x-q80.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://omp.dentist/media/pages/home/39145ee410-1708941534/chris-hogg-dentist-stoneybatter-one-manor-place-1200x-q80.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://omp.dentist/media/pages/home/c8a4cbbecc-1710167764/eithne-1200x-q80.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://omp.dentist/media/pages/home/be95a4a209-1708941541/cathy-1-1200x-q80.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://via.placeholder.com/500x400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://omp.dentist/media/pages/home/b4bfeee991-1708966499/chris-1.5-1200x-q80.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://omp.dentist/media/pages/home/fcae4ba926-1710173213/staff-03-1200x-q80.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://omp.dentist/media/pages/home/38915a6439-1707298858/testimonial-1-1200x-q80.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://omp.dentist/media/pages/home/4b2e6dbac0-1707298932/testimonial-2-1200x-q80.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://omp.dentist/media/site/496ba7d15b-1709121272/logotype-white.svg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "d277591625fe56c22e7c8768d8b27f5ee90ec39f0e9384a2a410a934ccc4d245"
+}

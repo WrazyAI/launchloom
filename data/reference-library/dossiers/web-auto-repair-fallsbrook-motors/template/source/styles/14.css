@@ -1,0 +1,657 @@
+/*
+Theme Name:     Patrai Child
+Theme URI: 		http://themes-demo.com/patrai/
+Author: 		the DesignThemes team
+Description:    Child theme for the Patrai theme powered by DesignThemes
+Template:       patrai
+Version:        1.0
+*/
+
+/* ReCAPTCHA */
+.grecaptcha-badge { 
+	visibility: hidden; 
+}
+
+/* Ninja Forms */
+
+/* Quote Form */
+#nf-form-3-cont .nf-field-container, #nf-form-3-cont .nf-field-label {
+	margin-bottom: 0 !important;
+}
+
+#nf-form-3-cont .nf-form-content textarea.ninja-forms-field {
+	height: 115px !important;
+}
+
+/* Typography */
+.fm-textcenter {
+    text-align: center;
+}
+.fallsbrook .dt-sc-title.with-vertical-solid-line .dt-sc-main-heading span:after {
+    background-color: transparent;
+}
+.fallsbrook .vc_sep_width_10 {
+    max-width: 55px;
+}
+.fm-separator span span {
+    width: 0;
+    height: 0;
+    max-width: 55px;
+    border-color: transparent;
+    border-top: 10px solid #ffe600 !important;
+    border-right: 10px solid transparent;
+}
+.fallsbrook h3 {
+    line-height: 38px;
+}
+
+/* Button */
+.fallsbrook .dt-sc-button {
+    font-weight: 600;
+}
+a.dt-sc-button.large.filled:after {
+    background-color: #444;
+    border-color: #444;
+}
+.fallsbrook #footer .dt-sc-dark-bg a.dt-sc-button {
+    color: #132048;
+}
+.fallsbrook #footer .dt-sc-dark-bg a.dt-sc-button:hover {
+    color: #fff;
+}
+
+/* Page title */
+section.main-title-section-wrapper.aligncenter {
+    background-color: #f7f7f7 !important;
+}
+.fallsbrook .breadcrumb span.current,
+.fallsbrook div.breadcrumb a,
+.breadcrumb .fa {
+    color: #132048;
+}
+.breadcrumb .fa {
+    font-size: 12px;
+}
+.fallsbrook div.breadcrumb a:hover {
+	color: #b1b3b3;
+}
+.fallsbrook .breadcrumb .fa.default {
+    color: #132048;
+}
+.fallsbrook .main-title-section h1 {
+    color: #132048;
+}
+.fm-page-title {
+	font-size: 50px;
+	font-weight: 600;
+	color: #132048;
+	text-transform: capitalize;
+	line-height: 50px;
+	font-family: Poppins;
+}
+
+/* Header */
+.header-wrapper .dt-custom-nav li a > span {
+    font-size: 22px;
+    font-weight: 600;
+    font-family: "Poppins", sans-serif;
+    line-height: 48px;
+}
+.fm-contact {
+    text-align: right;
+}
+.fm-number,
+.fm-email,
+.fm-number a,
+.fm-email a {
+    font-size: 18px;
+    font-weight: 600;
+    font-family: "Poppins", sans-serif;
+    line-height: 55px;
+    display: inline-block;
+    margin: 0 10px;
+    color: #fff;
+}
+
+/* Menu */
+.fallsbrook .dt-header-menu[data-nav-item-divider="vertical-line"] ul.dt-primary-nav > li > a > span:after {
+    border-color: #364161;
+    height: 47px;
+}
+.fallsbrook .dt-header-menu .dt-primary-nav li a {
+    padding: 15px 25px;
+    font-family: "Poppins", sans-serif;
+    font-weight: 600;
+}
+.fallsbrook .dt-header-menu[data-nav-item-highlight="bottom-border-only"] ul.dt-primary-nav > li > a:after {
+    border-width: 0 0 2px;
+}
+.fallsbrook .dt-header-menu[data-nav-item-divider="slanting-line"] ul.dt-primary-nav > li > a > span:after {
+    border-color: #132048;
+}
+
+/* LANDING PAGE */
+
+.fm-landing-page-form, .page-template-landing-page-template .nf-form-layout {
+    color: #fff;
+    max-width: 700px;
+    margin: 0 auto;
+    width: 100%;
+}
+.page-template-landing-page-template .field-wrap .nf-field-label label {
+	color: #fff !important;
+}
+.fm-landing-page-form .wpcf7-submit, .page-template-landing-page-template #nf-field-16 {
+    background-color: #ffe600 !important;
+    color: #282828 !important;
+    font-weight: 600;
+}
+.fm-landing-page-form .wpcf7-submit:hover, .page-template-landing-page-template #nf-field-16:hover {
+    background-color: #fff !important;
+}
+.fm-white-text, .fm-landing-page-form .gdpr-acceptance .wpcf7-list-item-label {
+    color: #fff !important;
+}
+
+.fm-centre {
+    text-align: center;
+}
+
+/* LISTS */
+
+.fallsbrook ul.dt-sc-fancy-list.blue li::before {
+	color: #132048 !important;
+}
+
+@media only screen and (min-width: 768px) {
+	.fb-list ul {
+	  -webkit-columns: 2;
+	  -moz-columns: 2;
+	  columns: 2;
+	}
+}
+
+/* CONTACT FORM 7 */
+
+.fallsbrook .wpcf7-select {
+	color: #282828;
+}
+
+.fallsbrook .wpcf7-select option {
+	font-family: Roboto, sans-serif;
+}
+
+.fallsbrook .wpcf7-text, .fallsbrook .wpcf7-textarea, .fallsbrook .wpcf7-select {
+	background-color: #f7f7f7;
+}
+
+.fallsbrook .wpcf7-submit:hover {
+	background-color: #435078;
+}
+
+/* Top CTA */
+.fm-topcta p {
+    line-height: 51px;
+    color: #132048;
+    text-align: right;
+}
+.fm-topcta a {
+    color: #132048;
+    text-decoration: underline;
+}
+.fm-topcta a:hover {
+    color: #fff;
+    text-decoration: none;
+}
+
+/* Home */
+.fallsbrook .dt-sc-quote-form {
+    background: #132048;
+    color: #fff;
+}
+.fallsbrook .dt-sc-quote-form .dt-sc-main-heading,
+.fallsbrook .dt-sc-quote-form label {
+    color: #fff;
+}
+.fallsbrook .dt-sc-quote-form input[type="text"], 
+.fallsbrook .dt-sc-quote-form input[type="email"], 
+.fallsbrook .dt-sc-quote-form textarea, 
+.fallsbrook .dt-sc-quote-form input.text, 
+.fallsbrook .dt-sc-quote-form select {
+    border-color: transparent;
+    background-color: #f7f7f7;
+}
+.fallsbrook .dt-sc-quote-form input.wpcf7-form-control.wpcf7-submit {
+    background-color: #ffe600;
+    color: #132048;
+    font-weight: 600;
+}
+.fallsbrook .dt-sc-quote-form input.wpcf7-form-control.wpcf7-submit:hover {
+    background-color: #444444;
+    color: #fff;
+}
+.fallsbrook.page-template-default.page section .type-page + .dt-sc-hr + .dt-sc-clear + section.commententries {
+    margin-top: 0px;
+}
+.fallsbrook.page-template-default section .type-page ~ .commententries:last-child {
+    margin-bottom: 0px;
+}
+.fallsbrook .dt-sc-image-caption:hover .dt-sc-image-content a,
+.fallsbrook .dt-sc-image-caption:hover .dt-sc-image-content a.dt-sc-no-bg {
+    color: #132048;
+}
+.fm-partswarranty .vc_column-inner {
+    padding-left: 60px;
+    padding-right: 60px;
+}
+.fm-partswarranty img {
+    width: 100px;
+}
+.fallsbrook.home #header-wrapper {
+    margin: 0 0 0px;
+}
+.fallsbrook.home.no-breadcrumb #main {
+    margin-top: 0px;
+}
+
+/* About */
+.fm-strapline {
+    margin-top: -100px;
+}
+.fm-custom-text {
+    font-size: 40px;
+    line-height: 40px;
+    font-weight: 600;
+    margin: 0px;
+}
+.fallsbrook .vc_images_carousel .vc_carousel-control {
+    opacity: 1 !important;
+    color: #fff;
+}
+.vc_images_carousel .vc_carousel-control .icon-prev:before,
+.vc_images_carousel .vc_carousel-control .icon-next:before {
+    font-size: 48px !important;
+}
+.fallsbrook .vc_images_carousel .vc_carousel-indicators li {
+    border: 1px solid #fff;
+    background-color: #fff;
+    margin: 1px 4px;
+    width: 11px;
+    height: 11px;
+}
+.fallsbrook .vc_images_carousel .vc_carousel-indicators .vc_active {
+    background-color: transparent;
+    border: 1px solid #fff;
+    margin: 1px 4px;
+    width: 11px;
+    height: 11px;
+}
+
+/* Services */
+.fallsbrook .side-navigation.type5 ul.side-nav li.current_page_item a, 
+.fallsbrook .side-navigation.type5 ul.side-nav>li>a:hover {
+    color: #132048;
+}
+.dt-sc-image-caption.type9.dt-sc-custom-img-caption .dt-sc-image-overlay a:after {
+    content: " " !important;
+}
+.dt-sc-image-caption.type9.dt-sc-custom-img-caption .dt-sc-image-wrapper:before {
+    background-color: #132048 !important;
+}
+
+/* WP Bakery */
+.post-edit-link, .vc_inline-link {
+    display: none;
+}
+
+/* Blog */
+.fallsbrook .dt-sc-content-overlay-style.dt-sc-post-entry .blog-entry div.entry-date > .date-wrapper,
+.fallsbrook .dt-sc-content-overlay-style.dt-sc-post-entry .blog-entry > div.entry-date > .date-wrapper i {
+	color: #132048;
+}
+
+/* Single post */
+.fallsbrook .single-post-header-wrapper.dt-parallax-bg {
+    background-color: transparent;
+    padding: 60px 0;
+}
+.single-post.fallsbrook #header-wrapper {
+    margin: 0 0 120px;
+}
+.fallsbrook .single-post-header-wrapper > .container h1 {
+    word-break: unset;
+    -ms-word-wrap: unset;
+}
+
+/* Contact */
+.fallsbrook .dt-sc-contact-info.type8:hover span:after {
+    background: #132048;
+}
+.fallsbrook.page-contact-us .fm-hidecontactpage {
+    display: none;
+}
+#responsive-form{
+	margin:0 auto;
+    width:100%;
+}
+.form-row {
+	margin-left: -6px;
+	margin-right: -6px;
+}
+.column-half, .column-full{
+    position: relative;
+    float: left;
+	padding: 4px 6px;
+	width:100%;
+	-webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box
+}
+.clearfix:after {
+	content: "";
+	display: table;
+	clear: both;
+}
+/**---------------- Media query ----------------**/
+@media only screen and (min-width: 48em) { 
+	.column-half{
+		width: 50%;
+	}
+}
+.fallsbrook input[type="text"], 
+.fallsbrook input[type="email"],
+.fallsbrook textarea, 
+.fallsbrook input.text {
+    color: #282828;
+}
+span.wpcf7-list-item {
+    margin: 0;
+    font-size: 12px;
+    line-height: 16px;
+}
+input.wpcf7-form-control.wpcf7-submit {
+    background-color: #132048;
+    border: none;
+    color: #fff;
+}
+input.wpcf7-form-control.wpcf7-submit:disabled {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Cookies */
+.medium.cli-plugin-button, 
+.medium.cli-plugin-button:visited {
+    font-size: 16px;
+    font-weight: 600;
+    text-transform: none;
+}
+
+/* Error */
+.fallsbrook.error404 h2 {
+    color: #ffe600;
+}
+
+/* Areas Coverd */
+ul#menu-areas-covered {
+    padding-left: 140px;
+}
+@media (max-width: 1024px) {
+    ul#menu-areas-covered {
+        padding-left: 100px;
+    }
+}
+@media (max-width: 500px) {
+    ul#menu-areas-covered {
+        padding-left: 0px;
+    }
+}
+
+/* Footer */
+.fallsbrook #footer .footer-20 .dt-sc-footer-section {
+    padding: 0px 25px;
+}
+.fallsbrook #footer .footer-20 p,
+.fallsbrook #footer .footer-20 .dt-sc-footer-section .dt-sc-contact-info,
+.fallsbrook #footer .footer-20 .dt-sc-footer-section .dt-sc-contact-info p,
+.fallsbrook #footer .footer-20 .dt-sc-footer-section .dt-sc-contact-info a {
+    color: #fff;
+}
+.fallsbrook .footer-20 .footer20-title {
+    text-transform: none;
+}
+.fallsbrook #footer h3.widgettitle {
+    display: none;
+}
+#footer .aio-tooltip:hover i {
+    color: #ffe600;
+}
+.openingtimes td {
+    text-align: left;
+    padding: 6px 9px 6px 0px;
+}
+
+/* Accreditations */
+.fallsbrook .fm-accreditations .fm-svg img {
+    height: 100px;
+}
+
+/* Testimonials */
+.fallsbrook .caroufredsel_wrapper blockquote,
+.fallsbrook .dt-sc-testimonial.type2 .dt-sc-testimonial-quote {
+    background-color: #132048;
+}
+.fallsbrook .dt-sc-testimonial.type2 blockquote:before {
+    color: #ffe600;
+}
+.fallsbrook .dt-sc-testimonial.type2 .dt-sc-testimonial-quote:before {
+    border-top: 20px solid #132048;
+}
+.fallsbrook .dt-sc-testimonial.type2 .dt-sc-testimonial-author {
+    width: 100%;
+    height: 80px;
+    float: left;
+    position: relative;
+    display: block;
+}
+.fallsbrook .dt-sc-testimonial.type2 .dt-sc-testimonial-author cite {
+    left: 70px;
+    top: -20px;
+}
+
+
+/* RESPONSIVE */
+/* Mobile menu */
+.fallsbrook .mobile-menu, 
+.fallsbrook .mobile-menu > ul, 
+.fallsbrook .mobile-menu ul.sub-menu{
+    background: #132048;
+}
+.fallsbrook .mobile-menu ul.dt-primary-nav li.close-nav:before, 
+.fallsbrook .mobile-menu ul.dt-primary-nav li.close-nav:after {
+    background-color: #fff;
+}
+.dt-sc-empty-space.fm-showcontactpage {
+    display: none;
+}
+
+@media only screen and (min-width: 1200px) {
+	.fm-icon-box {
+		min-height: 500px;
+	}
+	.fm-icon-box1 {
+		min-height: 360px;
+	}
+}
+
+@media only screen and (max-width: 1199px) {
+    /* General */
+
+    /* Mobile menu */
+    .mobile-nav-container {
+        padding-top: 15px;
+        padding-bottom: 15px;
+        text-align: center;
+    }
+    .mobile-nav-container .menu-trigger > span {
+        font-weight: 600;
+    }
+}
+
+@media only screen and (max-width: 1024px) {
+	.fallsbrook .dt-sc-fancy-list.blue.arrow {
+		margin-bottom: 30px !important;
+	}
+	.fm-icon-box, .fm-icon-box-half, .fm-icon-box1, .fm-icon-box-margin-btm {
+		margin-bottom: 30px !important;
+	}
+	.fm-icon-box.fm-icon-box-last, .fm-icon-box1-last {
+		margin-bottom: 0 !important;
+	}
+}
+@media only screen and (min-width: 1080px) {
+	.lgbtq-friendly-footer {
+		display: none;
+	}
+}
+@media only screen and (max-width: 991px) {
+    /* General */
+    .fallsbrook #header-wrapper,
+    .fallsbrook #header-wrapper .main-title-section-wrapper {
+        margin: 0 0 30px;
+    }
+    .fallsbrook .dt-logo-container a {
+        margin: auto;
+        display: block;
+    }
+    .fm-contact {
+        text-align: center;
+    }
+
+    /* Menu */
+    .fallsbrook .mobile-menu ul.dt-primary-nav li a {
+        color: #fff !important;
+    }
+    .fallsbrook .mobile-menu ul.dt-primary-nav li ul.sub-menu li.current_page_item > a,
+    .fallsbrook .mobile-menu ul.dt-primary-nav li > a:hover,
+    .fallsbrook .mobile-menu ul.dt-primary-nav li:hover > a, 
+    .fallsbrook .mobile-menu ul.dt-primary-nav li ul.sub-menu li > a:hover, 
+    .fallsbrook .mobile-menu ul.dt-primary-nav li ul.sub-menu li:hover > a,
+    .fallsbrook .mobile-menu ul.dt-primary-nav li.current-menu-item > a,
+    .fallsbrook .mobile-menu ul.dt-primary-nav li.current-menu-ancestor > a,
+    .fallsbrook .mobile-menu ul.dt-primary-nav li ul.sub-menu li.current_page_item > a,
+    .fallsbrook .mobile-menu ul.dt-primary-nav li ul.sub-menu li.current-menu-item > a,
+    .fallsbrook .mobile-menu ul.dt-primary-nav li.current_page_item > a,
+    .fallsbrook .mobile-menu ul.dt-primary-nav li.current-menu-item > a:hover,
+    .fallsbrook .mobile-menu ul.dt-primary-nav li.current-menu-ancestor > a:hover, 
+    .fallsbrook .mobile-menu ul.dt-primary-nav li.current-page-ancestor > a:hover {
+        color: #ffe600 !important;
+    }
+	
+	/* LGBTQ Icon */
+	.lgbtg-friendly {
+		display: none;
+	}
+}
+@media only screen and (max-width: 991px) and (min-width: 768px) {
+    /* Services */
+    .fallsbrook .dt-sc-image-caption.type9.dt-sc-custom-img-caption .dt-sc-image-overlay h3 {
+        font-size: 32px;
+    }
+    .fallsbrook .dt-sc-image-caption.type9 .dt-sc-image-overlay {
+        padding: 15px 30px;
+    }
+}
+@media only screen and (max-width: 768px) {
+    /* Typography */
+    .fallsbrook h2 {
+        font-size: 32px;
+    }
+    .fallsbrook.error404 .type7 h2 {
+        line-height: 70px;
+        font-size: 70px;
+    }
+    .fallsbrook.error404 h3 {
+        font-size: 32px;
+    }
+    .fallsbrook.error404 h4 {
+        font-size: 18px;
+    }
+
+    /* Header */
+    .fallsbrook #header .dt-header-tpl div[class^="dt-logo-container"][class*="vc_custom"] {
+        width: auto;
+    }
+    .fm-number,
+    .fm-email {
+        display: block;
+    }
+    .fm-number, .fm-email, .fm-number a, .fm-email a {
+        line-height: 34px;
+    }
+    .fm-number, .fm-email, .fm-number a, .fm-email a {
+        font-size: 15px;
+    }
+
+    /* WP Bakery */
+    .fallsbrook .column, 
+    .fallsbrook .wpb_column {
+        margin-bottom: 0px;
+    }
+
+    /* Home */
+    .fallsbrook .slick-dots {
+        position: relative;
+    }
+
+    /* Services */
+    .fallsbrook.page-template-tpl-blog #primary,
+    .fallsbrook.page-template-tpl-sidenavigation #primary, 
+    .fallsbrook.single #primary, .archive #primary, 
+    .fallsbrook.post-type-archive-tribe_events #primary,
+    .fallsbrook.single.single-wp_router_page #main,
+    .fallsbrook.search.search-results #primary, 
+    .fallsbrook.search.search-no-results #primary, 
+    .fallsbrook.home.blog #primary {
+        padding-bottom: 30px;
+    }
+
+    /* Post */
+    .single-post.fallsbrook #header-wrapper {
+        margin: 0 0 60px;
+    }
+
+    /* Contact */
+    .page-contact-us .fm-showcontactpage {
+        display: block;
+    }
+}
+@media only screen and (max-width: 667px) {
+    /* Typography */
+    .fallsbrook.error404 .type7 h2 {
+        line-height: 70px;
+        font-size: 70px;
+    }
+    .fallsbrook.error404 h3 {
+        font-size: 32px;
+    }
+    .fallsbrook.error404 h4 {
+        font-size: 18px;
+    }
+
+    /* Home */
+    .fallsbrook .dt-sc-quote-form {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+}
+
+/* Book Now Button */
+.fm-book-btn {
+	background-color: #132048;
+	color: #ffffff;
+}
+
+.fm-book-btn:hover {
+	color: #132048;
+}

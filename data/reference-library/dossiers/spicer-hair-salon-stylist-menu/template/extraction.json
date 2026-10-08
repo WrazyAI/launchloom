@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "spicer-hair-salon-stylist-menu",
+  "status": "extracted",
+  "method": "zip-download",
+  "source": {
+    "url": "https://www.spicerdesigns.com/templates/hair-salon",
+    "finalUrl": "https://www.spicerdesigns.com/downloads/hair-salon-template-html.zip",
+    "archiveSha256": "82ef0a6e0889282fca67fb74bf468206a17af0cf8423abae959082755d089de6",
+    "retrievedAt": "2026-10-08T20:05:52.859Z",
+    "license": "CC-BY-4.0",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/hero.webp",
+      "bytes": 73106,
+      "sha256": "3b3417cb6c3a4100d86a7cad06b79f8af039e7f37d78c3f5384dd401608fff10"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 26381,
+      "sha256": "5cbcda6e1b7cea904bdf764de76f232e0d7d3fc6ed2e17457cfc054dc092cf6c"
+    },
+    {
+      "path": "source/README.md",
+      "bytes": 2713,
+      "sha256": "14e65e619bdfdd1a0a37e3dcd95799a1420b67c2023b104f9cfcbd29e42586a2"
+    },
+    {
+      "path": "source/styles.css",
+      "bytes": 23396,
+      "sha256": "4df97d07476be39155732f782cda03c4a097946f0a0b64433fd854ae14d7bdf5"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.spicerdesigns.com/downloads/hair-salon-template-html.zip#LICENSE",
+      "reason": "unsupported-extension"
+    }
+  ],
+  "notes": "Downloaded the official HTML build (4 files, archive SHA-256 82ef0a6e0889282fca67fb74bf468206a17af0cf8423abae959082755d089de6). The template page footer also shows an MIT label; the retained LICENSE in rights/ records CC BY 4.0 with the footer attribution condition. Reconcile before any derivative publication.",
+  "digest": "228be70c2eb9e8b63bee34e3a9914fd76d6354569fa7a810ee8b5f1e37c669e4"
+}

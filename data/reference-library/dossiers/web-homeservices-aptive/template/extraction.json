@@ -1,0 +1,265 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-homeservices-aptive",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://aptivepestcontrol.com/",
+    "finalUrl": "https://aptivepestcontrol.com/",
+    "httpStatus": 200,
+    "pageTitle": "Effective Residential Pest Control Services | Aptive",
+    "retrievedAt": "2026-10-08T20:26:00.054Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 1115663,
+      "sha256": "3212f9bbf3fc56539b7815b2d96471a0d6a6ee962e97b7104b44bc8b9132b3c4"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 36577,
+      "sha256": "68e80784027ceb4c0100df1dbbd4c09501c80c727faa0e300937f1e139316923"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 1376,
+      "sha256": "5da21fc8af2588c40483b9e1dd839c226be53d59bc41a17ef297012a12b6ade7"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 2868,
+      "sha256": "c94fc45d3b55449e979af6d05995dfff43d21b8b18971acfece20cc9d25be1fc"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 1776,
+      "sha256": "de1e399b07289f3b0a8d35142e363e128124a1185770e214e25e58030dad48e5"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 3145,
+      "sha256": "7adaf08052c6a6a0f8a0d0055b4f191fd07389fe41c972b69573472b2ecb406a"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 7720,
+      "sha256": "ce5c84d78bc1a455c61ff95560cdd44079b33f79355e11bcef87e406128d8583"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 13399,
+      "sha256": "f2ddbf31fe79dc81771cc89e2be085c2ee6eae6858b6c47f93b44878ab222a11"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 2975,
+      "sha256": "297ec9b93f9a9745c643ee60a12f7808d06da60e2023489a9cc4f7350644c1c4"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 999,
+      "sha256": "76595886e40e3e5ff89fabd204158bb9de756d1d23d17333ce65203554580d81"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 1470,
+      "sha256": "abfd4f16966d61af891970b11fa668ec4b5ac12a5931220e5867dc2fb0b71b36"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 13677,
+      "sha256": "906ba97c9e3365be3f9b418f3d56349e0ec5c128d99b5134c0c586d5a4586f09"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 9038,
+      "sha256": "1431dcb3bb0737f91a4e458ab87c5e40353bedccd80c04a67d2bede205baa5f0"
+    },
+    {
+      "path": "source/styles/13.css",
+      "bytes": 108784,
+      "sha256": "6310f071a1e2fa9907f25daccd8293aa4698d605db2ad78bcbea54a258858795"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 36723,
+      "sha256": "809257d3130bb9d589cac69fb9cc38ed87b4dd6f03636e634b2c7b6d7de586d4"
+    },
+    {
+      "path": "source/styles/15.css",
+      "bytes": 13677,
+      "sha256": "906ba97c9e3365be3f9b418f3d56349e0ec5c128d99b5134c0c586d5a4586f09"
+    },
+    {
+      "path": "source/styles/16.css",
+      "bytes": 14140,
+      "sha256": "ecf39b705d89793e56ff82f60baa08ad365c053b9da4efb26ea61b84565ab1f2"
+    },
+    {
+      "path": "source/styles/17.css",
+      "bytes": 2063,
+      "sha256": "359c4bd2f6e2242ac4340c895e627323154c2a4b1ea961f42835714fe05d6bd7"
+    },
+    {
+      "path": "source/styles/18.css",
+      "bytes": 7425,
+      "sha256": "a86c9095a85556238c659ecd647cdaf602b90e2d540fa46b3570e63474aaefea"
+    },
+    {
+      "path": "source/styles/19.css",
+      "bytes": 79584,
+      "sha256": "a75d7649dde40a86502efc79f3e34fbf2f1d75fd066d5f70fae2f42052964d8e"
+    },
+    {
+      "path": "source/styles/20.css",
+      "bytes": 29095,
+      "sha256": "ac7c80a59f3c6a12354e7ca542b0a7b23c700da4aadaf9c29894457dafe542fb"
+    },
+    {
+      "path": "source/styles/22.css",
+      "bytes": 24054,
+      "sha256": "590bad690f290c1bc8ef4914b00d9910a8b4253eab228cc94a1ccfc099b99f00"
+    },
+    {
+      "path": "source/styles/23.css",
+      "bytes": 18956,
+      "sha256": "d319f8a32f7ee81021f3e5979331be8ba078fe92fd8e520eebbbb25504edf005"
+    },
+    {
+      "path": "source/styles/24.css",
+      "bytes": 10836,
+      "sha256": "f018d32e10cb0bae2d0a57c1deeeacaa7f2ae95299f44f3eed84b68bfc737c9a"
+    },
+    {
+      "path": "source/styles/25.css",
+      "bytes": 1776,
+      "sha256": "de1e399b07289f3b0a8d35142e363e128124a1185770e214e25e58030dad48e5"
+    },
+    {
+      "path": "source/styles/26.css",
+      "bytes": 1838,
+      "sha256": "1473a9d7fca9ac6f48df6934a2b01de8edd0bdbc12a704954d59131b520afa73"
+    },
+    {
+      "path": "source/styles/27.css",
+      "bytes": 86262,
+      "sha256": "cad8d0ee76526f644310bb1a2b96b1f9bdd6fc12c91548fb67469ad8d9bf66cf"
+    },
+    {
+      "path": "source/styles/28.css",
+      "bytes": 65,
+      "sha256": "61d78dd7041beea4ae04633431b90e4968d1043b3bc04ef2b152faa1947d44b6"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2025/08/aptive_pest_control_lockup-white.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2022/10/Union-63.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2022/10/Phone.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/04/aptive_logo-horizontal-snow.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/04/Logo-aptive-1.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/04/Stars.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/07/Frame-1000004682.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/07/Frame-1000004682-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/07/Frame-1000004686.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/07/Frame-1000004690.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/04/Icon.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/04/Icon-2.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/04/Icon-4.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/04/Icon-3.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/04/Icons-3.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/09/aptive-environmental-technician-consulting-homeowner-lawn.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/09/aptive-environmental-technician-consulting-homeowner-lawn-1280x960.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/09/aptive-environmental-technician-consulting-homeowner-lawn-980x735.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/09/aptive-environmental-technician-consulting-homeowner-lawn-480x360.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/04/Ants.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/05/Wasps.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/wp-content/uploads/2026/04/Spiders.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://aptivepestcontrol.com/",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bat.bing.com/action/0?ti=25037633&tm=gtm002&Ver=2&mid=87aceeb4-f3a2-448b-8699-a2ba15ce6b6a&bo=3&sid=71f97600c35611f192264be43dacd403&vid=71fa66c0c35611f18e21b3d739f729ea&vids=0&msclkid=N&pi=0&lg=en-US&sw=1440&sh=900&sc=24&nwd=1&tl=Effective%20Residential%20Pest%20Control%20Services%20%7C%20Aptive&p=https%3A%2F%2Faptivepestcontrol.com%2F&r=&lt=3099&pt=1791491142014,,,,,0,2,143,143,408,273,408,1160,1744,1165,2947,3094,3099,,,&pn=0,0&evt=pageLoad&sv=2&asc=G&cdb=AQAS&rn=893265",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://a4774510130364416.cdn.optimizely.com/client_storage/a4774510130364416.html",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 27 of 28 stylesheets retained. Stylesheet issues: https://aptivepestcontrol.com/wp-content/plugins/divi-modules-table-maker/extensions/divi-4/styles/style.min.css?ver=4.0.1 (empty-or-unreadable).",
+  "digest": "a3bbc7b1d0b4c23bf1e9bf2dd294e3dc097da9deb436fd04c160f9ed2992e4b6"
+}

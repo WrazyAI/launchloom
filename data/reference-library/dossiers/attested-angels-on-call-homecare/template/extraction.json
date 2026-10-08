@@ -1,0 +1,435 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "attested-angels-on-call-homecare",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://angelsoncallinc.com/",
+    "finalUrl": "https://angelsoncallinc.com/",
+    "httpStatus": 200,
+    "pageTitle": "Private Duty Services | Skilled Nursing | Angels On Call Inc.",
+    "retrievedAt": "2026-10-08T20:12:33.787Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 142181,
+      "sha256": "97c1b062751aa27cf1c1e398b4bce7fb2e09a7483dc1bcc789c47e5b55049f72"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 122541,
+      "sha256": "416dfabb1ba6878336a0cc23a509cc20cd2203ba0c9e31de37bd64410d18cb8f"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 10317,
+      "sha256": "e94d720449fd37c54620434749e46867be54d0ad27998a57dfe7e028c6dfd0aa"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 5788,
+      "sha256": "b698d7d63c8c236cda0499131978654fa884f24df6755f7b6909e5d784e096db"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 36633,
+      "sha256": "9ced39b38410c0b2392f079a7ae2540e321c15c4c800ba1184ecfd31c7a1389c"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 8420,
+      "sha256": "c519cee02ce3cf8f11d8337a7742348d35fd74cb2c12e7f9d2c79c86323223db"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 69220,
+      "sha256": "59e9af9669e2118d9e6dd7975c8cf1b401a7bff3d1c5431429c255f61bfd47eb"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 273,
+      "sha256": "3ea6e98d41a00d0c63f418bfdfd17e878b0c962e5f970fe13c1487cdb99bbeda"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 59004,
+      "sha256": "26a7e7b9d4bb9948771c126085b99fba6546af4399e6263e8a69a3e33f6271cb"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 48426,
+      "sha256": "1e8dcaec98f99c2b1b43ff8b8655680b69bbf150470b20ecbdd1cb45570a0587"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 58642,
+      "sha256": "64f297c515fca7ae03c407b39b9b86ef51c7621e0fec06556a5e87d8d4635ba0"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 714,
+      "sha256": "06a403636c35b31ba48fb3013e68ed82a59044bd72d9819ef43775b86c4afeae"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 235,
+      "sha256": "10f10045c99aaccac4aa93604c0a1c8a6eebd9a15d32778e67422a03d5be8737"
+    },
+    {
+      "path": "source/styles/13.css",
+      "bytes": 1078,
+      "sha256": "60ec5eacd7c8d4630f1ba547d93a8cabf572f5e0d85614a9eb0a0b92aa168dfb"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 52789,
+      "sha256": "8fe3fa119255adb5e0c12479331f9e092e85bcff56ab6ecc0510bfa2056b898d"
+    },
+    {
+      "path": "source/styles/15.css",
+      "bytes": 4858,
+      "sha256": "77f6bd054303b9a1f8ce449afda1e77b6a4d86617b8fd4b40bde2424300b0292"
+    },
+    {
+      "path": "source/styles/16.css",
+      "bytes": 88116,
+      "sha256": "48122532daa02b6f08454e557bfb0b372c02d7cc63f8ac0e9c60eed46bbd22ef"
+    },
+    {
+      "path": "source/styles/18.css",
+      "bytes": 40329,
+      "sha256": "33b3492b09631a21877dfe0fb17323bc5ea33f73e1aa2f88e6cdcbd180a5e751"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2017/05/AngelsfirstFinal_ff-01-768x343.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2017/05/AngelsfirstFinal_ff-01.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2017/05/AngelsfirstFinal_ff-01-300x134.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2017/05/AngelsfirstFinal_ff-01-1024x457.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Homepage-Redesign-April-2026-1536x269.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Homepage-Redesign-April-2026.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Homepage-Redesign-April-2026-300x53.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Homepage-Redesign-April-2026-1024x179.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Homepage-Redesign-April-2026-768x134.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-1-768x768.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-1-300x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-1-1024x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-1-150x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-1-75x75.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-2-768x768.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-2-300x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-2-1024x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-2-150x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-2-75x75.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-1-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-1-75x75.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-2-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-2-75x75.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-3.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-3-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-3-75x75.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-4.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-4-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-4-75x75.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-5.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-5-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Home-Icon-5-75x75.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-3-768x768.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-3-300x300.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-3-1024x1024.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-3-150x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Angels-Home-3-75x75.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Clinical-Leadership-768x171.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Clinical-Leadership.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Clinical-Leadership-300x67.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Clinical-Leadership-1024x228.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Clinical-Leadership-1536x341.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Experience-and-Outcomes-768x171.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Experience-and-Outcomes.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Experience-and-Outcomes-300x67.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Experience-and-Outcomes-1024x228.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Experience-and-Outcomes-1536x341.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Workforce-Training-Excellence-768x171.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Workforce-Training-Excellence.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Workforce-Training-Excellence-300x67.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Workforce-Training-Excellence-1024x228.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2026/04/Workforce-Training-Excellence-1536x341.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/09/HCP-logo-small.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/09/ny-small.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/07/Circle-Logo-75x75.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/07/Circle-Logo-150x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/07/facebook-icon-1-75x75.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/07/facebook-icon-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/07/facebook-icon-2-75x75.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/07/facebook-icon-2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/07/facebook-icon-5-75x75.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/07/facebook-icon-5.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/07/facebook-icon-4-75x75.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/07/facebook-icon-4.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/07/facebook-icon-3-75x75.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/07/facebook-icon-3.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/09/facebook.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/09/google.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/07/Untitled-120-x-40-px.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2018/09/glassdoor-hr.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bat.bing.com/action/0?ti=5797411&tm=gtm002&Ver=2&mid=cb67c4dd-738b-4cec-a81b-dc3a3d133892&bo=1&sid=928a9210c35411f1b3623325304ff1f8&vid=928aed00c35411f1bf4b054f5e3f544f&vids=1&msclkid=N&pi=0&lg=en-US&sw=1440&sh=900&sc=24&nwd=1&tl=Private%20Duty%20Services%20%7C%20Skilled%20Nursing%20%7C%20Angels%20On%20Call%20Inc.&p=https%3A%2F%2Fangelsoncallinc.com%2F&r=&lt=2255&evt=pageLoad&sv=2&cdb=AQAQ&rn=190921",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://angelsoncallinc.com/wp-content/uploads/2023/01/GettyImages-1198590033_AdobeCreativeCloudExpress.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/anchor?ar=1&k=6Lc7xu0pAAAAAIvklXt5Q_PfRczsAMDd4h1WOspq&co=aHR0cHM6Ly9hbmdlbHNvbmNhbGxpbmMuY29tOjQ0Mw..&hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&theme=light&size=normal&anchor-ms=20000&execute-ms=30000&cb=xxv4ifsvx1nx",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2997.9283610937837!2d-73.92331368457722!3d41.288663579273326!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c2c8db1dd351b1%3A0xaf13a99bee31068b!2s126%20Union%20Ave%2C%20Peekskill%2C%20NY%2010566!5e0!3m2!1sen!2sus!4v1619798070256!5m2!1sen!2sus",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/bframe?hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&k=6Lc7xu0pAAAAAIvklXt5Q_PfRczsAMDd4h1WOspq&bft=0dAFcWeA6gu1EAor8_xDW4L4aRPDQqSUEzOft7aXOdfY4yAWQXFR2oltBJIOrezil9NSwDRizyRFUmkZfkvgjCa5_8MXuFAep6Fw",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 17 of 18 stylesheets retained. Stylesheet issues: https://angelsoncallinc.com/wp-content/plugins/gravityforms/assets/css/dist/theme-components.min.css?ver=3.1.1 (empty-or-unreadable).",
+  "digest": "47f004c130add46756d914e12b7efb53397c987780e4b5574c20934ec4036533"
+}

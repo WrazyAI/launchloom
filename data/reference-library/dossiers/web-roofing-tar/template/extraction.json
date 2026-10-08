@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-roofing-tar",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://tarroofing.com/",
+    "finalUrl": "https://tarroofing.com/",
+    "httpStatus": 200,
+    "pageTitle": "Roofing Company Chicago IL | TAR Roofing",
+    "retrievedAt": "2026-10-08T20:35:58.949Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 110948,
+      "sha256": "2d031e066fe59561a07a05bed805bdbeb5bca9198cd241cd17ca27180f4b168d"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 3525,
+      "sha256": "33db461b5fe7d7dffa74aead9527f3f8f348c83b83798f580f328d393afdadc8"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 47160,
+      "sha256": "dd14ede0a6dafdb45bdb432df781a2f236f2ac36ecb5db152140d8ffa1957121"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 90679,
+      "sha256": "3c21dae42a0626ab658f2a4ab66c055d3e30ec25b0a03952c12c4b818e3ff653"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 232224,
+      "sha256": "c7ed2416a6aa78157ea2d91133b41bef690f02af82a25ff5886c2df971cbe2e0"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 208711,
+      "sha256": "37b271915e8fa90d8e44ecceb18faf63aa00c02e09764417af02d35de04265de"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 8118,
+      "sha256": "bd9f96242ce02ab4b7af9fcb26a6121abe54ed152d2fa1cff9280f87a3e1cc79"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://tarroofing.com/wp-content/uploads/2022/03/logo-300x159.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://tarroofing.com/wp-content/uploads/2022/03/logo-white-300x159.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://sidebar.bugherd.com/sidebar/embed_html?apikey=znxuwlbztx2lfzd68xruow",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "about:blank",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 6 of 6 stylesheets retained. Page errors observed: 1.",
+  "digest": "04dfea7de03b2d06ea6f917a7e3d4a9c7124614f1ba9c98b47db3545b2809a45"
+}

@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-auto-repair-ade-auto-repairs",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://adeautorepairs.com/",
+    "finalUrl": "https://adeautorepairs.com/",
+    "httpStatus": 200,
+    "pageTitle": "Car Servicing, MOT & Repairs in Shadwell, East London | ADE Auto Repairs",
+    "retrievedAt": "2026-10-08T20:21:45.526Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 255868,
+      "sha256": "793925ca8b1c1267d0b25eb49526f529d71bdd963defc51be8ead484eac019ee"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 100892,
+      "sha256": "01d9ebc7f59c0c3ed95d6ca6a83436130b22ad949cd578be0e24650cfb88d7da"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 18911,
+      "sha256": "2d751bd578504d696e03783f8e0fe5f9ef7b753a879ec75e87362cc8c57c83ab"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://adeautorepairs.com/assets/logo-BOGnamm5.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/garage-hero-DhCugvWK.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/videos/video_12_poster.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/garage1-BPFBgZQy.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/ade_bmw_lift--IIyzIy0.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/ade_paint_spray-zlofyOee.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/ade_bodywork_prep-C4_8gOa6.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/ade_vw_paint-CA95dRrz.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/ade_honda_lift-_8W7UXgL.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/ade_underbody-HjN_BCPS.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/ade_red_wheel-DuoVWbQk.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/ade_sprinter_paint-BGyADwOH.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/ade_underside_inspect-CcOgXF1k.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/ade_award_2018-bVi8zcYw.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/gar3-SazKPKFm.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/garage2-Dob8RRq9.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/gar4-DW2omEVy.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/assets/gar5-BtAJwK6p.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/videos/video_1_poster.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/videos/video_2_poster.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/videos/video_3_poster.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://adeautorepairs.com/videos/video_4_poster.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/maps?q=201%20Barnardo%20St%2C%20London%20E1%200LL&output=embed",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "38ad46c9568af25b16fa879fdb1cec3da61e05a20e418bba38c5ae8b53533e8d"
+}

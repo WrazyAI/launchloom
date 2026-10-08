@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "html5up-home-care-story",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://html5up.net/story",
+    "repository": "https://github.com/zce/html5up",
+    "revision": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "story/",
+    "retrievedAt": "2026-10-08T20:05:49.213Z",
+    "license": "CC-BY-3.0",
+    "licenseEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/font-awesome.min.css",
+      "bytes": 31000,
+      "sha256": "799aeb25cc0373fdee0e1b1db7ad6c2f6a0e058dfadaa3379689f583213190bd"
+    },
+    {
+      "path": "source/assets/css/main.css",
+      "bytes": 189544,
+      "sha256": "a788f2f16a29dcb46fbdc97bb36d4ac46f76b329081e0ea7f6b3991867ee941a"
+    },
+    {
+      "path": "source/assets/css/noscript.css",
+      "bytes": 8114,
+      "sha256": "57fd7a42b955819c60a65773a9e2bd88f258d5cd9281b9561eee635e01c41e27"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.eot",
+      "bytes": 165742,
+      "sha256": "7bfcab6db99d5cfbf1705ca0536ddc78585432cc5fa41bbd7ad0f009033b2979"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.svg",
+      "bytes": 444379,
+      "sha256": "ad6157926c1622ba4e1d03d478f1541368524bfc46f51e42fe0d945f7ef323e4"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.ttf",
+      "bytes": 165548,
+      "sha256": "aa58f33f239a0fb02f5c7a6c45c043d7a9ac9a093335806694ecd6d4edc0d6a8"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.woff",
+      "bytes": 98024,
+      "sha256": "ba0c59deb5450f5cb41b3f93609ee2d0d995415877ddfa223e8a8a7533474f07"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.woff2",
+      "bytes": 77160,
+      "sha256": "2adefcbc041e7d18fcf2d417879dc5a09997aa64d675b7a3c4b6ce33da13f3fe"
+    },
+    {
+      "path": "source/assets/fonts/FontAwesome.otf",
+      "bytes": 134808,
+      "sha256": "444dd4366615ffc4a16d012b2fa90137065d3ccb410fa6fd5e4ddd7b5e4ffcd5"
+    },
+    {
+      "path": "source/assets/js/breakpoints.min.js",
+      "bytes": 2439,
+      "sha256": "309febcd6d6e0cf092201532215f03a6a9f30b30f26203272a4861d704e7cd52"
+    },
+    {
+      "path": "source/assets/js/browser.min.js",
+      "bytes": 1851,
+      "sha256": "87910d5ed0053d90caf83230a2f1811d8679815da01f7bdec7548e776d7f04c4"
+    },
+    {
+      "path": "source/assets/js/demo.js",
+      "bytes": 15566,
+      "sha256": "5923af088e137ababf1e0d472f5613544eeb6997e5b25665f1f727bb1ab44ed0"
+    },
+    {
+      "path": "source/assets/js/jquery.min.js",
+      "bytes": 86927,
+      "sha256": "160a426ff2894252cd7cebbdd6d6b7da8fcd319c65b70468f10b6690c45d02ef"
+    },
+    {
+      "path": "source/assets/js/jquery.scrollex.min.js",
+      "bytes": 2257,
+      "sha256": "fc25b75fb3fc8b42756413be387e0d7a602813125283d2384551961d73ea784e"
+    },
+    {
+      "path": "source/assets/js/jquery.scrolly.min.js",
+      "bytes": 831,
+      "sha256": "8b6571ea2c3631ff50bb4b96e7f9081c6e33ebaadef9cb2ca5955d5e0b625a02"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 7568,
+      "sha256": "0974de5af9430372940d400da8d513bcf43ba692f2c30218c52708075382e548"
+    },
+    {
+      "path": "source/assets/js/util.js",
+      "bytes": 12433,
+      "sha256": "c2e1e72b0de356f6ce184e3af4fa8ab6590a2581162905a27d77886b2d960e00"
+    },
+    {
+      "path": "source/assets/sass/base/_page.scss",
+      "bytes": 983,
+      "sha256": "130e5bb40588398ee7039cbd885fc47744d241ba766e472932c183cbe84dd951"
+    },
+    {
+      "path": "source/assets/sass/base/_reset.scss",
+      "bytes": 1565,
+      "sha256": "cd1d627c14d7351f9f856d74c5e5424df17fdab41c0a9319ad95cceb5acb9463"
+    },
+    {
+      "path": "source/assets/sass/base/_typography.scss",
+      "bytes": 3559,
+      "sha256": "100b3dfc08b67a1a8297ea1bfc1c348e482e615d002a2ce1e47f9aa0edc9f55c"
+    },
+    {
+      "path": "source/assets/sass/components/_actions.scss",
+      "bytes": 1784,
+      "sha256": "667a67184cf7878bb6743162938fc5c65bbd95cbde9afbbf7406a14077ed811e"
+    },
+    {
+      "path": "source/assets/sass/components/_banner.scss",
+      "bytes": 20065,
+      "sha256": "80ef5f5dc3c343cac6e0cf821f36f8a64d18ea327e2b166210e8ac071c779bc7"
+    },
+    {
+      "path": "source/assets/sass/components/_box.scss",
+      "bytes": 630,
+      "sha256": "630dcc240b9a75cfc6f1573fb9d1b507f6f1b8051de267f67688e97810a47a66"
+    },
+    {
+      "path": "source/assets/sass/components/_button.scss",
+      "bytes": 2392,
+      "sha256": "f304dc890be13af1d637d7b4ef1f06577ce52ecab237ab92a68e5a9b254583dc"
+    },
+    {
+      "path": "source/assets/sass/components/_form.scss",
+      "bytes": 5937,
+      "sha256": "aa7981c42a762a88159a636efe4eea3f1bcdd0e29bed2047eabe11bb3de245ef"
+    },
+    {
+      "path": "source/assets/sass/components/_gallery.scss",
+      "bytes": 12373,
+      "sha256": "cb7eac5a2d9802ad7969cca6e7aefd844ed7f4dc7073c1b30402c3f8710e1164"
+    },
+    {
+      "path": "source/assets/sass/components/_icon.scss",
+      "bytes": 1505,
+      "sha256": "dd68433da57fa6fb17aacbecb897602708f4f8f731906efbe59caf014ff1e6de"
+    },
+    {
+      "path": "source/assets/sass/components/_icons.scss",
+      "bytes": 362,
+      "sha256": "1ed28a0411ecc460c69167581199aeae069ba9f8224f1d79518fd6e0b41468a5"
+    },
+    {
+      "path": "source/assets/sass/components/_image.scss",
+      "bytes": 905,
+      "sha256": "924e0df545e577955e8d141ea290905a9875e08c892c95824f36ca8cef964586"
+    },
+    {
+      "path": "source/assets/sass/components/_index.scss",
+      "bytes": 1073,
+      "sha256": "0adf28f240f8021b43081dd4b06792e9170c517c4ef6356a3f3cd1b088c3e984"
+    },
+    {
+      "path": "source/assets/sass/components/_items.scss",
+      "bytes": 7791,
+      "sha256": "b1b2f8ea3fc3819cf92550413efe604f7fe74aa6505ce746cbd0214604d36c85"
+    },
+    {
+      "path": "source/assets/sass/components/_list.scss",
+      "bytes": 1251,
+      "sha256": "52e72e03d7e7eb4c69f6a92bdf03e2c6e9f775fe9f4bd68ae7466f060201ae84"
+    },
+    {
+      "path": "source/assets/sass/components/_row.scss",
+      "bytes": 706,
+      "sha256": "4c04485e945e296ee99647f76a21087d4eb287c87909b3be1b54f65d02ee25c8"
+    },
+    {
+      "path": "source/assets/sass/components/_section.scss",
+      "bytes": 730,
+      "sha256": "40951507bc6b7e95b6b1c941cb5943154275c36009f31dd65353d641dcc48119"
+    },
+    {
+      "path": "source/assets/sass/components/_spotlight.scss",
+      "bytes": 20700,
+      "sha256": "cb06f394d4bf0690911fe4cac91c78a4b9cfe0eca8f5b0e805a3914268f70711"
+    },
+    {
+      "path": "source/assets/sass/components/_table.scss",
+      "bytes": 2129,
+      "sha256": "9bb23501fad15a492e995c44ce3363dc8c979676d6d1a67745011fc44ec94518"
+    },
+    {
+      "path": "source/assets/sass/components/_wrapper.scss",
+      "bytes": 2601,
+      "sha256": "8ceb563ef111303c1380cb8d7b94bb187d54c8394661a71b0ca3a131f64a8db7"
+    },
+    {
+      "path": "source/assets/sass/layout/_wrapper.scss",
+      "bytes": 927,
+      "sha256": "002683ad7e9cf7cfb152295764f9a76db9c1d3bb974b391e09ab3b2d8c0810ef"
+    },
+    {
+      "path": "source/assets/sass/libs/_breakpoints.scss",
+      "bytes": 4593,
+      "sha256": "69a8486c9bdc0b14358418cae6c4829b57fb0b6684634e1e72f5a2a27f732101"
+    },
+    {
+      "path": "source/assets/sass/libs/_functions.scss",
+      "bytes": 1957,
+      "sha256": "fc832d9ccc89117bb05beed1e5fb328e7f909845d2220a1060375142f51b7e5d"
+    },
+    {
+      "path": "source/assets/sass/libs/_html-grid.scss",
+      "bytes": 2840,
+      "sha256": "423fd36f530e34b329996d06b0db7c8543fc2034d0c12d479246fc0e498cc662"
+    },
+    {
+      "path": "source/assets/sass/libs/_mixins.scss",
+      "bytes": 1840,
+      "sha256": "1eadca47c82395e010637919c7684793711009b6413ebb3a087f7471a4e8bf41"
+    },
+    {
+      "path": "source/assets/sass/libs/_vars.scss",
+      "bytes": 1595,
+      "sha256": "5682e4832d5f34c469373e9ddef9a1d2e9e9675d29a24645a1489d87e32a6ff5"
+    },
+    {
+      "path": "source/assets/sass/libs/_vendor.scss",
+      "bytes": 7356,
+      "sha256": "272b2a31ba214fbe7293e24c9e925c3965220c144d97fe9846ba095d7fce14d6"
+    },
+    {
+      "path": "source/assets/sass/main.scss",
+      "bytes": 5483,
+      "sha256": "6ceb16d1ae282054539821fb7fe5dfc58681bf4ff549b352afac2358a68bb1df"
+    },
+    {
+      "path": "source/assets/sass/noscript.scss",
+      "bytes": 3721,
+      "sha256": "2ace4f5d814c47d9d9c93a3fa13a9eac979db58cbe87c603f942d67eae4f1a9d"
+    },
+    {
+      "path": "source/images/banner.jpg",
+      "bytes": 34992,
+      "sha256": "06a9228aa777386e1d1eb6ad0ca0833a321ad87537087ed61b428d8da9a4d44e"
+    },
+    {
+      "path": "source/images/gallery/fulls/01.jpg",
+      "bytes": 9363,
+      "sha256": "f0c57c940b0e43ad3a4cac2cf7993bbc3c7b1818fac4778cee464587385ff2a0"
+    },
+    {
+      "path": "source/images/gallery/fulls/02.jpg",
+      "bytes": 11460,
+      "sha256": "87f2178371f121e5f8aba0d93cecf2dbc1baf6a6def30f95beab57c2e3fa5bb0"
+    },
+    {
+      "path": "source/images/gallery/fulls/03.jpg",
+      "bytes": 10635,
+      "sha256": "b70b75f87df597c331fc9a913164448a7a08dd8c8da36daa83dc634c552571f6"
+    },
+    {
+      "path": "source/images/gallery/fulls/04.jpg",
+      "bytes": 10148,
+      "sha256": "4ff1305a002485333cb73cce0d81e2816f1f170ed461811067f2de7d9225b03f"
+    },
+    {
+      "path": "source/images/gallery/fulls/05.jpg",
+      "bytes": 10016,
+      "sha256": "6cbd190979b834661e72e9b9629ff230117c9e82efd375cfb036f3ed50e6bb55"
+    },
+    {
+      "path": "source/images/gallery/fulls/06.jpg",
+      "bytes": 9647,
+      "sha256": "0c920f6b82bb55d6f9b5582722fb6d9827a98f5ebcccb9844ce31ebde3c1fafc"
+    },
+    {
+      "path": "source/images/gallery/fulls/07.jpg",
+      "bytes": 9991,
+      "sha256": "66d912fca4ea009dccea05dee973200460ccc4faebdcd9be65231bcabef9f914"
+    },
+    {
+      "path": "source/images/gallery/fulls/08.jpg",
+      "bytes": 9891,
+      "sha256": "c95cc88dba4c03273b1d3ad3cd33a0931afa8c84ec93e4e050fae364535fc2bd"
+    },
+    {
+      "path": "source/images/gallery/fulls/09.jpg",
+      "bytes": 10615,
+      "sha256": "fd7bafb9c8456e416edaf607c15ea66392037cdaf0626cc0d10b24088825eb85"
+    },
+    {
+      "path": "source/images/gallery/fulls/10.jpg",
+      "bytes": 12137,
+      "sha256": "912082fc2680d1f3c522d20fed1137c98352888703080a56fa05f34b3ccbf38a"
+    },
+    {
+      "path": "source/images/gallery/fulls/11.jpg",
+      "bytes": 12222,
+      "sha256": "0daa90c3ce0ba54a6e81355732f39ee3805e5c9f103f709fa513f3e4335f1625"
+    },
+    {
+      "path": "source/images/gallery/fulls/12.jpg",
+      "bytes": 12752,
+      "sha256": "203171098d7ebc4eefdabb4b4b478292cd25fdccc40abbfe0e2020e3cca50c5a"
+    },
+    {
+      "path": "source/images/gallery/thumbs/01.jpg",
+      "bytes": 3196,
+      "sha256": "af6abd016cedb93112119606fa7a4e8842eea4453c832fde81801d19b9f41318"
+    },
+    {
+      "path": "source/images/gallery/thumbs/02.jpg",
+      "bytes": 3948,
+      "sha256": "49d43f9b91caba62eca112aa2932370a18a92128ad5a49f7d8b0dd20d807c6f4"
+    },
+    {
+      "path": "source/images/gallery/thumbs/03.jpg",
+      "bytes": 3378,
+      "sha256": "91952ba0fd6e6551cb9aa216bc90f7beefdef99d61f99f85c646e7d97c44d59c"
+    },
+    {
+      "path": "source/images/gallery/thumbs/04.jpg",
+      "bytes": 3476,
+      "sha256": "c4ced32b9851b21bcfef91cb8fcb27a934e8c7f918a0c6598cccf35960bdabbe"
+    },
+    {
+      "path": "source/images/gallery/thumbs/05.jpg",
+      "bytes": 3310,
+      "sha256": "aa354bd131f4a67b18a507a629d8cb4212337f056e4585048678381cfd150123"
+    },
+    {
+      "path": "source/images/gallery/thumbs/06.jpg",
+      "bytes": 3019,
+      "sha256": "9d5af40b87b193235bfd2b59acab30d0ecece8afe9a462bbf93533ab489ad7ce"
+    },
+    {
+      "path": "source/images/gallery/thumbs/07.jpg",
+      "bytes": 3667,
+      "sha256": "47b94cef9bae61de4c5a34258d332b27eda7554d26ffdb6716264fe9a8bdbc7d"
+    },
+    {
+      "path": "source/images/gallery/thumbs/08.jpg",
+      "bytes": 3405,
+      "sha256": "406df3e678cfe13a7fddd5052d90e71345fe91fa895631e5cf6ad80cdef1f05c"
+    },
+    {
+      "path": "source/images/gallery/thumbs/09.jpg",
+      "bytes": 3612,
+      "sha256": "dc47f2c44860b7da45ca837a85ea96533097127b9df84970daf8b321f1dbea06"
+    },
+    {
+      "path": "source/images/gallery/thumbs/10.jpg",
+      "bytes": 4301,
+      "sha256": "96bd2ae3a9615864e57bbcbe4baec60af4e6ef7e95a48cbbf7d556c69714aa5f"
+    },
+    {
+      "path": "source/images/gallery/thumbs/11.jpg",
+      "bytes": 4141,
+      "sha256": "9018f9c18021dfefc1a91cc2d330c039656b7cb8bbb70e969f094a023f778072"
+    },
+    {
+      "path": "source/images/gallery/thumbs/12.jpg",
+      "bytes": 4342,
+      "sha256": "af19e9b98f7e1f833d002cbf8d00f17bf8adec56e9726c21cc6fea0ca9bfce29"
+    },
+    {
+      "path": "source/images/pic01.jpg",
+      "bytes": 6002,
+      "sha256": "da4c34a6c71b4981ce1f1ea523154a8421250af156ebb6f38ef61a305f96664a"
+    },
+    {
+      "path": "source/images/pic02.jpg",
+      "bytes": 7726,
+      "sha256": "6dcc013f96d23ba11c0971431de28c139fd35d1dcd9a3542bdbf0b3ad7010419"
+    },
+    {
+      "path": "source/images/pic03.jpg",
+      "bytes": 7743,
+      "sha256": "efc6ef2878b54aced5caaf122045bd791ff2d0929cc0fc209441652f4ef29db4"
+    },
+    {
+      "path": "source/images/spotlight01.jpg",
+      "bytes": 30996,
+      "sha256": "e6fd12ac7fe80634e8252ae4e15fc700d6c225c00f07e7886bd490ba7152843a"
+    },
+    {
+      "path": "source/images/spotlight02.jpg",
+      "bytes": 40215,
+      "sha256": "432637c7f036e0bb2be72b2a3f9b572f3cae0a95aa38cdc9969a5e16d1286e7d"
+    },
+    {
+      "path": "source/images/spotlight03.jpg",
+      "bytes": 35532,
+      "sha256": "4b780b55d7bcab6e34ad3d08e34fa561f40e7936960357528cca6f6772379585"
+    },
+    {
+      "path": "source/index-demo.html",
+      "bytes": 109507,
+      "sha256": "89ca72c80a364de58048b41e7cbd15813ca486274d5068247699e78658b2d0d8"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 15955,
+      "sha256": "648fd901d8daff5ce4b33b4c31dbb7ddc9ec2c11edf4227fd7a3d6cc1e291ede"
+    },
+    {
+      "path": "source/LICENSE.txt",
+      "bytes": 17128,
+      "sha256": "d7b98629668e4968281c7083336bc292ae55e2ca3a5469072b9657dd2c1a634e"
+    },
+    {
+      "path": "source/README.txt",
+      "bytes": 1217,
+      "sha256": "8e15a01c628fb936d76e8446ae7fda6f864727e7f4ec7760143b78f14dbabd09"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Fetched 81 files from the pinned repository at f32c95cd40e42659857e2318b6deb1f6be43da5d.",
+  "digest": "95475a4b3e1fcb95758f97aad439771c1b96ccbe8e6187cc24dc6c0131530adb"
+}

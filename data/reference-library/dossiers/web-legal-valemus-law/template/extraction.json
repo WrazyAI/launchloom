@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-legal-valemus-law",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.valemuslaw.com/",
+    "finalUrl": "https://www.valemuslaw.com/",
+    "httpStatus": 200,
+    "pageTitle": "Business and Family Solicitors - Independent Legal Advice London, UK - Valemus Law",
+    "retrievedAt": "2026-10-08T20:29:47.205Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 110689,
+      "sha256": "7a69ad1fe5286ceed719233cb95f0cd8d44327afa65a7655a4ab00b5e265d850"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 15480,
+      "sha256": "4dae5e9a2c50331cb85c824618caa75230d98d6d4a705b4c02ffef2703d2b218"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 3106,
+      "sha256": "fbe820b6140ad28e86f34ffae507d807cf591a22697a05b71958f2014e96a9e4"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 27203,
+      "sha256": "3b0b378450cc44879557fe44a4a77f41c312fe8d9dfc3b19860bcfc8724613c2"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 33730,
+      "sha256": "c4df613c5f084f91019a548ee48a38569dad8ce046d3bb7d2c97f2a5be477203"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 8064,
+      "sha256": "3a1fb13a37375360a4e8b7725fb3a2fc085cb5fd3abe9750d5549c89abd08264"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 1243,
+      "sha256": "1e611c9caf18c0174ade0c93a3ba7ed3e382073ba7eafc14991eda5edf59e433"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 1421695,
+      "sha256": "8dc3908a946ac934a1d10dabb37dc51c102bb9f2b02a05fa878ccd7011259df1"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/03/Header-logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2021/02/gavel.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2021/02/aries-icon3.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2021/02/people.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/03/practice.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/03/practice-200x125.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/03/practice-400x250.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/03/practice-600x375.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/11/tim-gouw-bwki71ap-y8-unsplash-800x534.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/11/tim-gouw-bwki71ap-y8-unsplash-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/11/tim-gouw-bwki71ap-y8-unsplash-200x134.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/11/tim-gouw-bwki71ap-y8-unsplash-400x267.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/11/tim-gouw-bwki71ap-y8-unsplash-600x401.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/11/tim-gouw-bwki71ap-y8-unsplash-1200x802.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/11/tim-gouw-bwki71ap-y8-unsplash.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/07/JULIA-CLULEY.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/07/JULIA-CLULEY-200x111.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/05/JOANNA-ABRAHAMS.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/05/JOANNA-ABRAHAMS-200x111.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.valemuslaw.com/wp-content/uploads/2022/03/Footer-logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.yoshki.com/iframe/55845r.html",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 7 of 7 stylesheets retained.",
+  "digest": "baf8a834d97f5be042c5733c2aea7f02ec0222a50a79c01fb1b91b6274f562fd"
+}

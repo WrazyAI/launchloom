@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-dental-gartside-street",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://gartsidestreetdental.com/",
+    "finalUrl": "https://gartsidestreetdental.com/",
+    "httpStatus": 200,
+    "pageTitle": "Gartside St Dental Lounge | Private Dentist in Spinningfields, Manchester",
+    "retrievedAt": "2026-10-08T20:23:47.628Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 106528,
+      "sha256": "829f1ab5ebc1ae25a5fb33eda38bd42563b0e3df587c2cfef4c2bcae40bcd0c6"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 76760,
+      "sha256": "6351ec2ba111460a0f2a55b010c3d738785a579f5d88e7829ac1424f11b996c4"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://gartsidestreetdental.com/assets/logomark.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/hero_main_v2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/hexas.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/photo-nilesh.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/signature-nilesh.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/marble.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/interior-photo-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/interior-photo-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/interior-photo-3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/interior-photo-4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/interior-photo-5.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/interior-photo-6.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/interior-photo-7.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/interior-photo-8.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/interior-photo-9.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/interior-photo-10.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/interior-photo-11.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/interior-photo-12.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/icons/toothbrush.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/icons/straightening.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/icons/smile.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/icons/implant.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/icons/nervous.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/icons/emergency.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/photos/interior-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/ic_google.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/ic_star.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/logos/home-logo-1.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/logos/home-logo-2.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/logos/home-logo-3.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/logos/home-logo-4.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://gartsidestreetdental.com/assets/logos/home-logo-5.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fast.wistia.net/embed/iframe/jamdcmy6y8?seo=true&videoFoam=true",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "46f53c83d080fd63f990d8bd8a458a06193abf44fade4e9122ef8b89494718da"
+}

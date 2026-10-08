@@ -1,0 +1,225 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-accounting-goodman-jones",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.goodmanjones.com/",
+    "finalUrl": "https://www.goodmanjones.com/",
+    "httpStatus": 200,
+    "pageTitle": "Goodman Jones - Chartered Accountants & Business Advisors London",
+    "retrievedAt": "2026-10-08T20:09:44.481Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 121512,
+      "sha256": "81b42ca97025a308456b9da73663d5637a0e1c6aa5fa69bd7ccbb5f8d6ec0658"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 73890,
+      "sha256": "74005d7c17d4a02f2f25404ec0655d9bc2fdaa53166874c87d7b7eec69d9088a"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 19008,
+      "sha256": "8f9d7a6e75d3e584926f3401ebbd8731516d648dd7ba5fe2d568d9e785061129"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 43159,
+      "sha256": "95bfb66e22d717fd50e86fdc337a093301a28231a586f230ad773b8341a9ab7c"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 90731,
+      "sha256": "51864bcc0490e66964086a6e970d24feff86d49d051dd94311b80d0f7aad33ca"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 5489,
+      "sha256": "cac104e04f8132bca7069861bde40880eb78e060ffd90bf084f41f224448bfd4"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 1276,
+      "sha256": "e4f03158a8b9b8dfbf364a7ba1e423f5b85ff2a9ed366f89f193ddd18e24ddf8"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 58129,
+      "sha256": "3c770e90f98eb21b0c042fafb49755af93306fbaf42e449524f94fae9fc83295"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.goodmanjones.com/public/images/VXxA8/Goodman-Jones-gold-white-v2.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/_eIjP/crop_and_zoom_978x650_140x65_5815x3865/gj-office-logo-light-on.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/_eIjP/crop_and_zoom_489x325_140x65_5815x3865/gj-office-logo-light-on.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/-1j8z/C%26C-logo-white.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/sLMMf/84_100/logo-klh.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/sLMMf/42_50/logo-klh.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/UYn6A/fc-logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/yRH-x/crop_and_zoom_1400x1380_466x0_1947x1920/evelyn-paris-QR_vT8_hBZM-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/yRH-x/crop_and_zoom_700x690_466x0_1947x1920/evelyn-paris-QR_vT8_hBZM-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/0-0fc/crop_and_zoom_1400x532_1685x1281_4315x1639/nick-fewings-SoqG9RWd_FA-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/0-0fc/crop_and_zoom_700x266_1685x1281_4315x1639/nick-fewings-SoqG9RWd_FA-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/2TWQi/crop_and_zoom_1400x532_266x1293_4321x1642/tierra-mallorca-rgJ1J8SDEAY-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/2TWQi/crop_and_zoom_700x266_266x1293_4321x1642/tierra-mallorca-rgJ1J8SDEAY-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/MZxFD/147_55/logo-ICAEW.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/MZxFD/294_110/logo-ICAEW.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/0usEo/logo-GMNI.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/P_p4s/78_66/cep.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/P_p4s/156_132/cep.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/Du_PG/134_72/logo-IASME.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/Du_PG/268_144/logo-IASME.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/public/images/SIzeH/Goodman-Jones-white.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/zenario_custom/skins/goodmanjones-2026/videos/boardroom-team-meeting.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/zenario_custom/skins/goodmanjones-2026/videos/london-landscape.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/zenario_custom/skins/goodmanjones-2026/videos/manchester-aerial-view.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/zenario_custom/skins/goodmanjones-2026/videos/man-daughter-dog-jet.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/zenario_custom/skins/goodmanjones-2026/videos/people-on-beach-collecting-rubbish.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.goodmanjones.com/zenario_custom/skins/goodmanjones-2026/videos/teamwork-man-woman-laptop-office.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/_eIjP/crop_and_zoom_978x650_140x65_5815x3865/gj-office-logo-light-on.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/sLMMf/84_100/logo-klh.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/yRH-x/crop_and_zoom_200x130_0x24_2880x1872/evelyn-paris-QR_vT8_hBZM-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/yRH-x/crop_and_zoom_400x260_0x24_2880x1872/evelyn-paris-QR_vT8_hBZM-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/yRH-x/crop_and_zoom_1400x1380_466x0_1947x1920/evelyn-paris-QR_vT8_hBZM-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/0-0fc/crop_and_zoom_200x130_0x50_6000x3900/nick-fewings-SoqG9RWd_FA-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/0-0fc/crop_and_zoom_400x260_0x50_6000x3900/nick-fewings-SoqG9RWd_FA-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/0-0fc/crop_and_zoom_1400x532_1685x1281_4315x1639/nick-fewings-SoqG9RWd_FA-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/2TWQi/crop_and_zoom_200x130_5x232_4573x2973/tierra-mallorca-rgJ1J8SDEAY-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/2TWQi/crop_and_zoom_400x260_5x232_4573x2973/tierra-mallorca-rgJ1J8SDEAY-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/2TWQi/crop_and_zoom_1400x532_266x1293_4321x1642/tierra-mallorca-rgJ1J8SDEAY-unsplash.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "public/images/SIzeH/Goodman-Jones-white.svg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 7 of 7 stylesheets retained.",
+  "digest": "0dca306897822ce9d5b10371e7cdadf7303ebd1b77f1096e710331c9f4eb52db"
+}

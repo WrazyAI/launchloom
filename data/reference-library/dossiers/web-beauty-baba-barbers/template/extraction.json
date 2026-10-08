@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-beauty-baba-barbers",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.bababarbers.com/",
+    "finalUrl": "https://www.bababarbers.com/",
+    "httpStatus": 200,
+    "pageTitle": "Baba Barbers | Modern Turkish Barbershop · Kingsland Road London E2",
+    "retrievedAt": "2026-10-08T20:23:00.420Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 147392,
+      "sha256": "f79f79abfd7b90da74d16dfcbb48226efb6547ee760f24cec5cedbeabb6d9d80"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 16771,
+      "sha256": "b1d88f1e0c4c7343832acb6c30dcf901209d79b27c0ffd13cc1dc86bef362fb3"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 696,
+      "sha256": "84e6c428af7734e1919aec533df0b0f8a140fd9dad1eab068ab33d653994bb5a"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 14806,
+      "sha256": "a7837102824184820dfa198d1ebcd109ff6d0ff9a2672a074b9a1b4d147d04c6"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.bababarbers.com/logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/ottoman/ottoman_barbers.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/ottoman/old_turkish_barber.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/ottoman/turkish_people_old_picture.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/practice/hot_towel_sleeping.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/practice/how_towel_face.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/practice/wetting_face.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/practice/mud_mask.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/practice/threading.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/inside/inside_with_chairs.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/inside/mirrors.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/inside/barbers_smiling.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/inside/turkish_tea.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/inside/people.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/inside/couch.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/inside/sitting_down.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/clients/results1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/clients/results2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/clients/results3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/clients/results5.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/clients/results6.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/clients/results7.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/about/three_brothers.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/about/baba_their_dad.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/about/outside.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/about/brother_1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/about/brother_2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/about/brother_3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.bababarbers.com/practice/flaming_face.mp4",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "c77f89646643052b0e7ca85726415b4b13eb83b0dcfbb1d9416fd5a0a1a45617"
+}

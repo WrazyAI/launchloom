@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "trades-field-report",
+  "status": "extracted",
+  "method": "owned-artifact",
+  "source": {
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/trades-field-report",
+    "artifactPath": "design-family-demos/studio-minimal",
+    "generator": "scripts/build-design-family-demos.mjs",
+    "retrievedAt": "2026-10-08T20:06:10.056Z",
+    "license": "owned",
+    "attestationPath": null
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/_astro/Footer.C67EIklv.css",
+      "bytes": 34822,
+      "sha256": "79d93918cd13f5629673311c93ae31e3ca0fe4f0bc316b1f29381074638ef3f8"
+    },
+    {
+      "path": "source/_astro/index.IEDAeAGZ.css",
+      "bytes": 14532,
+      "sha256": "8c7c91f3d215cdf44d4c602e346cf387a6b145208462e724c53906c8c9cbfc2d"
+    },
+    {
+      "path": "source/images/packs/professional-services-advisory-v1.png",
+      "bytes": 1854057,
+      "sha256": "05ac63dadaa171f14f340e4b7158bf3bd81c462c41d9f277a89f2305b5734b3b"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 31357,
+      "sha256": "d256e06f21720c630ad5cb0a44761ade11ef7028205ef55755fe58975dfe5082"
+    },
+    {
+      "path": "source/locations/fremont/index.html",
+      "bytes": 29096,
+      "sha256": "422534d5a86759a41c554feed3f7b6119ffae36b0a43579cdd918e9bc61de87c"
+    },
+    {
+      "path": "source/locations/newark/index.html",
+      "bytes": 29064,
+      "sha256": "d05d8e2774d8243570c99c6af64a63e94b215eeb52b68d281de52302e7c54b3a"
+    },
+    {
+      "path": "source/locations/union-city/index.html",
+      "bytes": 29131,
+      "sha256": "4c8cbbe609f35547d8f22a16c86779d5dbae3c68fb33462a4c523bc69fd14094"
+    },
+    {
+      "path": "source/services/garage-door-opener-service/index.html",
+      "bytes": 29768,
+      "sha256": "c579b9046a19655b8789e0df686f17a701aae0dadc46af077b8b8b9681c75aec"
+    },
+    {
+      "path": "source/services/garage-door-repair/index.html",
+      "bytes": 29616,
+      "sha256": "bc1633e8ca63c31962a5154cc866c3cc774da2a8df202c6a22e1146c7294dc5b"
+    },
+    {
+      "path": "source/services/garage-door-replacement/index.html",
+      "bytes": 29679,
+      "sha256": "ff9aa768c7e1c9bb7e97347f4b77133638bcc5124970d83cb0af24a4dbd48066"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Copied 10 files from the local build artifact at design-family-demos/studio-minimal. The artifact directory is gitignored; regenerate it with scripts/build-design-family-demos.mjs when the owned prototype source changes.",
+  "digest": "09e9dfce00ce19c73ebfef1c32db9f128de900d042648e84df1200ef34c1758f"
+}

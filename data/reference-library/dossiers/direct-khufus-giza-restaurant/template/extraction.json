@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "direct-khufus-giza-restaurant",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://khufus.com/",
+    "finalUrl": "https://khufus.com/",
+    "httpStatus": 200,
+    "pageTitle": "Khufu’s | Award-Winning Elevated Egyptian Dining At The Pyramids",
+    "retrievedAt": "2026-10-08T20:16:43.776Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 326946,
+      "sha256": "619762849d1323d44bb4d991596036adf6f9328f407ea70995a8c500ef4e2ca3"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 44905,
+      "sha256": "84aad614f8b95ebd3a4ac6f7633e77323066d31da87afe3dafc8c14cd3d0f8fc"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 3385,
+      "sha256": "28f3b3e2e40d4e91818a81238a1bd4598dd8c5c02b83e3866016742fa285e64c"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 54666,
+      "sha256": "0a5d398672e25dc7f020f69df92a985481b248a60e301fee232d0c8afd648dc5"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 560,
+      "sha256": "f68e889145cb0e47b7b190b2fdf087a9213a264ad33951512880c9f8bb6d0cd8"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 214,
+      "sha256": "fb8690e594b2f9b841585895d811e8cb839667a1a63963d1a1cdea11e2aa2abb"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 5110,
+      "sha256": "91079644ee1e76145b30c207470b56866770b0564f0fbf1373ab8b11d94f8c9f"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 6713,
+      "sha256": "cf502b45ef8bcae37a65822f78546f6cc7db74faf8f48850bf8a860262817fe6"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 155,
+      "sha256": "377461349f66b2ccbd1e1f289cee9ebe37b81a366f5cda5846fd289996a7ec7e"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 995,
+      "sha256": "3e86e49c78cd2befb9c7e7b27ee263298290728f7489b17077f00c25e37a5838"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 130,
+      "sha256": "7263363f11b6184fe306b05a849db2de5a674258610578e594068bec72b4f2a9"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 153,
+      "sha256": "3436fb120128be48f9cb58e38456b21fa3a13f4f862d8b83cdb3dc0175180fc1"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 1229,
+      "sha256": "b62ff51e63ea7b9463ef68ce8e43c4bed081bd98fd261a333a3b24fe8c3ca54c"
+    },
+    {
+      "path": "source/styles/13.css",
+      "bytes": 1793,
+      "sha256": "808a659eb4e85607c6efe022bff149c3076853c5570a322bd35e5e8cb9458904"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 778,
+      "sha256": "830e206b42444c7bad7bf3ce729c00a11e0f4cb76b01f94f2d5d2c4578f7ee79"
+    },
+    {
+      "path": "source/styles/15.css",
+      "bytes": 16400,
+      "sha256": "8ee3504633d2fbf3ed52072ea4d98732a6af818bcf58d13610912e476feec521"
+    },
+    {
+      "path": "source/styles/16.css",
+      "bytes": 6618,
+      "sha256": "290b13b07d1115cdb0a44f6091c97d6a84771d1e2d10c2dd810858d3dba31576"
+    },
+    {
+      "path": "source/styles/17.css",
+      "bytes": 87,
+      "sha256": "6d2c0fc112d7a76682334131ec4d0d618fadb44d42849933f88ae954ddd9d0d5"
+    },
+    {
+      "path": "source/styles/18.css",
+      "bytes": 6096,
+      "sha256": "94c0592850a258e72b8a86de95af953614844bbfca684c95ea0c000d931bc26e"
+    },
+    {
+      "path": "source/styles/19.css",
+      "bytes": 21550,
+      "sha256": "0de24681856a381304c320f3b46b01268039f4ae8fb4d7cf18ab6dad2b540d9d"
+    },
+    {
+      "path": "source/styles/20.css",
+      "bytes": 2440,
+      "sha256": "79d1e4fe799eca5e78fecedba97ce1164654968de13dbfcde52790ffa5997408"
+    },
+    {
+      "path": "source/styles/21.css",
+      "bytes": 7318,
+      "sha256": "abfce618ab5d77d527df96b325e85c8048af6792a21618ae990165e65a4d2a24"
+    },
+    {
+      "path": "source/styles/22.css",
+      "bytes": 22365,
+      "sha256": "275c64f303c8e9a0320bc267c893cdae309afadde9750bebbe4e838040bd4cde"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://khufus.com/wp-content/uploads/2026/02/Logo-in-White.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://khufus.com/wp-content/uploads/2026/04/Pyramids-Backdrop.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://khufus.com/wp-content/uploads/2026/04/DSC04524-scaled.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://khufus.com/wp-content/uploads/2026/04/Khufus-Cap-Back.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://khufus.com/wp-content/uploads/2026/02/IMG-12-scaled.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://khufus.com/wp-content/uploads/2026/04/2-scaled.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://khufus.com/wp-content/uploads/2026/04/1-scaled.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://khufus.com/wp-content/uploads/2026/04/DSC04514-scaled.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://khufus.com/wp-content/uploads/2026/04/DSC06023.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://khufus.com/wp-content/uploads/2026/04/DSC3237_VSCO-scaled.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://khufus.com/wp-content/uploads/2026/02/IMG_3211.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://khufus.com/wp-content/uploads/2026/03/Chevron-Right-Khufus.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://khufus.com/wp-content/uploads/2026/02/Lander-Video-Pyramids-Camel-Compressed.mp4",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 22 of 22 stylesheets retained.",
+  "digest": "2ee075e45f79405d2a8e178ccb76871a4b771fa72020bf726b41aaf7b2a96580"
+}

@@ -125,6 +125,36 @@ source-owner grant was uploaded; the repository records the requester’s claim
 and does not represent it as independently verified. Reference screenshots
 are internal visual evidence, never client imagery or copy.
 
+## Reference templates
+
+Each dossier may retain the extracted source template its screenshots were
+captured from:
+
+- `template/extraction.json`: status, method, source revision or capture
+  date, license or permission attestation path, per-file SHA-256 values,
+  excluded media, and an independent template digest.
+- `template/source/`: the extracted files. Licensed and owned templates keep
+  their bundled media and fonts so they render locally; permission-cleared
+  live sites retain rendered HTML and CSS only, with remote media recorded as
+  an inventory.
+- `rights/template-extraction.md`: the local rights record covering template
+  source retention (absent for owned references).
+- `data/reference-library/template-index.json`: the committed index of every
+  dossier's template status (`extracted`, `pending`, `unavailable`, or
+  `failed`).
+
+Extraction is additive: it does not change dossier manifests, design prompts,
+screenshots, or existing dossier digests, so frozen candidate bindings stay
+valid. Templates are internal reference material; `docs/reference-template-rights.md`
+records the use limits and the pending attribution decision for derived
+output.
+
+```sh
+npm run extract:reference-templates -- --class licensed --write
+npm run extract:reference-templates -- --only <dossier-id> --write --force
+npm run verify:reference-templates
+```
+
 ## Retention rule
 
 Only owned, licensed, or explicitly permission-cleared references may be
@@ -164,8 +194,8 @@ selection, screenshot, and asset paths must point inside this library.
 2. Capture the entire desktop page and entire mobile page. Keep capture
    viewport dimensions in `manifest.json` and use the matching local files.
 3. Write a `design-prompt.md` with visual hierarchy, page sequence, interaction,
-  responsive translation, signature elements, prohibited patterns, and
-  local-SEO/conversion constraints.
+   responsive translation, signature elements, prohibited patterns, and
+   local-SEO/conversion constraints.
 4. Add complete Reference DNA, provenance, rights evidence, business kinds, and
    the dossier path to `data/inspiration-registry.json`. Run
    `npm run sync:reference-library -- --write` to register core dossiers and

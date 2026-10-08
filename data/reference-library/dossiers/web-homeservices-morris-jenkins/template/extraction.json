@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-homeservices-morris-jenkins",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://morrisjenkins.com/",
+    "finalUrl": "https://morrisjenkins.com/",
+    "httpStatus": 200,
+    "pageTitle": "HVAC & Plumbing Services in Charlotte, NC | Morris-Jenkins",
+    "retrievedAt": "2026-10-08T20:26:43.334Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 216993,
+      "sha256": "911c55574b5b4441644feac92ecae3fdf091830ba4d24ec35470a00304adac5f"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 4210,
+      "sha256": "314e6cd1c7daf9a536651c70edb90e8224795481d15f209977cff9138596b0d1"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 162017,
+      "sha256": "071ff89e3015a0966c2b22080596266adf4d5254a0d947ff9aa3e5b3524b96c6"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 17525,
+      "sha256": "0786e13b5c27bb0efc7c4ac72b640d78ae849e5984d8aafc605bd1453baf87cd"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 17525,
+      "sha256": "0786e13b5c27bb0efc7c4ac72b640d78ae849e5984d8aafc605bd1453baf87cd"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://wg.scene7.com/is/content/wrenchgroup/MJ-Logo-v2-3?wid=250&fmt=png-alpha&qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/content/wrenchgroup/logo-mobile-mj26wi001wg?wid=150&fmt=png-alpha&qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/image/wrenchgroup/hero-tech-wave-home-MJ26W001WI?qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0&$WrenchHero$&bfc=on&wid=1920",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/image/wrenchgroup/taking-care-of-home-mj26w001wi?qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0&wid=600&fmt=png-alpha",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/content/wrenchgroup/icon-heating-mj26w001wi?wid=600&fmt=png-alpha&qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/content/wrenchgroup/icon-plumbing-mj26w001wi?wid=600&fmt=png-alpha&qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/content/wrenchgroup/icon-cooling-mj26w001wi?wid=600&fmt=png-alpha&qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/content/wrenchgroup/icon-air-quality-mj26w001wi?wid=600&fmt=png-alpha&qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/content/wrenchgroup/icon-electrical-mj26w001wi?wid=600&fmt=png-alpha&qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://morrisjenkins.com/content/dam/morrisjenkins-com/website/images/tech-stars-border-mj26wi001wg.png?wid=621",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/content/wrenchgroup/enjoy?wid=600&fmt=png-alpha&qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/content/wrenchgroup/tailored-1?wid=600&fmt=png-alpha&qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/content/wrenchgroup/call-schedule?wid=600&fmt=png-alpha&qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://morrisjenkins.com/content/dam/morrisjenkins-com/website/images/tech-faucet-wrench--banner-card.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/image/wrenchgroup/tech-adjusting-thermostat--banner-card-BOOST?wid=600&fmt=png-alpha&qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/image/wrenchgroup/tech-dog-exterior--banner-card?wid=600&fmt=png-alpha&qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/content/wrenchgroup/MJ-Logo-v2-3?wid=300&fmt=png-alpha&qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://sp.analytics.yahoo.com/sp.pl?a=10000&d=Thu%2C%2008%20Oct%202026%2020%3A26%3A23%20GMT&n=0&b=HVAC%20%26%20Plumbing%20Services%20in%20Charlotte%2C%20NC%20%7C%20Morris-Jenkins&.yp=10194011&f=https%3A%2F%2Fmorrisjenkins.com%2F&enc=UTF-8&yv=1.17.1&tagmgr=adobe",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://sp.analytics.yahoo.com/sp.pl?a=10000&b=HVAC%20%26%20Plumbing%20Services%20in%20Charlotte%2C%20NC%20%7C%20Morris-Jenkins&.yp=10204783&f=https%3A%2F%2Fmorrisjenkins.com%2F&enc=UTF-8&yv=1.17.1&tagmgr=adobe",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://bat.bing.com/action/0?ti=199002297&Ver=2&mid=1f65f809-9f2a-4360-9ed2-f197223ae528&bo=1&sid=889e45d0c35611f1a242a3284c672309&vid=889e6830c35611f1a7e273f35f80cd5b&vids=1&msclkid=N&pi=0&lg=en-US&sw=1440&sh=900&sc=24&nwd=1&tl=HVAC%20%26%20Plumbing%20Services%20in%20Charlotte,%20NC%20%7C%20Morris-Jenkins&p=https%3A%2F%2Fmorrisjenkins.com%2F&r=&lt=4027&evt=pageLoad&sv=2&cdb=AQAQ&rn=569769",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/image/wrenchgroup/hero-tech-wave-home-MJ26W001WI?qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0&$WrenchHero$&bfc=on&wid=1440",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/image/wrenchgroup/hero-tech-wave-home-MJ26W001WI?qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0&$WrenchHero$&bfc=on&wid=1200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wg.scene7.com/is/image/wrenchgroup/hero-tech-wave-home-MJ26W001WI?qlt=85,0&resMode=sharp2&op_usm=1.75,0.3,2,0&$WrenchHero$&bfc=on&wid=992",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//wg.scene7.com/is/image/wrenchgroup/home-hero-tech-wave-smile-mobile-MJ26W001WI?qlt=85",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "0&resMode=sharp2&op_usm=1.75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "0.3",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "0&$WrenchHeroMobile$&bfc=on",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/content/dam/morrisjenkins-com/website/images/tech-faucet-wrench--banner-card.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//wg.scene7.com/is/image/wrenchgroup/tech-adjusting-thermostat--banner-card-BOOST?wid=600&fmt=png-alpha&qlt=85",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//wg.scene7.com/is/image/wrenchgroup/tech-dog-exterior--banner-card?wid=600&fmt=png-alpha&qlt=85",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://scheduler.servicetitan.com/?brandId=brand_ixvejrdzfv3lgjetrx1vlqic&api_key=ua2e57kz0xwszur0422wf3hk&schedulerid=sched_rorwx1y1w8bbzc73m3o58klj&client_url=https%3A%2F%2Fmorrisjenkins.com%2F&client_referrer=",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.youtube.com/embed/BSbLt2iqdHw?rel=0&enablejsapi=1&origin=https%3A%2F%2Fmorrisjenkins.com&playsinline=1",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.youtube.com/embed/QWvFGY6xziI?rel=0&enablejsapi=1&origin=https%3A%2F%2Fmorrisjenkins.com&playsinline=1",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.youtube.com/embed/_ryx4Dfwr8k?rel=0&enablejsapi=1&origin=https%3A%2F%2Fmorrisjenkins.com&playsinline=1",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://wrenchgroup.demdex.net/dest5.html?d_nsid=0#https%3A%2F%2Fmorrisjenkins.com",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://secure.livechatinc.com/customer/action/open_chat?license_id=8869304&group=1&embedded=1&widget_version=3&unique_groups=0&organization_id=ee0fca46-0c75-491d-b55f-04a17ded9844&use_parent_storage=1&x-region=us-south1",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 4 of 4 stylesheets retained.",
+  "digest": "35785eb11bf08dbe3bf666eec6d16c8b3f456ad534e40edaea0758e062d443c5"
+}

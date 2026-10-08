@@ -1,0 +1,295 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-legal-flip-family-law",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.flip.co.uk/",
+    "finalUrl": "https://www.flip.co.uk/",
+    "httpStatus": 200,
+    "pageTitle": "FLiP | Family Law in Partnership, Top London divorce lawyers",
+    "retrievedAt": "2026-10-08T20:29:36.661Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 205863,
+      "sha256": "38f1c931b84e6ea212129834f95b32ebed8a219b7791c651149e7360ab428e11"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 6066,
+      "sha256": "38f71427f8a09fcc35159633c9d5d79adb95a1a69d57ce8d9f665a549aa793d9"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 4515,
+      "sha256": "6af433592083b2b290dc0191151d20f89d027d089b28e30fd3c9ab3cd8864edd"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 131289,
+      "sha256": "abddc707edadb390e46c41293df283874a31cc1162b98e9e898086a0d9aef561"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 20542,
+      "sha256": "a91e7b10e7efb0d57a85f0ff6a49011a0619d9592b07705f6bfd991ed2d96cc8"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 11869,
+      "sha256": "8f815b9f84efe1559015b8ca60df0992432c7eaf022b81e6cc49d8447af994ee"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.flip.co.uk/",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.userway.org/widgetapp/images/spin_bl.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.userway.org/widgetapp/images/body_bl.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/11/Get-Started-Online-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/11/calendar-days-solid-full.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/02/homepage.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/02/homepage-200x300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/02/homepage-12x18.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/02/homepage-400x599.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2022/04/component-mobile-12x12.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/flip-phone@2x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/flip-phone@2x-65x111.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/flip-phone@2x-12x20.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/flip-email@2x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/flip-email@2x-111x83.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/flip-email@2x-12x9.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/flip-home@2x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/flip-home@2x-111x106.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/flip-home@2x-12x11.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2022/04/flip-screen@2x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2022/04/flip-screen@2x-111x111.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2022/04/flip-screen@2x-12x12.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/Copy-of-FLiP_201219-21-of-240-1-e1582042922645.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/Copy-of-FLiP_201219-21-of-240-1-612x408.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/Copy-of-FLiP_201219-21-of-240-1-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/Copy-of-FLiP_201219-21-of-240-1-12x8.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2020/02/Copy-of-FLiP_201219-21-of-240-1-400x267.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2024/02/international-picture-600x600.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2024/02/international-picture-150x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/08/Therapy-in-Divorce.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/08/Therapy-in-Divorce-300x300.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/08/Therapy-in-Divorce-150x150.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/08/Therapy-in-Divorce-12x12.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/08/Therapy-in-Divorce-400x400.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/07/Parenthood-EF-v.-HFEA.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/07/Parenthood-EF-v.-HFEA-300x200.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/07/Parenthood-EF-v.-HFEA-12x8.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2024/02/Lights-1-600x600.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2024/02/Lights-1-150x150.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/07/Chambers-Ranked-In-High-Net-Worth-2025-Laywers-1-12x12.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/07/citywealth-leaders-list-12x12.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/06/Citywealth-Future-Leaders-Awards-2025-12x12.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/06/Spears-500-12x12.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/05/Blue-White-Simple-Meet-The-Team-Instagram-Post-12x12.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/05/e-privateclient-awards-excellence-2-1-12x12.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/04/doyles-lawyers-12x12.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2024/12/Website-Featured-Image-5-12x8.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2024/11/protecting-childrens-mental-health-12x8.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2024/11/Hannah-Greene-back-up-2-12x8.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2024/11/The-Times-Best-Law-Firm-2025.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2024/11/The-Times-Best-Law-Firm-2025-300x266.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2024/11/The-Times-Best-Law-Firm-2025-12x11.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2024/11/The-Times-Best-Law-Firm-2025-400x354.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/11/best-law-firms-2019-2026.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/07/Citywealth-Leaders-List-Recommended-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/11/High-net-worth-chambers.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/06/Epcea-CMYK-Print-scaled.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/11/Chambers-ranked-2026-Logo.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.flip.co.uk/wp-content/uploads/2025/10/top-tier-firm.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.yoshki.com/iframe/55845r.html",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 5 of 6 stylesheets retained. Stylesheet issues: https://www.flip.co.uk/wp-content/themes/propeller/parent-style.min.css (empty-or-unreadable).",
+  "digest": "727fe35a418d2b16f86da7903bc332fd3b989bf0d1bbd5519343b30ad659cd6c"
+}

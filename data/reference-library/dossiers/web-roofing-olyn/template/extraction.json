@@ -1,0 +1,465 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-roofing-olyn",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.olynroofing.com/",
+    "finalUrl": "https://www.olynroofing.com/",
+    "httpStatus": 200,
+    "pageTitle": "Expert Roofing Contractor in Norwood, MA | Greater Boston",
+    "retrievedAt": "2026-10-08T20:35:00.372Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 459648,
+      "sha256": "6fd613ab994236b81958898604a3af419b82387734088aca5411774d7c87b0c8"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 114868,
+      "sha256": "20e0873591c294b1440df028a00eb19ace928d26f847befe4bdda07cd8e9769f"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 876592,
+      "sha256": "b98e8cbdb63e3fbf64dee5467cdb10e6b6f7a7e19bc9404f442bb9b6420dcf5f"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 140079,
+      "sha256": "fa8f2971ddba090254ba15f7917c85cb991bc6f3b1e7d244f679921992d5f556"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/header/header-logo.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/header/header-logo.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/header/header-logo@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/header/header-logo@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-01.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-01.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-01@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-01@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-02.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-02.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-02@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-02@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-03.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-03.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-03@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-03@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-04.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-04.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-04@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-04@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-05.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-05.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-05@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-05@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-06.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-06.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-06@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/service-blocks/service-06@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/value-prop/value-prop-img.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/value-prop/value-prop-img.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/value-prop/value-prop-img@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/value-prop/value-prop-img@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-1@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-1@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-1@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-2@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-2@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-2@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-3@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-3@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-3@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-4@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-4@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-4@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-5@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-5@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-5@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-6@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-6@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-6@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-7@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-7@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-7@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-8@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-8@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-8@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-9@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-9@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-9@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-10@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-10@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-10@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-11@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-11@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-11@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-12@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-12@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-12@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-13@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-13@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-13@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-14@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-14@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-14@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-15@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-15@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-15@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-16@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-16@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-16@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-17@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-17@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-17@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-18@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-18@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-18@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-19@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-19@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-19@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-20@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-20@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-20@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-21@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-21@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-21@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-22@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-22@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-22@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-23@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-23@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/affiliation/affiliation-23@3x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/testimonial/reviews-img.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.olynroofing.com/wp-content/themes/rds-child/img/testimonial/reviews-img.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/testimonial/reviews-img@2x.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildbill.nitrocdn.com/AfrFSLWVSHkPqMEghdYEanxdKSkoYKUM/assets/images/source/rev-2093064/www.olynroofing.com/wp-content/themes/rds-child/img/testimonial/reviews-img@3x.webp",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "bfa90804cdfa339f97e82b8dc2517af03088fd9df94996bf93e932c3eb9cad65"
+}

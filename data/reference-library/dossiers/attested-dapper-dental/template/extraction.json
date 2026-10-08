@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "attested-dapper-dental",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.dapperdental.com/",
+    "finalUrl": "https://www.dapperdental.com/",
+    "httpStatus": 200,
+    "pageTitle": "Dentist in Winter Park, FL | Dapper Dental",
+    "retrievedAt": "2026-10-08T20:13:03.030Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 170580,
+      "sha256": "d520a65208f42e38fd5ca2991193ad9dd7c4bb765aa9695041eb0d3b7664afb3"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 101748,
+      "sha256": "fd8d3c7549598f03123bd2ce31c5a0f76d1371e6638a1b73be49887148bda169"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 7824,
+      "sha256": "444691898a754d36ee1223b96b2e67e8c78688e3aa4843a928b112932e9ff07f"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/69307750be4f73b8972f2226_footerLogo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/6949783233c24736852b7d23_1210_Dapper%20Dental-165.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/69309dc7999a80d64f72dac0_Rectangle%2011.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/69309dc7999a80d64f72dac0_Rectangle%2011-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/69309dc7999a80d64f72dac0_Rectangle%2011-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/69309dc7999a80d64f72dac0_Rectangle%2011-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/69306719e0ebbe2e205785a8_Polygon%203.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/694978902a54a5e3a9359d40_1210_Dapper%20Dental-176.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/694978902a54a5e3a9359d40_1210_Dapper%20Dental-176-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/694978902a54a5e3a9359d40_1210_Dapper%20Dental-176-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/694978e30a02c4b157de03a3_1210_Dapper%20Dental-180.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/69307011dcdae9abba5ed75e_computer.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/69307011b1cb42d110cc2238_headphones.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/693070111e220ec48dec7dc6_chair.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/69307ca6c089021a68c4dad6_backgroundLogo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/69497949b005f11ea38e0621_1210_Dapper%20Dental-143.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/69497949b005f11ea38e0621_1210_Dapper%20Dental-143-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/69497949b005f11ea38e0621_1210_Dapper%20Dental-143-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/69497949b005f11ea38e0621_1210_Dapper%20Dental-143-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/694979adde1a8e8b835d446c_1210_Dapper%20Dental-240%20(1)-p-1600.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/694979adde1a8e8b835d446c_1210_Dapper%20Dental-240%20(1).jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/694979adde1a8e8b835d446c_1210_Dapper%20Dental-240%20(1)-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/694979adde1a8e8b835d446c_1210_Dapper%20Dental-240%20(1)-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/694979adde1a8e8b835d446c_1210_Dapper%20Dental-240%20(1)-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s3.us-east-1.amazonaws.com/s8e8.client-assets/Dapper+Dental/Hero+Loop_1.webm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/692f763c5fd2eb43d3068bf1/694065f0c8038e75d1a3471d_Hero%20Loop_1%201.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://player.vimeo.com/video/1151670794",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/anchor?ar=1&k=6LfUlFosAAAAABtf2yozfIWGT16o6MV6rS1IShtc&co=aHR0cHM6Ly93d3cuZGFwcGVyZGVudGFsLmNvbTo0NDM.&hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&size=normal&anchor-ms=20000&execute-ms=30000&cb=89s08myqh38t",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/bframe?hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&k=6LfUlFosAAAAABtf2yozfIWGT16o6MV6rS1IShtc&bft=0dAFcWeA4u_2db2gzmcY1CgYigxakCHY4UtW5hM-Zq7unejd6Hh-O9qOLT02iQ708-SAHlc3OMNoMahq1kYw0iSZqhVpEjKog_xQ",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "af7f9bdb3cc1967ef939badf726712ecaa429e05cf53a322ba453dcb0bd1fb36"
+}

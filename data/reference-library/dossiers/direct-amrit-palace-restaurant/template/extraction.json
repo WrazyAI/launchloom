@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "direct-amrit-palace-restaurant",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://amritpalace.com/",
+    "finalUrl": "https://amritpalace.com/",
+    "httpStatus": 200,
+    "pageTitle": "Amrit Palace",
+    "retrievedAt": "2026-10-08T20:14:00.924Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 88598,
+      "sha256": "131fc8ec7cbb239999825d530f75d363fd200c566d86ce06fde23c7e8f3833ab"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 146178,
+      "sha256": "8f4f22b69c9519c7d3d1831ec03731a68ee57331c72118017842f5297470ac54"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 1772,
+      "sha256": "0eb9f6cd4c34f9c5474a9a729a108b7dd9667d300a8ae2ef9f33db82c557bdaa"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 2220,
+      "sha256": "fcb45c37820cded38d488241bf44534c7cbfed4edb8e33fbb15cf510e05e03e9"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ab69d9e852bb71813eafdf_Logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ab6aad6d37e1980d319ac9_menu-icon.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ab6aad663e114eb608fb96_order-icon.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68c9c21775852a6417f46e90_chevron-down.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ab6f5c7f6ef175306f18bb_star-icon.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ab6f5c31e3e7b0a84252b6_google-icon.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/6900f221f61431ab7c171d52_mobile_hero.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/6900f221f61431ab7c171d52_mobile_hero-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ab6d83cbb46c5a59dea24b_Background%20Hero-min-p-1600.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ab6d83cbb46c5a59dea24b_Background%20Hero-min.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ab6d83cbb46c5a59dea24b_Background%20Hero-min-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ab6d83cbb46c5a59dea24b_Background%20Hero-min-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ab6d83cbb46c5a59dea24b_Background%20Hero-min-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac4c4fc4648b01d408500b_Featured%20Menu.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac4c4fc4648b01d408500b_Featured%20Menu-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac4c4fc4648b01d408500b_Featured%20Menu-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac4c4fc4648b01d408500b_Featured%20Menu-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68e46be43526b08d9492bd44_img-1.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68e46be43526b08d9492bd44_img-1-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68e46be3bdd582aff715479c_img-2.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68e46be3bdd582aff715479c_img-2-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68e46be4c3b9f44298ee4f60_img-3.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68e46be4c3b9f44298ee4f60_img-3-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac50267055b2ef13a16065_cocktails-1.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac50267055b2ef13a16065_cocktails-1-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac50267055b2ef13a16065_cocktails-1-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac5027270c47ed176e5cd7_cocktails-2.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac5027270c47ed176e5cd7_cocktails-2-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac5027270c47ed176e5cd7_cocktails-2-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac5358491181ca69dbe1f5_fullsize-min-p-1600.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac5358491181ca69dbe1f5_fullsize-min.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac5358491181ca69dbe1f5_fullsize-min-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac5358491181ca69dbe1f5_fullsize-min-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/68ac5358491181ca69dbe1f5_fullsize-min-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2%2F68ab88ee4daaf51c42a59660_Amrit%20Palace%20%281%29-transcode.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/68a25157e0edb92947ffe4a2/69a5fe2eb039b97dd5da108d_amrit-poster.avif",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "e99b0e1419ea0958ad3ceca5aef17fc8ad8fc4f54caf1ee5e2e4215b4f9bb924"
+}

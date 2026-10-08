@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-auto-repair-abees-hi-tech",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.abeesautomotive.com/",
+    "finalUrl": "https://www.abeesautomotive.com/",
+    "httpStatus": 200,
+    "pageTitle": "Abee's Hi-Tech Auto Service — Family owned auto repair in Austin, TX since 1996",
+    "retrievedAt": "2026-10-08T20:21:37.114Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 18136,
+      "sha256": "9da4b917f0fbde794641426827125c97af691e2ad90cc3c26d689ae429557112"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 22284,
+      "sha256": "1751b1cd1b4813796bdd46feae78db199804f23c53077976ea2af355351b22d4"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 33484,
+      "sha256": "a78ca233d29278e220e095ac2fddf088b146ae3c29e87f1dc1df72c81824ccca"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.abeesautomotive.com/assets/logo-logotype-mix.png?v=1786634191239",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.abeesautomotive.com/assets/logo-patch-black.png?v=1786634191239",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.abeesautomotive.com/assets/logo-patch-cream.png?v=1786634191239",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.abeesautomotive.com/assets/logo-circle-offwhite.png?v=1786634191239",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3444.5!2d-97.7013!3d30.3707!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2s811+McPhaul+St%2C+Austin%2C+TX+78758!5e0!3m2!1sen!2sus!4v1721760000000",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 3 stylesheets retained. Stylesheet issues: https://booking.tekmetric.com/iframe/modal.css?time=1791490891025 (HTTP 403).",
+  "digest": "bd6741130b597754065bc392bfebb6a2b99389dc5f31c536434cb78a6df7f413"
+}

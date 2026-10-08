@@ -1,0 +1,595 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "lapa-mesh-architects-editorial",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.mesharchitects.co.uk/",
+    "finalUrl": "https://www.mesharchitects.co.uk/",
+    "httpStatus": 200,
+    "pageTitle": "Mesh Architects - Chapel Allerton, Leeds",
+    "retrievedAt": "2026-10-08T20:19:57.901Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 119024,
+      "sha256": "eafd8e4708c022bae26286e3ed2b69d62dea03b4de51de3614462f09510d8d0f"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 150424,
+      "sha256": "18f36b77d8595dad6b6dccc5ba8764a7c2318aff6e855ecab594f5bef602523d"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/64f8a2eeb4aa1e94fd28cc6d_2023_07_13_Mesh_Architects_Recce_0664.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/64f8a2eeb4aa1e94fd28cc6d_2023_07_13_Mesh_Architects_Recce_0664-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/64f8a2eeb4aa1e94fd28cc6d_2023_07_13_Mesh_Architects_Recce_0664-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/64f8a2eeb4aa1e94fd28cc6d_2023_07_13_Mesh_Architects_Recce_0664-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676eca5bb0896ec7ebaad_20220127_114852.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676eca5bb0896ec7ebaad_20220127_114852-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676eca5bb0896ec7ebaad_20220127_114852-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676eca5bb0896ec7ebaad_20220127_114852-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676eca5bb0896ec7ebaad_20220127_114852-p-1600.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676eca5bb0896ec7ebaad_20220127_114852-p-2000.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676eca5bb0896ec7ebaad_20220127_114852-p-2600.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676eca5bb0896ec7ebaad_20220127_114852-p-3200.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676cee0d6a949481e47cb_lawrence-street_new7.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676cee0d6a949481e47cb_lawrence-street_new7-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676cee0d6a949481e47cb_lawrence-street_new7-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676cee0d6a949481e47cb_lawrence-street_new7-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676bdad9df4dad1d59d05_lawrence-street_new6.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676bdad9df4dad1d59d05_lawrence-street_new6-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676bdad9df4dad1d59d05_lawrence-street_new6-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64b676bdad9df4dad1d59d05_lawrence-street_new6-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/64b69e06f85f91509dc3a642_small-arrow.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/691b260ace3a61b607ab2300_MeshArchitects-September2025-40.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/691b260ace3a61b607ab2300_MeshArchitects-September2025-40-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/691b260ace3a61b607ab2300_MeshArchitects-September2025-40-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64f89094fdbd5383e9e15fc8_frame-portrait-orange.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/691b36a1d047d659951a6cf1_MeshArchitects-September2025-267.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/691b36a1d047d659951a6cf1_MeshArchitects-September2025-267-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/691b36a1d047d659951a6cf1_MeshArchitects-September2025-267-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ac981f421ffb0b5935d262_frame-landscape-green.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/676344dbb99444f361495869_Carrholme%20Drove-15-p-1600.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/676344dbb99444f361495869_Carrholme%20Drove-15.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/676344dbb99444f361495869_Carrholme%20Drove-15-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/676344dbb99444f361495869_Carrholme%20Drove-15-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/676344dbb99444f361495869_Carrholme%20Drove-15-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ac973e48944dce358f9de6_frame-landscape-red.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/6765f3f86db7e0717ba79344_Lidgett%20Park%20Grove-19-p-1600.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/6765f3f86db7e0717ba79344_Lidgett%20Park%20Grove-19.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/6765f3f86db7e0717ba79344_Lidgett%20Park%20Grove-19-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/6765f3f86db7e0717ba79344_Lidgett%20Park%20Grove-19-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/6765f3f86db7e0717ba79344_Lidgett%20Park%20Grove-19-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/64d23feda0dd76ba4f6276d7_frame-landscape-blue.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/65241eff60b0f2f237a09bcf_Finkle%20Dental%20External%204.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/65241eff60b0f2f237a09bcf_Finkle%20Dental%20External%204-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/65241eff60b0f2f237a09bcf_Finkle%20Dental%20External%204-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/65241eff60b0f2f237a09bcf_Finkle%20Dental%20External%204-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/654e14996d9fa0071411ead9_frame-portrait-clay.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/654e2dd00c5077fea52ebc4d_IMG_0108-p-1600.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/654e2dd00c5077fea52ebc4d_IMG_0108.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/654e2dd00c5077fea52ebc4d_IMG_0108-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/654e2dd00c5077fea52ebc4d_IMG_0108-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/654e2dd00c5077fea52ebc4d_IMG_0108-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/654e14a9fac1a9233926e347_frame-portrait-wood.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/65422f5d9a71b28a7f55686c_lawrence-street_new6-2.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/65422f5d9a71b28a7f55686c_lawrence-street_new6-2-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/65422f5d9a71b28a7f55686c_lawrence-street_new6-2-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/65422f5d9a71b28a7f55686c_lawrence-street_new6-2-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/652400b9c0ef8b478572879a_Psycle%20retail.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/652400b9c0ef8b478572879a_Psycle%20retail-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/652400b9c0ef8b478572879a_Psycle%20retail-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/652400b9c0ef8b478572879a_Psycle%20retail-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/64d1fdb75e12abf93828f30e_lawrence-street_new7.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/64d1fdb75e12abf93828f30e_lawrence-street_new7-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/64d1fdb75e12abf93828f30e_lawrence-street_new7-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/64d1fdb75e12abf93828f30e_lawrence-street_new7-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/64be891af8d13ef47a9875d0_circle-arrow.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/67cedbfa97e0bca16dc897f4_BV%20Heathrow.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/67cedbfa97e0bca16dc897f4_BV%20Heathrow-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/67cedbfa97e0bca16dc897f4_BV%20Heathrow-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/67cedbfa97e0bca16dc897f4_BV%20Heathrow-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67cecfd111818f16c29ebfdd_AGM%20Monaco.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67cecfd111818f16c29ebfdd_AGM%20Monaco-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67cecfd111818f16c29ebfdd_AGM%20Monaco-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67cecfd111818f16c29ebfdd_AGM%20Monaco-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0e7635a10ea54a0ee26_Psycle.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0e7635a10ea54a0ee26_Psycle-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0e7635a10ea54a0ee26_Psycle-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0e7635a10ea54a0ee26_Psycle-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0c28105cfa7d7c200c4_Octopus%20Energy.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0c28105cfa7d7c200c4_Octopus%20Energy-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0c28105cfa7d7c200c4_Octopus%20Energy-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0c28105cfa7d7c200c4_Octopus%20Energy-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced102fb32dd1d2688dab4_Vision.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced102fb32dd1d2688dab4_Vision-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced102fb32dd1d2688dab4_Vision-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced102fb32dd1d2688dab4_Vision-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0f3d764c8aa09bfb962_Spire.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0f3d764c8aa09bfb962_Spire-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0f3d764c8aa09bfb962_Spire-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced1186d60db8cb8c761a6_ZIA%20Developments.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced1186d60db8cb8c761a6_ZIA%20Developments-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced1186d60db8cb8c761a6_ZIA%20Developments-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced1186d60db8cb8c761a6_ZIA%20Developments-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced03bfd058149ac92e474_BV%20Heathrow.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced03bfd058149ac92e474_BV%20Heathrow-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced03bfd058149ac92e474_BV%20Heathrow-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced03bfd058149ac92e474_BV%20Heathrow-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0d6fdbc46ec87af99ee_Prada.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0d6fdbc46ec87af99ee_Prada-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0d6fdbc46ec87af99ee_Prada-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0d6fdbc46ec87af99ee_Prada-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced028a47a8c11576bc174_Bicester%20Village.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced028a47a8c11576bc174_Bicester%20Village-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced028a47a8c11576bc174_Bicester%20Village-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced028a47a8c11576bc174_Bicester%20Village-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67cecff87f0cb125d9ccc1fd_Anytime%20Fitness.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67cecff87f0cb125d9ccc1fd_Anytime%20Fitness-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67cecff87f0cb125d9ccc1fd_Anytime%20Fitness-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced017cc0e54994d366fec_Bannatynes.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced017cc0e54994d366fec_Bannatynes-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced017cc0e54994d366fec_Bannatynes-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced017cc0e54994d366fec_Bannatynes-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced08cd562850e3533d2f5_Fitness%20First.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced08cd562850e3533d2f5_Fitness%20First-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced08cd562850e3533d2f5_Fitness%20First-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced08cd562850e3533d2f5_Fitness%20First-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced06c2763d57908c6392a_Change%20Please.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced06c2763d57908c6392a_Change%20Please-p-500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced06c2763d57908c6392a_Change%20Please-p-800.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced06c2763d57908c6392a_Change%20Please-p-1080.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced07b3a28462cd45554dd_Coach.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced07b3a28462cd45554dd_Coach-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced07b3a28462cd45554dd_Coach-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced07b3a28462cd45554dd_Coach-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced09a55974a974dba1b6d_LAX.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced09a55974a974dba1b6d_LAX-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced09a55974a974dba1b6d_LAX-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced09a55974a974dba1b6d_LAX-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0b0e093893c8e340132_Northminster.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0b0e093893c8e340132_Northminster-p-500.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0b0e093893c8e340132_Northminster-p-800.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/64b67666b8e9da28bdf7166d/67ced0b0e093893c8e340132_Northminster-p-1080.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/6502f2c2fc50d9f9098a99d1_2023_07_13_Mesh_Architects_Recce_0667.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/6502f2c2fc50d9f9098a99d1_2023_07_13_Mesh_Architects_Recce_0667-p-500.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/6502f2c2fc50d9f9098a99d1_2023_07_13_Mesh_Architects_Recce_0667-p-800.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/6502f2c2fc50d9f9098a99d1_2023_07_13_Mesh_Architects_Recce_0667-p-1080.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/6502f2c2fc50d9f9098a99d1_2023_07_13_Mesh_Architects_Recce_0667-p-1600.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/6502f2c2fc50d9f9098a99d1_2023_07_13_Mesh_Architects_Recce_0667-p-2000.avif",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/654e3ffb478a24a7b486c7f4_Artboard%201.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/64f861f3c5925765f9047fa7_cta-round-text.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.prod.website-files.com/646797c698f01ff62c521484/64f862d2c92bc58a74518e6c_lets-talk.svg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "5ecdb254064156bbec2e44c37828286c838cdcc6eb8bc68d232238a571c2d997"
+}

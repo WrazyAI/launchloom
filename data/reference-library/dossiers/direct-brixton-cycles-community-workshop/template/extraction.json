@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "direct-brixton-cycles-community-workshop",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.brixtoncycles.co.uk/",
+    "finalUrl": "https://www.brixtoncycles.co.uk/",
+    "httpStatus": 200,
+    "pageTitle": "Brixton Cycles — A Workers' Co-operative Since 1983",
+    "retrievedAt": "2026-10-08T20:09:59.363Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 64577,
+      "sha256": "16c688b53fc78f05342b12ca0567d39139c99f694711ec439c651b3097f7562b"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 22570,
+      "sha256": "0e276c4c2c10129864e990c629556a9f6075145dd2b736faf8a01f4f9ee1cec7"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 88504,
+      "sha256": "b0476b207c6983d159eeed1422bd849986470b21a2622d7ce6fcafcf2a99f519"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.brixtoncycles.co.uk/__l5e/assets-v1/3058e67e-256f-452d-aa18-741156adb8a7/bc-oval.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.brixtoncycles.co.uk/__l5e/assets-v1/779c6ac8-9744-4aaa-94c5-aa73e57df996/mechanic-portrait.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.brixtoncycles.co.uk/__l5e/assets-v1/59e08361-3779-4f3b-b704-78cf61f0e13b/shop-display-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.brixtoncycles.co.uk/__l5e/assets-v1/70586807-74cb-4f13-84c1-b19fd60f26aa/shop-display-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.brixtoncycles.co.uk/__l5e/assets-v1/5c736950-992c-489b-9d65-8d3dad36c5df/wheelbuilding.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.brixtoncycles.co.uk/__l5e/assets-v1/cae6319c-ee21-412c-a7e2-a5a147457fc1/servicing-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.brixtoncycles.co.uk/__l5e/assets-v1/6b3d09a4-afe6-4bf8-a651-8155edd46ad0/servicing-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.brixtoncycles.co.uk/__l5e/assets-v1/cc34c285-24ae-4987-aef3-6d350cba05f8/servicing-3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.brixtoncycles.co.uk/__l5e/assets-v1/ef222a03-0d77-4415-8fcf-ee4888d54b26/servicing-4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.brixtoncycles.co.uk/__l5e/assets-v1/53413da9-6a67-465d-abaf-b8bc432d38b6/servicing-5.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.brixtoncycles.co.uk/__l5e/assets-v1/28c39ddd-4e51-4a4f-98c2-c7f3f4c309ce/bc-skull.png",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "bc196e29c62ef2db253ecd0b13371e0a70cf90d831f4fbafaf699189e77344da"
+}

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-auto-repair-michael-auto",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.michaelauto.co.uk/",
+    "finalUrl": "https://www.michaelauto.co.uk/",
+    "httpStatus": 200,
+    "pageTitle": "Michael Auto — Trusted Mechanic in Brixton, South London",
+    "retrievedAt": "2026-10-08T20:22:18.886Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 47794,
+      "sha256": "bd0920c7fffca2a2b30d6eeaafd1db7682b0914d9a146cf7786f8c74b9adb1b9"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 77035,
+      "sha256": "540d16eb91e4c60d06926394a856de3a4e1257dbd8249aa5e2f7a486a507d1c1"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 12460,
+      "sha256": "7b415b305ded99f1e7744fdaff7a82d168f1e6dbb978b53d670085b773d8495f"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://lh3.googleusercontent.com/3VY7SwP4Ux-XOUOxm20D0xawcgvHyx-TZFzRl58wh7T2rM9aUdHJDCyCcDcAbXd9AtccHzep4Wu7tA-8sKSxV19anMOd1cCel3SSnP6nTNygzvaa2STaPF9DLTFBpQ=w1024-nu-rw-e365",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/maps?q=Michael+Auto+Brixton+London&output=embed",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "33d9f05152138c27035f2832aa9dc1d92db75c0b0502b7c72ec6f333d6148c36"
+}

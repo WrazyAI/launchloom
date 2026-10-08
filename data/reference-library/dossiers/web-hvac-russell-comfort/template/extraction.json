@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-hvac-russell-comfort",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.russellcomfort.com/",
+    "finalUrl": "https://www.russellcomfort.com/",
+    "httpStatus": 200,
+    "pageTitle": "Russell Comfort Solutions - Expert HVAC Services in Denver, Colorado | Heating & Cooling Repair",
+    "retrievedAt": "2026-10-08T20:28:43.874Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 186426,
+      "sha256": "e6e18c666de57ec18075a8604d7857975d4534c220bae0f926480e81a5d9ac4f"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 4087,
+      "sha256": "da77d6427d82c7dfc67c4e66d2f7e7e0484a1fb3bcffb0c14c9acd3f95a9b17e"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 108885,
+      "sha256": "8e7e4a00bc37c4227e5fd74d027e60b9406094d550a1d889d42a8c6f0aa38925"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.russellcomfort.com/assets/official_logo_transparent_1749387933706-CvzfmUKA.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.russellcomfort.com/images/rocky-mountains-hero.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.russellcomfort.com/images/rocky-mountains-winter.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.russellcomfort.com/images/rocky-mountains-summer.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.russellcomfort.com/images/rocky-mountains-autumn.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.russellcomfort.com/images/denver-mountains-panorama.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "5afa8540c4a4824630dd98102263a790937865539a0bb4f845b3a327599c12a3"
+}

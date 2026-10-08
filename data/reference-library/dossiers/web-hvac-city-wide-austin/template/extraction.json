@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-hvac-city-wide-austin",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://citywideaustin.com/",
+    "finalUrl": "https://citywideaustin.com/",
+    "httpStatus": 200,
+    "pageTitle": "Austin AC Repair & HVAC Service | City Wide Services",
+    "retrievedAt": "2026-10-08T20:28:22.205Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 19856,
+      "sha256": "d8d6e975eb0381a6004ec9956151bfef706faf94a0a3a3cb9d9d15931e846f23"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 50559,
+      "sha256": "44f77c3f14dc8d3f0326460b371cf317823aa89b2e7bf4d5b0c35d752c5605db"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://citywideaustin.com/assets/citywide-logo.png",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "45b30bbf489493d29cc9c573986dc3efa6079d1930ec1a9ba61342cd43227670"
+}

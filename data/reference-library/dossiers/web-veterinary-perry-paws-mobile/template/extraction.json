@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-veterinary-perry-paws-mobile",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.perrypawsmobile.com/",
+    "finalUrl": "https://www.perrypawsmobile.com/",
+    "httpStatus": 200,
+    "pageTitle": "Mobile Veterinarian in Washington, DC | Perry Paws Mobile",
+    "retrievedAt": "2026-10-08T20:37:02.577Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 11321,
+      "sha256": "4def65070b699cb922b3a94ef6b90ecdb3970d218100fb3f3d510e5e53f2480a"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 635,
+      "sha256": "dc1c972ea313026a1fd17f05a87b696328eebbad3c7c26ea98b743df7cc26d56"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 18072,
+      "sha256": "081bdb68a6fcf22c2c199240c2b8ba8e2049c92e27facd6d430c5686e4209e15"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.perrypawsmobile.com/assets/logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.perrypawsmobile.com/assets/washington-dc-mobile-vet-cat-care.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.perrypawsmobile.com/assets/black-cat-at-home-perry-paws-mobile.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.perrypawsmobile.com/assets/corgi-patient-perry-paws-mobile.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "9f682b7368bf491df622f24de3916840355e64dd15e8442841ba62ae3a8212c6"
+}

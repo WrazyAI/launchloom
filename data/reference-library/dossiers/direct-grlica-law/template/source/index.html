@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="en"><head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="styles/01.css">
+	<title>GRLICALAW</title>
+	<link rel="apple-touch-icon" sizes="57x57" href="/img/favicon/apple-icon-57x57.png">
+	<link rel="apple-touch-icon" sizes="60x60" href="/img/favicon/apple-icon-60x60.png">
+	<link rel="apple-touch-icon" sizes="72x72" href="/img/favicon/apple-icon-72x72.png">
+	<link rel="apple-touch-icon" sizes="76x76" href="/img/favion/apple-icon-76x76.png">
+	<link rel="apple-touch-icon" sizes="114x114" href="/img/favicon/apple-icon-114x114.png">
+	<link rel="apple-touch-icon" sizes="120x120" href="/img/favicon/apple-icon-120x120.png">
+	<link rel="apple-touch-icon" sizes="144x144" href="/img/favicon/apple-icon-144x144.png">
+	<link rel="apple-touch-icon" sizes="152x152" href="/img/favicon/apple-icon-152x152.png">
+	<link rel="apple-touch-icon" sizes="180x180" href="/img/favicon/apple-icon-180x180.png">
+	<link rel="icon" type="image/png" sizes="192x192" href="/img/favicon/android-icon-192x192.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="96x96" href="/img/favicon/favicon-96x96.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon/favicon-16x16.png">
+	<link rel="manifest" href="/img/favicon/manifest.json">
+	<meta name="msapplication-TileColor" content="#010101">
+	<meta name="msapplication-TileImage" content="/img/favicon/ms-icon-144x144.png">
+	<meta name="theme-color" content="#010101">
+	<meta property="og:image" content="/img/graph.jpg">
+	<meta property="og:description" content="Our vision is to offer a new type of a law firm: location-independent online legal service.">
+	<meta property="og:site_name" content="Lawyers you can trust">
+	<meta property="og:type" content="website">
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="twitter:image" content="/img/graph.jpg">
+	<meta name="description" content="Tax Law. As the saying goes, you can never avoid taxes; but we will teach you how to optimize and lower them">
+</head>
+
+<body style="">
+
+	<div class="preloader" style="opacity: 0; visibility: hidden;">
+		<div class="preloader__circle"></div>
+		<div class="preloader__line-mask">
+			<div class="preloader__line"></div>
+		</div>
+	</div>
+
+	<div class="color"></div>
+
+	<header class="header" style="pointer-events: auto; opacity: 1;">
+    <div class="header__logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="212" height="51" viewBox="0 0 212 51" fill="none">
+            <path d="M19.8234 0.630586C23.9275 -0.0587711 28.3458 -0.542924 32.2703 1.17566C33.956 1.87617 35.4502 2.96894 36.6285 4.36312C37.8069 5.7573 38.6354 7.41261 39.0453 9.19145C39.6096 10.6856 39.3178 12.2631 39.0036 13.7765C38.3431 16.1427 37.2049 18.4577 35.3356 20.1025C33.9154 21.6408 32.2059 22.884 30.3049 23.7609C27.3583 24.8318 24.1455 25.6591 21.0066 24.9922C17.9349 24.4984 14.8857 22.9273 13.2409 20.2019C12.2469 18.5443 11.9808 16.2453 13.2793 14.6967C14.3727 13.3244 16.1971 13.0551 17.8067 12.7216C16.8127 14.2222 15.8829 16.1459 16.7005 17.9287C17.8644 20.0256 20.4743 20.67 22.7123 20.622C26.2842 20.8079 30.0676 19.6601 32.5268 16.9828C34.5885 15.059 35.3901 12.1348 35.1977 9.39665C35.1977 6.28011 33.0559 3.47138 30.3273 2.12152C27.121 0.399732 23.36 0.415764 19.8234 0.646618M36.5347 2.64736C38.4626 3.61034 40.2006 4.91381 41.6648 6.49493C44.2299 8.85478 45.4451 12.3785 45.4868 15.7932C45.2976 18.2689 44.469 20.6531 43.082 22.7125C41.8508 24.8383 39.8757 26.3581 38.2084 28.1215C34.645 30.8911 30.4003 32.6479 25.9218 33.2067C21.2534 33.4793 16.274 32.7547 12.3784 30.0004C8.85142 27.5668 6.36011 23.405 6.57814 19.0412C6.68395 17.6882 6.77694 16.0818 7.92159 15.1648C8.64301 14.5877 9.6017 14.8634 10.4097 15.0718C9.68186 18.4481 10.6438 22.27 13.2088 24.6811C15.4789 26.964 18.6595 28.0542 21.7985 28.4646C25.2421 28.7307 28.7819 28.3524 31.9497 26.9127C36.9355 24.5529 41.1326 20.048 42.149 14.5107C42.2292 12.6671 42.3863 10.7273 41.6456 8.98945C40.735 6.34745 38.6605 4.3435 36.5347 2.63133M45.8651 10.9421C47.6061 13.6482 48.9432 16.7135 49.0971 19.9743C49.2029 23.4082 47.6639 26.5697 46.0254 29.4874C44.473 31.6576 42.5817 33.564 40.424 35.1337C36.1596 37.9521 31.2475 39.7059 26.2232 40.5396C20.641 41.0943 15.1166 39.209 10.3007 36.5157C5.88558 33.6492 2.66965 28.8205 2.17267 23.5237C1.85204 21.2792 2.05724 18.8296 3.34618 16.9058C3.66681 16.4377 4.21188 16.7904 4.62871 16.8706C4.74093 20.8304 4.90124 25.098 7.10719 28.5351C10.0687 32.2644 14.2181 34.867 18.8647 35.9097C23.9983 37.0344 29.3508 36.6 34.2358 34.6624C36.0474 33.7614 37.9744 32.9887 39.4653 31.5811C42.1458 29.6573 44.0792 26.9031 45.7433 24.1008C47.8947 20.0544 47.7697 15.0526 45.8715 10.9357M0.466909 19.6408C0.928618 23.0652 1.27811 26.56 2.67285 29.7664C4.50792 34.4212 8.00524 38.2293 12.4874 40.453C18.3613 43.3387 25.2774 43.5182 31.5489 41.9311C37.1856 40.4755 42.6139 37.5834 46.3717 33.0592C48.4459 30.5947 49.7799 27.5933 50.2193 24.4022C50.4149 28.1889 49.2061 31.9883 47.231 35.1946C44.201 40.0266 39.0934 43.2361 33.6843 44.7815C26.794 46.7278 19.2014 46.4007 12.6028 43.5567C8.0787 41.6105 4.06119 38.2342 1.91296 33.755C-0.260924 29.3976 -0.331463 24.3509 0.466909 19.6472M0.563098 32.8188C2.74339 36.6664 5.37257 40.3632 8.89952 43.1046C13.1075 46.424 18.3179 48.2158 23.6774 48.1866C30.1862 48.1866 36.5732 45.9935 42.0304 42.5211C43.7721 41.3813 45.3754 40.0428 46.8078 38.5324C45.0507 42.0209 41.7707 44.432 38.4297 46.2853C32.4659 49.4339 25.4633 50.8222 18.7814 49.6295C13.9106 48.7655 9.46717 46.3012 6.15491 42.6269C3.62181 39.7848 1.71643 36.4406 0.563098 32.8124V32.8188Z" fill="url(#paint0_linear_298_69)"></path>
+            <path d="M74.305 25.9189H76.8861V30.4558C76.8861 32.3967 75.2627 33.3672 72.0157 33.3672H65.9847C62.7377 33.3672 61.1143 32.3839 61.1143 30.4174V22.6517C61.1143 20.6873 62.7377 19.7051 65.9847 19.7051H76.6713V21.7219H65.9847C64.4584 21.7219 63.6953 22.0318 63.6953 22.6517V30.4078C63.6953 31.0298 64.4584 31.3408 65.9847 31.3408H72.0157C73.5419 31.3408 74.305 31.0426 74.305 30.4462V25.9189Z" fill="#1E1DC0"></path>
+            <path d="M79.2588 33.3608V19.7051H90.0641C93.3089 19.7051 94.9313 20.6873 94.9313 22.6517V24.3158C94.9313 25.9574 93.8069 26.9193 91.5582 27.2014L94.7966 33.3704H92.0424L88.836 27.2784H81.8527V33.3704L79.2588 33.3608ZM81.8238 21.7218V25.2488H90.048C91.5742 25.2488 92.3373 24.9389 92.3373 24.319V22.6517C92.3373 22.0318 91.5742 21.7218 90.048 21.7218H81.8238Z" fill="#1E1DC0"></path>
+            <path d="M96.9639 19.7051H99.5289V31.344H110.607V33.3608H96.9639V19.7051Z" fill="#1E1DC0"></path>
+            <path d="M112.675 19.7051H115.24V33.3608H112.675V19.7051Z" fill="#1E1DC0"></path>
+            <path d="M132.423 31.3438V33.3606H122.006C118.761 33.3606 117.139 32.3132 117.139 30.2184V22.8439C117.139 20.7469 118.761 19.6995 122.006 19.7017H132.423V21.7184H122.006C120.48 21.7184 119.717 22.0936 119.717 22.8439V30.2184C119.717 30.9687 120.48 31.3438 122.006 31.3438H132.423Z" fill="#1E1DC0"></path>
+            <path d="M153.469 33.3608H150.676L143.516 22.206L136.244 33.3608H133.49L142.567 19.7051H144.449L153.469 33.3608Z" fill="#1E1DC0"></path>
+            <path d="M154.36 19.7051H156.925V31.344H168.003V33.3608H154.344L154.36 19.7051Z" fill="#1EC11D"></path>
+            <path d="M188.793 33.3608H186L178.841 22.206L171.569 33.3608H168.814L177.892 19.7051H179.774L188.793 33.3608Z" fill="#1EC11D"></path>
+            <path d="M205.69 33.3608H203.751L199.018 22.8857L194.186 33.3608H192.304L186.029 19.7051H188.511L193.266 30.1801L198.056 19.7051H199.98L204.712 30.1801L209.506 19.7051H212L205.69 33.3608Z" fill="#1EC11D"></path>
+            <path d="M76.9078 24.7036H71.0947V26.7877H76.9078V24.7036Z" fill="#1E1DC0"></path>
+            <defs>
+                <linearGradient id="paint0_linear_298_69" x1="3.74874e-07" y1="41.5" x2="53" y2="15" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#1E1DC0"></stop>
+                    <stop offset="0.297177" stop-color="#1E1DC0" stop-opacity="0.8"></stop>
+                    <stop offset="0.538452" stop-color="white"></stop>
+                    <stop offset="0.751187" stop-color="#1EC11D" stop-opacity="0.8"></stop>
+                    <stop offset="1" stop-color="#1EC11D"></stop>
+                </linearGradient>
+            </defs>
+        </svg>
+
+    </div>
+    <button class="header__burger" type="button">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+</header>
+
+	<!-- <div class="borders">
+		<div class="borders__box"></div>
+		<div class="borders__box"></div>
+		<div class="borders__box"></div>
+		<div class="borders__box"></div>
+		<div class="borders__box"></div>
+	</div> -->
+
+	<nav class="dots" style="pointer-events: none; opacity: 0.7875;">
+		<a class="dots__item active" href="#promo">
+			<span class="dots__text">Home</span>
+		</a>
+		<a class="dots__item" href="#practice">
+			<span class="dots__text">Practice Areas</span>
+		</a>
+		<a class="dots__item" href="#vision">
+			<span class="dots__text">GrlicaLaw Vision</span>
+		</a>
+		<a class="dots__item" href="#slider">
+			<span class="dots__text">Testimonials</span>
+		</a>
+		<a class="dots__item" href="#values">
+			<span class="dots__text">Our Values</span>
+		</a>
+		<a class="dots__item" href="#team">
+			<span class="dots__text">Team</span>
+		</a>
+        <a class="dots__item" href="#legal">
+			<span class="dots__text">Legal Career</span>
+		</a>
+		<a class="dots__item" href="#contact">
+			<span class="dots__text">Contact us</span>
+		</a>
+		<a class="dots__item" href="#footer">
+			<span class="dots__text">About us</span>
+		</a>
+	</nav>
+
+	<button class="to-contact">
+		<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80" fill="none">
+			<rect x="1" y="1" width="78" height="78" rx="39" stroke="#1EC11D" stroke-width="2"></rect>
+			<path d="M24 39C23.4477 39 23 39.4477 23 40C23 40.5523 23.4477 41 24 41V39ZM56.7071 40.7071C57.0976 40.3166 57.0976 39.6834 56.7071 39.2929L50.3431 32.9289C49.9526 32.5384 49.3195 32.5384 48.9289 32.9289C48.5384 33.3195 48.5384 33.9526 48.9289 34.3431L54.5858 40L48.9289 45.6569C48.5384 46.0474 48.5384 46.6805 48.9289 47.0711C49.3195 47.4616 49.9526 47.4616 50.3431 47.0711L56.7071 40.7071ZM24 41H56V39H24V41Z" fill="#1EC11D"></path>
+			</svg>
+			<span>Contact Us</span>
+	</button>
+
+	<section class="promo section" id="promo" data-color="0, 0, 0" style="min-height: 900px;">
+  <div class="promo__inner">
+    <h1 class="promo__title" style="translate: none; rotate: none; scale: none; opacity: 1; transform: translate(0px, 0px);">
+      <div>Lawyers</div>
+      You Trust
+    </h1>
+    <a class="promo__btn" href="#" style="translate: none; rotate: none; scale: none; opacity: 0.4945; transform: translate3d(0px, 25.2761px, 0px);">Contact Us</a>
+    <ul class="promo__list" style="translate: none; rotate: none; scale: none; opacity: 0; transform: translate(0px, 50px);">
+      <li>International Tax LL.M.</li>
+      <li>Blockchain &amp; FinTech Lawyer</li>
+      <li>EU Trademark Attorney</li>
+      <li>Corporate and M&amp;A</li>
+    </ul>
+  </div>
+</section>
+	<section class="practice columns section" id="practice" data-color="0, 0, 0">
+  <h2 class="columns__title title">Practice Areas</h2>
+
+  <ul class="columns__list">
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        <span>Crypto &amp;</span>
+        <span>VASPs</span>
+      </div>
+      <p class="columns__text">We are lawyers who understand crypto projects and virtual assets service providers
+        (VASPs) and have extensive experience in this field.</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        <span>Corporate</span>
+        <span>Law and M&amp;A</span>
+      </div>
+      <p class="columns__text">We are advising in general corporate matters, M&amp;A transactions, restructurings and
+        insolvency proceedings.</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        <span>Intellectual</span>
+        <span>Property Law</span>
+      </div>
+      <p class="columns__text">We will protect your intellectual property, from your brand name to copyrighted software,
+        know-how and trade secrets.</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        <span>Tax</span>
+        <span>Law</span>
+      </div>
+      <p class="columns__text">As the saying goes, you can never avoid taxes; but we will teach you how to optimize and
+        lower them.</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        <span>Start-ups</span>
+        <span>and IT Law</span>
+      </div>
+      <p class="columns__text">We offer specialized tailored approach to startups and provide them with everything they
+        need for the fast growth and scalability. We also advise in financing matters and exits.</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        <span>Immigration</span>
+        <span>Law</span>
+      </div>
+      <p class="columns__text">Business emigration to Slovenia, issues of residence permit, permanent residence,
+        citizenship</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        <span>Dispute</span>
+        <span>Resolution</span>
+      </div>
+      <p class="columns__text">We will fight hard for you and defend your interest in any kind of legal dispute.</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        <span>Criminal</span>
+        <span>Law</span>
+      </div>
+      <p class="columns__text">We defend clients in criminal proceedings and investigations.</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        <span>Mediation &amp;</span>
+        <span>Arbitration</span>
+      </div>
+      <p class="columns__text">Our law firm specializes in alternative dispute resolution, offering mediation services
+        for amicable resolution through facilitated negotiations. We also support in arbitration procedures.</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        <span>Real Estate</span>
+        <span>Law</span>
+      </div>
+      <p class="columns__text">Our real estate practice area focuses on providing comprehensive legal support for
+        property transactions, including purchases, sales, leases, and land development.</p>
+    </li>
+  </ul>
+</section>
+	<section class="vision section" id="vision" data-color="255, 255, 255" style="min-height: 900px;">
+  <div class="vision__inner">
+    <div class="vision__welcome">Welcome to Grlica Law!</div>
+    <h2 class="vision__title title">GrlicaLaw Vision</h2>
+    <div class="vision__content">
+      <div class="vision__text">
+        <p>Our vision is to offer a new type of a law firm: location-independent online legal service, yet with an
+          individual and boutique approach to every client.</p>
+        <p>Our team of GrlicaLaw specialists will be ready to tackle your hardest and most sensitive legal challenges.
+        </p>
+        <p>We stay flexible and agile while increasing our track records of court wins, successfully closed projects and
+          satisfied clients all over the world.</p>
+        <p>Our commitment is to be in the best service to YOU!</p>
+      </div>
+      <div class="vision__founder">
+        <span>Ivo Grlica, LL.M. (WU),</span>
+        <span>Managing Founder</span>
+      </div>
+    </div>
+  </div>
+</section>
+	<section class="slider section" id="slider" data-color="255, 255, 255">
+    <div class="slider__inner">
+        <div class="slider__top">
+            <h2 class="title slider__title">Testimonials Around The Globe</h2>
+
+            <div class="slider__btns">
+                <button class="slider__btn prev swiper-button-disabled" type="button" disabled="" tabindex="-1" aria-label="Previous slide" aria-controls="swiper-wrapper-9bd051035812e10219" aria-disabled="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="118" height="118" viewBox="0 0 118 118" fill="none">
+                        <circle cx="57.9588" cy="57.9593" r="56.9592" transform="rotate(-180 57.9588 57.9593)" fill="#1EC11D"></circle>
+                        <path d="M67.9178 32.9185L43.6321 57.2042L67.9178 81.4899" stroke="white"></path>
+                      </svg>
+                </button>
+                <button class="slider__btn next" type="button" tabindex="0" aria-label="Next slide" aria-controls="swiper-wrapper-9bd051035812e10219" aria-disabled="false">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="118" height="118" viewBox="0 0 118 118" fill="none">
+                        <circle cx="58.8772" cy="57.9592" r="56.9592" fill="#1EC11D"></circle>
+                        <path d="M48.9182 83L73.2039 58.7143L48.9181 34.4286" stroke="white"></path>
+                        </svg>
+                        <span>See more</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="swiper slider__swiper swiper-initialized swiper-horizontal">
+            <ul class="slider__wrapper swiper-wrapper" id="swiper-wrapper-9bd051035812e10219" aria-live="polite">
+                <li class="slider__item swiper-slide swiper-slide-active" role="group" aria-label="1 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        Olga Licen, PREVAJANJE &amp; <br> MANAGEMENT S.P., Head
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "I recommend a professional lawyer Ivo Grlica. A real legal expert. One of those who will
+                        always devote time to the client, listen to his problems and find solutions. I have
+                        personally
+                        collaborated with Ivo and I can say that it is easy to solve problems with him. He not only
+                        finds solutions, but also supports at any moment, and also gives support, which is
+                        invaluable in
+                        difficult situations."
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide swiper-slide-next" role="group" aria-label="2 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        M.Sc. M. K., Director 1337 Works <br> Swedish Venture Capital
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "Ivo Grlica is one of the best lawyers I have worked with. He has tremendous knowledge,
+                        passion,
+                        persistence, confidence and work ethics. He has helped me with several businesses regarding,
+                        how
+                        to
+                        establish a company, how to register a trademark, how to implement various policies and
+                        guidelines
+                        within a company. Overall, I love working with him, because not only is he fast and
+                        efficient,
+                        he is
+                        also very diligent and always double checks everything. He definitely has a winning
+                        attitude. I
+                        would highly recommend Ivo, and I know, I will continue working with him. He truly is a
+                        fantastic."
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="3 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        Roman Simkin, VIZANO d.o.o., <br> General Director
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "Ivo Grlica advised me on investment opportunities related to blockchain, on real estate issues and the organization of international business within the EU. I received answers to my questions and new solutions to current problems. I am very grateful to Ivo for his help."
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="4 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        Samantha <br> Stevens
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "I contacted Grlica Law firm to help navigate a tax procedure. Barbara Kompan as assigned to
+                        my
+                        case
+                        and was the person I was in contact with for the duration of my case. She was very
+                        professional
+                        and
+                        replied quickly to emails. I was satisfied with the service and would recommend this law
+                        firm to
+                        others."
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="5 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        Olga Smirnova, Smiklo <br> d.o.o., Director
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "Our company has been cooperating with Ivo in matters of Slovenian tax and civil law since
+                        2015.
+                        We recommend Ivo as a high-class specialist. In matters of taxation, it is always important
+                        to
+                        take an integrated approach to the problem with an analysis of various solutions and
+                        possible
+                        consequences. Ivo, thank you for your cooperation and help!"
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="6 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        J. B., Project Manager, <br> Abelium R&amp;D
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "The GrlicaLaw firm operates surprisingly efficiently and professionally. The field of
+                        copyright
+                        law
+                        is obviously one of their strongest ones and is managed accordingly. Our cooperation went
+                        smoothly
+                        and without major surprises. The results and procedures were in line with the original
+                        agreement
+                        and
+                        consistent with the anticipated costs, we were more than satisfied and will be happy to
+                        collaborate
+                        in our future endeavors!"
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="7 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        K. R., founder and <br> CEO of Vaulty
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "I want to thank the GrlicaLaw team and Ivo personally for resolving trademark issues,
+                        registering
+                        trademarks in Europe, and handling several agreements. Extremely professional services.
+                        Highly
+                        recommended!"
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="8 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        M. K., Director 1337 Works, <br> Swedish Venture Capital
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "Ivo Grlica is one of the best lawyers I have worked with. He has tremendous knowledge,
+                        passion,
+                        persistence, confidence and work ethics. He has helped me with several businesses."
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="9 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        D. W., CEO <br> of Imunsify
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "I don't think I ever met lawyers who can think like entrepreneurs before working with Ivo
+                        Grlica."
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="10 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        D. D., CEO of <br> Truegame.io
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "A lawyer who estimates all risks ahead of a client and explains them in understandable
+                        terms."
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="11 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        C. B., CEO <br> of Jarona
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "With Ivo as our legal counsel we always feel protected, prepared and confident for the next
+                        steps."
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="12 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        M. R., CEO of <br> Mediohealth AG
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "Ivo Grlica has delivered outstanding results for us over the time, within budget and has
+                        consistently exceeded our expectations."
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="13 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        J. P., Crypto <br> Water LLC (CEO)
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "Highly skilled legal professional. The first Blockchain lawyer I met in my life. Ivo's legal advice was always priceless. Highly recommended. I don't really like lawyers, but working with Ivo was an exception."
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="14 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        G. N., Co-Funder and <br> CEO of Suncontract
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "Fast to respond, diligent and thinking outside the box."
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="15 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        A. B., Bajdak &amp; <br> Family (CEO)
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "Ivo helped us with property transactions and it was very helpful to have a very clear and
+                        fast
+                        lawyer. Also with our trademark Bajdak&amp;Family, things were done very professionally."
+                    </p>
+                </li>
+
+                <li class="slider__item swiper-slide" role="group" aria-label="16 / 16" style="width: 285px;">
+                    <h4 class="slider__subtitle">
+                        I. P., LSBC <br> President
+                    </h4>
+                    <div class="slider__rate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="115" height="15" viewBox="0 0 115 15" fill="none">
+                            <path d="M7.5 0L9.18386 5.18237H14.6329L10.2245 8.38525L11.9084 13.5676L7.5 10.3647L3.09161 13.5676L4.77547 8.38525L0.367076 5.18237H5.81614L7.5 0Z" fill="#1EC11D"></path>
+                            <path d="M32.5 0L34.1839 5.18237H39.6329L35.2245 8.38525L36.9084 13.5676L32.5 10.3647L28.0916 13.5676L29.7755 8.38525L25.3671 5.18237H30.8161L32.5 0Z" fill="#1EC11D"></path>
+                            <path d="M57.5 0L59.1839 5.18237H64.6329L60.2245 8.38525L61.9084 13.5676L57.5 10.3647L53.0916 13.5676L54.7755 8.38525L50.3671 5.18237H55.8161L57.5 0Z" fill="#1EC11D"></path>
+                            <path d="M82.5 0L84.1839 5.18237H89.6329L85.2245 8.38525L86.9084 13.5676L82.5 10.3647L78.0916 13.5676L79.7755 8.38525L75.3671 5.18237H80.8161L82.5 0Z" fill="#1EC11D"></path>
+                            <path d="M107.5 0L109.184 5.18237H114.633L110.225 8.38525L111.908 13.5676L107.5 10.3647L103.092 13.5676L104.775 8.38525L100.367 5.18237H105.816L107.5 0Z" fill="#1EC11D"></path>
+                        </svg>
+                    </div>
+                    <p class="slider__descr">
+                        "If there exist such thing as out-of-the-box in the legal profession than Ivo is a personification of that. I've been working with Ivo in the field of business networking at several projects in the last 10 years and have always admired his oneness for new ideas."
+                    </p>
+                </li>
+            </ul>
+        <span class="swiper-notification" aria-live="assertive" aria-atomic="true"></span></div>
+
+    </div>
+</section>
+	<section class="columns values section" id="values" data-color="255, 255, 255">
+  <h2 class="columns__title title">Our Values</h2>
+  <ul class="columns__list">
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        added value
+      </div>
+      <p class="columns__text">We adopt a client-centric view in order to guide you towards the best solutions.</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        responsive
+      </div>
+      <p class="columns__text">We have organized our work in a way that enables fast work delivery times.</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        international
+      </div>
+      <p class="columns__text">We are an agile international law firm committed to supporting you globally.</p>
+    </li>
+
+  </ul>
+</section>
+	<section class="team columns section" id="team" data-color="0, 0, 0">
+  <h2 class="columns__title title">Meet Our Team</h2>
+
+  <ul class="columns__list">
+    <li class="columns__item">
+      <div class="columns__img">
+        <img src="img/team/Ivo.png" alt="Ivo Grlica, LL.M.(WU, Vienna)">
+      </div>
+      <div class="columns__subtitle title-h3">
+        <span>Ivo Grlica, LL.M.</span>
+        <span>(WU, Vienna)</span>
+      </div>
+      <p class="columns__text">Managing Partner</p>
+    </li>
+    <li class="columns__item">
+        <div class="columns__img">
+          <img src="img/team/Snezana.png" alt="Snežana Harnik">
+        </div>
+        <div class="columns__subtitle title-h3">
+          <span>Snežana </span>
+          <span>Harnik</span>
+        </div>
+        <p class="columns__text">Senior Lawyer</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__img">
+        <img src="img/team/Nejc.png" alt="Nejc Aristovnik">
+      </div>
+      <div class="columns__subtitle title-h3">
+        <span>Nejc</span>
+        <span>Aristovnik</span>
+      </div>
+      <p class="columns__text">Project Manager</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__img">
+        <img src="img/team/Jus.png" alt="Juš Weinberger">
+      </div>
+      <div class="columns__subtitle title-h3">
+        <span>Juš </span>
+        <span>Weinberger</span>
+      </div>
+      <p class="columns__text">Senior Associate</p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__img">
+        <img src="img/team/Lara.png" alt="Lara Ana Klančišar">
+      </div>
+      <div class="columns__subtitle title-h3">
+        <span>Lara Ana </span>
+        <span>Klančišar</span>
+      </div>
+      <p class="columns__text">Legal Assistant</p>
+    </li>
+    <li class="columns__item">
+        <div class="columns__img">
+          <img src="img/team/Manca.png" alt="Manca Kramar">
+        </div>
+        <div class="columns__subtitle title-h3">
+          <span>Manca </span>
+          <span>Kramar</span>
+        </div>
+        <p class="columns__text">Legal Assistant</p>
+    </li>
+
+
+  </ul>
+</section>
+
+<section class="legal section" id="legal" data-color="255, 255, 255">
+    <div class="legal__inner">
+      <h2 class="legal__title title">Legal Career</h2>
+      <div class="legal__content">
+        <div class="legal__text">
+          <h3>Join Our Funky Legal Team! 🎉</h3><br>
+          <h4>Are you curious?</h4><br>
+          <h4>Do you have the drive to excel?</h4><br>
+          <h4>Do you love helping people?</h4><br>
+            
+          <p>If you answered YES to all three with a big smile, and if you thrive on communicating in different languages, 
+            mingling with diverse cultures, and navigating their legal challenges within the Slovenian and EU legal framework, 
+            we want to meet you!
+          </p>
+          <p>In our vibrant and ever-evolving environment, we handle everything from classic legal matters to cutting-edge issues. 
+            To keep up with the fast-paced world around us, we rely on knowledge, continuous learning, and the coolest tech out there.
+          </p>
+          <p>Think you can add your unique touch to our story? We'd love to hear from you!</p>
+          <p>Are we on the same wavelength? 🌟</p>
+        </div>
+        <div class="legal__founder">
+          <span>Drop us a line at info@grlicalaw.com—we're open 24/7.</span>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section class="contact section" id="contact" data-color="255, 255, 255" style="min-height: 900px;">
+    <div class="contact__inner">
+        <h2 class="contact__title title">Contact Us</h2>
+        <form class="contact__form" id="form">
+            <div class="contact__wrapper">
+                <div class="contact__item">
+                    <label class="contact__item-label">
+                        <input class="contact__input" type="text" name="name">
+                        <span class="contact__placeholder">Your Name</span>
+                    </label>
+
+                </div>
+                <div class="contact__item">
+                    <label class="contact__item-label">
+                        <input class="contact__input" type="email" name="email">
+                        <span class="contact__placeholder">Your Email</span>
+                    </label>
+
+                </div>
+                <div class="contact__item">
+                    <label class="contact__item-label">
+                        <textarea class="contact__input" type="text" name="text" rows="1"></textarea>
+                        <span class="contact__placeholder">Your Message</span>
+                    </label>
+                </div>
+            </div>
+            <div class="contact__wrapper contact__wrapper--checkbox">
+                <label class="contact__label">
+                    <input class="sr-only" type="checkbox" name="newslatter">
+                    <span class="contact__checkbox"></span>
+
+                    I would like to sign up for Grlica Law newsletter.
+                </label>
+                <label class="contact__label">
+                    <input class="sr-only" type="checkbox" name="policy">
+                    <span class="contact__checkbox"></span>
+                    I agree with the privacy policy of this website.
+                </label>
+            </div>
+            <button id="send" class="contact__btn contact__btn--disable" disabled="" type="submit">Send</button>
+        </form>
+        <div class="contact__response">
+            <div class="contact__img">
+                <img src="/img/contact/ok.png" alt="ok">
+            </div>
+            <div class="contact__description">
+                <div class="title-h3">Your application has been sent,</div>
+                <p>our staff will contact you as soon as possible</p>
+                <button class="contact__btn contact__btn--again">Send again</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+	<footer class="footer columns section" id="footer" data-color="0, 0, 0">
+  <h2 class="columns__title title">About Us</h2>
+
+  <p class="columns__descr">GrlicaLaw is a boutique international legal agency providing value-adding and timely legal
+    solutions across borders.</p>
+
+  <ul class="columns__list">
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        address
+      </div>
+      <a class="columns__text link" href="https://maps.app.goo.gl/eMr1iVxDFrrGeyDc9" target="_blank">Miklošičeva cesta 18, 1000 Ljubljana, Slovenia</a>
+      <a class="link" href="tel:+38640753041">+3 864 075 30 41</a>
+      <p class="columns__text">
+      </p><div>Baarerstrasse 141</div>
+      <div>6300 Zug</div>
+      <div>Switzerland</div>
+      <p></p>
+    </li>
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        links
+      </div>
+      <ul>
+        <li><a class="link" href="/assets/pdf/Terms.pdf" target="_blank">Terms of Service</a></li>
+        <li><a class="link" href="/assets/pdf/PrivacyPolicy.pdf" target="_blank">Privacy Policy</a></li>
+      </ul>
+    </li>
+    <li class="columns__item">
+      <div class="columns__subtitle title-h3">
+        follow us
+      </div>
+      <ul>
+        <li><a class="link" href="https://www.linkedin.com/in/ivo-grlica-4a378637" target="_blank">Linkedin</a></li>
+        <li><a class="link" href="https://www.facebook.com/GrlicaLaw" target="_blank">Facebook</a></li>
+        <li><a class="link" href="https://medium.com/@IvoGrlica" target="_blank">Medium</a></li>
+        <li><a class="link" href="https://t.me/IvoGrlica" target="_blank">Telegram</a></li>
+      </ul>
+    </li>
+  </ul>
+  <div class="footer__copy">
+    <div>Achieving success for</div>
+    <div>our clients since 2018.</div>
+  </div>
+</footer>
+
+
+
+	
+	
+	
+	
+	
+	
+	
+
+
+
+<canvas data-engine="three.js r156" width="1440" height="900" class="themis" style="display: block; width: 1440px; height: 900px; opacity: 1;"></canvas></body></html>

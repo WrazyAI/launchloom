@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-roofing-joe-hall",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://joehallroofing.com/",
+    "finalUrl": "https://joehallroofing.com/",
+    "httpStatus": 200,
+    "pageTitle": "DFW Roofing Contractor | Joe Hall Roofing & Contracting",
+    "retrievedAt": "2026-10-08T20:34:49.851Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 156389,
+      "sha256": "d891b888186107597c17f772e8712d6a6c2fff631cce5110c198b0929e73a725"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 95786,
+      "sha256": "07ec60bab49d69927d930db98595c56cb658e11a1b9b937e59f02d4541f36968"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 2979,
+      "sha256": "a3b9f5df6bf638a4cb583480bed6e18a84ad7141cc3d75b81094f91dd7b82f32"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 69572,
+      "sha256": "eea0a045590668c0315cd672bce14938df2d23c6ae795837e4b14dbde0eb8641"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 22455,
+      "sha256": "0079dc9d6a2aff3431cbc3a15a0b7089e06b0309307771e1315e77f33885c5e6"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 248364,
+      "sha256": "a0993be0a1cf84a7610d052d2b0468abf2aae58b36ad56b6b48c8c95e6299fc3"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2021/11/Horizontal-Logo-2-2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2021/05/mobilelogo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2021/05/house.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2021/05/block.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2021/05/aff_1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2025/09/NTRCA-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2025/09/Vector-Logo-RCAT.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2025/09/Vector-Logo-BBB.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2022/01/GAF-Master-Elite.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2026/02/Badge_10-Years_Blue.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2026/03/Joe-Hall-Roofing-Team-North-Texas-scaled.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2025/09/Best-Companies-2025.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2025/09/Best-Companies-2024.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2021/08/Nextdoor_logo_@2x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2021/08/Green-Best-of-2021-Logo_@2x.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2021/08/Best-of-2020-Logo_@2x.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/plugins/instagram-feed-pro/img/placeholder.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/themes/joehallroofing-sage11/public/video/home.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://joehallroofing.com/wp-content/uploads/2021/05/video-cover.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 5 of 5 stylesheets retained.",
+  "digest": "5cfee6a3e1448414f4e1bcf547d72f64a65712f63fe0c4368d00c10975b23f2c"
+}

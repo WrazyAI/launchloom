@@ -1,0 +1,1255 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-real-estate-serhant-media-brokerage",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://serhant.com/",
+    "finalUrl": "https://serhant.com/",
+    "httpStatus": 200,
+    "pageTitle": "SERHANT. | Luxury Real Estate Brokerage & Media Co.",
+    "retrievedAt": "2026-10-08T20:33:21.115Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 855732,
+      "sha256": "6e087ca27c3907b12b9cdef43e3cdf4221954b6923b5065650cce7eea893b4b0"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 32112,
+      "sha256": "655c54a113e02233c15cdc1f3cd65367d0fd11ea179649ff392011a3d5d82365"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 11084,
+      "sha256": "83b1e0a0cc92672a27b8fc074ce45ffae18711e3a6ed5448da47d75979499dca"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 230929,
+      "sha256": "25f5fd1b54027a256cbface4b84c487c971584fcf18ab637c0ecce3a9775add9"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 22361,
+      "sha256": "0ecbd1374ebd05d9733e3230e6ccaefadbfd8907cd151221d8af6fdf881b4e09"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 1964,
+      "sha256": "6405c8982634e928d5b88ac97d65044e4c8272d5f968674bd40544057e42c590"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn-cookieyes.com/assets/images/revisit.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-cookieyes.com/assets/images/close.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=320/https://media-production.lp-cdn.com/media/f92cc6c4-e44d-472a-902e-4dc62c1d0bd0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85/https://media-production.lp-cdn.com/media/f92cc6c4-e44d-472a-902e-4dc62c1d0bd0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "fit=scale-down",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/f92cc6c4-e44d-472a-902e-4dc62c1d0bd0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/f92cc6c4-e44d-472a-902e-4dc62c1d0bd0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=320/https://media-production.lp-cdn.com/media/ebfad224-0163-4598-bf2d-fceaa323c667",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/ebfad224-0163-4598-bf2d-fceaa323c667",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/ebfad224-0163-4598-bf2d-fceaa323c667",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/ebfad224-0163-4598-bf2d-fceaa323c667",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/ebfad224-0163-4598-bf2d-fceaa323c667",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/ebfad224-0163-4598-bf2d-fceaa323c667",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85/https://media-production.lp-cdn.com/media/t3b0ii6wdq75vggug8oo",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/media/ba676d0b-4f19-40c8-bc4c-1a50b89eac5d",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/8d9fac28-e433-4881-bf60-33b0a3188188",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/8d9fac28-e433-4881-bf60-33b0a3188188",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/8d9fac28-e433-4881-bf60-33b0a3188188",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/8d9fac28-e433-4881-bf60-33b0a3188188",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/8d9fac28-e433-4881-bf60-33b0a3188188",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/8d9fac28-e433-4881-bf60-33b0a3188188",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/8d9fac28-e433-4881-bf60-33b0a3188188",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/gzi6d6th6ivrpshwizuz",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/gzi6d6th6ivrpshwizuz",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/gzi6d6th6ivrpshwizuz",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/gzi6d6th6ivrpshwizuz",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/gzi6d6th6ivrpshwizuz",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/gzi6d6th6ivrpshwizuz",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1709689702529-6fa1f343e108?ixid=M3w0MTQ1MnwwfDF8c2VhcmNofDEyfHxjb2xvcmFkb3xlbnwwfHx8fDE3ODc1ODQ5MDF8MA&ixlib=rb-4.1.0&q=80&w=960",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1709689702529-6fa1f343e108?ixid=M3w0MTQ1MnwwfDF8c2VhcmNofDEyfHxjb2xvcmFkb3xlbnwwfHx8fDE3ODc1ODQ5MDF8MA&ixlib=rb-4.1.0&q=80&w=1280",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1709689702529-6fa1f343e108?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0MTQ1MnwwfDF8c2VhcmNofDEyfHxjb2xvcmFkb3xlbnwwfHx8fDE3ODc1ODQ5MDF8MA&ixlib=rb-4.1.0&q=80&w=200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1709689702529-6fa1f343e108?ixid=M3w0MTQ1MnwwfDF8c2VhcmNofDEyfHxjb2xvcmFkb3xlbnwwfHx8fDE3ODc1ODQ5MDF8MA&ixlib=rb-4.1.0&q=80&w=1920",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1709689702529-6fa1f343e108?ixid=M3w0MTQ1MnwwfDF8c2VhcmNofDEyfHxjb2xvcmFkb3xlbnwwfHx8fDE3ODc1ODQ5MDF8MA&ixlib=rb-4.1.0&q=80&w=2560",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1709689702529-6fa1f343e108?ixid=M3w0MTQ1MnwwfDF8c2VhcmNofDEyfHxjb2xvcmFkb3xlbnwwfHx8fDE3ODc1ODQ5MDF8MA&ixlib=rb-4.1.0&q=80&w=3456",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/lgo6scjyhwihwfue9jog",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/lgo6scjyhwihwfue9jog",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/lgo6scjyhwihwfue9jog",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/lgo6scjyhwihwfue9jog",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/lgo6scjyhwihwfue9jog",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/lgo6scjyhwihwfue9jog",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/qysbhmdwnr5kyztv1lez",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/qysbhmdwnr5kyztv1lez",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/qysbhmdwnr5kyztv1lez",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/qysbhmdwnr5kyztv1lez",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/qysbhmdwnr5kyztv1lez",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/qysbhmdwnr5kyztv1lez",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/uuqrcu6ysg9addjnhurm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/uuqrcu6ysg9addjnhurm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/uuqrcu6ysg9addjnhurm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/uuqrcu6ysg9addjnhurm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/uuqrcu6ysg9addjnhurm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/uuqrcu6ysg9addjnhurm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/uuqrcu6ysg9addjnhurm",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/d38af5ba-911d-40fc-8aca-5b9a46d6a5f2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/d38af5ba-911d-40fc-8aca-5b9a46d6a5f2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/d38af5ba-911d-40fc-8aca-5b9a46d6a5f2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/d38af5ba-911d-40fc-8aca-5b9a46d6a5f2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/d38af5ba-911d-40fc-8aca-5b9a46d6a5f2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/d38af5ba-911d-40fc-8aca-5b9a46d6a5f2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/d38af5ba-911d-40fc-8aca-5b9a46d6a5f2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=3456/https://media-production.lp-cdn.com/media/d38af5ba-911d-40fc-8aca-5b9a46d6a5f2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/4495946e-fc0b-4154-8b0a-65836f355672",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85/https://media-production.lp-cdn.com/media/4495946e-fc0b-4154-8b0a-65836f355672",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/4495946e-fc0b-4154-8b0a-65836f355672",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/4495946e-fc0b-4154-8b0a-65836f355672",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/4495946e-fc0b-4154-8b0a-65836f355672",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/9fa7db33-d00a-4838-9c0e-c28d85e1dddf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/9fa7db33-d00a-4838-9c0e-c28d85e1dddf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/9fa7db33-d00a-4838-9c0e-c28d85e1dddf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/9fa7db33-d00a-4838-9c0e-c28d85e1dddf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/9fa7db33-d00a-4838-9c0e-c28d85e1dddf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/9fa7db33-d00a-4838-9c0e-c28d85e1dddf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/9fa7db33-d00a-4838-9c0e-c28d85e1dddf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=3456/https://media-production.lp-cdn.com/media/9fa7db33-d00a-4838-9c0e-c28d85e1dddf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/a3e136d1-5715-4891-b9a5-5227eb0964c0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/a3e136d1-5715-4891-b9a5-5227eb0964c0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/a3e136d1-5715-4891-b9a5-5227eb0964c0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/a3e136d1-5715-4891-b9a5-5227eb0964c0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/a3e136d1-5715-4891-b9a5-5227eb0964c0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/a3e136d1-5715-4891-b9a5-5227eb0964c0",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85/https://media-production.lp-cdn.com/media/2bc3d47a-d2c9-4cf4-a87c-7eb8727e65f5",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/2bc3d47a-d2c9-4cf4-a87c-7eb8727e65f5",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/2bc3d47a-d2c9-4cf4-a87c-7eb8727e65f5",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/letdivuro4mfj9iu2n02",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/letdivuro4mfj9iu2n02",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/letdivuro4mfj9iu2n02",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/letdivuro4mfj9iu2n02",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/letdivuro4mfj9iu2n02",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/letdivuro4mfj9iu2n02",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/pfudzjybmde9jwt2wdca",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/pfudzjybmde9jwt2wdca",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/pfudzjybmde9jwt2wdca",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/pfudzjybmde9jwt2wdca",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/pfudzjybmde9jwt2wdca",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/pfudzjybmde9jwt2wdca",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85/https://media-production.lp-cdn.com/media/a92335ff-b60b-4cf3-a0c4-90892e1ba842",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/a92335ff-b60b-4cf3-a0c4-90892e1ba842",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/a92335ff-b60b-4cf3-a0c4-90892e1ba842",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85/https://media-production.lp-cdn.com/media/e35eb719-d850-4ad8-b2f0-e5544d8dc293",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/e35eb719-d850-4ad8-b2f0-e5544d8dc293",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/e35eb719-d850-4ad8-b2f0-e5544d8dc293",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/fwqjkfcnziqhdfrv4hvl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/fwqjkfcnziqhdfrv4hvl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/fwqjkfcnziqhdfrv4hvl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/fwqjkfcnziqhdfrv4hvl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/fwqjkfcnziqhdfrv4hvl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/fwqjkfcnziqhdfrv4hvl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/thikhfvmstgxg5w7ftr2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/thikhfvmstgxg5w7ftr2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/thikhfvmstgxg5w7ftr2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/thikhfvmstgxg5w7ftr2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/thikhfvmstgxg5w7ftr2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/thikhfvmstgxg5w7ftr2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/9a8d1fc3-522d-44dd-9993-8f924d165f15",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/9a8d1fc3-522d-44dd-9993-8f924d165f15",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/9a8d1fc3-522d-44dd-9993-8f924d165f15",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/9a8d1fc3-522d-44dd-9993-8f924d165f15",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/9a8d1fc3-522d-44dd-9993-8f924d165f15",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/9a8d1fc3-522d-44dd-9993-8f924d165f15",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/9a8d1fc3-522d-44dd-9993-8f924d165f15",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=3456/https://media-production.lp-cdn.com/media/9a8d1fc3-522d-44dd-9993-8f924d165f15",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/3d9c811c-129e-4e5d-96f7-a97afaf8a32d",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/3d9c811c-129e-4e5d-96f7-a97afaf8a32d",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=320/https://media-production.lp-cdn.com/media/3d9c811c-129e-4e5d-96f7-a97afaf8a32d",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/3d9c811c-129e-4e5d-96f7-a97afaf8a32d",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/3d9c811c-129e-4e5d-96f7-a97afaf8a32d",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/3d9c811c-129e-4e5d-96f7-a97afaf8a32d",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/3d9c811c-129e-4e5d-96f7-a97afaf8a32d",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=3456/https://media-production.lp-cdn.com/media/3d9c811c-129e-4e5d-96f7-a97afaf8a32d",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/924260/-5649675470105296254.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/R11167313/6459902252446022324.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/RLS20053868/-7920043687733834014.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/luxuryp/images/f_auto,q_auto/ghg6svcisrh0ovuycxeb/rls_logo_vertical2020",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/RLS11014263/-1323208099368010651.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/125810/3209817930037943229.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/luxuryp/images/f_auto,q_auto/zexthtlgt5vakpmo6mew/294282229_484050867045378_7217578927306210277_n",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/R10979343/282656577052441419.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/PTP2604523/8004207925925630439.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/luxuryp/images/f_auto,q_auto/ayfqwu5unpcjgnh1uh7k/crmls-logo-simplified-600x600-1-1024x296",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/8610675/8619471764201980423.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/luxuryp/images/f_auto,q_auto/ddwqqnwa3slutft8zlhh/idxlogo",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/1410933/-3555120178618462674.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/media/6d32f4e5-ee2c-46fc-b941-745a6f1ba236",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=95/https://media-production.lp-cdn.com/media/725a5b05-b78f-4371-9429-4ce5fc1fb843",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/25-1653/-1024106356013380348.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://res.cloudinary.com/luxuryp/images/f_auto,q_auto/nnmt1xb0ift53nwlczyl/pbb-logo",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/RLS20100583/-6456694049647666907.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85/https://media-production.lp-cdn.com/media/99dc6a3b-70ee-4f5c-b8d0-ab04b666682c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/zonwhlsbzbgwooy3erdo",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/zonwhlsbzbgwooy3erdo",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/zonwhlsbzbgwooy3erdo",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/zonwhlsbzbgwooy3erdo",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/qx9mu0blt7z1ijbbbiaf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/qx9mu0blt7z1ijbbbiaf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/qx9mu0blt7z1ijbbbiaf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/qx9mu0blt7z1ijbbbiaf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/qx9mu0blt7z1ijbbbiaf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/qx9mu0blt7z1ijbbbiaf",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85/https://media-production.lp-cdn.com/media/s2whv4rpfkhapo5cjxqd",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/RLS20003424/5455309879452672818.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/RLS20009707/8506589270737420540.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://dlajgvw9htjpb.cloudfront.net/cms/b26ab618-2b1e-4a17-8868-498b96b52dc0/224050501/-1968123320935993459.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/b1056a81-197f-4117-94a0-18f92c5df2ec",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/b1056a81-197f-4117-94a0-18f92c5df2ec",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/b1056a81-197f-4117-94a0-18f92c5df2ec",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/b1056a81-197f-4117-94a0-18f92c5df2ec",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/b1056a81-197f-4117-94a0-18f92c5df2ec",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/b1056a81-197f-4117-94a0-18f92c5df2ec",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=3456/https://media-production.lp-cdn.com/media/b1056a81-197f-4117-94a0-18f92c5df2ec",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/c2056202-adf9-4a88-9bfe-7d52e4e14f40",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/c2056202-adf9-4a88-9bfe-7d52e4e14f40",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/c2056202-adf9-4a88-9bfe-7d52e4e14f40",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/c2056202-adf9-4a88-9bfe-7d52e4e14f40",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/c2056202-adf9-4a88-9bfe-7d52e4e14f40",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/c2056202-adf9-4a88-9bfe-7d52e4e14f40",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/d83b9235-5bfd-4b25-8ae7-3c1949fa805e",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/d83b9235-5bfd-4b25-8ae7-3c1949fa805e",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/d83b9235-5bfd-4b25-8ae7-3c1949fa805e",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/d83b9235-5bfd-4b25-8ae7-3c1949fa805e",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/d83b9235-5bfd-4b25-8ae7-3c1949fa805e",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/cc1ef62e-044c-42b8-b323-c95afea99134",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/cc1ef62e-044c-42b8-b323-c95afea99134",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/cc1ef62e-044c-42b8-b323-c95afea99134",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/cc1ef62e-044c-42b8-b323-c95afea99134",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/cc1ef62e-044c-42b8-b323-c95afea99134",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/cc1ef62e-044c-42b8-b323-c95afea99134",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/kt2cvan9p9khrud6hs30",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/kt2cvan9p9khrud6hs30",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/kt2cvan9p9khrud6hs30",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/kt2cvan9p9khrud6hs30",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/kt2cvan9p9khrud6hs30",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/fedcf334-a39e-4b00-8562-6126d9dbc39c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/fedcf334-a39e-4b00-8562-6126d9dbc39c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/fedcf334-a39e-4b00-8562-6126d9dbc39c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/fedcf334-a39e-4b00-8562-6126d9dbc39c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/fedcf334-a39e-4b00-8562-6126d9dbc39c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/fedcf334-a39e-4b00-8562-6126d9dbc39c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=3456/https://media-production.lp-cdn.com/media/fedcf334-a39e-4b00-8562-6126d9dbc39c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/huwcs8gnkedpnzhujhfk",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/huwcs8gnkedpnzhujhfk",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/huwcs8gnkedpnzhujhfk",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/huwcs8gnkedpnzhujhfk",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/huwcs8gnkedpnzhujhfk",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/f3jn28isd0ssolud0k3a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/f3jn28isd0ssolud0k3a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/f3jn28isd0ssolud0k3a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/f3jn28isd0ssolud0k3a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/f3jn28isd0ssolud0k3a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/rdsqhlcmjf4dqwdle9tl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/rdsqhlcmjf4dqwdle9tl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/rdsqhlcmjf4dqwdle9tl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/rdsqhlcmjf4dqwdle9tl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/rdsqhlcmjf4dqwdle9tl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/rdsqhlcmjf4dqwdle9tl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/rdsqhlcmjf4dqwdle9tl",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/paprhqdeuwvpgrja7zir",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/paprhqdeuwvpgrja7zir",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/paprhqdeuwvpgrja7zir",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/paprhqdeuwvpgrja7zir",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/paprhqdeuwvpgrja7zir",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/paprhqdeuwvpgrja7zir",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/paprhqdeuwvpgrja7zir",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/534e7fb8-a4b4-4ff7-a961-b71c646ed793",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/534e7fb8-a4b4-4ff7-a961-b71c646ed793",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/534e7fb8-a4b4-4ff7-a961-b71c646ed793",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/534e7fb8-a4b4-4ff7-a961-b71c646ed793",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/534e7fb8-a4b4-4ff7-a961-b71c646ed793",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/2a532122-9f35-4d80-8498-183ba9fba70a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/2a532122-9f35-4d80-8498-183ba9fba70a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/2a532122-9f35-4d80-8498-183ba9fba70a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/2a532122-9f35-4d80-8498-183ba9fba70a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/2a532122-9f35-4d80-8498-183ba9fba70a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/2a532122-9f35-4d80-8498-183ba9fba70a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=3456/https://media-production.lp-cdn.com/media/2a532122-9f35-4d80-8498-183ba9fba70a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/tmc9oykxg1s4zyhisajx",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/tmc9oykxg1s4zyhisajx",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/tmc9oykxg1s4zyhisajx",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/tmc9oykxg1s4zyhisajx",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/tmc9oykxg1s4zyhisajx",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/tmc9oykxg1s4zyhisajx",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/tmc9oykxg1s4zyhisajx",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/ue1ivvcgibro1rqndah9",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/ue1ivvcgibro1rqndah9",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/ue1ivvcgibro1rqndah9",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/ue1ivvcgibro1rqndah9",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/ue1ivvcgibro1rqndah9",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/ue1ivvcgibro1rqndah9",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/ue1ivvcgibro1rqndah9",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/c47e8f73-2afb-4951-88f9-10fd52a3e71a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/c47e8f73-2afb-4951-88f9-10fd52a3e71a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/c47e8f73-2afb-4951-88f9-10fd52a3e71a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/c47e8f73-2afb-4951-88f9-10fd52a3e71a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/c47e8f73-2afb-4951-88f9-10fd52a3e71a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/c47e8f73-2afb-4951-88f9-10fd52a3e71a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=3456/https://media-production.lp-cdn.com/media/c47e8f73-2afb-4951-88f9-10fd52a3e71a",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/udud9zil3r0zli2flfcr",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/udud9zil3r0zli2flfcr",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/udud9zil3r0zli2flfcr",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/udud9zil3r0zli2flfcr",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/udud9zil3r0zli2flfcr",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/udud9zil3r0zli2flfcr",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/udud9zil3r0zli2flfcr",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/af96d3bb-a303-4314-926e-993f72a32209",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/af96d3bb-a303-4314-926e-993f72a32209",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/af96d3bb-a303-4314-926e-993f72a32209",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/af96d3bb-a303-4314-926e-993f72a32209",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/af96d3bb-a303-4314-926e-993f72a32209",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/af96d3bb-a303-4314-926e-993f72a32209",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=3456/https://media-production.lp-cdn.com/media/af96d3bb-a303-4314-926e-993f72a32209",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/ozv29g2ftwvsedanrcne",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/ozv29g2ftwvsedanrcne",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/ozv29g2ftwvsedanrcne",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/ozv29g2ftwvsedanrcne",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/ozv29g2ftwvsedanrcne",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/ozv29g2ftwvsedanrcne",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/1cdce6ca-46d3-4ca1-9f79-639e2547fe0e",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/1cdce6ca-46d3-4ca1-9f79-639e2547fe0e",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/1cdce6ca-46d3-4ca1-9f79-639e2547fe0e",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/1cdce6ca-46d3-4ca1-9f79-639e2547fe0e",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/1cdce6ca-46d3-4ca1-9f79-639e2547fe0e",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/1cdce6ca-46d3-4ca1-9f79-639e2547fe0e",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/1cdce6ca-46d3-4ca1-9f79-639e2547fe0e",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/7ad0591e-801f-4970-835c-da06323a5d3c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/7ad0591e-801f-4970-835c-da06323a5d3c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/7ad0591e-801f-4970-835c-da06323a5d3c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/7ad0591e-801f-4970-835c-da06323a5d3c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/7ad0591e-801f-4970-835c-da06323a5d3c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/7ad0591e-801f-4970-835c-da06323a5d3c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/7ad0591e-801f-4970-835c-da06323a5d3c",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/f864f157-a258-4d47-8134-b70545697d98",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/f864f157-a258-4d47-8134-b70545697d98",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=960/https://media-production.lp-cdn.com/media/f864f157-a258-4d47-8134-b70545697d98",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1280/https://media-production.lp-cdn.com/media/f864f157-a258-4d47-8134-b70545697d98",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=1920/https://media-production.lp-cdn.com/media/f864f157-a258-4d47-8134-b70545697d98",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "width=2560/https://media-production.lp-cdn.com/media/f864f157-a258-4d47-8134-b70545697d98",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85/https://media-production.lp-cdn.com/media/f864f157-a258-4d47-8134-b70545697d98",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=960/https://media-production.lp-cdn.com/media/db397f61-1098-4d6f-aa67-2242b24ca2af",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/db397f61-1098-4d6f-aa67-2242b24ca2af",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 5 of 5 stylesheets retained. Page errors observed: 2.",
+  "digest": "e8b4364448fbd86baee3f8b04af41a2b68133469b15c4ccfa34f796c5a229376"
+}

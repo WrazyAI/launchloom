@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "jewelry-taya-memory-wearable",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://tayanecklace.com/",
+    "finalUrl": "https://tayanecklace.com/",
+    "httpStatus": 200,
+    "pageTitle": "TAYA - Jewelry that remembers",
+    "retrievedAt": "2026-10-08T20:19:26.496Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 268044,
+      "sha256": "dfee6e50d980d6101e3982ea9c59a1e0a86b39ef1ff63f61906a33a54438c0be"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://framerusercontent.com/images/GW7onPL8QM7WumyPS5etC5Xunw.png?scale-down-to=2048&width=4325&height=1632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/GW7onPL8QM7WumyPS5etC5Xunw.png?width=4325&height=1632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/GW7onPL8QM7WumyPS5etC5Xunw.png?scale-down-to=512&width=4325&height=1632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/GW7onPL8QM7WumyPS5etC5Xunw.png?scale-down-to=1024&width=4325&height=1632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/GW7onPL8QM7WumyPS5etC5Xunw.png?scale-down-to=4096&width=4325&height=1632",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/IQaoAphZwa7EsmBSbjQVv0btKNA.jpg?width=534&height=687",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/JkEzWigVWQMZGiBD7UIO23uGVw.jpg?scale-down-to=512&width=4500&height=3000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/JkEzWigVWQMZGiBD7UIO23uGVw.jpg?width=4500&height=3000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/JkEzWigVWQMZGiBD7UIO23uGVw.jpg?scale-down-to=1024&width=4500&height=3000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/JkEzWigVWQMZGiBD7UIO23uGVw.jpg?scale-down-to=2048&width=4500&height=3000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/JkEzWigVWQMZGiBD7UIO23uGVw.jpg?scale-down-to=4096&width=4500&height=3000",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/uJjObANJYhSWdQjJq1ZFOdv5A0.jpg?scale-down-to=512&width=887&height=695",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/uJjObANJYhSWdQjJq1ZFOdv5A0.jpg?width=887&height=695",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/KFQHsHwHosU6uyi09xMBUkSlUE.jpg?scale-down-to=1024&width=1600&height=2400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/KFQHsHwHosU6uyi09xMBUkSlUE.jpg?width=1600&height=2400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/KFQHsHwHosU6uyi09xMBUkSlUE.jpg?scale-down-to=2048&width=1600&height=2400",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/6tTbkXggWgQCAJ4DO2QEdXXmgM.svg?arrow=left",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/11KSGbIZoRSg4pjdnUoif6MKHI.svg?arrow=right",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/assets/L8jMZlhFYF8IQ6txUjquUKsdUE.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/assets/HAaw2Ie1WAxFSohA6FDeZQfOnJA.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/assets/ZhXxQvXT8TfZgJLrSemd6DJsPAk.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/TtrdZfVFvioqWCbFfF6F3Qx46Go.webp?width=1344&height=754",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framer.com/edit?framerSiteId=38d2bf6c82e0b1725f0321df1bad3223137792397512298e5e1e3488500f7f2a&source=tayanecklace.com&features=%7B%22editorBarDisableFrameAncestorsSecurity%22%3Afalse%2C%22onPageLocalizationSupport%22%3Atrue%2C%22onPageMoveTool%22%3Atrue%2C%22onPageRichTextBlockSelection%22%3Atrue%7D&loadStart=1791490761374",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 0 of 0 stylesheets retained.",
+  "digest": "a91dfc20df15c988929be483a164061ebed37c84e8e11a6c6257d76136ad9933"
+}

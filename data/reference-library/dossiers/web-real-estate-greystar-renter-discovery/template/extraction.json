@@ -1,0 +1,894 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-real-estate-greystar-renter-discovery",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.greystar.com/",
+    "finalUrl": "https://www.greystar.com/",
+    "httpStatus": 200,
+    "pageTitle": "Apartments & Homes for Rent | Greystar",
+    "retrievedAt": "2026-10-08T20:32:32.812Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 299075,
+      "sha256": "bded92e8289902eb1acda33f54502e39cad2ea90930befd2b36e5d01df878379"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 120637,
+      "sha256": "d14b318761b4661f12b697dd7a737849af67bae356fcabcd710d461d1ca65a01"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 5496,
+      "sha256": "fae0116cfd7faecd642ef63c5173db255799b67d08f90bcc4267a5594f5aebd2"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 299763,
+      "sha256": "3572d05a81eb912e86b5f65f353878f58c3f4bea27be4a67299771652214e82a"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 669,
+      "sha256": "bc5dbae6b4b77c81ef8ffc9038ea4bf17126c1eaddadd7bcd5be0ce9a1352866"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-hero-2026-09?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-hero-2026-09?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-hero-2026-09?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-hero-2026-09?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-hero-2026-09?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-hero-2026-09?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-hero-2026-09?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-hero-2026-09?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-hero-2026-09?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-hero-2026-09?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-hero-2026-09?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-hero-2026-09?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-hero-2026-09?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/19917PL1?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/19984BDG2?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/15419BDG4?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/21630CLB1?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-living-mom-baby-yoga?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-living-mom-baby-yoga?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-living-mom-baby-yoga?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-living-mom-baby-yoga?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-living-mom-baby-yoga?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-living-mom-baby-yoga?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-living-mom-baby-yoga?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-living-mom-baby-yoga?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-living-mom-baby-yoga?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-living-mom-baby-yoga?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-living-mom-baby-yoga?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-living-mom-baby-yoga?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-living-mom-baby-yoga?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=128&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=256&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-man-coffee?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=128&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=256&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-community-living-caregiver-mom-daughter?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=128&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=256&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-couple-plant-boxes?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=128&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=256&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Georgia-Atlanta-Metro-Stockbridge?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=128&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=256&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-North-Carolina-Charlotte-Metro?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=128&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=256&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-Texas-Houston-Braeswood-Fondren-SW?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=128&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=256&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/USA-California-Los-Angeles-Metro-Los-Angeles?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=128&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=256&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-us-local-guides-1?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=128&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=256&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-moving-new-house-keys?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=128&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=256&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-grandfather-child?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=128&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=256&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-laptop-searching?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=750&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=2048&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=256&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=375&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=384&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=425&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=640&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=828&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=1024&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=1080&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=1200&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=1440&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=1600&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://s7d9.scene7.com/is/image/greystarprod/greystar-shopping-couple-leasing-consultation?fmt=avif&wid=1920&qlt=70&fit=constrain",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.cookielaw.org/logos/1018a35e-3f7d-456d-9e22-1d0517248482/018f5ef2-9b8f-7f8f-b9e2-d835010d896d/972554f8-8f53-4d1a-92ca-8bef29fdb5d3/GreystarLogo_Navy_NoTagline.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.cookielaw.org/logos/static/powered_by_logo.svg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 4 of 4 stylesheets retained.",
+  "digest": "f499610252d62e812c31a8342ee3ec19e19c7caa49c9dd8bc0883ce5377d7f46"
+}

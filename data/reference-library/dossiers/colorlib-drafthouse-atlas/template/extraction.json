@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "colorlib-drafthouse-atlas",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/drafthouse",
+    "repository": "https://github.com/ColorlibHQ/bootstrap-templates",
+    "revision": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "templatePath": "drafthouse/",
+    "retrievedAt": "2026-10-08T20:05:26.237Z",
+    "license": "MIT",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/base.css",
+      "bytes": 12208,
+      "sha256": "84662d517b2d223427a0d403a347cb8edf1a834ecaf160e5f4c8f8627c78b56c"
+    },
+    {
+      "path": "source/assets/css/style.css",
+      "bytes": 5514,
+      "sha256": "c3c0a5338b65fb035ed2f6537ede57a780078cc03db9a3bfc1580b52087b4f4c"
+    },
+    {
+      "path": "source/assets/js/base.js",
+      "bytes": 4182,
+      "sha256": "593e618719970dfe796d86f0707593498951c0e52a4fc7a18c87d6be2fef5819"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 372,
+      "sha256": "92262638a438d92caa5e3644b6b437f930cf035fed580bc700d7b727a8e6aae1"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap-utilities.metadata.json",
+      "bytes": 29007,
+      "sha256": "0aa89f21fbbf9555a3905382ef4cdf5f281f164eb727b7a8d446efaf01b310fa"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap.min.css",
+      "bytes": 357751,
+      "sha256": "1a17841f830ff69b686da298babbf8e5e3e8dfb33b7329f115e366deacccb380"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/js/bootstrap.bundle.min.js",
+      "bytes": 214643,
+      "sha256": "77d552c3e6a815efd143c8e782c480bc63225cefba51bc510e0875a934f23fe7"
+    },
+    {
+      "path": "source/CREDITS.txt",
+      "bytes": 4397,
+      "sha256": "8a3e5653c1ddb5fe6c3702d87ea3c901a6b65d14f0b210f35cf94f50944418ea"
+    },
+    {
+      "path": "source/img/person-1.jpg",
+      "bytes": 54944,
+      "sha256": "c5395feb8ef0019a766480f8995e8297dac451845a3e09f2f5c2566487a2637c"
+    },
+    {
+      "path": "source/img/person-2.jpg",
+      "bytes": 118493,
+      "sha256": "5b9c8f686e26fb13a11bd5251d6f523d019aebb71edc04e7fdecff1735c8b302"
+    },
+    {
+      "path": "source/img/person-3.jpg",
+      "bytes": 48978,
+      "sha256": "1a5f763ed9d322e640b2bcc4b8efbb77d61c77171b417f95bfbb3a6269ef750c"
+    },
+    {
+      "path": "source/img/person-4.jpg",
+      "bytes": 49270,
+      "sha256": "f5fb2a28c6906d5f28bbb70f6d2c5ecb0725f6556172f82947844f58a7f33c72"
+    },
+    {
+      "path": "source/img/plate.jpg",
+      "bytes": 538813,
+      "sha256": "056d9e1154baaeabe2245a91346c4b35c62b8d193692dfed13f58779d4a88f18"
+    },
+    {
+      "path": "source/img/proj-1.jpg",
+      "bytes": 200174,
+      "sha256": "ee4feac7509cab9b751d3b9b802934935677c58967a47eed6043c019af66d113"
+    },
+    {
+      "path": "source/img/proj-2.jpg",
+      "bytes": 242926,
+      "sha256": "37ef3fcc6832eee8583e2d7f1ede99cbc62b2cfdef6afc318a858506cb9fdf84"
+    },
+    {
+      "path": "source/img/proj-3.jpg",
+      "bytes": 185203,
+      "sha256": "f087496f022ea3c5906a3ba3f4daf66860fab9c9af7b22cd13c2455325b662f0"
+    },
+    {
+      "path": "source/img/proj-4.jpg",
+      "bytes": 174424,
+      "sha256": "d13e48fa3a40f65ed39f9c175ffb6d9d3f6ecf752ddc2986144d93644e4de973"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 21954,
+      "sha256": "1a068007620394c731ede8227e9f3d5573a37c404834daf15bdc7dc7e3cf2bc8"
+    },
+    {
+      "path": "source/project.html",
+      "bytes": 9319,
+      "sha256": "afe3b0457611d4c37a38723192393bf3a06fbe354a42ec938514917eb7960ff9"
+    },
+    {
+      "path": "source/template.json",
+      "bytes": 4172,
+      "sha256": "33a0f30ed4b3d9975344c0097d42f82bdc455ad7721778116558d70c84088637"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Fetched 20 files from the pinned repository at f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf.",
+  "digest": "49519bf403446564e36b105321ad18f7c31986f4e11c5885327382027cb9f085"
+}

@@ -1,0 +1,566 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-roofing-quick-roofing",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.quickroofing.com/",
+    "finalUrl": "https://www.quickroofing.com/",
+    "httpStatus": 200,
+    "pageTitle": "Quick Roofing | Trusted, Experienced, Elite Roofing Contractors",
+    "retrievedAt": "2026-10-08T20:35:13.063Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 460636,
+      "sha256": "8d372ff26b69cb7abe999f51cceb82d6432558e6efb6115c1129c4251cfa6095"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 764,
+      "sha256": "079fb6d439e909470f18638a8effadf84835d4eaa1a77728dbe700a6e57a64eb"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 82955,
+      "sha256": "824a218c731d52b8dbfed37f2e76df33b504309aa53b60a1ce7215b6f280aaae"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 267,
+      "sha256": "504305877efe72036682cd24bbb30673a40d4d356c35953e90d200ce34e0c7c4"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 3608,
+      "sha256": "6802933490ae324d3e3d843ee979ec9120c95ea184cedc34b6471a5d323a3847"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 2992,
+      "sha256": "39e6713db86f84955fd35e4600eed98803b9043aa81ae1def7489d7387f8d8d3"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 18912,
+      "sha256": "3566021940f574b9c721506e978b0dd8544eecc76ddb9ce0021a519fce317675"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 31863,
+      "sha256": "514d733b96c670a7aca64bfbf632f2e0e0555edf2ac54ddcbf943bc08c035e91"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 31000,
+      "sha256": "799aeb25cc0373fdee0e1b1db7ad6c2f6a0e058dfadaa3379689f583213190bd"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 15306,
+      "sha256": "1b4a4328f18dfdf25ee1f02fdb26aa3eda4f7a58a3d320968f9cab7c35dcbad3"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 4532,
+      "sha256": "e9470eb86188e19f2054d4a637ff49b06d1fa7391670150cdf027da66879e2f8"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 4532,
+      "sha256": "e9470eb86188e19f2054d4a637ff49b06d1fa7391670150cdf027da66879e2f8"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 7898,
+      "sha256": "eeb05c5be3413b4c1b8cddba5cbff5c98d6df60e2716fc287c957ff0eacfa8e3"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2025/11/QR-Logo-Registered-Transparent-White.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2025/11/QR-Logo-Registered-Transparent-White.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/iStock-803485930-e1531337264761.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/iStock-803485930-e1531337264761.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/iStock-803485930-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/iStock-803485930-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/iStock-803485930-1024x682.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/iStock-803485930-1080x720.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/iStock-829381490-e1531337353624.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/iStock-829381490-e1531337353624.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/iStock-829381490-768x512.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/iStock-829381490-300x200.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/iStock-829381490-1024x683.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/iStock-829381490-1080x720.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2026/04/iStock-172920702.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2026/04/iStock-172920702.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2026/04/iStock-172920702-980x653.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2026/04/iStock-172920702-480x320.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2022/07/38-Years-QR-150x150.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2022/07/38-Years-QR.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2022/07/38-Years-QR-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/07/Warranty-e1531337683816.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/07/Warranty-e1531337683816.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/07/Warranty-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/07/Family-1-e1531337843770.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/07/Family-1-e1531337843770.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/07/Family-1-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/Financing-1-e1528315359945-1.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/Financing-1-e1528315359945-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/Financing-1-e1528315359945-1-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/Inspection-e1528313399552-1.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/Inspection-e1528313399552-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/Inspection-e1528313399552-1-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/Satisfaction-e1528313394494-1.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/Satisfaction-e1528313394494-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/Satisfaction-e1528313394494-1-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2026/03/8100-oak-creek-ln-scaled.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2026/03/8100-oak-creek-ln-scaled.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2026/03/8100-oak-creek-ln-1280x960.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2026/03/8100-oak-creek-ln-980x735.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2026/03/8100-oak-creek-ln-480x360.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/plugins/wp-google-places-review-slider/public/partials/imgs/google_small_icon.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/-VcOOQ_Dwjl4/AAAAAAAAAAI/AAAAAAAAAAA/ACHi3rcMtX68duALIPDVUYJye318v6EdMQ/s128-c0x00000000-cc-rp-mo/photo.jpg?sz=100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh6.googleusercontent.com/-wsHWEWl0z00/AAAAAAAAAAI/AAAAAAAAAAA/ACHi3renAAle0GcXrk1uXi5XGceJp5nNUw/s128-c0x00000000-cc-rp-mo/photo.jpg?sz=100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/-FQ-7WeckeE0/AAAAAAAAAAI/AAAAAAAABFU/DVM6GNvCVVA/s128-c0x00000000-cc-rp-mo/photo.jpg?sz=100",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2022/01/completed-roofing-job-1.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2022/01/completed-roofing-job-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2019/03/imageedit_2_5844115316.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2019/03/imageedit_2_5844115316.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2019/03/imageedit_6_2237662188.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2019/03/imageedit_6_2237662188.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2019/03/imageedit_4_6311533953.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2019/03/imageedit_4_6311533953.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/Carlisle.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/Carlisle.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/Decra.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/Decra.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/Malarky.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/Malarky.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/IKO.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/IKO.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/GAF.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/GAF.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/Firestone.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/Firestone.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/CertainTeed.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/CertainTeed.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/Mueller.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/Mueller.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/TAMKO.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/TAMKO.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/Atlas.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2018/06/Atlas.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/themes/Divi/includes/builder/images/marker.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i4!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=113595",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i3!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=49834",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i5!3i5!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=72151",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i4!3i5!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=8390",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i4!3i7!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=30004",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i5!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=46285",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i3!3i5!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=2354",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i5!3i7!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=93765",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i3!3i7!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=39589",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i2!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=117144",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i2!3i7!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=106899",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i2!3i5!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=69664",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i6!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=110046",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i6!3i5!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=62566",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i6!3i7!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=26455",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i1!3i7!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=43138",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i1!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=53383",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i1!3i5!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=5903",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.gstatic.com/mapfiles/transparent.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://seal-austin.bbb.org/seals/blue-seal-200-42-whitetxt-bbb-94050072.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2017/03/OC-e1504295187496.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2017/03/OC-e1504295187496.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2017/03/OC-300x67.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2019/04/NEW-Master-Elite.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2019/04/NEW-Master-Elite.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/uploads/2019/04/NEW-Master-Elite-150x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/iStock-803485930-768x512.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/iStock-803485930-300x200.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/iStock-803485930-1024x682.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/iStock-803485930-1080x720.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/iStock-829381490-768x512.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/iStock-829381490-300x200.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/iStock-829381490-1024x683.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/iStock-829381490-1080x720.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2026/04/iStock-172920702-980x653.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2026/04/iStock-172920702-480x320.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/07/Family-1-150x150.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/Financing-1-e1528315359945-1-150x150.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/Inspection-e1528313399552-1-150x150.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2018/06/Satisfaction-e1528313394494-1-150x150.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2026/03/8100-oak-creek-ln-1280x960.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2026/03/8100-oak-creek-ln-980x735.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2026/03/8100-oak-creek-ln-480x360.jpg.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2017/03/OC-300x67.png.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.quickroofing.com/wp-content/compressx-nextgen/uploads/2019/04/NEW-Master-Elite-150x150.png.webp",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 12 of 12 stylesheets retained.",
+  "digest": "84c55f41960d9c7a766cf6aa69214e1ea4545824427a1af5500644039368c026"
+}

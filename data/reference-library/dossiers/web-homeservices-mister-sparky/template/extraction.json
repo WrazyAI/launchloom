@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-homeservices-mister-sparky",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.mistersparky.com/",
+    "finalUrl": "https://www.mistersparky.com/",
+    "httpStatus": 200,
+    "pageTitle": "Electrician Services - Electrical Company | Mister Sparky",
+    "retrievedAt": "2026-10-08T20:26:11.638Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 573165,
+      "sha256": "f407880cc50a4a30099b219516222bb952a40e70d91abc02933809719a80191f"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 2380,
+      "sha256": "e17ed4af2848122fbc72b4ab373ad275dc3878d23a381f4a94b67bda7a0313cf"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 1168,
+      "sha256": "1a62502ea19daef9c7413dcc14730a33dbc0611abe1c80711e3e663bf960c11a"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.mistersparky.com/img/upload/mistersparky-logo-converted.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/mse-corp-mainstage.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/mse-halftone-circle-mobile.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/mse-halftone-circle.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/mse-testimonials-img-01_1_1.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/google-logo_6.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/mse-stars-new.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a/ACg8ocJKABlOT-LqN843aEPt14ZXsq8sj8OiAoMDzm2KL13jNftIGA=s128-c0x00000000-cc-rp-mo",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/mse-stars.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a/ACg8ocIj5rkZkGxFhPD-gvfSGY0tjLBolC5b-ORUQE5OGZ3jI2qlcg=s128-c0x00000000-cc-rp-mo",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjVbxLVfwiYf5ORsfvQ8V02rKoketND9o_8uqvvQInBuK-pyvrfq=s128-c0x00000000-cc-rp-mo",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a-/ALV-UjX8aLGdGvaLFXKc4jOVnQxLvxaaEteX_UHcP2WRN5fcnsEPfao=s128-c0x00000000-cc-rp-mo",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/mse-video-img-01.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/mse-value-statements-img.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/mse-content-img-01.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/image_5440.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/01-watts-right-for-you-a-comprehensive-guide-to-choosing-the-perfect-generator-for-your-home_1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/logo_25411.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/ben-franklin_4.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/drymedic-logo_1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/stop-logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/jnk-005_oval_logo_final_no_tagline_rgb.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/tca-logo_2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/screenmobile.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/88c7af6602f0c9da7c1ad5b7dd0d5aa5765cda74.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/img/upload/privacyoptions29x14.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.cookielaw.org/logos/4eff64d7-87db-4e8c-9294-87c9841ee4d2/019d02f1-42de-7f60-afc1-d18345b2684f/7277a438-cdd1-4c0b-b66a-5514f279b4f6/MS_Logo_vA2_4c_f.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.cookielaw.org/logos/static/powered_by_logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/img/upload/92581b863ab60ae52b28cd1adc89569c919d41b3-copy.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/img/upload/mse-halftone-circle-mobile.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/img/upload/mse-halftone-circle.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.mistersparky.com/sb-mistersparky/videos/SmartHome-TheMalarkyBusters-MisterSparky.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://insight.adsrvr.org/track/cei?advertiser_id=o3xtxot&cookie_sync=1&upv=3.0.0&upid=lu3qbdr&ref=https%3A%2F%2Fwww.mistersparky.com%2F",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://insight.adsrvr.org/track/cei?advertiser_id=uj6y8k7&cookie_sync=1&upv=3.0.0&upid=27kyyoo&ref=https%3A%2F%2Fwww.mistersparky.com%2F",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained. Page errors observed: 1.",
+  "digest": "064a20e113cc4e2db3cd48813c242067ce9572738d1fc1e78122d545b050ff44"
+}

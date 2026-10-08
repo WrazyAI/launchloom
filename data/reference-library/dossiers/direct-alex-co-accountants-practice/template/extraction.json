@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "direct-alex-co-accountants-practice",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.alexandcoaccountants.com/",
+    "finalUrl": "https://www.alexandcoaccountants.com/",
+    "httpStatus": 200,
+    "pageTitle": "Alex and Co Accountants, Chartered Certified Accountants in Lewisham, London",
+    "retrievedAt": "2026-10-08T20:13:50.985Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 32294,
+      "sha256": "50a1b566d423ff7df461ea04cfb2b64a80b3b05f25dc6831978f201305af72a5"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 7842,
+      "sha256": "dace895b2905c51511da40352ba9f25b0ea31c3a263881dfd95894a3353a5782"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 19899,
+      "sha256": "9727c8cb2a38efda4da1f56f622f8ff6193f7f2c3820f61d9217a23d5a49d395"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.alexandcoaccountants.com/logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1920&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1400&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1920&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1400&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1400&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&h=200&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&h=200&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&h=200&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&h=200&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&h=200&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&h=200&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&w=200&h=200&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&h=200&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&h=200&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&h=200&q=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=200&h=200&q=80",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "c99832fdee0d7705f51ced45a7c6ac1b518a63f60955aea95f1f33bb4fa5f6ce"
+}

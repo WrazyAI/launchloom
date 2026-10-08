@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-dental-glint-austin",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://glintatx.com/",
+    "finalUrl": "https://glintatx.com/",
+    "httpStatus": 200,
+    "pageTitle": "Cosmetic Dentist Austin | Concierge Dental Care Austin TX",
+    "retrievedAt": "2026-10-08T20:23:55.216Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 315008,
+      "sha256": "a7578459e1650dc0eafd88804937d2458d544b551ba8ebe4193040eaa62fe43e"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://2d499df8.delivery.rocketcdn.me/wp-content/uploads/2026/09/glint-logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "about:blank",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 0 of 0 stylesheets retained.",
+  "digest": "8d1b406c1135ea5ccb4b0727127b737be7955ebd3071266026af6d2f428448be"
+}

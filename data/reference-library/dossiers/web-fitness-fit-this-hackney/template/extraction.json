@@ -1,0 +1,424 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-fitness-fit-this-hackney",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://fit-this.com/",
+    "finalUrl": "https://fit-this.com/",
+    "httpStatus": 200,
+    "pageTitle": "Hackney's Independent Community Gym - Fit This",
+    "retrievedAt": "2026-10-08T20:24:46.132Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 143875,
+      "sha256": "d731c647842730c3347ff5ff5c31c1540a7ed8c6b4fb713634f8ef72e9ecf1d7"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 365,
+      "sha256": "c024a03d71fa262f8baf3c3af4919a1fbc6fd5ba763e495acda79e60da477fe2"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 61,
+      "sha256": "ee3c7d3cecafa90c2108f621fcd7b6cf23d958e56bc550a23cc5a59f80872a57"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/fc4a6e6813680bd88c6b3d1c9e64f8e679f1c1c4-1920x1080.png?w=1536&h=864&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/fc4a6e6813680bd88c6b3d1c9e64f8e679f1c1c4-1920x1080.png?w=2560&h=1440&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/fc4a6e6813680bd88c6b3d1c9e64f8e679f1c1c4-1920x1080.png?w=430&h=242&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/fc4a6e6813680bd88c6b3d1c9e64f8e679f1c1c4-1920x1080.png?w=640&h=360&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/fc4a6e6813680bd88c6b3d1c9e64f8e679f1c1c4-1920x1080.png?w=768&h=432&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/fc4a6e6813680bd88c6b3d1c9e64f8e679f1c1c4-1920x1080.png?w=860&h=484&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/fc4a6e6813680bd88c6b3d1c9e64f8e679f1c1c4-1920x1080.png?w=1024&h=576&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/fc4a6e6813680bd88c6b3d1c9e64f8e679f1c1c4-1920x1080.png?w=1280&h=720&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/fc4a6e6813680bd88c6b3d1c9e64f8e679f1c1c4-1920x1080.png?w=2048&h=1152&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/923a4bc0e8a26fda7246fb637284b1c1717e7098-2832x4240.jpg?w=427&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/923a4bc0e8a26fda7246fb637284b1c1717e7098-2832x4240.jpg?w=1280&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/923a4bc0e8a26fda7246fb637284b1c1717e7098-2832x4240.jpg?w=338&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/923a4bc0e8a26fda7246fb637284b1c1717e7098-2832x4240.jpg?w=384&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/923a4bc0e8a26fda7246fb637284b1c1717e7098-2832x4240.jpg?w=430&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/923a4bc0e8a26fda7246fb637284b1c1717e7098-2832x4240.jpg?w=640&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/923a4bc0e8a26fda7246fb637284b1c1717e7098-2832x4240.jpg?w=676&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/923a4bc0e8a26fda7246fb637284b1c1717e7098-2832x4240.jpg?w=768&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/923a4bc0e8a26fda7246fb637284b1c1717e7098-2832x4240.jpg?w=854&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/923a4bc0e8a26fda7246fb637284b1c1717e7098-2832x4240.jpg?w=860&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/2cd61613a71d742e23f9e95a50308469950cccaa-440x480.png?w=427&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/2cd61613a71d742e23f9e95a50308469950cccaa-440x480.png?w=1280&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/2cd61613a71d742e23f9e95a50308469950cccaa-440x480.png?w=338&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/2cd61613a71d742e23f9e95a50308469950cccaa-440x480.png?w=384&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/2cd61613a71d742e23f9e95a50308469950cccaa-440x480.png?w=430&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/2cd61613a71d742e23f9e95a50308469950cccaa-440x480.png?w=640&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/2cd61613a71d742e23f9e95a50308469950cccaa-440x480.png?w=676&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/2cd61613a71d742e23f9e95a50308469950cccaa-440x480.png?w=768&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/2cd61613a71d742e23f9e95a50308469950cccaa-440x480.png?w=854&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/2cd61613a71d742e23f9e95a50308469950cccaa-440x480.png?w=860&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/e13383ad6cabf432bf1c4039ae58c862905802cb-440x480.png?w=427&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/e13383ad6cabf432bf1c4039ae58c862905802cb-440x480.png?w=1280&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/e13383ad6cabf432bf1c4039ae58c862905802cb-440x480.png?w=338&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/e13383ad6cabf432bf1c4039ae58c862905802cb-440x480.png?w=384&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/e13383ad6cabf432bf1c4039ae58c862905802cb-440x480.png?w=430&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/e13383ad6cabf432bf1c4039ae58c862905802cb-440x480.png?w=640&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/e13383ad6cabf432bf1c4039ae58c862905802cb-440x480.png?w=676&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/e13383ad6cabf432bf1c4039ae58c862905802cb-440x480.png?w=768&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/e13383ad6cabf432bf1c4039ae58c862905802cb-440x480.png?w=854&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/e13383ad6cabf432bf1c4039ae58c862905802cb-440x480.png?w=860&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/198501665d5f87dda36db7c56c7d6db59be3ecb6-3840x2160.jpg?w=1536&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/198501665d5f87dda36db7c56c7d6db59be3ecb6-3840x2160.jpg?w=2560&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/198501665d5f87dda36db7c56c7d6db59be3ecb6-3840x2160.jpg?w=430&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/198501665d5f87dda36db7c56c7d6db59be3ecb6-3840x2160.jpg?w=640&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/198501665d5f87dda36db7c56c7d6db59be3ecb6-3840x2160.jpg?w=768&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/198501665d5f87dda36db7c56c7d6db59be3ecb6-3840x2160.jpg?w=860&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/198501665d5f87dda36db7c56c7d6db59be3ecb6-3840x2160.jpg?w=1024&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/198501665d5f87dda36db7c56c7d6db59be3ecb6-3840x2160.jpg?w=1280&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/198501665d5f87dda36db7c56c7d6db59be3ecb6-3840x2160.jpg?w=2048&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/70134d0780df00d05ce6413f36f47d6d8696cf11-1382x1906.png?w=430&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/70134d0780df00d05ce6413f36f47d6d8696cf11-1382x1906.png?w=640&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/70134d0780df00d05ce6413f36f47d6d8696cf11-1382x1906.png?w=215&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/70134d0780df00d05ce6413f36f47d6d8696cf11-1382x1906.png?w=253&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/70134d0780df00d05ce6413f36f47d6d8696cf11-1382x1906.png?w=256&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/70134d0780df00d05ce6413f36f47d6d8696cf11-1382x1906.png?w=320&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/70134d0780df00d05ce6413f36f47d6d8696cf11-1382x1906.png?w=506&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/70134d0780df00d05ce6413f36f47d6d8696cf11-1382x1906.png?w=512&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/98f9dbdc5e22b11d825a324bfbda0e1bf5ffe69b-1436x1898.png?w=430&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/98f9dbdc5e22b11d825a324bfbda0e1bf5ffe69b-1436x1898.png?w=640&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/98f9dbdc5e22b11d825a324bfbda0e1bf5ffe69b-1436x1898.png?w=215&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/98f9dbdc5e22b11d825a324bfbda0e1bf5ffe69b-1436x1898.png?w=253&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/98f9dbdc5e22b11d825a324bfbda0e1bf5ffe69b-1436x1898.png?w=256&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/98f9dbdc5e22b11d825a324bfbda0e1bf5ffe69b-1436x1898.png?w=320&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/98f9dbdc5e22b11d825a324bfbda0e1bf5ffe69b-1436x1898.png?w=506&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/98f9dbdc5e22b11d825a324bfbda0e1bf5ffe69b-1436x1898.png?w=512&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/06d3bebcb448294e908841be78013f8a92dc522a-2000x2994.jpg?w=430&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/06d3bebcb448294e908841be78013f8a92dc522a-2000x2994.jpg?w=640&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/06d3bebcb448294e908841be78013f8a92dc522a-2000x2994.jpg?w=215&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/06d3bebcb448294e908841be78013f8a92dc522a-2000x2994.jpg?w=253&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/06d3bebcb448294e908841be78013f8a92dc522a-2000x2994.jpg?w=256&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/06d3bebcb448294e908841be78013f8a92dc522a-2000x2994.jpg?w=320&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/06d3bebcb448294e908841be78013f8a92dc522a-2000x2994.jpg?w=506&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/06d3bebcb448294e908841be78013f8a92dc522a-2000x2994.jpg?w=512&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/76ff3eab51a644e55797681046cce7ac25c9f983-1571x2352.png?w=430&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/76ff3eab51a644e55797681046cce7ac25c9f983-1571x2352.png?w=640&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/76ff3eab51a644e55797681046cce7ac25c9f983-1571x2352.png?w=215&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/76ff3eab51a644e55797681046cce7ac25c9f983-1571x2352.png?w=253&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/76ff3eab51a644e55797681046cce7ac25c9f983-1571x2352.png?w=256&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/76ff3eab51a644e55797681046cce7ac25c9f983-1571x2352.png?w=320&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/76ff3eab51a644e55797681046cce7ac25c9f983-1571x2352.png?w=506&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/76ff3eab51a644e55797681046cce7ac25c9f983-1571x2352.png?w=512&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/6637700763e796b59863db3f842dfe5c38732206-1334x1944.png?w=430&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/6637700763e796b59863db3f842dfe5c38732206-1334x1944.png?w=640&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/6637700763e796b59863db3f842dfe5c38732206-1334x1944.png?w=215&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/6637700763e796b59863db3f842dfe5c38732206-1334x1944.png?w=253&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/6637700763e796b59863db3f842dfe5c38732206-1334x1944.png?w=256&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/6637700763e796b59863db3f842dfe5c38732206-1334x1944.png?w=320&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/6637700763e796b59863db3f842dfe5c38732206-1334x1944.png?w=506&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/6637700763e796b59863db3f842dfe5c38732206-1334x1944.png?w=512&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/3f32264984125ab7900fbb8d224ee34fc7cda4ee-1438x1976.png?w=430&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/3f32264984125ab7900fbb8d224ee34fc7cda4ee-1438x1976.png?w=640&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/3f32264984125ab7900fbb8d224ee34fc7cda4ee-1438x1976.png?w=215&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/3f32264984125ab7900fbb8d224ee34fc7cda4ee-1438x1976.png?w=253&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/3f32264984125ab7900fbb8d224ee34fc7cda4ee-1438x1976.png?w=256&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/3f32264984125ab7900fbb8d224ee34fc7cda4ee-1438x1976.png?w=320&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/3f32264984125ab7900fbb8d224ee34fc7cda4ee-1438x1976.png?w=506&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.sanity.io/images/33u9c8jf/production/3f32264984125ab7900fbb8d224ee34fc7cda4ee-1438x1976.png?w=512&q=80&auto=format",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "49a4b27b7c24e829b7acddd9d3b618bb72b46992be2d2a540bd944cca20760e0"
+}

@@ -1,0 +1,525 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-auto-repair-fallsbrook-motors",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://fallsbrookmotors.co.uk/",
+    "finalUrl": "https://fallsbrookmotors.co.uk/",
+    "httpStatus": 200,
+    "pageTitle": "",
+    "retrievedAt": "2026-10-08T20:22:07.754Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 566208,
+      "sha256": "4faab998c0f83108f3a23b02985a97287fd0c83ccad60bdb7d9a2dd67b9c0859"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 3106,
+      "sha256": "fbe820b6140ad28e86f34ffae507d807cf591a22697a05b71958f2014e96a9e4"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 27203,
+      "sha256": "3b0b378450cc44879557fe44a4a77f41c312fe8d9dfc3b19860bcfc8724613c2"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 68975,
+      "sha256": "239ac26dad3ffb493a910852a75c7fda75308cd772a5eb1c983d5e1d9ca9072c"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 4735,
+      "sha256": "420aa329e1cea4ce3df25830fb30e36ce44d8eca2aaf547f8001e54c7e98365d"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 19790,
+      "sha256": "bc03e246a845a7afc1c7a26df7077bb8699508c8c373ca3661d7628a6c52d114"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 11328,
+      "sha256": "2840406530480ef843afa14a436de9956c3971898c0ca2d1beb24d8a6610ac44"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 115380,
+      "sha256": "7e359df1292be1d4553586c69be343c20886b64c8ab2a40d2d4551e2d7b64e59"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 5195,
+      "sha256": "7663acfe6b39522608c177ab9c28990df9e36e32d3b9c25084f1659b6dc04499"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 442476,
+      "sha256": "fbee380071572cdd35659725d8b69da31e95d5a1ad837939068d05a0c24c1ba2"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 27639,
+      "sha256": "4354449ab7a164ef5486d12020f3bc403b8ff104a8da73e9f9332106b86b061c"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 460324,
+      "sha256": "41690d5972e4ce549d0dfadc5b8f07b98db53a237f16ae5d703b0f1adb11da53"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 1523,
+      "sha256": "9197a79f58f1343c9a771ac7da15e05cbfe0977db49935f25d49ec119efbf4c2"
+    },
+    {
+      "path": "source/styles/13.css",
+      "bytes": 15698,
+      "sha256": "53b2bd6270a8836cccb37336b56041801cefb8273e99f392e99d9cdcb694d88a"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 15698,
+      "sha256": "53b2bd6270a8836cccb37336b56041801cefb8273e99f392e99d9cdcb694d88a"
+    },
+    {
+      "path": "source/styles/15.css",
+      "bytes": 45869,
+      "sha256": "a02fb75fe636c260448231075cb1b9c684f53104467a67127268aa6afbec4360"
+    },
+    {
+      "path": "source/styles/16.css",
+      "bytes": 31585,
+      "sha256": "f41cf46debc132b17f1e711b5d141c93364ac4a7e2647991d850205c67d9b0cc"
+    },
+    {
+      "path": "source/styles/17.css",
+      "bytes": 63499,
+      "sha256": "c11f45007e2ca40ee2bd1c981d0caa85c561644b070b78035c8390fa50d35df2"
+    },
+    {
+      "path": "source/styles/18.css",
+      "bytes": 222665,
+      "sha256": "bbd7dd79afc6c0048ab7ac5bb600db80b98b4a16cd1ba79772b0cf4bb8d5049e"
+    },
+    {
+      "path": "source/styles/19.css",
+      "bytes": 385893,
+      "sha256": "8ca7ff42477243cf91016aa8773f719fe9b69c2bfe70a96031d7b5f14d8b1d05"
+    },
+    {
+      "path": "source/styles/20.css",
+      "bytes": 21496,
+      "sha256": "c0b005774ada2f12a9250f15df0b2b1f1825850c1e4f5106b5c80bbfc67a227a"
+    },
+    {
+      "path": "source/styles/21.css",
+      "bytes": 52549,
+      "sha256": "0740e098380c1589f216793ca64293745a5fc920bfd7ddf2168249574be41c33"
+    },
+    {
+      "path": "source/styles/22.css",
+      "bytes": 7082,
+      "sha256": "19c95d378bbe111b38dfbb8ccdfa8cb03506c0c2e8b12874087350d094f4cb6f"
+    },
+    {
+      "path": "source/styles/23.css",
+      "bytes": 21138,
+      "sha256": "17428cca79753a240fbf40f26f28385a19f5527288355f7209081e9619a99742"
+    },
+    {
+      "path": "source/styles/24.css",
+      "bytes": 54456,
+      "sha256": "9c099acc093abd2df85eaa34052ad36fe69b6ed16582c14aecd2928baa3b63bf"
+    },
+    {
+      "path": "source/styles/25.css",
+      "bytes": 9107,
+      "sha256": "7ae5834a84fe6bec5f2c370cf0bb608b441fef59536e1f72037f7135ab013852"
+    },
+    {
+      "path": "source/styles/26.css",
+      "bytes": 115264,
+      "sha256": "70b5d510970752afef6eede3cf5f38d5870964054787aa3de43608ae9642859f"
+    },
+    {
+      "path": "source/styles/27.css",
+      "bytes": 87143,
+      "sha256": "5f9f3efc231f7160d18b90df575a54c890d402124566bd8c8a263eeeece264e3"
+    },
+    {
+      "path": "source/styles/28.css",
+      "bytes": 70815,
+      "sha256": "dec3e9f0190a504ed0c8f4a5e957c107206ba106cac4a1bbb6cbac6369a16d56"
+    },
+    {
+      "path": "source/styles/29.css",
+      "bytes": 10382,
+      "sha256": "404d439ce8d47361d1da34aa96c11c2597a0446867529f434856552b4d6a296e"
+    },
+    {
+      "path": "source/styles/30.css",
+      "bytes": 9270,
+      "sha256": "e1852bc74f7e85208de85e0883d5082d11ea23f2694be0f7e5542f9d0eabb8da"
+    },
+    {
+      "path": "source/styles/31.css",
+      "bytes": 442,
+      "sha256": "086c821a02e36601b8e9a38675fb8176ba5ff4795d587454d99c2e89b474a579"
+    },
+    {
+      "path": "source/styles/32.css",
+      "bytes": 273356,
+      "sha256": "0701e1c25c8423b0492f431d5606e5b24d06d0a2b65a21395fad5fbc6091c9e2"
+    },
+    {
+      "path": "source/styles/33.css",
+      "bytes": 7978,
+      "sha256": "84cc2856719babce5346d8e2f7696ab993c465f0e5c938378c9cd1ccd9a1bddc"
+    },
+    {
+      "path": "source/styles/34.css",
+      "bytes": 21211,
+      "sha256": "6650a50d8591259400ed356b424ff4fe633bc0d1fc7be58e17c78fbb1312a707"
+    },
+    {
+      "path": "source/styles/35.css",
+      "bytes": 73890,
+      "sha256": "74005d7c17d4a02f2f25404ec0655d9bc2fdaa53166874c87d7b7eec69d9088a"
+    },
+    {
+      "path": "source/styles/36.css",
+      "bytes": 48444,
+      "sha256": "a4a8627a8d5d04d697c4feb09c7b45442d84a16cd5214360048a7dc5081a45ca"
+    },
+    {
+      "path": "source/styles/37.css",
+      "bytes": 27466,
+      "sha256": "ddd92f10ad162c7449eff0acaf40598c05b1111739587edb75e5326b6697c5d5"
+    },
+    {
+      "path": "source/styles/38.css",
+      "bytes": 1508,
+      "sha256": "23fc280e1b15ffaa6f77e0afbb066cbade43094d61afbd14980e3f601efb69fd"
+    },
+    {
+      "path": "source/styles/39.css",
+      "bytes": 1210,
+      "sha256": "dd33442ef1188f848690f378fd55468e27631700256cf48cdabf7efe120cff33"
+    },
+    {
+      "path": "source/styles/40.css",
+      "bytes": 4252,
+      "sha256": "0c8be24ba47a4d8293d966e90c6af3af52a4f6e5eea1fca01adc7fb81688b3d3"
+    },
+    {
+      "path": "source/styles/41.css",
+      "bytes": 1812,
+      "sha256": "533477701cf14c3b4361b3bc0e8691f876f780e1852913e241bbf4517e0cdc05"
+    },
+    {
+      "path": "source/styles/42.css",
+      "bytes": 2747,
+      "sha256": "7aef67f2444e57cc80d3d4c17a52477f5d9010626c56e1e128dd76aaf70123ed"
+    },
+    {
+      "path": "source/styles/43.css",
+      "bytes": 2416,
+      "sha256": "2e97b4f8e85265e5624295eeb0b60f249557484366b567919bf6fa6748b405c2"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/06/fallsbrook-motors-logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2022/11/lgbtq-friendly-white.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2022/04/wheel-alignment-thumb-420x336.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2022/04/wheel-alignment-thumb.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2022/04/wheel-alignment-thumb-300x240.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2022/04/wheel-alignment-thumb-150x120.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2022/04/wheel-alignment-thumb-540x432.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/air-conditioning-thumb-2-420x336.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/air-conditioning-thumb-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/air-conditioning-thumb-2-300x240.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/air-conditioning-thumb-2-150x120.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/air-conditioning-thumb-2-540x432.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/servicing-and-repairs-thumb-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/servicing-and-repairs-thumb-2-300x240.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/servicing-and-repairs-thumb-2-150x120.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/servicing-and-repairs-thumb-2-540x432.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/servicing-and-repairs-thumb-2-420x336.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/mot-testing-thumb.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/mot-testing-thumb-300x240.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/mot-testing-thumb-150x120.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/mot-testing-thumb-540x432.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/mot-testing-thumb-420x336.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/brakes-thumb-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/brakes-thumb-2-300x240.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/brakes-thumb-2-150x120.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/brakes-thumb-2-540x432.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/brakes-thumb-2-420x336.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/clutches-thumb.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/clutches-thumb-300x240.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/clutches-thumb-150x120.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/clutches-thumb-540x432.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/clutches-thumb-420x336.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/diagnostics-thumb-2-420x336.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/diagnostics-thumb-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/diagnostics-thumb-2-300x240.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/diagnostics-thumb-2-150x120.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/diagnostics-thumb-2-540x432.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/electrics-thumb-420x336.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/electrics-thumb.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/electrics-thumb-300x240.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/electrics-thumb-150x120.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/electrics-thumb-540x432.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/exhausts-thumb-420x336.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/exhausts-thumb.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/exhausts-thumb-300x240.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/exhausts-thumb-150x120.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/exhausts-thumb-540x432.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/wheels-and-tyres-thumb-2-420x336.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/wheels-and-tyres-thumb-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/wheels-and-tyres-thumb-2-300x240.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/wheels-and-tyres-thumb-2-150x120.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/wheels-and-tyres-thumb-2-540x432.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/steering-and-suspension-thumb-420x336.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/steering-and-suspension-thumb.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/steering-and-suspension-thumb-300x240.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/steering-and-suspension-thumb-150x120.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/steering-and-suspension-thumb-540x432.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/12/about-fallsbrook-motors-540x432.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/12/about-fallsbrook-motors.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/12/about-fallsbrook-motors-300x240.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/12/about-fallsbrook-motors-150x120.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/12/about-fallsbrook-motors-420x336.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/parts-warranty.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/06/approved-garages-logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/07/five-star-reviews.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/google-logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/05/autocare-logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2020/06/mot-testing-centre.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fallsbrookmotors.co.uk/wp-content/uploads/2021/09/we-accept-payments.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/anchor?ar=1&k=6Lc-4LwtAAAAADoVsyVekIFJrprxxBv8XdYEGPq3&co=aHR0cHM6Ly9mYWxsc2Jyb29rbW90b3JzLmNvLnVrOjQ0Mw..&hl=en-GB&v=nY0xPItgwtlvjEjk2TqdwOQz&size=invisible&anchor-ms=20000&execute-ms=30000&cb=kyr2cs9slge7",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 43 of 43 stylesheets retained.",
+  "digest": "894b85cc84a22d4cdeccef86e00606c1d5380e14fdf165362834a0236160c543"
+}

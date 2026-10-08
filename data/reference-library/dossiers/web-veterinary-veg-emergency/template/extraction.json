@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-veterinary-veg-emergency",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.veg.com/",
+    "finalUrl": "https://www.veg.com/",
+    "httpStatus": 200,
+    "pageTitle": "VEG ER for Pets | 24-hour Emergency Vet | Open Now",
+    "retrievedAt": "2026-10-08T20:37:44.727Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 2293533,
+      "sha256": "5222ae84304b67e065baca8ff20725f486664cfc42c9d442d65f2738a50cd1bd"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 4076,
+      "sha256": "d014d70d936ca1d3af1c1dd85412eb9e43816e628ae7208ff26ef0e73b74e042"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 65,
+      "sha256": "63805a20268b5d91b2134122a77a5530f70dc67cd4e07fbe9755af92c826814b"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://static.wixstatic.com/media/a1991a_0ba19a5658234d1ba8aed2facfec472e~mv2.jpg/v1/fill/w_147,h_147,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/veg-hero-mobile.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/ede2e8_df8147b92b7e46c8a8807796432cc1ecf000.jpg/v1/fill/w_599,h_556,al_c,q_80,usm_0.33_1.00_0.00,enc_avif,quality_auto/ede2e8_df8147b92b7e46c8a8807796432cc1ecf000.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/55d98a_3287270d83ef4efabfdd1f52d0dc6ec2~mv2.jpg/v1/fill/w_147,h_98,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/wolfgang-hasselmann-1ICIhK-ElJs-unsplash-edited.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/c8c9a4_bd33a40a251649e79588cbab55b8f13e~mv2.jpg/v1/fill/w_599,h_556,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/dog-home%20(1).jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/5d7ec1_1a82fd0afc8d4ff980d459f90e9ba1ab~mv2.png/v1/fill/w_32,h_32,al_c,q_85,blur_3,enc_avif,quality_auto/5d7ec1_1a82fd0afc8d4ff980d459f90e9ba1ab~mv2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/5d7ec1_1a82fd0afc8d4ff980d459f90e9ba1ab~mv2.png/v1/fill/w_24,h_24,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/5d7ec1_1a82fd0afc8d4ff980d459f90e9ba1ab~mv2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/c8c9a4_221b3e7b55ed4ccb8625cb380ae07dbb~mv2.jpg/v1/fill/w_235,h_109,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/press-logos.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/c8c9a4_76bf478c6aff4124ad257229a8b625cc~mv2.jpg/v1/fill/w_235,h_109,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Frame%2046.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/c8c9a4_8339201d9438441c96e8bc04c6ee9c10~mv2.jpg/v1/fill/w_235,h_109,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Frame%2047.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/c8c9a4_beffc74e341d49f3b709c4ba58e17d9e~mv2.jpg/v1/fill/w_235,h_109,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Frame%2048.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/c8c9a4_7e2e194d22b44d428870ce1c3da7e070~mv2.jpg/v1/fill/w_235,h_109,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Frame%2049.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/c8c9a4_80fb116fc58e486abea6abf8bf83d577~mv2.jpg/v1/fill/w_235,h_109,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Frame%2050.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/c8c9a4_c75b4df2c15c491ca7ecb4f1f0383c30~mv2.jpg/v1/fill/w_235,h_109,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Frame%2051.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/c8c9a4_0bcb1d9b2c674ab48d71797fe7cb62be~mv2.jpg/v1/fill/w_235,h_109,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Frame%2052.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/8797f9_9a9abca37aa94b139da6edcf60d20ed6~mv2.jpg/v1/fill/w_147,h_89,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/8797f9_9a9abca37aa94b139da6edcf60d20ed6~mv2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/a1991a_75e1d07c26cf43c3968c05d3cbb508a2~mv2.jpg/v1/fill/w_147,h_98,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/a1991a_75e1d07c26cf43c3968c05d3cbb508a2~mv2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/a1991a_7b5af881c4f64e04ac52026dbb12d170~mv2.png/v1/fill/w_86,h_118,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/a1991a_7b5af881c4f64e04ac52026dbb12d170~mv2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/8797f9_9a9abca37aa94b139da6edcf60d20ed6~mv2.jpg/v1/fill/w_393,h_274,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/8797f9_9a9abca37aa94b139da6edcf60d20ed6~mv2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/a1991a_75e1d07c26cf43c3968c05d3cbb508a2~mv2.jpg/v1/fill/w_393,h_274,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/a1991a_75e1d07c26cf43c3968c05d3cbb508a2~mv2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/a1991a_7b5af881c4f64e04ac52026dbb12d170~mv2.png/v1/fill/w_393,h_274,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/a1991a_7b5af881c4f64e04ac52026dbb12d170~mv2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/a1991a_87438b5656dd42f7b24a2d676396359d~mv2.jpg/v1/fill/w_147,h_92,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/VEG%20Careers.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/11062b_603340b7bcb14e7785c7b65b233cd9f9~mv2.png/v1/fill/w_26,h_26,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/11062b_603340b7bcb14e7785c7b65b233cd9f9~mv2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/11062b_f4e3e7f537ff4762a1914aa14e3e36b9~mv2.png/v1/fill/w_26,h_26,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/11062b_f4e3e7f537ff4762a1914aa14e3e36b9~mv2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/11062b_7edd292d29b34c309100535a26dc5033~mv2.png/v1/fill/w_26,h_26,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/11062b_7edd292d29b34c309100535a26dc5033~mv2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/11062b_7dcffe5daf2944b7be0a46ac6d472634~mv2.png/v1/fill/w_26,h_26,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/11062b_7dcffe5daf2944b7be0a46ac6d472634~mv2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/11062b_c67939a99eaf442d95d3f851857ceedf~mv2.png/v1/fill/w_26,h_26,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/11062b_c67939a99eaf442d95d3f851857ceedf~mv2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/a1991a_48481c1821374ab6b3141b93e56168e3~mv2.png/v1/fill/w_29,h_14,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/privacy-checkbox-icon-200x96.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://static.wixstatic.com/media/5d7ec1_8311cc9295e2405b87923a9c2c29e1f5~mv2.jpg/v1/fill/w_147,h_146,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/loading_circles_set.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.cookielaw.org/logos/15f250f8-17b7-4f10-a302-93af9e3b92a8/01992ed0-53c4-7440-b8c1-1950e43afe7c/76a49acc-73a3-4ac9-a388-88e82997bb6a/VEG_Logo_square_(1).png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.cookielaw.org/logos/15f250f8-17b7-4f10-a302-93af9e3b92a8/01992ed0-53c4-7440-b8c1-1950e43afe7c/4e39dc51-f133-4e52-af41-4e8940c816da/primarylogo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.cookielaw.org/logos/static/powered_by_logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://arttrk.com/pixel/?ad_log=referer&action=lead&pixid=03645dfe-89e0-4e55-8e07-4bea0fa5d49f",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://video.wixstatic.com/video/ede2e8_df8147b92b7e46c8a8807796432cc1ec/720p/mp4/file.mp4",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained. Page errors observed: 1.",
+  "digest": "5338f859d090f820386e877912034e0e403eeaebdc6f206a47d47ca4a8a36f62"
+}

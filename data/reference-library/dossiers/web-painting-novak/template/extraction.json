@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-painting-novak",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.novakpaintinggroup.com/",
+    "finalUrl": "https://www.novakpaintinggroup.com/",
+    "httpStatus": 200,
+    "pageTitle": "Novak Painting Group | Phoenix Painting Contractor",
+    "retrievedAt": "2026-10-08T20:31:43.752Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 88530,
+      "sha256": "ea1b26b2b93e267bdc5c42a9541168b4f775bb2a16b5ec3e25bb86175971f60a"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 17970,
+      "sha256": "b858765edc841680b4873ca3075dcf545e2c001e1403d005d89f413cf7af8712"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 72484,
+      "sha256": "7b9acdf2833d0c1548e70fc03800643e9a9f7f5054e7efe7d6f9d3ca8b7489d4"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 39638,
+      "sha256": "46e151b72b493db17ae98d979e5f20ca66d5a6434ee715e56eef52dfc2055361"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 4329,
+      "sha256": "e90acd05586c2154819edaa914548efb9fb14f718dc52d78e31c0b8d2c4c204a"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://ktunuekthpaqbvijarql.supabase.co/storage/v1/object/public/editor-uploads/novak-painting-group/1786725168256-logo_novak.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ktunuekthpaqbvijarql.supabase.co/storage/v1/object/public/editor-uploads/novak-painting-group/1786737854619-image.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ktunuekthpaqbvijarql.supabase.co/storage/v1/object/public/editor-uploads/novak-painting-group/1786739591469-image.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ktunuekthpaqbvijarql.supabase.co/storage/v1/object/public/editor-uploads/novak-painting-group/1786739594882-image.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ktunuekthpaqbvijarql.supabase.co/storage/v1/object/public/editor-uploads/novak-painting-group/1786739598520-image.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.novakpaintinggroup.com/projects/home-section-1.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.novakpaintinggroup.com/projects/home-section-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.novakpaintinggroup.com/projects/home-section-3.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.novakpaintinggroup.com/projects/home-section-4.webp",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 4 of 4 stylesheets retained. Page errors observed: 2.",
+  "digest": "a63524b7c2629dd1d2aa1d55087575365f29dbc0ab8952cb71752d157cf9e593"
+}

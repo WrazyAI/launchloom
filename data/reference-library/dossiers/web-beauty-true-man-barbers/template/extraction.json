@@ -1,0 +1,403 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-beauty-true-man-barbers",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://truemanbarbers.co.uk/",
+    "finalUrl": "https://truemanbarbers.co.uk/",
+    "httpStatus": 200,
+    "pageTitle": "True Man Barbers · Barbershop in Whetstone, North London",
+    "retrievedAt": "2026-10-08T20:23:28.258Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 43155,
+      "sha256": "2bc4c3c1aa280b28d14e1d715a8a3be3ae9480abb3d44cb9b63da0e8348ad993"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 45054,
+      "sha256": "5eed9839d99be4322d2508fc44e96c85a38b6a6cc73558bf38fe30f0a031ef5c"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Flogo-white.png&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Flogo-white.png&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Flogo-white.png&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Flogo-white.png&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fshop-interior.jpg&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fshop-interior.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fshop-interior.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fshop-interior.jpg&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fshop-interior.jpg&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fshop-interior.jpg&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fshop-interior.jpg&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fshop-interior.jpg&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fshop-interior.jpg&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fshop-interior.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fgallery-5.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fgallery-5.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-5.jpg&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-5.jpg&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-5.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-5.jpg&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-5.jpg&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-5.jpg&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-5.jpg&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-5.jpg&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-5.jpg&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-5.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fteam-sam.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fteam-sam.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-sam.jpg&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-sam.jpg&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-sam.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-sam.jpg&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-sam.jpg&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-sam.jpg&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-sam.jpg&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-sam.jpg&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-sam.jpg&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-sam.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fteam-jakup.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fteam-jakup.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-jakup.jpg&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-jakup.jpg&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-jakup.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-jakup.jpg&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-jakup.jpg&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-jakup.jpg&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-jakup.jpg&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-jakup.jpg&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-jakup.jpg&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-jakup.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fteam-mo.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fteam-mo.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-mo.jpg&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-mo.jpg&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-mo.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-mo.jpg&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-mo.jpg&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-mo.jpg&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-mo.jpg&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-mo.jpg&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-mo.jpg&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fteam-mo.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fgallery-6.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fgallery-6.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-6.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-6.jpg&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-6.jpg&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-6.jpg&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-6.jpg&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-6.jpg&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-6.jpg&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-6.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fgallery-1.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fgallery-1.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-1.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-1.jpg&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-1.jpg&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-1.jpg&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-1.jpg&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-1.jpg&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-1.jpg&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-1.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fgallery-8.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://truemanbarbers.co.uk/_next/image?url=%2Fimages%2Fgallery-8.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-8.jpg&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-8.jpg&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-8.jpg&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-8.jpg&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-8.jpg&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-8.jpg&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-8.jpg&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=%2Fimages%2Fgallery-8.jpg&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained. Page errors observed: 1.",
+  "digest": "1f561eb5963d13d6b6c2433c8aaa5b080df410f12ccafb9f17b72822f122578f"
+}

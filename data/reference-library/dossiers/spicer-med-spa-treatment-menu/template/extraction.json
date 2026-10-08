@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "spicer-med-spa-treatment-menu",
+  "status": "extracted",
+  "method": "zip-download",
+  "source": {
+    "url": "https://www.spicerdesigns.com/templates/med-spa",
+    "finalUrl": "https://www.spicerdesigns.com/downloads/med-spa-template-html.zip",
+    "archiveSha256": "b0b3e581969dc2cdd03d617989c29d2270bef02574804694024f3847c4b09920",
+    "retrievedAt": "2026-10-08T20:05:54.056Z",
+    "license": "CC-BY-4.0",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/hero.webp",
+      "bytes": 92538,
+      "sha256": "c972e9bb8d88e4f7f01bfdc595bd2f1c8937c1941f86f0fc5d9e206c7b1639ac"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 28788,
+      "sha256": "1b7609d998716aad3e3493ff51ab2934d9f0a875620f9adb06c25dcc41b39126"
+    },
+    {
+      "path": "source/README.md",
+      "bytes": 2710,
+      "sha256": "b4fab2c10b4d84a7554cc468d08da7d44d5674e97e4f84e19a48def132c1b69e"
+    },
+    {
+      "path": "source/styles.css",
+      "bytes": 24126,
+      "sha256": "dfaabb1ed28693af220bebaca0e275ae21ad5894d41101177fc2c2c5c89ac283"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.spicerdesigns.com/downloads/med-spa-template-html.zip#LICENSE",
+      "reason": "unsupported-extension"
+    }
+  ],
+  "notes": "Downloaded the official HTML build (4 files, archive SHA-256 b0b3e581969dc2cdd03d617989c29d2270bef02574804694024f3847c4b09920). The template page footer also shows an MIT label; the retained LICENSE in rights/ records CC BY 4.0 with the footer attribution condition. Reconcile before any derivative publication.",
+  "digest": "8b1e555dd668e64ed769c32459bb067ec8ac3a5a932e8221288988230041ff01"
+}

@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-hvac-allied-air-heat",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://alliedairheat.com/",
+    "finalUrl": "https://alliedairheat.com/",
+    "httpStatus": 200,
+    "pageTitle": "HVAC Company - Air Conditioning & Heating Repair & Installation in Palatine & Libertyville, IL | Allied Air Conditioning & Heating",
+    "retrievedAt": "2026-10-08T20:28:11.317Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 88806,
+      "sha256": "9021b7d20a1bd514582d99cbda9aba89193697f06b5dd58627e193b19dad1977"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 240517,
+      "sha256": "1be952c3b99b3ffea75341ef1749ba2ecda7291af03a451f1fe835ada3cecc04"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/themes/click5-wp/img/icons/icon-emergency.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/themes/click5-wp/img/aach-logo.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/themes/click5-wp/img/icons/icon-phone.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/themes/click5-wp/img/icons/icon-quote.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/uploads/icon-service-1.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/uploads/icon-service-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/uploads/icon-service-3.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/uploads/icon-service-4.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/uploads/icon-h-service-1.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/uploads/icon-h-service-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/uploads/icon-h-service-3.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/themes/click5-wp/img/icons/icon-stars.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/uploads/CAR-CFAD-Badge-4C-JPG-1-e1784577203500.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/uploads/aach-award-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/uploads/aach-award-3.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/uploads/aach-award-4.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/uploads/presidents-award-2026.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn-ildhpeb.nitrocdn.com/NEsNwhMASsSXkBBvLaIsNMEQsRsGzyRO/assets/images/optimized/rev-22fbd55/alliedairheat.com/wp-content/uploads/aach-award-6.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "PHN2ZyB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PC9zdmc+",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "8a2c1094fc47fdf996f65134d3550906df38d3ea6c6058de9fce28756235c536"
+}

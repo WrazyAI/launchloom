@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "colorlib-tavola-restaurant",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/tavola",
+    "repository": "https://github.com/ColorlibHQ/bootstrap-templates",
+    "revision": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "templatePath": "tavola/",
+    "retrievedAt": "2026-10-08T20:05:36.076Z",
+    "license": "MIT",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/base.css",
+      "bytes": 12208,
+      "sha256": "84662d517b2d223427a0d403a347cb8edf1a834ecaf160e5f4c8f8627c78b56c"
+    },
+    {
+      "path": "source/assets/css/style.css",
+      "bytes": 5530,
+      "sha256": "d1cdc65f1fdb90045f631c4dfcae79d814a316df48fcc21c32b25cc93aa5706a"
+    },
+    {
+      "path": "source/assets/js/base.js",
+      "bytes": 4182,
+      "sha256": "593e618719970dfe796d86f0707593498951c0e52a4fc7a18c87d6be2fef5819"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 331,
+      "sha256": "63677e8f83d73adb6624ae023db8b2aa1a8fe3ac3233de8609b369b8759d47ca"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap-utilities.metadata.json",
+      "bytes": 29007,
+      "sha256": "0aa89f21fbbf9555a3905382ef4cdf5f281f164eb727b7a8d446efaf01b310fa"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap.min.css",
+      "bytes": 357751,
+      "sha256": "1a17841f830ff69b686da298babbf8e5e3e8dfb33b7329f115e366deacccb380"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/js/bootstrap.bundle.min.js",
+      "bytes": 214643,
+      "sha256": "77d552c3e6a815efd143c8e782c480bc63225cefba51bc510e0875a934f23fe7"
+    },
+    {
+      "path": "source/CREDITS.txt",
+      "bytes": 1395,
+      "sha256": "c785068c336c2a57c2d43fa210b6f14409ee4654c42f5da3522d8d35c31193de"
+    },
+    {
+      "path": "source/img/hero.jpg",
+      "bytes": 648496,
+      "sha256": "43c8eeb8321b3e8d2eaba9e07060d9d756d0af76ad3b818d3dca0faaec50473b"
+    },
+    {
+      "path": "source/img/kitchen.jpg",
+      "bytes": 174739,
+      "sha256": "583fde6cf58d8721051fb1594332b100c89bb9eaa02f8b774cfb0fa387b105a8"
+    },
+    {
+      "path": "source/img/room-1.jpg",
+      "bytes": 276687,
+      "sha256": "5f3faca499452cb79a0e0d00d37bda11fe1d6c49fdb8690124d4266464bfdb70"
+    },
+    {
+      "path": "source/img/room-2.jpg",
+      "bytes": 95848,
+      "sha256": "7c058100e227519ce16ae526f485ad3af25b482e75a6d615d511c8aaba49365b"
+    },
+    {
+      "path": "source/img/room-3.jpg",
+      "bytes": 110099,
+      "sha256": "f15af993a87e98c349af006fb9247c5318ee7118bfb874d6fdef62c5a8f1ac09"
+    },
+    {
+      "path": "source/img/room-4.jpg",
+      "bytes": 82847,
+      "sha256": "eebbaa0ae001f628d041959173bf793c1195d09dbe33b6ba07711d6d85c4dbfe"
+    },
+    {
+      "path": "source/img/room-5.jpg",
+      "bytes": 86913,
+      "sha256": "3cfc44d78f7261e99059237ed89d344fd40e02e79440e0c0992cbea2d8d15047"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 25057,
+      "sha256": "1f9e4cc202d5a8289683347fb9edb10a738fe28423068dd857e12b2d24c0c637"
+    },
+    {
+      "path": "source/menu.html",
+      "bytes": 14534,
+      "sha256": "7e5452cb043ee7ff07c65af89db9f8ebb9bc50d0d71f5c391b31780ec501bf89"
+    },
+    {
+      "path": "source/template.json",
+      "bytes": 3837,
+      "sha256": "470a9aa5908b8b43029269355608cb89e838fa352e1499621f0e042b9dece85f"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Fetched 18 files from the pinned repository at f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf.",
+  "digest": "10198e7872bf77f3949f98890649e9cac876c014dd4b289e1b89765f8d9d6e68"
+}

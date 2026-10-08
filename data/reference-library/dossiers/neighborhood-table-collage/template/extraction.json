@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "neighborhood-table-collage",
+  "status": "extracted",
+  "method": "owned-artifact",
+  "source": {
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/neighborhood-table-collage",
+    "artifactPath": "a1-design-showcase/neighborhood-table.html",
+    "generator": "scripts/build-a1-design-showcase.mjs",
+    "retrievedAt": "2026-10-08T20:06:09.911Z",
+    "license": "owned",
+    "attestationPath": null
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 6982,
+      "sha256": "f6b89d786c2f399cbf453b35e09dd8d5b7c99428542ab76c5cff82d2422aa2f9"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Copied 1 files from the local build artifact at a1-design-showcase/neighborhood-table.html. The artifact directory is gitignored; regenerate it with scripts/build-a1-design-showcase.mjs when the owned prototype source changes.",
+  "digest": "a8b96dc7d101d36339dcd7d6da35a9cc618c0b6ead5c27575548218d8663353e"
+}

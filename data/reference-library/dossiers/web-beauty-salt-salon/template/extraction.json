@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-beauty-salt-salon",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.saltsalonlondon.com/",
+    "finalUrl": "https://www.saltsalonlondon.com/",
+    "httpStatus": 200,
+    "pageTitle": "SALT SALT LONDON | CONTEMPORARY HAIR SALON",
+    "retrievedAt": "2026-10-08T20:23:17.507Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 500158,
+      "sha256": "58a329ae940785836ff39d028a7eeabc70323baebed81f41fd28cb19296d8ebe"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 8413,
+      "sha256": "3e94b694b0efc60e31fb14f9d37ba0d39dc282d27b713bf42f2e85b9d62afac5"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 9897,
+      "sha256": "6c5b868d0b0d6d8a650edcc31bd0127627d8280526f698f3733bc61bba91b5f7"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 105,
+      "sha256": "62851efff91ee5fe72cea604fca72bbd29cfe282a517f1cbca5ba647285a1b65"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 1087,
+      "sha256": "1ae84d9f9687b4d101a7e87382c7a11b8029157df95de292ad48ac87f209f912"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 1271782,
+      "sha256": "71337f444f016daa1289b15bb36660fb03d48ce1c6b4bce36abff14bd22420f3"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 467125,
+      "sha256": "84c8cef704077c39326360d98375b0fc93877e3def2f883844d26b17e2104122"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 25629,
+      "sha256": "0e5e47c85a0b452da561b75fbedfae3d8398f54a7de67419efba318d529f7db1"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 5621,
+      "sha256": "0ff709d81c238e4bd4205ce9957ffba981b4870ae9d1fa42da5b1b6b69380259"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/65e856860f86596eb7d464e5/5bb49cec-a22c-4a4f-b6c1-8fee21a362e3/Asset+22%402x.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/65e856860f86596eb7d464e5/2fa1b96f-2504-4243-b0b5-e7b3e900548a/Asset+22%402x.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//images.squarespace-cdn.com/content/v1/65e856860f86596eb7d464e5/2fa1b96f-2504-4243-b0b5-e7b3e900548a/Asset+22%402x.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "//images.squarespace-cdn.com/content/v1/65e856860f86596eb7d464e5/5bb49cec-a22c-4a4f-b6c1-8fee21a362e3/Asset+22%402x.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "blob:https://www.saltsalonlondon.com/ba45a799-5eff-44c2-baaa-af65673174e0",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 8 of 8 stylesheets retained.",
+  "digest": "59ef6bad7e5cd31b098bb30e8243d0a7a012a4a79f0c0b65ab05cf1ee04b33b5"
+}

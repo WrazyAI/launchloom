@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "colorlib-marigold-event-venue",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/marigold",
+    "repository": "https://github.com/ColorlibHQ/bootstrap-templates",
+    "revision": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "templatePath": "marigold/",
+    "retrievedAt": "2026-10-08T20:05:33.159Z",
+    "license": "MIT",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/base.css",
+      "bytes": 12208,
+      "sha256": "84662d517b2d223427a0d403a347cb8edf1a834ecaf160e5f4c8f8627c78b56c"
+    },
+    {
+      "path": "source/assets/css/style.css",
+      "bytes": 5818,
+      "sha256": "125e4ab7981e2b84e7621c6cb775d3e1f035214100b9afc08e1bd7ea9705e0d3"
+    },
+    {
+      "path": "source/assets/js/base.js",
+      "bytes": 4182,
+      "sha256": "593e618719970dfe796d86f0707593498951c0e52a4fc7a18c87d6be2fef5819"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 3445,
+      "sha256": "762c85f680809444ccee62cbeaa1d904e0465c38280a9cdb5c3d51743d398fa1"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap-utilities.metadata.json",
+      "bytes": 29007,
+      "sha256": "0aa89f21fbbf9555a3905382ef4cdf5f281f164eb727b7a8d446efaf01b310fa"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap.min.css",
+      "bytes": 357751,
+      "sha256": "1a17841f830ff69b686da298babbf8e5e3e8dfb33b7329f115e366deacccb380"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/js/bootstrap.bundle.min.js",
+      "bytes": 214643,
+      "sha256": "77d552c3e6a815efd143c8e782c480bc63225cefba51bc510e0875a934f23fe7"
+    },
+    {
+      "path": "source/CREDITS.txt",
+      "bytes": 1391,
+      "sha256": "bfbba6273f4166c575b2a43ecf9417ceab3739bc00b71d1b780cc4d9f4a2e674"
+    },
+    {
+      "path": "source/img/gal-1.jpg",
+      "bytes": 204638,
+      "sha256": "054b0064d56aedcbee626d6d35e0e8c844a1c3bca3f2d0e4acb33777aca9b260"
+    },
+    {
+      "path": "source/img/gal-2.jpg",
+      "bytes": 153452,
+      "sha256": "e56422e300cb7f8bcfafce78f76474ed02ec85420d0330806ddc1d20a0058095"
+    },
+    {
+      "path": "source/img/gal-3.jpg",
+      "bytes": 123377,
+      "sha256": "b25f08b118205ca183e984c386ff46db8f3770952455f93169f63899143c2432"
+    },
+    {
+      "path": "source/img/gal-4.jpg",
+      "bytes": 196658,
+      "sha256": "80b97b2c76c90cceea5431c7b95678bd0ac22cbef15a36a5365c8b7ed07b3e48"
+    },
+    {
+      "path": "source/img/gal-5.jpg",
+      "bytes": 77349,
+      "sha256": "7f28c2d16cf15d6a701bccb636e71a616e19514a584d9b0ef466c8792fe81bff"
+    },
+    {
+      "path": "source/img/hero.jpg",
+      "bytes": 867410,
+      "sha256": "be1ae41e44b39091c742beaad67b1cbb7d8eec461a0441829a74ddcf447857c5"
+    },
+    {
+      "path": "source/img/story.jpg",
+      "bytes": 171585,
+      "sha256": "55e3ee6472ff6ceecc310ff6c14cfc2d1d7ac1225958f19914f4faf0f96d7b1c"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 16726,
+      "sha256": "5a15643ed8b4974732c9856fcbe78eb3501b9702073196daae5e07b156913aa5"
+    },
+    {
+      "path": "source/template.json",
+      "bytes": 4183,
+      "sha256": "f443ec1fec375a31b9e7281f4ea8aada257fa799a742bc0b03cb90c1de588b2a"
+    },
+    {
+      "path": "source/travel.html",
+      "bytes": 9809,
+      "sha256": "65f14d19b1a869e370fd59c8c900a094b694ab3b7cee5a86e7c8d0c40bc6ff9b"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://github.com/ColorlibHQ/bootstrap-templates/blob/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/marigold/build.py",
+      "reason": "unsupported-extension"
+    }
+  ],
+  "notes": "Fetched 18 files from the pinned repository at f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf.",
+  "digest": "7cbccd584915499bde061bfbd663a1e1b08a5eeb91f67bed6891f937baeafb4d"
+}

@@ -1,0 +1,687 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-architecture-simpson-studio",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.simpson-studio.com/",
+    "finalUrl": "https://www.simpson-studio.com/",
+    "httpStatus": 200,
+    "pageTitle": "Simpson Studio | Architecture, Interior Design & Cabinet Making",
+    "retrievedAt": "2026-10-08T20:20:55.238Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 425088,
+      "sha256": "078b7e01f43fb8d3233808d5555a7aa0dee9111d8cbe74cb9a4cb34743068b01"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 9897,
+      "sha256": "6c5b868d0b0d6d8a650edcc31bd0127627d8280526f698f3733bc61bba91b5f7"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 105,
+      "sha256": "62851efff91ee5fe72cea604fca72bbd29cfe282a517f1cbca5ba647285a1b65"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 1087,
+      "sha256": "1ae84d9f9687b4d101a7e87382c7a11b8029157df95de292ad48ac87f209f912"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 3522,
+      "sha256": "7a84177f9e7c09cd17f6d698962e53cc8bc2871146935c17e50e9e633aecdb66"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 1272468,
+      "sha256": "1f951d5905a622d84d1a509a210a8b72a6dffd331cb1566e127c760f42637f42"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 467125,
+      "sha256": "84c8cef704077c39326360d98375b0fc93877e3def2f883844d26b17e2104122"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 3675,
+      "sha256": "5ebc77bd3be68ac9236cfae91aa614c278204a32596b44e723250033858b8a00"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 25629,
+      "sha256": "0e5e47c85a0b452da561b75fbedfae3d8398f54a7de67419efba318d529f7db1"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 5621,
+      "sha256": "0ff709d81c238e4bd4205ce9957ffba981b4870ae9d1fa42da5b1b6b69380259"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/4d1699f5-f3ce-4488-9630-c7c4d4c60787/Simpson+Studio+Logotype+-+no+full+stop+copy.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548451828-DKCEV4VW038YADQPN1I3/SimpsonStudio_MIJ_281122_11077_v2.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548451828-DKCEV4VW038YADQPN1I3/SimpsonStudio_MIJ_281122_11077_v2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548451828-DKCEV4VW038YADQPN1I3/SimpsonStudio_MIJ_281122_11077_v2.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548451828-DKCEV4VW038YADQPN1I3/SimpsonStudio_MIJ_281122_11077_v2.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548451828-DKCEV4VW038YADQPN1I3/SimpsonStudio_MIJ_281122_11077_v2.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548451828-DKCEV4VW038YADQPN1I3/SimpsonStudio_MIJ_281122_11077_v2.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548451828-DKCEV4VW038YADQPN1I3/SimpsonStudio_MIJ_281122_11077_v2.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548451828-DKCEV4VW038YADQPN1I3/SimpsonStudio_MIJ_281122_11077_v2.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/a8807437-1235-4528-b5bb-25a89031c460/SimpsonStudio_HoflandRoad_130825_12527_v2.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/a8807437-1235-4528-b5bb-25a89031c460/SimpsonStudio_HoflandRoad_130825_12527_v2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/a8807437-1235-4528-b5bb-25a89031c460/SimpsonStudio_HoflandRoad_130825_12527_v2.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/a8807437-1235-4528-b5bb-25a89031c460/SimpsonStudio_HoflandRoad_130825_12527_v2.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/a8807437-1235-4528-b5bb-25a89031c460/SimpsonStudio_HoflandRoad_130825_12527_v2.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/a8807437-1235-4528-b5bb-25a89031c460/SimpsonStudio_HoflandRoad_130825_12527_v2.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/a8807437-1235-4528-b5bb-25a89031c460/SimpsonStudio_HoflandRoad_130825_12527_v2.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/a8807437-1235-4528-b5bb-25a89031c460/SimpsonStudio_HoflandRoad_130825_12527_v2.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548514370-XU5ZMHVF4BFFRPNRMKDU/SimpsonStudio_HollandParkMews_091222_11395_v2.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548514370-XU5ZMHVF4BFFRPNRMKDU/SimpsonStudio_HollandParkMews_091222_11395_v2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548514370-XU5ZMHVF4BFFRPNRMKDU/SimpsonStudio_HollandParkMews_091222_11395_v2.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548514370-XU5ZMHVF4BFFRPNRMKDU/SimpsonStudio_HollandParkMews_091222_11395_v2.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548514370-XU5ZMHVF4BFFRPNRMKDU/SimpsonStudio_HollandParkMews_091222_11395_v2.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548514370-XU5ZMHVF4BFFRPNRMKDU/SimpsonStudio_HollandParkMews_091222_11395_v2.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548514370-XU5ZMHVF4BFFRPNRMKDU/SimpsonStudio_HollandParkMews_091222_11395_v2.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676548514370-XU5ZMHVF4BFFRPNRMKDU/SimpsonStudio_HollandParkMews_091222_11395_v2.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954386723-N7HJDOLT4AD9N24ITXZR/SimpsonStudio_HoflandRoad_130825_12469_v2.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954386723-N7HJDOLT4AD9N24ITXZR/SimpsonStudio_HoflandRoad_130825_12469_v2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954386723-N7HJDOLT4AD9N24ITXZR/SimpsonStudio_HoflandRoad_130825_12469_v2.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954386723-N7HJDOLT4AD9N24ITXZR/SimpsonStudio_HoflandRoad_130825_12469_v2.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954386723-N7HJDOLT4AD9N24ITXZR/SimpsonStudio_HoflandRoad_130825_12469_v2.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954386723-N7HJDOLT4AD9N24ITXZR/SimpsonStudio_HoflandRoad_130825_12469_v2.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954386723-N7HJDOLT4AD9N24ITXZR/SimpsonStudio_HoflandRoad_130825_12469_v2.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954386723-N7HJDOLT4AD9N24ITXZR/SimpsonStudio_HoflandRoad_130825_12469_v2.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549188178-BWD7DYT8VGUZ9RFYVV39/SimpsonStudio_StokePark_031122_10274_v2.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549188178-BWD7DYT8VGUZ9RFYVV39/SimpsonStudio_StokePark_031122_10274_v2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549188178-BWD7DYT8VGUZ9RFYVV39/SimpsonStudio_StokePark_031122_10274_v2.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549188178-BWD7DYT8VGUZ9RFYVV39/SimpsonStudio_StokePark_031122_10274_v2.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549188178-BWD7DYT8VGUZ9RFYVV39/SimpsonStudio_StokePark_031122_10274_v2.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549188178-BWD7DYT8VGUZ9RFYVV39/SimpsonStudio_StokePark_031122_10274_v2.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549188178-BWD7DYT8VGUZ9RFYVV39/SimpsonStudio_StokePark_031122_10274_v2.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549188178-BWD7DYT8VGUZ9RFYVV39/SimpsonStudio_StokePark_031122_10274_v2.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549283775-T7ZEMECUQGKZBSB0G37J/60%2BMelody%2BRd%2B%25284%2529.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549283775-T7ZEMECUQGKZBSB0G37J/60%2BMelody%2BRd%2B%25284%2529.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549283775-T7ZEMECUQGKZBSB0G37J/60%2BMelody%2BRd%2B%25284%2529.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549283775-T7ZEMECUQGKZBSB0G37J/60%2BMelody%2BRd%2B%25284%2529.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549283775-T7ZEMECUQGKZBSB0G37J/60%2BMelody%2BRd%2B%25284%2529.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549283775-T7ZEMECUQGKZBSB0G37J/60%2BMelody%2BRd%2B%25284%2529.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549283775-T7ZEMECUQGKZBSB0G37J/60%2BMelody%2BRd%2B%25284%2529.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549283775-T7ZEMECUQGKZBSB0G37J/60%2BMelody%2BRd%2B%25284%2529.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/f1e21e1e-6b98-4153-a260-6a9cc98cd164/SimpsonStudio_WagWorks_Shoot+II_Location4076_v2.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/f1e21e1e-6b98-4153-a260-6a9cc98cd164/SimpsonStudio_WagWorks_Shoot+II_Location4076_v2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/f1e21e1e-6b98-4153-a260-6a9cc98cd164/SimpsonStudio_WagWorks_Shoot+II_Location4076_v2.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/f1e21e1e-6b98-4153-a260-6a9cc98cd164/SimpsonStudio_WagWorks_Shoot+II_Location4076_v2.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/f1e21e1e-6b98-4153-a260-6a9cc98cd164/SimpsonStudio_WagWorks_Shoot+II_Location4076_v2.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/f1e21e1e-6b98-4153-a260-6a9cc98cd164/SimpsonStudio_WagWorks_Shoot+II_Location4076_v2.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/f1e21e1e-6b98-4153-a260-6a9cc98cd164/SimpsonStudio_WagWorks_Shoot+II_Location4076_v2.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/f1e21e1e-6b98-4153-a260-6a9cc98cd164/SimpsonStudio_WagWorks_Shoot+II_Location4076_v2.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549408243-KGQ938S2KJS0KK390TWV/S.S_Grove-020.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549408243-KGQ938S2KJS0KK390TWV/S.S_Grove-020.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549408243-KGQ938S2KJS0KK390TWV/S.S_Grove-020.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549408243-KGQ938S2KJS0KK390TWV/S.S_Grove-020.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549408243-KGQ938S2KJS0KK390TWV/S.S_Grove-020.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549408243-KGQ938S2KJS0KK390TWV/S.S_Grove-020.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549408243-KGQ938S2KJS0KK390TWV/S.S_Grove-020.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1676549408243-KGQ938S2KJS0KK390TWV/S.S_Grove-020.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954498420-WM67KBBZG25YF2OBGWEF/20240423_SimpsonStudio_190_V1.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954498420-WM67KBBZG25YF2OBGWEF/20240423_SimpsonStudio_190_V1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954498420-WM67KBBZG25YF2OBGWEF/20240423_SimpsonStudio_190_V1.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954498420-WM67KBBZG25YF2OBGWEF/20240423_SimpsonStudio_190_V1.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954498420-WM67KBBZG25YF2OBGWEF/20240423_SimpsonStudio_190_V1.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954498420-WM67KBBZG25YF2OBGWEF/20240423_SimpsonStudio_190_V1.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954498420-WM67KBBZG25YF2OBGWEF/20240423_SimpsonStudio_190_V1.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1776954498420-WM67KBBZG25YF2OBGWEF/20240423_SimpsonStudio_190_V1.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/2f48eb4e-4ce8-42f2-ae11-e0b843ed33e4/SimpsonStudio_HoflandRoad_130825_12629_v2.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/2f48eb4e-4ce8-42f2-ae11-e0b843ed33e4/SimpsonStudio_HoflandRoad_130825_12629_v2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/2f48eb4e-4ce8-42f2-ae11-e0b843ed33e4/SimpsonStudio_HoflandRoad_130825_12629_v2.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/2f48eb4e-4ce8-42f2-ae11-e0b843ed33e4/SimpsonStudio_HoflandRoad_130825_12629_v2.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/2f48eb4e-4ce8-42f2-ae11-e0b843ed33e4/SimpsonStudio_HoflandRoad_130825_12629_v2.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/2f48eb4e-4ce8-42f2-ae11-e0b843ed33e4/SimpsonStudio_HoflandRoad_130825_12629_v2.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/2f48eb4e-4ce8-42f2-ae11-e0b843ed33e4/SimpsonStudio_HoflandRoad_130825_12629_v2.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/2f48eb4e-4ce8-42f2-ae11-e0b843ed33e4/SimpsonStudio_HoflandRoad_130825_12629_v2.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/542894f9-c318-4fc4-8eec-158ae87e7284/SimpsonStudio_290721-8184_v2.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/542894f9-c318-4fc4-8eec-158ae87e7284/SimpsonStudio_290721-8184_v2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/542894f9-c318-4fc4-8eec-158ae87e7284/SimpsonStudio_290721-8184_v2.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/542894f9-c318-4fc4-8eec-158ae87e7284/SimpsonStudio_290721-8184_v2.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/542894f9-c318-4fc4-8eec-158ae87e7284/SimpsonStudio_290721-8184_v2.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/542894f9-c318-4fc4-8eec-158ae87e7284/SimpsonStudio_290721-8184_v2.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/542894f9-c318-4fc4-8eec-158ae87e7284/SimpsonStudio_290721-8184_v2.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/542894f9-c318-4fc4-8eec-158ae87e7284/SimpsonStudio_290721-8184_v2.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6417bf8d-7684-48b4-bd0e-ecee6628f380/HPM.png?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6417bf8d-7684-48b4-bd0e-ecee6628f380/HPM.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6417bf8d-7684-48b4-bd0e-ecee6628f380/HPM.png?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6417bf8d-7684-48b4-bd0e-ecee6628f380/HPM.png?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6417bf8d-7684-48b4-bd0e-ecee6628f380/HPM.png?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6417bf8d-7684-48b4-bd0e-ecee6628f380/HPM.png?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6417bf8d-7684-48b4-bd0e-ecee6628f380/HPM.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6417bf8d-7684-48b4-bd0e-ecee6628f380/HPM.png?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6d279d7b-e24c-4b7a-a353-1437d8f7201e/SimpsonStudio_WagWorks_Shoot+II_Location3582_v2.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6d279d7b-e24c-4b7a-a353-1437d8f7201e/SimpsonStudio_WagWorks_Shoot+II_Location3582_v2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6d279d7b-e24c-4b7a-a353-1437d8f7201e/SimpsonStudio_WagWorks_Shoot+II_Location3582_v2.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6d279d7b-e24c-4b7a-a353-1437d8f7201e/SimpsonStudio_WagWorks_Shoot+II_Location3582_v2.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6d279d7b-e24c-4b7a-a353-1437d8f7201e/SimpsonStudio_WagWorks_Shoot+II_Location3582_v2.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6d279d7b-e24c-4b7a-a353-1437d8f7201e/SimpsonStudio_WagWorks_Shoot+II_Location3582_v2.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6d279d7b-e24c-4b7a-a353-1437d8f7201e/SimpsonStudio_WagWorks_Shoot+II_Location3582_v2.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/6d279d7b-e24c-4b7a-a353-1437d8f7201e/SimpsonStudio_WagWorks_Shoot+II_Location3582_v2.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/ea9659c7-5c60-4e1e-b64a-2f1af6bc9cc3/SimpsonStudio_MIJ_281122_11011_v2.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/ea9659c7-5c60-4e1e-b64a-2f1af6bc9cc3/SimpsonStudio_MIJ_281122_11011_v2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/ea9659c7-5c60-4e1e-b64a-2f1af6bc9cc3/SimpsonStudio_MIJ_281122_11011_v2.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/ea9659c7-5c60-4e1e-b64a-2f1af6bc9cc3/SimpsonStudio_MIJ_281122_11011_v2.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/ea9659c7-5c60-4e1e-b64a-2f1af6bc9cc3/SimpsonStudio_MIJ_281122_11011_v2.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/ea9659c7-5c60-4e1e-b64a-2f1af6bc9cc3/SimpsonStudio_MIJ_281122_11011_v2.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/ea9659c7-5c60-4e1e-b64a-2f1af6bc9cc3/SimpsonStudio_MIJ_281122_11011_v2.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/ea9659c7-5c60-4e1e-b64a-2f1af6bc9cc3/SimpsonStudio_MIJ_281122_11011_v2.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1e49e1e3-c84d-453d-87b9-d516ed0779d1/SimpsonStudio_StokePark_II_230623_11074_v2.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1e49e1e3-c84d-453d-87b9-d516ed0779d1/SimpsonStudio_StokePark_II_230623_11074_v2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1e49e1e3-c84d-453d-87b9-d516ed0779d1/SimpsonStudio_StokePark_II_230623_11074_v2.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1e49e1e3-c84d-453d-87b9-d516ed0779d1/SimpsonStudio_StokePark_II_230623_11074_v2.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1e49e1e3-c84d-453d-87b9-d516ed0779d1/SimpsonStudio_StokePark_II_230623_11074_v2.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1e49e1e3-c84d-453d-87b9-d516ed0779d1/SimpsonStudio_StokePark_II_230623_11074_v2.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1e49e1e3-c84d-453d-87b9-d516ed0779d1/SimpsonStudio_StokePark_II_230623_11074_v2.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/1e49e1e3-c84d-453d-87b9-d516ed0779d1/SimpsonStudio_StokePark_II_230623_11074_v2.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/fcc3ae88-24c2-4870-a8e9-214a9170004f/20240423_SimpsonStudio_143_V1.jpg?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/fcc3ae88-24c2-4870-a8e9-214a9170004f/20240423_SimpsonStudio_143_V1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/fcc3ae88-24c2-4870-a8e9-214a9170004f/20240423_SimpsonStudio_143_V1.jpg?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/fcc3ae88-24c2-4870-a8e9-214a9170004f/20240423_SimpsonStudio_143_V1.jpg?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/fcc3ae88-24c2-4870-a8e9-214a9170004f/20240423_SimpsonStudio_143_V1.jpg?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/fcc3ae88-24c2-4870-a8e9-214a9170004f/20240423_SimpsonStudio_143_V1.jpg?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/fcc3ae88-24c2-4870-a8e9-214a9170004f/20240423_SimpsonStudio_143_V1.jpg?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/fcc3ae88-24c2-4870-a8e9-214a9170004f/20240423_SimpsonStudio_143_V1.jpg?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/8c767e62-06f3-4878-831b-0d56058a7b7b/S+-+Monogram+-+Standard+-+Transparent.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/8c767e62-06f3-4878-831b-0d56058a7b7b/S+-+Monogram+-+Standard+-+Transparent.png?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/8c767e62-06f3-4878-831b-0d56058a7b7b/S+-+Monogram+-+Standard+-+Transparent.png?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/8c767e62-06f3-4878-831b-0d56058a7b7b/S+-+Monogram+-+Standard+-+Transparent.png?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/8c767e62-06f3-4878-831b-0d56058a7b7b/S+-+Monogram+-+Standard+-+Transparent.png?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/8c767e62-06f3-4878-831b-0d56058a7b7b/S+-+Monogram+-+Standard+-+Transparent.png?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/8c767e62-06f3-4878-831b-0d56058a7b7b/S+-+Monogram+-+Standard+-+Transparent.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/8c767e62-06f3-4878-831b-0d56058a7b7b/S+-+Monogram+-+Standard+-+Transparent.png?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/074e045b-3b30-474a-94f6-abd2c8e812dd/riba-logo-svg-vector.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/074e045b-3b30-474a-94f6-abd2c8e812dd/riba-logo-svg-vector.png?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/074e045b-3b30-474a-94f6-abd2c8e812dd/riba-logo-svg-vector.png?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/074e045b-3b30-474a-94f6-abd2c8e812dd/riba-logo-svg-vector.png?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/074e045b-3b30-474a-94f6-abd2c8e812dd/riba-logo-svg-vector.png?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/074e045b-3b30-474a-94f6-abd2c8e812dd/riba-logo-svg-vector.png?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/074e045b-3b30-474a-94f6-abd2c8e812dd/riba-logo-svg-vector.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/074e045b-3b30-474a-94f6-abd2c8e812dd/riba-logo-svg-vector.png?format=2500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/e0ac4962-23b3-4847-9fc3-26374690a241/rias.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/e0ac4962-23b3-4847-9fc3-26374690a241/rias.png?format=100w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/e0ac4962-23b3-4847-9fc3-26374690a241/rias.png?format=300w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/e0ac4962-23b3-4847-9fc3-26374690a241/rias.png?format=500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/e0ac4962-23b3-4847-9fc3-26374690a241/rias.png?format=750w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/e0ac4962-23b3-4847-9fc3-26374690a241/rias.png?format=1000w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/e0ac4962-23b3-4847-9fc3-26374690a241/rias.png?format=1500w",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://images.squarespace-cdn.com/content/v1/63cfb29796c0e23cf15bc5ac/e0ac4962-23b3-4847-9fc3-26374690a241/rias.png?format=2500w",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 9 of 9 stylesheets retained.",
+  "digest": "f372a90bd917b3069b0092e6991e03242eb820ea43aee7570b935d72b59ae26f"
+}

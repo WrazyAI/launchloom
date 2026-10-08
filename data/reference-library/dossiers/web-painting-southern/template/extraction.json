@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-painting-southern",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://southernpainting.com/",
+    "finalUrl": "https://southernpainting.com/",
+    "httpStatus": 200,
+    "pageTitle": "House Painting Company, Interior & Exterior | Southern Painting",
+    "retrievedAt": "2026-10-08T20:32:01.065Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 196699,
+      "sha256": "6a3bb7ee2d06b4a4fed033f49bf413d3f997e5622a8d850ca1146313f7890f7b"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 82955,
+      "sha256": "824a218c731d52b8dbfed37f2e76df33b504309aa53b60a1ce7215b6f280aaae"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 267,
+      "sha256": "504305877efe72036682cd24bbb30673a40d4d356c35953e90d200ce34e0c7c4"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 118202,
+      "sha256": "4940c77e3497f97e544d38a0da90d4cd33637e5e3dc16247bb2c8ea5e16624a9"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 804,
+      "sha256": "658fed4843a24a91239ae91731e4adf279b1206d3cd271d4426f6678fcefdbac"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 3525,
+      "sha256": "33db461b5fe7d7dffa74aead9527f3f8f348c83b83798f580f328d393afdadc8"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 43502,
+      "sha256": "4fa99002bd1e4d13670fbc79d2b142de33883b953db3b22b3debfa15d799f591"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 31000,
+      "sha256": "799aeb25cc0373fdee0e1b1db7ad6c2f6a0e058dfadaa3379689f583213190bd"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 270921,
+      "sha256": "b794792f58ec811eb81f37b368cf47ae339768392551cd8500841e4c40fd554f"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 2104,
+      "sha256": "d4b60fb9ace0c943a2883161709c259f6affdff72c40b2d9f34df2f70412f985"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 102361,
+      "sha256": "464fb20f1753ae464101d47634ff286045b31531633822d64e9929adf62bbcaf"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://southernpainting.com/wp-content/themes/southern-painting/images/logo.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://southernpainting.com/wp-content/themes/southern-painting/images/location-pin.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://southernpainting.com/wp-content/themes/southern-painting/images/phone.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://southernpainting.com/wp-content/uploads/2019/02/ppg.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://southernpainting.com/wp-content/uploads/2018/11/Sherwin-Williams_logo_wordmark-1024x290.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://southernpainting.com/wp-content/uploads/2018/11/BenjaminMoore-logo-1024x353.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://southernpainting.com/wp-content/uploads/2018/11/icon-2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i5!2i8!3i13!4i256!2m3!1e0!2sm!3i798564374!3m18!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy50OjF8cC5zOi0xMDAscy50OjE4fHAudjpvZmYscy50OjV8cC5zOi0xMDB8cC5sOjY1fHAudjpvbixzLnQ6MnxwLnM6LTEwMHxwLmw6NTB8cC52OnNpbXBsaWZpZWQscy50OjN8cC5zOi0xMDAscy50OjQ5fHAudjpzaW1wbGlmaWVkLHMudDo1MHxwLmw6MzAscy50OjUxfHAubDo0MCxzLnQ6NHxwLnM6LTEwMHxwLnY6c2ltcGxpZmllZCxzLnQ6NnxzLmU6Z3xwLmg6I2ZmZmYwMHxwLmw6LTI1fHAuc",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i5!2i9!3i12!4i256!2m3!1e0!2sm!3i798564194!3m18!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy50OjF8cC5zOi0xMDAscy50OjE4fHAudjpvZmYscy50OjV8cC5zOi0xMDB8cC5sOjY1fHAudjpvbixzLnQ6MnxwLnM6LTEwMHxwLmw6NTB8cC52OnNpbXBsaWZpZWQscy50OjN8cC5zOi0xMDAscy50OjQ5fHAudjpzaW1wbGlmaWVkLHMudDo1MHxwLmw6MzAscy50OjUxfHAubDo0MCxzLnQ6NHxwLnM6LTEwMHxwLnY6c2ltcGxpZmllZCxzLnQ6NnxzLmU6Z3xwLmg6I2ZmZmYwMHxwLmw6LTI1fHAuc",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i5!2i6!3i14!4i256!2m3!1e0!2sm!3i798564122!3m18!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy50OjF8cC5zOi0xMDAscy50OjE4fHAudjpvZmYscy50OjV8cC5zOi0xMDB8cC5sOjY1fHAudjpvbixzLnQ6MnxwLnM6LTEwMHxwLmw6NTB8cC52OnNpbXBsaWZpZWQscy50OjN8cC5zOi0xMDAscy50OjQ5fHAudjpzaW1wbGlmaWVkLHMudDo1MHxwLmw6MzAscy50OjUxfHAubDo0MCxzLnQ6NHxwLnM6LTEwMHxwLnY6c2ltcGxpZmllZCxzLnQ6NnxzLmU6Z3xwLmg6I2ZmZmYwMHxwLmw6LTI1fHAuc",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i5!2i7!3i12!4i256!2m3!1e0!2sm!3i798564374!3m18!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy50OjF8cC5zOi0xMDAscy50OjE4fHAudjpvZmYscy50OjV8cC5zOi0xMDB8cC5sOjY1fHAudjpvbixzLnQ6MnxwLnM6LTEwMHxwLmw6NTB8cC52OnNpbXBsaWZpZWQscy50OjN8cC5zOi0xMDAscy50OjQ5fHAudjpzaW1wbGlmaWVkLHMudDo1MHxwLmw6MzAscy50OjUxfHAubDo0MCxzLnQ6NHxwLnM6LTEwMHxwLnY6c2ltcGxpZmllZCxzLnQ6NnxzLmU6Z3xwLmg6I2ZmZmYwMHxwLmw6LTI1fHAuc",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i5!2i9!3i13!4i256!2m3!1e0!2sm!3i798564194!3m18!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy50OjF8cC5zOi0xMDAscy50OjE4fHAudjpvZmYscy50OjV8cC5zOi0xMDB8cC5sOjY1fHAudjpvbixzLnQ6MnxwLnM6LTEwMHxwLmw6NTB8cC52OnNpbXBsaWZpZWQscy50OjN8cC5zOi0xMDAscy50OjQ5fHAudjpzaW1wbGlmaWVkLHMudDo1MHxwLmw6MzAscy50OjUxfHAubDo0MCxzLnQ6NHxwLnM6LTEwMHxwLnY6c2ltcGxpZmllZCxzLnQ6NnxzLmU6Z3xwLmg6I2ZmZmYwMHxwLmw6LTI1fHAuc",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i5!2i7!3i13!4i256!2m3!1e0!2sm!3i798564374!3m18!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy50OjF8cC5zOi0xMDAscy50OjE4fHAudjpvZmYscy50OjV8cC5zOi0xMDB8cC5sOjY1fHAudjpvbixzLnQ6MnxwLnM6LTEwMHxwLmw6NTB8cC52OnNpbXBsaWZpZWQscy50OjN8cC5zOi0xMDAscy50OjQ5fHAudjpzaW1wbGlmaWVkLHMudDo1MHxwLmw6MzAscy50OjUxfHAubDo0MCxzLnQ6NHxwLnM6LTEwMHxwLnY6c2ltcGxpZmllZCxzLnQ6NnxzLmU6Z3xwLmg6I2ZmZmYwMHxwLmw6LTI1fHAuc",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i5!2i9!3i14!4i256!2m3!1e0!2sm!3i798564374!3m18!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy50OjF8cC5zOi0xMDAscy50OjE4fHAudjpvZmYscy50OjV8cC5zOi0xMDB8cC5sOjY1fHAudjpvbixzLnQ6MnxwLnM6LTEwMHxwLmw6NTB8cC52OnNpbXBsaWZpZWQscy50OjN8cC5zOi0xMDAscy50OjQ5fHAudjpzaW1wbGlmaWVkLHMudDo1MHxwLmw6MzAscy50OjUxfHAubDo0MCxzLnQ6NHxwLnM6LTEwMHxwLnY6c2ltcGxpZmllZCxzLnQ6NnxzLmU6Z3xwLmg6I2ZmZmYwMHxwLmw6LTI1fHAuc",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i5!2i7!3i14!4i256!2m3!1e0!2sm!3i798564194!3m18!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy50OjF8cC5zOi0xMDAscy50OjE4fHAudjpvZmYscy50OjV8cC5zOi0xMDB8cC5sOjY1fHAudjpvbixzLnQ6MnxwLnM6LTEwMHxwLmw6NTB8cC52OnNpbXBsaWZpZWQscy50OjN8cC5zOi0xMDAscy50OjQ5fHAudjpzaW1wbGlmaWVkLHMudDo1MHxwLmw6MzAscy50OjUxfHAubDo0MCxzLnQ6NHxwLnM6LTEwMHxwLnY6c2ltcGxpZmllZCxzLnQ6NnxzLmU6Z3xwLmg6I2ZmZmYwMHxwLmw6LTI1fHAuc",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i5!2i8!3i12!4i256!2m3!1e0!2sm!3i798564374!3m18!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy50OjF8cC5zOi0xMDAscy50OjE4fHAudjpvZmYscy50OjV8cC5zOi0xMDB8cC5sOjY1fHAudjpvbixzLnQ6MnxwLnM6LTEwMHxwLmw6NTB8cC52OnNpbXBsaWZpZWQscy50OjN8cC5zOi0xMDAscy50OjQ5fHAudjpzaW1wbGlmaWVkLHMudDo1MHxwLmw6MzAscy50OjUxfHAubDo0MCxzLnQ6NHxwLnM6LTEwMHxwLnY6c2ltcGxpZmllZCxzLnQ6NnxzLmU6Z3xwLmg6I2ZmZmYwMHxwLmw6LTI1fHAuc",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i5!2i6!3i12!4i256!2m3!1e0!2sm!3i798564374!3m18!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy50OjF8cC5zOi0xMDAscy50OjE4fHAudjpvZmYscy50OjV8cC5zOi0xMDB8cC5sOjY1fHAudjpvbixzLnQ6MnxwLnM6LTEwMHxwLmw6NTB8cC52OnNpbXBsaWZpZWQscy50OjN8cC5zOi0xMDAscy50OjQ5fHAudjpzaW1wbGlmaWVkLHMudDo1MHxwLmw6MzAscy50OjUxfHAubDo0MCxzLnQ6NHxwLnM6LTEwMHxwLnY6c2ltcGxpZmllZCxzLnQ6NnxzLmU6Z3xwLmg6I2ZmZmYwMHxwLmw6LTI1fHAuc",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i5!2i8!3i14!4i256!2m3!1e0!2sm!3i798564194!3m18!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy50OjF8cC5zOi0xMDAscy50OjE4fHAudjpvZmYscy50OjV8cC5zOi0xMDB8cC5sOjY1fHAudjpvbixzLnQ6MnxwLnM6LTEwMHxwLmw6NTB8cC52OnNpbXBsaWZpZWQscy50OjN8cC5zOi0xMDAscy50OjQ5fHAudjpzaW1wbGlmaWVkLHMudDo1MHxwLmw6MzAscy50OjUxfHAubDo0MCxzLnQ6NHxwLnM6LTEwMHxwLnY6c2ltcGxpZmllZCxzLnQ6NnxzLmU6Z3xwLmg6I2ZmZmYwMHxwLmw6LTI1fHAuc",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i5!2i6!3i13!4i256!2m3!1e0!2sm!3i798564374!3m18!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy50OjF8cC5zOi0xMDAscy50OjE4fHAudjpvZmYscy50OjV8cC5zOi0xMDB8cC5sOjY1fHAudjpvbixzLnQ6MnxwLnM6LTEwMHxwLmw6NTB8cC52OnNpbXBsaWZpZWQscy50OjN8cC5zOi0xMDAscy50OjQ5fHAudjpzaW1wbGlmaWVkLHMudDo1MHxwLmw6MzAscy50OjUxfHAubDo0MCxzLnQ6NHxwLnM6LTEwMHxwLnY6c2ltcGxpZmllZCxzLnQ6NnxzLmU6Z3xwLmg6I2ZmZmYwMHxwLmw6LTI1fHAuc",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.gstatic.com/mapfiles/transparent.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://southernpainting.com/wp-content/themes/southern-painting/images/logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/anchor?ar=1&k=6Ld9Nf4sAAAAACesOStjeIZyI_bl47ghMGIyZ3qC&co=aHR0cHM6Ly9zb3V0aGVybnBhaW50aW5nLmNvbTo0NDM.&hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&size=normal&anchor-ms=20000&execute-ms=30000&cb=dm0g0y113oy2",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/anchor?ar=1&k=6Ld9Nf4sAAAAACesOStjeIZyI_bl47ghMGIyZ3qC&co=aHR0cHM6Ly9zb3V0aGVybnBhaW50aW5nLmNvbTo0NDM.&hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&size=normal&anchor-ms=20000&execute-ms=30000&cb=uc1wclhmgkcv",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/bframe?hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&k=6Ld9Nf4sAAAAACesOStjeIZyI_bl47ghMGIyZ3qC&bft=0dAFcWeA6YRjDb-pPpSOZ8QF72FUZGp6rQZDoUIhnDcMZFFxncI3kBbTOKcTOWe_IgG3FV6sGnLs2PtCWCKi6Ks3bW-1TDFvH3lQ",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.google.com/recaptcha/api2/bframe?hl=en&v=nY0xPItgwtlvjEjk2TqdwOQz&k=6Ld9Nf4sAAAAACesOStjeIZyI_bl47ghMGIyZ3qC&bft=0dAFcWeA6lFbGPzTXvlbj1bebRmWNauuafciWz9s25mN1hlOYANDIfBfEbvz6WKam5dywtp-xRLBKsCkOQCdX2HwIuMtfOwU33ww",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 10 of 11 stylesheets retained. Stylesheet issues: https://southernpainting.com/wp-content/plugins/easy-bootstrap-shortcodes/styles/ebs_dynamic_css.php (empty-or-unreadable).",
+  "digest": "164c526e6fd5e55195b259093cecea2eeb40d0bc5bd8b314c79468ebe0dca672"
+}

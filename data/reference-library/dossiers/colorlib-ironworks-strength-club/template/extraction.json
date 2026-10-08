@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "colorlib-ironworks-strength-club",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/ironworks",
+    "repository": "https://github.com/ColorlibHQ/bootstrap-templates",
+    "revision": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "templatePath": "ironworks/",
+    "retrievedAt": "2026-10-08T20:05:31.189Z",
+    "license": "MIT",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/base.css",
+      "bytes": 12208,
+      "sha256": "84662d517b2d223427a0d403a347cb8edf1a834ecaf160e5f4c8f8627c78b56c"
+    },
+    {
+      "path": "source/assets/css/style.css",
+      "bytes": 4107,
+      "sha256": "480bc9a9b474c20d74e980ea7795f73c772de54a3ad3bbb344bb33df7c63553a"
+    },
+    {
+      "path": "source/assets/js/base.js",
+      "bytes": 4182,
+      "sha256": "593e618719970dfe796d86f0707593498951c0e52a4fc7a18c87d6be2fef5819"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 660,
+      "sha256": "32d66c104a517d64dc5bf66412fdf2653ad553bb48317b8a82d7e3b62a5d5fa0"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap-utilities.metadata.json",
+      "bytes": 29007,
+      "sha256": "0aa89f21fbbf9555a3905382ef4cdf5f281f164eb727b7a8d446efaf01b310fa"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/css/bootstrap.min.css",
+      "bytes": 357751,
+      "sha256": "1a17841f830ff69b686da298babbf8e5e3e8dfb33b7329f115e366deacccb380"
+    },
+    {
+      "path": "source/assets/vendor/bootstrap6/js/bootstrap.bundle.min.js",
+      "bytes": 214643,
+      "sha256": "77d552c3e6a815efd143c8e782c480bc63225cefba51bc510e0875a934f23fe7"
+    },
+    {
+      "path": "source/CREDITS.txt",
+      "bytes": 573,
+      "sha256": "562ec0726f8e7049b01a58d75f888d6a0a126ac363d08c25111d38ff72aff62d"
+    },
+    {
+      "path": "source/img/hero.jpg",
+      "bytes": 447975,
+      "sha256": "ebef09f0135a901d32c55a13a867243a8e8bd6eed5222e29df5127d511a4084e"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 22957,
+      "sha256": "fac53e30ab834361cdd6f8399ca68f6e4902bcbe4dc07516b0c4d57c64c7948f"
+    },
+    {
+      "path": "source/template.json",
+      "bytes": 2549,
+      "sha256": "8ef9ee5e5623838109f303cf8bfcccf95ea28f3d5f23b990aa18cf8d71159cde"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Fetched 11 files from the pinned repository at f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf.",
+  "digest": "a84654e13dbdc231101ba072ee392a031eca6f6f91a831d9ff97c26a88a83251"
+}

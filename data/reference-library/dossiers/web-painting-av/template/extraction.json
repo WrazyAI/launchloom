@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-painting-av",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.avpainting.com/",
+    "finalUrl": "https://www.avpainting.com/",
+    "httpStatus": 200,
+    "pageTitle": "Interior & Exterior Painting Company Seattle WA | AV Painting",
+    "retrievedAt": "2026-10-08T20:30:22.031Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 110700,
+      "sha256": "f2f267e3e13cd461a5f5303609853b16d7453d71991d13b33fc126510f6da5f7"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 3525,
+      "sha256": "33db461b5fe7d7dffa74aead9527f3f8f348c83b83798f580f328d393afdadc8"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 237958,
+      "sha256": "62ae631fad268f6990a1aa52812c789fca968f51f43d683feeb906d70d1e0985"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 90679,
+      "sha256": "3c21dae42a0626ab658f2a4ab66c055d3e30ec25b0a03952c12c4b818e3ff653"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 197610,
+      "sha256": "adaff0b6fc4a9de2244ada88636427840caab291cb0761aee59daec615594d1b"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 308,
+      "sha256": "b6bde7f37e5843758710973ffed7d6031658467d3ff575c12be0732d8cddd418"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 47160,
+      "sha256": "dd14ede0a6dafdb45bdb432df781a2f236f2ac36ecb5db152140d8ffa1957121"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.avpainting.com/wp-content/uploads/2022/01/av-painting-logo-lt-green.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.avpainting.com/wp-content/themes/socius-theme-advantage/images/dummy.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.avpainting.com/wp-content/uploads/2022/02/logo-sticky.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://api.leadconnectorhq.com/widget/survey/fG4bidapk0sPyzUDtBdh",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://sidebar.bugherd.com/sidebar/embed_html?apikey=phflgxmq7mmxazibde8v9w",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 6 of 6 stylesheets retained. Page errors observed: 1.",
+  "digest": "80949f84898f0fccf5a019a193ab2bc7e7c0a5abc4283939b121c0f50e4c9ae2"
+}

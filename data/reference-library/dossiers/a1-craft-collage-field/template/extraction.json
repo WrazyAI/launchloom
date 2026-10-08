@@ -1,0 +1,879 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "a1-craft-collage-field",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.craft.do/",
+    "finalUrl": "https://www.craft.do/",
+    "httpStatus": 200,
+    "pageTitle": "Craft — Productivity App for Notes, Tasks, and Docs",
+    "retrievedAt": "2026-10-08T20:10:57.717Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 1602247,
+      "sha256": "c007793eabd13dba684d14349859ae50ac8e590c84ce40052a56f5824536269b"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 247229,
+      "sha256": "bca6493c9cc73ae11eb793a3a1fde1dd657fdb61ff1384023787ee2aa14a4494"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 11328,
+      "sha256": "5ac64b180ca34fafd7096fc33791659d24b9197e1bc7017cca0555888d688a9b"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 2242,
+      "sha256": "6e8f23b155ea51cd02d89c25558eb20bc85ccc15613193148f1fe1ff841e47cb"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 5002,
+      "sha256": "e6e2a25c4c1b69087d720776ff9569e9698c9ec52bdd5659c346bcaca9ce28d5"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 1964,
+      "sha256": "6405c8982634e928d5b88ac97d65044e4c8272d5f968674bd40544057e42c590"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.craft.do/_image/width=640,quality=85,format=auto/_next/static/media/cloud.33739c9c.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/cloud.33739c9c.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=384",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "quality=85",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/cloud.33739c9c.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=640",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=750",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=828",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=1080",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=1200",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=1920",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=2048",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=3840",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=640,quality=85,format=auto/_next/static/media/paper-black.dba476c7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/paper-black.dba476c7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/paper-black.dba476c7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_next/static/media/paper-notebook.9ae2b49a.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=1080,quality=85,format=auto/_next/static/media/hero-screenshot-desktop-full.4be7130c.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/hero-screenshot-desktop-full.4be7130c.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=16",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/hero-screenshot-desktop-full.4be7130c.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=32",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=48",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=64",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=96",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=128",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_image/width=256",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/TomBackground.edb4083b.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/TomBackground.edb4083b.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/TomBackground.edb4083b.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/TomPodcaster.c1a5beed.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/TomPodcaster.c1a5beed.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/TomPodcaster.c1a5beed.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/AnaBackground.c048196a.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/AnaBackground.c048196a.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/AnaBackground.c048196a.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/Ana.9e19ce9a.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/Ana.9e19ce9a.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/Ana.9e19ce9a.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/GaganBackground.a86dffe4.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/GaganBackground.a86dffe4.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/GaganBackground.a86dffe4.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/Gagan.0b34f0dd.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/Gagan.0b34f0dd.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/Gagan.0b34f0dd.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/AmityBackground.24a97e2b.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/AmityBackground.24a97e2b.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/AmityBackground.24a97e2b.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/Amity.b95275af.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/Amity.b95275af.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/Amity.b95275af.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/AaronWriterBackground.db8ed086.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/AaronWriterBackground.db8ed086.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/AaronWriterBackground.db8ed086.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/AaronWriter.c1157736.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/AaronWriter.c1157736.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/AaronWriter.c1157736.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/SeoyoungBackgroundWithImage.2dc9f8ef.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/SeoyoungBackgroundWithImage.2dc9f8ef.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/SeoyoungBackgroundWithImage.2dc9f8ef.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/GianBackground.bd769816.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/GianBackground.bd769816.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/GianBackground.bd769816.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/GianSiteManager.5441fa47.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/GianSiteManager.5441fa47.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/GianSiteManager.5441fa47.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/StephenBackground.95ea0100.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/StephenBackground.95ea0100.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/StephenDogDad.11e02d38.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/StephenDogDad.11e02d38.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/AaronStudentBackground.b6d6593f.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/AaronStudentBackground.b6d6593f.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/AaronStudent.630b4b10.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/AaronStudent.630b4b10.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=64,quality=85,format=auto/_next/static/media/tom.03901736.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=128,quality=85,format=auto/_next/static/media/tom.03901736.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/tom.03901736.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-claude.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-claude.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-claude.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-chatgpt.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-chatgpt.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-chatgpt.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-claude-code.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-claude-code.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-claude-code.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-windsurf.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-windsurf.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-windsurf.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-cursor.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-cursor.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-cursor.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-vscode.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-vscode.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-vscode.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-raycast.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-raycast.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-raycast.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-mcp.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-mcp.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-mcp.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-lovable.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-lovable.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-lovable.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-replit.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-replit.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-replit.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-shortcuts.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-shortcuts.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-shortcuts.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-bolt.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-bolt.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-bolt.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-v0.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-v0.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-v0.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-codex.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-codex.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-codex.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=48,quality=85,format=auto/images/showcase/icon-api.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/images/showcase/icon-api.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/showcase/icon-api.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/_next/static/media/awards-appstore.031705d7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/awards-appstore.031705d7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/awards-appstore.031705d7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/_next/static/media/awards-apple.a98fdf3e.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/awards-apple.a98fdf3e.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/awards-apple.a98fdf3e.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/_next/static/media/awards-webby.05b8f2e6.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/awards-webby.05b8f2e6.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/awards-webby.05b8f2e6.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/_next/static/media/awards-german.64156530.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/awards-german.64156530.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/awards-german.64156530.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=64,quality=85,format=auto/_next/static/media/amity_sensei.ed040fc9.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=128,quality=85,format=auto/_next/static/media/amity_sensei.ed040fc9.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/amity_sensei.ed040fc9.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=384,quality=85,format=auto/_next/static/media/mountain_purple_bg.4ef3b0bb.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/mountain_purple_bg.4ef3b0bb.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/mountain_purple_bg.4ef3b0bb.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=96,quality=85,format=auto/_next/static/media/icon-sky.6eda7764.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=256,quality=85,format=auto/_next/static/media/icon-sky.6eda7764.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/icon-sky.6eda7764.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=384,quality=85,format=auto/_next/static/media/mountain_blue_bg.e77321cf.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/mountain_blue_bg.e77321cf.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/mountain_blue_bg.e77321cf.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=384,quality=85,format=auto/_next/static/media/mountain_green_bg.39f82c71.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/mountain_green_bg.39f82c71.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/mountain_green_bg.39f82c71.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=828,quality=85,format=auto/_next/static/media/papers-combined-sm.f77de118.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/papers-combined-sm.f77de118.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=1920,quality=85,format=auto/_next/static/media/papers-combined-lg.c4bb9e28.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/papers-combined-lg.c4bb9e28.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/papers-combined-lg.c4bb9e28.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/papers-combined-2xl.9e55a7e3.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/papers-combined-2xl.9e55a7e3.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=384,quality=85,format=auto/_next/static/media/savoir-faire.e2a835c7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/savoir-faire.e2a835c7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/savoir-faire.e2a835c7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=384,quality=85,format=auto/_next/static/media/a-blogger-from-philly.5990f3ab.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/a-blogger-from-philly.5990f3ab.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/a-blogger-from-philly.5990f3ab.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=384,quality=85,format=auto/_next/static/media/the-tour.ebfda196.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/the-tour.ebfda196.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/the-tour.ebfda196.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=384,quality=85,format=auto/_next/static/media/partners-in-crime.5bacc97c.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/partners-in-crime.5bacc97c.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/partners-in-crime.5bacc97c.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=384,quality=85,format=auto/_next/static/media/morning.5bfc67a7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/morning.5bfc67a7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/morning.5bfc67a7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/time-period.14572fa3.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/time-period.14572fa3.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/antiquities.b1fd961e.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/antiquities.b1fd961e.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/childhood.c6df019e.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/childhood.c6df019e.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/crimson-coil.61286530.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/crimson-coil.61286530.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/writer.101bc4f9.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/writer.101bc4f9.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/shape-shift.9281730d.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/shape-shift.9281730d.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/hopefully-sweet.3d34098f.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/hopefully-sweet.3d34098f.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/little-world.199eee1a.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/little-world.199eee1a.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/blurry-bloom.4dbf923d.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/blurry-bloom.4dbf923d.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/market-walks.c3e7dd37.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/market-walks.c3e7dd37.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/start-of-the-day.62f52ad3.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/start-of-the-day.62f52ad3.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=384,quality=85,format=auto/_next/static/media/infinity-void.60d806c2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/infinity-void.60d806c2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/infinity-void.60d806c2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=384,quality=85,format=auto/_next/static/media/paper.9d316d59.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/_next/static/media/paper.9d316d59.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/paper.9d316d59.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=64,quality=85,format=auto/_next/static/media/leo_tohyama.4f8a33cb.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=128,quality=85,format=auto/_next/static/media/leo_tohyama.4f8a33cb.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/leo_tohyama.4f8a33cb.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=1920,quality=85,format=auto/images/cards/download-card-vector.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.craft.do/_image/width=3840,quality=85,format=auto/images/cards/download-card-vector.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/images/cards/download-card-vector.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "format=auto/_next/static/media/hero-screenshot-mobile.2f2986e2.png",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 5 of 5 stylesheets retained.",
+  "digest": "48168108304f1c43158c474aea9d985463c306811ae1740bb1215b5ef9d8b856"
+}

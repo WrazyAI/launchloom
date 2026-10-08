@@ -1,0 +1,94 @@
+/* =========================================================
+   ui_kits/website/site.css — page-specific styles for the
+   marketing-website UI kit recreation. Brand tokens come
+   from ../../colors_and_type.css.
+   ========================================================= */
+
+/* ---------- Header ---------- */
+.hh-header { display: flex; align-items: stretch; height: 90px; }
+.hh-logo { display: flex; align-items: stretch; height: 90px; flex-shrink: 0; }
+.hh-logo img { height: 90px; display: block; }
+.hh-headerbar { flex: 1; background: var(--hh-terracotta); display: flex; align-items: center; padding: 0 0 0 56px; gap: 56px; color: var(--hh-bone); margin-left: -1px; }
+.hh-tagline { font: 500 16px/1.2 var(--hh-font-display); font-style: italic; color: var(--hh-bone); }
+.hh-nav { margin-left: auto; display: flex; align-items: center; gap: 36px; height: 100%; }
+.hh-nav a { font: 500 14px/1 var(--hh-font-body); color: var(--hh-bone); }
+.hh-nav a:hover { color: var(--hh-bone); opacity: 0.8; }
+.hh-nav .contact { background: var(--hh-ink); color: var(--hh-bone); padding: 0 36px; height: 100%; display: flex; align-items: center; }
+
+/* ---------- Hero ---------- */
+.hh-hero { position: relative; height: 720px; background-size: cover; background-position: center; }
+.hh-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.35) 100%); }
+.hh-hero-inner { position: relative; z-index: 1; height: 100%; padding: 84px 56px 56px; display: flex; flex-direction: column; justify-content: space-between; color: var(--hh-bone); }
+.hh-hero h1 { color: var(--hh-bone); font: 400 130px/0.85 var(--hh-font-display); letter-spacing: -0.02em; max-width: 1100px; }
+.hh-hero h1 em { font-style: italic; }
+.hh-hero-foot { display: flex; flex-direction: column; gap: 28px; align-items: flex-start; max-width: 720px; }
+.hh-hero-foot p { font: 500 18px/1.4 var(--hh-font-body); color: var(--hh-bone); margin: 0; max-width: 480px; }
+
+/* ---------- Search bar ---------- */
+.hh-search { display: inline-flex; align-items: center; background: var(--hh-bone); border-radius: 1000px; padding: 6px; gap: 6px; box-shadow: var(--hh-shadow-md); }
+.hh-search-dd { display: inline-flex; align-items: center; gap: 10px; padding: 16px 24px; font: 500 14px/1 var(--hh-font-body); color: var(--hh-ink); cursor: pointer; border-radius: 1000px; user-select: none; }
+.hh-search-dd:hover { background: rgba(0,0,0,0.04); }
+.hh-search-divider { width: 1px; height: 24px; background: var(--hh-border); }
+.hh-search-go { background: var(--hh-terracotta); color: var(--hh-bone); border-radius: 1000px; padding: 16px 28px; display: inline-flex; align-items: center; gap: 10px; font: 500 14px/1 var(--hh-font-body); border: 0; cursor: pointer; }
+.hh-search-go:hover { filter: brightness(0.92); }
+
+/* ---------- Section primitives ---------- */
+.hh-section { padding: 84px 56px; }
+.hh-section-bone { background: var(--hh-bone); }
+.hh-section-sand { background: var(--hh-sand); }
+.hh-section-blue { background: var(--hh-blue-mist); }
+.hh-section-terra { background: var(--hh-terracotta); color: var(--hh-bone); }
+.hh-section-head { font: 400 64px/0.9 var(--hh-font-display); letter-spacing: -0.01em; color: var(--hh-ink); margin: 0 0 56px; }
+.hh-section-eyebrow { font: 700 11px/1 var(--hh-font-body); letter-spacing: 0.05em; text-transform: uppercase; color: var(--hh-graphite); margin-bottom: 18px; }
+
+/* ---------- Property card ---------- */
+.hh-prop { display: flex; flex-direction: column; gap: 14px; }
+.hh-prop-img { width: 100%; aspect-ratio: 1; background-size: cover; background-position: center; border-radius: 0; }
+.hh-prop-meta { display: flex; align-items: flex-start; justify-content: space-between; }
+.hh-prop-loc { font: 500 14px/1.3 var(--hh-font-body); color: var(--hh-ink); }
+.hh-prop-price { font: 700 14px/1.3 var(--hh-font-body); color: var(--hh-ink); }
+.hh-prop-feats { display: flex; gap: 18px; align-items: center; margin-top: 4px; }
+.hh-prop-feat { display: flex; align-items: center; gap: 6px; font: 500 13px/1 var(--hh-font-body); color: var(--hh-ink-soft); }
+.hh-prop-tag { display: inline-flex; align-items: center; padding: 5px 10px; font: 700 10px/1 var(--hh-font-body); letter-spacing: 0.04em; text-transform: uppercase; }
+
+/* ---------- City browse tile ---------- */
+.hh-city-tile { position: relative; aspect-ratio: 4/5; background-size: cover; background-position: center; cursor: pointer; transition: transform .25s ease; overflow: hidden; }
+.hh-city-tile:hover { transform: translateY(-6px); }
+.hh-city-tile::after { content:""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.45)); }
+.hh-city-tile .label { position: absolute; left: 28px; bottom: 24px; color: var(--hh-bone); font: 400 36px/1 var(--hh-font-display); letter-spacing: -0.01em; z-index: 1; }
+.hh-city-tile .arrow { position: absolute; right: 24px; bottom: 24px; color: var(--hh-bone); z-index: 1; }
+
+/* ---------- Buttons ---------- */
+.hh-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 1000px; padding: 16px 30px; font: 500 14px/1 var(--hh-font-body); cursor: pointer; border: 0; transition: filter .2s; text-decoration: none; }
+.hh-btn:hover { filter: brightness(0.92); color: inherit; }
+.hh-btn-primary { background: var(--hh-terracotta); color: var(--hh-bone); }
+.hh-btn-sage { background: var(--hh-sage); color: var(--hh-bone); }
+.hh-btn-secondary { background: var(--hh-sand); color: var(--hh-ink); }
+.hh-btn-ghost { background: transparent; color: var(--hh-ink); }
+.hh-btn-ghost:hover { background: rgba(0,0,0,0.04); }
+.hh-btn-dark { background: var(--hh-ink); color: var(--hh-bone); }
+
+/* ---------- Trust columns ---------- */
+.hh-trust { display: grid; grid-template-columns: repeat(4, 1fr); gap: 56px; }
+.hh-trust-icon { width: 36px; height: 36px; color: var(--hh-terracotta); margin-bottom: 21px; }
+.hh-trust h4 { font: 700 18px/1.2 var(--hh-font-body); color: var(--hh-ink); margin: 0 0 8px; letter-spacing: -0.01em; }
+.hh-trust p { font: 500 14px/1.5 var(--hh-font-body); color: var(--hh-ink-soft); margin: 0; }
+
+/* ---------- Story / consultation band ---------- */
+.hh-story { background: var(--hh-sand); padding: 84px 56px; display: grid; grid-template-columns: 1fr 1fr; gap: 84px; align-items: center; }
+.hh-story h2 { font: 400 72px/0.9 var(--hh-font-display); letter-spacing: -0.01em; margin: 0 0 28px; }
+.hh-story p { font: 500 16px/1.5 var(--hh-font-body); color: var(--hh-ink-soft); margin: 0 0 28px; max-width: 480px; }
+
+/* ---------- Footer ---------- */
+.hh-footer { background: var(--hh-terracotta); color: var(--hh-bone); padding: 84px 56px 28px; }
+.hh-footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 56px; padding-bottom: 56px; border-bottom: 1px solid rgba(247,247,240,0.18); }
+.hh-footer h5 { font: 700 12px/1 var(--hh-font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--hh-bone); margin: 0 0 18px; opacity: 0.7; }
+.hh-footer ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.hh-footer ul a { font: 500 14px/1 var(--hh-font-body); color: var(--hh-bone); }
+.hh-footer-bottom { display: flex; justify-content: space-between; padding-top: 28px; font: 500 12px/1 var(--hh-font-body); color: var(--hh-bone); opacity: 0.6; }
+.hh-newsletter { display: flex; align-items: center; background: rgba(247,247,240,0.12); border-radius: 1000px; padding: 4px; max-width: 380px; }
+.hh-newsletter input { flex: 1; background: transparent; border: 0; padding: 12px 18px; font: 500 14px/1 var(--hh-font-body); color: var(--hh-bone); outline: none; }
+.hh-newsletter input::placeholder { color: rgba(247,247,240,0.6); }
+.hh-newsletter button { background: var(--hh-bone); color: var(--hh-terracotta); border: 0; border-radius: 1000px; padding: 10px 20px; font: 500 14px/1 var(--hh-font-body); cursor: pointer; }
+
+.hh-hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;opacity:0}

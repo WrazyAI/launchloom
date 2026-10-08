@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "spicer-plumber-dispatch-console",
+  "status": "extracted",
+  "method": "zip-download",
+  "source": {
+    "url": "https://www.spicerdesigns.com/templates/plumber",
+    "finalUrl": "https://www.spicerdesigns.com/downloads/plumber-template-html.zip",
+    "archiveSha256": "18821c280c0b7a623094ce80c4a5f1ba4eebab285ed66eddccb0c5206be9259e",
+    "retrievedAt": "2026-10-08T20:05:54.686Z",
+    "license": "CC-BY-4.0",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/hero.webp",
+      "bytes": 143166,
+      "sha256": "2bcacd0f4e1b4c18e81a6bce6754927785f56c5afb68e3ffa41c4fb1ba26f46d"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 100787,
+      "sha256": "b28de007fc36e15a9f9f00d07683d4126b72780a989cdbd208d84cda00fd3a9c"
+    },
+    {
+      "path": "source/README.md",
+      "bytes": 2711,
+      "sha256": "38caa229c262cc4d2f9a280beb1e555cd7f2c778203f8d718c00ddd37479fa30"
+    },
+    {
+      "path": "source/styles.css",
+      "bytes": 39478,
+      "sha256": "32ed8a86533f26778ab4f9717dd1a6461645b77e9821d45df7287aa6499d82b5"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.spicerdesigns.com/downloads/plumber-template-html.zip#LICENSE",
+      "reason": "unsupported-extension"
+    }
+  ],
+  "notes": "Downloaded the official HTML build (4 files, archive SHA-256 18821c280c0b7a623094ce80c4a5f1ba4eebab285ed66eddccb0c5206be9259e). The template page footer also shows an MIT label; the retained LICENSE in rights/ records CC BY 4.0 with the footer attribution condition. Reconcile before any derivative publication.",
+  "digest": "22cd6c4624468b59221c600b821887605446829520c594f11960702d3a285572"
+}

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" role="img" aria-labelledby="title desc">
+  <title id="title">Nightjar Records emblem</title>
+  <desc id="desc">A night bird perched across the grooves of a vinyl record</desc>
+  <circle cx="36" cy="36" r="33" fill="#0c0908" stroke="#df9a4e" stroke-width="1.5"/>
+  <circle cx="36" cy="36" r="25" fill="none" stroke="#725235" stroke-width="1"/>
+  <circle cx="36" cy="36" r="18" fill="none" stroke="#493526" stroke-width="1"/>
+  <circle cx="36" cy="36" r="4" fill="#df9a4e"/>
+  <path d="M17 48.5c7.5-1.5 10.2-6.1 12.6-12.8 1.8-5 5.1-9.3 10.2-10.1 4.4-.7 8.7 1.5 10.4 5.4 3.3 1.1 6.3 3 8.8 5.5-3.5.1-6.5-.2-9.1-1.2-.6 5.8-4.1 11.6-10.3 14.1-6.7 2.7-15.1 1.1-22.6-.9Z" fill="#f4eadb"/>
+  <path d="M29.4 39.7c4.7-4.2 10-5.4 15.8-3.8-2.4 5.7-7.2 9.3-14.5 10.5 2.3-2 2.5-4.2-1.3-6.7Z" fill="#b9783f"/>
+  <circle cx="43.8" cy="29.8" r="1.9" fill="#0c0908"/>
+  <circle cx="44.3" cy="29.4" r=".6" fill="#df9a4e"/>
+  <path d="M50.1 31 62 32.6l-10.8 3.1Z" fill="#df9a4e"/>
+  <path d="M16 50.8h40" stroke="#df9a4e" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M31.8 49.8 29 56.2M39.1 49.8l2.7 6.4" stroke="#f4eadb" stroke-width="1.4" stroke-linecap="round"/>
+</svg>

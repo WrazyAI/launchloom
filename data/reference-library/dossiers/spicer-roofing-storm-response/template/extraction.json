@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "spicer-roofing-storm-response",
+  "status": "extracted",
+  "method": "zip-download",
+  "source": {
+    "url": "https://www.spicerdesigns.com/templates/roofing",
+    "finalUrl": "https://www.spicerdesigns.com/downloads/roofing-template-html.zip",
+    "archiveSha256": "5db60a1cbaa94d8e8d31249c445ee28c0624eb5ecf366995e481a1accbbd7a93",
+    "retrievedAt": "2026-10-08T20:05:55.208Z",
+    "license": "CC-BY-4.0",
+    "licenseEvidencePath": "rights/LICENSE",
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/hero.webp",
+      "bytes": 97936,
+      "sha256": "745167324843f70f27ce153a64a82c3116aa5c16e4cc2de1a03fce1a4a25d4a5"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 112369,
+      "sha256": "990d864488a72f6966e6175a65d1630062f0002115095cb821b1b4acd3a243b9"
+    },
+    {
+      "path": "source/README.md",
+      "bytes": 2710,
+      "sha256": "f60d542e7ee5b6838c2733f3de4696ba48f266dba19ec551db6cf69fadc0f4dd"
+    },
+    {
+      "path": "source/styles.css",
+      "bytes": 35252,
+      "sha256": "b3fba88d208a7b3eccc8bf74ab12c77cd1b57a4ae3f01ec3664ae0cb2051ad80"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.spicerdesigns.com/downloads/roofing-template-html.zip#LICENSE",
+      "reason": "unsupported-extension"
+    }
+  ],
+  "notes": "Downloaded the official HTML build (4 files, archive SHA-256 5db60a1cbaa94d8e8d31249c445ee28c0624eb5ecf366995e481a1accbbd7a93). The template page footer also shows an MIT label; the retained LICENSE in rights/ records CC BY 4.0 with the footer attribution condition. Reconcile before any derivative publication.",
+  "digest": "232fcf768bf72bd83301593aab02b35a23b4addcfb2507a891a9d755e49f23e7"
+}

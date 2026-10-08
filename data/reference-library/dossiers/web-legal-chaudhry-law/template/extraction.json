@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-legal-chaudhry-law",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://chaudhrylaw.com/",
+    "finalUrl": "https://chaudhrylaw.com/",
+    "httpStatus": 200,
+    "pageTitle": "Home - ChaudhryLaw PLLC",
+    "retrievedAt": "2026-10-08T20:29:23.547Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 57163,
+      "sha256": "42ec8cff3d5f5a5644ed987602246c817f03a21aebc51b2813310ae74ba0e4d9"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 22518,
+      "sha256": "5951ef63c406c42d97fd9d34802457587370db1880df5774075004f78795a681"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 100782,
+      "sha256": "0df5a33710e433de1f5415b1d47e4130ca7466aee5b81955f1045c4844bbb3ed"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 13677,
+      "sha256": "906ba97c9e3365be3f9b418f3d56349e0ec5c128d99b5134c0c586d5a4586f09"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 290692,
+      "sha256": "e1e10bd86b214fdc76d05f05e4775a1f0d5fb6e0b5abc771345a77b9747f67c9"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 233442,
+      "sha256": "250f48f03642f20bf305855fed71ffad98bb6b9f880a8ef8482745301364b538"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 256,
+      "sha256": "8f0a52273c637966698ecb5cd7ab37a5f9b9ae41165e4fd76500ac2375ea97f0"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 42181,
+      "sha256": "c69f04e2059d66cf717374fa78c242e77adba72da90f053f494c9dd0208556a9"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 527,
+      "sha256": "a204832ae194804c2ea92ae9fc278091bfad378ab340cb1977661f35863137eb"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 442476,
+      "sha256": "fbee380071572cdd35659725d8b69da31e95d5a1ad837939068d05a0c24c1ba2"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 21211,
+      "sha256": "6650a50d8591259400ed356b424ff4fe633bc0d1fc7be58e17c78fbb1312a707"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 73890,
+      "sha256": "74005d7c17d4a02f2f25404ec0655d9bc2fdaa53166874c87d7b7eec69d9088a"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 58327,
+      "sha256": "d2a7a173045c7ed2c9474ee0edd3ebc0389454132b0a16e55b3eae6402c46a05"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/08/Final-1536x522.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/08/Final.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/08/Final-300x102.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/08/Final-1024x348.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/08/Final-768x261.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/08/Final-2048x696.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/09/chambers-and-partners-300x131.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/09/chambers-and-partners.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/09/chambers-and-partners-768x335.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/09/Super-Lawyers-Logo-780x340-1-300x131.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/09/Super-Lawyers-Logo-780x340-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/09/Super-Lawyers-Logo-780x340-1-768x335.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2025/09/forbes2-300x131.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2025/09/forbes2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2025/09/forbes2-768x335.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/09/amcl-logo-780x340-1-300x131.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/09/amcl-logo-780x340-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/09/amcl-logo-780x340-1-768x335.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/09/Americas-Top-100-Criminal-Defense-Attorneys-780x340-1-300x131.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/09/Americas-Top-100-Criminal-Defense-Attorneys-780x340-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2023/09/Americas-Top-100-Criminal-Defense-Attorneys-780x340-1-768x335.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2025/12/NBL-Top-40-1-300x131.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2025/12/NBL-Top-40-1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2025/12/NBL-Top-40-1-768x335.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2024/12/NMSDC-Logo-Transparent-white-type-300x210.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2024/12/NMSDC-Logo-Transparent-white-type-768x537.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://chaudhrylaw.com/wp-content/uploads/2024/12/NMSDC-Logo-Transparent-white-type.png",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 12 of 12 stylesheets retained.",
+  "digest": "afdcc50cc6ee3faff9fccaa7d46133fff2b8ac18cf90fbf03f6c5af9f1653111"
+}

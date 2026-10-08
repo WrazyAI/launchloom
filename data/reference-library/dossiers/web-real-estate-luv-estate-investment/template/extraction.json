@@ -1,0 +1,417 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-real-estate-luv-estate-investment",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://luv.estate/",
+    "finalUrl": "https://luv.estate/",
+    "httpStatus": 200,
+    "pageTitle": "Inversión inmobiliaria y agencia inmobiliaria de lujo",
+    "retrievedAt": "2026-10-08T20:32:49.600Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 53858,
+      "sha256": "31a33219d38496eda85cc452a12b726897ef8c63592208125934f5fab8511ffd"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 14617,
+      "sha256": "66b86b18586127c3ec15c44fba04f9dcb899efafc3dc7630ec8a02b99ada498d"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 10563,
+      "sha256": "13a7ec89985f80a7751e03948854e2538631d0b9a316984673176ac8b11752a5"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 83482,
+      "sha256": "f1c3946ea98e12235257cdf141c14f26eacffeb3e58918fb73d65e1fb581c123"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://luv.estate/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLuv-Studio_Antiparos-Villa_Aerea_Frontal_Desk%201.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLuv-Studio_Antiparos-Villa_Aerea_Frontal_Desk%201.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://luv.estate/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://luv.estate/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=16&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=32&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=48&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=64&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=96&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=128&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2Fvision-estate.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://luv.estate/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://luv.estate/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=16&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=32&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=48&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=64&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=96&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=128&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FIntegrated%20Process.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://luv.estate/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://luv.estate/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=16&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=32&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=48&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=64&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=96&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=128&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FInvestor%20Committement.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://luv.estate/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://luv.estate/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=16&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=32&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=48&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=64&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=96&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=128&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FLong%20term%20Value.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://luv.estate/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://luv.estate/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=16&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=32&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=48&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=64&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=96&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=128&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=256&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=384&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=640&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=750&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=828&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=1080&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=1200&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=1920&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=2048&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/_next/image?url=https%3A%2F%2Fcdn.luv.studio%2FDesign%20Excellence.webp&w=3840&q=75",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://cdn.luv.studio/Estate-hero-video.mp4",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "2f22564053df3a121252863055770eb0698a5801364ebe7db472a54bedb6e5e1"
+}

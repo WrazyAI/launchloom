@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "kokoro-spatial-editorial",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://kokoro.framer.website/",
+    "finalUrl": "https://kokoro.framer.website/",
+    "httpStatus": 200,
+    "pageTitle": "Kokoro - Architect Website Template",
+    "retrievedAt": "2026-10-08T20:10:09.472Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 253346,
+      "sha256": "bf6ae2fa06e8521bb3686b551da8ccc4346ea8ffbc0a788ca305c10ab3e70ded"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://framerusercontent.com/images/cFE098Pwayahcm1f2hC5euIIo4.jpg?scale-down-to=2048",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/cFE098Pwayahcm1f2hC5euIIo4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/cFE098Pwayahcm1f2hC5euIIo4.jpg?scale-down-to=1024",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/49oIOeNeuGhz073XAttoqFXaTm4.jpg?scale-down-to=2048",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/49oIOeNeuGhz073XAttoqFXaTm4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/49oIOeNeuGhz073XAttoqFXaTm4.jpg?scale-down-to=1024",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/YDAiqyAs035xJUmbuGXpQZ2QybQ.jpg?scale-down-to=2048",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/YDAiqyAs035xJUmbuGXpQZ2QybQ.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/YDAiqyAs035xJUmbuGXpQZ2QybQ.jpg?scale-down-to=1024",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/rihGpBTkcssJeqC23ScsaqVJAc.png?width=1200&height=960",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/rihGpBTkcssJeqC23ScsaqVJAc.png?scale-down-to=512&width=1200&height=960",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/rihGpBTkcssJeqC23ScsaqVJAc.png?scale-down-to=1024&width=1200&height=960",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/coTgnhchlOHchnw2opOAAGMmTFc.png?scale-down-to=1024&width=1792&height=2688",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/coTgnhchlOHchnw2opOAAGMmTFc.png?width=1792&height=2688",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/coTgnhchlOHchnw2opOAAGMmTFc.png?scale-down-to=2048&width=1792&height=2688",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/JIqj84r2vGf4cDOJOrlB3RwmFYk.jpg?scale-down-to=2048&width=2314&height=1568",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/JIqj84r2vGf4cDOJOrlB3RwmFYk.jpg?width=2314&height=1568",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/JIqj84r2vGf4cDOJOrlB3RwmFYk.jpg?scale-down-to=512&width=2314&height=1568",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/JIqj84r2vGf4cDOJOrlB3RwmFYk.jpg?scale-down-to=1024&width=2314&height=1568",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/xUmGm5o4ysqx7m7P0GX5eK06o.jpg?scale-down-to=1024&width=1046&height=1568",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/xUmGm5o4ysqx7m7P0GX5eK06o.jpg?width=1046&height=1568",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/UHQ0BSxJi4PTqS9puu6IT4tfI.png?width=1232&height=928",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/UHQ0BSxJi4PTqS9puu6IT4tfI.png?scale-down-to=512&width=1232&height=928",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/UHQ0BSxJi4PTqS9puu6IT4tfI.png?scale-down-to=1024&width=1232&height=928",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framer.com/edit?framerSiteId=466a308c0a54a7fb2d79756e213e50338d9b5276b6f7ff35f0e1af5f24d465c7&source=kokoro.framer.website&features=%7B%22editorBarDisableFrameAncestorsSecurity%22%3Afalse%2C%22onPageLocalizationSupport%22%3Atrue%2C%22onPageMoveTool%22%3Atrue%7D&loadStart=1791490203955",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 0 of 0 stylesheets retained.",
+  "digest": "b0e2a67507eec3f686fcce265139279ac8b97ca495bd5b1f94e7d3f55b43e0f6"
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "a1-uncommon-founder-atlas",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.theuncommonfounder.com/",
+    "finalUrl": "https://www.theuncommonfounder.com/",
+    "httpStatus": 200,
+    "pageTitle": "The Uncommon Founder · Coach and advisor",
+    "retrievedAt": "2026-10-08T20:12:17.108Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 534422,
+      "sha256": "ce81066f2a1a7a172c96b42f3044c36b7e32d7d33275eb74a103c01c6ab92c4f"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://framerusercontent.com/images/6tTbkXggWgQCAJ4DO2QEdXXmgM.svg?arrow=left",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/11KSGbIZoRSg4pjdnUoif6MKHI.svg?arrow=right",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/m5AQ4kXAq4hwQsoBrGoafFqEj4.png?width=220&height=80",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/GwQccfvj3nHPOTEB5LWdXtbICXM.png?width=400&height=443",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framerusercontent.com/images/e4LgPiJdOTl6bExzGh3RES28YzU.jpg?width=656&height=873",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://i.ytimg.com/vi_webp/H5h_6tc1YMU/maxresdefault.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://i.ytimg.com/vi_webp/8kWLcmfD4Fg/maxresdefault.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.youtube.com/embed/H5h_6tc1YMU?iv_load_policy=3&rel=0&modestbranding=1&playsinline=1&autoplay=0&color=white",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.youtube.com/embed/8kWLcmfD4Fg?iv_load_policy=3&rel=0&modestbranding=1&playsinline=1&autoplay=0&color=white",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://framer.com/edit?framerSiteId=1fabb8b5ae9d5c88e08b2a1776b3d928281ab6346bbf1aaeec98401b137d6860&source=www.theuncommonfounder.com&features=%7B%22editorBarDisableFrameAncestorsSecurity%22%3Afalse%2C%22onPageLocalizationSupport%22%3Atrue%2C%22onPageMoveTool%22%3Atrue%2C%22onPageRichTextBlockSelection%22%3Atrue%7D&loadStart=1791490331281",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 0 of 0 stylesheets retained.",
+  "digest": "ee53a393044c8a373f8c44ddcb32202b35cc31000b63088555171823c4643ff1"
+}
