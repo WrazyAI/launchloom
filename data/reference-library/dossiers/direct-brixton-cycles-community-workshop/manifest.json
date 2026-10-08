@@ -8,11 +8,14 @@
     "name": "Brixton Cycles official website",
     "url": "https://www.brixtoncycles.co.uk/",
     "rights": "permission-cleared",
-    "rightsEvidence": "Requester attested on 2026-09-26 that full-page screenshot retention, derived prompts and LaunchLoom pipeline-model visual-reference use are cleared. No source-owner grant was uploaded.",
-    "rightsEvidencePath": "rights/requester-attestation.md",
+    "rightsEvidence": "Requester-attested retention of full-page captures, derived prompts, and pipeline-model visual-reference use; no independent source-owner grant was provided.",
+    "rightsEvidencePath": "rights/REQUESTER-ATTESTATION.md",
     "provenanceEvidencePaths": [
       "rights/business-verification.md",
-      "rights/capture-record.md"
+      "rights/capture-record.md",
+      "rights/requester-attestation.md",
+      "rights/ASSET-PROVENANCE.md",
+      "rights/PROVENANCE.md"
     ]
   },
   "provenance": {
