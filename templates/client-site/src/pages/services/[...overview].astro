@@ -6,6 +6,7 @@ import Footer from "../../components/Footer.astro";
 import ServicesIndexCandidateHost from "../../components/ServicesIndexCandidateHost";
 import site, { routePageBrief, phoneHref, routeIsRendered, serviceHref, approvedServices } from "../../lib/site";
 import { compileExperiencePack } from "../../lib/experience-pack";
+import { hasPipelineTest } from "../../lib/seo-readiness.mjs";
 import { resolvePageRecipe } from "../../lib/page-recipe";
 import "../../styles/creative-runtime.css";
 import "../../generated-experiences/selected/styles.css";
@@ -23,7 +24,7 @@ const creativeServicesIndex = Boolean(
 const experience = site.design?.experience?.packId || creativeServicesIndex
   ? compileExperiencePack(site, recipe)
   : null;
-const diagnostic = import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
+const diagnostic = hasPipelineTest(site) || import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 const creativeRuntime = {
   candidateId: site.design?.experience?.candidateId || "selected",
   diagnostic,

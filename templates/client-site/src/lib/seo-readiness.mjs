@@ -5,6 +5,14 @@ export function isAffirmativeConfirmation(value) {
   return value === true || value === "yes" || value === "on";
 }
 export function seoResearchReadiness(config) {
+  if (hasPipelineTest(config))
+    return {
+      allowed: false,
+      mode: "baseline",
+      code: "pipeline_test_only",
+      error:
+        "This is a test-only pipeline preview. Run the full pipeline before approving or publishing it.",
+    };
   const facts = businessFactReadiness(config);
   if (!facts.allowed) return { ...facts, mode: "baseline" };
   const routes = routeReadiness(config);
@@ -129,6 +137,10 @@ export function seoResearchReadiness(config) {
     error:
       "SEO research is incomplete. The preview remains available, but production publishing is blocked until research succeeds.",
   };
+}
+export function hasPipelineTest(config) {
+  // A malformed or edited marker cannot opt a diagnostic artifact into release.
+  return Boolean(config && Object.hasOwn(config, "pipelineTest"));
 }
 function hasCompleteVersionTwoMap(config, research) {
   const completeness = research.completeness;
