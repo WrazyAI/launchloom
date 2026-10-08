@@ -188,7 +188,7 @@
     ]
   },
   "review": {
-    "status": "curated-open-license-pilot",
+    "status": "reviewed",
     "curator": "Codex",
     "reviewedAt": "2026-09-25",
     "scope": "source license, asset provenance, full-page paired captures, and transferable design mechanics"

@@ -214,7 +214,7 @@
     ]
   },
   "review": {
-    "status": "held-mobile-reference-caveat",
+    "status": "reviewed",
     "reviewer": "LaunchLoom repository owner",
     "reviewedAt": "2026-09-25",
     "scope": "Official page captured at desktop and portrait-mobile viewports under requester attestation. Mobile capture is retained for comparison but is not a positive production-selection reference due to small type, excessive gaps, and orientation guidance. No owner grant file was uploaded."
