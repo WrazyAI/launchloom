@@ -1283,6 +1283,18 @@ function isBindingMutated(bindingNode, file) {
     "splice",
     "unshift",
   ]);
+  const objectMutators = new Set([
+    "assign",
+    "defineProperty",
+    "defineProperties",
+    "setPrototypeOf",
+  ]);
+  const reflectMutators = new Set([
+    "set",
+    "defineProperty",
+    "deleteProperty",
+    "setPrototypeOf",
+  ]);
   const isKnownMutatorCallee = (expression, seen = new Set()) => {
     const callee = unwrapUrlExpression(expression);
     if (!callee) return false;
@@ -1290,8 +1302,9 @@ function isBindingMutated(bindingNode, file) {
     if (
       member &&
       ((member.receiver.getText(file) === "Object" &&
-        ["assign", "defineProperty", "setPrototypeOf"].includes(member.name)) ||
-        (member.receiver.getText(file) === "Reflect" && member.name === "set"))
+        objectMutators.has(member.name)) ||
+        (member.receiver.getText(file) === "Reflect" &&
+          reflectMutators.has(member.name)))
     )
       return true;
     if (!ts.isIdentifier(callee) || seen.has(callee.text)) return false;
@@ -1313,10 +1326,8 @@ function isBindingMutated(bindingNode, file) {
       initializer &&
       ts.isIdentifier(initializer) &&
       ((initializer.text === "Object" &&
-        ["assign", "defineProperty", "setPrototypeOf"].includes(
-          bindingPath,
-        )) ||
-        (initializer.text === "Reflect" && bindingPath === "set"))
+        objectMutators.has(bindingPath)) ||
+        (initializer.text === "Reflect" && reflectMutators.has(bindingPath)))
     )
       return true;
     return isKnownMutatorCallee(binding.node.initializer, seen);
