@@ -10,7 +10,7 @@ describe("client generation handoff idempotency", () => {
     );
     expect(workflow).toContain("cancel-in-progress: false");
     expect(workflow).toContain("intake_handoff_check:");
-    expect(workflow).toContain("needs: intake_handoff_check");
+    expect(workflow).toContain("needs: [profile_policy, intake_handoff_check]");
     expect(workflow).toContain("launchloom-generation-handoff:complete");
     expect(workflow).toContain("inputs.reuse_authored_candidates");
   });

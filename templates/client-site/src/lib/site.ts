@@ -120,6 +120,13 @@ export type ExperiencePackId =
   | "guided-conversation"
   | "service-led";
 export type SiteConfig = {
+  pipelineTest?: {
+    version: 1;
+    profile: "seo-only" | "creative-only";
+    testOnly: true;
+    sourceSha: string;
+    runId: string;
+  };
   pageContent?: Record<string, any>;
   pageEvidence?: Array<Record<string, any>>;
   pageBriefs?: ReturnType<typeof compilePageBriefs>;
@@ -432,7 +439,7 @@ export const homeSectionHref = (type: string) => {
   const section = resolvePageRecipe(site).sections.find(
     (section) => section.type === type,
   );
-  const id = site.design?.experience?.packId
+  const id = site.design?.experience?.packId || site.design?.experience?.renderer === "creative-candidate"
     ? type === "faq"
       ? "faqs"
       : type

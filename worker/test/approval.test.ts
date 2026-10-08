@@ -44,6 +44,72 @@ async function reviewToken() {
 }
 
 describe("developer approval", () => {
+  it.each(["seo-only", "creative-only"])(
+    "rejects %s at the signed reviewed commit without external writes",
+    async (profile) => {
+      let writes = 0;
+      network.use(
+        http.get(
+          "https://api.github.com/repos/WrazyAI/example-client/pulls/7",
+          () =>
+            HttpResponse.json({
+              head: { sha: "review-head-sha" },
+              state: "open",
+              draft: false,
+            }),
+        ),
+        http.get(
+          "https://api.github.com/repos/WrazyAI/example-client/contents/src/site.config.json",
+          ({ request }) => {
+            expect(new URL(request.url).searchParams.get("ref")).toBe(
+              "review-head-sha",
+            );
+            return HttpResponse.json({
+              encoding: "base64",
+              content: btoa(
+                JSON.stringify({
+                  pipelineTest: { version: 1, profile, testOnly: true },
+                  seoResearch: { mode: "researched", publishReady: true },
+                }),
+              ),
+            });
+          },
+        ),
+        http.put(
+          "https://api.github.com/repos/WrazyAI/example-client/pulls/7/merge",
+          () => {
+            writes++;
+            return HttpResponse.json({ merged: true, sha: "approved" });
+          },
+        ),
+        http.post(
+          "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+          () => {
+            writes++;
+            return new HttpResponse(null, { status: 204 });
+          },
+        ),
+      );
+      const token = await reviewToken();
+      const response = await SELF.fetch(
+        "https://api.launchloom.test/api/approval",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Origin: origin },
+          body: JSON.stringify({
+            token,
+            email: "developer@example.com",
+            pageUrl: `${origin}/?review=${token}`,
+          }),
+        },
+      );
+      expect(response.status).toBe(409);
+      expect(await response.json()).toMatchObject({
+        code: "pipeline_test_only",
+      });
+      expect(writes).toBe(0);
+    },
+  );
   it("retries publication after merge succeeds but the first dispatch fails", async () => {
     let merged = false;
     let mergeAttempts = 0;

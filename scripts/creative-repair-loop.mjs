@@ -1147,7 +1147,7 @@ Return a complete replacement for only this requested file. Keep source non-empt
   ) => {
     const spanCatalog = !scopedHumanRepair && editsOnly ? buildRepairSpanCatalog(currentFiles) : null;
     if (spanCatalog && !spanCatalog.spans.length) throw repairOutputRejection("No trusted bounded source spans are available.");
-    const requestBudget = spanCatalog && automaticSpanRepair ? buildSpanRequestBudget(spanCatalog) : null;
+    const requestBudget = spanCatalog ? buildSpanRequestBudget(spanCatalog) : null;
     const requestContent = buildRepairContent(currentFiles, { targetFile, editsOnly });
     if (spanCatalog) {
       requestContent.push({ type: "text", text: "TRUSTED SOURCE SPANS\n" + JSON.stringify(spanCatalog) +
@@ -1164,10 +1164,10 @@ Return a complete replacement for only this requested file. Keep source non-empt
         sessionId,
         body: {
           model,
-          ...(requestBudget ? { provider: { require_parameters: true } } : {}),
+          ...(automaticSpanRepair ? { provider: { require_parameters: true } } : {}),
           ...promptCacheRequestFields(model, promptCacheKey),
           // Frozen QA reasoning endpoints do not advertise temperature support.
-          ...(requestBudget ? {} : { temperature: 0.35 }),
+          ...(automaticSpanRepair ? {} : { temperature: 0.35 }),
           reasoning: {
             effort: reasoningEffort,
             exclude: true,

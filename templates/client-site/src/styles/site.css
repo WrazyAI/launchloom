@@ -2312,6 +2312,19 @@ h2 {
   .breadcrumb {
     margin-bottom: 28px;
   }
+  .inner-page .inner-hero h1 {
+    font-size: clamp(2.2rem, 11vw, 3rem);
+    line-height: 1;
+  }
+  .inner-page .hero-actions {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .inner-page .hero-actions > .cta {
+    max-width: 100%;
+    white-space: normal;
+  }
   .mobile-call {
     border-radius: 999px;
     bottom: 14px;

@@ -7,6 +7,7 @@ import { auditBuiltContrast } from "./contrast-sweep.mjs";
 import {
   serveBuiltSite,
   verifyApprovedRoutes,
+  diagnosticFormMode,
 } from "./browser-route-verification.mjs";
 import {
   buildRouteHandoff,
@@ -69,7 +70,7 @@ export async function verifySiteRoutes({
       config,
       mode,
       origin: destination || server.origin,
-      formMode: "mocked",
+      formMode: diagnosticFormMode(config, mode),
       screenshotsDir,
     });
     contrast = await auditBuiltContrast({

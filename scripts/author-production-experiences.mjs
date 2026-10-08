@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { safeAuthorFailureText } from "./author-failure-evidence.mjs";
+import { parsePipelineTestArgs, resolvePipelineTestPolicy } from "./pipeline-test-policy.mjs";
 import { parseModelJson } from "./model-json.mjs";
 import {
   assertModelPromptTextBudget,
@@ -43,17 +44,8 @@ import {
   referenceImplementationChecklist,
 } from "./creative-authoring-output.mjs";
 
-const args = Object.fromEntries(
-  process.argv
-    .slice(2)
-    .reduce(
-      (pairs, value, index, all) =>
-        index % 2 === 0
-          ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]]
-          : pairs,
-      [],
-    ),
-);
+const args = parsePipelineTestArgs(process.argv.slice(2));
+const testPolicy = resolvePipelineTestPolicy({ profile: args.profile, eventName: process.env.GITHUB_EVENT_NAME || "workflow_dispatch" });
 const configPath = path.resolve(args.config || "src/site.config.json");
 const inspirationPath = path.resolve(
   args.inspiration || ".launchloom/inspiration-pack.json",
@@ -741,6 +733,7 @@ async function writeResult(result) {
       {
         version: 1,
         status: "authored",
+        testProfile: testPolicy.profile,
         model: result.model,
         selectionKey: result.selectionKey,
         contentManifestDigest: result.contentManifest.digest,
@@ -818,6 +811,7 @@ try {
     generate: requestStage,
     model,
     creativeSession,
+    testProfile: testPolicy.profile,
   });
   await writeResult(result);
   console.log(`production_experience_candidates=${outputPath}`);

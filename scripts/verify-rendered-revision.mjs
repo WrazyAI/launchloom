@@ -1,6 +1,7 @@
-import { verifyApprovedRoutes } from "./browser-route-verification.mjs";
+import { verifyApprovedRoutes, diagnosticFormMode } from "./browser-route-verification.mjs";
 import { sanitizeVerificationReport } from "./route-verification-handoff.mjs";
 import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
+import { hasPipelineTest } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { contrastFailureMessages } from "./rendered-contrast.mjs";
 import fs from "node:fs/promises";
 import http from "node:http";
@@ -24,7 +25,8 @@ const args = Object.fromEntries(
 if (!args.config || !args.dist)
   throw new Error("--config and --dist are required.");
 const config = JSON.parse(await fs.readFile(path.resolve(args.config), "utf8"));
-const reviewMode = process.env.PUBLIC_REVIEW_MODE === "true";
+const testPreview = hasPipelineTest(config);
+const reviewMode = testPreview || process.env.PUBLIC_REVIEW_MODE === "true";
 const dist = path.resolve(args.dist);
 const creativeExperience =
   config.design?.experience?.renderer === "creative-candidate";
@@ -120,7 +122,7 @@ try {
     origin: url,
     mode: reviewMode ? "review" : "production",
     browser,
-    formMode: "mocked",
+    formMode: testPreview ? diagnosticFormMode(config, "review") : "mocked",
     screenshotsDir: path.join(screenshotDir, "approved-routes"),
   });
   await fs.writeFile(
@@ -234,6 +236,21 @@ try {
       deviceScaleFactor: 1,
     });
     await page.goto(url, { waitUntil: "networkidle" });
+    if (testPreview) {
+      const banner = page.locator("[data-pipeline-test-preview]");
+      const profile = config.pipelineTest?.profile;
+      const skipped = profile === "seo-only" ? "Creative evaluation and visual promotion skipped" : profile === "creative-only" ? "SEO research skipped" : "Unknown pipeline lane skipped";
+      if (!(await banner.isVisible()) || !(await banner.textContent())?.includes(profile || "invalid profile") || !(await banner.textContent())?.includes(skipped))
+        failures.push(`${viewport.name}: test-only profile and skipped lane must be visible.`);
+      if (await page.locator(".ll-approve, .ll-send-anyway").count())
+        failures.push(`${viewport.name}: test-only preview contains release controls.`);
+      if ((await page.locator('meta[name="robots"]').getAttribute("content")) !== "noindex, nofollow" || await page.locator('link[rel="canonical"]').count())
+        failures.push(`${viewport.name}: test-only preview must remain unindexed without a production canonical.`);
+      for (const form of await page.locator("form.lead-form, form.launchloom-lead-form").all()) {
+        if ((await form.getAttribute("data-lead-preview")) !== "true" || await form.locator('[name="lead-token"]').evaluateAll(nodes => nodes.some(node => node.value)))
+          failures.push(`${viewport.name}: test-only form exposes a live submission path.`);
+      }
+    }
     // Astro's inline module islands can finish attaching interaction handlers
     // just after network idle. Give the shared conversion controls one frame
     // to initialize before exercising them.

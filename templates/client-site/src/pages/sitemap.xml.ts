@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
-import { routeInventory } from "../lib/site";
+import config, { routeInventory } from "../lib/site";
+import { hasPipelineTest } from "../lib/seo-readiness.mjs";
 
 export const prerender = true;
 
@@ -14,6 +15,7 @@ const escapeXml = (value: string) =>
 export const GET: APIRoute = ({ site }) => {
   const configured = site?.href || "https://example.pages.dev/";
   const review =
+    hasPipelineTest(config) ||
     import.meta.env.PUBLIC_REVIEW_MODE === "true" ||
     import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
   const paths = review

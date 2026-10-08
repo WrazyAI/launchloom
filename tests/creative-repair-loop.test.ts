@@ -1863,8 +1863,12 @@ describe("creative repair loop", () => {
     const pageSpan = buildRepairSpanCatalog(files).spans.find(span => span.file === "servicePage")!;
     vi.stubGlobal("fetch", vi.fn(async (_url, options: any) => {
       const body=JSON.parse(options.body); const schema=body.response_format.json_schema.schema.properties.edits;
-      expect(body.provider?.require_parameters).not.toBe(true); expect(body.temperature).toBe(0.35); expect(schema.maxItems).toBeUndefined();
-      expect(schema.items.properties.replace.maxLength).toBeUndefined();
+      const promptText = body.messages[1].content.filter((part: any) => part.type === "text").map((part: any) => part.text).join("\n");
+      expect(body.provider?.require_parameters).not.toBe(true); expect(body.temperature).toBe(0.35);
+      expect(schema.minItems).toBe(1);
+      expect(Number.isInteger(schema.maxItems)).toBe(true);
+      expect(schema.items.properties.replace.pattern).toBe("^[\\s\\S]{1,6000}$");
+      expect(promptText).toContain("REQUEST CHARACTER BUDGET");
       return Response.json({
       choices: [{ finish_reason: "stop", message: { content: JSON.stringify({
         edits: [{ spanId: pageSpan.id, replace: pageSpan.find.replace('className="service-old"', 'className="service-new"') }],
@@ -2188,6 +2192,45 @@ it("automatic span repair binds current sources without model-generated find tex
   vi.stubGlobal("fetch", vi.fn(() => { throw Error("unexpected global provider call"); }));
   const result = await requestRepair({ model: "test/model", referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } }, files, findings: ["contrast: hero"], screenshots: [], automaticSpanRepair: true, fetchImpl, logger: () => {} } as any);
   expect(result).toEqual({ ...files, styles: ".hero{color:white;}\n" }); expect(fetchImpl).toHaveBeenCalledTimes(1);
+});
+
+it("constrains production span repairs to the bounded patch budget", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-production-span-budget-")); roots.push(root);
+  const desktop = path.join(root, "desktop.png"); await fs.writeFile(desktop, "evidence");
+  const files = {
+    experience: Array.from({ length: 1800 }, (_, index) => `const token${index} = ${index};\n`).join(""),
+    styles: ".hero { color: navy; }\n",
+    motion: "export function mountExperienceMotion() { return () => {}; }\n",
+    servicePage: "export default function ServicePage() { return null; }\n",
+  };
+  const span = buildRepairSpanCatalog(files).spans.find((item) => item.file === "experience");
+  expect(span).toBeDefined();
+  const replacement = span!.find.replace("token0", "token0Safe");
+  const fetchImpl = vi.fn(async (_url: any, options: any) => {
+    const body = JSON.parse(options.body);
+    const editsSchema = body.response_format.json_schema.schema.properties.edits;
+    const requestText = body.messages[1].content.filter((item: any) => item.type === "text").map((item: any) => item.text).join("\n");
+    const budgetMatch = requestText.match(/REQUEST CHARACTER BUDGET\n(\{[^\n]+\})/u);
+    expect(budgetMatch).not.toBeNull();
+    const budget = JSON.parse(budgetMatch![1]);
+    expect(editsSchema.maxItems).toBe(budget.maxEdits);
+    expect(editsSchema.maxItems * (budget.maxFindChars + budget.maxReplacementChars)).toBeLessThanOrEqual(budget.maxPatchChars);
+    expect(editsSchema.items.properties.replace.pattern).toBe("^[\\s\\S]{1,6000}$");
+    expect(body.provider).toBeUndefined();
+    expect(body.temperature).toBe(0.35);
+    return Response.json({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ edits: [{ spanId: span!.id, replace: replacement }] }) } }] });
+  });
+  const result = await requestRepair({
+    model: "test/model",
+    referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } },
+    files,
+    findings: ["contrast: hero"],
+    screenshots: [],
+    fetchImpl,
+    logger: () => {},
+  } as any);
+  expect(result.experience).toContain("const token0Safe = 0;");
+  expect(fetchImpl).toHaveBeenCalledTimes(1);
 });
 
 
