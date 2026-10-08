@@ -816,7 +816,7 @@ export default function Experience`,
         "<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>",
       );
 
-    const validate = (experience) =>
+    const validate = (experience: string) =>
       validateProductionCandidateFiles({
         files: {
           experience,
