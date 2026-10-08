@@ -13,7 +13,7 @@ on:
         description: Full generation or an isolated developer-only test preview
         required: false
         type: choice
-        options: [full, seo-only, creative-only]
+        options: [full, full-preview, seo-only, creative-only]
         default: full
       reuse_authored_candidates:
         description: Reuse a validated candidate set from an existing private client repository
@@ -46,7 +46,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: launchloom-intake-${{ github.event.client_payload.issue || inputs.issue || github.run_id }}${{ github.event_name == 'workflow_dispatch' && (inputs.test_profile == 'seo-only' || inputs.test_profile == 'creative-only') && format('-test-{0}-{1}', inputs.test_profile, github.run_id) || '' }}
+  group: launchloom-intake-${{ github.event.client_payload.issue || inputs.issue || github.run_id }}${{ github.event_name == 'workflow_dispatch' && (inputs.test_profile == 'full-preview' || inputs.test_profile == 'seo-only' || inputs.test_profile == 'creative-only') && format('-test-{0}-{1}', inputs.test_profile, github.run_id) || '' }}
   cancel-in-progress: false
 
 jobs:

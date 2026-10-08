@@ -203,6 +203,47 @@ describe("focused pipeline orchestration", () => {
     expect(report.verdict).toBe("failed");
     expect(report.previewDelivered).toBe(true);
   });
+  it("full-preview runs research and creative and passes only when both lanes pass", async () => {
+    const { calls, dependencies } = adapter();
+    const report = await runPipelineTest(
+      { ...input, profile: "full-preview" },
+      dependencies,
+    );
+    expect(calls).toEqual([
+      "prepare",
+      "research",
+      "configure",
+      "author",
+      "creative",
+      "select",
+      "technical",
+      "seo",
+      "deploy",
+      "notify",
+      "persist",
+    ]);
+    expect(report.candidateCount).toBe(3);
+    expect(report.stages.research.status).toBe("passed");
+    expect(report.stages.creative.status).toBe("passed");
+    expect(report.stages.seo.status).toBe("passed");
+    expect(report.verdict).toBe("passed");
+    expect(report.previewDelivered).toBe(true);
+  });
+  it.each(["creative", "seo"])(
+    "full-preview does not deploy when the %s quality lane fails",
+    async (failedLane) => {
+      const { calls, dependencies } = adapter(failedLane);
+      const report = await runPipelineTest(
+        { ...input, profile: "full-preview" },
+        dependencies,
+      );
+      expect(report.verdict).toBe("failed");
+      expect(report.previewDelivered).toBe(false);
+      expect(calls).not.toContain("deploy");
+      expect(calls).not.toContain("notify");
+      expect(calls.at(-1)).toBe("persist");
+    },
+  );
   it("technical failure prevents deployment and notification", async () => {
     const { calls, dependencies } = adapter("technical");
     const report = await runPipelineTest(input, dependencies);

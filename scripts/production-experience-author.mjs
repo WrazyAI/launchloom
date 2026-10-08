@@ -15,7 +15,6 @@ import {
 import {
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
-  CLIENT_TYPOGRAPHY_CONTRACT,
 } from "./creative-authoring-output.mjs";
 import {
   assertCreativeInnerPageSource,

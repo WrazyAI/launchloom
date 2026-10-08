@@ -46,7 +46,13 @@ const colorRoles = semanticColorCss(palette) + `
 `;
 const testPreview = hasPipelineTest(site);
 const testProfile = site.pipelineTest?.profile;
-const skippedLane = testProfile === "seo-only" ? "Creative evaluation and visual promotion" : testProfile === "creative-only" ? "SEO research" : "Unknown pipeline lane";
+const skippedLane = testProfile === "seo-only"
+  ? "Creative evaluation and visual promotion skipped"
+  : testProfile === "creative-only"
+    ? "SEO research skipped"
+    : testProfile === "full-preview"
+      ? "SEO and creative lanes ran"
+      : "Unknown pipeline lane";
 const diagnosticPreview = testPreview || import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 // Judge previews render the authored candidate only. Platform chrome such as
 // the floating website-assistant launcher and the exit offer must not appear
@@ -109,7 +115,7 @@ const schemaBlocks = (Array.isArray(schemas) ? schemas : []).map((schema) =>
     {testPreview ? (
       <aside class="ll-demo-notice" data-pipeline-test-preview role="note" aria-label="Test-only pipeline preview">
         <strong>Test-only preview: {testProfile || "invalid profile"}</strong>
-        <span>{skippedLane} skipped. Approval, client release and form submissions are disabled.</span>
+        <span>{skippedLane}. Approval, client release and form submissions are disabled.</span>
       </aside>
     ) : <ReviewBanner diagnosticPreview={diagnosticPreview} />}
     <slot />

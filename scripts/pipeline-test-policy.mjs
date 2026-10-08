@@ -14,7 +14,7 @@ export function resolvePipelineTestPolicy({ profile, skipCreativeAuthorChecks = 
   const alias = skipCreative ? "seo-only" : skipSeo ? "creative-only" : null;
   if (profile && alias && profile !== alias) throw new Error("Conflicting test profile and skip flag.");
   const selected = profile || alias || "full";
-  if (!["full", "seo-only", "creative-only"].includes(selected)) throw new Error("Unknown pipeline test profile.");
+  if (!["full", "full-preview", "seo-only", "creative-only"].includes(selected)) throw new Error("Unknown pipeline test profile.");
   if (selected !== "full" && eventName !== "workflow_dispatch") throw new Error("Isolated profiles require a manual workflow dispatch.");
   return Object.freeze({
     profile: selected,

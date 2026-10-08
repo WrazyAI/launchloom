@@ -125,7 +125,7 @@ export async function sendPipelineTestNotification({
 }
 
 export function validatePipelineTestInput(input) {
-  if (!["seo-only", "creative-only"].includes(input.profile))
+  if (!["full-preview", "seo-only", "creative-only"].includes(input.profile))
     throw new Error("A focused test profile is required.");
   if (!/^[1-9]\d*$/u.test(input.issue))
     throw new Error("Issue must be a positive integer.");
@@ -200,16 +200,23 @@ export async function runPipelineTest(input, dependencies) {
     if (!(await stage("select"))) return report;
     // Source selection, browser transitions and painted contrast are delivery gates.
     if (!(await stage("technical"))) return report;
-    if (input.profile === "seo-only") await stage("seo");
+    if (policy.runSeoResearch) await stage("seo");
     const relevant =
       input.profile === "seo-only"
         ? ["research", "select", "technical", "seo"]
-        : ["author", "creative", "select", "technical"];
+        : input.profile === "creative-only"
+          ? ["author", "creative", "select", "technical"]
+          : ["research", "author", "creative", "select", "technical", "seo"];
     report.verdict = relevant.every(
       (name) => report.stages[name].status === "passed",
     )
       ? "passed"
       : "failed";
+    // A combined preview is the end-to-end acceptance canary. Unlike the
+    // isolated diagnostic profiles, it is deployed only after both quality
+    // lanes and all shared rendered gates pass.
+    if (input.profile === "full-preview" && report.verdict !== "passed")
+      return report;
     const deployment = await stage("deploy");
     if (deployment?.url) {
       report.previewUrl = deployment.url;
@@ -295,7 +302,12 @@ export function createCloudDependencies(
 ) {
   if (!work)
     throw new Error("RUNNER_TEMP is required for the isolated test workspace.");
-  const slug = `llqa-${input.issue}-${input.profile === "seo-only" ? "seo" : "creative"}-${input.runId}`;
+  const profileSlug = input.profile === "seo-only"
+    ? "seo"
+    : input.profile === "creative-only"
+      ? "creative"
+      : "full";
+  const slug = `llqa-${input.issue}-${profileSlug}-${input.runId}`;
   const site = path.join(work, slug);
   const evidence = path.join(site, ".launchloom");
   const repo = `WrazyAI/${slug}`;
@@ -318,7 +330,7 @@ export function createCloudDependencies(
   async function costSummary(report) {
     const { readGenerationCostInputs } = await import("./generation-cost-summary.mjs");
     const costs = await readGenerationCostInputs({
-      seo: input.profile === "seo-only" ? research : undefined,
+      seo: input.profile !== "creative-only" ? research : undefined,
       siteConfigUsage: path.join(evidence, "site-config-usage.json"),
       referenceDnaUsage: path.join(evidence, "reference-dna-usage.json"),
       preflight: session,

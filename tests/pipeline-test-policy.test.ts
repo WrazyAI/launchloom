@@ -11,6 +11,19 @@ describe("focused pipeline execution policy", () => {
   it("creative-only keeps authoring but disables external SEO research", () => {
     expect(resolvePipelineTestPolicy({ profile: "creative-only" })).toMatchObject({ testOnly: true, candidateCount: 3, runSeoResearch: false, runCreativeChecks: true, repairCycles: 3 });
   });
+  it("full-preview runs both lanes while remaining test-only", () => {
+    expect(resolvePipelineTestPolicy({ profile: "full-preview" })).toMatchObject({
+      profile: "full-preview",
+      testOnly: true,
+      candidateCount: 3,
+      runSeoResearch: true,
+      runCreativeChecks: true,
+      repairCycles: 3,
+    });
+  });
+  it("requires manual dispatch for the combined test-only preview", () => {
+    expect(() => resolvePipelineTestPolicy({ profile: "full-preview", eventName: "repository_dispatch" })).toThrow(/manual/i);
+  });
   it("rejects profile injection in automatic client intakes", () => {
     expect(() => resolvePipelineTestPolicy({ profile: "seo-only", eventName: "repository_dispatch" })).toThrow(/manual/i);
   });

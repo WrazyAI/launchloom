@@ -44,7 +44,7 @@ async function reviewToken() {
 }
 
 describe("developer approval", () => {
-  it.each(["seo-only", "creative-only"])(
+  it.each(["seo-only", "creative-only", "full-preview"])(
     "rejects %s at the signed reviewed commit without external writes",
     async (profile) => {
       let writes = 0;
@@ -408,7 +408,11 @@ describe("developer approval", () => {
       research: { mode: "researched", publishReady: true },
       allowed: true,
     },
-    { name: "completed cited fallback", research: fallback, allowed: true },
+    {
+      name: "completed cited fallback without measured metrics",
+      research: fallback,
+      allowed: false,
+    },
     {
       name: "partial fallback",
       research: {
@@ -423,7 +427,7 @@ describe("developer approval", () => {
       allowed: false,
     },
   ])(
-    "publishes only the reviewed head with $name",
+    "allows publication only for measured research ($name)",
     async ({ research, allowed }) => {
       let mergeRequest: Record<string, unknown> = {};
       let dispatchRequest: Record<string, any> = {};

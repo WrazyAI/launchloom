@@ -6,7 +6,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 import { it, expect } from "vitest";
 
-it.each(["seo-only", "creative-only", "full"])(
+it.each(["seo-only", "creative-only", "full-preview", "full"])(
   "renders %s provenance and enforces form delivery behavior at desktop and mobile",
   async (profile) => {
     const repository = path.resolve(".");
@@ -140,7 +140,9 @@ it.each(["seo-only", "creative-only", "full"])(
           expect(await banner.textContent()).toContain(
             profile === "seo-only"
               ? "Creative evaluation and visual promotion skipped"
-              : "SEO research skipped",
+              : profile === "creative-only"
+                ? "SEO research skipped"
+                : "SEO and creative lanes ran",
           );
           expect(
             await page.locator(".ll-approve, .ll-send-anyway").count(),
