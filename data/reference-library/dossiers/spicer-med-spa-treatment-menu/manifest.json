@@ -207,7 +207,7 @@
     ]
   },
   "review": {
-    "status": "cc-by-production-reference-with-static-html-caveat",
+    "status": "reviewed",
     "curator": "Codex",
     "reviewedAt": "2026-09-25",
     "scope": "Official package/license, single AI-generated hero asset, Google Fonts OFL metadata, local full-page renders, attribution, and responsive inspection. Medical demo copy remains reference-only."

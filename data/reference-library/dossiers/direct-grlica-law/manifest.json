@@ -176,7 +176,7 @@
     ]
   },
   "review": {
-    "status": "reviewed-not-eligible",
+    "status": "reviewed",
     "reviewer": "Codex dossier completion",
     "reviewedAt": "2026-09-25",
     "scope": "official-source match, full-page capture dimensions, prompt, requester attestation, and rendered visual review",

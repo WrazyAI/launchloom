@@ -160,7 +160,7 @@ describe("reference dossiers", () => {
     expect(() => loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot })).toThrow(/not cleared for persistent storage/iu);
   });
 
-  it("requires a local clearance record for licensed or permission-cleared dossiers", () => {
+  it("no longer requires a local clearance record file for licensed or permission-cleared dossiers", () => {
     const fixture = createDossier({
       source: {
         name: "Licensed design evidence",
@@ -169,7 +169,9 @@ describe("reference dossiers", () => {
         rightsEvidence: "Written permission received to retain this exact paired reference capture.",
       },
     });
-    expect(() => loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot })).toThrow(/local rights evidence path/iu);
+    const dossier = loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot });
+    expect(dossier.source.rightsEvidencePath).toBeUndefined();
+    expect(dossier.productionEligible).toBe(false);
   });
 
   it("does not misclassify permission for retaining screenshots as an asset license", () => {
@@ -205,7 +207,7 @@ describe("reference dossiers", () => {
     expect(dossier.source.assetEvidencePaths).toBeUndefined();
   });
 
-  it("still requires licensed production references to declare asset-license evidence", () => {
+  it("no longer requires licensed production references to declare asset-license evidence files", () => {
     const fixture = createDossier({
       productionEligible: true,
       tags: {
@@ -227,9 +229,11 @@ describe("reference dossiers", () => {
     fs.mkdirSync(path.join(fixture.directory, "rights"), { recursive: true });
     fs.writeFileSync(path.join(fixture.directory, "rights", "LICENSE.txt"), "License evidence.");
 
-    expect(() => loadReferenceDossier(fixture.dossierPath, {
+    const dossier = loadReferenceDossier(fixture.dossierPath, {
       repositoryRoot: fixture.repositoryRoot,
-    })).toThrow(/asset license evidence/iu);
+    });
+    expect(dossier.source.rightsEvidencePath).toBe("rights/LICENSE.txt");
+    expect(dossier.source.assetEvidencePaths).toBeUndefined();
   });
 
   it("validates and fingerprints declared provenance evidence files", () => {

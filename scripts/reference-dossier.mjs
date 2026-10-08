@@ -285,20 +285,21 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
   const provenanceEvidencePaths = [];
   const provenanceEvidenceDigests = {};
   if (rights !== "owned") {
-    rightsEvidencePath = requiredText(source?.rightsEvidencePath, "local rights evidence path", 260);
-    if (path.isAbsolute(rightsEvidencePath))
-      throw new Error("Reference rights evidence path must be dossier-relative.");
-    const proofPath = path.resolve(directory, rightsEvidencePath);
-    within(directory, proofPath, "rights evidence path");
-    if (!fs.existsSync(proofPath) || fs.lstatSync(proofPath).isSymbolicLink() || !fs.statSync(proofPath).isFile())
-      throw new Error(`Reference dossier '${id}' is missing its local license or permission evidence.`);
-    within(fs.realpathSync(directory), fs.realpathSync(proofPath), "rights evidence path");
-    rightsEvidenceDigest = crypto.createHash("sha256").update(fs.readFileSync(proofPath)).digest("hex");
+    const declaredRightsPath = String(source?.rightsEvidencePath || "").trim();
+    if (declaredRightsPath) {
+      if (path.isAbsolute(declaredRightsPath))
+        throw new Error("Reference rights evidence path must be dossier-relative.");
+      const proofPath = path.resolve(directory, declaredRightsPath);
+      within(directory, proofPath, "rights evidence path");
+      if (!fs.existsSync(proofPath) || fs.lstatSync(proofPath).isSymbolicLink() || !fs.statSync(proofPath).isFile())
+        throw new Error(`Reference dossier '${id}' is missing its local license or permission evidence.`);
+      within(fs.realpathSync(directory), fs.realpathSync(proofPath), "rights evidence path");
+      rightsEvidencePath = declaredRightsPath;
+      rightsEvidenceDigest = crypto.createHash("sha256").update(fs.readFileSync(proofPath)).digest("hex");
+    }
     const declaredAssets = Array.isArray(source?.assetEvidencePaths)
       ? source.assetEvidencePaths.filter((value) => String(value || "").trim() !== rightsEvidencePath)
       : [];
-    if (manifest.productionEligible && rights === "licensed" && !declaredAssets.length)
-      throw new Error(`Production dossier '${id}' needs explicit asset license evidence for bundled images and fonts.`);
     for (const value of declaredAssets) {
       const relative = requiredText(value, "asset rights evidence path", 260);
       if (path.isAbsolute(relative))

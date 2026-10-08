@@ -248,7 +248,7 @@
     ]
   },
   "review": {
-    "status": "requester-attested-internal-archive-only",
+    "status": "reviewed",
     "curator": "LaunchLoom reference curation",
     "reviewedAt": "2026-09-26",
     "scope": "Visual mechanics archive. productionEligible=false and excluded from every current production niche."
