@@ -77,4 +77,4 @@
 - [x] **Step 2: Run `npm test`, `npm run test:worker`, `npm run check`, `npm run check:worker`, and `npm run build`.**
 - [x] **Step 3: Run client-site Astro check/build and compile a production-style inspiration pack** using the current main config; confirm three matching references, complete desktop/mobile evidence, and no unrelated filler.
 - [x] **Step 4: Review `git diff --check`, staged/untracked state, and all diff paths; record the exact results in the progress ledger.**
-- [ ] **Step 5: Commit only the validated reconciliation on this feature branch** if all gates pass; do not push, merge, or deploy.
+- [x] **Step 5: Commit only the validated reconciliation on this feature branch** if all gates pass; do not push, merge, or deploy.
