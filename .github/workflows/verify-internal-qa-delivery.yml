@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   readback:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
