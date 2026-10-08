@@ -177,10 +177,7 @@ it.each(["seo-only", "creative-only", "full"])(
             () => document.documentElement.scrollWidth <= window.innerWidth,
           ),
         ).toBe(true);
-        const evidence = path.join(
-          repository,
-          "artifacts/test-profile-previews",
-        );
+        const evidence = path.join(root, "test-profile-previews");
         await fs.mkdir(evidence, { recursive: true });
         await page.screenshot({
           path: path.join(evidence, `${profile}-${viewport.width}.png`),

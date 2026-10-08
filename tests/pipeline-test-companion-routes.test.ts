@@ -103,7 +103,7 @@ it.each(["seo-only", "creative-only", "full"])(
             : "Developer preview only: this form is not connected here, so nothing was sent.", { exact: true }).waitFor();
           expect(requests).toBe(profile === "full" ? 1 : 0);
           expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
-          const evidence = path.join(repository, "artifacts/test-profile-companion-routes");
+          const evidence = path.join(root, "test-profile-companion-routes");
           await fs.mkdir(evidence, { recursive: true });
           await page.screenshot({ path: path.join(evidence, `${profile}-${routePath.replaceAll("/", "-")}-${viewport.width}.png`), fullPage: true });
           await page.close();
