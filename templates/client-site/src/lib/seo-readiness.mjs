@@ -35,7 +35,7 @@ export function seoResearchReadiness(config) {
     const requireAll = coverage?.approvalPolicy === "all-confirmed-cities";
     const valid =
       research.version === 2 &&
-      ["researched", "context-only"].includes(research.mode) &&
+      research.mode === "researched" &&
       research.publishReady === true &&
       coverage?.version === 1 &&
       ["primary-city", "all-confirmed-cities"].includes(
@@ -90,10 +90,11 @@ export function seoResearchReadiness(config) {
         );
     // Retain the original top-level release checks as well as city provenance.
     // Nested proof must not bypass the actual site's page map or spend checks.
+    // Cited fallback observations can inform a private diagnostic review, but
+    // they do not meet the measured evidence required for production approval.
     const primaryPolicyReady =
-      research.mode === "researched"
-        ? hasCompleteVersionTwoMap(config, research)
-        : hasCompletedFallbackResearch(research);
+      research.mode === "researched" &&
+      hasCompleteVersionTwoMap(config, research);
     return valid && primaryPolicyReady
       ? { allowed: true, mode: research.mode }
       : {
@@ -115,12 +116,6 @@ export function seoResearchReadiness(config) {
       error:
         "SEO research is incomplete. The preview remains available, but production publishing is blocked until research succeeds.",
     };
-  if (
-    schemaVersion === 2 &&
-    mode === "context-only" &&
-    hasCompletedFallbackResearch(research)
-  )
-    return { allowed: true, mode };
   if (schemaVersion === 1 && mode === "researched" && publishReady === true)
     return { allowed: true, mode };
   if (

@@ -1,5 +1,5 @@
 export type SeoResearchReadiness =
-  | { allowed: true; mode: "legacy" | "researched" | "context-only" }
+  | { allowed: true; mode: "legacy" | "researched" }
   | {
       allowed: false;
       mode: "context-only" | "baseline";

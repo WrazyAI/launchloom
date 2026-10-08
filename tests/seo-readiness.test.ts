@@ -141,10 +141,11 @@ describe("SEO publication readiness", () => {
     ).toBe(false);
   });
 
-  it("allows completed cited fallback research with its own mode", () => {
-    expect(seoResearchReadiness({ seoResearch: fallback })).toEqual({
-      allowed: true,
+  it("keeps completed cited fallback research reviewable but blocks production approval", () => {
+    expect(seoResearchReadiness({ seoResearch: fallback })).toMatchObject({
+      allowed: false,
       mode: "context-only",
+      code: "seo_research_required",
     });
   });
 
@@ -206,7 +207,7 @@ describe("SEO publication readiness", () => {
   });
 });
 
-it("requires completed research for every confirmed city even when the primary fallback is ready", () => {
+it("blocks qualitative fallback research for every confirmed city", () => {
   const cityResearch = (city: string) => ({
     ...fallback,
     marketSnapshot: { primaryCity: city },
@@ -228,7 +229,7 @@ it("requires completed research for every confirmed city even when the primary f
       })),
     },
   };
-  expect(seoResearchReadiness({ seoResearch: research }).allowed).toBe(true);
+  expect(seoResearchReadiness({ seoResearch: research }).allowed).toBe(false);
   for (const coverageResearch of [
     { ...research.coverageResearch, complete: false },
     { ...research.coverageResearch, cities: [null, null] },
@@ -277,7 +278,7 @@ it("blocks a confirmed multi-city dossier whose per-city evidence was stripped",
   ).toBe(false);
 });
 
-it("preserves primary-city approval while reporting budget-pending secondary city research", () => {
+it("blocks primary-city qualitative fallback while reporting pending secondary city research", () => {
   const areas = ["Cookeville, TN", "Algood, TN"];
   const research = {
     ...fallback,
@@ -298,7 +299,7 @@ it("preserves primary-city approval while reporting budget-pending secondary cit
       ],
     },
   };
-  expect(seoResearchReadiness({ seoResearch: research }).allowed).toBe(true);
+  expect(seoResearchReadiness({ seoResearch: research }).allowed).toBe(false);
   expect(
     seoResearchReadiness({
       seoResearch: {
@@ -361,7 +362,11 @@ it("validates site route approval once without applying it to individual city ev
       },
     },
   };
-  expect(seoResearchReadiness(config).allowed).toBe(true);
+  expect(seoResearchReadiness(config)).toMatchObject({
+    allowed: false,
+    mode: "context-only",
+    code: "seo_research_required",
+  });
   const missingContent = {
     ...config,
     routePolicy: {

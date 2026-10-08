@@ -100,6 +100,60 @@ describe("SEO market map", () => {
     });
   });
 
+  it("infers local, cost, and booking query families from minimal confirmed intake", async () => {
+    const provider = researchProvider();
+    const dossier = await researchSiteContext({
+      businessKind: "auto repair",
+      confirmedServices: ["Brake repair"],
+      primaryCity: "Portland, OR",
+    }, { dataForSeo: provider, maxTasks: 16, maxUsd: 0.5 });
+    const planned = provider.googleSearchVolume.mock.calls[0]?.[0].keywords || [];
+    const servicePage = dossier.pageMap.find((page) => page.pageType === "service");
+
+    expect(planned).toEqual(expect.arrayContaining([
+      "Brake repair",
+      "Brake repair near me",
+      "Brake repair Portland OR",
+      "Brake repair cost",
+      "Brake repair quote",
+    ]));
+    expect(provider.searchIntent.mock.calls[0]?.[0].keywords).toEqual(planned);
+    expect(servicePage?.primaryKeyword).toMatchObject({
+      keyword: "Brake repair Portland OR",
+      intent: "commercial",
+      provenance: "dataforseo",
+    });
+    expect(dossier.publishReady).toBe(true);
+  });
+
+  it("does not invent a city when minimal intake has no confirmed primary location", async () => {
+    const provider = researchProvider();
+    const dossier = await researchSiteContext({
+      businessKind: "auto repair",
+      confirmedServices: ["Brake repair"],
+    }, { dataForSeo: provider, maxTasks: 16, maxUsd: 0.5 });
+    const planned = provider.googleSearchVolume.mock.calls[0]?.[0].keywords || [];
+
+    expect(planned).toContain("Brake repair near me");
+    expect(planned.every((query) => !query.includes("Portland") && !query.includes("Tacoma"))).toBe(true);
+    expect(dossier.marketSnapshot.primaryCity).toBe("");
+    expect(dossier.publishReady).toBe(false);
+    expect(dossier.warnings.join(" ")).toContain("No confirmed primary city");
+  });
+
+  it("does not start paid research until at least one service is confirmed", async () => {
+    const provider = researchProvider();
+    const dossier = await researchSiteContext({
+      businessKind: "auto repair",
+      primaryCity: "Portland, OR",
+    }, { dataForSeo: provider });
+
+    expect(provider.googleSearchVolume).not.toHaveBeenCalled();
+    expect(dossier.mode).toBe("baseline");
+    expect(dossier.publishReady).toBe(false);
+    expect(dossier.warnings.join(" ")).toContain("at least one client-confirmed service");
+  });
+
   it("preserves an explicit niche separately from a broad industry label", () => {
     expect(normaliseSeoIntake({
       businessKind: "veterinary",
@@ -396,6 +450,42 @@ describe("SEO market map", () => {
     expect(dossier.warnings.join(" ")).toContain("lack a primary query with measured volume, CPC, competition, Keyword Difficulty, and intent");
   });
 
+  it("does not map unrelated provider metrics onto a confirmed service", async () => {
+    const provider = researchProvider();
+    provider.googleSearchVolume.mockResolvedValueOnce({
+      cost: 0.04,
+      keywords: [{ keyword: "unrelated industrial equipment", searchVolume: 900, cpc: 9, competition: 0.9 }],
+    });
+    provider.searchIntent.mockResolvedValueOnce({
+      cost: 0.01,
+      keywords: [{ keyword: "unrelated industrial equipment", intent: "commercial" }],
+    });
+    provider.bulkKeywordDifficulty.mockResolvedValueOnce({
+      cost: 0.01,
+      keywords: [{ keyword: "unrelated industrial equipment", difficulty: 3 }],
+    });
+
+    const dossier = await researchSiteContext({
+      businessKind: "auto repair",
+      confirmedServices: ["Brake repair"],
+      primaryCity: "Portland, OR",
+    }, { dataForSeo: provider, maxTasks: 16, maxUsd: 0.5 });
+    const primary = dossier.pageMap.find((page) => page.pageType === "service")?.primaryKeyword;
+
+    expect(dossier.publishReady).toBe(false);
+    expect(dossier.completeness.serviceMetrics).toEqual([
+      { service: "Brake repair", complete: false, primaryKeyword: null },
+    ]);
+    expect(primary).toMatchObject({
+      volume: null,
+      kd: null,
+      cpc: null,
+      competition: null,
+      intent: null,
+      provenance: "dataforseo_unavailable",
+    });
+  });
+
   it("degrades to context-only when a required measured research stage fails", async () => {
     const provider = researchProvider({ serpFailure: true });
     const dossier = await researchSiteContext(intake, { dataForSeo: provider, maxTasks: 16, maxUsd: 0.25 });
@@ -442,7 +532,7 @@ describe("SEO market map", () => {
     expect(dossier.warnings.join(" ")).toContain("without provider-reported spend");
   });
 
-  it("collects bounded cited web evidence without DataForSEO and permits developer approval", async () => {
+  it("collects bounded cited web evidence without DataForSEO but remains unready for production", async () => {
     const webSearch = {
       search: vi.fn(async ({ query }: { query: string }) => ({
         results: [
@@ -465,7 +555,7 @@ describe("SEO market map", () => {
 
     expect(webSearch.search).toHaveBeenCalledTimes(2);
     expect(dossier.mode).toBe("context-only");
-    expect(dossier.publishReady).toBe(true);
+    expect(dossier.publishReady).toBe(false);
     expect(dossier.fallbackSearch).toMatchObject({
       status: "complete",
       queriesAttempted: 2,
@@ -527,7 +617,7 @@ describe("SEO market map", () => {
       "veterinary diagnostic consultations Madison, WI",
     ]);
     expect(veterinary.mode).toBe("context-only");
-    expect(veterinary.publishReady).toBe(true);
+    expect(veterinary.publishReady).toBe(false);
     expect(veterinary.marketSnapshot.businessKind).toBe("veterinary");
     expect(veterinary.validatedQueries.every((item) =>
       item.volume === null && item.kd === null && item.cpc === null &&
@@ -579,7 +669,7 @@ describe("SEO market map", () => {
 
     expect(webSearch.search).toHaveBeenCalledTimes(2);
     expect(dossier.mode).toBe("context-only");
-    expect(dossier.publishReady).toBe(true);
+    expect(dossier.publishReady).toBe(false);
     expect(dossier.cost.stageCosts[0]).toMatchObject({
       stage: "local_search_volume",
       status: "failed",
@@ -816,7 +906,7 @@ it("shares fallback query and USD caps across confirmed cities instead of multip
   expect(dossier.coverageResearch!.fallbackQueries).toBe(3);
   expect(dossier.coverageResearch!.fallbackCostUsd).toBe(0.006);
   expect(dossier.coverageResearch!.cities.slice(1).map(item=>item.status)).toEqual(["pending","pending"]);
-  expect(dossier.publishReady).toBe(true);
+  expect(dossier.publishReady).toBe(false);
   expect(dossier.coverageResearch!.complete).toBe(false);
   expect(dossier.coverageResearch!.approvalPolicy).toBe("primary-city");
 });

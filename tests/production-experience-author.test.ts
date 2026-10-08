@@ -719,6 +719,37 @@ export default function Experience`,
     );
   });
 
+  it("makes one bounded final JSX retry when both normal validation repairs fail", async () => {
+    let routeTwoExperienceCalls = 0;
+    let finalRetryRequest: AuthorStageRequest | undefined;
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const base = safeStage(request);
+        if (request.route.id !== "route-02" || request.stage !== "experience")
+          return base;
+        routeTwoExperienceCalls += 1;
+        if (routeTwoExperienceCalls === 4) finalRetryRequest = request;
+        if (routeTwoExperienceCalls <= 3)
+          return {
+            content: String(base.content).replace(
+              "<section data-hero>",
+              '<section data-hero><img src={content.hero.secondaryImage} alt="" />',
+            ),
+          };
+        return base;
+      },
+    });
+
+    expect(routeTwoExperienceCalls).toBe(4);
+    expect(result.candidates).toHaveLength(3);
+    expect(result.failures).toEqual([]);
+    expect(finalRetryRequest?.validationError).toMatch(
+      /final .*retry|previous validation repairs still failed/iu,
+    );
+  });
+
   it.each([
     "const selectedService = content.services[0];",
     "const firstService = content.services[0]; const selectedService = firstService;",

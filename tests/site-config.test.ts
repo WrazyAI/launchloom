@@ -29,11 +29,21 @@ function repairOutcomeCandidate(heroHeading: string) {
         name: "Mobile vehicle diagnostics",
         description:
           "We scan warning lights and explain what the findings can and cannot tell you.",
+        decisionSupport: {
+          scope: "Ask which questions a warning-light scan can answer.",
+          nextStep: "Share the vehicle details and warning light before discussing options.",
+          preparation: "Note when the light appeared and what changes you have observed.",
+        },
       },
       {
         name: "Brake inspection and repair",
         description:
           "We check brake wear and share a written estimate before any agreed work.",
+        decisionSupport: {
+          scope: "Ask what the inspection can confirm about wear and available options.",
+          nextStep: "Review the itemized estimate before deciding whether to approve work.",
+          preparation: "Note any noises, pedal changes, or warning indicators you have noticed.",
+        },
       },
     ],
     differentiators: [
@@ -75,6 +85,20 @@ function repairOutcomeCandidate(heroHeading: string) {
       ],
     },
   };
+}
+
+function repeatedServiceCandidate(heroHeading: string) {
+  const candidate = repairOutcomeCandidate(heroHeading);
+  candidate.services = candidate.services.map((service) => ({
+    ...service,
+    description: `Discuss the scope, options, and preparation for ${service.name.toLowerCase()} with the team before choosing a next step.`,
+    decisionSupport: {
+      scope: `Ask what a request for ${service.name.toLowerCase()} usually covers.`,
+      nextStep: "Describe your needs and ask which next step fits.",
+      preparation: "Note the questions and timing you want to discuss.",
+    },
+  }));
+  return candidate;
 }
 
 function stubCopyModelResponses(
@@ -657,6 +681,22 @@ describe("site configuration", () => {
     const v2 = prepareGenerationIntake({ seoResearch: { version: 2, mode: "researched", publishReady: true, pageMap: [{ id: "service:a", pageType: "service" }] } });
     expect(v2.seoResearch?.pageMap).toHaveLength(1);
     expect(v2.seoResearch?.publishReady).toBe(true);
+  });
+
+  it("does not preserve a forged ready flag for qualitative context-only research", () => {
+    const prepared = prepareGenerationIntake({
+      seoResearch: {
+        version: 2,
+        mode: "context-only",
+        publishReady: true,
+        fallbackSearch: { status: "complete" },
+        externalSearchEvidence: [{ provenance: "external_search_observation" }],
+      },
+    });
+    expect(prepared.seoResearch).toMatchObject({
+      mode: "context-only",
+      publishReady: false,
+    });
   });
 
   it("uses client photos and logo metadata without substituting an unrelated stock image", () => {
@@ -1321,6 +1361,34 @@ describe("site configuration", () => {
     );
   });
 
+  it("flags service guidance that is duplicated after service-name substitution", () => {
+    const repeatedDescription = (name: string) =>
+      `Discuss the scope, options, and preparation for ${name.toLowerCase()} with the team before choosing a next step.`;
+    const repeatedSupport = (name: string) => ({
+      scope: `Ask what a request for ${name.toLowerCase()} usually covers.`,
+      nextStep: "Describe your needs and ask which next step fits.",
+      preparation: "Note the questions and timing you want to discuss.",
+    });
+    const config = normalise(
+      {
+        services: [
+          { name: "Drain cleaning", description: repeatedDescription("Drain cleaning"), decisionSupport: repeatedSupport("Drain cleaning") },
+          { name: "Water heater repair", description: repeatedDescription("Water heater repair"), decisionSupport: repeatedSupport("Water heater repair") },
+        ],
+      },
+      {
+        businessName: "Harbor Plumbing",
+        services: "Drain cleaning\nWater heater repair",
+        industry: "home-services",
+        primaryCta: "Request a quote",
+      },
+    );
+
+    expect(evaluateDraft(config).issues).toContain(
+      "Service pages repeat generic guidance after service-name substitution.",
+    );
+  });
+
   it("blocks repair-outcome copy when the client explicitly prohibited those claims", () => {
     const intake = {
       businessName: "Riverview Mobile Auto Care",
@@ -1416,6 +1484,42 @@ describe("site configuration", () => {
     expect(config.qualityReport.issues).not.toContain(
       "Generated copy includes a repair outcome prohibited by the client art direction.",
     );
+  });
+
+  it("repairs service copy that only differs by the service name", async () => {
+    const fetchMock = stubCopyModelResponses([
+      repeatedServiceCandidate("Mobile auto care for Portland drivers"),
+      repairOutcomeCandidate("Mobile auto care for Portland drivers"),
+    ]);
+    const config = await generateSiteConfigWithModel({
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      phone: "(503) 555-0146",
+      differentiators: "Documented inspection before recommendations.\nItemized estimate before work.",
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(config.qualityReport.refined).toBe(true);
+    expect(config.qualityReport.issues).not.toContain(
+      "Service pages repeat generic guidance after service-name substitution.",
+    );
+  });
+
+  it("fails closed when one refinement leaves service copy repetitive", async () => {
+    const repeated = repeatedServiceCandidate("Mobile auto care for Portland drivers");
+    const fetchMock = stubCopyModelResponses([repeated, repeated]);
+
+    await expect(generateSiteConfigWithModel({
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      phone: "(503) 555-0146",
+      differentiators: "Documented inspection before recommendations.\nItemized estimate before work.",
+    })).rejects.toThrow(/service pages remained repetitive after one refinement/i);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("fails closed if copy refinement keeps an explicitly prohibited repair outcome", async () => {

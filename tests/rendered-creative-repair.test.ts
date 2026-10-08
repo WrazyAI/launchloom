@@ -2053,37 +2053,50 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
     ).toBe("candidate-a-desktop-round-2");
   });
 
-  it("repairs the selected candidate when promotion is blocked without diversity pairs", async () => {
-    const { root, candidates } = await fixture();
+  it("does not repair a sole candidate when rendered pairwise diversity is unmeasurable", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
     let bakeoffCalls = 0;
     const repairs: string[] = [];
+    const promotions: string[] = [];
 
-    const result = await runRenderedCreativeRepair({
-      siteDir: root,
-      candidatesDir: candidates,
-      outDir: path.join(root, "evidence"),
-      mode: "promote",
-      runBakeoffImpl: async (options: any) => {
-        bakeoffCalls += 1;
-        return writeBakeoffEvidence(
-          options,
-          bakeoffCalls === 1
-            ? report({
-                promotionReady: false,
-                visualDiversity: { pass: true, pairs: [] },
-              })
-            : report(),
-        );
-      },
-      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
-      repairCandidateImpl: async ({ candidateId }: any) => {
-        repairs.push(candidateId);
-      },
-      promoteImpl: async () => ({ candidateId: "candidate-a" }),
-    });
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "promote",
+        maxCycles: 3,
+        runBakeoffImpl: async (options: any) => {
+          bakeoffCalls += 1;
+          return writeBakeoffEvidence(
+            options,
+            report({
+              promotionReady: false,
+              selectedCandidateId: "candidate-a",
+              candidates: [candidate("candidate-a")],
+              visualDiversity: {
+                pass: false,
+                minimumDistance: 0,
+                pairs: [],
+                source: "incomplete-rendered-evidence",
+              },
+            }),
+          );
+        },
+        runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+        repairCandidateImpl: async ({ candidateId }: any) => {
+          repairs.push(candidateId);
+        },
+        promoteImpl: async ({ candidateDir }: any) => {
+          promotions.push(path.basename(candidateDir));
+          return { candidateId: "candidate-a" };
+        },
+      }),
+    ).rejects.toThrow(/insufficient candidate count.*pairwise diversity/iu);
 
-    expect(result.status).toBe("passed");
-    expect(repairs).toEqual(["candidate-a"]);
+    expect(bakeoffCalls).toBe(1);
+    expect(repairs).toEqual([]);
+    expect(promotions).toEqual([]);
   });
 
   it("repairs each diversity candidate once per rendered round even when multiple pairs fail", async () => {

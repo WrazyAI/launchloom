@@ -73,14 +73,16 @@ Model-authored prose is discarded and is never treated as search evidence.
 Fallback web observations remain separate from confirmed business facts and
 measured SEO fields. They do not create search volume, Keyword Difficulty,
 intent, ranking positions, competitor-rank claims, services, or locations.
-Completed bounded fallback research stays `context-only` and sets
-`publishReady: true` for developer approval. It must have usable HTTPS citations,
+Completed bounded fallback research stays `context-only` and remains available
+for private diagnostic review, but it never sets `publishReady: true` and cannot
+be approved or released to a client. It must still have usable HTTPS citations,
 no failed queries, complete provider-reported fallback cost within its cap, and
-no budget exhaustion. The review banner states: "Web research complete.
-Measured SEO data unavailable. Developer approval is available." Missing,
-empty, failed, partial, or unreported-cost fallback research remains blocked.
-The Worker, rendered review controls, and production build use the same evidence
-policy; the ready flag alone cannot unlock a new preview.
+no budget exhaustion before its observations are retained. The review banner
+states that cited observations are available for review but do not replace
+measured SEO, so production approval remains blocked. Missing, empty, failed,
+partial, or unreported-cost fallback research remains blocked. The Worker,
+rendered review controls, and production build require measured version-two
+research for new-site publication; a ready flag alone cannot unlock it.
 If OpenRouter is unavailable or not configured, the result stays explicitly
 degraded/context-only and is not described as researched.
 
@@ -91,8 +93,8 @@ an operator sets higher values. A provider-reported final-task overrun prevents 
 starting and disqualifies the measured-research approval path.
 If a completed or failed provider task has no reported cost, the task cost is
 recorded as unavailable and further measured tasks stop, rather than presenting
-an invented $0 total. A separately completed bounded cited fallback can still
-qualify for developer approval.
+an invented $0 total. A separately completed bounded cited fallback can inform
+private review but cannot qualify for production approval.
 
 ## Configuration
 
@@ -116,13 +118,11 @@ GitHub Actions variables:
 
 The generated client repository retains the JSON map, Markdown report,
 business enrichment, and canonical brief under `.launchloom/`. Production
-approval accepts either a complete measured map or completed cited fallback
-research. The measured path requires all measurement stages, service SERPs,
-three ranking domains, and reported cost. The fallback path verifies its own
-citations and completion/budget receipt without claiming measured metrics.
-Existing version-two fallback receipts can qualify even when their historical
-`publishReady` flag is false, provided those receipts are preserved in the site
-config. Incomplete research remains blocked. Creative, reference, content,
+approval requires a complete measured map with all measurement stages, service
+SERPs, three ranking domains, and reported cost. Completed cited fallback
+receipts are preserved as private diagnostic context only and cannot satisfy
+the production gate, including historical version-two receipts whose
+`publishReady` flag was true. Incomplete research remains blocked. Creative, reference, content,
 indexability, signed-review, and exact-reviewed-head checks still apply.
 
 The operator Access setup and one-use invitation secret are documented in
@@ -142,8 +142,8 @@ All cities share the configured DataForSEO task/USD caps and fallback query/USD
 caps. Caps are not multiplied by the city count. Unknown provider cost stops
 further measured requests across the run. Cities that cannot be researched
 remain visibly pending; no confirmed cities are silently dropped by the old
-20-area limit. Both measured and completed cited fallback qualify per city
-under the existing evidence policy. The default `primary-city` approval policy
+20-area limit. Only measured research qualifies per city for production
+approval. The default `primary-city` approval policy
 preserves existing primary-city release requirements, including complete
 reported measured spend; secondary pending research is disclosed rather than
 silently promoted as complete. Strict `all-confirmed-cities` policy is supported

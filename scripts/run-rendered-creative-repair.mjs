@@ -114,6 +114,11 @@ function candidateDiversityFinding(
   diversity = report?.visualDiversity,
 ) {
   if (!diversity) return "";
+  // A missing pairwise comparison is not evidence that this candidate is too
+  // similar to another. In particular, never ask a sole passing candidate to
+  // redesign itself to compensate for a sibling that was not authored or
+  // could not be rendered.
+  if (diversity.source === "incomplete-rendered-evidence") return "";
   const pairs = (diversity.pairs || []).filter(
     (pair) =>
       (pair.left === candidateId || pair.right === candidateId) &&
@@ -182,6 +187,7 @@ function candidateNeedsRepair(candidate) {
 
 function diversityRepairTargets(report, diversity = report?.visualDiversity) {
   if (diversity?.pass !== false) return [];
+  if (diversity.source === "incomplete-rendered-evidence") return [];
   const findingsByCandidate = new Map();
   const add = (candidateId, finding) => {
     if (!candidateId) return;
@@ -213,6 +219,13 @@ function diversityRepairTargets(report, diversity = report?.visualDiversity) {
     candidateId,
     finding: findings.join("\n"),
   }));
+}
+
+function incompleteDiversityFailure(report) {
+  const candidateCount = Array.isArray(report?.candidates)
+    ? report.candidates.length
+    : 0;
+  return `Production promotion is blocked: insufficient candidate count or rendered evidence for pairwise diversity (${candidateCount} candidate(s); source: incomplete-rendered-evidence). Re-author or repair missing sibling candidates before retrying; do not alter a passing candidate to simulate a comparison.`;
 }
 
 function repairPriority(report, candidateId) {
@@ -1445,6 +1458,11 @@ export async function runRenderedCreativeRepair({
             .filter((target) => target.candidate);
       const target = closestToPassingFirst(report, repairTargets)[0];
       if (!target) {
+        if (
+          requestedMode === "promote" &&
+          report.visualDiversity?.source === "incomplete-rendered-evidence"
+        )
+          throw new Error(incompleteDiversityFailure(report));
         // No candidate has repair budget left. Before giving up, put every
         // candidate back to its best measured state and judge once more.
         let restored = false;
@@ -1652,6 +1670,10 @@ export async function runRenderedCreativeRepair({
     }
 
     if (requestedMode === "promote" && !report.promotionReady) {
+      if (
+        report.visualDiversity?.source === "incomplete-rendered-evidence"
+      )
+        throw new Error(incompleteDiversityFailure(report));
       const targets = diversityRepairTargets(report);
       if (!targets.length) {
         const selectedCandidate = reportCandidate(report, selectedId);

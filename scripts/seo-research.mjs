@@ -1,6 +1,5 @@
 import { publicGenerationIntake, normalizeResearchLanguageCode } from "../templates/client-site/src/lib/business-facts.mjs";
 import { confirmedCoverageFromIntake, applyCoverageEnrichment } from "./confirmed-coverage.mjs";
-import { hasCompletedFallbackResearch } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import {
@@ -679,7 +678,7 @@ async function researchSingleCity(intake = {}, options = {}) {
     const fallback = await collectFallbackWebEvidence(seo, seeds, options.webSearch, options, warnings);
     base.externalSearchEvidence = fallback.evidence;
     base.fallbackSearch = { ...fallback };
-    base.publishReady = hasCompletedFallbackResearch(base);
+    base.publishReady = false;
     base.evidence.push(...fallback.evidence.map((item) => ({
       type: "external_web_search",
       query: item.query,
@@ -767,7 +766,7 @@ async function researchSingleCity(intake = {}, options = {}) {
     );
     base.externalSearchEvidence = fallback.evidence;
     base.fallbackSearch = { ...fallback };
-    base.publishReady = hasCompletedFallbackResearch(base);
+    base.publishReady = false;
     base.evidence.push(...fallback.evidence.map((item) => ({
       type: "external_web_search",
       query: item.query,
@@ -1032,10 +1031,10 @@ async function researchSingleCity(intake = {}, options = {}) {
     base.completeness.serviceSerps === seo.services.length &&
     base.completeness.competitors >= 3 &&
     !cost.overBudget && cost.complete && cost.unreportedTasks === 0;
-  base.publishReady = requiredResearchComplete || hasCompletedFallbackResearch(base);
+  base.publishReady = requiredResearchComplete;
   base.mode = requiredResearchComplete ? "researched" : "context-only";
   if (!requiredResearchComplete)
-    warnings.push("The complete measured market map is unavailable. Developer approval is available only if the bounded cited web research completed.");
+    warnings.push("The complete measured market map is unavailable. Bounded cited web observations may inform private review, but production approval remains blocked until measured research is complete.");
   base.cost = { ...cost, limitUsd: limits.maxUsd, stageCosts };
   base.warnings = [...new Set(warnings)];
   return base;

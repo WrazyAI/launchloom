@@ -3702,12 +3702,38 @@ export async function authorExperienceCandidates({
             "experience",
           );
           experience = normalizeAuthoredSource(finalRepair.value);
-          validateExperience(
-            experience,
-            route,
-            content,
-            routeContentManifest.visualBrief,
-          );
+          try {
+            validateExperience(
+              experience,
+              route,
+              content,
+              routeContentManifest.visualBrief,
+            );
+          } catch (finalRepairError) {
+            const finalRepairMessage =
+              finalRepairError instanceof Error
+                ? finalRepairError.message
+                : String(finalRepairError);
+            const lastRepair = await generateStageValue(
+              limitedGenerate,
+              {
+                ...base,
+                stage: "experience",
+                designContract,
+                previousSource: experience,
+                validationError: `The previous validation repairs still failed: ${finalRepairMessage}. This is the final bounded retry. Correct that exact source-safety issue while preserving the assigned composition, sealed content bindings, required sections, and all other validated structure.`,
+              },
+              "content",
+              "experience",
+            );
+            experience = normalizeAuthoredSource(lastRepair.value);
+            validateExperience(
+              experience,
+              route,
+              content,
+              routeContentManifest.visualBrief,
+            );
+          }
         }
       }
       let referenceRepairCycles = 0;

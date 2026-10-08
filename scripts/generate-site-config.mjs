@@ -100,8 +100,8 @@ function seoResearchForConfig(value) {
     mode,
     languageCode: value.languageCode || "en",
     publishReady:
-      value.publishReady === true ||
-      (sourceVersion < 2 && mode === "researched"),
+      mode === "researched" &&
+      (value.publishReady === true || sourceVersion < 2),
     validatedQueries: list(
       value.validatedQueries,
       sourceVersion >= 2 ? 120 : 12,
@@ -1291,6 +1291,8 @@ const GENERIC_COPY =
   /tailored to your needs|talk through your needs|personalized support|quality you can trust|when it matters|next level|we are here for you|your trusted partner|one[- ]stop/i;
 const REPAIR_OUTCOME_ISSUE =
   "Generated copy includes a repair outcome prohibited by the client art direction.";
+const DUPLICATE_SERVICE_CONTENT_ISSUE =
+  "Service pages repeat generic guidance after service-name substitution.";
 const REPAIR_OUTCOME_CLAIM =
   /\b(?:gets?|got|will be|is|are|was|were)\s+(?:(?:completely|fully)\s+)?(?:fixed|repaired|solved|restored|resolved)\b|\b(?:we|our team)\s+(?:will|can)\s+(?:fix|repair|solve|restore)\b/i;
 const REPAIR_OUTCOME_NEGATION =
@@ -1329,6 +1331,16 @@ function visitorFacingCopy(config) {
   ]
     .filter((value) => typeof value === "string")
     .join("\n");
+}
+
+function routeCopyWithoutServiceName(value, serviceName) {
+  const normalizedName = text(serviceName, 120).toLocaleLowerCase();
+  return String(value || "")
+    .toLocaleLowerCase()
+    .split(normalizedName)
+    .join(" service ")
+    .replace(/\s+/gu, " ")
+    .trim();
 }
 
 function hasUnnegatedRepairOutcomeClaim(copy) {
@@ -1379,6 +1391,23 @@ export function evaluateDraft(config) {
     issues.push(
       "At least one service card lacks a specific, customer-useful outcome.",
     );
+  if (
+    services.length > 1 &&
+    (new Set(
+      services.map((service) =>
+        routeCopyWithoutServiceName(service.description, service.name),
+      ),
+    ).size < services.length ||
+      new Set(
+        services.map((service) =>
+          routeCopyWithoutServiceName(
+            Object.values(service.decisionSupport || {}).join(" "),
+            service.name,
+          ),
+        ),
+      ).size < services.length)
+  )
+    issues.push(DUPLICATE_SERVICE_CONTENT_ISSUE);
   if (
     text(copy.heroKicker, 160).length < 8 ||
     text(copy.servicesHeading, 160).length < 12
@@ -2089,7 +2118,7 @@ export function removeEmDashes(value) {
 }
 
 async function askModel(intake, effort, model = MODEL) {
-  const systemPrompt = `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-language website copy from verified facts. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When an seoResearch dossier is present, use its keyword-to-page map to keep each confirmed service attached to its researched intent and use page-level fan-out questions for decision support. Never add services absent from the confirmed services list. Keep location pages only when the canonical map contains them. Blog opportunities are for future articles; do not generate initial blog posts or filler. Never present search metrics, SERP language, or competitor titles as a business fact, and never include anything listed under prohibitedClaims. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`;
+  const systemPrompt = `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-language website copy from verified facts. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When an seoResearch dossier is present, use each service's matching page-map entry, measured primary intent, supporting keywords, and fan-out questions for its own descriptions and decision support. Do not copy generic service guidance between routes with only the service name changed. If the research supplies a question but no business-specific answer, frame the response as a cautious question or next-step prompt instead of asserting undocumented business practices. Never add services absent from the confirmed services list. Keep location pages only when the canonical map contains them. Blog opportunities are for future articles; do not generate initial blog posts or filler. Never present search metrics, SERP language, or competitor titles as a business fact, and never include anything listed under prohibitedClaims. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`;
   const identity = {
     businessName: intake.businessName || intake.business?.name || "",
     email: intake.email || intake.business?.email || "",
@@ -2138,7 +2167,7 @@ async function askModel(intake, effort, model = MODEL) {
 }
 
 async function refineDraft(intake, draft, report, model = MODEL) {
-  const systemPrompt = `You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Fix only the listed quality issues. Treat explicit negative instructions in client art direction and prohibitedClaims as hard constraints. Preserve the selected design recipe, every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, staff, or claims. Do not return HTML, CSS, code, explanations, or markdown.`;
+  const systemPrompt = `You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Fix only the listed quality issues. If service routes are repetitive, rewrite their descriptions and decision support so they stay distinct after replacing each service name with the word service. Use each route's measured intent and fan-out questions, and do not invent business-specific facts to force variation. Treat explicit negative instructions in client art direction and prohibitedClaims as hard constraints. Preserve the selected design recipe, every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, staff, or claims. Do not return HTML, CSS, code, explanations, or markdown.`;
   const identity = {
     businessName: intake.businessName || intake.business?.name || "",
     email: intake.email || intake.business?.email || "",
@@ -2229,10 +2258,18 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
       initialReport.issues.includes(REPAIR_OUTCOME_ISSUE);
     const refinedHasProhibitedClaim =
       finalReport.issues.includes(REPAIR_OUTCOME_ISSUE);
+    const initialHasRepeatedServiceCopy =
+      initialReport.issues.includes(DUPLICATE_SERVICE_CONTENT_ISSUE);
+    const refinedHasRepeatedServiceCopy =
+      finalReport.issues.includes(DUPLICATE_SERVICE_CONTENT_ISSUE);
+    const initialHasCriticalIssue =
+      initialHasProhibitedClaim || initialHasRepeatedServiceCopy;
+    const refinedHasCriticalIssue =
+      refinedHasProhibitedClaim || refinedHasRepeatedServiceCopy;
     const selected =
-      initialHasProhibitedClaim && !refinedHasProhibitedClaim
+      initialHasCriticalIssue && !refinedHasCriticalIssue
         ? refined
-        : !initialHasProhibitedClaim && refinedHasProhibitedClaim
+        : !initialHasCriticalIssue && refinedHasCriticalIssue
           ? draft
           : finalReport.score >= initialReport.score
             ? refined
@@ -2240,6 +2277,8 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
     const selectedReport = selected === refined ? finalReport : initialReport;
     if (selectedReport.issues.includes(REPAIR_OUTCOME_ISSUE))
       throw new Error(REPAIR_OUTCOME_ISSUE);
+    if (selectedReport.issues.includes(DUPLICATE_SERVICE_CONTENT_ISSUE))
+      throw new Error(DUPLICATE_SERVICE_CONTENT_ISSUE);
     return {
       ...selected,
       qualityReport: {
@@ -2251,6 +2290,11 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
     if (initialReport.issues.includes(REPAIR_OUTCOME_ISSUE))
       throw new Error(
         "Copy generation stopped because the explicit repair-outcome prohibition could not be satisfied.",
+        { cause: error },
+      );
+    if (initialReport.issues.includes(DUPLICATE_SERVICE_CONTENT_ISSUE))
+      throw new Error(
+        "Copy generation stopped because service pages remained repetitive after one refinement.",
         { cause: error },
       );
     console.warn(
