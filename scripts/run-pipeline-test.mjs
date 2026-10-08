@@ -7,6 +7,7 @@ import {
   parsePipelineTestArgs,
   resolvePipelineTestPolicy,
 } from "./pipeline-test-policy.mjs";
+import { summarizeGenerationCosts } from "./generation-cost-summary.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { businessFactReadiness } from "../templates/client-site/src/lib/business-facts.mjs";
 
@@ -19,6 +20,14 @@ export function focusedSeoReadiness(config) {
 
 export function currentRunCostInputs(costs, report) {
   return { ...costs, creativeRun: report.stages.author.status === "not_run" ? null : costs.creativeRun };
+}
+
+export function currentRunCostSummary(costs, report, falImageUsdPerImage) {
+  const unitPrice = Number(falImageUsdPerImage);
+  return summarizeGenerationCosts(currentRunCostInputs(costs, report), {
+    falImageUsdPerImage:
+      Number.isFinite(unitPrice) && unitPrice > 0 ? unitPrice : null,
+  });
 }
 
 export function assertPipelineTestFacts(config) {
@@ -307,8 +316,7 @@ export function createCloudDependencies(
       ...options,
     });
   async function costSummary(report) {
-    const { readGenerationCostInputs, summarizeGenerationCosts } =
-      await import("./generation-cost-summary.mjs");
+    const { readGenerationCostInputs } = await import("./generation-cost-summary.mjs");
     const costs = await readGenerationCostInputs({
       seo: input.profile === "seo-only" ? research : undefined,
       siteConfigUsage: path.join(evidence, "site-config-usage.json"),
@@ -322,7 +330,11 @@ export function createCloudDependencies(
       minutes: (Date.now() - Date.parse(report.startedAt)) / 60000,
       usdPerMinute: process.env.RUNNER_USD_PER_MINUTE || null,
     };
-    return summarizeGenerationCosts(currentRunCostInputs(costs, report));
+    return currentRunCostSummary(
+      costs,
+      report,
+      process.env.FAL_IMAGE_USD_PER_IMAGE,
+    );
   }
   async function initializeAuthorship() {
     await node("compile-inspiration-pack.mjs", [

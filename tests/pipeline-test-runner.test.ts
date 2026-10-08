@@ -4,6 +4,7 @@ import {
   sendPipelineTestNotification,
   focusedSeoReadiness,
   currentRunCostInputs,
+  currentRunCostSummary,
   assertPipelineTestFacts,
   assertCompatibleTestAssets,
   pagesDeploymentUrl,
@@ -95,6 +96,28 @@ describe("focused pipeline orchestration", () => {
     expect(summarizeGenerationCosts(currentRunCostInputs(costs, reused)).actualUsd).toBe(0);
     expect(summarizeGenerationCosts(currentRunCostInputs(costs, { stages: { author: { status: "failed" } } })).actualUsd).toBe(9);
     expect(costs.creativeRun.cacheSummary.cost).toBe(9);
+  });
+  it("includes configured FAL image prices in a focused generation cost summary", () => {
+    const costs = {
+      generatedAssets: {
+        provider: "fal.ai",
+        model: "fal-ai/minimax/image-01",
+        placements: [{ path: "/images/generated/hero.webp" }, { path: "/images/generated/services.webp" }],
+      },
+    };
+    const report = { stages: { author: { status: "not_run" } } };
+    const summary = currentRunCostSummary(costs, report, "0.03");
+    expect(summary.stages.find((stage) => stage.stage === "images")).toMatchObject({
+      costUsd: 0.06,
+      costKind: "estimated",
+      complete: true,
+    });
+    const unknownPrice = currentRunCostSummary(costs, report, "unset");
+    expect(unknownPrice.stages.find((stage) => stage.stage === "images")).toMatchObject({
+      costUsd: null,
+      costKind: "unreported",
+      complete: false,
+    });
   });
   it("evaluates SEO evidence separately while keeping original test provenance blocked for release", () => {
     const config = { pipelineTest: { testOnly: true, profile: "seo-only" }, seoResearch: { version: 1, mode: "researched", publishReady: true } };
