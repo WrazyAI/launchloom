@@ -441,4 +441,89 @@ describe("reference dossiers", () => {
     }
   });
 
+  it("binds supplemental capture and rights records into their existing dossier digests", () => {
+    const supplements = [
+      {
+        id: "attested-future-fitness",
+        provenance: ["rights/source-observations.md"],
+      },
+      {
+        id: "colorlib-marigold-event-venue",
+        provenance: ["rights/PROVENANCE.md"],
+      },
+      { id: "colorlib-meridian-clinic", provenance: ["rights/PROVENANCE.md"] },
+      {
+        id: "direct-brixton-cycles-community-workshop",
+        rights: "rights/REQUESTER-ATTESTATION.md",
+        provenance: [
+          "rights/ASSET-PROVENANCE.md",
+          "rights/PROVENANCE.md",
+          "rights/requester-attestation.md",
+        ],
+      },
+      {
+        id: "independent-retail-beepy-bella-art-world",
+        rights: "rights/REQUESTER-ATTESTATION.md",
+        provenance: [
+          "rights/ASSET-PROVENANCE.md",
+          "rights/requester-attestation.md",
+        ],
+      },
+      {
+        id: "jewelry-panconesi-sculptural-luxury",
+        rights: "rights/REQUESTER-ATTESTATION.md",
+        provenance: [
+          "rights/ASSET-PROVENANCE.md",
+          "rights/requester-attestation.md",
+        ],
+      },
+      {
+        id: "jewelry-taya-memory-wearable",
+        rights: "rights/REQUESTER-ATTESTATION.md",
+        provenance: [
+          "rights/ASSET-PROVENANCE.md",
+          "rights/requester-attestation.md",
+        ],
+      },
+      {
+        id: "spicer-auto-repair-digital-inspection",
+        provenance: ["rights/ASSET-PROVENANCE.md", "rights/SOURCE-README.md"],
+      },
+      {
+        id: "spicer-plumber-dispatch-console",
+        provenance: ["rights/README.md"],
+      },
+    ];
+
+    for (const supplement of supplements) {
+      const dossierPath = path.join(
+        "data/reference-library/dossiers",
+        supplement.id,
+      );
+      const manifest = JSON.parse(
+        fs.readFileSync(path.resolve(dossierPath, "manifest.json"), "utf8"),
+      );
+      expect(manifest.productionEligible, supplement.id).toBe(false);
+      if (supplement.rights) {
+        expect(manifest.source.rightsEvidencePath, supplement.id).toBe(
+          supplement.rights,
+        );
+      }
+      expect(manifest.source.provenanceEvidencePaths, supplement.id).toEqual(
+        expect.arrayContaining(supplement.provenance),
+      );
+
+      const dossier = loadReferenceDossier(dossierPath);
+      for (const evidencePath of supplement.provenance) {
+        expect(
+          dossier.evidenceDigests.provenance,
+          `${supplement.id}: ${evidencePath}`,
+        ).toHaveProperty(
+          evidencePath,
+          expect.stringMatching(/^[a-f0-9]{64}$/u),
+        );
+      }
+    }
+  });
+
 });
