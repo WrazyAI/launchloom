@@ -736,6 +736,80 @@ describe("SEO market map", () => {
     ).toBe("United States");
   });
 
+  it("surfaces the Google Ads task error instead of a top-level Ok message", async () => {
+    const client = createDataForSeoClient({
+      login: "test-login",
+      password: "test-password",
+      fetchImpl: vi.fn(async () =>
+        Response.json({
+          status_code: 20000,
+          status_message: "Ok.",
+          tasks_error: 1,
+          tasks: [
+            {
+              status_code: 40501,
+              status_message: "The supplied location is unavailable.",
+            },
+          ],
+        }),
+      ),
+    });
+
+    await expect(
+      client.googleSearchVolume({
+        keywords: ["sourdough bread"],
+        locationName: "Seattle,Washington,United States",
+      }),
+    ).rejects.toThrow(
+      "DataForSEO task 40501: The supplied location is unavailable.",
+    );
+  });
+
+  it("accepts numeric-string DataForSEO success codes and zero task errors", async () => {
+    const client = createDataForSeoClient({
+      login: "test-login",
+      password: "test-password",
+      fetchImpl: vi.fn(async () =>
+        Response.json({
+          status_code: "20000",
+          status_message: "Ok.",
+          tasks_error: "0",
+          cost: 0.09,
+          tasks: [
+            {
+              status_code: "20000",
+              result: [
+                {
+                  keyword: "sourdough bread",
+                  search_volume: 170,
+                  cpc: 2.4,
+                  competition: 0.6,
+                },
+              ],
+            },
+          ],
+        }),
+      ),
+    });
+
+    await expect(
+      client.googleSearchVolume({
+        keywords: ["sourdough bread"],
+        locationName: "Seattle,Washington,United States",
+      }),
+    ).resolves.toMatchObject({
+      cost: 0.09,
+      keywords: [
+        {
+          keyword: "sourdough bread",
+          searchVolume: 170,
+          cpc: 2.4,
+          competition: 0.6,
+        },
+      ],
+    });
+  });
+
   it("maps local Google Ads metrics, measured search intent, KD, SERP, related-keyword, and ranked-keyword fields", async () => {
     const fetchImpl = vi
       .fn()

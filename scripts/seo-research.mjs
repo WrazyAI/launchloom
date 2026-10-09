@@ -2203,15 +2203,28 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
     if (!response.ok)
       throw new Error(`DataForSEO returned HTTP ${response.status}.`);
     const body = await response.json();
-    if (body.status_code !== 20000 || body.tasks_error)
+    const statusCode = Number(body?.status_code);
+    if (!Number.isFinite(statusCode) || statusCode !== 20000)
       throw new Error(
-        text(body.status_message || "DataForSEO task failed.", 300),
+        `DataForSEO response ${Number.isFinite(statusCode) ? statusCode : "with an invalid status code"}: ${text(body?.status_message || "DataForSEO request failed.", 300)}`,
       );
-    const task = body.tasks?.[0];
-    if (!task || task.status_code !== 20000)
+    const tasks = Array.isArray(body.tasks) ? body.tasks : [];
+    const tasksError = Number(body.tasks_error ?? 0);
+    if (!Number.isFinite(tasksError) || tasksError < 0)
+      throw new Error("DataForSEO returned an invalid tasks_error count.");
+    const failedTask = tasks.find(
+      (item) => Number(item?.status_code) !== 20000,
+    );
+    if (failedTask)
       throw new Error(
-        text(task?.status_message || "DataForSEO task failed.", 300),
+        `DataForSEO task ${Number.isFinite(Number(failedTask.status_code)) ? Number(failedTask.status_code) : "with an invalid status code"}: ${text(failedTask.status_message || "DataForSEO task failed.", 300)}`,
       );
+    if (tasksError > 0)
+      throw new Error(
+        `DataForSEO reported ${tasksError} task error(s) without failed-task details.`,
+      );
+    const task = tasks[0];
+    if (!task) throw new Error("DataForSEO returned no task details.");
     return { body, task, cost: finiteMetric(body.cost ?? task.cost) };
   }
   const locationFields = (locationName, languageCode) => ({
