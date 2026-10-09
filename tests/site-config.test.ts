@@ -1650,6 +1650,448 @@ describe("site configuration", () => {
     );
   });
 
+  it("retries a truncated copy refinement once with a larger bounded JSON budget", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+    const unsafe = repairOutcomeCandidate("Mobile auto care, open now");
+    unsafe.copy.heroBody =
+      "Open now for every driver. Every repair is guaranteed for a year.";
+    const safe = repairOutcomeCandidate(
+      "Mobile auto care for Portland drivers",
+    );
+    const responses = [
+      {
+        choices: [
+          {
+            message: { content: JSON.stringify(unsafe) },
+            finish_reason: "stop",
+          },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1, cost: 0 },
+      },
+      {
+        choices: [
+          { message: { content: '{"copy":' }, finish_reason: "length" },
+        ],
+        usage: {
+          prompt_tokens: 100,
+          completion_tokens: 4096,
+          completion_tokens_details: { reasoning_tokens: 76 },
+          cost: 0.01,
+        },
+      },
+      {
+        choices: [
+          { message: { content: JSON.stringify(safe) }, finish_reason: "stop" },
+        ],
+        usage: { prompt_tokens: 100, completion_tokens: 100, cost: 0.002 },
+      },
+    ];
+    const fetchMock = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        Response.json(responses.shift(), {
+          headers: { "content-type": "application/json" },
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const config = await generateSiteConfigWithModel({
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      phone: "(503) 555-0146",
+      differentiators:
+        "Documented inspection before recommendations.\nItemized estimate before work.",
+    });
+    const bodies = fetchMock.mock.calls.map(([, init]) =>
+      JSON.parse(String(init?.body || "{}")),
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(bodies.map((body) => body.max_completion_tokens)).toEqual([
+      8192, 4096, 8192,
+    ]);
+    expect(JSON.stringify(bodies[2].messages)).toMatch(/truncated/i);
+    expect(config.qualityReport.refined).toBe(true);
+    expect(config.qualityReport.issues.join(" ")).not.toMatch(
+      /unsupported business claims/i,
+    );
+  });
+
+  it("does not retry malformed refinement JSON unless the provider reports truncation", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+    const unsafe = repairOutcomeCandidate("Mobile auto care, open now");
+    unsafe.copy.heroBody = "Open now for every driver.";
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          choices: [
+            {
+              message: { content: JSON.stringify(unsafe) },
+              finish_reason: "stop",
+            },
+          ],
+          usage: { prompt_tokens: 1, completion_tokens: 1, cost: 0 },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          choices: [
+            { message: { content: '{"copy":' }, finish_reason: "stop" },
+          ],
+          usage: { prompt_tokens: 100, completion_tokens: 30, cost: 0.001 },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      generateSiteConfigWithModel({
+        businessName: "Riverview Mobile Auto Care",
+        industry: "auto-repair",
+        services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+        serviceAreas: "Portland, OR",
+        phone: "(503) 555-0146",
+      }),
+    ).rejects.toThrow(/unsupported business claims.*availability/i);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("fails closed after the single truncation retry is still incomplete", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+    const unsafe = repairOutcomeCandidate("Mobile auto care, open now");
+    unsafe.copy.heroBody = "Open now for every driver.";
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          choices: [
+            {
+              message: { content: JSON.stringify(unsafe) },
+              finish_reason: "stop",
+            },
+          ],
+          usage: { prompt_tokens: 1, completion_tokens: 1, cost: 0 },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          choices: [
+            { message: { content: '{"copy":' }, finish_reason: "length" },
+          ],
+          usage: { prompt_tokens: 100, completion_tokens: 4096, cost: 0.01 },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          choices: [
+            { message: { content: '{"copy":' }, finish_reason: "length" },
+          ],
+          usage: { prompt_tokens: 100, completion_tokens: 8192, cost: 0.02 },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      generateSiteConfigWithModel({
+        businessName: "Riverview Mobile Auto Care",
+        industry: "auto-repair",
+        services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+        serviceAreas: "Portland, OR",
+        phone: "(503) 555-0146",
+      }),
+    ).rejects.toThrow(
+      /unsupported business claims.*after 2 bounded refinement attempts/i,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("keeps SEO evidence sealed while copy refinement receives compact measured context", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+    const unsafe = repairOutcomeCandidate("Mobile auto care, open now");
+    unsafe.copy.heroBody = "Open now for every driver.";
+    const safe = repairOutcomeCandidate(
+      "Mobile auto care for Portland drivers",
+    );
+    const seoResearch = {
+      version: 2,
+      mode: "context-only",
+      publishReady: false,
+      validatedQueries: [
+        {
+          keyword: "brake repair near me",
+          confirmedService: "Brake inspection and repair",
+          intent: "commercial",
+          volume: null,
+          provenance: "dataforseo_metric_partial",
+        },
+      ],
+      pageMap: [
+        {
+          id: "service:brake-inspection-and-repair",
+          pageType: "service",
+          title: "Brake inspection and repair",
+          service: "Brake inspection and repair",
+          slug: "/services/brake-inspection-and-repair/",
+          primaryKeyword: {
+            keyword: "brake repair near me",
+            intent: "commercial",
+          },
+          supportingKeywords: ["brake inspection"],
+          fanOutQuestions: ["What should I share about a brake concern?"],
+        },
+      ],
+      competitors: [
+        {
+          domain: "other-shop.example",
+          title: "RAW_COMPETITOR_TITLE_SENTINEL",
+        },
+      ],
+      externalSearchEvidence: [
+        {
+          sourceUrl: "https://other-shop.example/service",
+          title: "RAW_EXTERNAL_TITLE_SENTINEL",
+          snippet:
+            "RAW_UNVERIFIED_CLAIM_SENTINEL: available today and guaranteed",
+        },
+      ],
+    };
+    const patch = {
+      business: {
+        tagline: safe.business.tagline,
+        description: safe.business.description,
+        phone: "(999) 555-0199",
+      },
+      copy: safe.copy,
+      services: safe.services.map((service) => ({
+        ...service,
+        slug: "/model-controlled-route/",
+      })),
+      differentiators: safe.differentiators,
+      conversion: safe.conversion,
+      seoResearch: { mode: "researched", publishReady: true },
+      routeInventory: [{ path: "/model-controlled-route/" }],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          choices: [
+            {
+              message: { content: JSON.stringify(unsafe) },
+              finish_reason: "stop",
+            },
+          ],
+          usage: { prompt_tokens: 1, completion_tokens: 1, cost: 0 },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          choices: [
+            {
+              message: { content: JSON.stringify(patch) },
+              finish_reason: "stop",
+            },
+          ],
+          usage: { prompt_tokens: 100, completion_tokens: 100, cost: 0.002 },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const config = await generateSiteConfigWithModel({
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      phone: "(503) 555-0146",
+      faqNotes: "Mention what to share about brake squeal.",
+      feedback: "Remove any wording that says the shop is open now.",
+      excludedServices: "Engine replacement",
+      researchLanguageCode: "en",
+      seoResearch,
+    });
+    const refinementBody = JSON.parse(
+      String(fetchMock.mock.calls[1]?.[1]?.body || "{}"),
+    );
+    const initialBody = JSON.parse(
+      String(fetchMock.mock.calls[0]?.[1]?.body || "{}"),
+    );
+    const initialPrompt = JSON.stringify(initialBody.messages);
+    const refinementPrompt = JSON.stringify(refinementBody.messages);
+
+    expect(initialPrompt).toContain("brake repair near me");
+    expect(initialPrompt).toContain(
+      "Mention what to share about brake squeal.",
+    );
+    expect(initialPrompt).toContain(
+      "Remove any wording that says the shop is open now.",
+    );
+    expect(initialPrompt).toContain("Engine replacement");
+    expect(initialPrompt).toContain("languageCode");
+    expect(initialPrompt).not.toContain("RAW_COMPETITOR_TITLE_SENTINEL");
+    expect(initialPrompt).not.toContain("RAW_EXTERNAL_TITLE_SENTINEL");
+    expect(initialPrompt).not.toContain("RAW_UNVERIFIED_CLAIM_SENTINEL");
+    expect(refinementPrompt).toContain("brake repair near me");
+    expect(refinementPrompt).toContain(
+      "Mention what to share about brake squeal.",
+    );
+    expect(refinementPrompt).toContain(
+      "Remove any wording that says the shop is open now.",
+    );
+    expect(refinementPrompt).toContain("Engine replacement");
+    expect(refinementPrompt).toContain(
+      "What should I share about a brake concern?",
+    );
+    expect(refinementPrompt).not.toContain("RAW_COMPETITOR_TITLE_SENTINEL");
+    expect(refinementPrompt).not.toContain("RAW_EXTERNAL_TITLE_SENTINEL");
+    expect(refinementPrompt).not.toContain("RAW_UNVERIFIED_CLAIM_SENTINEL");
+    expect(refinementPrompt).not.toContain("(503) 555-0146");
+    expect(refinementPrompt).not.toContain("externalSearchEvidence");
+    expect(config.seoResearch.externalSearchEvidence[0].snippet).toContain(
+      "RAW_UNVERIFIED_CLAIM_SENTINEL",
+    );
+    expect(config.seoResearch.competitors[0].title).toBe(
+      "RAW_COMPETITOR_TITLE_SENTINEL",
+    );
+    expect(config.copy.heroBody).toBe(safe.copy.heroBody);
+    expect(config.business.phone).toBe("(503) 555-0146");
+    expect(config.business.phone).not.toBe("(999) 555-0199");
+    expect(config.services[0].slug).not.toBe("/model-controlled-route/");
+    expect(JSON.stringify(config.routeInventory)).not.toContain(
+      "/model-controlled-route/",
+    );
+    expect(config.seoResearch.mode).toBe("context-only");
+    expect(config.seoResearch.publishReady).toBe(false);
+  });
+
+  it("preserves measured service-page copy through copy-only refinement", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+    const baseCandidate = repairOutcomeCandidate("Mobile auto care, open now");
+    const serviceName = "Brake inspection and repair";
+    const questions = [
+      "What should I share about a brake concern?",
+      "What does a brake inspection include?",
+    ];
+    const introduction =
+      "A brake concern can involve a sound or pedal change. Share what you noticed so the team can discuss the inspection scope.";
+    const scope =
+      "Describe when the sound happens and which wheels seem affected so the inspection discussion can focus on your concern.";
+    const unsafe = {
+      ...baseCandidate,
+      copy: { ...baseCandidate.copy, heroBody: "Open now for every driver." },
+      services: baseCandidate.services.map((service) =>
+        service.name !== serviceName
+          ? service
+          : {
+              ...service,
+              decisionSupport: {
+                ...service.decisionSupport,
+                scope:
+                  "Ask what the inspection can confirm about wear and the reported concern.",
+              },
+              pageIntroduction: introduction,
+              pageMetaDescription:
+                "Learn what details to share when requesting a brake inspection in Portland.",
+              pageSections: {
+                scope,
+                preparation:
+                  "Note when the sound occurs and whether the pedal or dashboard indicators have changed.",
+                nextStep:
+                  "Share the vehicle details and concern, then review the inspection findings before deciding on work.",
+              },
+              pageFaqs: questions.map((question, index) => ({
+                question,
+                answer:
+                  index === 0
+                    ? "Share when the concern began, what you hear or feel, and whether a warning appeared. Those details help the team understand your question."
+                    : "Ask what the inspection can assess for your vehicle and concern. Review the findings before deciding whether to request any work.",
+              })),
+            },
+      ),
+    };
+    const seoResearch = {
+      version: 2,
+      mode: "researched",
+      publishReady: true,
+      validatedQueries: [
+        {
+          keyword: "brake repair near me",
+          confirmedService: serviceName,
+          intent: "commercial",
+          volume: 90,
+          provenance: "dataforseo_metric",
+        },
+      ],
+      pageMap: [
+        {
+          id: "service:brake-inspection-and-repair",
+          pageType: "service",
+          title: serviceName,
+          service: serviceName,
+          slug: "/services/brake-inspection-and-repair/",
+          primaryKeyword: { keyword: "brake repair near me", intent: "commercial" },
+          supportingKeywords: ["brake inspection"],
+          fanOutQuestions: questions,
+        },
+      ],
+    };
+    const responses = [
+      {
+        choices: [
+          { message: { content: JSON.stringify(unsafe) }, finish_reason: "stop" },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1, cost: 0 },
+      },
+      {
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                copy: {
+                  heroHeading: "Mobile auto care for Portland drivers",
+                  heroBody:
+                    "Appointment-based mobile auto care starts with a documented inspection before recommendations.",
+                },
+              }),
+            },
+            finish_reason: "stop",
+          },
+        ],
+        usage: { prompt_tokens: 100, completion_tokens: 100, cost: 0.002 },
+      },
+    ];
+    const fetchMock = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        Response.json(responses.shift()),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const config = await generateSiteConfigWithModel({
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: serviceName,
+      serviceAreas: "Portland, OR",
+      primaryCity: "Portland, OR",
+      phone: "(503) 555-0146",
+      seoResearch,
+    });
+    const refinementBody = JSON.parse(
+      String(fetchMock.mock.calls[1]?.[1]?.body || "{}"),
+    );
+    const refinementPrompt = JSON.stringify(refinementBody.messages);
+    const route = config.pageContent[`service:${serviceName.toLowerCase()}`];
+
+    expect(refinementPrompt).toContain(introduction);
+    expect(refinementPrompt).toContain(questions[0]);
+    expect(route.introduction.text).toBe(introduction);
+    expect(route.scope[0].text).toBe(scope);
+    expect(
+      route.faqs.map((faq: { question: { text: string } }) => faq.question.text),
+    ).toEqual(questions);
+    expect(pageBriefReadiness(config)).toEqual({ allowed: true });
+    expect(config.qualityReport.refined).toBe(true);
+  });
+
   it("repairs service copy that only differs by the service name", async () => {
     const fetchMock = stubCopyModelResponses([
       repeatedServiceCandidate("Mobile auto care for Portland drivers"),
