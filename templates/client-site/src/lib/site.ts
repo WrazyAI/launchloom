@@ -122,7 +122,7 @@ export type ExperiencePackId =
 export type SiteConfig = {
   pipelineTest?: {
     version: 1;
-    profile: "seo-only" | "creative-only";
+    profile: "seo-only" | "creative-only" | "full-preview";
     testOnly: true;
     sourceSha: string;
     runId: string;

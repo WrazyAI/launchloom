@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { resolvePipelineTestPolicy, parsePipelineTestArgs } from "../scripts/pipeline-test-policy.mjs";
+import { pipelineTestBannerMessage } from "../templates/client-site/src/lib/pipeline-test-preview.mjs";
 
 describe("focused pipeline execution policy", () => {
+  it.each([
+    ["seo-only", "Creative evaluation and visual promotion skipped"],
+    ["creative-only", "SEO research skipped"],
+    ["full-preview", "SEO and creative lanes ran"],
+  ])("shares the rendered lane message for %s", (profile, message) => {
+    expect(pipelineTestBannerMessage(profile)).toBe(message);
+  });
   it("keeps ordinary intake on the full three-candidate gated pipeline", () => {
     expect(resolvePipelineTestPolicy({ eventName: "repository_dispatch" })).toMatchObject({ profile: "full", testOnly: false, candidateCount: 3, runSeoResearch: true, runCreativeChecks: true, repairCycles: 3 });
   });

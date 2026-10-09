@@ -1,6 +1,9 @@
 import { it, expect, afterEach, vi } from "vitest";
 import http from "node:http";
-import { verifyApprovedRoutes } from "../scripts/browser-route-verification.mjs";
+import {
+  diagnosticFormMode,
+  verifyApprovedRoutes,
+} from "../scripts/browser-route-verification.mjs";
 vi.setConfig({ testTimeout: 60000 });
 const owned: http.Server[] = [];
 afterEach(async () => {
@@ -33,6 +36,23 @@ const config: any = {
   },
   lead: { apiUrl: "https://stage4-provider.invalid", token: "synthetic-token" },
 };
+it.each(["seo-only", "creative-only", "full-preview"])(
+  "accepts %s as a disabled, test-only diagnostic form profile",
+  (profile) => {
+    expect(
+      diagnosticFormMode({
+        lead: { apiUrl: "", token: "" },
+        pipelineTest: {
+          version: 1,
+          profile,
+          testOnly: true,
+          sourceSha: "a".repeat(40),
+          runId: "synthetic",
+        },
+      }),
+    ).toBe("test-preview");
+  },
+);
 function html(route: string, broken = false) {
   return `<html><head><title>Browser fixture</title></head><body><main><h1>${route === "/" ? "Browser Fixture" : "Drain cleaning"}</h1><a href="${route === "/" ? "/services/drain-cleaning/" : "/"}">Other page</a><details><summary>What should I share?</summary><p>Explain which drain is affected.</p></details><form class="lead-form"><label>Name<input name="name" required></label><label>Phone<input name="phone" required></label><label>Email<input name="email" type="email" required></label><label>Message<textarea name="message" required></textarea></label><button type="submit">Send</button><small role="status"></small></form></main><script>${broken ? 'throw new Error("synthetic hydration failure");' : ""}const form=document.querySelector('form');form.addEventListener('submit',async event=>{event.preventDefault();try{const fields=Object.fromEntries(new FormData(form));const r=await fetch('https://stage4-provider.invalid/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...fields,token:'synthetic-token',pageUrl:location.href})});const data=await r.json();if(!r.ok)throw new Error(data.error);form.reset();form.querySelector('[role=status]').textContent='Thank you. We will be in touch shortly.';dispatchEvent(new CustomEvent('launchloom:lead-submitted'));}catch(error){form.querySelector('[role=status]').textContent=error.message;}});</script></body></html>`;
 }
@@ -127,6 +147,31 @@ it.each(["safe", "hidden", "no-marker", "live-token", "network"] as const)("veri
   if (preview === "safe") {
     expect(report.routes.every((route: any) => route.profiles.every((profile: any) => profile.forms.every((form: any) => form.previewDisabled === "pass" && form.externalDelivery === "not_verified" && form.syntheticRequests === 0)))).toBe(true);
   }
+  expect(s.mutations()).toBe(0);
+});
+it("runs the disabled-form browser check for full-preview provenance", async () => {
+  const s = await server({ preview: "safe" });
+  const diagnosticConfig = {
+    ...config,
+    lead: { apiUrl: "", token: "" },
+    pipelineTest: {
+      version: 1,
+      profile: "full-preview",
+      testOnly: true,
+      sourceSha: "a".repeat(40),
+      runId: "synthetic",
+    },
+  };
+  const report: any = await verifyApprovedRoutes({
+    config: diagnosticConfig,
+    origin: s.origin,
+    mode: "review",
+    formMode: diagnosticFormMode(diagnosticConfig),
+    viewports: [{ name: "mobile", width: 390, height: 844 }],
+    representativeViewports: [],
+    timeout: 1500,
+  });
+  expect(report.status).toBe("pass");
   expect(s.mutations()).toBe(0);
 });
 it.each(["native-get", "stale-status", "image-get"] as const)("rejects diagnostic GET delivery or stale disabled status: %s", async (preview) => {

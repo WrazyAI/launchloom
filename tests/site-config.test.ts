@@ -9,6 +9,7 @@ import {
   normalise,
   prepareGenerationIntake,
 } from "../scripts/generate-site-config.mjs";
+import { pageBriefReadiness } from "../templates/client-site/src/lib/page-briefs.mjs";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -121,6 +122,170 @@ function stubCopyModelResponses(
 }
 
 describe("site configuration", () => {
+  it("builds evidence-backed service-page content from measured route intent", () => {
+    const serviceName = "Brake inspection and repair";
+    const pageMap = {
+      id: "service:brakes",
+      pageType: "service",
+      title: serviceName,
+      service: serviceName,
+      slug: "/services/brake-inspection-and-repair/",
+      primaryKeyword: { keyword: "brake repair near me" },
+      supportingKeywords: ["brake inspection"],
+      fanOutQuestions: [
+        "What should I share about a brake concern?",
+        "What does a brake inspection include?",
+      ],
+    };
+    const candidate = {
+      services: [{
+        name: serviceName,
+        description: "Review brake wear and the reported symptoms before discussing possible next steps.",
+        decisionSupport: {
+          scope: "Describe which wheels, sounds, or pedal changes are involved so the inspection can focus on the reported concern.",
+          preparation: "Note when the sound or pedal change occurs and whether it has changed since you first noticed it.",
+          nextStep: "Share the vehicle details and concern, then review the inspection findings before deciding whether to request any work.",
+        },
+        pageIntroduction: "A brake concern can involve a sound, a change in pedal feel, or a warning light. Share what you have noticed so the team can understand which inspection questions to discuss.",
+        pageMetaDescription: "Learn what details to share when requesting a brake inspection and repair discussion with Riverview Mobile Auto Care in Portland.",
+        pageFaqs: [
+          { question: pageMap.fanOutQuestions[0], answer: "Share when the concern began, what you hear or feel, and whether a dashboard warning appeared. Those details help the team understand what you are asking about." },
+          { question: pageMap.fanOutQuestions[1], answer: "The available inspection scope should be confirmed with the team for your vehicle and concern. Ask what the inspection can assess before deciding on any follow-up work." },
+        ],
+      }],
+    };
+    const config = normalise(candidate, {
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: serviceName,
+      serviceAreas: "Portland, OR",
+      primaryCity: "Portland, OR",
+      seoResearch: {
+        version: 2,
+        mode: "researched",
+        publishReady: true,
+        pageMap: [{
+          ...pageMap,
+          evidence: [{ query: "brake repair near me", sourceUrl: "https://research.example/brakes" }],
+        }],
+      },
+    });
+
+    expect(config.pageContentContractVersion).toBe(1);
+    expect(config.pageContent["service:brake inspection and repair"].introduction.text).toContain("pedal feel");
+    expect(pageBriefReadiness(config)).toEqual({ allowed: true });
+    expect(config.pageEvidence.filter((item: any) => item.routeIds.includes("service:brake inspection and repair")))
+      .toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          kind: "generated_copy",
+          confirmed: true,
+          public: true,
+          sourceRefs: expect.arrayContaining(["services.0.name", "seoPageMap.0.fanOutQuestions.0"]),
+        }),
+      ]));
+  });
+
+  it("does not let fallback service guidance satisfy researched route-page content", () => {
+    const config = normalise({ services: [{ name: "Drain cleaning", description: "A specific description about drain cleaning scope and inspection before work begins." }] }, {
+      businessName: "Harbor Plumbing",
+      industry: "home-services",
+      services: "Drain cleaning",
+      serviceAreas: "Tacoma, WA",
+      seoResearch: {
+        version: 2,
+        mode: "researched",
+        publishReady: true,
+        pageMap: [{
+          id: "service:drain",
+          pageType: "service",
+          title: "Drain cleaning",
+          service: "Drain cleaning",
+          slug: "/services/drain-cleaning/",
+          primaryKeyword: { keyword: "drain cleaning Tacoma" },
+          supportingKeywords: [],
+          fanOutQuestions: [],
+        }],
+      },
+    });
+
+    const readiness = pageBriefReadiness(config);
+    expect(readiness.allowed).toBe(false);
+    if (readiness.allowed) throw new Error("Missing route copy must block readiness.");
+    expect(readiness.error).toMatch(/supported FAQs|introduction|metadata/iu);
+  });
+
+  it("grounds selected location-page copy in its explicit admission facts", () => {
+    const config = normalise({
+      locations: [{
+        name: "Tacoma, WA",
+        pageIntroduction: "Tacoma homeowners can share the service address and the plumbing concern so the team can confirm which confirmed service applies to the request.",
+        pageMetaDescription: "Read how Tacoma plumbing requests are checked against confirmed service coverage and local access details.",
+        pageLocalContext: "Share the service address and note whether building access needs coordination; the team uses those details to confirm whether the selected service applies to that Tacoma request.",
+      }],
+    }, {
+      businessName: "Harbor Plumbing",
+      industry: "home-services",
+      services: "Drain cleaning",
+      serviceAreas: "Tacoma, WA\n",
+      primaryCity: "Tacoma, WA",
+      routePolicy: {
+        version: 1,
+        decisions: [{
+          pageType: "location",
+          target: "Tacoma, WA",
+          status: "approved",
+          evidence: ["Operator approved after service-area review"],
+          admission: {
+            services: ["Drain cleaning"],
+            visitorNeed: "Confirm whether drain cleaning is available for the service address.",
+            distinctValue: "The business records a different access note for this area.",
+            localFacts: [{
+              value: "Technicians need the service address and a note about building access before confirming coverage.",
+              source: "Client coverage notes",
+              provenance: "client_supplied_local_information",
+            }],
+          },
+        }],
+      },
+      seoResearch: {
+        version: 2,
+        mode: "researched",
+        publishReady: true,
+        pageMap: [
+          {
+            id: "service:drain",
+            pageType: "service",
+            title: "Drain cleaning",
+            service: "Drain cleaning",
+            slug: "/services/drain-cleaning/",
+            primaryKeyword: { keyword: "drain cleaning" },
+            supportingKeywords: [],
+            fanOutQuestions: [],
+          },
+          {
+            id: "location:tacoma",
+            pageType: "location",
+            title: "Tacoma plumbing service area",
+            location: "Tacoma, WA",
+            slug: "/locations/tacoma-wa/",
+            primaryKeyword: { keyword: "plumber Tacoma" },
+            supportingKeywords: [],
+            fanOutQuestions: [],
+          },
+        ],
+      },
+    });
+
+    const locationCopy = config.pageContent["location:tacoma, wa"];
+    expect(locationCopy.introduction.text).toContain("Tacoma homeowners");
+    expect(locationCopy.localContext[0].text).toContain("building access");
+    expect(config.pageEvidence.some((item: any) =>
+      item.kind === "generated_copy" &&
+      item.routeIds.includes("location:tacoma, wa") &&
+      item.sourceRefs.some((ref: string) => ref.includes("admission.localFacts")),
+    )).toBe(true);
+  });
+
   it("marks only explicitly synthetic demo intakes with the fixed public notice", () => {
     const demo = normalise({}, {
       submissionId: "demo-coastal-20260923",
@@ -1369,22 +1534,21 @@ describe("site configuration", () => {
       nextStep: "Describe your needs and ask which next step fits.",
       preparation: "Note the questions and timing you want to discuss.",
     });
-    const config = normalise(
-      {
-        services: [
-          { name: "Drain cleaning", description: repeatedDescription("Drain cleaning"), decisionSupport: repeatedSupport("Drain cleaning") },
-          { name: "Water heater repair", description: repeatedDescription("Water heater repair"), decisionSupport: repeatedSupport("Water heater repair") },
-        ],
-      },
-      {
-        businessName: "Harbor Plumbing",
-        services: "Drain cleaning\nWater heater repair",
-        industry: "home-services",
-        primaryCta: "Request a quote",
-      },
-    );
+    const modelOutput = {
+      services: [
+        { name: "Drain cleaning", description: repeatedDescription("Drain cleaning"), decisionSupport: repeatedSupport("Drain cleaning") },
+        { name: "Water heater repair", description: repeatedDescription("Water heater repair"), decisionSupport: repeatedSupport("Water heater repair") },
+      ],
+    };
+    const intake = {
+      businessName: "Harbor Plumbing",
+      services: "Drain cleaning\nWater heater repair",
+      industry: "home-services",
+      primaryCta: "Request a quote",
+    };
+    const config = normalise(modelOutput, intake);
 
-    expect(evaluateDraft(config).issues).toContain(
+    expect(evaluateDraft(config, { modelOutput, intake }).issues).toContain(
       "Service pages repeat generic guidance after service-name substitution.",
     );
   });
@@ -1519,6 +1683,169 @@ describe("site configuration", () => {
       phone: "(503) 555-0146",
       differentiators: "Documented inspection before recommendations.\nItemized estimate before work.",
     })).rejects.toThrow(/service pages remained repetitive after one refinement/i);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not mistake normalized fallback service copy for repeated model copy", async () => {
+    const fallbackOnly: any = repairOutcomeCandidate(
+      "Mobile auto care for Portland drivers",
+    );
+    fallbackOnly.services = fallbackOnly.services.map(
+      ({ name }: { name: string }) => ({ name }),
+    );
+    const fetchMock = stubCopyModelResponses([
+      fallbackOnly,
+      repairOutcomeCandidate("Mobile auto care for Portland drivers"),
+    ]);
+
+    const config = await generateSiteConfigWithModel({
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      phone: "(503) 555-0146",
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const refinement = JSON.parse(
+      String(fetchMock.mock.calls[1][1]?.body || "{}"),
+    ).messages[1].content;
+    expect(refinement).not.toContain(
+      "Service pages repeat generic guidance after service-name substitution.",
+    );
+    expect(config.qualityReport.issues).not.toContain(
+      "Service pages repeat generic guidance after service-name substitution.",
+    );
+  });
+
+  it.each([
+    ["credentials", "Licensed and insured mobile auto care for Portland drivers."],
+    ["pricing", "Brake inspection starts at $99 for Portland drivers."],
+    ["guarantees", "Every repair is guaranteed for life."],
+    ["ratings", "Five-star auto care trusted by 400 local drivers."],
+    ["experience", "More than 20 years of auto-repair experience."],
+    ["availability", "Same-day service and 24/7 emergency support."],
+    ["outcomes", "Save 30% on your monthly vehicle costs."],
+    ["staff", "Our 4 technicians handle every booking."],
+    ["physical location", "Visit our repair shop in Portland, Oregon."],
+  ])("flags unsupported %s claims in generated copy", (category, body) => {
+    const intake = {
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      phone: "(503) 555-0146",
+    };
+    const config = normalise(
+      {
+        ...repairOutcomeCandidate("Mobile auto care for Portland drivers"),
+        copy: {
+          ...repairOutcomeCandidate("Mobile auto care for Portland drivers").copy,
+          heroBody: body,
+        },
+      },
+      intake,
+    );
+
+    expect(evaluateDraft(config, { intake }).issues.join(" ")).toMatch(
+      /unsupported business claims/iu,
+    );
+    expect(evaluateDraft(config, { intake }).issues.join(" ")).toContain(
+      category,
+    );
+  });
+
+  it("accepts a credential claim only when the client supplied matching evidence", () => {
+    const intake = {
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      phone: "(503) 555-0146",
+      credentials: "Licensed and insured mobile auto-care provider",
+    };
+    const candidate = repairOutcomeCandidate(
+      "Mobile auto care for Portland drivers",
+    );
+    candidate.copy.heroBody =
+      "Licensed and insured mobile auto care for Portland drivers.";
+    const config = normalise(candidate, intake);
+
+    expect(evaluateDraft(config, { intake }).issues.join(" ")).not.toMatch(
+      /unsupported business claims/iu,
+    );
+  });
+
+  it("does not flag cautious questions that avoid asserting an unverified fact", () => {
+    const intake = {
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      phone: "(503) 555-0146",
+    };
+    const candidate = repairOutcomeCandidate(
+      "Mobile auto care for Portland drivers",
+    );
+    candidate.copy.heroBody =
+      "Ask whether a licensed professional or same-day service is available before planning a visit.";
+    const config = normalise(candidate, intake);
+
+    expect(evaluateDraft(config, { intake }).issues.join(" ")).not.toMatch(
+      /unsupported business claims/iu,
+    );
+  });
+
+  it.each([
+    ["pricing", "Brake inspection starts at $99 for Portland drivers."],
+    ["guarantees", "Every repair is guaranteed for 12 months."],
+    ["availability", "24/7 mobile vehicle diagnostics in Portland."],
+    ["physical location", "Visit our repair shop in Portland, Oregon."],
+  ])("accepts supported %s claims when matching facts are supplied", (category, body) => {
+    const evidence = {
+      pricing: { offer: "Brake inspection starts at $99" },
+      guarantees: { warranty: "Every repair is guaranteed for 12 months" },
+      availability: { hours: "24/7" },
+      "physical location": {
+        address: "123 Main Street, Portland, Oregon 97201",
+      },
+    }[category];
+    const intake = {
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      phone: "(503) 555-0146",
+      ...evidence,
+    };
+    const candidate = repairOutcomeCandidate(
+      "Mobile auto care for Portland drivers",
+    );
+    candidate.copy.heroBody = body;
+    const config = normalise(candidate, intake);
+
+    expect(evaluateDraft(config, { intake }).issues.join(" ")).not.toMatch(
+      /unsupported business claims/iu,
+    );
+  });
+
+  it("fails closed after one refinement if an unsupported credential claim remains", async () => {
+    const unsupported = repairOutcomeCandidate(
+      "Mobile auto care for Portland drivers",
+    );
+    unsupported.copy.heroBody =
+      "Licensed and insured mobile auto care for Portland drivers.";
+    const fetchMock = stubCopyModelResponses([unsupported, unsupported]);
+
+    await expect(
+      generateSiteConfigWithModel({
+        businessName: "Riverview Mobile Auto Care",
+        industry: "auto-repair",
+        services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+        serviceAreas: "Portland, OR",
+        phone: "(503) 555-0146",
+      }),
+    ).rejects.toThrow(/unsupported business claims.*credentials/i);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 

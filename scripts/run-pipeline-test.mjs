@@ -10,6 +10,7 @@ import {
 import { summarizeGenerationCosts } from "./generation-cost-summary.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { businessFactReadiness } from "../templates/client-site/src/lib/business-facts.mjs";
+import { pageBriefReadiness } from "../templates/client-site/src/lib/page-briefs.mjs";
 
 // Research verdict only: never a production authorization. The persisted
 // provenance and every release guard retain the original, marked config.
@@ -39,6 +40,86 @@ export function pagesDeploymentUrl(output) {
   const matches = [...String(output).matchAll(/Deployment complete![^\r\n]*?(https:\/\/[a-z0-9.-]+\.pages\.dev)/giu)];
   if (matches.length !== 1) throw new Error("Immutable Pages deployment URL was not returned.");
   return new URL(matches[0][1]).href.replace(/\/$/u, "");
+}
+
+export function assertTestPreviewIndexingPolicy({
+  robotsTxt = "",
+  sitemapXml = "",
+  xRobotsTag = "",
+} = {}) {
+  if (
+    !/^User-agent:\s*\*\s*$/imu.test(robotsTxt) ||
+    !/^Allow:\s*\/\s*$/imu.test(robotsTxt) ||
+    /^Disallow:\s*\/\s*$/imu.test(robotsTxt)
+  )
+    throw new Error("Test preview robots.txt must allow crawling.");
+  if (String(sitemapXml).trim())
+    throw new Error("Test preview must not publish a sitemap.");
+  if (!/\bnoindex\b/iu.test(xRobotsTag))
+    throw new Error("Test preview response must include an X-Robots-Tag noindex directive.");
+  return true;
+}
+
+/**
+ * @param {{anonymousStatus?: number, anonymousLocation?: string, authenticatedStatus?: number}} [input]
+ */
+export function assertTestPreviewAccessPolicy({
+  anonymousStatus,
+  anonymousLocation = "",
+  authenticatedStatus,
+} = {}) {
+  const redirectedToAccess =
+    Number(anonymousStatus) >= 300 &&
+    Number(anonymousStatus) < 400 &&
+    /(?:^|\/)cdn-cgi\/access\/login(?:\/|\?|$)/iu.test(
+      String(anonymousLocation),
+    );
+  const anonymouslyBlocked =
+    [401, 403].includes(Number(anonymousStatus)) || redirectedToAccess;
+  if (!anonymouslyBlocked)
+    throw new Error(
+      "Test preview is not protected behind Cloudflare Access; refusing to release its URL.",
+    );
+  if (Number(authenticatedStatus) !== 200)
+    throw new Error(
+      "Cloudflare Access did not authorize the configured developer request (service token).",
+    );
+  return true;
+}
+
+export async function verifyTestPreviewAccess({
+  url,
+  clientId,
+  clientSecret,
+  send = fetch,
+}) {
+  if (!clientId || !clientSecret)
+    throw new Error("Cloudflare Access service-token credentials are required.");
+  const anonymous = await send(url, { method: "GET", redirect: "manual" });
+  const authenticated = await send(url, {
+    method: "GET",
+    redirect: "manual",
+    headers: {
+      "CF-Access-Client-Id": clientId,
+      "CF-Access-Client-Secret": clientSecret,
+    },
+  });
+  assertTestPreviewAccessPolicy({
+    anonymousStatus: anonymous.status,
+    anonymousLocation: anonymous.headers.get("location") || "",
+    authenticatedStatus: authenticated.status,
+  });
+  return {
+    anonymousStatus: anonymous.status,
+    authenticatedStatus: authenticated.status,
+  };
+}
+
+export function resolveTestPreviewProject(value = "launchloom-pipeline-preview") {
+  const project = String(value || "").trim().toLowerCase();
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(project))
+    throw new Error("Test preview Pages project name is invalid.");
+  return project;
 }
 
 export async function assertCompatibleTestAssets(current, previous, manifest, publicRoot) {
@@ -160,7 +241,8 @@ export async function runPipelineTest(input, dependencies) {
     issue: input.issue,
     sourceSha: input.sourceSha,
     runId: input.runId,
-    candidateCount: policy.candidateCount,
+    candidateCount: 0,
+    candidateTarget: policy.candidateCount,
     startedAt: new Date().toISOString(),
     verdict: "failed",
     previewDelivered: false,
@@ -193,9 +275,32 @@ export async function runPipelineTest(input, dependencies) {
     if (policy.runSeoResearch && !(await stage("research"))) return report;
     if (!(await stage("configure"))) return report;
     let reused = false;
-    if (input.profile === "seo-only")
-      reused = (await stage("reuse"))?.reused === true;
-    if (!reused && !(await stage("author"))) return report;
+    if (input.profile === "seo-only") {
+      const reuse = await stage("reuse");
+      reused = reuse?.reused === true;
+      if (reused)
+        report.candidateCount = Number.isInteger(reuse.candidateCount)
+          ? reuse.candidateCount
+          : 1;
+    }
+    if (!reused) {
+      const authorship = await stage("author");
+      if (!authorship) return report;
+      report.candidateCount = Number.isInteger(authorship.candidateCount)
+        ? authorship.candidateCount
+        : 0;
+      if (
+        input.profile === "full-preview" &&
+        report.candidateCount !== policy.candidateCount
+      ) {
+        report.stages.author = {
+          ...report.stages.author,
+          status: "failed",
+          error: `Expected ${policy.candidateCount} authored candidates, received ${report.candidateCount}.`,
+        };
+        return report;
+      }
+    }
     if (policy.runCreativeChecks) await stage("creative");
     if (!(await stage("select"))) return report;
     // Source selection, browser transitions and painted contrast are delivery gates.
@@ -311,6 +416,9 @@ export function createCloudDependencies(
   const site = path.join(work, slug);
   const evidence = path.join(site, ".launchloom");
   const repo = `WrazyAI/${slug}`;
+  const pagesProject = resolveTestPreviewProject(
+    process.env.LAUNCHLOOM_TEST_PAGES_PROJECT,
+  );
   const branch = `qa/${input.profile}/${input.runId}`;
   const config = path.join(site, "src/site.config.json");
   const research = path.join(evidence, "seo-research.json");
@@ -347,6 +455,63 @@ export function createCloudDependencies(
       report,
       process.env.FAL_IMAGE_USD_PER_IMAGE,
     );
+  }
+  async function ensurePrivatePreviewProject() {
+    const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)}/pages/projects/${encodeURIComponent(pagesProject)}`;
+    const current = await fetch(apiUrl, {
+      headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` },
+      cache: "no-store",
+    });
+    if (current.status === 404) {
+      await command(
+        path.join(root, "node_modules/.bin/wrangler"),
+        ["pages", "project", "create", pagesProject, "--production-branch", "main"],
+        { cwd: root },
+      );
+    } else if (!current.ok) {
+      throw new Error(
+        `Could not safely inspect the dedicated Pages preview project (HTTP ${current.status}).`,
+      );
+    }
+    const probeDir = path.join(work, `${slug}-access-probe`);
+    await fs.mkdir(probeDir, { recursive: true });
+    await fs.writeFile(
+      path.join(probeDir, "index.html"),
+      "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"noindex,nofollow\"><title>LaunchLoom preview access probe</title></head><body><main><h1>Access control probe</h1><p>This page contains no client or business data.</p></main></body></html>\n",
+    );
+    await fs.writeFile(
+      path.join(probeDir, "_headers"),
+      "/*\n  X-Robots-Tag: noindex, nofollow, noarchive\n",
+    );
+    await fs.writeFile(
+      path.join(probeDir, "robots.txt"),
+      "User-agent: *\nAllow: /\n",
+    );
+    const deployment = await command(
+      path.join(root, "node_modules/.bin/wrangler"),
+      [
+        "pages",
+        "deploy",
+        probeDir,
+        "--project-name",
+        pagesProject,
+        "--branch",
+        "access-probe",
+        "--commit-hash",
+        input.sourceSha,
+        "--commit-message",
+        "Verify private pipeline preview access",
+      ],
+      { cwd: root, capture: true },
+    );
+    const probeUrl = pagesDeploymentUrl(deployment);
+    await node("wait-for-pages-preview.mjs", ["--url", probeUrl]);
+    const access = await verifyTestPreviewAccess({
+      url: probeUrl,
+      clientId: process.env.CLOUDFLARE_ACCESS_CLIENT_ID,
+      clientSecret: process.env.CLOUDFLARE_ACCESS_CLIENT_SECRET,
+    });
+    return { probeUrl, access };
   }
   async function initializeAuthorship() {
     await node("compile-inspiration-pack.mjs", [
@@ -423,11 +588,18 @@ export function createCloudDependencies(
         "GH_TOKEN",
         "CLOUDFLARE_API_TOKEN",
         "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_ACCESS_CLIENT_ID",
+        "CLOUDFLARE_ACCESS_CLIENT_SECRET",
         "LAUNCHLOOM_DEVELOPER_EMAIL",
         "RESEND_API_KEY",
         "LAUNCHLOOM_FROM_EMAIL",
       ])
         if (!process.env[key]) throw new Error(`${key} is required.`);
+      const accessProbe = await ensurePrivatePreviewProject();
+      report.previewAccess = {
+        anonymousStatus: accessProbe.access.anonymousStatus,
+        authenticatedStatus: accessProbe.access.authenticatedStatus,
+      };
       await fs.mkdir(site, { recursive: false });
       await fs.cp(path.join(root, "templates/client-site"), site, {
         recursive: true,
@@ -469,8 +641,13 @@ export function createCloudDependencies(
       );
       report.repository = repo;
       report.branch = branch;
-      report.project = slug;
-      return { repository: repo, branch, project: slug };
+      report.project = pagesProject;
+      return {
+        repository: repo,
+        branch,
+        project: pagesProject,
+        previewAccess: report.previewAccess,
+      };
     },
     async research() {
       await node("coverage-areas.mjs", [
@@ -707,6 +884,7 @@ export function createCloudDependencies(
               await writeJson(config, current);
               return {
                 reused: true,
+                candidateCount: 1,
                 repository,
                 sourceCommit: await command("git", ["rev-parse", "HEAD"], {
                   cwd: source,
@@ -752,7 +930,15 @@ export function createCloudDependencies(
         "--test-profile",
         input.profile,
       ]);
-      return { artifact: ".launchloom/generated-experiences" };
+      const authored = await readJson(
+        path.join(candidates, "creative-run.json"),
+      );
+      return {
+        artifact: ".launchloom/generated-experiences",
+        candidateCount: Array.isArray(authored.candidates)
+          ? authored.candidates.length
+          : 0,
+      };
     },
     async creative({ policy }) {
       await command("npm", ["ci"], { cwd: site });
@@ -893,7 +1079,8 @@ export function createCloudDependencies(
         ],
         { env: reviewEnv },
       );
-      const readiness = focusedSeoReadiness(await readJson(config));
+      const finalConfig = await readJson(config);
+      const readiness = focusedSeoReadiness(finalConfig);
       await writeJson(
         path.join(evidence, "seo-research-readiness.json"),
         readiness,
@@ -901,6 +1088,11 @@ export function createCloudDependencies(
       if (!readiness.allowed)
         throw new Error(
           readiness.error || "SEO research readiness did not pass.",
+        );
+      const pageReadiness = pageBriefReadiness(finalConfig);
+      if (!pageReadiness.allowed)
+        throw new Error(
+          pageReadiness.error || "Route-specific content readiness did not pass.",
         );
       return { artifact: ".launchloom/seo-review-report.json" };
     },
@@ -911,13 +1103,9 @@ export function createCloudDependencies(
       );
       await fs.writeFile(
         path.join(site, "dist/robots.txt"),
-        "User-agent: *\nDisallow: /\n",
+        "User-agent: *\nAllow: /\n",
       );
-      await command(
-        path.join(root, "node_modules/.bin/wrangler"),
-        ["pages", "project", "create", slug, "--production-branch", "main"],
-        { cwd: site },
-      );
+      await fs.rm(path.join(site, "dist/sitemap.xml"), { force: true });
       const deployed = await command(
         path.join(root, "node_modules/.bin/wrangler"),
         [
@@ -925,7 +1113,7 @@ export function createCloudDependencies(
           "deploy",
           path.join(site, "dist"),
           "--project-name",
-          slug,
+          pagesProject,
           "--branch",
           branch,
           "--commit-hash",
@@ -937,14 +1125,37 @@ export function createCloudDependencies(
       );
       const url = pagesDeploymentUrl(deployed);
       await node("wait-for-pages-preview.mjs", ["--url", url]);
-      const response = await fetch(url);
-      if (
-        !response.ok ||
-        !/noindex/iu.test(response.headers.get("x-robots-tag") || "")
-      )
-        throw new Error("Live diagnostic did not return a noindex response.");
+      const previewAccess = await verifyTestPreviewAccess({
+        url,
+        clientId: process.env.CLOUDFLARE_ACCESS_CLIENT_ID,
+        clientSecret: process.env.CLOUDFLARE_ACCESS_CLIENT_SECRET,
+      });
+      report.previewAccess = previewAccess;
+      const accessHeaders = {
+        "CF-Access-Client-Id": process.env.CLOUDFLARE_ACCESS_CLIENT_ID,
+        "CF-Access-Client-Secret": process.env.CLOUDFLARE_ACCESS_CLIENT_SECRET,
+      };
+      const response = await fetch(url, {
+        redirect: "manual",
+        headers: accessHeaders,
+      });
+      const robotsResponse = await fetch(new URL("robots.txt", url), {
+        redirect: "manual",
+        headers: accessHeaders,
+      });
+      const sitemapResponse = await fetch(new URL("sitemap.xml", url), {
+        redirect: "manual",
+        headers: accessHeaders,
+      });
+      assertTestPreviewIndexingPolicy({
+        robotsTxt: robotsResponse.ok ? await robotsResponse.text() : "",
+        sitemapXml: sitemapResponse.ok ? await sitemapResponse.text() : "",
+        xRobotsTag: response.headers.get("x-robots-tag") || "",
+      });
+      if (!response.ok)
+        throw new Error("Live diagnostic did not return a successful homepage response.");
       report.previewUrl = url;
-      return { url };
+      return { url, access: previewAccess };
     },
     async notify({ report }) {
       report.costs = await costSummary(report);

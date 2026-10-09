@@ -3121,6 +3121,41 @@ export default function ServicePage({ content, runtime, service: { name, slug, d
       ),
     ).toThrow(/remote URL/u);
   });
+
+  it("rejects unsupported price and availability claims in authored service-page copy", () => {
+    const route = { id: "service:brake repair" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const valid = String(safeStage({ ...request, stage: "service" }).content || "");
+    const claimed = valid.replace(
+      "</section>",
+      "<p>Same-day brake repairs start at $99.</p></section>",
+    );
+    expect(() => validateServicePage(claimed, route, { claimEvidence: {} })).toThrow(
+      /unsupported business claims.*availability.*pricing/iu,
+    );
+  });
+
+  it("includes confirmed claim evidence in the creative manifest without exposing private addresses", () => {
+    const manifest = buildCreativeContentManifest({
+      ...site,
+      business: {
+        ...site.business,
+        offer: "$99 brake inspection",
+        credentials: ["Licensed technicians"],
+        address: "44 Private Lane, Portland, OR",
+        addressVisibility: "private",
+      },
+    });
+    expect(manifest.values.claimEvidence.business.offer).toBe("$99 brake inspection");
+    expect(manifest.values.claimEvidence.business.credentials).toEqual([
+      "Licensed technicians",
+    ]);
+    expect(manifest.values.brand.address).toBe("");
+    expect(JSON.stringify(manifest.values.claimEvidence)).not.toContain(
+      "44 Private Lane",
+    );
+    expect(JSON.stringify(manifest.values)).not.toContain("44 Private Lane");
+  });
 });
 
 it("supplies safe local color pairings before creative authorship", () => {

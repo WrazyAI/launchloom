@@ -4,6 +4,7 @@ import { fontFaceCss, resolveFontPairing } from "../lib/font-catalog.mjs";
 import site, { routeInventory, routePageBrief } from "../lib/site";
 import ReviewBanner from "../components/ReviewBanner.astro";
 import { hasPipelineTest } from "../lib/seo-readiness.mjs";
+import { pipelineTestBannerMessage } from "../lib/pipeline-test-preview.mjs";
 import QuickAnswers from "../components/QuickAnswers.astro";
 import ExitOffer from "../components/ExitOffer.astro";
 import "../styles/site.css";
@@ -46,13 +47,7 @@ const colorRoles = semanticColorCss(palette) + `
 `;
 const testPreview = hasPipelineTest(site);
 const testProfile = site.pipelineTest?.profile;
-const skippedLane = testProfile === "seo-only"
-  ? "Creative evaluation and visual promotion skipped"
-  : testProfile === "creative-only"
-    ? "SEO research skipped"
-    : testProfile === "full-preview"
-      ? "SEO and creative lanes ran"
-      : "Unknown pipeline lane";
+const skippedLane = pipelineTestBannerMessage(testProfile);
 const diagnosticPreview = testPreview || import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 // Judge previews render the authored candidate only. Platform chrome such as
 // the floating website-assistant launcher and the exit offer must not appear

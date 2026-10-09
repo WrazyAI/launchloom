@@ -10,6 +10,7 @@ import { auditBuiltContrast } from "./contrast-sweep.mjs";
 import sharp from "sharp";
 import { chromium } from "playwright";
 import { revisionImageMatches } from "./revision-image-acceptance.mjs";
+import { pipelineTestBannerMessage } from "../templates/client-site/src/lib/pipeline-test-preview.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -239,7 +240,7 @@ try {
     if (testPreview) {
       const banner = page.locator("[data-pipeline-test-preview]");
       const profile = config.pipelineTest?.profile;
-      const skipped = profile === "seo-only" ? "Creative evaluation and visual promotion skipped" : profile === "creative-only" ? "SEO research skipped" : "Unknown pipeline lane skipped";
+      const skipped = pipelineTestBannerMessage(profile);
       if (!(await banner.isVisible()) || !(await banner.textContent())?.includes(profile || "invalid profile") || !(await banner.textContent())?.includes(skipped))
         failures.push(`${viewport.name}: test-only profile and skipped lane must be visible.`);
       if (await page.locator(".ll-approve, .ll-send-anyway").count())

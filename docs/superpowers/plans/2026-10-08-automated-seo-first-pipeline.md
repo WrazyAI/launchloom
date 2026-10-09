@@ -85,12 +85,12 @@
 - Consumes: sealed business facts, Task 2 route/intent map, supported page briefs, built HTML and approved service/coverage records.
 - Produces: route-level content evidence that a visitor can decide and act, plus explicit findings for missing, duplicated, thin, unsupported, or non-rendered content.
 
-- [ ] Add tests for useful service scope/process/preparation/next-step coverage and exact business fact provenance.
-- [ ] Add tests that distinguish route-specific information from headings or text produced only by city/service name substitution.
-- [ ] Add tests proving unsupported testimonials, credentials, prices, guarantees, staff, and locations remain rejected.
-- [ ] Add tests that a confirmed service route and a location route are not created or indexed without adequate supporting facts.
-- [ ] Implement the smallest route-brief and rendered-audit changes; avoid arbitrary word-count thresholds as the sole richness measure.
-- [ ] Verify audit evidence comes from built HTML, not model claims or metadata markers alone.
+- [x] Add tests for useful service scope/process/preparation/next-step coverage and exact business fact provenance.
+- [x] Add tests that distinguish route-specific information from headings or text produced only by city/service name substitution.
+- [x] Add tests proving unsupported testimonials, credentials, prices, guarantees, staff, and locations remain rejected.
+- [x] Add tests that a confirmed service route and a location route are not created or indexed without adequate supporting facts.
+- [x] Implement the smallest route-brief and rendered-audit changes; avoid arbitrary word-count thresholds as the sole richness measure.
+- [x] Verify audit evidence comes from built HTML, not model claims or metadata markers alone.
 
 ### Task 4: Close dossier-fidelity and rendered-repair gaps
 

@@ -6,6 +6,10 @@ import {
   currentRunCostInputs,
   currentRunCostSummary,
   assertPipelineTestFacts,
+  assertTestPreviewIndexingPolicy,
+  assertTestPreviewAccessPolicy,
+  verifyTestPreviewAccess,
+  resolveTestPreviewProject,
   assertCompatibleTestAssets,
   pagesDeploymentUrl,
   pushPipelineTestEvidence,
@@ -20,9 +24,9 @@ const input = {
   sourceSha: "a".repeat(40),
   runId: "123-1",
 };
-function adapter(fail = "") {
+function adapter(fail = "", authoredCandidateCount = 3) {
   const calls: string[] = [];
-  const dependencies = Object.fromEntries(
+  const dependencies: Record<string, any> = Object.fromEntries(
     [
       "prepare",
       "research",
@@ -41,7 +45,9 @@ function adapter(fail = "") {
       async () => {
         calls.push(stage);
         if (stage === fail) throw new Error(`${stage} failed`);
-        if (stage === "reuse") return { reused: true };
+        if (stage === "reuse") return { reused: true, candidateCount: 1 };
+        if (stage === "author")
+          return { candidateCount: authoredCandidateCount };
         if (stage === "deploy") return { url: "https://qa.pages.dev" };
         return {};
       },
@@ -50,6 +56,80 @@ function adapter(fail = "") {
   return { calls, dependencies };
 }
 describe("focused pipeline orchestration", () => {
+  it("requires an Access challenge for anonymous preview traffic and a successful authenticated check", async () => {
+    expect(assertTestPreviewAccessPolicy).toBeTypeOf("function");
+    expect(assertTestPreviewAccessPolicy({
+      anonymousStatus: 302,
+      anonymousLocation: "/cdn-cgi/access/login/preview",
+      authenticatedStatus: 200,
+    })).toBe(true);
+    expect(() => assertTestPreviewAccessPolicy?.({
+      anonymousStatus: 200,
+      anonymousLocation: "",
+      authenticatedStatus: 200,
+    })).toThrow(/not protected behind Cloudflare Access/i);
+    expect(() => assertTestPreviewAccessPolicy?.({
+      anonymousStatus: 302,
+      anonymousLocation: "/cdn-cgi/access/login/preview",
+      authenticatedStatus: 403,
+    })).toThrow(/authorize.*developer request/i);
+  });
+  it("probes preview access anonymously and with only the configured service token", async () => {
+    const calls: Array<{ url: string; init: RequestInit }> = [];
+    const result = await verifyTestPreviewAccess({
+      url: "https://hash.launchloom-pipeline-preview.pages.dev",
+      clientId: "synthetic-client-id",
+      clientSecret: "synthetic-client-secret",
+      send: async (url: any, init: any) => {
+        calls.push({ url: String(url), init });
+        return calls.length === 1
+          ? new Response(null, { status: 302, headers: { location: "/cdn-cgi/access/login/test" } })
+          : new Response("ok", { status: 200 });
+      },
+    });
+    expect(result).toEqual({ anonymousStatus: 302, authenticatedStatus: 200 });
+    expect(calls).toHaveLength(2);
+    expect(calls[0].init.headers).toBeUndefined();
+    expect(calls[1].init.headers).toEqual({
+      "CF-Access-Client-Id": "synthetic-client-id",
+      "CF-Access-Client-Secret": "synthetic-client-secret",
+    });
+  });
+  it("accepts only a stable safe Pages project slug", () => {
+    expect(resolveTestPreviewProject()).toBe("launchloom-pipeline-preview");
+    expect(resolveTestPreviewProject("LLQA-Previews")).toBe("llqa-previews");
+    expect(() => resolveTestPreviewProject("https://evil.test/x")).toThrow(/project name/i);
+  });
+  it("requires crawler-accessible noindex headers and no deployed sitemap", () => {
+    expect(
+      assertTestPreviewIndexingPolicy({
+        robotsTxt: "User-agent: *\nAllow: /\n",
+        sitemapXml: "",
+        xRobotsTag: "noindex, nofollow, noarchive",
+      }),
+    ).toBe(true);
+    expect(() =>
+      assertTestPreviewIndexingPolicy({
+        robotsTxt: "User-agent: *\nDisallow: /\n",
+        sitemapXml: "",
+        xRobotsTag: "noindex, nofollow",
+      }),
+    ).toThrow(/robots\.txt must allow crawling/i);
+    expect(() =>
+      assertTestPreviewIndexingPolicy({
+        robotsTxt: "User-agent: *\nAllow: /\n",
+        sitemapXml: "<urlset></urlset>",
+        xRobotsTag: "noindex, nofollow",
+      }),
+    ).toThrow(/must not publish a sitemap/i);
+    expect(() =>
+      assertTestPreviewIndexingPolicy({
+        robotsTxt: "User-agent: *\nAllow: /\n",
+        sitemapXml: "",
+        xRobotsTag: "index, follow",
+      }),
+    ).toThrow(/noindex/i);
+  });
   it("retries a transient GitHub evidence push without regenerating the site", async () => {
     let calls = 0;
     const waits: number[] = [];
@@ -181,11 +261,12 @@ describe("focused pipeline orchestration", () => {
     expect(report.previewDelivered).toBe(true);
   });
   it("authors one source only when reuse is unavailable", async () => {
-    const { calls, dependencies } = adapter();
+    const { calls, dependencies } = adapter("", 1);
     dependencies.reuse = async () => ({ reused: false });
     const report = await runPipelineTest(input, dependencies);
     expect(calls).toContain("author");
     expect(report.candidateCount).toBe(1);
+    expect(report.candidateTarget).toBe(1);
     expect(calls).not.toContain("creative");
   });
   it("creative failure can deliver a diagnostic without claiming a pass", async () => {
@@ -198,6 +279,7 @@ describe("focused pipeline orchestration", () => {
     expect(calls).not.toContain("seo");
     expect(calls).not.toContain("reuse");
     expect(report.candidateCount).toBe(3);
+    expect(report.candidateTarget).toBe(3);
     expect(report.stages.creative.status).toBe("failed");
     expect(report.stages.research.status).toBe("not_run");
     expect(report.verdict).toBe("failed");
@@ -223,6 +305,7 @@ describe("focused pipeline orchestration", () => {
       "persist",
     ]);
     expect(report.candidateCount).toBe(3);
+    expect(report.candidateTarget).toBe(3);
     expect(report.stages.research.status).toBe("passed");
     expect(report.stages.creative.status).toBe("passed");
     expect(report.stages.seo.status).toBe("passed");
@@ -244,6 +327,21 @@ describe("focused pipeline orchestration", () => {
       expect(calls.at(-1)).toBe("persist");
     },
   );
+  it("fails full-preview before creative evaluation when fewer than three candidates were authored", async () => {
+    const { calls, dependencies } = adapter("", 2);
+    const report = await runPipelineTest(
+      { ...input, profile: "full-preview" },
+      dependencies,
+    );
+    expect(report.candidateCount).toBe(2);
+    expect(report.candidateTarget).toBe(3);
+    expect(report.stages.author.status).toBe("failed");
+    expect((report.stages.author as any).error).toMatch(/expected 3 authored candidates, received 2/i);
+    expect(calls).not.toContain("creative");
+    expect(calls).not.toContain("select");
+    expect(calls).not.toContain("deploy");
+    expect(calls).not.toContain("notify");
+  });
   it("technical failure prevents deployment and notification", async () => {
     const { calls, dependencies } = adapter("technical");
     const report = await runPipelineTest(input, dependencies);

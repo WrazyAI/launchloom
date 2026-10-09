@@ -1,4 +1,3 @@
-import { pageBriefReadiness } from "./page-briefs.mjs";
 import { routeReadiness } from "./route-inventory.mjs";
 import { businessFactReadiness } from "./business-facts.mjs";
 export function isAffirmativeConfirmation(value) {
@@ -17,8 +16,6 @@ export function seoResearchReadiness(config) {
   if (!facts.allowed) return { ...facts, mode: "baseline" };
   const routes = routeReadiness(config);
   if (!routes.allowed) return { ...routes, mode: "baseline" };
-  const pages = pageBriefReadiness(config);
-  if (!pages.allowed) return { ...pages, mode: "baseline" };
   const research = config.seoResearch;
   if (!research || typeof research !== "object")
     return { allowed: true, mode: "legacy" };

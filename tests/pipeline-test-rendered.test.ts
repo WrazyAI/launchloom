@@ -54,6 +54,9 @@ it.each(["seo-only", "creative-only", "full-preview", "full"])(
       const config = JSON.parse(
         await fs.readFile(path.join(root, "src/site.config.json"), "utf8"),
       );
+      // Every profile receives active synthetic credentials so the test-only
+      // assertions prove that preview rendering strips them, rather than
+      // passing because the fixture started with empty values.
       config.lead = {
         apiUrl: "https://synthetic-lead.invalid",
         token: "synthetic-active-token",
@@ -151,11 +154,14 @@ it.each(["seo-only", "creative-only", "full-preview", "full"])(
             await page.locator('meta[name="robots"]').getAttribute("content"),
           ).toBe("noindex, nofollow");
           expect(await page.locator('link[rel="canonical"]').count()).toBe(0);
-        expect(html).not.toContain("synthetic-active-token");
-        expect(await page.locator("form.lead-form").getAttribute("data-lead-preview")).toBe("true");
+          expect(html).not.toContain("synthetic-active-token");
+          expect(html).not.toContain("synthetic-lead.invalid");
+          expect(await page.locator("form.lead-form").getAttribute("data-lead-preview")).toBe("true");
         } else {
           expect(await banner.count()).toBe(0);
           expect(await page.locator('link[rel="canonical"]').count()).toBe(1);
+          expect(html).toContain("synthetic-active-token");
+          expect(html).toContain("synthetic-lead.invalid");
         }
         for (const [name, value] of Object.entries({
           name: "Synthetic",

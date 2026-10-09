@@ -1,4 +1,6 @@
 import { compilePageBriefs } from "../templates/client-site/src/lib/page-briefs.mjs";
+import { redactPrivateLocation } from "../templates/client-site/src/lib/business-facts.mjs";
+import { auditUnsupportedBusinessClaims } from "./business-copy-claims.mjs";
 import { routeLinkedContent } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import { fontFamilyById, resolveFontPairing } from "./font-catalog.mjs";
@@ -338,6 +340,13 @@ function visualBrief(site) {
 }
 
 function contentShape(site, route) {
+  const sourceBusiness = site.business || {};
+  site = redactPrivateLocation(site, {
+    addressVisibility: sourceBusiness.addressVisibility,
+    address: sourceBusiness.address,
+    placeId: sourceBusiness.placeId,
+    googleMapsUrl: sourceBusiness.googleMapsUrl,
+  });
   site = routeLinkedContent(site);
   const business = site.business || {};
   const copy = site.copy || {};
@@ -356,6 +365,57 @@ function contentShape(site, route) {
     site.socialProof.google?.apiUrl &&
     site.socialProof.google?.token,
   );
+  const publicAddress = business.addressVisibility === "private"
+    ? ""
+    : String(business.address || "");
+  const claimEvidence = {
+    credentials: site.credentials || business.credentials || [],
+    offer: site.offer || business.offer || "",
+    price: site.price || business.price || "",
+    prices: site.prices || business.prices || [],
+    pricing: site.pricing || business.pricing || "",
+    priceRange: site.priceRange || business.priceRange || "",
+    startingPrice: site.startingPrice || business.startingPrice || "",
+    guarantee: site.guarantee || business.guarantee || "",
+    guarantees: site.guarantees || business.guarantees || [],
+    warranty: site.warranty || business.warranty || "",
+    reviews: site.reviews || business.reviews || [],
+    testimonials: site.testimonials || business.testimonials || [],
+    awards: site.awards || business.awards || [],
+    rating: site.rating || business.rating || "",
+    reviewCount: site.reviewCount || business.reviewCount || "",
+    yearEstablished: site.yearEstablished || business.yearEstablished || "",
+    yearsExperience: site.yearsExperience || business.yearsExperience || "",
+    yearsInBusiness: site.yearsInBusiness || business.yearsInBusiness || "",
+    businessSince: site.businessSince || business.businessSince || "",
+    experience: site.experience || business.experience || "",
+    availability: site.availability || business.availability || "",
+    responseTime: site.responseTime || business.responseTime || "",
+    emergencyAvailability:
+      site.emergencyAvailability || business.emergencyAvailability || "",
+    hours: business.hours || "",
+    results: site.results || business.results || [],
+    metrics: site.metrics || business.metrics || [],
+    caseStudies: site.caseStudies || business.caseStudies || [],
+    proofPoints: site.proofPoints || site.differentiators || [],
+    staff: site.staff || business.staff || [],
+    teamMembers: site.teamMembers || business.teamMembers || [],
+    team: site.team || business.team || [],
+    address: publicAddress,
+    addressVisibility: business.addressVisibility || "public",
+    business: {
+      credentials: business.credentials || [],
+      offer: business.offer || "",
+      address: publicAddress,
+      addressVisibility: business.addressVisibility || "public",
+      yearEstablished: business.yearEstablished || "",
+      yearsExperience: business.yearsExperience || "",
+      yearsInBusiness: business.yearsInBusiness || "",
+      businessSince: business.businessSince || "",
+      experience: business.experience || "",
+      staff: business.staff || [],
+    },
+  };
   return {
     brand: {
       name: String(business.name || ""),
@@ -383,6 +443,7 @@ function contentShape(site, route) {
       offer: String(business.offer || ""),
     },
     pageBriefContractVersion: compilePageBriefs(site).briefs.some(brief => brief.mode === "supported") ? 1 : null,
+    claimEvidence,
     services: site.services || [],
     proof: (site.differentiators || []).slice(0, 3).map(String),
     process: (site.conversion?.process || []).slice(0, 4).map(String),
@@ -2773,6 +2834,44 @@ function unsupportedClaimLiterals(source) {
   );
 }
 
+function authoredSourceText(source) {
+  const file = ts.createSourceFile(
+    "authored-claim-copy.jsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  const values = [];
+  function visit(node) {
+    if (ts.isJsxText(node)) values.push(node.text.trim());
+    else if (
+      ts.isStringLiteral(node) ||
+      ts.isNoSubstitutionTemplateLiteral(node)
+    )
+      values.push(node.text);
+    else if (ts.isTemplateExpression(node))
+      values.push([
+        node.head.text,
+        ...node.templateSpans.map((span) => span.literal.text),
+      ].join(" "));
+    ts.forEachChild(node, visit);
+  }
+  visit(file);
+  return values.filter(Boolean).join(". ");
+}
+
+function assertAuthoredCopyClaims(source, route, content, fileLabel) {
+  const unsupported = auditUnsupportedBusinessClaims(
+    { copy: { authoredSource: authoredSourceText(source) } },
+    content?.claimEvidence || {},
+  );
+  if (unsupported.length)
+    throw new Error(
+      `Candidate ${route.id} ${fileLabel} contains unsupported business claims: ${unsupported.join(", ")}.`,
+    );
+}
+
 function scalarContentValues(value) {
   if (Array.isArray(value)) return value.flatMap(scalarContentValues);
   if (value && typeof value === "object")
@@ -2990,6 +3089,7 @@ function validateInnerPageSource({
     throw new Error(
       `Candidate ${route.id} ${file} contains an unsupported claim literal: ${literals[0]}`,
     );
+  assertAuthoredCopyClaims(source, route, content, file);
   const embeddedFact = scalarContentValues(content).find((value) =>
     source.includes(value),
   );
@@ -3214,6 +3314,7 @@ function validateExperience(source, route, content, visualBrief = {}) {
     throw new Error(
       `Candidate ${route.id} contains an unsupported claim literal: ${literals[0]}`,
     );
+  assertAuthoredCopyClaims(source, route, content, "Experience.jsx");
   const embeddedFact = scalarContentValues(content).find((value) =>
     source.includes(value),
   );
@@ -3595,7 +3696,7 @@ function safeAuthorFailureStack(error) {
  *   generate: (request: AuthorStageRequest) => Promise<Record<string, any>>;
  *   model?: string;
  *   creativeSession?: Record<string, any> | null;
- *   testProfile?: "full" | "seo-only" | "creative-only";
+ *   testProfile?: "full" | "full-preview" | "seo-only" | "creative-only";
  * }} input
  */
 export async function authorExperienceCandidates({

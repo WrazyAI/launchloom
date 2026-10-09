@@ -19,7 +19,7 @@ const message = (error) =>
 export function diagnosticFormMode(config, mode = "review") {
   if (mode === "production" || !Object.hasOwn(config, "pipelineTest")) return "mocked";
   const provenance = config.pipelineTest;
-  if (!provenance || provenance.version !== 1 || provenance.testOnly !== true || !["seo-only", "creative-only"].includes(provenance.profile) || !/^[a-f0-9]{40}$/iu.test(provenance.sourceSha || "") || typeof provenance.runId !== "string" || !provenance.runId.trim() || config.lead?.apiUrl || config.lead?.token)
+  if (!provenance || provenance.version !== 1 || provenance.testOnly !== true || !["seo-only", "creative-only", "full-preview"].includes(provenance.profile) || !/^[a-f0-9]{40}$/iu.test(provenance.sourceSha || "") || typeof provenance.runId !== "string" || !provenance.runId.trim() || config.lead?.apiUrl || config.lead?.token)
     throw new Error("Diagnostic test-preview form checks require valid persisted test provenance and empty API URL/token.");
   return "test-preview";
 }

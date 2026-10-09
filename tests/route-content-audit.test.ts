@@ -176,6 +176,38 @@ it("blocks unauthorized placeholders in visible page copy", async () => {
     ),
   ).toContain("placeholder");
 });
+it("requires supported route-copy evidence to appear in the built HTML", async () => {
+  const { auditRouteContent } = await import("../scripts/route-content-audit.mjs");
+  const dist = await fixture();
+  const routeId = "service:drain cleaning";
+  const claim = (id: string, value: string) => ({ text: value, evidenceIds: [id] });
+  const routeConfig = {
+    ...config,
+    pageEvidence: [
+      { id: "intro", value: "Tell us which fixtures are affected and when the change began so the team can understand the drain request.", source: "client notes", kind: "client_supplied", confirmed: true, public: true, routeIds: [routeId] },
+      { id: "meta", value: "Review useful drain cleaning details and preparation before discussing your service request.", source: "client notes", kind: "client_supplied", confirmed: true, public: true, routeIds: [routeId] },
+      { id: "scope", value: "Describe the affected fixtures and the details you have noticed before discussing the service scope.", source: "client notes", kind: "client_supplied", confirmed: true, public: true, routeIds: [routeId] },
+    ],
+    pageContent: {
+      [routeId]: {
+        introduction: claim("intro", "Tell us which fixtures are affected and when the change began so the team can understand the drain request."),
+        metadata: { description: claim("meta", "Review useful drain cleaning details and preparation before discussing your service request.") },
+        scope: [claim("scope", "Describe the affected fixtures and the details you have noticed before discussing the service scope.")],
+      },
+    },
+  };
+  const report = await auditRouteContent({
+    config: routeConfig,
+    records: [{ id: routeId, target: "Drain cleaning", pageType: "service", path: "/services/drain-cleaning/" }],
+    htmlPages: {
+      "/services/drain-cleaning/": await fs.readFile(path.join(dist, "services/drain-cleaning/index.html"), "utf8"),
+    },
+    dist,
+    origin,
+    mode: "production",
+  });
+  expect(report.routes[0].checks.find((item: any) => item.name === "supported-content")).toMatchObject({ status: "fail" });
+});
 it("blocks a known private location value anywhere in public HTML", async () => {
   const dist = await fixture();
   const privateConfig = {
@@ -250,6 +282,31 @@ it("blocks long exact city substitutions after removing the shared shell and ove
     mode: "production",
   });
   expect(report.failures.join(" ")).toContain("city/service substitution");
+});
+
+it("blocks service pages whose substance is a near-copy with one changed word", async () => {
+  const { auditRouteContent } =
+    await import("../scripts/route-content-audit.mjs");
+  const dist = await fixture();
+  const routeConfig = {
+    ...config,
+    services: [
+      ...config.services,
+      { name: "Leak repair", slug: "leak-repair", description: "Discuss the visible leak." },
+    ],
+  };
+  const records = [
+    { id: "service:drain cleaning", target: "Drain cleaning", pageType: "service", path: "/services/drain-cleaning/" },
+    { id: "service:leak repair", target: "Leak repair", pageType: "service", path: "/services/leak-repair/" },
+  ];
+  const common = "Describe the issue you noticed, when it began, which fixtures are involved, what access is available, and the questions you want answered before discussing the next step. ".repeat(5);
+  const htmlPages = Object.fromEntries(records.map((record, index) => [
+    record.path,
+    `<title>${record.target} | Fixture Plumbing</title><main><h1>${record.target}</h1><p>${index ? common.replace("which fixtures", "which areas") : common}</p></main>`,
+  ]));
+  const report = await auditRouteContent({ config: routeConfig, records, htmlPages, dist, origin, mode: "production" });
+  expect(report.failures.join(" ")).toMatch(/near-duplicate|substance/i);
+  expect(report.diagnostics.some((item: any) => item.blocking)).toBe(true);
 });
 it("redacts known private fields from observations as well as failures", async () => {
   const module = await import("../scripts/seo-release-gate.mjs");
