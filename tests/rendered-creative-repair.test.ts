@@ -2556,6 +2556,68 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
     expect(bakeoffCalls).toBe(3);
   });
 
+  it("allows the final render after independent reference and visual-gate repair budgets are used", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let bakeoffCalls = 0;
+    let gateCalls = 0;
+    let repairCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 2,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        const needsReferenceRepair = bakeoffCalls <= 2;
+        const candidateState = needsReferenceRepair
+          ? candidate("candidate-a", {
+              valid: false,
+              eligible: false,
+              referenceFidelity: { pass: false },
+              renderedReferenceFidelity: {
+                pass: false,
+                audit: {
+                  overallScore: 64,
+                  findings: [{
+                    severity: "major",
+                    category: "composition",
+                    viewport: "desktop",
+                    evidence: "The reference composition is not yet met.",
+                  }],
+                },
+              },
+              failures: ["Reference fidelity is below its hard threshold."],
+            })
+          : candidate("candidate-a");
+        return writeBakeoffEvidence(
+          options,
+          report({
+            selectedCandidateId: needsReferenceRepair
+              ? null
+              : "candidate-a",
+            promotionReady: !needsReferenceRepair,
+            candidates: [candidateState],
+          }),
+        );
+      },
+      runVisualGateImpl: (options: any) => {
+        gateCalls += 1;
+        return visualGate(options, gateCalls <= 2 ? "revise" : "pass");
+      },
+      repairCandidateImpl: async () => {
+        repairCalls += 1;
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(bakeoffCalls).toBe(5);
+    expect(gateCalls).toBe(3);
+    expect(repairCalls).toBe(4);
+  });
+
   it("rejects a passing visual-gate report when the process exits nonzero", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-visual-gate-exit-"),

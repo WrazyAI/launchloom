@@ -1156,7 +1156,14 @@ export async function runRenderedCreativeRepair({
     candidateRoot,
     frozenCreativeSession,
   );
-  const maxRounds = Math.max(1, candidateCount * (cycleLimit + 1) + 1);
+  // Reference repairs and selected visual-gate repairs have independent
+  // per-candidate limits. Reserve one round per candidate for excluding a
+  // rejected repair, plus the single best-state restore and final evaluation,
+  // so the orchestration cap cannot expire before those bounded budgets do.
+  const maxRounds = Math.max(
+    1,
+    candidateCount * (cycleLimit + MAX_GATE_REPAIRS + 1) + 2,
+  );
   const humanFindings = Array.isArray(requestedFindings)
     ? requestedFindings.filter(Boolean)
     : [];

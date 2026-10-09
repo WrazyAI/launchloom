@@ -1946,6 +1946,25 @@ export default function Experience`,
     }
   });
 
+  it("teaches every authoring stage the validator-approved sealed service link form", async () => {
+    const requests: AuthorStageRequest[] = [];
+    await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        requests.push(request);
+        return safeStage(request);
+      },
+      model: "test/model",
+      testProfile: "creative-only",
+    });
+
+    expect(requests.length).toBeGreaterThan(0);
+    expect(requests.every((request) => request.rules.includes(
+      "For service-page links, use the validator-approved same-origin form href={`/services/${service.slug}/`} only inside a direct map over a sealed service list. Do not search for a selected service, bind its slug into a computed href, concatenate arbitrary path parts, or derive href values from unsealed input.",
+    ))).toBe(true);
+  });
+
   it("omits equal cloned route design templates without dropping explicit null", () => {
     const routeDesignTemplate = {
       opening: { layout: "graphic-field", imageRole: "architecture" },

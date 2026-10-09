@@ -139,6 +139,32 @@ function promptFor(site, route, placement) {
   const direction = visualDirection(site);
   const dna = route?.referenceDna || {};
   const familyImageDirection = {
+    "editorial-monument":
+      "restrained editorial environments, oversized negative space, tactile paper and stone materials, and quiet ink-blue shadows",
+    "cinematic-stage":
+      "wide cinematic environments, one legible horizon or service anchor, directional light, and premium restraint",
+    "utility-diagnostic":
+      "clear documentary service details, precise tools and materials, uncluttered work surfaces, and practical light",
+    "typographic-poster":
+      "one bold physical subject, high-contrast shape, a limited palette, and broad clean negative space for typography",
+    "archive-rail":
+      "archive-like service specimens, varied tactile materials, isolated objects, and editorial catalog lighting without text",
+    "guided-conversation":
+      "calm confidential consultation atmosphere, welcoming rooms or desk details, soft daylight, and warm neutral restraint",
+    "spatial-object":
+      "one sculptural service-relevant object, credible material physics, controlled studio lighting, and visible spatial depth",
+    "market-collage":
+      "warm neighborhood product still life, tactile ingredients or tools, asymmetrical groupings, and playful color blocks",
+    "a1-collage-composition":
+      "layered editorial still life, separated physical objects, tactile surfaces, deliberate overlaps, and off-center balance",
+    "a1-kinetic-command":
+      "directional action-documentary framing, motion cues from tools or equipment, a clear silhouette, and open copy space",
+    "a1-object-stage":
+      "monumental studio object staging, sculptural form, grounded materials, deep controlled shadows, and clear negative space",
+    "a1-kinetic-founder":
+      "authored workspace still life, process tools and personal studio artifacts, directional light, and no identifiable people",
+    "a1-cinematic-3d":
+      "cinematic spatial 3D environment, believable scale and material depth, controlled perspective, and restrained atmosphere",
     "kokoro-editorial-architecture":
       "warm architectural interiors, editorial still life, restrained dark palette, tactile natural materials",
     "skyelite-cinematic-luxury":
@@ -157,6 +183,110 @@ function promptFor(site, route, placement) {
       "warm neighborhood food market still life, playful flat color blocks, tactile ingredients, local table energy, and crop-safe product compositions",
   };
   const familyAssetBriefs = {
+    "editorial-monument": {
+      medium: "restrained editorial service photography",
+      hero: "Create a quiet editorial environment or material tableau for the service, with tactile paper or stone detail and broad negative space for oversized type.",
+      secondary:
+        "Create a vertical architectural or material chapter with one distinct focal detail, warm natural light, and calm editorial framing.",
+      tertiary:
+        "Create an isolated service-relevant archive object or material close-up, suitable for a magazine-like section and free of readable text.",
+    },
+    "cinematic-stage": {
+      medium: "wide cinematic environmental photography",
+      hero: "Create a panoramic service environment with one strong horizon or physical anchor, directional natural light, motion in the setting, and copy-safe negative space.",
+      secondary:
+        "Create a different wide service environment with a clear diagonal light path and a distinct crop, without people or faces.",
+      tertiary:
+        "Create a close material or equipment detail that reads as a cinematic cutaway rather than a catalog product card.",
+    },
+    "utility-diagnostic": {
+      medium: "clear documentary service photography",
+      hero: "Create a practical, uncluttered view of one service-relevant tool or work surface, with accurate materials and room for a diagnostic headline.",
+      secondary:
+        "Create a separate preparation or process detail using objects and materials only, with a clear focal point and ordinary work light.",
+      tertiary:
+        "Create a precise close-up of a service material, tool, or mechanism with an unbranded surface and legible shape.",
+    },
+    "typographic-poster": {
+      medium: "high-contrast editorial object photography",
+      hero: "Create one bold service-relevant physical subject or silhouette against a limited-color field, leaving a large clean area for oversized type.",
+      secondary:
+        "Create an asymmetric graphic detail with one clear material subject, a restrained palette, and a crop different from the hero.",
+      tertiary:
+        "Create a tightly cropped service object or tactile material texture that works as a visual punctuation mark.",
+    },
+    "archive-rail": {
+      medium: "editorial archive still-life photography",
+      hero: "Create a horizontal archive specimen of service-relevant objects or materials, arranged as one tactile collection with catalog-like light and no readable text.",
+      secondary:
+        "Create a distinct second specimen grouping with another crop and clearly separated object silhouettes.",
+      tertiary:
+        "Create a close archival texture or service-material detail that adds variety without repeating the hero arrangement.",
+    },
+    "guided-conversation": {
+      medium: "calm consultation-environment photography",
+      hero: "Create a private, welcoming consultation setting through an empty room, arranged chairs, soft daylight, or thoughtful desk objects. Do not depict people, faces, or readable documents.",
+      secondary:
+        "Create a separate calm environmental detail that suggests a thoughtful first conversation through light, materials, and space, without staged customers.",
+      tertiary:
+        "Create a tactile close detail from the consultation setting, such as a natural material or neutral object arrangement, without text or people.",
+    },
+    "spatial-object": {
+      medium: "spatial service-object photography or render",
+      hero: "Create one service-relevant sculptural object on a grounded spatial stage, with believable materials, controlled depth, and generous negative space. Avoid unrelated decoration.",
+      secondary:
+        "Create a different camera angle or spatial arrangement for a service-relevant object class, with crop-safe focus and realistic materials.",
+      tertiary:
+        "Create a close material and form study with credible reflections, clear scale, and restrained studio light.",
+    },
+    "market-collage": {
+      medium: "warm editorial neighborhood product still life",
+      hero: "Create a tactile asymmetrical grouping of business-relevant products, ingredients, tools, or materials on a warm local surface, with clear layers and crop-safe focus.",
+      secondary:
+        "Create a separate counter, shelf, or product grouping with repeated tactile rhythm and a clearly different crop.",
+      tertiary:
+        "Create a close still life of a service material or product detail with natural texture and intentional mobile cropping.",
+    },
+    "a1-collage-composition": {
+      medium: "layered editorial still-life photography",
+      hero: "Create one layered still life of business-relevant service objects with visibly separated planes, tactile surfaces, deliberate overlap, and off-center balance.",
+      secondary:
+        "Create a distinct second object grouping with readable silhouettes, a different crop, and depth between foreground and background.",
+      tertiary:
+        "Create a close crop of one service material or process detail, not another hero-scale tableau.",
+    },
+    "a1-kinetic-command": {
+      medium: "directional action-documentary photography",
+      hero: "Create a motion-led service scene using tools, equipment, or materials to imply action without identifiable people, with a strong silhouette and one large open copy area.",
+      secondary:
+        "Create a separate directional service detail with diagonal movement cues, one strong focal object, and practical lighting.",
+      tertiary:
+        "Create a crisp close action detail of equipment or material that stays legible at a small crop and contains no text.",
+    },
+    "a1-object-stage": {
+      medium: "grounded sculptural service-object render",
+      hero: "Create one monumental service-relevant object on a grounded spatial stage, with physically credible material, controlled light, and deep negative space.",
+      secondary:
+        "Create a secondary object study from a new camera angle, preserving scale and realistic contact with its environment.",
+      tertiary:
+        "Create a close study of an object material or mechanism with believable reflections and no decorative unrelated forms.",
+    },
+    "a1-kinetic-founder": {
+      medium: "authored workspace and process still-life photography",
+      hero: "Create an authored workspace still life of tools, materials, and process artifacts arranged with directional energy. Do not depict a founder, employee, customer, face, or readable text.",
+      secondary:
+        "Create a different process arrangement of business-relevant tools and materials with a new light direction and tactile surfaces.",
+      tertiary:
+        "Create a macro study of one process material or tool detail, cropped for clarity on mobile.",
+    },
+    "a1-cinematic-3d": {
+      medium: "cinematic spatial 3D environment",
+      hero: "Create a cinematic spatial environment for one business-relevant object or material, with credible scale, dramatic but restrained light, and controlled camera perspective.",
+      secondary:
+        "Create a separate spatial render with layered depth and a clearly different camera angle, using physically believable materials.",
+      tertiary:
+        "Create a close material study with realistic surface response, controlled reflections, and restrained cinematic light.",
+    },
     "kokoro-editorial-architecture": {
       medium: "photorealistic architectural editorial photography",
       hero: "Create an architectural tableau with strong negative space, warm material depth, and a crop that can support monumental type without becoming a split hero.",
@@ -250,7 +380,7 @@ function promptFor(site, route, placement) {
     ? `Reference-specific physical scene cues: ${referenceScene}. Use only subject and material cues; do not reproduce its layout, interface, or exact source image.`
     : "";
   const dnaContext = dna.familyId
-    ? `Image art direction: ${familyImageDirection[dna.familyId] || "Follow the assigned reference's visual mood and materials without copying a brand."} Image treatment: ${sceneOnlyDirection(dna.imageTreatment?.mode, 120)}. Crop strategy: ${imageOnlyDirection(dna.imageTreatment?.crop, 140)}. Palette intent: ${imageOnlyDirection(dna.palette?.contrastIntent, 140)}.`
+    ? `Reference family: ${dna.familyId}. Image art direction: ${familyImageDirection[dna.familyId] || "Follow the assigned reference's visual mood and materials without copying a brand."} Image treatment: ${sceneOnlyDirection(dna.imageTreatment?.mode, 120)}. Crop strategy: ${imageOnlyDirection(dna.imageTreatment?.crop, 140)}. Palette intent: ${imageOnlyDirection(dna.palette?.contrastIntent, 140)}.`
     : "";
   const directionContext = direction ? `Visual direction: ${direction}.` : "";
   const placementBrief =
