@@ -1,7 +1,7 @@
 import { verifyApprovedRoutes, diagnosticFormMode } from "./browser-route-verification.mjs";
 import { sanitizeVerificationReport } from "./route-verification-handoff.mjs";
 import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
-import { hasPipelineTest } from "../templates/client-site/src/lib/seo-readiness.mjs";
+import { hasTestOnlySite } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { contrastFailureMessages } from "./rendered-contrast.mjs";
 import fs from "node:fs/promises";
 import http from "node:http";
@@ -26,7 +26,7 @@ const args = Object.fromEntries(
 if (!args.config || !args.dist)
   throw new Error("--config and --dist are required.");
 const config = JSON.parse(await fs.readFile(path.resolve(args.config), "utf8"));
-const testPreview = hasPipelineTest(config);
+const testPreview = hasTestOnlySite(config);
 const reviewMode = testPreview || process.env.PUBLIC_REVIEW_MODE === "true";
 const dist = path.resolve(args.dist);
 const creativeExperience =
@@ -239,7 +239,7 @@ try {
     await page.goto(url, { waitUntil: "networkidle" });
     if (testPreview) {
       const banner = page.locator("[data-pipeline-test-preview]");
-      const profile = config.pipelineTest?.profile;
+      const profile = config.pipelineTest?.profile || (config.demoNotice ? "fictional-demo" : undefined);
       const skipped = pipelineTestBannerMessage(profile);
       if (!(await banner.isVisible()) || !(await banner.textContent())?.includes(profile || "invalid profile") || !(await banner.textContent())?.includes(skipped))
         failures.push(`${viewport.name}: test-only profile and skipped lane must be visible.`);

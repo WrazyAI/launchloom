@@ -53,6 +53,15 @@ it.each(["seo-only", "creative-only", "full-preview"])(
     ).toBe("test-preview");
   },
 );
+it("treats a fictional full-path demo as a disabled preview and rejects production form mode", () => {
+  const fictional = {
+    ...config,
+    demoNotice: "Fictional pipeline demo",
+    lead: { apiUrl: "", token: "" },
+  };
+  expect(diagnosticFormMode(fictional)).toBe("test-preview");
+  expect(() => diagnosticFormMode(fictional, "production")).toThrow(/test-only/i);
+});
 function html(route: string, broken = false) {
   return `<html><head><title>Browser fixture</title></head><body><main><h1>${route === "/" ? "Browser Fixture" : "Drain cleaning"}</h1><a href="${route === "/" ? "/services/drain-cleaning/" : "/"}">Other page</a><details><summary>What should I share?</summary><p>Explain which drain is affected.</p></details><form class="lead-form"><label>Name<input name="name" required></label><label>Phone<input name="phone" required></label><label>Email<input name="email" type="email" required></label><label>Message<textarea name="message" required></textarea></label><button type="submit">Send</button><small role="status"></small></form></main><script>${broken ? 'throw new Error("synthetic hydration failure");' : ""}const form=document.querySelector('form');form.addEventListener('submit',async event=>{event.preventDefault();try{const fields=Object.fromEntries(new FormData(form));const r=await fetch('https://stage4-provider.invalid/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...fields,token:'synthetic-token',pageUrl:location.href})});const data=await r.json();if(!r.ok)throw new Error(data.error);form.reset();form.querySelector('[role=status]').textContent='Thank you. We will be in touch shortly.';dispatchEvent(new CustomEvent('launchloom:lead-submitted'));}catch(error){form.querySelector('[role=status]').textContent=error.message;}});</script></body></html>`;
 }

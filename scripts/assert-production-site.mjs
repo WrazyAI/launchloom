@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { hasPipelineTest } from "../templates/client-site/src/lib/seo-readiness.mjs";
+import { hasTestOnlySite } from "../templates/client-site/src/lib/seo-readiness.mjs";
 
 try {
   const args = process.argv.slice(2);
@@ -25,7 +25,7 @@ try {
     throw new Error("Approved commit checkout mismatch.");
   const config = JSON.parse(git(["show", `${args[3]}:src/site.config.json`]));
   if (
-    hasPipelineTest(config) ||
+    hasTestOnlySite(config) ||
     fs.existsSync(path.join(site, ".launchloom/pipeline-test-report.json"))
   )
     throw new Error(

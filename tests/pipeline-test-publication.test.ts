@@ -9,6 +9,7 @@ it.each([
   "seo-only",
   "creative-only",
   "full-preview",
+  "fictional-demo",
   "report",
   "malformed",
   "full",
@@ -19,6 +20,9 @@ it.each([
     fs.mkdirSync(path.join(dir, "src"));
     fs.mkdirSync(path.join(dir, ".launchloom"));
     const config =
+      mode === "fictional-demo"
+        ? { demoNotice: "Fictional pipeline demo" }
+        :
       mode === "seo-only" || mode === "creative-only" || mode === "full-preview"
         ? { pipelineTest: { version: 1, profile: mode, testOnly: true } }
         : mode === "malformed"

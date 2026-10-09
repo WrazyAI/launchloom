@@ -4,8 +4,26 @@ import {
   isAffirmativeConfirmation,
   seoResearchReadiness,
 } from "../worker/src/seo-readiness";
+import * as clientSeoReadiness from "../templates/client-site/src/lib/seo-readiness.mjs";
 
 describe("SEO publication readiness", () => {
+  it("classifies a fictional demo notice as test-only without suppressing its measured SEO evidence", () => {
+    expect(clientSeoReadiness.hasTestOnlySite).toBeTypeOf("function");
+    const config = {
+      demoNotice: "Fictional pipeline demo",
+      business: { name: "Fictional demo business" },
+      services: [{ name: "Drain inspection" }],
+      seoResearch: { mode: "researched", publishReady: true },
+    };
+
+    expect(clientSeoReadiness.hasTestOnlySite(config)).toBe(true);
+    expect(seoResearchReadiness(config)).toMatchObject({
+      allowed: true,
+      mode: "researched",
+    });
+    expect(clientSeoReadiness.hasTestOnlySite({ business: { name: "Real client" } })).toBe(false);
+  });
+
   it.each(["seo-only", "creative-only", null, false, 42, [], { testOnly: false }])(
     "blocks focused test provenance despite completed research: %s",
     (profile) => {

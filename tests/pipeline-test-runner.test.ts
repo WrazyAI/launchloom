@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import {
   runPipelineTest,
   sendPipelineTestNotification,
@@ -16,6 +19,7 @@ import {
 } from "../scripts/run-pipeline-test.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { summarizeGenerationCosts } from "../scripts/generation-cost-summary.mjs";
+import * as privatePreview from "../scripts/run-pipeline-test.mjs";
 
 const input = {
   eventName: "workflow_dispatch",
@@ -24,6 +28,19 @@ const input = {
   sourceSha: "a".repeat(40),
   runId: "123-1",
 };
+async function makePrivateDiagnosticDirectory() {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "ll-private-diagnostic-"));
+  await fs.writeFile(
+    path.join(directory, "index.html"),
+    '<html><head><meta name="robots" content="noindex, nofollow"></head></html>',
+  );
+  await fs.writeFile(path.join(directory, "robots.txt"), "User-agent: *\nAllow: /\n");
+  await fs.writeFile(
+    path.join(directory, "_headers"),
+    "/*\n  X-Robots-Tag: noindex, nofollow, noarchive\n",
+  );
+  return directory;
+}
 function adapter(fail = "", authoredCandidateCount = 3) {
   const calls: string[] = [];
   const dependencies: Record<string, any> = Object.fromEntries(
@@ -56,6 +73,139 @@ function adapter(fail = "", authoredCandidateCount = 3) {
   return { calls, dependencies };
 }
 describe("focused pipeline orchestration", () => {
+  it("treats a Cloudflare Access challenge as readiness only in protected-preview mode", () => {
+    expect(privatePreview.classifyPagesPreviewResponse).toBeTypeOf("function");
+    expect(
+      privatePreview.classifyPagesPreviewResponse({
+        status: 302,
+        location: "/cdn-cgi/access/login/preview",
+        protectedPreview: true,
+      }),
+    ).toBe("access-challenge");
+    expect(
+      privatePreview.classifyPagesPreviewResponse({
+        status: 200,
+        protectedPreview: true,
+      }),
+    ).toBe("unsafe-public");
+    expect(
+      privatePreview.classifyPagesPreviewResponse({
+        status: 302,
+        location: "/ordinary-login",
+        protectedPreview: true,
+      }),
+    ).toBe("retry");
+  });
+  it("waits for an Access challenge rather than demanding a public 2xx from private previews", async () => {
+    expect(privatePreview.waitForPagesPreview).toBeTypeOf("function");
+    const ready = await privatePreview.waitForPagesPreview({
+      url: "https://candidate-hash.launchloom-private-test.pages.dev",
+      protectedPreview: true,
+      timeoutSeconds: 10,
+      intervalSeconds: 1,
+      send: async () => new Response(null, {
+        status: 302,
+        headers: { location: "/cdn-cgi/access/login/preview" },
+      }),
+      wait: async () => {},
+    });
+    expect(ready).toEqual({ state: "access-challenge", status: 302 });
+    await expect(privatePreview.waitForPagesPreview({
+      url: "https://candidate-hash.launchloom-private-test.pages.dev",
+      protectedPreview: true,
+      timeoutSeconds: 10,
+      intervalSeconds: 1,
+      send: async () => new Response("public HTML", { status: 200 }),
+      wait: async () => {},
+    })).rejects.toThrow(/without an Access challenge/i);
+  });
+  it("never deploys diagnostic content until a no-data private preview probe passes", async () => {
+    expect(privatePreview.deployPrivatePagesPreview).toBeTypeOf("function");
+    const events: string[] = [];
+    const candidateDirectory = await makePrivateDiagnosticDirectory();
+    await fs.writeFile(path.join(candidateDirectory, "index.html"), '<html><head><meta name="robots" content="noindex"></head><body>candidate-specific content</body></html>');
+    try {
+    const deployed = await privatePreview.deployPrivatePagesPreview({
+      projectName: "launchloom-private-test",
+      directory: candidateDirectory,
+      sourceSha: "a".repeat(40),
+      branch: "creative-diagnostic-123",
+      ensureProject: async () => { events.push("ensure-project"); },
+      deploy: async ({ directory, branch }: { directory: string; branch: string }) => {
+        if (branch === "access-probe") {
+          const probe = await import("node:fs/promises");
+          const html = await probe.readFile(`${directory}/index.html`, "utf8");
+          expect(html).toContain("contains no client or business data");
+          expect(html).not.toContain("candidate-specific content");
+        }
+        events.push(`deploy:${branch}`);
+        return { url: branch === "access-probe"
+          ? "https://probe-hash.launchloom-private-test.pages.dev"
+          : "https://candidate-hash.launchloom-private-test.pages.dev" };
+      },
+      waitForReady: async (url: string, options: { protectedPreview: boolean }) => {
+        expect(options.protectedPreview).toBe(true);
+        events.push(`wait:${url.includes("probe-hash") ? "probe" : "candidate"}`);
+      },
+      verifyAccess: async (url: string) => {
+        events.push(`verify:${url.includes("probe-hash") ? "probe" : "candidate"}`);
+      },
+    });
+    expect(deployed.url).toBe("https://candidate-hash.launchloom-private-test.pages.dev");
+    expect(events).toEqual([
+      "ensure-project",
+      "deploy:access-probe",
+      "wait:probe",
+      "verify:probe",
+      "deploy:creative-diagnostic-123",
+      "wait:candidate",
+      "verify:candidate",
+    ]);
+    } finally {
+      await fs.rm(candidateDirectory, { recursive: true, force: true });
+    }
+  });
+  it("fails closed without uploading candidate content when the access probe is public", async () => {
+    expect(privatePreview.deployPrivatePagesPreview).toBeTypeOf("function");
+    const deployments: string[] = [];
+    const candidateDirectory = await makePrivateDiagnosticDirectory();
+    await fs.writeFile(path.join(candidateDirectory, "index.html"), '<html><head><meta name="robots" content="noindex"></head><body>must remain private</body></html>');
+    try {
+    await expect(privatePreview.deployPrivatePagesPreview({
+      projectName: "launchloom-private-test",
+      directory: candidateDirectory,
+      sourceSha: "b".repeat(40),
+      branch: "creative-diagnostic-456",
+      ensureProject: async () => {},
+      deploy: async ({ branch }: { branch: string }) => {
+        deployments.push(branch);
+        return { url: `https://${branch}.launchloom-private-test.pages.dev` };
+      },
+      waitForReady: async () => {},
+      verifyAccess: async () => { throw new Error("not protected behind Cloudflare Access"); },
+    })).rejects.toThrow(/not protected behind Cloudflare Access/i);
+    expect(deployments).toEqual(["access-probe"]);
+    } finally {
+      await fs.rm(candidateDirectory, { recursive: true, force: true });
+    }
+  });
+  it("requires private diagnostic output to be noindex, crawler-allowed, and sitemap-free before deployment", async () => {
+    expect(privatePreview.assertPrivateDiagnosticOutput).toBeTypeOf("function");
+    const directory = await makePrivateDiagnosticDirectory();
+    try {
+      await expect(privatePreview.assertPrivateDiagnosticOutput(directory)).resolves.toBe(true);
+      await fs.writeFile(path.join(directory, "robots.txt"), "User-agent: *\nDisallow: /\n");
+      await expect(privatePreview.assertPrivateDiagnosticOutput(directory)).rejects.toThrow(/robots\.txt must allow crawling/i);
+      await fs.writeFile(path.join(directory, "robots.txt"), "User-agent: *\nAllow: /\n");
+      await fs.writeFile(path.join(directory, "sitemap.xml"), "");
+      await expect(privatePreview.assertPrivateDiagnosticOutput(directory)).rejects.toThrow(/must not contain a sitemap/i);
+      await fs.rm(path.join(directory, "sitemap.xml"));
+      await fs.writeFile(path.join(directory, "_headers"), "/*\n");
+      await expect(privatePreview.assertPrivateDiagnosticOutput(directory)).rejects.toThrow(/X-Robots-Tag noindex/i);
+    } finally {
+      await fs.rm(directory, { recursive: true, force: true });
+    }
+  });
   it("requires an Access challenge for anonymous preview traffic and a successful authenticated check", async () => {
     expect(assertTestPreviewAccessPolicy).toBeTypeOf("function");
     expect(assertTestPreviewAccessPolicy({

@@ -1,3 +1,5 @@
+import { hasTestOnlySite } from "../templates/client-site/src/lib/seo-readiness.mjs";
+
 /**
  * One execution policy shared by workflow, author and focused runner.
  * @param {{profile?: string, skipCreativeAuthorChecks?: boolean|string, skipSeoAddon?: boolean|string, eventName?: string}} [input]
@@ -47,4 +49,20 @@ export function parsePipelineTestArgs(argv = []) {
     skipSeoAddon: args["skip-seo-addon"] ?? false,
   });
   return { ...args, profile: policy.profile };
+}
+
+
+/**
+ * Prevent test-only site provenance from entering the full production route.
+ * Focused profiles remain preview-only even when their SEO evidence is complete.
+ */
+export function assertGenerationMode(config, { profile = "full" } = {}) {
+  if (!["full", "full-preview", "seo-only", "creative-only"].includes(profile))
+    throw new Error("Unknown generation profile.");
+  const testOnly = profile !== "full" || hasTestOnlySite(config);
+  if (profile === "full" && testOnly)
+    throw new Error(
+      "Test-only site provenance cannot enter production generation; run the full-preview profile.",
+    );
+  return Object.freeze({ profile, testOnly });
 }

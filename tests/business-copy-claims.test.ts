@@ -102,4 +102,31 @@ describe("auditUnsupportedBusinessClaims", () => {
       ),
     ).toEqual([]);
   });
+
+  it("does not treat a negated credential as evidence for its positive counterpart", () => {
+    expect(
+      auditUnsupportedBusinessClaims(
+        { copy: { heroBody: "Our licensed technicians handle each repair." } },
+        { credentials: ["Unlicensed technicians"] },
+      ),
+    ).toContain("credentials");
+  });
+
+  it("requires an exact monetary amount instead of a numeric prefix", () => {
+    expect(
+      auditUnsupportedBusinessClaims(
+        { copy: { heroBody: "Brake inspection starts at $99." } },
+        { pricing: "Brake inspection starts at $999." },
+      ),
+    ).toContain("pricing");
+  });
+
+  it("does not extend a limited warranty into a lifetime guarantee", () => {
+    expect(
+      auditUnsupportedBusinessClaims(
+        { copy: { heroBody: "Every repair is guaranteed for life." } },
+        { warranty: "Every repair is guaranteed for 12 months." },
+      ),
+    ).toContain("guarantees");
+  });
 });

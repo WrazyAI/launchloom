@@ -2858,7 +2858,10 @@ function authoredSourceText(source) {
     ts.forEachChild(node, visit);
   }
   visit(file);
-  return values.filter(Boolean).join(". ");
+  // JSX tags can split one visitor-visible claim into several AST text nodes.
+  // Preserve source order with whitespace only; inserting sentence punctuation
+  // between inline nodes can hide phrases such as "reduce fall risk".
+  return values.filter(Boolean).join(" ");
 }
 
 function assertAuthoredCopyClaims(source, route, content, fileLabel) {

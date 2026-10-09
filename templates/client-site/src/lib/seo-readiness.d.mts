@@ -14,6 +14,7 @@ export type SeoResearchReadiness =
 export function isAffirmativeConfirmation(value: unknown): boolean;
 export function seoResearchReadiness(config: {
   pipelineTest?: unknown;
+  demoNotice?: unknown;
   business?: Record<string, unknown>;
   factReadiness?: unknown;
   pageContent?: unknown;
@@ -27,3 +28,4 @@ export function seoResearchReadiness(config: {
 }): SeoResearchReadiness;
 export function hasCompletedFallbackResearch(research: unknown): boolean;
 export function hasPipelineTest(config: unknown): boolean;
+export function hasTestOnlySite(config: unknown): boolean;

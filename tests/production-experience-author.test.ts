@@ -3154,6 +3154,20 @@ export default function ServicePage({ content, runtime, service: { name, slug, d
     );
   });
 
+  it.each([
+    ["outcomes", "<p>Our home-care visits <strong>reduce</strong> <em>fall risk</em>.</p>"],
+    ["staff", "<p>Meet <strong>Maya, your care coordinator</strong>.</p>"],
+  ])("preserves inline JSX text when auditing unsupported %s claims", (category, markup) => {
+    const route = { id: "service:care" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const valid = String(safeStage({ ...request, stage: "service" }).content || "");
+    const claimed = valid.replace("</main>", `${markup}</main>`);
+
+    expect(() => validateServicePage(claimed, route, { claimEvidence: {} })).toThrow(
+      new RegExp(`unsupported business claims.*${category}`, "iu"),
+    );
+  });
+
   it("includes confirmed claim evidence in the creative manifest without exposing private addresses", () => {
     const manifest = buildCreativeContentManifest({
       ...site,

@@ -127,6 +127,71 @@ function evidenceFor(intake, fields) {
   return fields.flatMap((field) => textValues(getPath(intake, field)));
 }
 
+function containsWholePhrase(text, phrase) {
+  const escaped = normalize(phrase).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  if (!escaped) return false;
+  const flexibleSpaces = escaped.replace(/\s+/gu, "\\s+");
+  const pattern = new RegExp(
+    `(?:^|[^\\p{L}\\p{N}])${flexibleSpaces}(?:$|[^\\p{L}\\p{N}])`,
+    "u",
+  );
+  return pattern.test(normalize(text));
+}
+
+function currencyAmounts(text) {
+  return [
+    ...normalize(text).matchAll(/\$\s?(\d[\d,]*(?:\.\d{1,2})?)(?![\d,]|\.\d)/gu),
+  ].map((match) => Number(match[1].replace(/,/gu, "")));
+}
+
+function guaranteeScope(text, index = 0, matchLength = 0) {
+  const start = Math.max(
+    text.lastIndexOf(".", index - 1),
+    text.lastIndexOf("!", index - 1),
+    text.lastIndexOf("?", index - 1),
+    text.lastIndexOf(";", index - 1),
+    text.lastIndexOf("\n", index - 1),
+  ) + 1;
+  const candidates = [".", "!", "?", ";", "\n"]
+    .map((character) => text.indexOf(character, index + matchLength))
+    .filter((position) => position >= 0);
+  const end = candidates.length ? Math.min(...candidates) : text.length;
+  const clause = normalize(text.slice(start, end));
+  const duration = clause.match(
+    /\b(?:for|up to|within|during)\s+(?:the\s+)?(life(?:time)?|\d+(?:\.\d+)?\s*(?:days?|weeks?|months?|years?))\b|\b(\d+(?:\.\d+)?[- ]?(?:days?|weeks?|months?|years?))\s+(?:warranty|guarantee)\b/iu,
+  );
+  const modifier = clause.match(/\b(?:money[- ]back|limited|lifetime)\b/iu)?.[0];
+  const rawDuration = duration?.[1] || duration?.[2] || "";
+  const normalizedDuration = /^(?:life|lifetime)$/iu.test(rawDuration)
+    ? "life"
+    : rawDuration.replace(/[- ]+/gu, " ").replace(/\s+/gu, " ").trim();
+  return {
+    duration: normalizedDuration,
+    modifier: modifier === "lifetime" ? "life" : modifier || "",
+  };
+}
+
+function hasCompatibleGuaranteeEvidence(text, match, evidence) {
+  const claimScope = guaranteeScope(text, match.index || 0, match[0].length);
+  return evidence.some((value) => {
+    const normalized = normalize(value);
+    const marker = /\b(?:guaranteed?|warrant(?:y|ies)|money[- ]back guarantee)\b/giu;
+    for (const evidenceMatch of normalized.matchAll(marker)) {
+      const evidenceScope = guaranteeScope(
+        normalized,
+        evidenceMatch.index || 0,
+        evidenceMatch[0].length,
+      );
+      const durationMatches =
+        !claimScope.duration || claimScope.duration === evidenceScope.duration;
+      const modifierMatches =
+        !claimScope.modifier || claimScope.modifier === evidenceScope.modifier;
+      if (durationMatches && modifierMatches) return true;
+    }
+    return false;
+  });
+}
+
 function pricingScopeTerms(text, match) {
   const start = Math.max(
     text.lastIndexOf(".", match.index - 1),
@@ -202,20 +267,26 @@ function supportedByEvidence(rule, match, intake, text) {
   const claim = normalize(match[0]);
   if (rule.category === "experience")
     return supportsStructuredExperience(match, evidence);
+  if (rule.category === "guarantees")
+    return hasCompatibleGuaranteeEvidence(text, match, evidence);
   if (rule.category === "pricing") {
-    const amount = claim.match(/\$\s?\d[\d,]*(?:\.\d{1,2})?/u)?.[0];
+    const amount = currencyAmounts(claim)[0];
     if (!amount)
-      return Boolean(claim && evidence.some((value) => value.includes(claim)));
+      return Boolean(
+        claim && evidence.some((value) => containsWholePhrase(value, claim)),
+      );
     const claimTerms = pricingScopeTerms(text, match);
     return evidence.some((value) => {
-      if (!value.includes(normalize(amount))) return false;
+      if (!currencyAmounts(value).includes(amount)) return false;
       const evidenceTerms = scopeWords(value);
       return claimTerms.length
         ? claimTerms.every((term) => evidenceTerms.includes(term))
         : evidenceTerms.length === 0;
     });
   }
-  return Boolean(claim && evidence.some((value) => value.includes(claim)));
+  return Boolean(
+    claim && evidence.some((value) => containsWholePhrase(value, claim)),
+  );
 }
 
 function generatedCopy(config) {

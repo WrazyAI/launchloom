@@ -11,6 +11,8 @@ import { summarizeGenerationCosts } from "./generation-cost-summary.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { businessFactReadiness } from "../templates/client-site/src/lib/business-facts.mjs";
 import { pageBriefReadiness } from "../templates/client-site/src/lib/page-briefs.mjs";
+export { classifyPagesPreviewResponse, waitForPagesPreview } from "./pages-preview-readiness.mjs";
+export { assertPrivateDiagnosticOutput, deployPrivatePagesPreview } from "./private-pages-preview.mjs";
 
 // Research verdict only: never a production authorization. The persisted
 // provenance and every release guard retain the original, marked config.
@@ -505,7 +507,7 @@ export function createCloudDependencies(
       { cwd: root, capture: true },
     );
     const probeUrl = pagesDeploymentUrl(deployment);
-    await node("wait-for-pages-preview.mjs", ["--url", probeUrl]);
+    await node("wait-for-pages-preview.mjs", ["--url", probeUrl, "--protected-preview", "true"]);
     const access = await verifyTestPreviewAccess({
       url: probeUrl,
       clientId: process.env.CLOUDFLARE_ACCESS_CLIENT_ID,
@@ -1124,7 +1126,7 @@ export function createCloudDependencies(
         { cwd: site, capture: true },
       );
       const url = pagesDeploymentUrl(deployed);
-      await node("wait-for-pages-preview.mjs", ["--url", url]);
+      await node("wait-for-pages-preview.mjs", ["--url", url, "--protected-preview", "true"]);
       const previewAccess = await verifyTestPreviewAccess({
         url,
         clientId: process.env.CLOUDFLARE_ACCESS_CLIENT_ID,

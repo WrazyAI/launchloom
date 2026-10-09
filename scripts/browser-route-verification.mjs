@@ -11,13 +11,20 @@ import {
   pageBriefExpectedContent,
 } from "../templates/client-site/src/lib/page-briefs.mjs";
 import { redactPrivateLocation } from "../templates/client-site/src/lib/business-facts.mjs";
+import { hasPipelineTest, hasTestOnlySite } from "../templates/client-site/src/lib/seo-readiness.mjs";
 const message = (error) =>
   String(error?.message || error)
     .split("\n")[0]
     .replace(/(https?:\/\/[^?\s]+)\?[^\s]+/gu, "$1?[redacted]");
 
 export function diagnosticFormMode(config, mode = "review") {
-  if (mode === "production" || !Object.hasOwn(config, "pipelineTest")) return "mocked";
+  if (mode === "production") {
+    if (hasTestOnlySite(config))
+      throw new Error("Diagnostic test-only site provenance cannot use production form verification.");
+    return "mocked";
+  }
+  if (!hasTestOnlySite(config)) return "mocked";
+  if (!hasPipelineTest(config) && config.demoNotice) return "test-preview";
   const provenance = config.pipelineTest;
   if (!provenance || provenance.version !== 1 || provenance.testOnly !== true || !["seo-only", "creative-only", "full-preview"].includes(provenance.profile) || !/^[a-f0-9]{40}$/iu.test(provenance.sourceSha || "") || typeof provenance.runId !== "string" || !provenance.runId.trim() || config.lead?.apiUrl || config.lead?.token)
     throw new Error("Diagnostic test-preview form checks require valid persisted test provenance and empty API URL/token.");

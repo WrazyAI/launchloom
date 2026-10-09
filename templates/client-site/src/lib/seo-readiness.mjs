@@ -134,6 +134,12 @@ export function hasPipelineTest(config) {
   // A malformed or edited marker cannot opt a diagnostic artifact into release.
   return Boolean(config && Object.hasOwn(config, "pipelineTest"));
 }
+export function hasTestOnlySite(config) {
+  return Boolean(
+    hasPipelineTest(config) ||
+      (typeof config?.demoNotice === "string" && config.demoNotice.trim()),
+  );
+}
 function hasCompleteVersionTwoMap(config, research) {
   const completeness = research.completeness;
   const costs = research.cost;

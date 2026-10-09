@@ -51,6 +51,17 @@ returns HTTP 200. It repeats those checks on the actual immutable deployment
 before checking noindex or emailing a link. A failed access check stops the
 run before client content is deployed or delivered.
 
+Failed creative diagnostics from both the automatic intake workflow and the
+single-repair workflow use this same dedicated Pages project. They first upload
+only the content-free access probe, then require an anonymous Access challenge
+and a successful service-token request before candidate files are uploaded.
+The immutable candidate preview is checked again before its URL is returned.
+The build is rejected unless it has a robots noindex meta tag, an
+`X-Robots-Tag: noindex` response header, an `Allow: /` robots rule, and no
+sitemap file. A missing or misconfigured Access policy stops before the
+diagnostic site is uploaded; it never falls back to the per-client Pages
+project.
+
 Configure these once:
 
 1. Set the repository variable `LAUNCHLOOM_TEST_PAGES_PROJECT` if the default

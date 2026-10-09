@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { resolvePipelineTestPolicy, parsePipelineTestArgs } from "../scripts/pipeline-test-policy.mjs";
+import * as generationPolicy from "../scripts/pipeline-test-policy.mjs";
 import { pipelineTestBannerMessage } from "../templates/client-site/src/lib/pipeline-test-preview.mjs";
 
 describe("focused pipeline execution policy", () => {
+  it("rejects synthetic demo provenance from the default production generation mode", () => {
+    expect(generationPolicy.assertGenerationMode).toBeTypeOf("function");
+    expect(() => generationPolicy.assertGenerationMode(
+      { demoNotice: "Fictional pipeline demo" },
+      { profile: "full" },
+    )).toThrow(/test-only.*full-preview/i);
+    expect(generationPolicy.assertGenerationMode(
+      { demoNotice: "Fictional pipeline demo" },
+      { profile: "full-preview" },
+    )).toMatchObject({ profile: "full-preview", testOnly: true });
+  });
   it.each([
     ["seo-only", "Creative evaluation and visual promotion skipped"],
     ["creative-only", "SEO research skipped"],

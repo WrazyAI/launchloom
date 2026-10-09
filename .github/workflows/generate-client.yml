@@ -189,6 +189,7 @@ jobs:
           gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
           if [ "$REUSE_AUTHORED_CANDIDATES" != "true" ]; then
             node scripts/internal-qa-intake.mjs /tmp/intake.md
+            node scripts/assert-client-generation-mode.mjs --intake /tmp/intake.md --profile full
           fi
           if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then
             case "$REUSABLE_CANDIDATE_REPO" in
@@ -265,6 +266,8 @@ jobs:
             --slug "${{ steps.intake.outputs.slug }}" \
             --status generating \
             --cost-summary /tmp/seo-cost.json
+      - name: Reject synthetic demos from the production intake path
+        run: node scripts/assert-client-generation-mode.mjs --config /tmp/site.config.json --profile full
       # Reserve visual routes against the latest main history before expensive
       # reference analysis or authoring. Branch preview-only canaries read the
       # same history without writing hypothetical attempts into production.
@@ -651,6 +654,10 @@ jobs:
         id: diagnostic_preview
         if: always() && steps.creative_recovery.outputs.repair_available == 'true' && steps.creative_recovery.outputs.diagnostic_eligible == 'true'
         continue-on-error: true
+        env:
+          LAUNCHLOOM_TEST_PAGES_PROJECT: ${{ vars.LAUNCHLOOM_TEST_PAGES_PROJECT || 'launchloom-pipeline-preview' }}
+          CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+          CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           PUBLIC_REVIEW_MODE=true PUBLIC_CREATIVE_DIAGNOSTIC=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
@@ -658,15 +665,22 @@ jobs:
             --dist dist \
             --candidate "${{ steps.creative_recovery.outputs.candidate }}" \
             --screenshots .launchloom/creative-repair/diagnostic/screenshots
+          printf '/*\n  X-Robots-Tag: noindex, nofollow, noarchive\n' > dist/_headers
+          printf 'User-agent: *\nAllow: /\n' > dist/robots.txt
+          rm -f dist/sitemap.xml
           git add .launchloom/creative-repair/diagnostic
           if ! git diff --cached --quiet; then
             git commit -m "Record noindex diagnostic preview checks"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
-          PROJECT="${{ steps.client.outputs.project }}"
-          npx wrangler pages deploy dist --project-name "$PROJECT" --branch creative-diagnostic --commit-hash "$(git rev-parse HEAD)" --commit-message "Private diagnostic design preview"
-          PREVIEW="https://creative-diagnostic.$PROJECT.pages.dev"
-          node "$GITHUB_WORKSPACE/scripts/wait-for-pages-preview.mjs" --url "$PREVIEW"
+          RUN_SUFFIX=$(printf '%s' "$GITHUB_RUN_ID" | tail -c 9)
+          BRANCH="diag-${RUN_SUFFIX}-${GITHUB_RUN_ATTEMPT}"
+          PREVIEW_RESULT=$(node "$GITHUB_WORKSPACE/scripts/deploy-private-diagnostic-preview.mjs" \
+            --directory "$PWD/dist" \
+            --project "$LAUNCHLOOM_TEST_PAGES_PROJECT" \
+            --branch "$BRANCH" \
+            --source-sha "$(git rev-parse HEAD)")
+          PREVIEW=$(printf '%s' "$PREVIEW_RESULT" | jq -er '.url')
           echo "preview=$PREVIEW" >> "$GITHUB_OUTPUT"
       - name: Register one-time repair session and create signed review link
         id: creative_repair_link

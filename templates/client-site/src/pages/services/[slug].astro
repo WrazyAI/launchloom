@@ -8,7 +8,7 @@ import ServiceCandidateHost from "../../components/ServiceCandidateHost";
 import site, { phoneHref, serviceHref, pageHref, homeSectionHref, approvedServices, routePageBrief, type Service } from "../../lib/site";
 import { resolvePageRecipe } from "../../lib/page-recipe";
 import { compileExperiencePack } from "../../lib/experience-pack";
-import { hasPipelineTest } from "../../lib/seo-readiness.mjs";
+import { hasTestOnlySite } from "../../lib/seo-readiness.mjs";
 import "../../styles/experience-packs.css";
 import "../../styles/creative-runtime.css";
 import "../../generated-experiences/selected/styles.css";
@@ -37,7 +37,7 @@ const related = supported ? approvedServices.filter(item => brief.related.some(r
 const process = supported ? brief.process : site.conversion?.process?.slice(0, 4) || [];
 const faqs = supported ? brief.faqs : site.conversion?.faqs?.slice(0, 4) || [];
 const support = supported ? {scope:fieldText("scope"),preparation:fieldText("preparation"),nextStep:fieldText("nextStep")} : service.decisionSupport;
-const diagnostic = hasPipelineTest(site) || import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
+const diagnostic = hasTestOnlySite(site) || import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 const creativeRuntime = {
   candidateId: site.design?.experience?.candidateId || "selected",
   diagnostic,
