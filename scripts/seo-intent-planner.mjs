@@ -9,6 +9,7 @@ import {
 import { parseModelJson } from "./model-json.mjs";
 
 const DEFAULT_MODEL = "z-ai/glm-5.3-flash";
+const MAX_OUTPUT_TOKENS = 768;
 const MAX_SERVICES = 5;
 const MAX_PHRASES_PER_SERVICE = 2;
 const STOP_WORDS = new Set([
@@ -77,6 +78,50 @@ function sanitizePlannerContext(context = {}) {
     services,
     languageCode: cleanText(context.languageCode, 12) || "en",
   };
+}
+
+function outputType(value) {
+  if (value === null) return "null";
+  if (value === undefined) return "missing";
+  if (Array.isArray(value)) return "array";
+  return typeof value;
+}
+
+function safeResponseSummary(payload, response) {
+  const choice = payload?.choices?.[0];
+  const finishReason = /^[\w-]{1,40}$/u.test(
+    String(choice?.finish_reason || ""),
+  )
+    ? choice.finish_reason
+    : "unknown";
+  return `http_status=${response.status}; finish_reason=${finishReason}; content_type=${outputType(choice?.message?.content)}; refusal=${Boolean(choice?.message?.refusal)}; usage_reported=${Boolean(payload?.usage)}`;
+}
+
+function plannerUsage(payload, response, model) {
+  const usage = payload?.usage;
+  if (!usage || typeof usage !== "object") return null;
+  const cache = logOpenRouterCacheUsage("seo-query-planner", usage);
+  const responseCache = openRouterResponseCacheMetrics(response);
+  return {
+    costUsd: Number.isFinite(Number(usage.cost)) ? Number(usage.cost) : null,
+    model: String(payload?.model || model),
+    promptTokens: cache.promptTokens,
+    completionTokens: Number(
+      usage.completion_tokens ?? usage.output_tokens ?? 0,
+    ),
+    reasoningTokens: Number(
+      usage.completion_tokens_details?.reasoning_tokens ?? 0,
+    ),
+    cachedTokens: cache.cachedTokens,
+    cacheStatus: responseCache.status,
+    cacheDiscount: cache.cacheDiscount ?? null,
+  };
+}
+
+function attachPlannerTelemetry(error, usage, model) {
+  if (usage) error.usage = usage;
+  error.model = model;
+  return error;
 }
 
 export function validateIntentQueryPlan(candidate, confirmedServices = []) {
@@ -184,7 +229,8 @@ export function createOpenRouterIntentQueryPlanner({
       signal: AbortSignal.timeout(20_000),
       body: {
         model,
-        max_tokens: 384,
+        max_tokens: MAX_OUTPUT_TOKENS,
+        reasoning: { max_tokens: 96, exclude: true },
         temperature: 0,
         response_format: { type: "json_object" },
         messages: [
@@ -198,34 +244,52 @@ export function createOpenRouterIntentQueryPlanner({
       throw new Error(
         "OpenRouter query planning returned an unreadable response.",
       );
+    const usage = plannerUsage(envelope.payload, response, model);
+    const responseModel = String(envelope.payload.model || model);
     const apiError = openRouterApiError(envelope.payload, response.status);
     if (!response.ok || apiError)
-      throw (
+      throw attachPlannerTelemetry(
         apiError ||
-        new Error(`OpenRouter query planning returned HTTP ${response.status}.`)
+          new Error(
+            `OpenRouter query planning returned HTTP ${response.status}.`,
+          ),
+        usage,
+        responseModel,
       );
     const content = envelope.payload.choices?.[0]?.message?.content;
     if (!content)
-      throw new Error("OpenRouter query planning returned no content.");
-    const plan = parseModelJson(content);
-    const usage = envelope.payload.usage || {};
-    const cache = logOpenRouterCacheUsage("seo-query-planner", usage);
+      throw attachPlannerTelemetry(
+        new Error(
+          `OpenRouter query planning returned no content. ${safeResponseSummary(envelope.payload, response)}`,
+        ),
+        usage,
+        responseModel,
+      );
+    let plan;
+    try {
+      plan = parseModelJson(content);
+    } catch {
+      throw attachPlannerTelemetry(
+        new Error(
+          `OpenRouter query planning returned invalid JSON. ${safeResponseSummary(envelope.payload, response)}`,
+        ),
+        usage,
+        responseModel,
+      );
+    }
     const responseCache = openRouterResponseCacheMetrics(response);
     return {
       plan,
       provider: "openrouter",
-      model,
+      model: responseModel,
       usage: {
-        costUsd: Number.isFinite(Number(usage.cost))
-          ? Number(usage.cost)
-          : null,
-        promptTokens: cache.promptTokens,
-        completionTokens: Number(
-          usage.completion_tokens ?? usage.output_tokens ?? 0,
-        ),
-        cachedTokens: cache.cachedTokens,
+        costUsd: usage?.costUsd ?? null,
+        promptTokens: usage?.promptTokens ?? 0,
+        completionTokens: usage?.completionTokens ?? 0,
+        reasoningTokens: usage?.reasoningTokens ?? 0,
+        cachedTokens: usage?.cachedTokens ?? 0,
         cacheStatus: responseCache.status,
-        cacheDiscount: cache.cacheDiscount ?? null,
+        cacheDiscount: usage?.cacheDiscount ?? null,
       },
     };
   };

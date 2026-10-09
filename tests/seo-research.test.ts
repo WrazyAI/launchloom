@@ -389,6 +389,66 @@ describe("SEO market map", () => {
     });
   });
 
+  it("bounds reasoning for query planning and records cost when output is exhausted", async () => {
+    const provider = researchProvider();
+    const fetchImpl = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            model: "z-ai/glm-5.3-flash",
+            choices: [
+              {
+                finish_reason: "length",
+                message: {
+                  role: "assistant",
+                  content: null,
+                  reasoning: "PRIVATE_REASONING_MUST_NOT_BE_RECORDED",
+                },
+              },
+            ],
+            usage: {
+              cost: 0.0002283,
+              prompt_tokens: 242,
+              completion_tokens: 384,
+              prompt_tokens_details: { cached_tokens: 0 },
+              completion_tokens_details: { reasoning_tokens: 406 },
+            },
+          }),
+          { status: 200, headers: { "x-openrouter-cache-status": "MISS" } },
+        ),
+    );
+    const intentPlanner = createOpenRouterIntentQueryPlanner({
+      apiKey: "test-openrouter-key",
+      fetchImpl,
+    });
+    const dossier = await researchSiteContext(
+      {
+        businessName: "Rivet and Road Auto Repair",
+        businessKind: "auto repair",
+        confirmedServices: ["Brake repair"],
+        primaryCity: "Portland, OR",
+      },
+      { dataForSeo: provider, intentPlanner, maxTasks: 16, maxUsd: 0.5 },
+    );
+    const request = JSON.parse(String(fetchImpl.mock.calls[0]?.[1]?.body));
+
+    expect(request).toMatchObject({
+      max_tokens: 768,
+      reasoning: { max_tokens: 96, exclude: true },
+    });
+    expect(dossier.intentPlanning.status).toBe("deterministic-fallback");
+    expect(dossier.intentPlanning.usage).toMatchObject({
+      costUsd: 0.0002283,
+      promptTokens: 242,
+      completionTokens: 384,
+      cacheStatus: "MISS",
+    });
+    expect(dossier.intentPlanning.warning).toContain("finish_reason=length");
+    expect(dossier.intentPlanning.warning).not.toContain(
+      "PRIVATE_REASONING_MUST_NOT_BE_RECORDED",
+    );
+  });
+
   it("does not invent a city when minimal intake has no confirmed primary location", async () => {
     const provider = researchProvider();
     const dossier = await researchSiteContext(

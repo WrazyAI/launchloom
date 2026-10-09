@@ -376,6 +376,7 @@ function normalizePlannerUsage(usage, model) {
     model: text(usage.model || model, 120) || null,
     promptTokens: finiteMetric(usage.promptTokens) ?? 0,
     completionTokens: finiteMetric(usage.completionTokens) ?? 0,
+    reasoningTokens: finiteMetric(usage.reasoningTokens) ?? 0,
     cachedTokens: finiteMetric(usage.cachedTokens) ?? 0,
     cacheStatus: text(usage.cacheStatus, 20) || null,
     cacheDiscount: finiteMetric(usage.cacheDiscount),
@@ -431,9 +432,11 @@ async function resolveIntentPlanning(seo, options) {
             : null,
     };
   } catch (error) {
+    model = text(error?.model || model, 120) || null;
     return deterministicIntentPlanning(seo, {
       attempted: true,
       model,
+      usage: normalizePlannerUsage(error?.usage, model),
       warning: `The model-assisted search-intent planner failed; exact confirmed-service queries will be measured. ${text(error instanceof Error ? error.message : error, 240)}`,
     });
   }
