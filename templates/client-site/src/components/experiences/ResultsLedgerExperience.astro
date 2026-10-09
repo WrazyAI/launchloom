@@ -5,6 +5,7 @@ import type { ExperienceBlueprintV2, ExperienceContent } from "../../lib/experie
 import LeadForm from "../LeadForm.astro";
 import LocationMap from "../LocationMap.astro";
 import SocialProof from "../SocialProof.astro";
+import ReferencePackCredit from "./ReferencePackCredit.astro";
 
 interface Props { program: ExperienceBlueprintV2; content: ExperienceContent }
 const { program, content } = Astro.props;
@@ -60,5 +61,5 @@ const { brand, hero, services, proof, process, faqs, copy } = content;
       <LeadForm id="results-lead" />
     </section>
   </main>
-  <footer class="xp-results__footer"><strong>{brand.name}</strong><span>{brand.serviceAreas.join(" · ")}</span><span>© {new Date().getFullYear()}</span></footer>
+  <footer class="xp-results__footer"><strong>{brand.name}</strong><span>{brand.serviceAreas.join(" · ")}</span><span>© {new Date().getFullYear()}</span><ReferencePackCredit label="Template adapted from Spicer Designs" href="https://www.spicerdesigns.com" license="CC BY 4.0" /></footer>
 </div>

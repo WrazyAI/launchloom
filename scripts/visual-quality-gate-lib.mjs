@@ -155,12 +155,8 @@ const EXPERIENCE_CONTRACTS = {
       },
     },
   },
-};
-
-// Internal-only reference packs derived from extracted source templates. They
-// render for internal demos and review but are excluded from production
-// selection until the attribution decision is settled.
-const INTERNAL_EXPERIENCE_CONTRACTS = {
+  // Promoted reference packs, derived from extracted templates with visible
+  // license attribution. See docs/reference-template-rights.md.
   "stage-index": {
     navigation: "minimal-inline",
     conversion: "discovery-ribbon",
@@ -228,6 +224,11 @@ const INTERNAL_EXPERIENCE_CONTRACTS = {
     },
   },
 };
+
+// Internal-only reference packs derived from extracted source templates. New
+// reference packs are added here until their attribution decision; promoted
+// packs move into EXPERIENCE_CONTRACTS above.
+const INTERNAL_EXPERIENCE_CONTRACTS = {};
 
 function experienceContract(packId) {
   return EXPERIENCE_CONTRACTS[packId] || INTERNAL_EXPERIENCE_CONTRACTS[packId];

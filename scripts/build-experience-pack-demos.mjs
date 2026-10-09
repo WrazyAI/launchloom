@@ -38,21 +38,18 @@ const demos = [
     fixture: "home-care.json",
     packId: "stage-index",
     variants: ["standard"],
-    internal: true,
   },
   {
     slug: "editorial-ledger",
     fixture: "architecture.json",
     packId: "editorial-ledger",
     variants: ["standard"],
-    internal: true,
   },
   {
     slug: "results-ledger",
     fixture: "garage-door.json",
     packId: "results-ledger",
     variants: ["standard"],
-    internal: true,
   },
 ];
 const onlyFlag = process.argv.indexOf("--only");
@@ -489,7 +486,7 @@ const cards = renderTargets
   .join("");
 await fs.writeFile(
   path.join(output, "index.html"),
-  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="robots" content="noindex"><title>LaunchLoom experience packs</title><style>*{box-sizing:border-box}body{margin:0;padding:clamp(24px,6vw,80px);background:#111;color:#fff;font-family:Arial,sans-serif}header{max-width:900px;margin-bottom:60px}h1{font:400 clamp(52px,8vw,112px)/.86 Georgia,serif;letter-spacing:-.07em;margin:12px 0 24px}p{max-width:650px;color:#aaa;line-height:1.6}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.grid a{display:grid;gap:16px;color:#fff;text-decoration:none;text-transform:capitalize;font-weight:800}.grid img{width:100%;aspect-ratio:4/5;object-fit:cover;object-position:top;border:1px solid #333}@media(max-width:850px){.grid{grid-template-columns:1fr}}</style></head><body><header><small>Compiled experience-pack outputs, including internal reference packs</small><h1>Independent structures, not skins.</h1><p>Each output owns its navigation, opening, early conversion, services, rhythm, and mobile behavior while sharing verified facts, SEO, forms, and release safeguards. Internal reference packs never enter production selection.</p></header><main class="grid">${cards}</main></body></html>`,
+  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="robots" content="noindex"><title>LaunchLoom experience packs</title><style>*{box-sizing:border-box}body{margin:0;padding:clamp(24px,6vw,80px);background:#111;color:#fff;font-family:Arial,sans-serif}header{max-width:900px;margin-bottom:60px}h1{font:400 clamp(52px,8vw,112px)/.86 Georgia,serif;letter-spacing:-.07em;margin:12px 0 24px}p{max-width:650px;color:#aaa;line-height:1.6}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.grid a{display:grid;gap:16px;color:#fff;text-decoration:none;text-transform:capitalize;font-weight:800}.grid img{width:100%;aspect-ratio:4/5;object-fit:cover;object-position:top;border:1px solid #333}@media(max-width:850px){.grid{grid-template-columns:1fr}}</style></head><body><header><small>Compiled experience-pack outputs</small><h1>Independent structures, not skins.</h1><p>Each output owns its navigation, opening, early conversion, services, rhythm, and mobile behavior while sharing verified facts, SEO, forms, and release safeguards. Reference packs carry a visible license credit in the footer.</p></header><main class="grid">${cards}</main></body></html>`,
 );
 
 console.log(`experience_pack_index=${path.join(output, "index.html")}`);

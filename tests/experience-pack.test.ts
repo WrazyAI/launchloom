@@ -332,10 +332,13 @@ describe("experience-pack compiler", () => {
       "cinematic-narrative",
       "bold-utility",
       "kinetic-poster",
+      "stage-index",
+      "editorial-ledger",
+      "results-ledger",
     ]);
-    expect(new Set(packs.map((pack) => pack.fingerprint))).toHaveLength(3);
-    expect(new Set(packs.map((pack) => pack.hero))).toHaveLength(3);
-    expect(new Set(packs.map((pack) => pack.services))).toHaveLength(3);
+    expect(new Set(packs.map((pack) => pack.fingerprint))).toHaveLength(6);
+    expect(new Set(packs.map((pack) => pack.hero))).toHaveLength(6);
+    expect(new Set(packs.map((pack) => pack.services))).toHaveLength(6);
   });
 
   it("keeps guided portrait copy distinct and hides missing closing contact details", () => {
@@ -454,19 +457,26 @@ describe("experience-pack compiler", () => {
     expect(alternative.program.fingerprint).not.toBe(first.program.fingerprint);
   });
 
-  it("keeps all three structural packs reachable for each recipe", () => {
+  it("keeps every production pack reachable for each recipe", () => {
     for (const recipe of [
       "care-editorial",
       "local-trades",
       "general-editorial",
     ] as const) {
       const selected = new Set(
-        Array.from({ length: 200 }, (_, index) =>
+        Array.from({ length: 300 }, (_, index) =>
           selectExperiencePackId({ recipe, seed: `${recipe}|intake-${index}` }),
         ),
       );
       expect(selected).toEqual(
-        new Set(["cinematic-narrative", "bold-utility", "kinetic-poster"]),
+        new Set([
+          "cinematic-narrative",
+          "bold-utility",
+          "kinetic-poster",
+          "stage-index",
+          "editorial-ledger",
+          "results-ledger",
+        ]),
       );
     }
   });
@@ -474,25 +484,40 @@ describe("experience-pack compiler", () => {
   it("compiles bakeoff candidates with per-pack coverage while rejecting image-dependent packs without media", () => {
     const input = site("No Image Business");
     const candidates = compileExperienceCandidates(input, "general-editorial");
-    expect(candidates).toHaveLength(6);
+    expect(candidates).toHaveLength(9);
     expect(new Set(candidates.map((candidate) => candidate.packId))).toEqual(
-      new Set(["cinematic-narrative", "bold-utility", "kinetic-poster"]),
+      new Set([
+        "cinematic-narrative",
+        "bold-utility",
+        "kinetic-poster",
+        "stage-index",
+        "editorial-ledger",
+        "results-ledger",
+      ]),
     );
     for (const packId of [
       "cinematic-narrative",
+      "stage-index",
+      "editorial-ledger",
+    ] as const) {
+      const packCandidates = candidates.filter(
+        (candidate) => candidate.packId === packId,
+      );
+      expect(packCandidates.length).toBeGreaterThan(0);
+      for (const candidate of packCandidates)
+        expect(candidate.diagnostics).toContain(
+          "This experience requires a verified business-relevant image.",
+        );
+    }
+    for (const packId of [
       "bold-utility",
       "kinetic-poster",
+      "results-ledger",
     ] as const) {
       expect(
-        candidates.filter((candidate) => candidate.packId === packId),
-      ).toHaveLength(2);
+        candidates.filter((candidate) => candidate.packId === packId).length,
+      ).toBeGreaterThan(0);
     }
-    for (const candidate of candidates.filter(
-      (item) => item.packId === "cinematic-narrative",
-    ))
-      expect(candidate.diagnostics).toContain(
-        "This experience requires a verified business-relevant image.",
-      );
     expect(
       compileExperiencePack(input, "general-editorial").program.packId,
     ).not.toBe("cinematic-narrative");
@@ -593,11 +618,11 @@ describe("experience-pack compiler", () => {
     const input = site("Cap Check");
     input.images.hero = "/images/hero.webp";
     const candidates = compileExperienceCandidates(input, "general-editorial", {
-      maxCandidates: 4,
+      maxCandidates: 8,
     });
-    expect(candidates).toHaveLength(4);
+    expect(candidates).toHaveLength(8);
     expect(new Set(candidates.map((candidate) => candidate.packId)).size).toBe(
-      3,
+      6,
     );
   });
 
@@ -670,8 +695,11 @@ describe("experience-pack compiler", () => {
     );
     const candidates = compileExperienceCandidates(input, "general-editorial", {
       avoidPackIds: avoid,
+      maxCandidates: 12,
     });
-    const baseline = compileExperienceCandidates(input, "general-editorial");
+    const baseline = compileExperienceCandidates(input, "general-editorial", {
+      maxCandidates: 12,
+    });
     const findBold = (list: ReturnType<typeof compileExperienceCandidates>) =>
       list.find(
         (candidate) =>
@@ -709,7 +737,9 @@ describe("experience-pack compiler", () => {
   it("penalizes a recently launched pack and variant fingerprint", () => {
     const input = site("Variant Recency");
     input.images.hero = "/images/hero.webp";
-    const baseline = compileExperienceCandidates(input, "general-editorial");
+    const baseline = compileExperienceCandidates(input, "general-editorial", {
+      maxCandidates: 12,
+    });
     const boldStandard = baseline.find(
       (candidate) =>
         candidate.packId === "bold-utility" &&
@@ -718,6 +748,7 @@ describe("experience-pack compiler", () => {
     expect(boldStandard).toBeDefined();
     const penalized = compileExperienceCandidates(input, "general-editorial", {
       recentFingerprints: [boldStandard!.blueprint.fingerprint],
+      maxCandidates: 12,
     });
     const penalizedBold = penalized.find(
       (candidate) =>

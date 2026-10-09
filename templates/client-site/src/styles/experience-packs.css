@@ -1886,7 +1886,7 @@
 
 .xp-stage__footer {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr auto auto;
   gap: 1rem;
   padding: 2rem 4vw;
   background: var(--stage-forest-deep);
@@ -2204,7 +2204,7 @@
 
 .xp-ledger__footer {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr auto auto;
   gap: 1rem;
   padding: 2rem 4vw;
   background: var(--ledger-paper-deep);
@@ -2531,7 +2531,7 @@
 
 .xp-results__footer {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr auto auto;
   gap: 1rem;
   padding: 2rem 4vw;
   background: var(--results-ink);
@@ -2540,6 +2540,31 @@
 }
 
 .xp-results__footer span {
+  color: #f7f6f3;
+}
+
+/* License-compliant attribution for promoted reference packs. The link must
+   stay followed and visible; see docs/reference-template-rights.md. */
+.xp-credit {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.xp-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.xp-stage .xp-credit a {
+  color: var(--stage-brass-text);
+}
+
+.xp-ledger .xp-credit a {
+  color: var(--ledger-navy);
+}
+
+.xp-results .xp-credit a {
   color: #f7f6f3;
 }
 

@@ -45,9 +45,21 @@ the committed index without network access.
 
 ## Pack derivation status
 
-Pilot wave 1 converts three licensed references into internal experience
-packs: `stage-index` (HTML5UP Dimension), `editorial-ledger` (Colorlib
-Caseworth), and `results-ledger` (Spicer Designs law template). The packs are
-registered with `internalOnly: true`, never selected by production generation,
-and render only for internal demo builds. No template-derived output serves a
-client site until the attribution decision above is settled.
+Pilot wave 1 converts three licensed references into experience packs:
+`stage-index` (HTML5UP Dimension), `editorial-ledger` (Colorlib Caseworth),
+and `results-ledger` (Spicer Designs law template). The user promoted all
+three into production selection on 2026-10-09. Promotion required a visible,
+followed license credit, because the Spicer CC BY 4.0 license states that the
+attribution condition is met only while its footer link stays in place:
+
+- `stage-index` footer: "Design language adapted from Dimension by HTML5 UP"
+  linking to https://html5up.net/dimension (CC BY 3.0)
+- `editorial-ledger` footer: "Design language adapted from Caseworth by
+  Colorlib" linking to https://github.com/ColorlibHQ/bootstrap-templates (MIT)
+- `results-ledger` footer: "Template adapted from Spicer Designs" linking to
+  https://www.spicerdesigns.com (CC BY 4.0), rendered without rel="nofollow"
+
+The credit is rendered by `ReferencePackCredit.astro` and must not be
+removed, hidden, or made nofollow while these packs serve client sites. New
+reference packs stay internal (`internalOnly: true`) until their own
+attribution decision and credit are in place.

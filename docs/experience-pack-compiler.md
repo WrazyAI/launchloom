@@ -65,6 +65,9 @@ details, or assets.
 1. `cinematic-narrative`: image-led editorial opening, discovery ribbon, magazine service index, restrained narrative motion, and cinematic inquiry close. Variants: `standard` (image narrative), `monument` (centered monument with chaptered service rows).
 2. `bold-utility`: pill navigation, asymmetric human opening, immediate guided qualifier, service chapters, quiet proof, and conversation handoff. Variants: `standard` (editorial dialogue), `portrait` (guided portrait with a service grid).
 3. `kinetic-poster`: command-bar navigation, graphic split opening, quick-request strip, diagnostic service list, coverage, ordered process, and action-poster close. Variants: `standard` (poster split), `full-bleed` (full-bleed poster with a problem grid).
+4. `stage-index` (reference pack): centered full-viewport stage, segmented destination ribbon, ruled care panels, approach steps, and cinematic inquiry close. Variant: `standard` (centered stage index). Renders the HTML5UP Dimension credit.
+5. `editorial-ledger` (reference pack): light editorial split opening, fee note band, ruled practice ledger, quiet proof ledger, and conversation handoff. Variant: `standard` (ruled fee ledger). Renders the Colorlib Caseworth credit.
+6. `results-ledger` (reference pack): sharp results statement, practice record card, confidential request band, oversized practice rows, ordered process, and conversation handoff. Variant: `standard` (results ledger). Renders the Spicer Designs credit.
 
 Each adapter owns independent markup and mobile behavior. They are not CSS skins over `DesignFamilySections.astro`.
 
@@ -120,9 +123,21 @@ Use GSAP only when the pack needs a sequenced, scrubbed, or pinned scene that na
 
 Reference packs are experience packs authored from an extracted reference
 template (`data/reference-library/dossiers/<id>/template/`). They follow the
-same adapter and gate rules as production packs but are registered with
-`internalOnly: true` until the attribution decision in
-`docs/reference-template-rights.md` is settled. Internal packs:
+same adapter and gate rules as production packs.
+
+`stage-index`, `editorial-ledger`, and `results-ledger` were promoted into
+production selection on 2026-10-09 after the attribution decision in
+`docs/reference-template-rights.md`. Each promoted adapter renders a visible,
+followed license credit in its footer:
+
+| Pack               | Reference dossier                 | Source license | Footer credit         |
+| ------------------ | --------------------------------- | -------------- | --------------------- |
+| `stage-index`      | `html5up-dental-dimension`        | CC BY 3.0      | Dimension by HTML5 UP |
+| `editorial-ledger` | `colorlib-caseworth-legal-ledger` | MIT            | Caseworth by Colorlib |
+| `results-ledger`   | `spicer-law-firm-results-ledger`  | CC BY 4.0      | Spicer Designs        |
+
+New reference packs start with `internalOnly: true` until their own
+attribution decision. Internal packs:
 
 - are excluded from `selectExperiencePackId` and from default
   `compileExperienceCandidates`, so production generation can never select
@@ -146,14 +161,6 @@ The brief records structure, section mapping, palette and typography
 candidates, layout metrics, motion hints, and the dossier's signature and
 prohibited patterns. It is the starting point for authoring the adapter; the
 converter never registers packs.
-
-Pilot wave 1 (licensed sources, all internal-only):
-
-| Pack               | Reference dossier                 | Source license |
-| ------------------ | --------------------------------- | -------------- |
-| `stage-index`      | `html5up-dental-dimension`        | CC BY 3.0      |
-| `editorial-ledger` | `colorlib-caseworth-legal-ledger` | MIT            |
-| `results-ledger`   | `spicer-law-firm-results-ledger`  | CC BY 4.0      |
 
 ## Model-authored experience lab
 

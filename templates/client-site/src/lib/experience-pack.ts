@@ -380,6 +380,11 @@ const packs: Record<ExperiencePackId, PackDefinition> = {
       },
     ],
   },
+  // Promoted reference packs: derived from extracted source templates and
+  // promoted into production selection on 2026-10-09. Each adapter renders a
+  // license-compliant footer credit (see docs/reference-template-rights.md).
+  // New reference packs start with internalOnly: true until their own
+  // attribution decision.
   "stage-index": {
     packId: "stage-index",
     intent:
@@ -395,7 +400,7 @@ const packs: Record<ExperiencePackId, PackDefinition> = {
     rhythm: "cinematic",
     motion: { profile: "restrained", engine: "css", maxPinnedScenes: 0 },
     mobile: "editorial-stack",
-    internalOnly: true,
+    internalOnly: false,
     variants: [
       {
         id: "standard",
@@ -431,7 +436,7 @@ const packs: Record<ExperiencePackId, PackDefinition> = {
     rhythm: "editorial",
     motion: { profile: "restrained", engine: "css", maxPinnedScenes: 0 },
     mobile: "editorial-stack",
-    internalOnly: true,
+    internalOnly: false,
     variants: [
       {
         id: "standard",
@@ -467,7 +472,7 @@ const packs: Record<ExperiencePackId, PackDefinition> = {
     rhythm: "editorial",
     motion: { profile: "still", engine: "css", maxPinnedScenes: 0 },
     mobile: "editorial-stack",
-    internalOnly: true,
+    internalOnly: false,
     variants: [
       {
         id: "standard",
@@ -1043,16 +1048,28 @@ export function compileExperiencePack(
   const requestedVariant = requestedPack
     ? findVariant(requestedPack, requestedVariantId)
     : undefined;
+  // A valid requested pack is honored directly so a capped candidate list can
+  // never silently drop the requested variant. Internal packs still require
+  // the explicit internal review flag.
+  const requestedBlueprint =
+    requestedId &&
+    requestedPack &&
+    (includeInternalPacks || !requestedPack.internalOnly)
+      ? (() => {
+          const variant = requestedVariant || primaryVariant(requestedPack);
+          const result = compatibility(requestedPack, variant, site, recipe);
+          if (result.score < 0) return undefined;
+          return {
+            packId: requestedId,
+            variantId: variant.id,
+            blueprint: asBlueprint(requestedPack, variant),
+            compatibilityScore: result.score,
+            diagnostics: result.diagnostics,
+          };
+        })()
+      : undefined;
   const chosen =
-    (requestedId && requestedPack
-      ? candidates.find(
-          (candidate) =>
-            candidate.packId === requestedId &&
-            candidate.variantId ===
-              (requestedVariant?.id || primaryVariant(requestedPack).id) &&
-            candidate.compatibilityScore >= 0,
-        )
-      : undefined) ||
+    requestedBlueprint ||
     candidates.find((candidate) => candidate.compatibilityScore >= 0);
   if (!chosen)
     throw new Error(

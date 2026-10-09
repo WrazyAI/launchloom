@@ -148,9 +148,10 @@ captured from:
 
 Extraction is additive: it does not change dossier manifests, design prompts,
 screenshots, or existing dossier digests, so frozen candidate bindings stay
-valid. Templates are internal reference material; `docs/reference-template-rights.md`
-records the use limits and the pending attribution decision for derived
-output.
+valid. Templates are internal reference material. The three promoted reference
+packs carry visible, followed license credits in their footers;
+`docs/reference-template-rights.md` records the promotion decision, the credit
+requirements, and the rules for new packs.
 
 ```sh
 npm run extract:reference-templates -- --class licensed --write
