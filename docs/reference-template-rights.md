@@ -42,3 +42,12 @@ Each `template/extraction.json` records the method, source revision or capture
 date, per-file SHA-256 values, excluded media, and an independent digest.
 `npm run verify:reference-templates` re-verifies every retained byte against
 the committed index without network access.
+
+## Pack derivation status
+
+Pilot wave 1 converts three licensed references into internal experience
+packs: `stage-index` (HTML5UP Dimension), `editorial-ledger` (Colorlib
+Caseworth), and `results-ledger` (Spicer Designs law template). The packs are
+registered with `internalOnly: true`, never selected by production generation,
+and render only for internal demo builds. No template-derived output serves a
+client site until the attribution decision above is settled.

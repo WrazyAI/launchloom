@@ -1,0 +1,70 @@
+---
+import { serviceHref } from "../../lib/site";
+import { phoneHref, primaryCtaHref } from "../../lib/site";
+import type { ExperienceBlueprintV2, ExperienceContent } from "../../lib/experience-pack";
+import LeadForm from "../LeadForm.astro";
+import LocationMap from "../LocationMap.astro";
+import SocialProof from "../SocialProof.astro";
+
+interface Props { program: ExperienceBlueprintV2; content: ExperienceContent }
+const { program, content } = Astro.props;
+const { brand, hero, services, proof, faqs, copy } = content;
+---
+
+<div class="xp-ledger" data-experience-pack={program.packId} data-experience-variant={program.variantId} data-layout-fingerprint={program.fingerprint}>
+  <header class="xp-ledger__header">
+    <a class="xp-ledger__mark" href="/">{brand.logo ? <img src={brand.logo} alt={brand.name} /> : <strong>{brand.name}</strong>}</a>
+    <nav aria-label="Main navigation"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>
+    {brand.phone && <a class="xp-ledger__phone" href={phoneHref(brand.phone)}>{brand.phone}</a>}
+  </header>
+
+  <main>
+    <section class="xp-ledger__hero" id="opening">
+      <div class="xp-ledger__intro">
+        <p class="xp-ledger__eyebrow">{hero.kicker}</p>
+        <h1>{hero.heading}</h1>
+        <p>{hero.body}</p>
+        <div class="xp-ledger__actions">
+          <a href={primaryCtaHref(Astro.url.pathname)}>{hero.primaryLabel}</a>
+          <a class="xp-ledger__secondary" href="#services">See the practice areas</a>
+        </div>
+      </div>
+      <figure class="xp-ledger__portrait">
+        {hero.image ? <img src={hero.image} alt={`${brand.name} practice setting`} fetchpriority="high" /> : <div class="xp-ledger__plate" aria-hidden="true"><span>{brand.name}</span></div>}
+        {hero.offer && <figcaption>{hero.offer}</figcaption>}
+      </figure>
+    </section>
+
+    <aside class="xp-ledger__fee-request" aria-label="Fees and enquiry">
+      <div><strong>Fees in writing</strong><p>{hero.offer || "Every engagement starts with a written scope and a clear price before work begins."}</p></div>
+      <a href="#contact">Request a fee note ↗</a>
+    </aside>
+
+    <section class="xp-ledger__services" id="services">
+      <header><p class="xp-ledger__eyebrow">Practice areas</p><h2>{copy.servicesHeading || "Advice you can act on."}</h2><p>{copy.servicesIntro || "Each area is handled by named people with clear next steps."}</p></header>
+      <div class="xp-ledger__rows">
+        {services.map((service, index) => <a href={serviceHref(service.slug)}><span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><div><h3>{service.name}</h3><p>{service.description}</p></div><b aria-hidden="true">Read ↗</b></a>)}
+      </div>
+    </section>
+
+    <section class="xp-ledger__about" id="about">
+      <div>
+        <p class="xp-ledger__eyebrow">How the practice works</p>
+        <h2>{copy.aboutHeading || "A quiet ledger of work in progress."}</h2>
+        <p>{copy.aboutBody || content.businessDescription}</p>
+      </div>
+      {proof.length > 0 && <ul class="xp-ledger__proof">{proof.map((item) => <li>{item}</li>)}</ul>}
+    </section>
+
+    {content.hasSocialProof && <SocialProof id="social-proof" />}
+
+    {faqs.length > 0 && <section class="xp-ledger__faqs" id="faqs"><header><p class="xp-ledger__eyebrow">Practical questions</p><h2>{copy.faqHeading || "Before you instruct."}</h2></header><div>{faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>}
+
+    {content.showLocationMap && <LocationMap />}
+    <section class="xp-ledger__contact" id="contact">
+      <div><p class="xp-ledger__eyebrow">{copy.contactKicker || "Start a conversation"}</p><h2>{copy.contactHeading || hero.primaryLabel}</h2><p>{content.businessDescription}</p>{brand.phone && <a href={phoneHref(brand.phone)}>{brand.phone}</a>}</div>
+      <LeadForm id="ledger-lead" />
+    </section>
+  </main>
+  <footer class="xp-ledger__footer"><strong>{brand.name}</strong><span>{brand.serviceAreas.join(" · ")}</span><span>© {new Date().getFullYear()}</span></footer>
+</div>

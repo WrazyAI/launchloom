@@ -1,0 +1,64 @@
+---
+import { serviceHref } from "../../lib/site";
+import { phoneHref, primaryCtaHref } from "../../lib/site";
+import type { ExperienceBlueprintV2, ExperienceContent } from "../../lib/experience-pack";
+import LeadForm from "../LeadForm.astro";
+import LocationMap from "../LocationMap.astro";
+import SocialProof from "../SocialProof.astro";
+
+interface Props { program: ExperienceBlueprintV2; content: ExperienceContent }
+const { program, content } = Astro.props;
+const { brand, hero, services, proof, process, faqs, copy } = content;
+---
+
+<div class="xp-results" data-experience-pack={program.packId} data-experience-variant={program.variantId} data-layout-fingerprint={program.fingerprint}>
+  <header class="xp-results__header">
+    <a class="xp-results__mark" href="/">{brand.logo ? <img src={brand.logo} alt={brand.name} /> : <strong>{brand.name}</strong>}</a>
+    <nav aria-label="Main navigation"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>
+    {brand.phone && <a class="xp-results__phone" href={phoneHref(brand.phone)}>{brand.phone}</a>}
+  </header>
+
+  <main>
+    <section class="xp-results__hero" id="opening">
+      <div class="xp-results__statement">
+        <p class="xp-results__eyebrow">{hero.kicker}</p>
+        <h1>{hero.heading}</h1>
+        <p>{hero.body}</p>
+        <a class="xp-results__action" href={primaryCtaHref(Astro.url.pathname)}>{hero.primaryLabel}</a>
+      </div>
+      <aside class="xp-results__ledger" aria-label="Practice record">
+        <p class="xp-results__ledger-title">The record, up front</p>
+        {proof.length > 0 ? <ul>{proof.map((item) => <li>{item}</li>)}</ul> : <p>{hero.offer || "Every engagement begins with a plainly worded scope and a confidential first conversation."}</p>}
+      </aside>
+    </section>
+
+    <aside class="xp-results__request" aria-label="Confidential consultation">
+      <div><strong>Confidential first conversation</strong><p>{hero.offer || "Tell us what happened and where the matter stands. The first conversation is confidential and plainly priced."}</p></div>
+      <a href="#contact">Request a consultation ↗</a>
+    </aside>
+
+    <section class="xp-results__services" id="services">
+      <header><p class="xp-results__eyebrow">What we take on</p><h2>{copy.servicesHeading || "Matters we take seriously."}</h2><p>{copy.servicesIntro || "Each practice area is set out plainly, without soft edges."}</p></header>
+      <div class="xp-results__rows">
+        {services.map((service, index) => <a href={serviceHref(service.slug)}><span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><div><h3>{service.name}</h3><p>{service.description}</p></div><b aria-hidden="true">↗</b></a>)}
+      </div>
+    </section>
+
+    {process.length > 0 && <section class="xp-results__process" id="process"><header><p class="xp-results__eyebrow">How a matter runs</p><h2>{copy.processHeading || "A matter, step by step."}</h2></header><ol>{process.map((step, index) => <li><span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><p>{step}</p></li>)}</ol></section>}
+
+    <section class="xp-results__about" id="about">
+      <div><p class="xp-results__eyebrow">The practice</p><h2>{copy.aboutHeading || "Straight answers, in writing."}</h2><p>{copy.aboutBody || content.businessDescription}</p></div>
+    </section>
+
+    {content.hasSocialProof && <SocialProof id="social-proof" />}
+
+    {faqs.length > 0 && <section class="xp-results__faqs" id="faqs"><header><p class="xp-results__eyebrow">Asked before the first call</p><h2>{copy.faqHeading || "Before you call."}</h2></header><div>{faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>}
+
+    {content.showLocationMap && <LocationMap />}
+    <section class="xp-results__contact" id="contact">
+      <div><p class="xp-results__eyebrow">{copy.contactKicker || "Start here"}</p><h2>{copy.contactHeading || hero.primaryLabel}</h2><p>{content.businessDescription}</p>{brand.phone && <a href={phoneHref(brand.phone)}>{brand.phone}</a>}</div>
+      <LeadForm id="results-lead" />
+    </section>
+  </main>
+  <footer class="xp-results__footer"><strong>{brand.name}</strong><span>{brand.serviceAreas.join(" · ")}</span><span>© {new Date().getFullYear()}</span></footer>
+</div>

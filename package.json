@@ -36,6 +36,7 @@
     "generate:client-site": "node scripts/verify-client-pipeline-fixtures.mjs",
     "extract:reference-templates": "node scripts/extract-reference-templates.mjs",
     "verify:reference-templates": "node scripts/verify-reference-templates.mjs",
+    "convert:reference-packs": "node scripts/reference-pack-converter.mjs",
     "test:watch": "vitest",
     "format": "prettier --write .",
     "preflight:reasoning": "node scripts/run-reasoning-preflight.mjs",

@@ -116,6 +116,45 @@ Add the new pack to `listExperiencePacks`, the variant-aware contracts in
 
 Use GSAP only when the pack needs a sequenced, scrubbed, or pinned scene that native CSS and scroll behavior cannot express clearly. Motion is a pack capability, not a default dependency.
 
+## Reference packs derived from extracted templates
+
+Reference packs are experience packs authored from an extracted reference
+template (`data/reference-library/dossiers/<id>/template/`). They follow the
+same adapter and gate rules as production packs but are registered with
+`internalOnly: true` until the attribution decision in
+`docs/reference-template-rights.md` is settled. Internal packs:
+
+- are excluded from `selectExperiencePackId` and from default
+  `compileExperienceCandidates`, so production generation can never select
+  them
+- compile only for explicit internal review builds that set
+  `design.experience.internal: true`
+- appear in `listInternalExperiencePacks()` rather than
+  `listExperiencePacks()`
+- are rendered by `build-experience-pack-demos.mjs --only <pack-id>` with the
+  same desktop, compact desktop, mobile, contrast, and overflow gates as
+  production packs
+
+Convert a dossier into a conversion brief with:
+
+```sh
+npm run convert:reference-packs -- --dossier <id> --write
+npm run convert:reference-packs -- --class licensed --write --scaffold
+```
+
+The brief records structure, section mapping, palette and typography
+candidates, layout metrics, motion hints, and the dossier's signature and
+prohibited patterns. It is the starting point for authoring the adapter; the
+converter never registers packs.
+
+Pilot wave 1 (licensed sources, all internal-only):
+
+| Pack               | Reference dossier                 | Source license |
+| ------------------ | --------------------------------- | -------------- |
+| `stage-index`      | `html5up-dental-dimension`        | CC BY 3.0      |
+| `editorial-ledger` | `colorlib-caseworth-legal-ledger` | MIT            |
+| `results-ledger`   | `spicer-law-firm-results-ledger`  | CC BY 4.0      |
+
 ## Model-authored experience lab
 
 `npm run generate:model-experiences` exercises the current pipeline models as full experience authors rather than asking the shared renderer to imitate a reference. Every model receives the same verified facts, local assets, visual reference, forbidden patterns, and release contract. It authors complete React and CSS files, then receives at most one constrained self-repair pass for build or release failures.

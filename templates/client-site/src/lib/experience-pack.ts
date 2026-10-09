@@ -9,7 +9,12 @@ import type {
 import { resolveLocationMap } from "./location-map.mjs";
 
 export type ExperiencePackId =
-  "cinematic-narrative" | "bold-utility" | "kinetic-poster";
+  | "cinematic-narrative"
+  | "bold-utility"
+  | "kinetic-poster"
+  | "stage-index"
+  | "editorial-ledger"
+  | "results-ledger";
 export type LegacyExperiencePackId =
   "editorial-folio" | "guided-conversation" | "service-led";
 export type ExperienceSection = PageSectionType | "conversion" | "location-map";
@@ -22,25 +27,39 @@ export type ExperienceHero =
   | "editorial-dialogue"
   | "guided-portrait"
   | "poster-split"
-  | "poster-full-bleed";
+  | "poster-full-bleed"
+  | "centered-stage"
+  | "editorial-ledger"
+  | "results-ledger";
 export type ExperienceConversion =
-  "discovery-ribbon" | "embedded-qualifier" | "quick-request";
+  | "discovery-ribbon"
+  | "embedded-qualifier"
+  | "quick-request"
+  | "fee-note"
+  | "confidential-request";
 export type ExperienceServices =
   | "editorial-index"
   | "chaptered-index"
   | "service-chapters"
   | "service-grid"
   | "diagnostic-list"
-  | "problem-grid";
+  | "problem-grid"
+  | "panel-list"
+  | "ruled-ledger"
+  | "oversized-rows";
 export type ExperienceProof =
-  "principle-line" | "quiet-ledger" | "evidence-strip";
+  "principle-line" | "quiet-ledger" | "evidence-strip" | "results-table";
 export type ExperienceClosing =
   "cinematic-inquiry" | "conversation-handoff" | "action-poster";
 export type ExperienceTypography =
   "editorial-contrast" | "humanist-calm" | "graphic-impact";
 export type ExperienceImageStrategy =
-  "narrative-crops" | "human-context" | "bold-documentary";
-export type ExperienceRhythm = "cinematic" | "conversational" | "kinetic";
+  | "narrative-crops"
+  | "human-context"
+  | "bold-documentary"
+  | "typographic-ledger";
+export type ExperienceRhythm =
+  "cinematic" | "conversational" | "kinetic" | "editorial";
 export type ExperienceMobile =
   "editorial-stack" | "guided-stack" | "poster-stack";
 export type ExperienceMotion = Readonly<{
@@ -157,6 +176,10 @@ type PackDefinition = Omit<
   intent: string;
   preferredRecipes: readonly PageRecipe[];
   requiresImage: boolean;
+  // Internal-only packs are derived from extracted reference templates. They
+  // render for internal review and demos but are never selected by production
+  // generation until the attribution decision is settled.
+  internalOnly?: boolean;
   variants: readonly PackVariantDefinition[];
 };
 
@@ -357,9 +380,118 @@ const packs: Record<ExperiencePackId, PackDefinition> = {
       },
     ],
   },
+  "stage-index": {
+    packId: "stage-index",
+    intent:
+      "Centered full-viewport stage with a segmented destination index and a dark botanical clinical editorial treatment.",
+    preferredRecipes: ["care-editorial", "general-editorial"],
+    requiresImage: true,
+    navigation: "minimal-inline",
+    conversion: "discovery-ribbon",
+    proof: "principle-line",
+    closing: "cinematic-inquiry",
+    typography: "editorial-contrast",
+    imageStrategy: "narrative-crops",
+    rhythm: "cinematic",
+    motion: { profile: "restrained", engine: "css", maxPinnedScenes: 0 },
+    mobile: "editorial-stack",
+    internalOnly: true,
+    variants: [
+      {
+        id: "standard",
+        label: "Centered stage index",
+        affinity: ["refined-serif", "editorial", "humanist"],
+        hero: "centered-stage",
+        services: "panel-list",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "about",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+    ],
+  },
+  "editorial-ledger": {
+    packId: "editorial-ledger",
+    intent:
+      "Light editorial professional ledger with ruled practice rows, fee transparency, and a quiet enquiry close.",
+    preferredRecipes: ["general-editorial", "care-editorial"],
+    requiresImage: true,
+    navigation: "minimal-inline",
+    conversion: "fee-note",
+    proof: "quiet-ledger",
+    closing: "conversation-handoff",
+    typography: "editorial-contrast",
+    imageStrategy: "narrative-crops",
+    rhythm: "editorial",
+    motion: { profile: "restrained", engine: "css", maxPinnedScenes: 0 },
+    mobile: "editorial-stack",
+    internalOnly: true,
+    variants: [
+      {
+        id: "standard",
+        label: "Ruled fee ledger",
+        affinity: ["refined-serif", "modern-serif", "heritage"],
+        hero: "editorial-ledger",
+        services: "ruled-ledger",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "about",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+    ],
+  },
+  "results-ledger": {
+    packId: "results-ledger",
+    intent:
+      "Sharp-edged results-first professional layout with oversized practice rows and a case-results ledger.",
+    preferredRecipes: ["general-editorial"],
+    requiresImage: false,
+    navigation: "minimal-inline",
+    conversion: "confidential-request",
+    proof: "results-table",
+    closing: "conversation-handoff",
+    typography: "editorial-contrast",
+    imageStrategy: "typographic-ledger",
+    rhythm: "editorial",
+    motion: { profile: "still", engine: "css", maxPinnedScenes: 0 },
+    mobile: "editorial-stack",
+    internalOnly: true,
+    variants: [
+      {
+        id: "standard",
+        label: "Results ledger",
+        affinity: ["modern-serif", "geometric", "strong"],
+        hero: "results-ledger",
+        services: "oversized-rows",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "process",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+    ],
+  },
 };
 
 const packIds = Object.keys(packs) as ExperiencePackId[];
+const productionPackIds = packIds.filter((id) => !packs[id].internalOnly);
 
 const AVOIDANCE_PENALTY = 20;
 
@@ -568,16 +700,25 @@ export function compileExperienceCandidates(
     typography?: DesignTypography;
     routePreferences?: readonly ExperienceRoutePreference[];
     avoidPackIds?: readonly ExperiencePackId[];
+    includeInternalPacks?: boolean;
   } = {},
 ): readonly ExperienceCandidate[] {
   const seed = seedFor(site);
-  const offset = stableHash(seed) % packIds.length;
+  const candidatePackIds =
+    options.includeInternalPacks === true ||
+    site.design?.experience?.internal === true
+      ? packIds
+      : productionPackIds;
+  const offset = stableHash(seed) % candidatePackIds.length;
   const recent = new Set(options.recentFingerprints || []);
-  const maxCandidates = Math.max(packIds.length, options.maxCandidates ?? 6);
+  const maxCandidates = Math.max(
+    candidatePackIds.length,
+    options.maxCandidates ?? 6,
+  );
   const routePreferences = options.routePreferences || [];
   const avoidPackIds = new Set(options.avoidPackIds || []);
   const candidates: ExperienceCandidate[] = [];
-  packIds.forEach((packId, index) => {
+  candidatePackIds.forEach((packId, index) => {
     const definition = packs[packId];
     const preferredVariantIndex =
       stableHash(`${seed}|${packId}`) % definition.variants.length;
@@ -585,7 +726,7 @@ export function compileExperienceCandidates(
       const result = compatibility(definition, variant, site, recipe);
       const blueprint = asBlueprint(definition, variant);
       const rotationPenalty =
-        (index - offset + packIds.length) % packIds.length;
+        (index - offset + candidatePackIds.length) % candidatePackIds.length;
       const recencyPenalty = recent.has(blueprint.fingerprint) ? 15 : 0;
       const variantPenalty = variantIndex === preferredVariantIndex ? 0 : 4;
       const affinityBonus =
@@ -619,7 +760,8 @@ export function compileExperienceCandidates(
   candidates.sort(
     (left, right) =>
       right.compatibilityScore - left.compatibilityScore ||
-      packIds.indexOf(left.packId) - packIds.indexOf(right.packId) ||
+      candidatePackIds.indexOf(left.packId) -
+        candidatePackIds.indexOf(right.packId) ||
       left.variantId.localeCompare(right.variantId),
   );
   const selected: ExperienceCandidate[] = [];
@@ -638,7 +780,8 @@ export function compileExperienceCandidates(
           routeAffinity(right.blueprint, route) -
             routeAffinity(left.blueprint, route) ||
           right.compatibilityScore - left.compatibilityScore ||
-          packIds.indexOf(left.packId) - packIds.indexOf(right.packId),
+          candidatePackIds.indexOf(left.packId) -
+            candidatePackIds.indexOf(right.packId),
       )[0];
     if (!best) continue;
     taken.add(best);
@@ -681,16 +824,21 @@ export function selectExperiencePackId({
   avoidPackIds?: readonly ExperiencePackId[];
 }): ExperiencePackId {
   const requestedId = canonicalPackId(requested);
-  if (requestedId && (!packs[requestedId].requiresImage || hasImage))
+  if (
+    requestedId &&
+    !packs[requestedId].internalOnly &&
+    (!packs[requestedId].requiresImage || hasImage)
+  )
     return requestedId;
-  const offset = stableHash(seed) % packIds.length;
+  const offset = stableHash(seed) % productionPackIds.length;
   const recent = new Set(recentFingerprints);
   const avoided = new Set(avoidPackIds);
-  return packIds
+  return productionPackIds
     .filter((id) => hasImage || !packs[id].requiresImage)
     .sort((left, right) => {
       const score = (id: ExperiencePackId) =>
-        ((packIds.indexOf(id) - offset + packIds.length) % packIds.length) -
+        ((productionPackIds.indexOf(id) - offset + productionPackIds.length) %
+          productionPackIds.length) -
         (packs[id].preferredRecipes.includes(recipe) ? 0.5 : 0) +
         (recent.has(fingerprint(packs[id], primaryVariant(packs[id])))
           ? 100
@@ -846,35 +994,51 @@ function contentFor(site: SiteConfig): ExperienceContent {
   };
 }
 
+function describePack(id: ExperiencePackId) {
+  const definition = packs[id];
+  return {
+    ...asBlueprint(definition, primaryVariant(definition)),
+    intent: definition.intent,
+    preferredRecipes: [...definition.preferredRecipes],
+    requiresImage: definition.requiresImage,
+    internalOnly: definition.internalOnly === true,
+    variants: definition.variants.map((variant) => ({
+      id: variant.id,
+      label: variant.label,
+      hero: variant.hero,
+      services: variant.services,
+      sectionOrder: [...variant.sectionOrder],
+      fingerprint: fingerprint(definition, variant),
+    })),
+  };
+}
+
 export function listExperiencePacks() {
-  return packIds.map((id) => {
-    const definition = packs[id];
-    return {
-      ...asBlueprint(definition, primaryVariant(definition)),
-      intent: definition.intent,
-      preferredRecipes: [...definition.preferredRecipes],
-      requiresImage: definition.requiresImage,
-      variants: definition.variants.map((variant) => ({
-        id: variant.id,
-        label: variant.label,
-        hero: variant.hero,
-        services: variant.services,
-        sectionOrder: [...variant.sectionOrder],
-        fingerprint: fingerprint(definition, variant),
-      })),
-    };
-  });
+  return productionPackIds.map(describePack);
+}
+
+export function listInternalExperiencePacks() {
+  return packIds.filter((id) => packs[id].internalOnly).map(describePack);
 }
 
 export function compileExperiencePack(
   site: SiteConfig,
   recipe: PageRecipe,
-  options: { recentFingerprints?: readonly string[] } = {},
+  options: {
+    recentFingerprints?: readonly string[];
+    includeInternalPacks?: boolean;
+  } = {},
 ): CompiledExperience {
   const requested = site.design?.experience?.packId;
   const requestedId = canonicalPackId(requested);
   const requestedVariantId = site.design?.experience?.variantId;
-  const candidates = compileExperienceCandidates(site, recipe, options);
+  const includeInternalPacks =
+    options.includeInternalPacks === true ||
+    site.design?.experience?.internal === true;
+  const candidates = compileExperienceCandidates(site, recipe, {
+    ...options,
+    includeInternalPacks,
+  });
   const requestedPack = requestedId ? packs[requestedId] : undefined;
   const requestedVariant = requestedPack
     ? findVariant(requestedPack, requestedVariantId)
@@ -909,7 +1073,9 @@ export function compileExperiencePack(
         : []),
       ...(requestedId && requestedId !== chosen.packId
         ? [
-            `Experience pack '${requestedId}' was incompatible with verified assets and was replaced safely.`,
+            packs[requestedId]?.internalOnly && !includeInternalPacks
+              ? `Internal reference pack '${requestedId}' is not available to production selection.`
+              : `Experience pack '${requestedId}' was incompatible with verified assets and was replaced safely.`,
           ]
         : []),
       ...(requestedVariantId && requestedPack && !requestedVariant

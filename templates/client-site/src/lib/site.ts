@@ -291,6 +291,7 @@ export type SiteConfig = {
     experience?: {
       packId?: ExperiencePackId | string;
       variantId?: string;
+      internal?: boolean;
       blueprintVersion?: 2;
       renderer?: "reviewed-pack" | "creative-candidate" | "legacy" | string;
       candidateId?: string;
@@ -420,7 +421,11 @@ const site = {
 // Always compile from current content/policy; stored reports cannot authorize routes.
 export const routeInventory = compileRouteInventory(site);
 export const pageBriefs = compilePageBriefs(site);
-export const routePageBrief = (routeId: string) => pageBriefs.briefs.find(brief => brief.routeId === routeId.trim().toLowerCase().replace(/\s+/gu, " ")) || null;
+export const routePageBrief = (routeId: string) =>
+  pageBriefs.briefs.find(
+    (brief) =>
+      brief.routeId === routeId.trim().toLowerCase().replace(/\s+/gu, " "),
+  ) || null;
 export const renderedRoutes = approvedRoutes(routeInventory, {
   production: productionRouteMode(import.meta.env),
 });
