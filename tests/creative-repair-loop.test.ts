@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { interactionSourceDigest } from "../scripts/rendered-interaction-evidence.mjs";
 import {
   applyCreativeRepairEdits,
   applyCreativeVisualSafetyRepairs,
@@ -38,6 +39,28 @@ afterEach(async () => {
 });
 
 describe("creative repair loop", () => {
+  it("carries separately labeled interaction pairs beyond the three static images and rejects stale source", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-interaction-repair-prompt-"));
+    roots.push(root);
+    const screenshot = path.join(root, "evidence.png");
+    await fs.writeFile(screenshot, "browser-evidence");
+    const files = { experience: "current", styles: "", motion: "" };
+    const interactionEvidence = { version: 1, candidateId: "candidate-a", sourceDigest: interactionSourceDigest(files), observations: [{ viewport: "compact", status: "passed", after: { content: "Actual changed preparation guidance" } }], pairs: [{ viewport: "mobile", kind: "tab", before: screenshot, after: screenshot }], failures: [] };
+    const requests: any[] = [];
+    vi.stubGlobal("fetch", async (_url: string, options: RequestInit) => {
+      requests.push(JSON.parse(String(options.body)));
+      return Response.json({ choices: [{ message: { content: JSON.stringify({ experience: "fixed", styles: "fixed", motion: "fixed" }) } }] });
+    });
+    const input = { model: "test/model", candidateId: "candidate-a", referenceDna: { familyId: "service-editorial", referenceName: "Licensed service template", sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: screenshot } } }, files, findings: [], screenshots: [screenshot, screenshot, screenshot], interactionEvidence };
+    await requestRepair(input);
+    const parts = requests[0].messages[1].content;
+    expect(parts.filter((p: any) => p.type === "image_url")).toHaveLength(6);
+    expect(parts.filter((p: any) => p.type === "text").map((p: any) => p.text).join("\n")).toContain("Actual changed preparation guidance");
+    expect(parts.filter((p: any) => p.type === "text").map((p: any) => p.text).join("\n")).toContain("after activation");
+    await expect(requestRepair({ ...input, files: { ...files, styles: "new source" } })).rejects.toThrow(/source identity/);
+    expect(requests).toHaveLength(1);
+  });
+
   it("applies only unique, bounded literal edits to candidate files", () => {
     const files = {
       experience:

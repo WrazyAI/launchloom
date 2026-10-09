@@ -16,6 +16,7 @@ import {
   CLIENT_PALETTE_ROLE_CONTRACT,
   CLIENT_TYPOGRAPHY_CONTRACT,
 } from "./creative-authoring-output.mjs";
+import { interactionPromptParts, validateInteractionEvidence } from "./rendered-interaction-evidence.mjs";
 
 export const RENDERED_REFERENCE_MODEL =
   process.env.CREATIVE_REFERENCE_JUDGE_MODEL || "openai/gpt-6-luna";
@@ -418,7 +419,7 @@ function scorePass(audit, thresholds = RENDERED_REFERENCE_THRESHOLDS) {
 }
 
 /**
- * @param {{referenceDna: any, visualBrief?: Record<string, any>, candidateScreenshots?: {desktop?: string, compact?: string, mobile?: string, fullDesktop?: string}, renderedGeometry?: Record<string, any>, model?: string, fetchImpl?: typeof fetch}} options
+ * @param {{referenceDna: any, visualBrief?: Record<string, any>, candidateScreenshots?: {desktop?: string, compact?: string, mobile?: string, fullDesktop?: string}, renderedGeometry?: Record<string, any>, interactionEvidence?: Record<string, any>, candidateId?: string, sourceDigest?: string, model?: string, fetchImpl?: typeof fetch}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function evaluateRenderedReferenceFidelity({
@@ -426,10 +427,14 @@ export async function evaluateRenderedReferenceFidelity({
   visualBrief = {},
   candidateScreenshots,
   renderedGeometry = {},
+  interactionEvidence,
+  candidateId,
+  sourceDigest,
   model = RENDERED_REFERENCE_MODEL,
   fetchImpl = fetch,
 } = {}) {
   validateReferenceDna(referenceDna, { requireEvidence: true });
+  validateInteractionEvidence(interactionEvidence, { candidateId, sourceDigest });
   const desktopReference = await resolveEvidencePath(
     referenceDna.evidence.desktopScreenshot,
   );
@@ -511,6 +516,7 @@ Treat this as binding client art direction layered onto the reference mechanics.
         ]
       : []),
   ];
+  content.push(...await interactionPromptParts(interactionEvidence, { candidateId, sourceDigest }, imagePart));
   const sessionId = openRouterSessionId(
     "rendered-reference",
     model,
@@ -534,7 +540,7 @@ Treat this as binding client art direction layered onto the reference mechanics.
   return {
     version: 1,
     model,
-    pass: scorePass(result.audit),
+    pass: scorePass(result.audit) && !(interactionEvidence?.failures.length),
     score: Number(result.audit.overallScore || 0),
     ...result,
   };
