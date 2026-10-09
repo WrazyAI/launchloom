@@ -716,9 +716,13 @@ export function compileExperienceCandidates(
       : productionPackIds;
   const offset = stableHash(seed) % candidatePackIds.length;
   const recent = new Set(options.recentFingerprints || []);
+  const registeredVariantCount = candidatePackIds.reduce(
+    (total, packId) => total + packs[packId].variants.length,
+    0,
+  );
   const maxCandidates = Math.max(
     candidatePackIds.length,
-    options.maxCandidates ?? 6,
+    options.maxCandidates ?? registeredVariantCount,
   );
   const routePreferences = options.routePreferences || [];
   const avoidPackIds = new Set(options.avoidPackIds || []);

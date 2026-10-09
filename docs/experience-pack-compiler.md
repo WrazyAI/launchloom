@@ -36,8 +36,9 @@ motion profile, and mobile behavior. The selected `variantId` is recorded in
 `design.experience` and is part of the structural fingerprint, so rotation and
 revision behavior can distinguish two variants of the same pack.
 
-The bakeoff renders up to six candidates (`maxCandidates`), one per compatible
-pack plus the strongest alternates. Candidate ordering and scoring are
+The bakeoff renders all registered variants by default (`maxCandidates` can
+lower the budget, but never below one candidate per compatible pack), one per
+compatible pack plus the strongest alternates. Candidate ordering and scoring are
 influenced by five bounded inputs:
 
 - the intake seed, which deterministically prefers one variant per pack so

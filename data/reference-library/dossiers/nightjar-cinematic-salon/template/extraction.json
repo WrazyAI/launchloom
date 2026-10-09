@@ -9,7 +9,8 @@
     "generator": "artifacts/nightjar-cinematic-prototype",
     "retrievedAt": "2026-10-08T20:06:09.948Z",
     "license": "owned",
-    "attestationPath": null
+    "attestationPath": null,
+    "rightsEvidencePath": "rights/provenance.md"
   },
   "entrypoint": "source/index.html",
   "files": [
@@ -71,5 +72,5 @@
   ],
   "excludedMedia": [],
   "notes": "Copied 11 files from the local build artifact at nightjar-cinematic-prototype/dist. The artifact directory is gitignored; regenerate it with artifacts/nightjar-cinematic-prototype when the owned prototype source changes.",
-  "digest": "3d0d7f7e3353979529617d4a866e054a24920d80718453d0a34ff16610597762"
+  "digest": "4754f3dc8252938cad1960c4d723993466093ad7c9b6646defbfbee45d02d3d3"
 }

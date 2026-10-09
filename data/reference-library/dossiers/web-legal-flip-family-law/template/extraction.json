@@ -13,14 +13,15 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 205863,
-      "sha256": "38f1c931b84e6ea212129834f95b32ebed8a219b7791c651149e7360ab428e11"
+      "bytes": 205755,
+      "sha256": "094ebae5f3f7a6bb81c27608ed2205e8d8321ea337016d60ee86ddcc798b4702"
     },
     {
       "path": "source/styles/01.css",
@@ -291,5 +292,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 5 of 6 stylesheets retained. Stylesheet issues: https://www.flip.co.uk/wp-content/themes/propeller/parent-style.min.css (empty-or-unreadable).",
-  "digest": "727fe35a418d2b16f86da7903bc332fd3b989bf0d1bbd5519343b30ad659cd6c"
+  "digest": "11d1248ebb124bb8b7b830ea0b2cb80a59825fd037e46782ae1d548ded4f704c"
 }

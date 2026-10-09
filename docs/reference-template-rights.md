@@ -25,12 +25,13 @@ attestation is missing.
 ## Use limits
 
 The retained templates are internal reference material for pipeline
-refinement, renderer-pack development, and design-mechanics study. Until the
-attribution decision is settled:
+refinement, renderer-pack development, and design-mechanics study. A
+template-derived pack must remain internal until its attribution decision is
+settled. For the three promoted packs listed below, client publication is
+allowed only while the documented footer credit remains visible and followed:
 
 - Source branding, copy, imagery, fonts, and code must not be transferred
   into client sites.
-- Template-derived renderer output must not be published on a client site.
 - Spicer Designs templates carry a footer-attribution condition in their
   CC BY 4.0 license; MIT and CC BY 3.0 sources require attribution if
   substantial portions are reused. Any future publication of derived output

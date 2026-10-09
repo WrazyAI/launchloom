@@ -13,14 +13,15 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 452376,
-      "sha256": "9133c90b01749d72eab6052e0984d2cf78551e7bd27ae4d003043febf89417da"
+      "bytes": 452313,
+      "sha256": "095b0aaaed8903651ad12cac5b142a160db6c478eab837269cee9215fbb0d8eb"
     },
     {
       "path": "source/styles/01.css",
@@ -60,7 +61,7 @@
     {
       "path": "source/styles/08.css",
       "bytes": 121412,
-      "sha256": "c28eb8900abce3c478234e62390838556d839c10b7073b2ba42bcbae20d6e2fc"
+      "sha256": "d351856b0a103f6e6cff13574dffc0678a031e31ec5497df4a062ca8e6fa85b6"
     },
     {
       "path": "source/styles/09.css",
@@ -877,5 +878,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 15 of 15 stylesheets retained.",
-  "digest": "d46d1f545c62d69b11cf177f5367e017f690652f47771a957db6de32387c9d74"
+  "digest": "ab87228d96cd5c8aee1194bec9c1f3f0e5dd065e8f14b4112e226705f5e1d685"
 }

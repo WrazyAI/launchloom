@@ -13,14 +13,15 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 460636,
-      "sha256": "8d372ff26b69cb7abe999f51cceb82d6432558e6efb6115c1129c4251cfa6095"
+      "bytes": 460072,
+      "sha256": "e6c46992e2724e7910d06b09980601e244cb410764c4461f82422ff497008aa2"
     },
     {
       "path": "source/styles/01.css",
@@ -381,75 +382,75 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i4!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=113595",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i4!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i3!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=49834",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i3!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i5!3i5!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=72151",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i5!3i5!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i4!3i5!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=8390",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i4!3i5!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i4!3i7!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=30004",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i4!3i7!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i5!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=46285",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i5!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i3!3i5!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=2354",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i3!3i5!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i5!3i7!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=93765",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i5!3i7!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i3!3i7!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=39589",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i3!3i7!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i2!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=117144",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i2!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i2!3i7!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=106899",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i2!3i7!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i2!3i5!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=69664",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i2!3i5!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i6!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=110046",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i6!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i6!3i5!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=62566",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i6!3i5!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i6!3i7!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=26455",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i6!3i7!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i1!3i7!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=43138",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i1!3i7!4i256!2m3!1e0!2sm!3i798564194!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i1!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=53383",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i1!3i6!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i1!3i5!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=AIzaSyAd5qBPJYpsdFFn4Ql3aEPw-i92cYYFY0k&token=5903",
+      "url": "https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i4!2i1!3i5!4i256!2m3!1e0!2sm!3i798564374!3m13!2sen-US!3sUS!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e0!5m1!1e3!23i46991212!23i47054750!23i47083502&key=[redacted]&token=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
@@ -562,5 +563,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 12 of 12 stylesheets retained.",
-  "digest": "84c55f41960d9c7a766cf6aa69214e1ea4545824427a1af5500644039368c026"
+  "digest": "5ffe51a04b6dd32cee76533f495e1183d989510f0069735b9d182038abb3a8e7"
 }

@@ -7,8 +7,11 @@ import {
   buildReferenceTemplateIndex,
   listReferenceTemplateEntries,
   loadReferenceTemplate,
+  redactSensitiveUrl,
   referenceTemplateDigest,
   readReferenceTemplateIndex,
+  scrubLiveTemplateHtml,
+  scrubLiveTemplateCss,
   validateReferenceTemplateRecord,
 } from "../scripts/reference-template.mjs";
 
@@ -72,6 +75,7 @@ function writeExtractionRecord(
       url: "https://example.test/",
       retrievedAt: "2026-10-08T00:00:00.000Z",
       attestationPath: "rights/template-extraction.md",
+      rightsEvidencePath: "rights/permission.md",
     },
     entrypoint: "source/index.html",
     files: [
@@ -106,6 +110,24 @@ afterEach(() => {
 });
 
 describe("reference templates", () => {
+  it("redacts credential-like URL values and executable live-site markup", () => {
+    expect(
+      redactSensitiveUrl(
+        "https://example.test/media?apikey=secret-value&width=1200",
+      ),
+    ).toBe("https://example.test/media?apikey=[redacted]&width=1200");
+    const html = scrubLiveTemplateHtml(`
+      <!-- <script src="https://example.test/app.js"></script> -->
+      <noscript><a href="javascript:alert(1)">Open</a></noscript>
+      <a href="javascript:void(0)" onclick="alert(1)">Open</a>
+      <img src="https://example.test/image?token=secret-value" />
+    `);
+    expect(html).not.toMatch(/<script|noscript|javascript:|onclick=/iu);
+    expect(html).toContain("token=[redacted]");
+    expect(scrubLiveTemplateCss(".x{background:url(https://x.test/?key=secret)}"))
+      .toContain("key=[redacted]");
+  });
+
   it("validates and loads a complete extracted template", () => {
     const { repositoryRoot, directory } = createDossier();
     writeExtractionRecord(directory);
@@ -214,6 +236,7 @@ describe("reference templates", () => {
         url: "https://example.test/",
         retrievedAt: "2026-10-08T00:00:00.000Z",
         attestationPath: "rights/template-extraction.md",
+        rightsEvidencePath: "rights/permission.md",
       },
     };
     expect(() =>
@@ -248,6 +271,59 @@ describe("reference templates", () => {
         },
       ),
     ).toThrow(/attestation/u);
+  });
+
+  it("requires the manifest rights evidence and binds licensed records to it", () => {
+    const { directory } = createDossier("licensed");
+    fs.rmSync(path.join(directory, "rights", "permission.md"));
+    writeExtractionRecord(directory, {
+      source: {
+        url: "https://example.test/",
+        retrievedAt: "2026-10-08T00:00:00.000Z",
+        attestationPath: "rights/template-extraction.md",
+        licenseEvidencePath: "rights/permission.md",
+        rightsEvidencePath: "rights/permission.md",
+      },
+    });
+    expect(() =>
+      validateReferenceTemplateRecord(
+        JSON.parse(
+          fs.readFileSync(
+            path.join(directory, "template", "extraction.json"),
+            "utf8",
+          ),
+        ),
+        {
+          dossierDirectory: directory,
+          dossierId: "sample-reference",
+          dossierRights: "licensed",
+        },
+      ),
+    ).toThrow(/source rights evidence/u);
+  });
+
+  it("rejects retained files that are absent from the extraction manifest", () => {
+    const { directory } = createDossier();
+    writeExtractionRecord(directory);
+    fs.writeFileSync(
+      path.join(directory, "template", "source", "extra.css"),
+      "body { color: #111; }\n",
+    );
+    expect(() =>
+      validateReferenceTemplateRecord(
+        JSON.parse(
+          fs.readFileSync(
+            path.join(directory, "template", "extraction.json"),
+            "utf8",
+          ),
+        ),
+        {
+          dossierDirectory: directory,
+          dossierId: "sample-reference",
+          dossierRights: "permission-cleared",
+        },
+      ),
+    ).toThrow(/unrecorded retained file/u);
   });
 
   it("rejects file paths that escape the template folder", () => {
@@ -343,6 +419,23 @@ describe("reference templates", () => {
       files: [...files].reverse(),
     });
     expect(forward).toBe(reversed);
+  });
+
+  it("rejects excluded-media records beyond the digest limit", () => {
+    const entries = Array.from({ length: 301 }, (_, index) => ({
+      url: `https://example.test/media/${index}`,
+      reason: "remote-media-not-retained",
+    }));
+    expect(() =>
+      referenceTemplateDigest({
+        dossierId: "sample-reference",
+        status: "failed",
+        method: "live-site",
+        source: { url: "https://example.test/" },
+        reason: "source failure",
+        excludedMedia: entries,
+      }),
+    ).toThrow(/excluded media exceeds/u);
   });
 
   it("keeps the committed library index consistent with retained templates", () => {

@@ -53,7 +53,6 @@ const BUNDLED_EXTENSIONS = new Set([
   ".mp4",
   ".webm",
   ".pdf",
-  ".zip",
 ]);
 
 const DEFAULT_LIMITS = {
@@ -63,6 +62,58 @@ const DEFAULT_LIMITS = {
   liveMaxTotalBytes: 8 * 1024 * 1024,
   maxExcludedMedia: 300,
 };
+
+const SENSITIVE_QUERY_VALUE =
+  /([?&](?:amp;)?(?:api[_-]?key|apikey|access[_-]?token|authorization|auth|credential|key|password|secret|sig|signature|token)=)[^&#"'<>\s]*/giu;
+
+/**
+ * Removes credential-like query values before URLs enter retained records.
+ * Keep the parameter name and path so the inventory remains useful without
+ * preserving a bearer, signed-media, or API credential value.
+ */
+export function redactSensitiveUrl(value, limit = 600) {
+  return String(value || "")
+    .replace(SENSITIVE_QUERY_VALUE, "$1[redacted]")
+    .slice(0, limit);
+}
+
+export function redactSensitiveUrlText(value) {
+  return String(value || "").replace(
+    SENSITIVE_QUERY_VALUE,
+    "$1[redacted]",
+  );
+}
+
+/**
+ * Live-site captures are structural references, not executable source. Remove
+ * script-bearing fallbacks, comments containing executable markup, inline
+ * handlers, and javascript URLs before retaining the DOM.
+ */
+export function scrubLiveTemplateHtml(value) {
+  return redactSensitiveUrlText(String(value || ""))
+    .replace(/<script\b[\s\S]*?<\/script>/giu, "")
+    .replace(/<\/?noscript\b[^>]*>/giu, "")
+    .replace(
+      /<!--[\s\S]*?(?:<script\b|javascript:|\son[a-z][\w:-]*\s*=)[\s\S]*?-->/giu,
+      "",
+    )
+    .replace(
+      /\s+on[a-z][\w:-]*\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/giu,
+      "",
+    )
+    .replace(
+      /\s+(?:href|src|action|formaction|poster|data|xlink:href)\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*'|javascript:[^\s>]+)/giu,
+      "",
+    )
+    .replace(/javascript:/giu, "about:blank");
+}
+
+export function scrubLiveTemplateCss(value) {
+  return redactSensitiveUrlText(String(value || "")).replace(
+    /javascript:/giu,
+    "about:blank",
+  );
+}
 
 function stableJson(value) {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
@@ -116,6 +167,7 @@ function normalizeSource(source = {}) {
     generator: optionalText(source.generator, 400),
     license: optionalText(source.license, 120),
     licenseEvidencePath: optionalText(source.licenseEvidencePath, 260),
+    rightsEvidencePath: optionalText(source.rightsEvidencePath, 260),
     attestationPath: optionalText(source.attestationPath, 260),
     archiveSha256: optionalText(source.archiveSha256, 64),
     finalUrl: optionalText(source.finalUrl, 600),
@@ -156,12 +208,16 @@ export function normalizeReferenceTemplateRecord(record = {}) {
         .sort((a, b) => a.path.localeCompare(b.path))
     : [];
   const excludedMedia = Array.isArray(record.excludedMedia)
-    ? record.excludedMedia
-        .map((entry) => ({
+    ? (() => {
+        if (record.excludedMedia.length > DEFAULT_LIMITS.maxExcludedMedia)
+          throw new Error(
+            `Reference template excluded media exceeds the ${DEFAULT_LIMITS.maxExcludedMedia} entry limit.`,
+          );
+        return record.excludedMedia.map((entry) => ({
           url: requiredText(entry?.url, "excluded media URL", 600),
           reason: requiredText(entry?.reason, "excluded media reason", 120),
-        }))
-        .slice(0, DEFAULT_LIMITS.maxExcludedMedia)
+        }));
+      })()
     : [];
   return {
     schemaVersion: REFERENCE_TEMPLATE_SCHEMA_VERSION,
@@ -195,6 +251,8 @@ export function validateReferenceTemplateRecord(record, options = {}) {
     dossierDirectory,
     dossierId,
     dossierRights,
+    dossierRightsEvidencePath,
+    templateDirectoryOverride,
     limits: limitOverrides,
   } = options;
   const limits = { ...DEFAULT_LIMITS, ...(limitOverrides || {}) };
@@ -205,6 +263,8 @@ export function validateReferenceTemplateRecord(record, options = {}) {
       "Reference template validation requires a dossier directory.",
     );
   const directory = path.resolve(dossierDirectory);
+  if (fs.realpathSync(directory) !== directory)
+    throw new Error("Reference dossier directory must not be a symlink.");
   const normalized = normalizeReferenceTemplateRecord(record);
   const id = normalized.dossierId;
   if (dossierId && id !== dossierId)
@@ -222,6 +282,12 @@ export function validateReferenceTemplateRecord(record, options = {}) {
       `Reference template method must be one of: ${REFERENCE_TEMPLATE_METHODS.join(", ")}.`,
     );
 
+  const manifest = readDossierManifest(directory);
+  const rightsEvidencePath =
+    dossierRightsEvidencePath ||
+    normalized.source.rightsEvidencePath ||
+    manifest?.source?.rightsEvidencePath ||
+    null;
   const attestationPath = normalized.source.attestationPath;
   if (dossierRights !== "owned") {
     if (!attestationPath)
@@ -247,6 +313,39 @@ export function validateReferenceTemplateRecord(record, options = {}) {
       fs.realpathSync(resolvedAttestation),
       "rights attestation path",
     );
+
+    if (!rightsEvidencePath)
+      throw new Error(
+        `Reference template '${id}' needs a source rights evidence path.`,
+      );
+    if (normalized.source.rightsEvidencePath !== rightsEvidencePath)
+      throw new Error(
+        `Reference template '${id}' rights evidence path must match its dossier manifest.`,
+      );
+    if (path.isAbsolute(rightsEvidencePath))
+      throw new Error("Template rights evidence path must be dossier-relative.");
+    const resolvedRightsEvidence = path.resolve(directory, rightsEvidencePath);
+    within(directory, resolvedRightsEvidence, "rights evidence path");
+    if (
+      !fs.existsSync(resolvedRightsEvidence) ||
+      fs.lstatSync(resolvedRightsEvidence).isSymbolicLink() ||
+      !fs.statSync(resolvedRightsEvidence).isFile()
+    )
+      throw new Error(
+        `Reference template '${id}' is missing source rights evidence: ${rightsEvidencePath}.`,
+      );
+    within(
+      fs.realpathSync(directory),
+      fs.realpathSync(resolvedRightsEvidence),
+      "rights evidence path",
+    );
+    if (
+      dossierRights === "licensed" &&
+      normalized.source.licenseEvidencePath !== rightsEvidencePath
+    )
+      throw new Error(
+        `Reference template '${id}' license evidence must match its dossier rights evidence path.`,
+      );
   }
 
   if (normalized.status !== "extracted") {
@@ -270,7 +369,9 @@ export function validateReferenceTemplateRecord(record, options = {}) {
     };
   }
 
-  const templateDirectory = path.join(directory, "template");
+  const templateDirectory = path.resolve(
+    templateDirectoryOverride || path.join(directory, "template"),
+  );
   if (
     !fs.existsSync(templateDirectory) ||
     fs.lstatSync(templateDirectory).isSymbolicLink() ||
@@ -302,6 +403,22 @@ export function validateReferenceTemplateRecord(record, options = {}) {
       `Reference template '${id}' exceeds the ${limits.maxFiles} file limit.`,
     );
 
+  const sourceDirectory = path.join(templateDirectory, "source");
+  if (
+    !fs.existsSync(sourceDirectory) ||
+    fs.lstatSync(sourceDirectory).isSymbolicLink() ||
+    !fs.statSync(sourceDirectory).isDirectory()
+  )
+    throw new Error(`Reference template '${id}' is missing its source folder.`);
+  within(
+    fs.realpathSync(templateDirectory),
+    fs.realpathSync(sourceDirectory),
+    "source folder",
+  );
+  const actualFiles = collectTemplateFiles(sourceDirectory).map(
+    (file) => `source/${file}`,
+  );
+  const actualFileSet = new Set(actualFiles);
   let totalBytes = 0;
   const seen = new Set();
   for (const file of normalized.files) {
@@ -351,6 +468,15 @@ export function validateReferenceTemplateRecord(record, options = {}) {
       );
     totalBytes += bytes.length;
   }
+  for (const actualFile of actualFiles)
+    if (!seen.has(actualFile))
+      throw new Error(
+        `Reference template '${id}' has an unrecorded retained file '${actualFile}'.`,
+      );
+  if (actualFileSet.size !== normalized.files.length)
+    throw new Error(
+      `Reference template '${id}' file manifest does not match retained files.`,
+    );
   const totalLimit =
     normalized.method === "live-site"
       ? limits.liveMaxTotalBytes
@@ -397,11 +523,38 @@ export function readReferenceTemplateRecord(dossierDirectory) {
   return JSON.parse(fs.readFileSync(recordPath, "utf8"));
 }
 
-function readDossierRights(dossierDirectory) {
+function readDossierManifest(dossierDirectory) {
   const manifestPath = path.join(dossierDirectory, "manifest.json");
   if (!fs.existsSync(manifestPath)) return null;
+  if (fs.lstatSync(manifestPath).isSymbolicLink())
+    throw new Error(`Reference dossier manifest must not be a symlink: ${manifestPath}.`);
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-  return manifest?.source?.rights || null;
+  return manifest && typeof manifest === "object" ? manifest : null;
+}
+
+function readDossierRights(dossierDirectory) {
+  return readDossierManifest(dossierDirectory)?.source?.rights || null;
+}
+
+function collectTemplateFiles(directory) {
+  const files = [];
+  const visit = (current) => {
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const fullPath = path.join(current, entry.name);
+      if (entry.isSymbolicLink())
+        throw new Error(`Reference template must not contain a symlink: ${fullPath}.`);
+      if (entry.isDirectory()) {
+        visit(fullPath);
+        continue;
+      }
+      if (entry.isFile())
+        files.push(
+          path.relative(directory, fullPath).replaceAll(path.sep, "/"),
+        );
+    }
+  };
+  visit(directory);
+  return files.sort((left, right) => left.localeCompare(right));
 }
 
 export function loadReferenceTemplate(
@@ -414,12 +567,19 @@ export function loadReferenceTemplate(
     throw new Error("Reference dossier path must be repository-relative.");
   const directory = path.resolve(root, relativeDirectory);
   within(root, directory, "dossier directory");
+  const realRoot = fs.realpathSync(root);
+  const realDirectory = fs.realpathSync(directory);
+  within(realRoot, realDirectory, "dossier directory");
+  if (realDirectory !== directory)
+    throw new Error("Reference dossier directory must not be a symlink.");
   const record = readReferenceTemplateRecord(directory);
   if (!record) return null;
   const validated = validateReferenceTemplateRecord(record, {
     dossierDirectory: directory,
     dossierId: path.basename(directory),
     dossierRights: readDossierRights(directory),
+    dossierRightsEvidencePath:
+      readDossierManifest(directory)?.source?.rightsEvidencePath || null,
   });
   return {
     ...validated,
@@ -443,6 +603,8 @@ export function listReferenceTemplateEntries(repositoryRoot = process.cwd()) {
     const directory = path.join(dossiersRoot, id);
     const dossierPath = `data/reference-library/dossiers/${id}`;
     const rights = readDossierRights(directory);
+    const rightsEvidencePath =
+      readDossierManifest(directory)?.source?.rightsEvidencePath || null;
     const record = readReferenceTemplateRecord(directory);
     if (!record) {
       entries.push({
@@ -464,6 +626,7 @@ export function listReferenceTemplateEntries(repositoryRoot = process.cwd()) {
       dossierDirectory: directory,
       dossierId: id,
       dossierRights: rights,
+      dossierRightsEvidencePath: rightsEvidencePath,
     });
     entries.push({
       id,

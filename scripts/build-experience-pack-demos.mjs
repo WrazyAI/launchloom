@@ -150,6 +150,23 @@ async function makeSitePortable(siteRoot) {
   }
 }
 
+async function resolveDependencyNodeModules() {
+  for (const candidate of [
+    path.join(repository, "templates/client-site/node_modules"),
+    path.join(repository, "node_modules"),
+  ]) {
+    try {
+      await fs.access(path.join(candidate, "astro", "package.json"));
+      return candidate;
+    } catch {
+      // Try the next supported install location.
+    }
+  }
+  throw new Error(
+    "No dependencies found. Run npm ci at the repository root before building experience-pack demos.",
+  );
+}
+
 const contentTypes = {
   ".css": "text/css",
   ".html": "text/html",
@@ -162,6 +179,7 @@ const contentTypes = {
 
 await fs.rm(output, { recursive: true, force: true });
 await fs.mkdir(path.join(output, "screenshots"), { recursive: true });
+const dependencyNodeModules = await resolveDependencyNodeModules();
 
 for (const demo of renderTargets) {
   const workspace = await fs.mkdtemp(
@@ -175,7 +193,7 @@ for (const demo of renderTargets) {
         !source.includes(`${path.sep}dist`),
     });
     await fs.symlink(
-      path.join(repository, "templates/client-site/node_modules"),
+      dependencyNodeModules,
       path.join(workspace, "node_modules"),
       "dir",
     );
@@ -342,7 +360,7 @@ try {
         const mainSections = [
           ...document.querySelectorAll("main > section, main > aside"),
         ];
-        const hero = document.querySelector("main > section:first-child");
+        const hero = document.querySelector("main > [data-experience-hero]");
         const heroBounds = hero?.getBoundingClientRect();
         return {
           packId: root?.getAttribute("data-experience-pack"),
@@ -447,8 +465,9 @@ try {
         await leadForm.locator('button[type="submit"]').click();
         const formStatus = await leadForm.locator(".lead-status").textContent();
         if (
-          formStatus?.trim() !==
-          "This form is not configured yet. Please call us instead."
+          !formStatus?.trim().startsWith(
+            "This inquiry form is not connected yet. Please call ",
+          )
         )
           throw new Error(
             `Editorial demo form fallback is not truthful: ${formStatus}`,

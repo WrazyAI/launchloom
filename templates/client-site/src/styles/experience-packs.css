@@ -212,7 +212,7 @@
   padding: clamp(5rem, 9vw, 9rem) 6vw;
 }
 .xp-folio__contact .lead-form .kicker {
-  color: var(--ll-accent-text-on-dark, var(--folio-paper));
+  color: var(--ll-accent-text-on-light-band, var(--folio-black));
 }
 
 .xp-folio__services > header,
@@ -1557,7 +1557,7 @@
 }
 
 /* Stage index: centered stage with a segmented destination ribbon. Derived
-   from the Dimension reference template (CC BY 3.0); internal review only. */
+   from the Dimension reference template (CC BY 3.0); promoted with credit. */
 .xp-stage {
   --stage-forest-deep: #0c1713;
   --stage-forest: #16241e;
@@ -1900,7 +1900,7 @@
 }
 
 /* Editorial ledger: ruled practice rows, fee transparency, quiet close.
-   Derived from the Caseworth reference template (MIT); internal review only. */
+   Derived from the Caseworth reference template (MIT); promoted with credit. */
 .xp-ledger {
   --ledger-paper: #f4f1ea;
   --ledger-paper-deep: #eae5da;
@@ -2214,7 +2214,7 @@
 }
 
 /* Results ledger: sharp oversized rows and a practice record.
-   Derived from the Spicer Designs law template (CC BY 4.0); internal review only. */
+   Derived from the Spicer Designs law template (CC BY 4.0); promoted with credit. */
 .xp-results {
   --results-paper: #f5f4f0;
   --results-paper-deep: #e9e7e1;

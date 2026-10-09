@@ -10,8 +10,12 @@ import { chromium } from "playwright";
 import {
   buildReferenceTemplateIndex,
   listReferenceTemplateEntries,
+  redactSensitiveUrl,
   referenceTemplateDigest,
   readReferenceTemplateRecord,
+  scrubLiveTemplateCss,
+  scrubLiveTemplateHtml,
+  validateReferenceTemplateRecord,
   writeReferenceTemplateIndex,
 } from "./reference-template.mjs";
 
@@ -279,7 +283,7 @@ function attestationMarkdown(
     "",
     `- Dossier: \`${manifest.id}\``,
     `- Source: ${source.name}`,
-    `- Source URL: ${source.url}`,
+    `- Source URL: ${redactSensitiveUrl(source.url)}`,
     `- Rights basis: ${source.rights}`,
     `- Extraction method: ${method}`,
     `- Recorded: 2026-10-08`,
@@ -591,14 +595,17 @@ async function inlineImports(cssText, baseUrl, requestContext, failures) {
         );
       } else {
         failures.push({
-          url: resolved,
+          url: redactSensitiveUrl(resolved),
           reason: `import HTTP ${response.status()}`,
         });
       }
     } catch (error) {
       if (process.env.LAUNCHLOOM_TEMPLATE_DEBUG)
         console.error("inline-import failure", error?.stack || error);
-      failures.push({ url: resolved, reason: errorText(error) });
+      failures.push({
+        url: redactSensitiveUrl(resolved),
+        reason: errorText(error),
+      });
     }
   }
   return output;
@@ -670,11 +677,14 @@ async function extractLiveSite(manifest, stagedSource, options) {
         if (cssResponse.ok()) text = await cssResponse.text();
         else
           stylesheetFailures.push({
-            url: sheet.href,
+            url: redactSensitiveUrl(sheet.href),
             reason: `HTTP ${cssResponse.status()}`,
           });
       } catch (error) {
-        stylesheetFailures.push({ url: sheet.href, reason: errorText(error) });
+        stylesheetFailures.push({
+          url: redactSensitiveUrl(sheet.href),
+          reason: errorText(error),
+        });
       }
       if (!text) {
         const serialized = await page
@@ -702,19 +712,23 @@ async function extractLiveSite(manifest, stagedSource, options) {
           media: sheet.media,
         });
       else if (
-        !stylesheetFailures.some((failure) => failure.url === sheet.href)
+        !stylesheetFailures.some(
+          (failure) => failure.url === redactSensitiveUrl(sheet.href),
+        )
       )
         stylesheetFailures.push({
-          url: sheet.href,
+          url: redactSensitiveUrl(sheet.href),
           reason: "empty-or-unreadable",
         });
     }
     for (const file of styleFiles)
-      file.text = await inlineImports(
-        file.text,
-        file.sourceUrl,
-        context.request,
-        stylesheetFailures,
+      file.text = scrubLiveTemplateCss(
+        await inlineImports(
+          file.text,
+          file.sourceUrl,
+          context.request,
+          stylesheetFailures,
+        ),
       );
 
     const media = await page.evaluate(() => {
@@ -757,7 +771,7 @@ async function extractLiveSite(manifest, stagedSource, options) {
     const styleMap = Object.fromEntries(
       styleFiles.map((file) => [file.sourceUrl, file.path]),
     );
-    const html = await page.evaluate((map) => {
+    const capturedHtml = await page.evaluate((map) => {
       document
         .querySelectorAll("script")
         .forEach((element) => element.remove());
@@ -790,6 +804,7 @@ async function extractLiveSite(manifest, stagedSource, options) {
       });
       return `<!doctype html>\n${document.documentElement.outerHTML}`;
     }, styleMap);
+    const html = scrubLiveTemplateHtml(capturedHtml);
 
     await fsp.mkdir(path.join(stagedSource, "styles"), { recursive: true });
     await fsp.writeFile(path.join(stagedSource, "index.html"), html);
@@ -811,13 +826,13 @@ async function extractLiveSite(manifest, stagedSource, options) {
     return {
       entrypoint: "index.html",
       excludedMedia: media.map((mediaUrl) => ({
-        url: mediaUrl,
+        url: redactSensitiveUrl(mediaUrl),
         reason: "remote-media-not-retained",
       })),
       license: null,
       source: {
         url,
-        finalUrl: page.url(),
+        finalUrl: redactSensitiveUrl(page.url()),
         httpStatus,
         pageTitle: pageTitle.slice(0, 200),
         retrievedAt: nowIso(),
@@ -883,48 +898,78 @@ async function commitExtraction({
 }) {
   const templateDirectory = path.join(dossierDirectory, "template");
   if (fs.existsSync(templateDirectory) && !force) return "exists";
-  if (fs.existsSync(templateDirectory))
-    await fsp.rm(templateDirectory, { recursive: true, force: true });
-  await fsp.mkdir(templateDirectory, { recursive: true });
-  await fsp.cp(stagedSource, path.join(templateDirectory, "source"), {
-    recursive: true,
-  });
-  const attestationRelative = result.source.attestationPath;
-  if (attestationRelative) {
-    const attestationPath = path.join(dossierDirectory, attestationRelative);
-    if (!fs.existsSync(attestationPath)) {
-      await fsp.mkdir(path.dirname(attestationPath), { recursive: true });
-      await fsp.writeFile(
-        attestationPath,
-        attestationMarkdown(manifest, {
-          method: result.method,
-          license: result.license,
-          licenseEvidencePath: result.source.licenseEvidencePath,
-        }),
-      );
-    }
-  }
-  const files = buildFilesRecord(templateDirectory);
-  const record = {
-    schemaVersion: 1,
-    dossierId: manifest.id,
-    status: "extracted",
-    method: result.method,
-    source: result.source,
-    entrypoint: result.entrypoint.startsWith("source/")
-      ? result.entrypoint
-      : `source/${result.entrypoint}`,
-    files,
-    excludedMedia: result.excludedMedia || [],
-    notes: result.notes || null,
-  };
-  const digest = referenceTemplateDigest(record);
-  const finalRecord = { ...record, digest };
-  await fsp.writeFile(
-    path.join(templateDirectory, "extraction.json"),
-    `${JSON.stringify(finalRecord, null, 2)}\n`,
+  const stagingTemplateDirectory = await fsp.mkdtemp(
+    path.join(dossierDirectory, ".template-staging-"),
   );
-  return "extracted";
+  try {
+    await fsp.cp(stagedSource, path.join(stagingTemplateDirectory, "source"), {
+      recursive: true,
+    });
+    const attestationRelative = result.source.attestationPath;
+    if (attestationRelative) {
+      const attestationPath = path.join(dossierDirectory, attestationRelative);
+      if (!fs.existsSync(attestationPath)) {
+        await fsp.mkdir(path.dirname(attestationPath), { recursive: true });
+        await fsp.writeFile(
+          attestationPath,
+          attestationMarkdown(manifest, {
+            method: result.method,
+            license: result.license,
+            licenseEvidencePath: result.source.licenseEvidencePath,
+          }),
+        );
+      }
+    }
+    const files = buildFilesRecord(stagingTemplateDirectory);
+    const record = {
+      schemaVersion: 1,
+      dossierId: manifest.id,
+      status: "extracted",
+      method: result.method,
+      source: result.source,
+      entrypoint: result.entrypoint.startsWith("source/")
+        ? result.entrypoint
+        : `source/${result.entrypoint}`,
+      files,
+      excludedMedia: result.excludedMedia || [],
+      notes: result.notes || null,
+    };
+    const digest = referenceTemplateDigest(record);
+    const finalRecord = { ...record, digest };
+    await fsp.writeFile(
+      path.join(stagingTemplateDirectory, "extraction.json"),
+      `${JSON.stringify(finalRecord, null, 2)}\n`,
+    );
+    validateReferenceTemplateRecord(finalRecord, {
+      dossierDirectory,
+      dossierId: manifest.id,
+      dossierRights: manifest.source?.rights || null,
+      dossierRightsEvidencePath: manifest.source?.rightsEvidencePath || null,
+      templateDirectoryOverride: stagingTemplateDirectory,
+    });
+
+    let backupDirectory = null;
+    if (fs.existsSync(templateDirectory)) {
+      backupDirectory = path.join(
+        dossierDirectory,
+        `.template-backup-${process.pid}-${Date.now()}`,
+      );
+      await fsp.rename(templateDirectory, backupDirectory);
+    }
+    try {
+      await fsp.rename(stagingTemplateDirectory, templateDirectory);
+    } catch (error) {
+      if (backupDirectory && fs.existsSync(backupDirectory))
+        await fsp.rename(backupDirectory, templateDirectory).catch(() => {});
+      throw error;
+    }
+    if (backupDirectory)
+      await fsp.rm(backupDirectory, { recursive: true, force: true });
+    return "extracted";
+  } finally {
+    if (fs.existsSync(stagingTemplateDirectory))
+      await fsp.rm(stagingTemplateDirectory, { recursive: true, force: true });
+  }
 }
 
 async function writeStatusRecord({
@@ -959,11 +1004,13 @@ async function writeStatusRecord({
     status,
     method,
     source: {
-      url: manifest.source?.url,
+      url: redactSensitiveUrl(manifest.source?.url),
       repository: manifest.source?.repository || null,
       retrievedAt: nowIso(),
       attestationPath: attestationRelative,
+      rightsEvidencePath: manifest.source?.rightsEvidencePath || null,
       ...source,
+      rightsEvidencePath: manifest.source?.rightsEvidencePath || null,
     },
     reason,
   };
@@ -1100,12 +1147,16 @@ async function main() {
       const result = {
         ...staged,
         method,
-        source: {
-          url: plan.manifest.source?.url,
-          ...staged.source,
-          attestationPath:
-            plan.manifest.source?.rights === "owned" ? null : ATT_LICENSED,
-        },
+      source: {
+        url: redactSensitiveUrl(plan.manifest.source?.url),
+        ...staged.source,
+        attestationPath:
+          plan.manifest.source?.rights === "owned" ? null : ATT_LICENSED,
+        rightsEvidencePath:
+          plan.manifest.source?.rights === "owned"
+            ? null
+            : plan.manifest.source?.rightsEvidencePath || null,
+      },
       };
       const status = await commitExtraction({
         manifest: plan.manifest,

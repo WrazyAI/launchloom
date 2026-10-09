@@ -20,7 +20,7 @@
     
     <link rel="stylesheet" href="styles/01.css">
     <link rel="stylesheet" href="styles/02.css" as="style">
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ion-rangeslider/2.3.1/css/ion.rangeSlider.min.css"></noscript>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ion-rangeslider/2.3.1/css/ion.rangeSlider.min.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -6368,16 +6368,16 @@ In Your Inbox.</h5>
     
 
             <!-- Google Tag Manager (noscript) -->
-            <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W3F7DHF"
-            height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+            <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W3F7DHF"
+            height="0" width="0" style="display:none;visibility:hidden"></iframe>
             <!-- End Google Tag Manager -->
             <!-- Google Tag Manager (noscript) -->
-            <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T7M2KNXS"
-            height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+            <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T7M2KNXS"
+            height="0" width="0" style="display:none;visibility:hidden"></iframe>
             <!-- End Google Tag Manager -->
             <!-- Google Tag Manager (noscript) -->
-            <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T9SFQGHZ"
-            height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+            <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T9SFQGHZ"
+            height="0" width="0" style="display:none;visibility:hidden"></iframe>
             <!-- End Google Tag Manager -->
         
 
@@ -6398,83 +6398,7 @@ In Your Inbox.</h5>
 
 
 <!-- 
-<script>
-// Regions Dropdown Element Script - SE Raul
-(function () {
-  function init() {
-    var tabsList = document.querySelectorAll('[data-el-id="fc3cbdd1-08c4-4038-8629-1fd7fd6b59d8"] .accordion.tabs');
 
-    tabsList.forEach(function (tabs) {
-      var headers = tabs.querySelectorAll('.accordion-header');
-
-      function positionAll() {
-        var tabsRect = tabs.getBoundingClientRect();
-        var maxBottom = 0;
-
-        headers.forEach(function (header) {
-          var content = header.nextElementSibling;
-          if (!content || !content.classList.contains('accordion-content')) { return; }
-
-          var headerRect = header.getBoundingClientRect();
-          content.style.left = (headerRect.left - tabsRect.left) + 'px';
-          content.style.top = (headerRect.bottom - tabsRect.top) + 'px';
-          content.style.width = headerRect.width + 'px';
-
-          if (header.classList.contains('is-active')) {
-            var contentRect = content.getBoundingClientRect();
-            maxBottom = Math.max(maxBottom, contentRect.bottom - tabsRect.top);
-          }
-        });
-
-        tabs.style.minHeight = maxBottom ? maxBottom + 'px' : '';
-      }
-
-      function suppressAutoScroll() {
-        var originalScrollTo = window.scrollTo;
-        window.scrollTo = function () {};
-        setTimeout(function () {
-          window.scrollTo = originalScrollTo;
-        }, 500);
-      }
-
-      headers.forEach(function (header) {
-        var content = header.nextElementSibling;
-        if (!content || !content.classList.contains('accordion-content')) { return; }
-
-        var links = content.querySelectorAll('a[href]');
-        var isLinkOnly = links.length === 1 && content.textContent.trim() === links[0].textContent.trim();
-
-        if (isLinkOnly) {
-          var href = links[0].getAttribute('href');
-          header.classList.add('is-link-tile');
-
-          header.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            window.location.href = href;
-          }, true);
-
-          return;
-        }
-
-        header.addEventListener('click', function () {
-          suppressAutoScroll();
-          setTimeout(positionAll, 0);
-        });
-      });
-
-      window.addEventListener('resize', positionAll);
-      positionAll();
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
-</script>
 -->
 
 <!-- SERHANT. - Custom Form Checkbox Disclaimer for https://serhant.com/agent-support - Raul S.E -->

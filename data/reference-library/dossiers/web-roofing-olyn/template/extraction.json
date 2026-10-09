@@ -13,14 +13,15 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 459648,
-      "sha256": "6fd613ab994236b81958898604a3af419b82387734088aca5411774d7c87b0c8"
+      "bytes": 458568,
+      "sha256": "0ea0f899bc7c4fef02e5c9997fb0282ee928a864b8e56eab0f4edbb30976f06d"
     },
     {
       "path": "source/styles/01.css",
@@ -461,5 +462,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
-  "digest": "bfa90804cdfa339f97e82b8dc2517af03088fd9df94996bf93e932c3eb9cad65"
+  "digest": "08c3690a5c749c13dd87345735d50557906bc1f1879cb475a07955321cb6b8fd"
 }

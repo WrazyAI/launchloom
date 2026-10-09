@@ -13,19 +13,20 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 189548,
-      "sha256": "95c4fd9b66fe7cf4255abcad60f3ebae0d69d9bff8beccad2e084d00dad3a4da"
+      "bytes": 189419,
+      "sha256": "731cee60b0099b1afae31a96ff9407e91fd3f160a747e0398a1898d5020e7902"
     },
     {
       "path": "source/styles/01.css",
       "bytes": 122541,
-      "sha256": "416dfabb1ba6878336a0cc23a509cc20cd2203ba0c9e31de37bd64410d18cb8f"
+      "sha256": "fe74c5bfb19688d2359690e38e56391b4c19734f016483dc6359931e9bd756a3"
     },
     {
       "path": "source/styles/02.css",
@@ -65,7 +66,7 @@
     {
       "path": "source/styles/09.css",
       "bytes": 48426,
-      "sha256": "1e8dcaec98f99c2b1b43ff8b8655680b69bbf150470b20ecbdd1cb45570a0587"
+      "sha256": "d633f24647db69316ca1809fb506026dbcc36ff5848b4c5d9c4c721690a435f7"
     },
     {
       "path": "source/styles/10.css",
@@ -541,11 +542,11 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://portal.autoops.com/?apiKey=key_cl_grp_a7b5588a2e5547dba243cfa4ab343cbb&bookingPage=www.urbanautocare.com%2F",
+      "url": "https://portal.autoops.com/?apiKey=[redacted]&bookingPage=www.urbanautocare.com%2F",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://portal.autoops.com/chat?apiKey=key_cl_grp_a7b5588a2e5547dba243cfa4ab343cbb",
+      "url": "https://portal.autoops.com/chat?apiKey=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
@@ -578,5 +579,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 16 of 16 stylesheets retained.",
-  "digest": "692847b4f3a5703a16732ff5eae45ea6f72aa84de3e6ded64e4c6ce69fb14c75"
+  "digest": "4885fb9100f8b7cd811196b697e1ae80feb467e2e737c6eea115e8ca62cf9aae"
 }

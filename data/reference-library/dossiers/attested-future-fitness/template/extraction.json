@@ -13,14 +13,15 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 198663,
-      "sha256": "d3b6ce1fe34f6d28228ab8aba0fd552ffddc56ba52c49a3330f199600c937e99"
+      "bytes": 198631,
+      "sha256": "cf730054cf56b9f8fa1c76f8977646a243c4593150fa760ba6bace8b30aeabda"
     },
     {
       "path": "source/styles/01.css",
@@ -469,7 +470,7 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://www.ojrq.net/p/?return=&cid=13946&tpsync=no&auth=",
+      "url": "https://www.ojrq.net/p/?return=&cid=13946&tpsync=no&auth=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
@@ -494,5 +495,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 4 of 5 stylesheets retained. Stylesheet issues: https://future.co/_next/static/chunks/1z_mbvpkjhpd5.css (empty-or-unreadable).",
-  "digest": "b07a8794855a1b2408d591a1fc4c1bebb36121cc0f9c28ad5bb841011073e4a0"
+  "digest": "ee8e7c7247f615274ee8f658732ef839ef2228414fd060198972e93ef94a4249"
 }

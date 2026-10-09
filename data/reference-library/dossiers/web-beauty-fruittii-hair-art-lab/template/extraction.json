@@ -7,7 +7,8 @@
     "url": "https://fruittiilondon.com/",
     "repository": null,
     "retrievedAt": "2026-10-08T20:40:53.360Z",
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "reason": "navigation returned HTTP 500"
 }

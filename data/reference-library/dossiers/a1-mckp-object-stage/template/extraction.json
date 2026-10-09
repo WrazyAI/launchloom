@@ -13,14 +13,15 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 118225,
-      "sha256": "51e82b1685f6c9eec3f2c17251260d073e035c0addea235f4db836751dfa1609"
+      "bytes": 118087,
+      "sha256": "7dedb583f959b5393d78dd0a53976b2b4f3a45f49a2e703eb64bece2b1882067"
     },
     {
       "path": "source/styles/01.css",
@@ -153,7 +154,7 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/c00bd897-be12-481e-95a6-3d536f45572b?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/c00bd897-be12-481e-95a6-3d536f45572b?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
@@ -161,7 +162,7 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/b99606fc-a215-435f-ad24-7c5c202f87ba?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/b99606fc-a215-435f-ad24-7c5c202f87ba?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
@@ -169,7 +170,7 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/102b630f-3918-4b7d-b44d-047a4cf0b101?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/102b630f-3918-4b7d-b44d-047a4cf0b101?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
@@ -177,7 +178,7 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/1383fac2-6bcc-4e15-9d66-304bee62bfad?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/1383fac2-6bcc-4e15-9d66-304bee62bfad?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
@@ -185,7 +186,7 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/a9aa5a77-acbf-4967-be9f-e09193c21493?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/a9aa5a77-acbf-4967-be9f-e09193c21493?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
@@ -193,7 +194,7 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/b50525b7-c280-485a-9d95-9eda614660b3?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/b50525b7-c280-485a-9d95-9eda614660b3?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
@@ -201,7 +202,7 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/785ee47b-6355-4d68-80e0-8fd40c8025db?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/785ee47b-6355-4d68-80e0-8fd40c8025db?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
@@ -209,35 +210,35 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/bfc85892-19cf-4bbc-b6f5-874af436bde4?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/bfc85892-19cf-4bbc-b6f5-874af436bde4?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/6cfb35a2-d412-43fa-b070-df8ac8c7ccdb?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/6cfb35a2-d412-43fa-b070-df8ac8c7ccdb?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/2fc6e323-c71f-41f8-946e-6270964cdb06?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/2fc6e323-c71f-41f8-946e-6270964cdb06?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/10553dce-103b-4f00-a00c-4ed51d727548?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/10553dce-103b-4f00-a00c-4ed51d727548?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/3572813a-d541-4b00-a43d-735880052afc?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/3572813a-d541-4b00-a43d-735880052afc?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/499cbe82-a4bc-4263-bce5-223ce609997c?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/499cbe82-a4bc-4263-bce5-223ce609997c?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/920d19db-be58-43fd-a0e6-3b5da347f007?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/920d19db-be58-43fd-a0e6-3b5da347f007?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://directus.mckp.live/assets/7a306efb-8b44-4fb5-8af7-b9051aa4fc42?key=800-600-webp",
+      "url": "https://directus.mckp.live/assets/7a306efb-8b44-4fb5-8af7-b9051aa4fc42?key=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
@@ -282,5 +283,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 4 of 4 stylesheets retained.",
-  "digest": "18a81ba2e4d257fdd74accc1fca23f1ee2799129e9eb67c5fe31a6e045355194"
+  "digest": "6d7a50548504c47ecc686a16314931952b13302c19586ea07914d1db975d0379"
 }

@@ -13,14 +13,15 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 110948,
-      "sha256": "2d031e066fe59561a07a05bed805bdbeb5bca9198cd241cd17ca27180f4b168d"
+      "bytes": 110834,
+      "sha256": "2da156c026a62c1c674dae8f9472feb18bac6daaff2c8c9255ceb09d748b4200"
     },
     {
       "path": "source/styles/01.css",
@@ -63,7 +64,7 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://sidebar.bugherd.com/sidebar/embed_html?apikey=znxuwlbztx2lfzd68xruow",
+      "url": "https://sidebar.bugherd.com/sidebar/embed_html?apikey=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
@@ -72,5 +73,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 6 of 6 stylesheets retained. Page errors observed: 1.",
-  "digest": "04dfea7de03b2d06ea6f917a7e3d4a9c7124614f1ba9c98b47db3545b2809a45"
+  "digest": "662cd207dc61a0bef8ebf7b760dbc7802098764acdb5c3464526a7eba7f659b6"
 }

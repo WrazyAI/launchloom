@@ -9,7 +9,8 @@
     "generator": "scripts/build-a1-design-showcase.mjs",
     "retrievedAt": "2026-10-08T20:06:09.985Z",
     "license": "owned",
-    "attestationPath": null
+    "attestationPath": null,
+    "rightsEvidencePath": "rights/provenance.md"
   },
   "entrypoint": "source/index.html",
   "files": [
@@ -21,5 +22,5 @@
   ],
   "excludedMedia": [],
   "notes": "Copied 1 files from the local build artifact at a1-design-showcase/quiet-practice.html. The artifact directory is gitignored; regenerate it with scripts/build-a1-design-showcase.mjs when the owned prototype source changes.",
-  "digest": "8739a57a581f2c727486f103ced6f53d97296ae37b6b257630264735b02e3e12"
+  "digest": "13cdd1855b8328e55dc4ba341690db74330bf903bf552201c4e80b68a6f9c6d6"
 }

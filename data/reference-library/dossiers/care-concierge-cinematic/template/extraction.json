@@ -9,7 +9,8 @@
     "generator": "scripts/build-design-family-demos.mjs",
     "retrievedAt": "2026-10-08T20:06:09.733Z",
     "license": "owned",
-    "attestationPath": null
+    "attestationPath": null,
+    "rightsEvidencePath": "rights/provenance.md"
   },
   "entrypoint": "source/index.html",
   "files": [
@@ -51,5 +52,5 @@
   ],
   "excludedMedia": [],
   "notes": "Copied 7 files from the local build artifact at design-family-demos/cinematic-premium. The artifact directory is gitignored; regenerate it with scripts/build-design-family-demos.mjs when the owned prototype source changes.",
-  "digest": "60194057babb1b78fa37b0606ad89d53ac630c976fe5e831970a797fe73b79eb"
+  "digest": "91b04d753276791fd513c1a78a3150acc08d075c32efee78f7220b444ba9cd36"
 }

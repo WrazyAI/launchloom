@@ -13,14 +13,15 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 216993,
-      "sha256": "911c55574b5b4441644feac92ecae3fdf091830ba4d24ec35470a00304adac5f"
+      "bytes": 216958,
+      "sha256": "99365fda3248816d1a367c7ef32692b1e2d8583dfadd562292563e9b8d3b0dea"
     },
     {
       "path": "source/styles/01.css",
@@ -173,7 +174,7 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://scheduler.servicetitan.com/?brandId=brand_ixvejrdzfv3lgjetrx1vlqic&api_key=ua2e57kz0xwszur0422wf3hk&schedulerid=sched_rorwx1y1w8bbzc73m3o58klj&client_url=https%3A%2F%2Fmorrisjenkins.com%2F&client_referrer=",
+      "url": "https://scheduler.servicetitan.com/?brandId=brand_ixvejrdzfv3lgjetrx1vlqic&api_key=[redacted]&schedulerid=sched_rorwx1y1w8bbzc73m3o58klj&client_url=https%3A%2F%2Fmorrisjenkins.com%2F&client_referrer=",
       "reason": "remote-media-not-retained"
     },
     {
@@ -198,5 +199,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 4 of 4 stylesheets retained.",
-  "digest": "35785eb11bf08dbe3bf666eec6d16c8b3f456ad534e40edaea0758e062d443c5"
+  "digest": "620fe5466da5b77f893c710b1db382fd0e935a0db6b22da2b5842a242526cc7b"
 }

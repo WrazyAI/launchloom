@@ -626,6 +626,28 @@ describe("experience-pack compiler", () => {
     );
   });
 
+  it("keeps registered alternate variants in the default bakeoff budget", () => {
+    const input = site("Default Variant Coverage");
+    input.images.hero = "/images/hero.webp";
+    const candidates = compileExperienceCandidates(input, "general-editorial");
+    const candidateIds = new Set(
+      candidates.map((candidate) => `${candidate.packId}:${candidate.variantId}`),
+    );
+    expect(candidateIds).toEqual(
+      new Set([
+        "cinematic-narrative:standard",
+        "cinematic-narrative:monument",
+        "bold-utility:standard",
+        "bold-utility:portrait",
+        "kinetic-poster:standard",
+        "kinetic-poster:full-bleed",
+        "stage-index:standard",
+        "editorial-ledger:standard",
+        "results-ledger:standard",
+      ]),
+    );
+  });
+
   it("front-loads one candidate per inspiration route", () => {
     const input = site("Route Aware");
     input.images.hero = "/images/hero.webp";

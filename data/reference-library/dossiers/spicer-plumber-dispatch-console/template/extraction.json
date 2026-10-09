@@ -10,7 +10,8 @@
     "retrievedAt": "2026-10-08T20:05:54.686Z",
     "license": "CC-BY-4.0",
     "licenseEvidencePath": "rights/LICENSE",
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/LICENSE"
   },
   "entrypoint": "source/index.html",
   "files": [
@@ -42,5 +43,5 @@
     }
   ],
   "notes": "Downloaded the official HTML build (4 files, archive SHA-256 18821c280c0b7a623094ce80c4a5f1ba4eebab285ed66eddccb0c5206be9259e). The template page footer also shows an MIT label; the retained LICENSE in rights/ records CC BY 4.0 with the footer attribution condition. Reconcile before any derivative publication.",
-  "digest": "22cd6c4624468b59221c600b821887605446829520c594f11960702d3a285572"
+  "digest": "81c470bc40056fef37916cb59671fe8e36fe51e344d83d03c7489f519bb541eb"
 }

@@ -9,7 +9,8 @@
     "generator": "scripts/build-design-family-demos.mjs",
     "retrievedAt": "2026-10-08T20:06:09.865Z",
     "license": "owned",
-    "attestationPath": null
+    "attestationPath": null,
+    "rightsEvidencePath": "rights/provenance.md"
   },
   "entrypoint": "source/index.html",
   "files": [
@@ -51,5 +52,5 @@
   ],
   "excludedMedia": [],
   "notes": "Copied 7 files from the local build artifact at design-family-demos/atmospheric-editorial. The artifact directory is gitignored; regenerate it with scripts/build-design-family-demos.mjs when the owned prototype source changes.",
-  "digest": "cabb479861aee9c9c6817c588c02075d53a579498716e707eb1bb03d3ce800ef"
+  "digest": "563789072da1dee6623733961633685e3413028ca266c698a1a1be84028f3481"
 }

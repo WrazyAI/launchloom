@@ -11,7 +11,8 @@
     "retrievedAt": "2026-10-08T20:04:57.967Z",
     "license": "CC-BY-3.0",
     "licenseEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt"
   },
   "entrypoint": "source/index.html",
   "files": [
@@ -248,5 +249,5 @@
   ],
   "excludedMedia": [],
   "notes": "Fetched 46 files from the pinned repository at f32c95cd40e42659857e2318b6deb1f6be43da5d.",
-  "digest": "7ee0e39f3af8754709d8707c3b3c51ebda2ba949afc68b1223c2d3f8c1453bb9"
+  "digest": "4589f7ac79a9c01dd0774fb82d18c4c45505e24165b983b9ca9a6e535c628463"
 }

@@ -13,14 +13,15 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 103673,
-      "sha256": "fe27b8f605fb2da1f5b381aa59c4bada7f75e627df876f4aef3ac6ca2aed48da"
+      "bytes": 103565,
+      "sha256": "a62b2d36590a88e199374d7e0a04d84bfb1e7d887af1a78ddd30faea9f0e98db"
     },
     {
       "path": "source/styles/01.css",
@@ -343,7 +344,7 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://player.vimeo.com/progressive_redirect/playback/1046552673/rendition/1080p/file.mp4?loc=external&log_user=0&signature=a91fc6a125f61e799d124bd21ddfd907a8e26a8f838c0c79fdd7eeac01bc918b",
+      "url": "https://player.vimeo.com/progressive_redirect/playback/1046552673/rendition/1080p/file.mp4?loc=external&log_user=0&signature=[redacted]",
       "reason": "remote-media-not-retained"
     },
     {
@@ -351,10 +352,10 @@
       "reason": "remote-media-not-retained"
     },
     {
-      "url": "https://player.vimeo.com/progressive_redirect/playback/1045156118/rendition/1080p/file.mp4?loc=external&log_user=0&signature=5b3590afac5d7dca806c98af30249defbe579b6b2c6d825315e17aceaeb232ff",
+      "url": "https://player.vimeo.com/progressive_redirect/playback/1045156118/rendition/1080p/file.mp4?loc=external&log_user=0&signature=[redacted]",
       "reason": "remote-media-not-retained"
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained. Page errors observed: 1.",
-  "digest": "f069c54486771ef028d5be5a24712a2f45cf676f3797f21568295d685e53fc92"
+  "digest": "90421021bfd161ef66c5b66239cebfd648ae01c3cba40e9be35535b52ff884fc"
 }

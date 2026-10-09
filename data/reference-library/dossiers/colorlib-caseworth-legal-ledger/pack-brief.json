@@ -3,7 +3,7 @@
   "dossierId": "colorlib-caseworth-legal-ledger",
   "sourceClass": "licensed",
   "sourceUrl": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/caseworth",
-  "templateDigest": "9757ffcb6b5c9e4d366487a0587867cf4bfef6bc0bfcfbbd7d67e38a23ef5ac1",
+  "templateDigest": "c7f38110a3b04d88d7948f2a44a98793b794dc0c2f54b2e2f0cbdb33d430b917",
   "entrypoint": "source/index.html",
   "generatedAt": "2026-10-09T08:46:30.151Z",
   "files": {

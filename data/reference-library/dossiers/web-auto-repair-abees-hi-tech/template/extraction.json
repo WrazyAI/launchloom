@@ -13,7 +13,8 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
@@ -56,5 +57,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 3 stylesheets retained. Stylesheet issues: https://booking.tekmetric.com/iframe/modal.css?time=1791490891025 (HTTP 403).",
-  "digest": "bd6741130b597754065bc392bfebb6a2b99389dc5f31c536434cb78a6df7f413"
+  "digest": "4e68ae13415a07813c22cf884c1a9eb10e9aaa3b055e941ac41e282d00dc91e1"
 }

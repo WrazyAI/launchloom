@@ -13,14 +13,15 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 196699,
-      "sha256": "6a3bb7ee2d06b4a4fed033f49bf413d3f997e5622a8d850ca1146313f7890f7b"
+      "bytes": 196367,
+      "sha256": "3f249476e9b11dc9895b38da5b1af33ea27ba79ba02a21442b919a130aa110fd"
     },
     {
       "path": "source/styles/01.css",
@@ -35,7 +36,7 @@
     {
       "path": "source/styles/03.css",
       "bytes": 118202,
-      "sha256": "4940c77e3497f97e544d38a0da90d4cd33637e5e3dc16247bb2c8ea5e16624a9"
+      "sha256": "47e5bf04df20df43eeeee2aee1950b05328f16a7b8d22896b58215c86c62c6ff"
     },
     {
       "path": "source/styles/04.css",
@@ -176,5 +177,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 10 of 11 stylesheets retained. Stylesheet issues: https://southernpainting.com/wp-content/plugins/easy-bootstrap-shortcodes/styles/ebs_dynamic_css.php (empty-or-unreadable).",
-  "digest": "164c526e6fd5e55195b259093cecea2eeb40d0bc5bd8b314c79468ebe0dca672"
+  "digest": "44133a2a923054e3b220dd9c31fdebb504915212928b7a114b26f08884d9fd0a"
 }

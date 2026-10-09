@@ -11,7 +11,8 @@
     "retrievedAt": "2026-10-08T20:05:36.076Z",
     "license": "MIT",
     "licenseEvidencePath": "rights/LICENSE",
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/LICENSE"
   },
   "entrypoint": "source/index.html",
   "files": [
@@ -108,5 +109,5 @@
   ],
   "excludedMedia": [],
   "notes": "Fetched 18 files from the pinned repository at f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf.",
-  "digest": "10198e7872bf77f3949f98890649e9cac876c014dd4b289e1b89765f8d9d6e68"
+  "digest": "1c49e6fa9dc8e0a6127d52161debb0dfc2b2808389cdc2ab01c44d003685161e"
 }

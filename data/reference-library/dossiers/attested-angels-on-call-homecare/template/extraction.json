@@ -13,19 +13,20 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 142181,
-      "sha256": "97c1b062751aa27cf1c1e398b4bce7fb2e09a7483dc1bcc789c47e5b55049f72"
+      "bytes": 142113,
+      "sha256": "94b5880cc7126a5325c031e88fa612f6234476742cc9376aa1e2cf567dbd03a0"
     },
     {
       "path": "source/styles/01.css",
       "bytes": 122541,
-      "sha256": "416dfabb1ba6878336a0cc23a509cc20cd2203ba0c9e31de37bd64410d18cb8f"
+      "sha256": "fe74c5bfb19688d2359690e38e56391b4c19734f016483dc6359931e9bd756a3"
     },
     {
       "path": "source/styles/02.css",
@@ -65,7 +66,7 @@
     {
       "path": "source/styles/09.css",
       "bytes": 48426,
-      "sha256": "1e8dcaec98f99c2b1b43ff8b8655680b69bbf150470b20ecbdd1cb45570a0587"
+      "sha256": "d633f24647db69316ca1809fb506026dbcc36ff5848b4c5d9c4c721690a435f7"
     },
     {
       "path": "source/styles/10.css",
@@ -431,5 +432,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 17 of 18 stylesheets retained. Stylesheet issues: https://angelsoncallinc.com/wp-content/plugins/gravityforms/assets/css/dist/theme-components.min.css?ver=3.1.1 (empty-or-unreadable).",
-  "digest": "47f004c130add46756d914e12b7efb53397c987780e4b5574c20934ec4036533"
+  "digest": "9be474d9d6307537adbb252df05c9c524e7d94cb57c8081af85506bbd1185d60"
 }

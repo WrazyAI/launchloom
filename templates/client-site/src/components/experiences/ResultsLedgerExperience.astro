@@ -20,7 +20,7 @@ const { brand, hero, services, proof, process, faqs, copy } = content;
   </header>
 
   <main>
-    <section class="xp-results__hero" id="opening">
+    <section class="xp-results__hero" id="opening" data-experience-hero>
       <div class="xp-results__statement">
         <p class="xp-results__eyebrow">{hero.kicker}</p>
         <h1>{hero.heading}</h1>
@@ -53,7 +53,7 @@ const { brand, hero, services, proof, process, faqs, copy } = content;
 
     {content.hasSocialProof && <SocialProof id="social-proof" />}
 
-    {faqs.length > 0 && <section class="xp-results__faqs" id="faqs"><header><p class="xp-results__eyebrow">Asked before the first call</p><h2>{copy.faqHeading || "Before you call."}</h2></header><div>{faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>}
+    <section class="xp-results__faqs" id="faqs"><header><p class="xp-results__eyebrow">Asked before the first call</p><h2>{copy.faqHeading || "Before you call."}</h2></header><div>{faqs.length > 0 ? faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>) : <p>Questions are welcome. Contact the team to talk through what you need.</p>}</div></section>
 
     {content.showLocationMap && <LocationMap />}
     <section class="xp-results__contact" id="contact">

@@ -9,7 +9,8 @@
     "generator": "scripts/build-a1-design-showcase.mjs",
     "retrievedAt": "2026-10-08T20:06:09.904Z",
     "license": "owned",
-    "attestationPath": null
+    "attestationPath": null,
+    "rightsEvidencePath": "rights/provenance.md"
   },
   "entrypoint": "source/index.html",
   "files": [
@@ -21,5 +22,5 @@
   ],
   "excludedMedia": [],
   "notes": "Copied 1 files from the local build artifact at a1-design-showcase/kinetic-club.html. The artifact directory is gitignored; regenerate it with scripts/build-a1-design-showcase.mjs when the owned prototype source changes.",
-  "digest": "a6f6005e6ad04a1caf1334c733390b5e7a9f4bda58045a0a26609c9869b7d8ff"
+  "digest": "c2df2207e4ea1033611706b214d9f0e67f050a45c670b57c5f42c3d174d289e7"
 }

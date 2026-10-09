@@ -13,14 +13,15 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 1115663,
-      "sha256": "3212f9bbf3fc56539b7815b2d96471a0d6a6ee962e97b7104b44bc8b9132b3c4"
+      "bytes": 480585,
+      "sha256": "32af56d7cea351e8ad8eda42e048e650400031d642414b9cb20738c578af0fa1"
     },
     {
       "path": "source/styles/01.css",
@@ -261,5 +262,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 27 of 28 stylesheets retained. Stylesheet issues: https://aptivepestcontrol.com/wp-content/plugins/divi-modules-table-maker/extensions/divi-4/styles/style.min.css?ver=4.0.1 (empty-or-unreadable).",
-  "digest": "a3bbc7b1d0b4c23bf1e9bf2dd294e3dc097da9deb436fd04c160f9ed2992e4b6"
+  "digest": "ad823995e9b803debec4ed91dc38eb0b5d920bc6878156a9ffbd692a50526aa7"
 }

@@ -20,7 +20,7 @@ const { brand, hero, services, proof, process, faqs, locations, copy } = content
   </header>
 
   <main>
-    <section class="xp-service__hero" id="opening">
+    <section class="xp-service__hero" id="opening" data-experience-hero>
       <div><p class="xp-service__eyebrow">{hero.kicker}</p><h1>{hero.heading}</h1><p>{hero.body}</p><div class="xp-service__actions"><a href={primaryCtaHref(Astro.url.pathname)}>{hero.primaryLabel}</a>{brand.phone && <a href={phoneHref(brand.phone)}>Call now</a>}</div></div>
       {hero.image ? <figure><img src={hero.image} alt={`${brand.name} service work`} fetchpriority="high" />{proof[0] && <figcaption>{proof[0]}</figcaption>}</figure> : <div class="xp-service__hero-art"><span>{brand.name}</span></div>}
     </section>

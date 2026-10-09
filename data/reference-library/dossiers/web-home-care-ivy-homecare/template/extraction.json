@@ -13,7 +13,8 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
@@ -184,5 +185,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 22 of 23 stylesheets retained. Stylesheet issues: https://ivyhomecareservices.co.uk/wp-content/plugins/astra-addon/addons/nav-menu/assets/css/minified/magamenu-frontend.min.css?ver=4.13.10 (empty-or-unreadable).",
-  "digest": "ec762412c677686bfb17e68f691cbbb2c9849542156ff9a143e7c32a374bbb56"
+  "digest": "2df8d6506c6385c21f2dc0942d5455a53f22e5f1b120306278eb8fe35acf274f"
 }

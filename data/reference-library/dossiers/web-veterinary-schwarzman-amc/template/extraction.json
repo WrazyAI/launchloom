@@ -13,14 +13,15 @@
       "width": 1440,
       "height": 900
     },
-    "attestationPath": "rights/template-extraction.md"
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
   },
   "entrypoint": "source/index.html",
   "files": [
     {
       "path": "source/index.html",
-      "bytes": 216424,
-      "sha256": "61e29d2927f2e48d8155a8b9da88073a01b5d7390533d797eb8de9feee41a955"
+      "bytes": 46945,
+      "sha256": "852c80f81d6ed8f01627e3bfb27e4912bd5a31d7c3c3f5004e2ac294d1cede9b"
     },
     {
       "path": "source/styles/01.css",
@@ -1163,5 +1164,5 @@
     }
   ],
   "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 13 of 14 stylesheets retained. Stylesheet issues: https://www.amcny.org/wp-content/themes/amc/css/static.css?ver=2026-10-08 (empty-or-unreadable). Page errors observed: 1.",
-  "digest": "f2e6cd155e3452adac87c7ef67832ff88f1c02b91b702fdfe10e9a0056408c15"
+  "digest": "41671980470aca1dd32522f64d2a77d603c4011ea5e67ebb28782c90883ecefd"
 }

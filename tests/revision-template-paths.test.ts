@@ -48,6 +48,22 @@ it("syncs the quick-answer layout runtime with conversion-feature revisions", ()
     );
 });
 
+it("copies every promoted experience adapter and its license credit", () => {
+  const paths = revisionTemplatePaths({
+    design: { experience: { packId: "stage-index" } },
+  });
+  expect(paths).toEqual(
+    expect.arrayContaining([
+      "src/components/ExperiencePage.astro",
+      "src/components/experiences/StageIndexExperience.astro",
+      "src/components/experiences/EditorialLedgerExperience.astro",
+      "src/components/experiences/ResultsLedgerExperience.astro",
+      "src/components/experiences/ReferencePackCredit.astro",
+      "src/styles/experience-packs.css",
+    ]),
+  );
+});
+
 it("allows the legacy homepage only when social proof insertion can write it", () => {
   const withoutProof = revisionTemplateWritePaths({
     revisionReport: { operations: [] },
