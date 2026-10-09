@@ -268,10 +268,14 @@ describe("SEO market map", () => {
       expect.arrayContaining([
         "sourdough bread",
         "sourdough bread near me",
-        "sourdough bread Seattle, WA",
+        "sourdough bread Seattle WA",
         "order sourdough bread",
       ]),
     );
+    expect(planned.every((keyword) => !keyword.includes(","))).toBe(true);
+    expect(provider.googleSearchVolume.mock.calls[0]?.[0]).toMatchObject({
+      locationName: "Seattle,Washington,United States",
+    });
     expect(
       planned.some((keyword) =>
         keyword.toLowerCase().startsWith("restaurant "),
@@ -280,7 +284,7 @@ describe("SEO market map", () => {
     expect(dossier.validatedQueries).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          keyword: "sourdough bread Seattle, WA",
+          keyword: "sourdough bread Seattle WA",
           confirmedService: "Naturally leavened breads",
           volume: 90,
           provenance: "dataforseo",
@@ -290,12 +294,12 @@ describe("SEO market map", () => {
     expect(
       dossier.pageMap.find((page) => page.pageType === "service")
         ?.primaryKeyword?.keyword,
-    ).toMatch(/sourdough bread Seattle, WA/iu);
+    ).toMatch(/sourdough bread Seattle WA/iu);
     expect(provider.organicSerp.mock.calls[0]?.[0].keyword).toBe(
-      "sourdough bread Seattle, WA",
+      "sourdough bread Seattle WA",
     );
     expect(provider.relatedKeywords.mock.calls[0]?.[0].keyword).toBe(
-      "sourdough bread Seattle, WA",
+      "sourdough bread Seattle WA",
     );
     expect(dossier.intentPlanning).toMatchObject({
       status: "model",
@@ -1504,9 +1508,9 @@ describe("SEO market map", () => {
     expect(
       webSearch.search.mock.calls.map(([request]) => request.query),
     ).toEqual([
-      "veterinary preventive wellness visits Madison, WI",
-      "veterinary vaccination appointments Madison, WI",
-      "veterinary diagnostic consultations Madison, WI",
+      "veterinary preventive wellness visits Madison WI",
+      "veterinary vaccination appointments Madison WI",
+      "veterinary diagnostic consultations Madison WI",
     ]);
     expect(veterinary.mode).toBe("context-only");
     expect(veterinary.publishReady).toBe(false);
@@ -1546,7 +1550,7 @@ describe("SEO market map", () => {
       },
     );
     expect(generalSearch.search.mock.calls[0]?.[0].query).toBe(
-      "Preventive wellness visits Madison, WI",
+      "Preventive wellness visits Madison WI",
     );
     expect(generalSearch.search.mock.calls[0]?.[0].query).not.toContain(
       "veterinary",

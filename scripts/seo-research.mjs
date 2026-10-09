@@ -312,7 +312,10 @@ function searchServiceTerm(seo, service) {
 }
 
 function localServiceQuery(service, city) {
-  const cityTerm = text(city, 160).replace(/\s+/gu, " ").trim();
+  const cityTerm = text(city, 160)
+    .replace(/,/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
   const cityKey = keywordKey(cityTerm);
   return !cityKey || ` ${keywordKey(service)} `.includes(` ${cityKey} `)
     ? service
