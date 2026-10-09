@@ -1,0 +1,566 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "spicer-law-firm-results-ledger",
+  "sourceClass": "licensed",
+  "sourceUrl": "https://www.spicerdesigns.com/templates/law-firm",
+  "templateDigest": "634fc8862fcab74857d449a13e3f15f8fd2d999e52806cd0d23f7eb958e96bb4",
+  "entrypoint": "source/index.html",
+  "generatedAt": "2026-10-09T08:46:30.172Z",
+  "files": {
+    "html": 1,
+    "css": 1,
+    "total": 4
+  },
+  "structure": {
+    "headings": [
+      {
+        "level": 1,
+        "text": "Trial lawyers. Not settlement mills."
+      },
+      {
+        "level": 2,
+        "text": "Four areas. Nothing outside them."
+      },
+      {
+        "level": 3,
+        "text": "Personal injury"
+      },
+      {
+        "level": 3,
+        "text": "Employment"
+      },
+      {
+        "level": 3,
+        "text": "Business litigation"
+      },
+      {
+        "level": 3,
+        "text": "Appeals"
+      },
+      {
+        "level": 2,
+        "text": "The ledger, not the highlights."
+      },
+      {
+        "level": 2,
+        "text": "Three lawyers. Each tries their own files."
+      },
+      {
+        "level": 3,
+        "text": "Margaret Hartwell"
+      },
+      {
+        "level": 3,
+        "text": "Daniel Vance"
+      },
+      {
+        "level": 3,
+        "text": "Priya Okonkwo"
+      },
+      {
+        "level": 2,
+        "text": "What happens after you call."
+      },
+      {
+        "level": 3,
+        "text": "Intake call"
+      },
+      {
+        "level": 3,
+        "text": "Case assessment"
+      },
+      {
+        "level": 3,
+        "text": "Engagement letter"
+      },
+      {
+        "level": 3,
+        "text": "Investigation"
+      },
+      {
+        "level": 2,
+        "text": "Four fields. That is the whole form."
+      },
+      {
+        "level": 3,
+        "text": "Confidentiality"
+      },
+      {
+        "level": 3,
+        "text": "The fee"
+      },
+      {
+        "level": 3,
+        "text": "If there is no case"
+      },
+      {
+        "level": 2,
+        "text": "Asked on nearly every first call."
+      },
+      {
+        "level": 3,
+        "text": "What does a consultation cost?"
+      },
+      {
+        "level": 3,
+        "text": "How does the fee work?"
+      },
+      {
+        "level": 3,
+        "text": "How long will my case take?"
+      },
+      {
+        "level": 3,
+        "text": "Is there a deadline I should worry about?"
+      },
+      {
+        "level": 3,
+        "text": "Who will actually handle my file?"
+      }
+    ],
+    "sections": [
+      {
+        "element": "header",
+        "id": "",
+        "marker": "relative"
+      },
+      {
+        "element": "aside",
+        "id": "",
+        "marker": "border"
+      },
+      {
+        "element": "section",
+        "id": "practice",
+        "marker": "border-t"
+      },
+      {
+        "element": "article",
+        "id": "",
+        "marker": "group"
+      },
+      {
+        "element": "article",
+        "id": "",
+        "marker": "group"
+      },
+      {
+        "element": "article",
+        "id": "",
+        "marker": "group"
+      },
+      {
+        "element": "article",
+        "id": "",
+        "marker": "group"
+      },
+      {
+        "element": "section",
+        "id": "results",
+        "marker": "bg-[#18222f]"
+      },
+      {
+        "element": "section",
+        "id": "attorneys",
+        "marker": "border-t"
+      },
+      {
+        "element": "article",
+        "id": "",
+        "marker": "border"
+      },
+      {
+        "element": "article",
+        "id": "",
+        "marker": "border"
+      },
+      {
+        "element": "article",
+        "id": "",
+        "marker": "border"
+      },
+      {
+        "element": "section",
+        "id": "",
+        "marker": "bg-[#18222f]"
+      },
+      {
+        "element": "section",
+        "id": "",
+        "marker": "border-t"
+      },
+      {
+        "element": "section",
+        "id": "consult",
+        "marker": "bg-[#18222f]"
+      },
+      {
+        "element": "section",
+        "id": "",
+        "marker": "border-t"
+      },
+      {
+        "element": "footer",
+        "id": "",
+        "marker": "border-t"
+      }
+    ],
+    "classNames": [
+      "min-h-screen",
+      "bg-[#111925]",
+      "text-[#ede9e1]",
+      "antialiased",
+      "border-b",
+      "border-[#c9a84c]/45",
+      "mx-auto",
+      "flex",
+      "max-w-7xl",
+      "flex-wrap",
+      "items-center",
+      "justify-between",
+      "gap-x-6",
+      "gap-y-1",
+      "px-5",
+      "py-2.5",
+      "sm:px-8",
+      "text-[12px]",
+      "tracking-[0.02em]",
+      "text-[#8e8880]",
+      "text-[#4e4a45]",
+      "text-[13px]",
+      "font-bold",
+      "tracking-[0.04em]",
+      "text-[#c9a84c]",
+      "hover:text-[#f5e8c0]",
+      "relative",
+      "overflow-hidden",
+      "pointer-events-none",
+      "absolute",
+      "inset-0",
+      "h-full",
+      "w-full",
+      "object-cover",
+      "opacity-[0.60]",
+      "bg-gradient-to-r",
+      "from-[#111925]",
+      "via-[#111925]/80",
+      "to-[#111925]/25",
+      "bg-gradient-to-t",
+      "via-transparent",
+      "to-transparent",
+      "opacity-[0.04]",
+      "gap-6",
+      "border-[#243041]",
+      "py-6",
+      "text-[19px]",
+      "hidden",
+      "gap-9",
+      "text-[11px]",
+      "font-semibold",
+      "uppercase",
+      "tracking-[0.16em]",
+      "md:flex",
+      "transition",
+      "hover:text-[#ede9e1]",
+      "grid",
+      "gap-14",
+      "pb-24",
+      "pt-16",
+      "sm:pb-32",
+      "sm:pt-24",
+      "lg:grid-cols-[1.15fr_0.85fr]",
+      "lg:items-start",
+      "lg:gap-20",
+      "h-px",
+      "w-24",
+      "bg-[#c9a84c]",
+      "mt-9",
+      "max-w-[13ch]",
+      "text-[clamp(2.6rem,6vw,4.6rem)]",
+      "font-normal",
+      "leading-[1.02]",
+      "tracking-[-0.015em]",
+      "mt-8",
+      "max-w-[54ch]",
+      "text-[16.5px]",
+      "leading-[1.75]",
+      "mt-10",
+      "gap-3",
+      "inline-flex",
+      "rounded-none",
+      "px-8",
+      "py-4",
+      "text-[13.5px]",
+      "tracking-[0.03em]",
+      "text-[#111925]",
+      "transition-colors",
+      "duration-300",
+      "hover:bg-[#f5e8c0]",
+      "border",
+      "border-[#c9a84c]",
+      "hover:bg-[#c9a84c]",
+      "hover:text-[#111925]",
+      "text-[12.5px]",
+      "leading-relaxed",
+      "bg-[#18222f]",
+      "px-6",
+      "divide-y",
+      "divide-[#243041]",
+      "text-[clamp(1.9rem,4vw,2.6rem)]",
+      "leading-none",
+      "tabular-nums",
+      "mt-2.5",
+      "border-t",
+      "py-20",
+      "sm:py-28",
+      "max-w-2xl",
+      "mt-4",
+      "text-[clamp(1.9rem,4.2vw,3rem)]",
+      "leading-[1.06]",
+      "tracking-[-0.01em]",
+      "mt-5",
+      "text-[15.5px]",
+      "mt-16",
+      "group",
+      "py-10",
+      "pl-0",
+      "transition-[padding-left]",
+      "duration-[420ms]",
+      "ease-out",
+      "hover:pl-4",
+      "lg:grid-cols-[6rem_1fr_minmax(0,22rem)]",
+      "lg:gap-10",
+      "block",
+      "text-[clamp(2.4rem,5vw,3.4rem)]",
+      "text-transparent",
+      "[-webkit-text-stroke:1px_rgba(201,168,76,0.45)]",
+      "text-[clamp(1.6rem,3.4vw,2.6rem)]",
+      "leading-[1.08]",
+      "group-hover:text-[#c9a84c]",
+      "max-w-[52ch]",
+      "text-[15px]",
+      "leading-[1.8]",
+      "space-y-2.5",
+      "lg:pt-3",
+      "border-l",
+      "border-[#2d3d52]",
+      "pl-4",
+      "group-hover:border-[#a87c2e]",
+      "max-w-6xl",
+      "items-end",
+      "max-w-xl",
+      "max-w-[34ch]",
+      "mt-12",
+      "overflow-x-auto",
+      "bg-[#1b2537]",
+      "min-w-[40rem]",
+      "border-collapse",
+      "text-left",
+      "sr-only",
+      "text-right",
+      "hover:bg-[#18222f]",
+      "whitespace-nowrap",
+      "py-5",
+      "text-[26px]",
+      "text-[14.5px]",
+      "mt-6",
+      "max-w-[70ch]",
+      "mt-14",
+      "gap-px",
+      "bg-[#243041]",
+      "md:grid-cols-3",
+      "aspect-square",
+      "p-7",
+      "text-[25px]",
+      "leading-tight",
+      "mt-2",
+      "tracking-[0.1em]",
+      "mt-1.5",
+      "pt-5",
+      "mt-3",
+      "space-y-2",
+      "w-3",
+      "shrink-0",
+      "bg-[#a87c2e]",
+      "text-[14px]",
+      "text-[#ede9e1]/80",
+      "inset-x-0",
+      "top-[1.35rem]",
+      "bg-[#2d3d52]",
+      "md:block",
+      "gap-12",
+      "md:grid-cols-4",
+      "md:gap-8",
+      "h-11",
+      "w-11",
+      "place-items-center",
+      "tracking-[0.08em]",
+      "text-[23px]",
+      "pt-4",
+      "text-[#a87c2e]",
+      "lg:grid-cols-2",
+      "lg:gap-16",
+      "border-l-2",
+      "pl-6",
+      "italic",
+      "leading-[1.7]",
+      "lg:grid-cols-[0.9fr_1.1fr]",
+      "space-y-8",
+      "pt-6",
+      "text-[21px]",
+      "h-fit",
+      "sm:p-10",
+      "pb-5",
+      "mt-7",
+      "gap-5",
+      "sm:grid-cols-2",
+      "px-4",
+      "py-3.5",
+      "outline-none",
+      "placeholder:text-[#4e4a45]",
+      "focus:border-[#c9a84c]",
+      "appearance-none",
+      "resize-none",
+      "lg:grid-cols-[0.8fr_1.2fr]",
+      "max-w-[42ch]",
+      "lg:pt-2",
+      "py-7",
+      "leading-snug",
+      "max-w-[62ch]",
+      "py-14",
+      "items-start",
+      "gap-8",
+      "max-w-[46ch]",
+      "gap-4",
+      "hover:underline"
+    ],
+    "ids": [
+      "practice",
+      "results",
+      "attorneys",
+      "consult"
+    ],
+    "cssVariables": [],
+    "colors": [
+      "#111925",
+      "#ede9e1",
+      "#c9a84c",
+      "#8e8880",
+      "#4e4a45",
+      "#f5e8c0",
+      "#000",
+      "rgba(0,0,0,0.6)",
+      "#243041",
+      "#18222f",
+      "rgba(201,168,76,0.45)",
+      "#2d3d52",
+      "#a87c2e"
+    ],
+    "fonts": [
+      "var(--font-tpl-body, &quot",
+      "var(--font-tpl-serif, &quot"
+    ],
+    "media": {
+      "images": 1,
+      "svgs": 3,
+      "videos": 0
+    },
+    "interactive": {
+      "details": 0,
+      "forms": 1,
+      "dialogs": 0,
+      "navs": 1
+    }
+  },
+  "styles": {
+    "mediaQueries": [
+      "@media (hover: hover)",
+      "@media (width >= 40rem)",
+      "@media (width >= 48rem)",
+      "@media (width >= 64rem)"
+    ],
+    "transitions": [],
+    "animations": [],
+    "gridTemplates": [
+      "repeat(2, minmax(0, 1fr))",
+      "repeat(3, minmax(0, 1fr))",
+      "repeat(4, minmax(0, 1fr))",
+      "0.8fr 1.2fr",
+      "0.9fr 1.1fr",
+      "1.15fr 0.85fr",
+      "6rem 1fr minmax(0,22rem)"
+    ],
+    "maxWidths": [
+      "100%",
+      "var(--container-2xl)",
+      "var(--container-6xl)",
+      "var(--container-7xl)",
+      "13ch",
+      "34ch",
+      "42ch",
+      "46ch",
+      "52ch",
+      "54ch",
+      "62ch",
+      "70ch",
+      "var(--container-xl)"
+    ],
+    "colors": [
+      "#243041",
+      "#2d3d52",
+      "#c9a84c",
+      "#1b2537",
+      "#18222f",
+      "#111925",
+      "#a87c2e",
+      "#4e4a45",
+      "#8e8880",
+      "#ede9e1",
+      "rgba(201,168,76,0.45)",
+      "#f5e8c0",
+      "#0000",
+      "rgb(from red r g b)"
+    ],
+    "fonts": [
+      "var(--font-sans)",
+      "var(--font-mono)",
+      "var(--default-font-family, ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol",
+      "var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\","
+    ]
+  },
+  "sectionMap": [
+    {
+      "target": "services",
+      "source": "border-t"
+    },
+    {
+      "target": "proof",
+      "source": "bg-[#18222f]"
+    },
+    {
+      "target": "contact",
+      "source": "bg-[#18222f]"
+    }
+  ],
+  "referenceSignatures": [
+    "legal positioning statement balanced by a compact, factual matter or proof ledger",
+    "large, scan-friendly practice-area index with short verified scope",
+    "auditable client-supplied outcomes, or an explicitly non-results proof/process substitute when none are approved",
+    "brief consultation request that avoids implying representation or guaranteed confidentiality"
+  ],
+  "prohibitedPatterns": [
+    "source firm name, logo, lawyers, case results, testimonials, prices, credentials or legal promises",
+    "invented settlements, verdicts, case counts, success rates, years of experience or response times",
+    "implied attorney-client relationship before intake or an unsupported confidentiality guarantee",
+    "unverified jurisdiction, bar admission, specialties, awards or contingency terms",
+    "using source monograms or generated portraits as real attorneys",
+    "fake trust-badge walls, aggressive outcome promises, rounded generic benefit cards"
+  ],
+  "proposedPack": {
+    "id": null,
+    "note": "Assign the pack id during authoring; the converter never registers packs.",
+    "hero": null,
+    "services": null,
+    "sectionOrder": null
+  }
+}

@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "html5up-dental-dimension",
+  "sourceClass": "licensed",
+  "sourceUrl": "https://html5up.net/dimension",
+  "templateDigest": "7ee0e39f3af8754709d8707c3b3c51ebda2ba949afc68b1223c2d3f8c1453bb9",
+  "entrypoint": "source/index.html",
+  "generatedAt": "2026-10-09T08:46:30.168Z",
+  "files": {
+    "html": 1,
+    "css": 3,
+    "total": 46
+  },
+  "structure": {
+    "headings": [
+      {
+        "level": 1,
+        "text": "Dimension"
+      },
+      {
+        "level": 2,
+        "text": "Intro"
+      },
+      {
+        "level": 2,
+        "text": "Work"
+      },
+      {
+        "level": 2,
+        "text": "About"
+      },
+      {
+        "level": 2,
+        "text": "Contact"
+      },
+      {
+        "level": 2,
+        "text": "Elements"
+      },
+      {
+        "level": 3,
+        "text": "Text"
+      },
+      {
+        "level": 2,
+        "text": "Heading Level 2"
+      },
+      {
+        "level": 3,
+        "text": "Heading Level 3"
+      },
+      {
+        "level": 3,
+        "text": "Lists"
+      },
+      {
+        "level": 3,
+        "text": "Table"
+      },
+      {
+        "level": 3,
+        "text": "Buttons"
+      },
+      {
+        "level": 3,
+        "text": "Form"
+      }
+    ],
+    "sections": [
+      {
+        "element": "header",
+        "id": "header",
+        "marker": "header"
+      },
+      {
+        "element": "article",
+        "id": "intro",
+        "marker": "intro"
+      },
+      {
+        "element": "article",
+        "id": "work",
+        "marker": "work"
+      },
+      {
+        "element": "article",
+        "id": "about",
+        "marker": "about"
+      },
+      {
+        "element": "article",
+        "id": "contact",
+        "marker": "contact"
+      },
+      {
+        "element": "article",
+        "id": "elements",
+        "marker": "elements"
+      },
+      {
+        "element": "section",
+        "id": "",
+        "marker": ""
+      },
+      {
+        "element": "section",
+        "id": "",
+        "marker": ""
+      },
+      {
+        "element": "section",
+        "id": "",
+        "marker": ""
+      },
+      {
+        "element": "section",
+        "id": "",
+        "marker": ""
+      },
+      {
+        "element": "section",
+        "id": "",
+        "marker": ""
+      },
+      {
+        "element": "footer",
+        "id": "footer",
+        "marker": "footer"
+      }
+    ],
+    "classNames": [
+      "is-preload",
+      "logo",
+      "icon",
+      "fa-diamond",
+      "content",
+      "inner",
+      "major",
+      "image",
+      "main",
+      "fields",
+      "field",
+      "half",
+      "actions",
+      "primary",
+      "icons",
+      "fa-twitter",
+      "label",
+      "fa-facebook",
+      "fa-instagram",
+      "fa-github",
+      "alt",
+      "button",
+      "stacked",
+      "table-wrapper",
+      "small",
+      "fa-download",
+      "disabled",
+      "copyright"
+    ],
+    "ids": [
+      "wrapper",
+      "header",
+      "main",
+      "intro",
+      "work",
+      "about",
+      "contact",
+      "name",
+      "email",
+      "message",
+      "elements",
+      "demo-name",
+      "demo-email",
+      "demo-category",
+      "demo-priority-low",
+      "demo-priority-high",
+      "demo-copy",
+      "demo-human",
+      "demo-message",
+      "footer",
+      "bg"
+    ],
+    "cssVariables": [],
+    "colors": [],
+    "fonts": [],
+    "media": {
+      "images": 3,
+      "svgs": 0,
+      "videos": 0
+    },
+    "interactive": {
+      "details": 0,
+      "forms": 2,
+      "dialogs": 0,
+      "navs": 1
+    }
+  },
+  "styles": {
+    "mediaQueries": [
+      "@media screen and (max-width: 480px)",
+      "@media screen and (max-width: 1680px)",
+      "@media screen and (max-width: 736px)",
+      "@media screen and (max-width: 360px)",
+      "@media screen and (max-width: 980px)"
+    ],
+    "transitions": [
+      "none !important",
+      "color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out",
+      "border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out",
+      "background-color 0.2s ease-in-out, color 0.2s ease-in-out",
+      "background-color 2.5s ease-in-out",
+      "-moz-transform 0.325s ease-in-out, -moz-filter 0.325s ease-in-out",
+      "-webkit-transform 0.325s ease-in-out, -webkit-filter 0.325s ease-in-out",
+      "-ms-transform 0.325s ease-in-out, -ms-filter 0.325s ease-in-out",
+      "transform 0.325s ease-in-out, filter 0.325s ease-in-out",
+      "-moz-transform 0.325s ease-in-out, -moz-filter 0.325s ease-in-out, opacity 0.325s ease-in-out",
+      "-webkit-transform 0.325s ease-in-out, -webkit-filter 0.325s ease-in-out, opacity 0.325s ease-in-out",
+      "-ms-transform 0.325s ease-in-out, -ms-filter 0.325s ease-in-out, opacity 0.325s ease-in-out",
+      "transform 0.325s ease-in-out, filter 0.325s ease-in-out, opacity 0.325s ease-in-out",
+      "opacity 0.325s ease-in-out",
+      "max-height 0.75s ease, padding 0.75s ease, opacity 0.325s ease-in-out"
+    ],
+    "animations": [
+      "fa-spin 2s infinite linear",
+      "fa-spin 1s infinite steps(8)",
+      "none !important"
+    ],
+    "gridTemplates": [],
+    "maxWidths": [
+      "480px) {\n\n\t\thtml, body {\n\t\t\tmin-width: 320px",
+      "1680px) {\n\n\t\t\thtml {\n\t\t\t\tfont-size: 12pt",
+      "736px) {\n\n\t\t\thtml {\n\t\t\t\tfont-size: 11pt",
+      "360px) {\n\n\t\t\thtml {\n\t\t\t\tfont-size: 10pt",
+      "736px) {\n\n\t\th1 {\n\t\t\tfont-size: 1.75rem",
+      "480px) {\n\n\t\t\tform > .fields {\n\t\t\t\twidth: calc(100% + 3rem)",
+      "40%",
+      "736px) {\n\n\t\t\t.image.main {\n\t\t\t\tmargin: 2rem 0",
+      "480px) {\n\n\t\t\t.image.main {\n\t\t\t\tmargin: 1.5rem 0",
+      "480px) {\n\n\t\t\tul.actions:not(.fixed) {\n\t\t\t\t-moz-flex-directio",
+      "1680px) {\n\n\t\t\t#wrapper {\n\t\t\t\tpadding: 3rem 2rem",
+      "736px) {\n\n\t\t\t#wrapper {\n\t\t\t\tpadding: 2rem 1rem",
+      "480px) {\n\n\t\t\t#wrapper {\n\t\t\t\tpadding: 1rem",
+      "100%",
+      "980px) {\n\n\t\t\t#header .content p br {\n\t\t\t\tdisplay: none",
+      "736px) {\n\n\t\t\t#header > * {\n\t\t\t\tmargin-top: 2rem",
+      "480px) {\n\n\t\t\t#header {\n\t\t\t\tpadding: 1.5rem 0",
+      "736px) {\n\n\t\t\t#main article {\n\t\t\t\tpadding: 3.5rem 2rem 0.5rem",
+      "480px) {\n\n\t\t\t#main article {\n\t\t\t\tpadding: 3rem 1.5rem 0.5rem"
+    ],
+    "colors": [
+      "#eee",
+      "#fff",
+      "#1b1f22",
+      "#ffffff",
+      "rgba(255, 255, 255, 0.5)",
+      "rgba(255, 255, 255, 0.075)",
+      "rgba(19, 21, 25, 0.5)",
+      "rgba(255, 255, 255, 0.175)",
+      "#000000",
+      "rgba(0, 0, 0, 0.25)",
+      "rgba(0, 0, 0, 0)",
+      "rgba(27, 31, 34, 0.85)"
+    ],
+    "fonts": [
+      "'FontAwesome'",
+      "\"Source Sans Pro\", sans-serif",
+      "\"Courier New\", monospace",
+      "FontAwesome"
+    ]
+  },
+  "sectionMap": [
+    {
+      "target": "gallery",
+      "source": "work"
+    },
+    {
+      "target": "about",
+      "source": "about"
+    },
+    {
+      "target": "contact",
+      "source": "contact"
+    }
+  ],
+  "referenceSignatures": [
+    "centered photo stage with segmented Services, Approach, FAQs, Contact index",
+    "one focus-managed section panel open above the defocused stage"
+  ],
+  "prohibitedPatterns": [
+    "generic split hero",
+    "large repeated card grid",
+    "pill navbar",
+    "long why-us essay",
+    "invented dental claims",
+    "unverified prices, credentials, ratings, or patient stories"
+  ],
+  "proposedPack": {
+    "id": null,
+    "note": "Assign the pack id during authoring; the converter never registers packs.",
+    "hero": null,
+    "services": null,
+    "sectionOrder": null
+  }
+}

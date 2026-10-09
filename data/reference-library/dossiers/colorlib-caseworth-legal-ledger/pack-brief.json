@@ -1,0 +1,398 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "colorlib-caseworth-legal-ledger",
+  "sourceClass": "licensed",
+  "sourceUrl": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/caseworth",
+  "templateDigest": "9757ffcb6b5c9e4d366487a0587867cf4bfef6bc0bfcfbbd7d67e38a23ef5ac1",
+  "entrypoint": "source/index.html",
+  "generatedAt": "2026-10-09T08:46:30.151Z",
+  "files": {
+    "html": 2,
+    "css": 3,
+    "total": 16
+  },
+  "structure": {
+    "headings": [
+      {
+        "level": 1,
+        "text": "Advice you can act on, in writing, with a price on it"
+      },
+      {
+        "level": 2,
+        "text": "What we are instructed on"
+      },
+      {
+        "level": 2,
+        "text": "Who you will deal with"
+      },
+      {
+        "level": 2,
+        "text": "Published, not quoted on request"
+      },
+      {
+        "level": 2,
+        "text": "Written for clients, not for search"
+      },
+      {
+        "level": 2,
+        "text": "Tell us what has happened"
+      }
+    ],
+    "sections": [
+      {
+        "element": "header",
+        "id": "",
+        "marker": "site-header"
+      },
+      {
+        "element": "section",
+        "id": "",
+        "marker": "masthead"
+      },
+      {
+        "element": "main",
+        "id": "main",
+        "marker": "main"
+      },
+      {
+        "element": "section",
+        "id": "practices",
+        "marker": "section"
+      },
+      {
+        "element": "section",
+        "id": "people",
+        "marker": "section"
+      },
+      {
+        "element": "section",
+        "id": "fees",
+        "marker": "section"
+      },
+      {
+        "element": "section",
+        "id": "insights",
+        "marker": "section"
+      },
+      {
+        "element": "section",
+        "id": "enquiry",
+        "marker": "section"
+      },
+      {
+        "element": "footer",
+        "id": "",
+        "marker": "site-footer"
+      }
+    ],
+    "classNames": [
+      "visually-hidden-focusable",
+      "btn-solid",
+      "theme-primary",
+      "m-2",
+      "util-bar",
+      "container",
+      "d-flex",
+      "flex-wrap",
+      "justify-content-between",
+      "align-items-center",
+      "gap-2",
+      "fg-3",
+      "site-header",
+      "navbar",
+      "lg:navbar-expand",
+      "wordmark",
+      "drawer",
+      "drawer-end",
+      "drawer-header",
+      "drawer-title",
+      "btn-close",
+      "drawer-body",
+      "mb-2",
+      "lg:mb-0",
+      "nav",
+      "navbar-nav",
+      "ms-auto",
+      "lg:gap-3",
+      "nav-item",
+      "nav-link",
+      "btn-icon",
+      "theme-icon-light",
+      "theme-icon-dark",
+      "d-none",
+      "md:d-inline-flex",
+      "navbar-toggler",
+      "navbar-toggler-icon",
+      "masthead",
+      "row",
+      "g-6",
+      "lg:col-7",
+      "eyebrow",
+      "fs-sm",
+      "fg-primary",
+      "mb-3",
+      "serif",
+      "masthead-title",
+      "mb-4",
+      "lede",
+      "fg-2",
+      "mb-5",
+      "gap-3",
+      "btn-lg",
+      "btn-outline",
+      "theme-secondary",
+      "lg:col-5",
+      "masthead-figure",
+      "ph",
+      "figure-note",
+      "mb-0",
+      "section",
+      "section-title",
+      "fs-4xl",
+      "g-0",
+      "lg:gx-6",
+      "lg:col-6",
+      "practice-index",
+      "practice-item",
+      "idx",
+      "practice-name",
+      "d-block",
+      "go",
+      "bg-2",
+      "g-5",
+      "sm:col-6",
+      "lg:col-3",
+      "person",
+      "cred",
+      "mb-1",
+      "fs-lg",
+      "person-role",
+      "fee-note",
+      "form-control",
+      "form-adorn",
+      "form-adorn-icon",
+      "form-ghost",
+      "table-responsive",
+      "table",
+      "md:table-stacked",
+      "text-end",
+      "table-group-divider",
+      "fw-normal",
+      "mt-3",
+      "lg:col-4",
+      "lg:col-8",
+      "insight",
+      "fs-xs",
+      "insight-title",
+      "spec-row",
+      "accordion",
+      "mt-5",
+      "accordion-item",
+      "accordion-header",
+      "accordion-icon",
+      "accordion-body",
+      "enquiry",
+      "g-3",
+      "md:col-6",
+      "form-field",
+      "form-label",
+      "invalid-feedback",
+      "combobox-toggle",
+      "combobox-value",
+      "combobox-caret",
+      "menu",
+      "menu-item",
+      "col-12",
+      "check",
+      "site-footer",
+      "pb-5",
+      "md:col-4",
+      "d-inline-block",
+      "md:col-2",
+      "fw-semibold",
+      "list-unstyled",
+      "my-5"
+    ],
+    "ids": [
+      "navDrawer",
+      "navDrawerLabel",
+      "navScroll",
+      "themeToggle",
+      "main",
+      "practices",
+      "people",
+      "fees",
+      "feeFilter",
+      "feeTable",
+      "feeEmpty",
+      "insights",
+      "enquiry",
+      "enqForm",
+      "eqName",
+      "eqEmail",
+      "eqDeadline",
+      "eqDetail",
+      "eqOk"
+    ],
+    "cssVariables": [],
+    "colors": [],
+    "fonts": [],
+    "media": {
+      "images": 5,
+      "svgs": 7,
+      "videos": 0
+    },
+    "interactive": {
+      "details": 3,
+      "forms": 1,
+      "dialogs": 1,
+      "navs": 1
+    }
+  },
+  "styles": {
+    "mediaQueries": [
+      "@media (width >= 768px)",
+      "@media (prefers-reduced-motion: reduce)",
+      "@media (width>=576px)",
+      "@media (width>=768px)",
+      "@media (width>=1024px)",
+      "@media (width>=1280px)",
+      "@media (width>=1536px)",
+      "@media (width<576px)",
+      "@media (width<768px)",
+      "@media (width<1024px)",
+      "@media (width<1280px)",
+      "@media (width<1536px)",
+      "@media (prefers-reduced-motion:reduce)",
+      "@media (prefers-reduced-motion:no-preference)"
+    ],
+    "transitions": [
+      "border-color 0.2s ease, background 0.2s ease",
+      "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
+      "none",
+      "text-decoration-color .1s ease-in-out",
+      "var(--bs-control-transition-property) var(--bs-control-transition-timing)",
+      "var(--bs-control-transition)",
+      "background-color .15s ease-in-out",
+      "inset-inline-start .15s ease-in-out",
+      "var(--bs-range-thumb-transition-property) var(--bs-range-thumb-transition-timing)",
+      "var(--bs-range-thumb-transition)",
+      "var(--bs-form-floating-transition-property) var(--bs-form-floating-transition-timing)",
+      "var(--bs-form-floating-transition)",
+      "background-color .2s ease-in-out,width .3s ease-in-out",
+      "color .2s ease-in-out",
+      "border-color .15s ease-in-out,box-shadow .15s ease-in-out"
+    ],
+    "animations": [
+      "1s step-end infinite otp-caret-blink",
+      "carousel-indicator-progress var(--bs-carousel-interval,5s) linear forwards",
+      "2s ease-in-out infinite placeholder-glow",
+      "2s linear infinite placeholder-wave",
+      "progress-bar-stripes 1s linear infinite",
+      "var(--bs-progress-bar-animation)",
+      "none",
+      "var(--bs-spinner-animation-speed) var(--bs-spinner-animation-timing-function) infinite var(--bs-spinner-animation-name)",
+      "1s linear infinite spinner-border"
+    ],
+    "gridTemplates": [
+      "repeat(2, minmax(0, 1fr))",
+      "repeat(4, minmax(0, 1fr))",
+      "2.75rem 1fr auto",
+      "repeat(var(--bs-columns), 1fr)",
+      "auto 1fr",
+      "repeat(var(--bs-vc-columns,4), minmax(0, 1fr))",
+      "repeat(7,1fr)",
+      "var(--bs-stepper-size) auto",
+      "auto",
+      "1fr",
+      "repeat(2,1fr)",
+      "repeat(3,1fr)",
+      "repeat(4,1fr)",
+      "repeat(6,1fr)",
+      "subgrid"
+    ],
+    "maxWidths": [
+      "46rem",
+      "38rem",
+      "540px",
+      "720px",
+      "960px",
+      "1200px",
+      "1440px",
+      "100%",
+      "1000px",
+      "calc(100% - var(--bs-dialog-margin) * 2)",
+      "none",
+      "none!important",
+      "calc(100% - var(--bs-drawer-inset) * 2)",
+      "var(--bs-drawer-sheet-width,760px)",
+      "280px",
+      "var(--bs-popover-max-width)",
+      "350px",
+      "200px",
+      "var(--bs-tooltip-max-width)"
+    ],
+    "colors": [
+      "rgb(0 0 0 / 18%)",
+      "#0000",
+      "#0000000d",
+      "#0000001a",
+      "#00000013",
+      "#ffffff20",
+      "#000",
+      "#00000026",
+      "#ffffff1a",
+      "#00000080",
+      "#000000a6",
+      "rgb(0, 0, 0, calc(1 - var(--bs-placeholder-opacity-min)",
+      "#ffffff26",
+      "#fff"
+    ],
+    "fonts": [
+      "ui-serif, Georgia, \"Times New Roman\", serif",
+      "ui-serif, Georgia, serif",
+      "var(--bs-body-font-family)",
+      "var(--bs-heading-font-family)",
+      "var(--bs-font-mono)",
+      "inherit",
+      "var(--bs-font-sans-serif)",
+      "system-ui"
+    ]
+  },
+  "sectionMap": [
+    {
+      "target": "hero",
+      "source": "masthead"
+    },
+    {
+      "target": "services",
+      "source": "section"
+    },
+    {
+      "target": "contact",
+      "source": "section"
+    }
+  ],
+  "referenceSignatures": [
+    "measured statement beside one relevant image",
+    "two-column or ruled practice-area index",
+    "accurate fee table or honest alternative explanation",
+    "enquiry with matter context and useful preparation note"
+  ],
+  "prohibitedPatterns": [
+    "copied legal claims, fees, names, images or regulatory identifiers",
+    "invented credentials, jurisdiction, fixed fees, response promise or privilege claim",
+    "stock people presented as the client firm's lawyers",
+    "unverified rates or time estimates",
+    "fake trust badge wall",
+    "invented client testimonials",
+    "generic benefit card grid"
+  ],
+  "proposedPack": {
+    "id": null,
+    "note": "Assign the pack id during authoring; the converter never registers packs.",
+    "hero": null,
+    "services": null,
+    "sectionOrder": null
+  }
+}

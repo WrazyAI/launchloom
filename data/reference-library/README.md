@@ -139,6 +139,9 @@ captured from:
   an inventory.
 - `rights/template-extraction.md`: the local rights record covering template
   source retention (absent for owned references).
+- `pack-brief.json`: the optional conversion brief produced by
+  `npm run convert:reference-packs` for dossiers being turned into internal
+  experience packs.
 - `data/reference-library/template-index.json`: the committed index of every
   dossier's template status (`extracted`, `pending`, `unavailable`, or
   `failed`).
