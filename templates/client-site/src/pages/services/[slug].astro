@@ -9,6 +9,7 @@ import site, { phoneHref, serviceHref, pageHref, homeSectionHref, approvedServic
 import { resolvePageRecipe } from "../../lib/page-recipe";
 import { compileExperiencePack } from "../../lib/experience-pack";
 import { hasTestOnlySite } from "../../lib/seo-readiness.mjs";
+import { selectServicePageLinks } from "../../lib/service-page-links.mjs";
 import "../../styles/experience-packs.css";
 import "../../styles/creative-runtime.css";
 import "../../generated-experiences/selected/styles.css";
@@ -33,7 +34,11 @@ const supported = brief?.mode === "supported";
 const introduction = supported ? brief.introduction : service.description;
 const fieldText = (kind: string) => brief?.sections.find(section => section.kind === kind)?.items.map(item => item.text).join(" ") || "";
 const serviceImage = supported ? brief.media[0]?.src || "" : site.assets?.photoTwo || site.assets?.photoOne || site.images.secondary || site.images.hero;
-const related = supported ? approvedServices.filter(item => brief.related.some(related => related.path === `/services/${item.slug}/`)) : approvedServices.filter((item) => item.slug !== service.slug).slice(0, 3);
+const related = selectServicePageLinks(
+  approvedServices,
+  service.slug,
+  supported ? brief.related : [],
+);
 const process = supported ? brief.process : site.conversion?.process?.slice(0, 4) || [];
 const faqs = supported ? brief.faqs : site.conversion?.faqs?.slice(0, 4) || [];
 const support = supported ? {scope:fieldText("scope"),preparation:fieldText("preparation"),nextStep:fieldText("nextStep")} : service.decisionSupport;
@@ -117,7 +122,7 @@ const serviceStructuredData = {
 
         {process.length > 0 && <section class="inner-band"><div class="wrap"><div class="section-heading"><span class="kicker">The process</span><h2>Clear steps from first contact.</h2></div><ol class="process-grid">{process.map((step, index) => <li><span>0{index + 1}</span><p>{step}</p></li>)}</ol></div></section>}
 
-        {related.length > 0 && <section class="section wrap related-services"><div class="section-heading"><span class="kicker">Other ways we can help</span><h2>Explore related services.</h2></div><div class="service-grid">{related.map((item) => <a class="service-card" href={serviceHref(item.slug)}><h3>{item.name}</h3><p>{supported ? brief.related.find(related=>related.path===`/services/${item.slug}/`)?.reason : item.description}</p><b>View service details <i aria-hidden="true">↗</i></b></a>)}</div></section>}
+        {related.length > 0 && <section class="section wrap related-services"><div class="section-heading"><span class="kicker">Other ways we can help</span><h2>Explore related services.</h2></div><div class="service-grid">{related.map((item) => <a class="service-card" href={serviceHref(item.slug)}><h3>{item.name}</h3><p>{(supported ? brief.related.find(related=>related.path===`/services/${item.slug}/`)?.reason : null) || item.description}</p><b>View service details <i aria-hidden="true">↗</i></b></a>)}</div></section>}
 
         {faqs.length > 0 && <section class="section wrap faq-section"><div class="section-heading"><span class="kicker">Before you reach out</span><h2>Practical questions, answered.</h2></div><div class="faq-list">{faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>}
 

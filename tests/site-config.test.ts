@@ -131,7 +131,13 @@ describe("site configuration", () => {
       service: serviceName,
       slug: "/services/brake-inspection-and-repair/",
       primaryKeyword: { keyword: "brake repair near me" },
-      supportingKeywords: ["brake inspection"],
+      supportingKeywords: [
+        {
+          keyword: "brake inspection",
+          provenance: "dataforseo",
+          searchVolume: 90,
+        },
+      ],
       fanOutQuestions: [
         "What should I share about a brake concern?",
         "What does a brake inspection include?",
@@ -183,6 +189,20 @@ describe("site configuration", () => {
           sourceRefs: expect.arrayContaining(["services.0.name", "seoPageMap.0.fanOutQuestions.0"]),
         }),
       ]));
+    const generatedEvidence = config.pageEvidence.filter((item: any) =>
+      item.routeIds.includes("service:brake inspection and repair") &&
+      item.kind === "generated_copy",
+    );
+    expect(generatedEvidence.length).toBeGreaterThan(0);
+    expect(generatedEvidence.every((item: any) =>
+      item.sourceRefs.every((sourceRef: string) => {
+        const value = sourceRef.split(".").reduce((current: any, part: string) => current?.[part], config);
+        return typeof value === "string" || typeof value === "number";
+      }),
+    )).toBe(true);
+    expect(generatedEvidence.some((item: any) =>
+      item.sourceRefs.includes("seoPageMap.0.supportingKeywords.0.keyword"),
+    )).toBe(true);
   });
 
   it("does not let fallback service guidance satisfy researched route-page content", () => {

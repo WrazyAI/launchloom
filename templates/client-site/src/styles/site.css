@@ -106,7 +106,7 @@ a {
   letter-spacing: 0.14em;
   font-size: 0.7rem;
   font-weight: 800;
-  color: var(--ll-accent-text, var(--accent-ink, var(--brand-ink, var(--brand))));
+  color: var(--ink, currentColor);
 }
 h1,
 h2,
@@ -360,6 +360,7 @@ h2 {
 .contact-section {
   padding: 94px 0;
   background: #ece7dc;
+  color: var(--ink, #14201d);
 }
 .contact-grid {
   display: grid;
@@ -386,7 +387,7 @@ h2 {
   color: var(--ink);
 }
 .lead-form .kicker {
-  color: var(--ll-accent-text, var(--ink));
+  color: var(--ink);
 }
 .lead-form--guided {
   min-height: 520px;
@@ -475,7 +476,7 @@ h2 {
 }
 .qualifier-option span:after {
   content: "→";
-  color: var(--brand);
+  color: var(--ink);
 }
 .qualifier-option input:focus-visible + span {
   outline: 3px solid color-mix(in srgb, var(--brand) 35%, transparent);
@@ -987,7 +988,7 @@ h2 {
   color: #d4dfdc;
 }
 .recipe-local-trades .kicker {
-  color: var(--ll-accent-text, color-mix(in srgb, var(--brand) 72%, #000));
+  color: var(--ink, currentColor);
 }
 .recipe-local-trades .trust-grid span,
 .recipe-local-trades .process-grid span {

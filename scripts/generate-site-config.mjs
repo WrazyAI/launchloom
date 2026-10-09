@@ -2437,9 +2437,14 @@ export function normalise(candidate, intake) {
         .reduce((current, part) => current?.[part], normalized);
     const copyClaim = (value, routeId, suffix, sourceRefs, limit) => {
       const cleaned = text(value, limit);
-      const refs = [...new Set(sourceRefs)].filter((ref) =>
-        text(resolveSource(ref), 1000),
-      );
+      const refs = [...new Set(sourceRefs)].filter((ref) => {
+        const source = resolveSource(ref);
+        return (
+          (typeof source === "string" ||
+            (typeof source === "number" && Number.isFinite(source))) &&
+          text(source, 1000)
+        );
+      });
       if (
         !cleaned ||
         !matchesWritingSystem(cleaned, clientSource) ||
@@ -2486,7 +2491,7 @@ export function normalise(candidate, intake) {
         serviceRef("name"),
         serviceRef("description"),
         keywordRef,
-        mapRef("supportingKeywords.0"),
+        mapRef("supportingKeywords.0.keyword"),
       ];
       const rawSections = rawService?.pageSections || {};
       const rawSupport = rawService?.decisionSupport || {};

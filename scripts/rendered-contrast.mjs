@@ -67,10 +67,25 @@ export function collectContrastTargets({
     "opacity",
     "backgroundImage",
     "backgroundColor",
+    "position",
+    "top",
+    "left",
+    "width",
+    "height",
+    "transform",
+    "translate",
+    "rotate",
+    "scale",
+    "boxSizing",
+    "writingMode",
     "fontSize",
     "fontWeight",
     "color",
     "webkitTextFillColor",
+    ...["Top", "Right", "Bottom", "Left"].flatMap((side) => [
+      `margin${side}`,
+      `border${side}Width`,
+    ]),
   ];
   const styleFor = (el, pseudo = "") => {
     if (!styles.has(el)) styles.set(el, new Map());
@@ -162,6 +177,62 @@ export function collectContrastTargets({
     a.right > b.left &&
     a.top < b.bottom &&
     a.bottom > b.top;
+  const pseudoBackdropRect = (el, style) => {
+    const ownerStyle = styleFor(el);
+    if (
+      style.position !== "absolute" ||
+      ownerStyle.position === "static" ||
+      style.transform !== "none" ||
+      style.translate !== "none" ||
+      style.rotate !== "none" ||
+      style.scale !== "none" ||
+      ownerStyle.transform !== "none" ||
+      ownerStyle.translate !== "none" ||
+      ownerStyle.rotate !== "none" ||
+      ownerStyle.scale !== "none" ||
+      ownerStyle.perspective !== "none" ||
+      style.writingMode !== "horizontal-tb"
+    )
+      return null;
+    const px = (value) =>
+      /^-?(?:\d+|\d*\.\d+)px$/u.test(value) ? Number.parseFloat(value) : NaN;
+    const left = px(style.left),
+      top = px(style.top),
+      rawWidth = px(style.width),
+      rawHeight = px(style.height);
+    if (![left, top, rawWidth, rawHeight].every(Number.isFinite)) return null;
+    const box = rectFor(el),
+      borderLeft = parseFloat(ownerStyle.borderLeftWidth) || 0,
+      borderTop = parseFloat(ownerStyle.borderTopWidth) || 0,
+      marginLeft = px(style.marginLeft),
+      marginTop = px(style.marginTop),
+      marginRight = px(style.marginRight),
+      marginBottom = px(style.marginBottom);
+    if (
+      ![marginLeft, marginTop, marginRight, marginBottom].every(Number.isFinite)
+    )
+      return null;
+    const width =
+      rawWidth +
+      (style.boxSizing === "border-box"
+        ? 0
+        : (parseFloat(style.borderLeftWidth) || 0) +
+          (parseFloat(style.borderRightWidth) || 0));
+    const height =
+      rawHeight +
+      (style.boxSizing === "border-box"
+        ? 0
+        : (parseFloat(style.borderTopWidth) || 0) +
+          (parseFloat(style.borderBottomWidth) || 0));
+    return {
+      left: box.left + borderLeft + left + marginLeft,
+      top: box.top + borderTop + top + marginTop,
+      right: box.left + borderLeft + left + marginLeft + width + marginRight,
+      bottom: box.top + borderTop + top + marginTop + height + marginBottom,
+      width: width + marginLeft + marginRight,
+      height: height + marginTop + marginBottom,
+    };
+  };
   const visible = (el, rect) => {
     if (
       !rect.width ||
@@ -581,8 +652,11 @@ export function collectContrastTargets({
           ps.visibility === "visible" &&
           Number(ps.opacity) > 0 &&
           (ps.backgroundImage !== "none" || color(ps.backgroundColor)?.[3] > 0)
-        )
+        ) {
+          const pseudoRect = pseudoBackdropRect(p, ps);
+          if (pseudoRect && !intersects(pseudoRect, rect)) continue;
           issues.push("pseudo-element backdrop requires rendered review");
+        }
       }
     }
     const overlap = paintedLayers.some((layer) => {

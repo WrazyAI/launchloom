@@ -87,6 +87,9 @@ describe("creative authoring output budgets", () => {
     expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain(
       "Never pair --ll-text as an action fill with --ll-on-action text",
     );
+    expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain(
+      "use native list markers or an explicit aria-hidden child marker instead",
+    );
   });
 
   it("states distinct desktop and mobile hero topologies as separate layout contracts", () => {

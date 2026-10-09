@@ -64,6 +64,46 @@ describe("rendered contrast backdrop geometry", () => {
     );
     expect(report.pass, JSON.stringify(report.findings)).toBe(true);
   });
+  it("does not treat a proven non-overlapping decorative pseudo marker as text backdrop", async () => {
+    const report = await scan(
+      '<style>body{margin:0;background:#e8eee5;color:#14201d}ul{margin:0;padding:0;list-style:none}li{position:relative;width:320px;padding:8px 8px 8px 24px;color:#14201d}li::before{position:absolute;top:14px;left:4px;width:6px;height:6px;border-radius:50%;background:#c8ec58;content:""}</style><ul><li>Service coverage in Tacoma, Washington</li></ul>',
+      1440,
+      { states: false },
+    );
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+  });
+  it("keeps overlapping pseudo-element paint unresolved", async () => {
+    const report = await scan(
+      '<style>body{margin:0;background:#e8eee5;color:#14201d}li{position:relative;width:320px;color:#14201d}li::before{position:absolute;inset:0;background:#000;content:""}</style><ul><li>Text over a pseudo backdrop</li></ul>',
+      1440,
+      { states: false },
+    );
+    expect(report.pass).toBe(false);
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Text over a pseudo backdrop",
+          status: "unresolved",
+        }),
+      ]),
+    );
+  });
+  it("does not prove pseudo-element separation through a transformed owner", async () => {
+    const report = await scan(
+      '<style>body{margin:0;background:#e8eee5;color:#14201d}li{position:relative;width:320px;padding:8px 8px 8px 120px;color:#14201d;transform:rotate(45deg)}li::before{position:absolute;top:0;left:0;width:6px;height:6px;background:#c8ec58;content:""}</style><ul><li>Service coverage in Tacoma, Washington</li></ul>',
+      1440,
+      { states: false },
+    );
+    expect(report.pass).toBe(false);
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Service coverage in Tacoma, Washington",
+          status: "unresolved",
+        }),
+      ]),
+    );
+  });
   it("proves a pill plate only when glyph bounds lie inside its normalized fill", async () => {
     const report = await scan(
       '<style>body{color:black;background:white}.rear{height:200px;background:black}a{position:fixed;top:30px;left:30px;z-index:2;background:black;color:white;padding:20px;border-radius:999px}</style><div class="rear"></div><a href="#">Readable pill plate</a>',
