@@ -77,14 +77,20 @@ async function makeTemplateCopy(configOverrides = {}) {
       "dir",
     );
   }
-  if (Object.keys(configOverrides).length) {
-    const configPath = path.join(root, "src/site.config.json");
-    const config = JSON.parse(await fs.readFile(configPath, "utf8"));
-    await fs.writeFile(
-      configPath,
-      `${JSON.stringify({ ...config, ...configOverrides }, null, 2)}\n`,
-    );
+  const configPath = path.join(root, "src/site.config.json");
+  const config = JSON.parse(await fs.readFile(configPath, "utf8"));
+  // Promotion fixtures must be wholly owned and offline. The template's
+  // example remote photographs are not browser-test evidence or client assets.
+  for (const [role, image] of Object.entries(config.images || {})) {
+    if (typeof image !== "string" || !/^https?:/iu.test(image)) continue;
+    const name = `creative-test-${role}.svg`;
+    await fs.mkdir(path.join(root, "public/images"), { recursive: true });
+    await fs.writeFile(path.join(root, "public/images", name),
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="960"><rect width="1280" height="960" fill="#456a60"/></svg>');
+    config.images[role] = `/images/${name}`;
   }
+  await fs.writeFile(configPath,
+    `${JSON.stringify({ ...config, ...configOverrides }, null, 2)}\n`);
   return root;
 }
 
@@ -684,6 +690,10 @@ describe("creative candidate promotion", () => {
 
       expect(report.diversity.pass).toBe(false);
       const firstEvidence = fidelityEvidence[0];
+      // A static viewport cannot establish that authored interactions work.
+      expect(firstEvidence.interactionEvidence?.observations).toHaveLength(3);
+      expect(firstEvidence.interactionEvidence?.candidateId).toBe("candidate-a");
+      expect(firstEvidence.interactionEvidence?.sourceDigest).toMatch(/^[a-f0-9]{64}$/);
       const viewportImage = await sharp(
         firstEvidence.candidateScreenshots.desktop,
       ).metadata();
@@ -709,6 +719,11 @@ describe("creative candidate promotion", () => {
       expect(report.visualDiversity.pass).toBe(true);
       expect(
         report.candidates.every((candidate: any) => candidate.eligible),
+        JSON.stringify(report.candidates.map((candidate: any) => ({
+          candidateId: candidate.candidateId,
+          failures: candidate.failures,
+          interaction: candidate.interactionEvidence,
+        }))),
       ).toBe(true);
       expect(report.selectedCandidateId).not.toBeNull();
       expect(report.promotionReady).toBe(true);
@@ -1076,7 +1091,7 @@ describe("creative candidate promotion", () => {
           },
         }),
       });
-      expect(report.candidates[0].valid).toBe(true);
+      expect(report.candidates[0].valid, JSON.stringify(report.candidates[0].failures)).toBe(true);
       expect(report.candidates[0].eligible).toBe(true);
       expect(report.selectedCandidateId).toBe("candidate-a");
       expect(report.fallback).toBe(false);

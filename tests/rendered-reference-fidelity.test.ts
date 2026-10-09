@@ -560,6 +560,29 @@ describe("rendered reference request retries", () => {
 });
 
 describe("rendered reference fidelity", () => {
+  it("includes bounded paired transitions and compact observations in the pixel judge", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const requests: any[] = [];
+    await evaluateRenderedReferenceFidelity({
+      referenceDna: dna(files),
+      candidateId: "candidate-a", sourceDigest: "a".repeat(64),
+      candidateScreenshots: { desktop: files.candidateDesktop, compact: files.candidateCompact, mobile: files.candidateMobile },
+      interactionEvidence: { version: 1, candidateId: "candidate-a", sourceDigest: "a".repeat(64), observations: [{ viewport: "compact", kind: "disclosure", status: "passed", before: { content: "" }, after: { content: "Service preparation" }, restored: true }], pairs: [{ viewport: "desktop", kind: "disclosure", before: files.candidateDesktop, after: files.secondDesktop }], failures: [] },
+      fetchImpl: async (_url, options) => {
+        requests.push(JSON.parse(String(options?.body || "{}")));
+        return response({ verdict: "pass", overallScore: 89, scores: passingScores, findings: [], summary: "Pass." });
+      },
+    });
+    const parts = requests[0].messages[1].content;
+    expect(parts.filter((p: any) => p.type === "image_url")).toHaveLength(7);
+    const text = parts.filter((p: any) => p.type === "text").map((p: any) => p.text).join("\n");
+    expect(text).toContain("Service preparation");
+    expect(text).toContain("compact");
+    expect(text).toContain("before activation");
+    expect(text).toContain("after activation");
+  });
+
   it("identifies the true viewport and page overview as different visual evidence", async () => {
     process.env.OPENROUTER_API_KEY = "test";
     const files = await evidence();

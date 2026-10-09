@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { builtRoutes, enforceBuiltContrast } from "./contrast-sweep.mjs";
+import { captureRenderedInteractionEvidence, interactionSourceDigest, requiresPurposefulInteraction } from "./rendered-interaction-evidence.mjs";
 import { chromium } from "playwright";
 import {
   CREATIVE_PROMOTION_THRESHOLDS,
@@ -819,6 +820,9 @@ export async function runCreativeBakeoff({
             );
         }
         const { server, origin } = await startServer(path.join(root, "dist"));
+        const sourceDigest = interactionSourceDigest({ experience: experienceSource, styles: stylesSource, motion: motionSource });
+        const interactionEvidence = { version: 1, candidateId: candidate.manifest.candidateId, sourceDigest, observations: [], pairs: [], failures: [] };
+        candidateResult.interactionEvidence = interactionEvidence;
         try {
           for (const viewport of [
             { name: "desktop", width: 1536, height: 864 },
@@ -934,6 +938,20 @@ export async function runCreativeBakeoff({
               fullPage: true,
             });
             await page.close();
+            if (candidate.manifest.version >= 2) {
+              const capture = await captureRenderedInteractionEvidence({
+                browser, origin, dist: path.join(root, "dist"),
+                candidateId: candidate.manifest.candidateId, sourceDigest,
+                viewport, evidenceDir,
+                requiredPurposeful: requiresPurposefulInteraction(candidate.contentManifest?.visualBrief),
+                scrollRequired: /scroll|reading.progress/iu.test(candidate.manifest.referenceDna?.motion?.primitive || ""),
+                capturePair: viewport.name !== "compact",
+              });
+              interactionEvidence.observations.push(capture.observation);
+              interactionEvidence.pairs.push(...capture.pairs);
+              interactionEvidence.failures.push(...capture.failures);
+              candidateResult.failures.push(...capture.failures);
+            }
           }
           const authoredPages = [
             {
@@ -1053,6 +1071,9 @@ export async function runCreativeBakeoff({
         }
         if (candidate.manifest.version >= 2) {
           const renderedReference = await renderedReferenceEvaluator({
+            candidateId: candidate.manifest.candidateId,
+            sourceDigest,
+            interactionEvidence,
             referenceDna: candidate.manifest.referenceDna,
             visualBrief: candidate.contentManifest?.visualBrief || {},
             candidateScreenshots: {
