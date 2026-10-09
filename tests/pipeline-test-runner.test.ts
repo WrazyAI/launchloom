@@ -73,6 +73,66 @@ function adapter(fail = "", authoredCandidateCount = 3) {
   return { calls, dependencies };
 }
 describe("focused pipeline orchestration", () => {
+  it("classifies explicit rendered and contrast findings but not verifier execution failures", async () => {
+    expect(privatePreview.classifyDiagnosticQualityGateFailure).toBeTypeOf(
+      "function",
+    );
+    expect(
+      privatePreview.classifyDiagnosticQualityGateFailure("rendered", {
+        output:
+          "Rendered revision verification failed: mobile hero overlaps navigation.",
+      }),
+    ).toMatchObject({ name: "rendered", passed: false });
+    expect(
+      privatePreview.classifyDiagnosticQualityGateFailure("contrast", {
+        output: "contrast_verified=false routes=3 unresolved=4",
+      }),
+    ).toMatchObject({ name: "contrast", passed: false });
+    expect(
+      privatePreview.classifyDiagnosticQualityGateFailure("rendered", {
+        output: "browserType.launch: Executable doesn't exist",
+      }),
+    ).toBeNull();
+    expect(
+      privatePreview.classifyDiagnosticQualityGateFailure("contrast", {
+        output: "Error: Route HTTP 404",
+      }),
+    ).toBeNull();
+
+    const contrastProcessError = await privatePreview
+      .command(
+        process.execPath,
+        [
+          "-e",
+          "process.stdout.write('contrast_verified=false routes=1'); process.exitCode = 1",
+        ],
+        { capture: true, captureOutputOnError: true },
+      )
+      .then(() => null, (error: Error) => error);
+    expect(
+      privatePreview.classifyDiagnosticQualityGateFailure(
+        "contrast",
+        contrastProcessError,
+      ),
+    ).toMatchObject({ name: "contrast", passed: false });
+
+    const renderedProcessError = await privatePreview
+      .command(
+        process.execPath,
+        [
+          "-e",
+          "process.stderr.write('Error: Rendered revision verification failed: mobile hero overlaps navigation.'); process.exitCode = 1",
+        ],
+        { capture: true, captureOutputOnError: true },
+      )
+      .then(() => null, (error: Error) => error);
+    expect(
+      privatePreview.classifyDiagnosticQualityGateFailure(
+        "rendered",
+        renderedProcessError,
+      ),
+    ).toMatchObject({ name: "rendered", passed: false });
+  });
   it("treats a Cloudflare Access challenge as readiness only in protected-preview mode", () => {
     expect(privatePreview.classifyPagesPreviewResponse).toBeTypeOf("function");
     expect(
@@ -517,6 +577,52 @@ describe("focused pipeline orchestration", () => {
     expect(calls).not.toContain("deploy");
     expect(calls).not.toContain("notify");
     expect(calls.at(-1)).toBe("persist");
+  });
+  it("delivers an isolated SEO preview after rendered quality gates fail without claiming a pass", async () => {
+    const { calls, dependencies } = adapter();
+    dependencies.technical = async () => {
+      calls.push("technical");
+      const error: any = new Error("Rendered quality checks did not pass.");
+      error.code = "PIPELINE_QUALITY_GATE";
+      error.gates = [
+        { name: "rendered", passed: false },
+        { name: "contrast", passed: false },
+      ];
+      throw error;
+    };
+
+    const report = await runPipelineTest(input, dependencies);
+
+    expect(report.stages.technical.status).toBe("failed");
+    expect(report.verdict).toBe("failed");
+    expect(report.previewDelivered).toBe(true);
+    expect((report.stages.technical as any).gates).toEqual([
+      { name: "rendered", passed: false },
+      { name: "contrast", passed: false },
+    ]);
+    expect(calls).toContain("deploy");
+    expect(calls).toContain("notify");
+  });
+  it("keeps full-preview deployment blocked when rendered quality gates fail", async () => {
+    const { calls, dependencies } = adapter();
+    dependencies.technical = async () => {
+      calls.push("technical");
+      const error: any = new Error("Rendered quality checks did not pass.");
+      error.code = "PIPELINE_QUALITY_GATE";
+      error.gates = [{ name: "contrast", passed: false }];
+      throw error;
+    };
+
+    const report = await runPipelineTest(
+      { ...input, profile: "full-preview" },
+      dependencies,
+    );
+
+    expect(report.stages.technical.status).toBe("failed");
+    expect(report.verdict).toBe("failed");
+    expect(report.previewDelivered).toBe(false);
+    expect(calls).not.toContain("deploy");
+    expect(calls).not.toContain("notify");
   });
   it("SEO failure remains failed even when a safe preview is delivered", async () => {
     const { dependencies } = adapter("seo");

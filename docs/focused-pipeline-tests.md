@@ -26,7 +26,10 @@ with compatible authored evidence. Reuse requires frozen source/session/dossier
 validation, identical sealed token definitions and current content source
 validation. No compatible source means one authored route from the validated
 three-route pack. This profile skips aesthetic evaluation and repair, while
-keeping Astro, browser transition, painted contrast and SEO review checks.
+keeping Astro/build failures as hard blockers and running browser-transition,
+painted-contrast and SEO review checks as diagnostics. A rendered or contrast
+quality failure leaves the report verdict failed but does not suppress the
+protected noindex diagnostic preview. The preview is never a client release.
 
 Creative-only writes an explicit skipped SEO research artifact and keeps
 `publishReady: false`. It authors the normal three candidates and runs the
@@ -42,9 +45,12 @@ test branches. The active business repository and `review/initial` remain
 untouched. Diagnostic previews have `X-Robots-Tag: noindex`, an `Allow: /`
 robots rule so crawlers can observe the noindex directive, and no sitemap.
 Notification goes only to the developer. No signed client approval link is
-created. Single-lane diagnostic preview delivery requires source safety,
-browser verification and passing rendered contrast even when the tested SEO or
-creative stage failed.
+created. Single-lane diagnostic previews remain source-safe, compile
+successfully, and pass the private Access/noindex release checks. Rendered-
+quality or contrast failures are recorded as failed gates and can accompany a
+delivered diagnostic preview; build failures, source-safety failures, or
+private-preview access failures still block delivery. The report verdict stays
+failed whenever a quality gate fails.
 
 ## One-time private preview setup
 

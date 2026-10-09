@@ -163,6 +163,28 @@ const STAGES = [
   "persist",
 ];
 
+function pipelineQualityGateError(gates) {
+  const error = new Error("Rendered quality checks did not pass.");
+  error.code = "PIPELINE_QUALITY_GATE";
+  error.gates = gates;
+  return error;
+}
+
+export function classifyDiagnosticQualityGateFailure(name, error) {
+  // Only a completed verifier's explicit failure marker is non-blocking.
+  const output = String(error?.output || error?.message || "");
+  const marker = {
+    rendered: /Rendered revision verification failed:/u,
+    contrast: /\bcontrast_verified=false\b/u,
+  }[name];
+  if (!marker?.test(output)) return null;
+  return {
+    name,
+    passed: false,
+    error: output.slice(-800),
+  };
+}
+
 export async function sendPipelineTestNotification({
   report,
   to,
@@ -268,11 +290,24 @@ export async function runPipelineTest(input, dependencies) {
       };
       return result;
     } catch (error) {
+      const diagnosticQualityFailure =
+        name === "technical" &&
+        error?.code === "PIPELINE_QUALITY_GATE" &&
+        ["seo-only", "creative-only"].includes(input.profile);
       report.stages[name] = {
         status: "failed",
         durationMs: Date.now() - started,
         error: String(error.message || error).slice(0, 1000),
+        ...(error?.code === "PIPELINE_QUALITY_GATE"
+          ? { gates: error.gates }
+          : {}),
       };
+      if (diagnosticQualityFailure)
+        return {
+          status: "failed",
+          error: String(error.message || error).slice(0, 1000),
+          gates: error.gates,
+        };
       return null;
     }
   }
@@ -344,7 +379,7 @@ export async function runPipelineTest(input, dependencies) {
 export async function command(
   binary,
   args,
-  { cwd, env = {}, capture = false } = {},
+  { cwd, env = {}, capture = false, captureOutputOnError = false } = {},
 ) {
   return await new Promise((resolve, reject) => {
     const child = spawn(binary, args, {
@@ -364,15 +399,26 @@ export async function command(
       });
     }
     child.on("error", reject);
-    child.on("close", (code) =>
-      code === 0
-        ? resolve(output.trim())
-        : reject(
-            new Error(
-              `${binary} ${args[0]} exited ${code}${capture ? `: ${stderr.slice(-500)}` : ""}`,
-            ),
-          ),
-    );
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve(output.trim());
+        return;
+      }
+      const combinedOutput = `${output}\n${stderr}`.trim();
+      const failureOutput = captureOutputOnError
+        ? combinedOutput.length <= 4_000
+          ? combinedOutput
+          : `${combinedOutput.slice(0, 2_000)}\n[output truncated]\n${combinedOutput.slice(-2_000)}`
+        : capture
+          ? stderr.slice(-500)
+          : "";
+      const error = new Error(
+        `${binary} ${args[0]} exited ${code}${failureOutput ? `: ${failureOutput}` : ""}`,
+      );
+      error.output = failureOutput;
+      error.exitCode = code;
+      reject(error);
+    });
   });
 }
 
@@ -1052,22 +1098,50 @@ export function createCloudDependencies(
       await command("npm", ["ci"], { cwd: site });
       await command("npm", ["run", "check"], { cwd: site, env: reviewEnv });
       await command("npm", ["run", "build"], { cwd: site, env: reviewEnv });
-      await node(
-        "verify-rendered-revision.mjs",
-        [
-          "--config",
-          config,
-          "--dist",
-          path.join(site, "dist"),
-          "--screenshots",
-          path.join(evidence, "screenshots"),
-        ],
-        { env: reviewEnv },
-      );
-      await node("verify-contrast.mjs", ["--site", site], { env: reviewEnv });
+      const gates = [];
+      try {
+        await node(
+          "verify-rendered-revision.mjs",
+          [
+            "--config",
+            config,
+            "--dist",
+            path.join(site, "dist"),
+            "--screenshots",
+            path.join(evidence, "screenshots"),
+          ],
+          { env: reviewEnv, capture: true, captureOutputOnError: true },
+        );
+        gates.push({ name: "rendered", passed: true });
+      } catch (error) {
+        const finding = classifyDiagnosticQualityGateFailure(
+          "rendered",
+          error,
+        );
+        if (!finding) throw error;
+        gates.push(finding);
+      }
+      try {
+        await node("verify-contrast.mjs", ["--site", site], {
+          env: reviewEnv,
+          capture: true,
+          captureOutputOnError: true,
+        });
+        gates.push({ name: "contrast", passed: true });
+      } catch (error) {
+        const finding = classifyDiagnosticQualityGateFailure(
+          "contrast",
+          error,
+        );
+        if (!finding) throw error;
+        gates.push(finding);
+      }
+      if (gates.some((gate) => !gate.passed))
+        throw pipelineQualityGateError(gates);
       return {
         screenshots: ".launchloom/screenshots",
         contrast: ".launchloom/contrast-report.json",
+        gates,
       };
     },
     async seo() {
