@@ -19,7 +19,9 @@ function readJson(file) {
 async function listJsonFiles(directory, predicate) {
   if (!directory) return [];
   const root = path.resolve(directory);
-  const entries = await fs.readdir(root, { withFileTypes: true }).catch(() => []);
+  const entries = await fs
+    .readdir(root, { withFileTypes: true })
+    .catch(() => []);
   const files = [];
   for (const entry of entries) {
     const full = path.join(root, entry.name);
@@ -67,26 +69,57 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
   if (seo && typeof seo === "object") {
     const measured = finiteNumber(seo.cost?.usd) || 0;
     const fallback = finiteNumber(seo.fallbackSearch?.costUsd) || 0;
+    const intentPlanning = seo.intentPlanning || {};
+    const plannerUsage = intentPlanning.usage || {};
+    const plannerCost =
+      plannerUsage.costUsd === null ||
+      plannerUsage.costUsd === undefined ||
+      plannerUsage.costUsd === ""
+        ? null
+        : finiteNumber(plannerUsage.costUsd);
+    const plannerAttempted =
+      intentPlanning.attempted === true ||
+      ["model", "partial"].includes(intentPlanning.status);
+    const providers = ["dataforseo"];
+    if (
+      seo.fallbackSearch?.status &&
+      !["unavailable", "not-needed"].includes(seo.fallbackSearch.status)
+    )
+      providers.push("fallback");
+    if (plannerAttempted) providers.push("openrouter");
     const complete =
       seo.cost?.complete !== false &&
-      seo.fallbackSearch?.costComplete !== false;
+      seo.fallbackSearch?.costComplete !== false &&
+      (!plannerAttempted || plannerCost !== null);
     stages.push({
       stage: "seo_research",
-      provider: seo.fallbackSearch?.status && seo.fallbackSearch.status !== "unavailable"
-        ? "dataforseo+fallback"
-        : "dataforseo",
-      model: null,
-      costUsd: round(measured + fallback),
+      provider: providers.join("+"),
+      model: plannerAttempted
+        ? intentPlanning.model || plannerUsage.model || null
+        : null,
+      costUsd: round(measured + fallback + (plannerCost || 0)),
       costKind: "actual",
       complete,
       detail: {
         mode: seo.mode || null,
         tasks: Number(seo.cost?.tasks) || 0,
         unreportedTasks: Number(seo.cost?.unreportedTasks) || 0,
-        stageCosts: Array.isArray(seo.cost?.stageCosts) ? seo.cost.stageCosts.slice(0, 12) : [],
+        stageCosts: Array.isArray(seo.cost?.stageCosts)
+          ? seo.cost.stageCosts.slice(0, 12)
+          : [],
         fallbackStatus: seo.fallbackSearch?.status || null,
         fallbackQueries: Number(seo.fallbackSearch?.queriesAttempted) || 0,
         publishReady: seo.publishReady === true,
+        queryPlannerStatus: intentPlanning.status || null,
+        queryPlannerModel: intentPlanning.model || plannerUsage.model || null,
+        queryPlannerCostUsd: plannerCost,
+        queryPlannerPromptTokens: Number(plannerUsage.promptTokens) || 0,
+        queryPlannerCompletionTokens:
+          Number(plannerUsage.completionTokens) || 0,
+        queryPlannerCachedTokens: Number(plannerUsage.cachedTokens) || 0,
+        queryPlannerCacheStatus: plannerUsage.cacheStatus || null,
+        queryPlannerAcceptedPhrases:
+          Number(intentPlanning.acceptedPhraseCount) || 0,
         validatedQueries: Array.isArray(seo.validatedQueries)
           ? seo.validatedQueries.length
           : 0,
@@ -115,11 +148,13 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
           pricedCalls: summed.priced,
           unpricedCalls: summed.unpriced,
           promptTokens: records.reduce(
-            (total, record) => total + (finiteNumber(record?.usage?.prompt_tokens) || 0),
+            (total, record) =>
+              total + (finiteNumber(record?.usage?.prompt_tokens) || 0),
             0,
           ),
           completionTokens: records.reduce(
-            (total, record) => total + (finiteNumber(record?.usage?.completion_tokens) || 0),
+            (total, record) =>
+              total + (finiteNumber(record?.usage?.completion_tokens) || 0),
             0,
           ),
         },
@@ -137,7 +172,12 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
       provider: "typesafe",
       model: preflight.model || preflight.selector?.model || null,
       costUsd: cost !== null && cost >= 0 ? round(cost) : null,
-      costKind: cost === null || cost < 0 ? "unreported" : estimated ? "estimated" : "actual",
+      costKind:
+        cost === null || cost < 0
+          ? "unreported"
+          : estimated
+            ? "estimated"
+            : "actual",
       complete: cost !== null && cost >= 0,
       detail: {
         mode: preflight.mode || null,
@@ -150,11 +190,14 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
 
   const assets = input.generatedAssets;
   if (assets && typeof assets === "object") {
-    const placements = Array.isArray(assets.placements) ? assets.placements : [];
+    const placements = Array.isArray(assets.placements)
+      ? assets.placements
+      : [];
     const images = placements.length;
     if (images > 0) {
       const unitPrice = options.falImageUsdPerImage ?? null;
-      const cost = unitPrice !== null && unitPrice > 0 ? round(images * unitPrice) : null;
+      const cost =
+        unitPrice !== null && unitPrice > 0 ? round(images * unitPrice) : null;
       stages.push({
         stage: "images",
         provider: assets.provider || "fal.ai",
@@ -175,8 +218,15 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
   if (creative && typeof creative === "object") {
     const cacheCost = finiteNumber(creative.cacheSummary?.cost);
     const usageRecords = Array.isArray(creative.usage) ? creative.usage : [];
-    const summed = sumUsage(usageRecords.map((record) => ({ usage: record.usage || record })));
-    const cost = cacheCost !== null && cacheCost > 0 ? cacheCost : summed.priced ? summed.cost : null;
+    const summed = sumUsage(
+      usageRecords.map((record) => ({ usage: record.usage || record })),
+    );
+    const cost =
+      cacheCost !== null && cacheCost > 0
+        ? cacheCost
+        : summed.priced
+          ? summed.cost
+          : null;
     stages.push({
       stage: "authoring",
       provider: "openrouter",
@@ -186,8 +236,12 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
       complete: cost !== null,
       detail: {
         status: creative.status || null,
-        candidates: Array.isArray(creative.candidates) ? creative.candidates.length : 0,
-        responses: Number(creative.cacheSummary?.responseCount) || summed.priced + summed.unpriced,
+        candidates: Array.isArray(creative.candidates)
+          ? creative.candidates.length
+          : 0,
+        responses:
+          Number(creative.cacheSummary?.responseCount) ||
+          summed.priced + summed.unpriced,
         cacheHitPercent: Number(creative.cacheSummary?.cacheHitPercent) || 0,
       },
     });
@@ -199,7 +253,9 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
     const sources = [];
     for (const record of Array.isArray(repair.usage) ? repair.usage : [])
       records.push({ usage: record.usage || record });
-    for (const file of Array.isArray(repair.visualGateFiles) ? repair.visualGateFiles : []) {
+    for (const file of Array.isArray(repair.visualGateFiles)
+      ? repair.visualGateFiles
+      : []) {
       if (!file || !file.report) continue;
       const usage = file.report.usage || null;
       const cacheCost = finiteNumber(file.report.cache?.cost);
@@ -255,12 +311,18 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
         costUsd: cost,
         costKind: cost === null ? "unreported" : "estimated",
         complete: cost !== null,
-        detail: { minutes: round(minutes), unitPriceUsd: cost === null ? null : price },
+        detail: {
+          minutes: round(minutes),
+          unitPriceUsd: cost === null ? null : price,
+        },
       });
     }
   }
 
-  const totalUsd = stages.reduce((total, stage) => total + (stage.costUsd || 0), 0);
+  const totalUsd = stages.reduce(
+    (total, stage) => total + (stage.costUsd || 0),
+    0,
+  );
   const actualUsd = stages
     .filter((stage) => stage.costKind === "actual")
     .reduce((total, stage) => total + (stage.costUsd || 0), 0);
@@ -312,7 +374,9 @@ export async function readGenerationCostInputs(paths = {}) {
     const visualGateFiles = [];
     let rounds = 0;
     let repairModel = null;
-    for (const directory of [paths.repairDir, paths.revisionDir].filter(Boolean)) {
+    for (const directory of [paths.repairDir, paths.revisionDir].filter(
+      Boolean,
+    )) {
       const root = path.resolve(directory);
       const usage = await readJson(path.join(root, "repair-usage.json"));
       if (Array.isArray(usage?.records)) usageRecords.push(...usage.records);
@@ -320,13 +384,13 @@ export async function readGenerationCostInputs(paths = {}) {
       const summary = await readJson(path.join(root, "summary.json"));
       if (summary?.repairCycles)
         rounds += Object.values(summary.repairCycles).length;
-      const candidates = await listJsonFiles(
-        root,
-        (name) => /^visual-gate.*\.json$/u.test(name),
+      const candidates = await listJsonFiles(root, (name) =>
+        /^visual-gate.*\.json$/u.test(name),
       );
       for (const file of candidates) {
         const report = await readJson(file);
-        if (report) visualGateFiles.push({ name: path.relative(root, file), report });
+        if (report)
+          visualGateFiles.push({ name: path.relative(root, file), report });
       }
     }
     if (usageRecords.length || visualGateFiles.length)
@@ -376,7 +440,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const summary = summarizeGenerationCosts(input, {
     falImageUsdPerImage: falPrice !== null && falPrice > 0 ? falPrice : null,
   });
-  await fs.writeFile(path.resolve(output), `${JSON.stringify(summary, null, 2)}\n`);
+  await fs.writeFile(
+    path.resolve(output),
+    `${JSON.stringify(summary, null, 2)}\n`,
+  );
   console.log(
     `generation_cost_total=${summary.totalUsd} actual=${summary.actualUsd} estimated=${summary.estimatedUsd} incomplete=${summary.incomplete} stages=${summary.stages.length}`,
   );

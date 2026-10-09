@@ -325,7 +325,9 @@ export function collectContrastTargets({
     );
   };
   const opaqueRootPlate = (plate) =>
-    opaquePlateSurface(plate) && stackZ(plate) > 0 && rootContext(plate) === plate;
+    opaquePlateSurface(plate) &&
+    stackZ(plate) > 0 &&
+    rootContext(plate) === plate;
   // Context creators strictly between an element and a shared ancestor context
   // govern how that element's paint is ordered inside the ancestor, so paint
   // order may only be compared directly when neither side has one.
@@ -333,6 +335,19 @@ export function collectContrastTargets({
     for (let p = el.parentElement; p && p !== root; p = p.parentElement)
       if (createsContext(p)) return true;
     return false;
+  };
+  const outermostStackingContextUnder = (el, root) => {
+    let context = null;
+    for (let p = el; p && p !== root; p = p.parentElement)
+      if (createsContext(p)) context = p;
+    return context;
+  };
+  const hasPaintPseudoThroughRoot = (el, root) => {
+    for (let p = el; p; p = p.parentElement) {
+      if (hasPaintPseudo(p)) return true;
+      if (p === root) return false;
+    }
+    return true;
   };
   const roundedFillCovers = (plate, rect) => {
     const box = rectFor(plate),
@@ -425,9 +440,10 @@ export function collectContrastTargets({
       plate = plate.parentElement
     ) {
       if (!opaquePlateSurface(plate)) continue;
-      if (
-        !((ownRoundedContour && plate === el) || roundedFillCovers(plate, rect))
-      )
+      if (!(
+        (ownRoundedContour && plate === el) ||
+        roundedFillCovers(plate, rect)
+      ))
         continue;
       const plateContext = rootContext(plate);
       if (plateContext && stackZ(layerContext) < stackZ(plateContext))
@@ -442,6 +458,29 @@ export function collectContrastTargets({
         !interveningContexts(plate, plateContext) &&
         !interveningContexts(layer, layerContext) &&
         stackZ(layer) < stackZ(plate)
+      )
+        return true;
+      // An isolated hero may add nested contexts on both sides (for example,
+      // a transformed image inside a negative-z media wrapper and an opaque
+      // nav link inside a positive-z header). Compare the outermost child
+      // contexts immediately below their shared root. Only strict sibling
+      // ordering proves the plate is above the image; equal or unknown order,
+      // or any pseudo paint on the plate path, remains unresolved.
+      const plateStackingContext = outermostStackingContextUnder(
+        plate,
+        plateContext,
+      );
+      const layerStackingContext = outermostStackingContextUnder(
+        layer,
+        layerContext,
+      );
+      if (
+        plateContext === layerContext &&
+        plateStackingContext &&
+        layerStackingContext &&
+        plateStackingContext !== layerStackingContext &&
+        !hasPaintPseudoThroughRoot(plate, plateContext) &&
+        stackZ(layerStackingContext) < stackZ(plateStackingContext)
       )
         return true;
     }
@@ -577,7 +616,9 @@ export function collectContrastTargets({
           "--ll-surface": String(
             computed.getPropertyValue("--ll-surface") || "",
           ).trim(),
-          "--ll-text": String(computed.getPropertyValue("--ll-text") || "").trim(),
+          "--ll-text": String(
+            computed.getPropertyValue("--ll-text") || "",
+          ).trim(),
         });
       }
       const value = roleCache.get(p)[name];

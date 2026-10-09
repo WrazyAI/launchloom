@@ -29,6 +29,7 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      SEO_QUERY_PLANNER_MODEL: ${{ vars.SEO_QUERY_PLANNER_MODEL || 'z-ai/glm-5.3-flash' }}
       FAL_KEY: ${{ secrets.FAL_KEY }}
       FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}
       FAL_IMAGE_USD_PER_IMAGE: ${{ vars.FAL_IMAGE_USD_PER_IMAGE }}

@@ -9,6 +9,75 @@ import {
 import { buildGenerationTrackingPayload } from "../scripts/record-generation-event.mjs";
 
 describe("generation cost summary", () => {
+  it("includes query-planner cost and cache telemetry in measured SEO spend", () => {
+    const summary = summarizeGenerationCosts({
+      seoResearch: {
+        mode: "researched",
+        publishReady: true,
+        cost: { usd: 0.1, tasks: 3, complete: true, unreportedTasks: 0 },
+        fallbackSearch: {
+          status: "not-needed",
+          costUsd: 0,
+          costComplete: true,
+        },
+        intentPlanning: {
+          attempted: true,
+          status: "model",
+          model: "z-ai/glm-5.3-flash",
+          acceptedPhraseCount: 4,
+          usage: {
+            costUsd: 0.002,
+            promptTokens: 100,
+            completionTokens: 30,
+            cachedTokens: 20,
+            cacheStatus: "HIT",
+          },
+        },
+        validatedQueries: [],
+      },
+    });
+
+    expect(summary.stages[0]).toMatchObject({
+      stage: "seo_research",
+      provider: "dataforseo+openrouter",
+      costUsd: 0.102,
+      costKind: "actual",
+      complete: true,
+      detail: {
+        queryPlannerModel: "z-ai/glm-5.3-flash",
+        queryPlannerCostUsd: 0.002,
+        queryPlannerPromptTokens: 100,
+        queryPlannerCompletionTokens: 30,
+        queryPlannerCachedTokens: 20,
+        queryPlannerCacheStatus: "HIT",
+      },
+    });
+  });
+
+  it("marks SEO stage spend incomplete when query-planner cost is unreported", () => {
+    const summary = summarizeGenerationCosts({
+      seoResearch: {
+        cost: { usd: 0.1, tasks: 3, complete: true, unreportedTasks: 0 },
+        fallbackSearch: {
+          status: "not-needed",
+          costUsd: 0,
+          costComplete: true,
+        },
+        intentPlanning: {
+          attempted: true,
+          status: "model",
+          usage: { costUsd: null },
+        },
+      },
+    });
+
+    expect(summary.stages[0]).toMatchObject({
+      stage: "seo_research",
+      complete: false,
+      costUsd: 0.1,
+    });
+  });
+
   it("summarizes provider-reported and estimated stage costs", () => {
     const summary = summarizeGenerationCosts(
       {
@@ -21,28 +90,54 @@ describe("generation cost summary", () => {
             complete: false,
             unreportedTasks: 1,
           },
-          fallbackSearch: { costUsd: 0.01617, costComplete: true, status: "complete", queriesAttempted: 3 },
+          fallbackSearch: {
+            costUsd: 0.01617,
+            costComplete: true,
+            status: "complete",
+            queriesAttempted: 3,
+          },
           validatedQueries: [{ keyword: "plumber" }],
         },
         siteConfigUsage: {
           records: [
-            { label: "site-copy", model: "openai/gpt-6-luna", usage: { cost: 0.084, prompt_tokens: 1000, completion_tokens: 200 } },
+            {
+              label: "site-copy",
+              model: "openai/gpt-6-luna",
+              usage: {
+                cost: 0.084,
+                prompt_tokens: 1000,
+                completion_tokens: 200,
+              },
+            },
           ],
         },
         referenceDnaUsage: {
           records: [
-            { label: "reference-dna", model: "openai/gpt-6-luna", usage: { cost: 0.031 } },
+            {
+              label: "reference-dna",
+              model: "openai/gpt-6-luna",
+              usage: { cost: 0.031 },
+            },
           ],
         },
         preflight: {
           mode: "shadow",
           reasoningEffort: "xhigh",
-          usage: { costUsd: 0.05, estimatedCostUsd: 0.05, costSource: "estimated", inputTokens: 900 },
+          usage: {
+            costUsd: 0.05,
+            estimatedCostUsd: 0.05,
+            costSource: "estimated",
+            inputTokens: 900,
+          },
         },
         generatedAssets: {
           provider: "fal.ai",
           model: "fal-ai/minimax/image-01",
-          placements: [{ placement: "hero" }, { placement: "secondary" }, { placement: "tertiary" }],
+          placements: [
+            { placement: "hero" },
+            { placement: "secondary" },
+            { placement: "tertiary" },
+          ],
           skipped: [],
         },
         creativeRun: {
@@ -53,9 +148,18 @@ describe("generation cost summary", () => {
           candidates: [{}, {}],
         },
         repair: {
-          usage: [{ label: "creative-repair", model: "openai/gpt-6-luna", usage: { cost: 0.2 } }],
+          usage: [
+            {
+              label: "creative-repair",
+              model: "openai/gpt-6-luna",
+              usage: { cost: 0.2 },
+            },
+          ],
           visualGateFiles: [
-            { name: "final/visual-gate.json", report: { usage: { cost: 0.1 }, cache: { cost: 0.1 } } },
+            {
+              name: "final/visual-gate.json",
+              report: { usage: { cost: 0.1 }, cache: { cost: 0.1 } },
+            },
           ],
           rounds: 2,
         },
@@ -70,8 +174,14 @@ describe("generation cost summary", () => {
       costKind: "actual",
       complete: false,
     });
-    expect(stages.site_config).toMatchObject({ costUsd: 0.084, costKind: "actual" });
-    expect(stages.reference_dna).toMatchObject({ costUsd: 0.031, costKind: "actual" });
+    expect(stages.site_config).toMatchObject({
+      costUsd: 0.084,
+      costKind: "actual",
+    });
+    expect(stages.reference_dna).toMatchObject({
+      costUsd: 0.031,
+      costKind: "actual",
+    });
     expect(stages.reasoning_preflight).toMatchObject({
       costUsd: 0.05,
       costKind: "estimated",
@@ -81,13 +191,21 @@ describe("generation cost summary", () => {
       costKind: "estimated",
       complete: true,
     });
-    expect(stages.authoring).toMatchObject({ costUsd: 1.94, costKind: "actual" });
-    expect(stages.repair_qa).toMatchObject({ costUsd: 0.3, costKind: "actual" });
+    expect(stages.authoring).toMatchObject({
+      costUsd: 1.94,
+      costKind: "actual",
+    });
+    expect(stages.repair_qa).toMatchObject({
+      costUsd: 0.3,
+      costKind: "actual",
+    });
     expect(summary.incomplete).toBe(true);
     expect(summary.totalUsd).toBeCloseTo(2.63253, 5);
     expect(summary.actualUsd).toBeCloseTo(2.49253, 5);
     expect(summary.estimatedUsd).toBeCloseTo(0.14, 5);
-    expect(summary.events.map((event: { eventKey: string }) => event.eventKey)).toEqual([
+    expect(
+      summary.events.map((event: { eventKey: string }) => event.eventKey),
+    ).toEqual([
       "cost:seo_research",
       "cost:site_config",
       "cost:reference_dna",
@@ -124,7 +242,11 @@ describe("generation cost summary", () => {
     });
     expect(summary.totalUsd).toBe(0);
     expect(summary.incomplete).toBe(true);
-    expect(summary.events.every((event: { costUsd: number | null }) => event.costUsd === null)).toBe(true);
+    expect(
+      summary.events.every(
+        (event: { costUsd: number | null }) => event.costUsd === null,
+      ),
+    ).toBe(true);
   });
 
   it("omits stages with no activity", () => {
@@ -193,7 +315,10 @@ describe("generation tracking payload", () => {
   });
 
   it("falls back to an issue id for manual runs", () => {
-    const payload = buildGenerationTrackingPayload({ issue: "701", action: "start" });
+    const payload = buildGenerationTrackingPayload({
+      issue: "701",
+      action: "start",
+    });
     expect(payload.generationId).toBe("issue:701");
   });
 

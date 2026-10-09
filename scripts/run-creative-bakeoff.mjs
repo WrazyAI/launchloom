@@ -1,4 +1,7 @@
-import { compilePageBriefs, pageBriefExpectedContent } from "../templates/client-site/src/lib/page-briefs.mjs";
+import {
+  compilePageBriefs,
+  pageBriefExpectedContent,
+} from "../templates/client-site/src/lib/page-briefs.mjs";
 import { routeLinkedContent } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { contrastFailureMessages } from "./rendered-contrast.mjs";
 import { spawn } from "node:child_process";
@@ -550,7 +553,7 @@ function renderedPairMetrics(visualDiversity, candidateIds) {
 }
 
 /**
- * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, deferPromotion?: boolean, excludedCandidateIds?: string[], renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean}} options
+ * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, deferPromotion?: boolean, excludedCandidateIds?: string[], renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, contrastEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function runCreativeBakeoff({
@@ -564,6 +567,7 @@ export async function runCreativeBakeoff({
   excludedCandidateIds = [],
   renderedReferenceEvaluator = evaluateRenderedReferenceFidelity,
   renderedDiversityEvaluator = evaluateRenderedDiversity,
+  contrastEvaluator = enforceBuiltContrast,
   requireDiversity = true,
   allowContrastRepair = true,
 } = {}) {
@@ -764,15 +768,13 @@ export async function runCreativeBakeoff({
         // and location pages. Deterministic routes (contact, about, blog)
         // never load the candidate stylesheet, so auditing them would block
         // every candidate on findings no repair can reach.
-        const authored = (
-          await builtRoutes(path.join(root, "dist"))
-        ).filter(
+        const authored = (await builtRoutes(path.join(root, "dist"))).filter(
           (route) =>
             route === "/" ||
             route.startsWith("/services/") ||
             route.startsWith("/locations/"),
         );
-        candidateResult.contrast = await enforceBuiltContrast({
+        candidateResult.contrast = await contrastEvaluator({
           dist: path.join(root, "dist"),
           browser,
           routes: authored.length ? authored : null,
@@ -987,12 +989,37 @@ export async function runCreativeBakeoff({
                   waitUntil: "networkidle",
                 });
                 await page.waitForTimeout(900);
-                const brief = pageBriefReport.briefs.find(brief=>brief.path===authoredPage.route);
-                if(brief?.mode === "supported") {
-                  const disclosureStates = await page.locator("details").evaluateAll(nodes=>nodes.map(node=>{const open=node.open;node.open=true;return open;}));
+                const brief = pageBriefReport.briefs.find(
+                  (brief) => brief.path === authoredPage.route,
+                );
+                if (brief?.mode === "supported") {
+                  const disclosureStates = await page
+                    .locator("details")
+                    .evaluateAll((nodes) =>
+                      nodes.map((node) => {
+                        const open = node.open;
+                        node.open = true;
+                        return open;
+                      }),
+                    );
                   const visibleText = await page.locator("body").innerText();
-                  await page.locator("details").evaluateAll((nodes,states)=>nodes.forEach((node,index)=>node.open=states[index]),disclosureStates);
-                  if(pageBriefExpectedContent(brief).some(value=>!visibleText.includes(value)))pageResult.failures.push(`${viewport.name}: supported page brief content is missing after hydration.`);
+                  await page
+                    .locator("details")
+                    .evaluateAll(
+                      (nodes, states) =>
+                        nodes.forEach(
+                          (node, index) => (node.open = states[index]),
+                        ),
+                      disclosureStates,
+                    );
+                  if (
+                    pageBriefExpectedContent(brief).some(
+                      (value) => !visibleText.includes(value),
+                    )
+                  )
+                    pageResult.failures.push(
+                      `${viewport.name}: supported page brief content is missing after hydration.`,
+                    );
                 }
 
                 const evidence = await inspectAuthoredPage(page);
