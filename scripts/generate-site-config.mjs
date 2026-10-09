@@ -33,7 +33,7 @@ import {
   selectExperiencePackId,
   selectExperienceVariantId,
 } from "../templates/client-site/src/lib/experience-pack.ts";
-import { auditUnsupportedBusinessClaims } from "./business-copy-claims.mjs";
+import { findUnsupportedBusinessClaimLocations } from "./business-copy-claims.mjs";
 
 // Bounded per-process usage evidence so the generation workflow can report
 // provider cost without parsing runner logs. Never changes the generated
@@ -1722,10 +1722,12 @@ export function evaluateDraft(config, { modelOutput, intake } = {}) {
   const pageReadiness = pageBriefReadiness(config);
   if (!pageReadiness.allowed)
     issues.push(pageReadiness.error || "Route-specific page content is incomplete.");
-  const unsupportedClaims = auditUnsupportedBusinessClaims(config, intake);
+  const unsupportedClaims = findUnsupportedBusinessClaimLocations(config, intake);
   if (unsupportedClaims.length)
     issues.push(
-      `Generated copy includes unsupported business claims: ${unsupportedClaims.join(", ")}.`,
+      `Generated copy includes unsupported business claims: ${unsupportedClaims
+        .map(({ category, path }) => `${category} at ${path}`)
+        .join("; ")}.`,
     );
   if (
     text(copy.heroKicker, 160).length < 8 ||

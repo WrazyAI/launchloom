@@ -1650,6 +1650,30 @@ describe("site configuration", () => {
     );
   });
 
+  it("gives copy refinement the field path of an unsupported availability claim", async () => {
+    const unsafe = repairOutcomeCandidate("Mobile auto care for Portland drivers");
+    unsafe.copy.heroBody =
+      "Same-day emergency service is available today for Portland drivers.";
+    const safe = repairOutcomeCandidate("Mobile vehicle care with clear next steps");
+    const fetchMock = stubCopyModelResponses([unsafe, safe]);
+
+    await generateSiteConfigWithModel({
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      phone: "(503) 555-0146",
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const refinementBody = JSON.parse(
+      String(fetchMock.mock.calls[1]?.[1]?.body || "{}"),
+    );
+    expect(JSON.stringify(refinementBody.messages)).toMatch(
+      /unsupported business claims.*availability.*copy\.heroBody/iu,
+    );
+  });
+
   it("retries a truncated copy refinement once with a larger bounded JSON budget", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
     const unsafe = repairOutcomeCandidate("Mobile auto care, open now");

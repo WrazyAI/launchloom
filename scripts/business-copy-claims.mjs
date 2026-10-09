@@ -289,38 +289,66 @@ function supportedByEvidence(rule, match, intake, text) {
   );
 }
 
-function generatedCopy(config) {
+function copyTextEntries(value, path, entries = []) {
+  if (typeof value === "string" || typeof value === "number") {
+    const text = String(value);
+    if (text.trim()) entries.push({ path, text });
+    return entries;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => copyTextEntries(item, `${path}[${index}]`, entries));
+    return entries;
+  }
+  if (value && typeof value === "object") {
+    for (const [key, item] of Object.entries(value))
+      copyTextEntries(item, path ? `${path}.${key}` : key, entries);
+  }
+  return entries;
+}
+
+function generatedCopyEntries(config) {
   const services = Array.isArray(config.services) ? config.services : [];
   const locations = Array.isArray(config.locations) ? config.locations : [];
   const faqs = Array.isArray(config.conversion?.faqs)
     ? config.conversion.faqs
     : [];
   return [
-    config.business?.tagline,
-    config.business?.description,
-    ...Object.values(config.copy || {}),
-    ...services.flatMap((service) => [
-      service?.description,
-      ...Object.values(service?.decisionSupport || {}),
+    ...copyTextEntries(config.business?.tagline, "business.tagline"),
+    ...copyTextEntries(config.business?.description, "business.description"),
+    ...Object.entries(config.copy || {}).flatMap(([key, value]) =>
+      copyTextEntries(value, `copy.${key}`),
+    ),
+    ...services.flatMap((service, index) => [
+      ...copyTextEntries(service?.description, `services[${index}].description`),
+      ...copyTextEntries(service?.decisionSupport || {}, `services[${index}].decisionSupport`),
     ]),
-    ...(Array.isArray(config.differentiators) ? config.differentiators : []),
-    ...(Array.isArray(config.conversion?.process)
-      ? config.conversion.process
+    ...(Array.isArray(config.differentiators)
+      ? config.differentiators.flatMap((value, index) =>
+          copyTextEntries(value, `differentiators[${index}]`),
+        )
       : []),
-    ...faqs.flatMap((faq) => [faq?.question, faq?.answer]),
-    ...locations.flatMap((location) => [
-      location?.description,
-      location?.localNote,
+    ...(Array.isArray(config.conversion?.process)
+      ? config.conversion.process.flatMap((value, index) =>
+          copyTextEntries(value, `conversion.process[${index}]`),
+        )
+      : []),
+    ...faqs.flatMap((faq, index) => [
+      ...copyTextEntries(faq?.question, `conversion.faqs[${index}].question`),
+      ...copyTextEntries(faq?.answer, `conversion.faqs[${index}].answer`),
     ]),
-    ...Object.values(config.pageContent || {}).flatMap(textValues),
-  ].filter((value) => typeof value === "string" && value.trim());
+    ...locations.flatMap((location, index) => [
+      ...copyTextEntries(location?.description, `locations[${index}].description`),
+      ...copyTextEntries(location?.localNote, `locations[${index}].localNote`),
+    ]),
+    ...copyTextEntries(config.pageContent || {}, "pageContent"),
+  ];
 }
 
-/** Finds high-risk factual claims that lack a corresponding confirmed intake value. */
-export function auditUnsupportedBusinessClaims(config = {}, intake = {}) {
-  const copy = generatedCopy(config);
-  const unsupported = new Set();
-  for (const text of copy) {
+/** Finds unsupported claim categories and their copy-field paths. */
+export function findUnsupportedBusinessClaimLocations(config = {}, intake = {}) {
+  const copyEntries = generatedCopyEntries(config);
+  const findings = new Map();
+  for (const { path, text } of copyEntries) {
     for (const rule of claimRules) {
       const pattern = new RegExp(rule.pattern.source, rule.pattern.flags);
       for (const match of text.matchAll(pattern)) {
@@ -330,9 +358,27 @@ export function auditUnsupportedBusinessClaims(config = {}, intake = {}) {
           supportedByEvidence(rule, match, intake, text)
         )
           continue;
-        unsupported.add(rule.category);
+        findings.set(`${rule.category}\u0000${path}`, {
+          category: rule.category,
+          path,
+        });
       }
     }
   }
-  return [...unsupported].sort();
+  return [...findings.values()].sort(
+    (left, right) =>
+      left.category.localeCompare(right.category) ||
+      left.path.localeCompare(right.path),
+  );
+}
+
+/** Finds high-risk factual claim categories lacking confirmed intake evidence. */
+export function auditUnsupportedBusinessClaims(config = {}, intake = {}) {
+  return [
+    ...new Set(
+      findUnsupportedBusinessClaimLocations(config, intake).map(
+        ({ category }) => category,
+      ),
+    ),
+  ].sort();
 }
