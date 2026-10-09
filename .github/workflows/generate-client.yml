@@ -6,14 +6,14 @@ on:
   workflow_dispatch:
     inputs:
       issue:
-        description: LaunchLoom intake issue number
-        required: true
+        description: Intake issue number (not needed for access-only)
+        required: false
         type: string
       test_profile:
-        description: Full generation or an isolated developer-only test preview
+        description: Full generation, isolated test preview, or no-intake Access smoke
         required: false
         type: choice
-        options: [full, full-preview, seo-only, creative-only]
+        options: [full, full-preview, seo-only, creative-only, access-only]
         default: full
       reuse_authored_candidates:
         description: Reuse a validated candidate set from an existing private client repository
@@ -62,23 +62,60 @@ jobs:
         id: policy
         env:
           REQUESTED_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.test_profile || 'full' }}
+          REQUESTED_ISSUE: ${{ github.event.client_payload.issue || inputs.issue || '' }}
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          import { resolvePipelineTestPolicy } from './scripts/pipeline-test-policy.mjs';
-          const policy = resolvePipelineTestPolicy({profile: process.env.REQUESTED_PROFILE, eventName: process.env.GITHUB_EVENT_NAME});
+          import { resolveWorkflowTestDispatch } from './scripts/pipeline-test-policy.mjs';
+          const policy = resolveWorkflowTestDispatch({
+            profile: process.env.REQUESTED_PROFILE,
+            eventName: process.env.GITHUB_EVENT_NAME,
+            issue: process.env.REQUESTED_ISSUE,
+          });
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `profile=${policy.profile}\n`);
           NODE
 
   focused_test:
     needs: profile_policy
-    if: ${{ needs.profile_policy.outputs.profile != 'full' }}
+    if: ${{ needs.profile_policy.outputs.profile == 'full-preview' || needs.profile_policy.outputs.profile == 'seo-only' || needs.profile_policy.outputs.profile == 'creative-only' }}
     uses: ./.github/workflows/test-generation.yml
     with:
       issue: ${{ inputs.issue }}
       test_profile: ${{ needs.profile_policy.outputs.profile }}
       candidate_repository: ${{ inputs.candidate_repository || '' }}
     secrets: inherit
+
+  private_preview_access_smoke:
+    needs: profile_policy
+    if: ${{ needs.profile_policy.outputs.profile == 'access-only' }}
+    runs-on: depot-ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+      CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
+      LAUNCHLOOM_TEST_PAGES_PROJECT: ${{ vars.LAUNCHLOOM_TEST_PAGES_PROJECT || 'launchloom-pipeline-preview' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Create a content-free probe
+        run: node scripts/create-private-preview-probe.mjs "$RUNNER_TEMP/launchloom-access-smoke"
+      - name: Verify anonymous denial and service-token access
+        run: |
+          BRANCH="access-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          node scripts/deploy-private-diagnostic-preview.mjs \
+            --directory "$RUNNER_TEMP/launchloom-access-smoke" \
+            --source-sha "$GITHUB_SHA" \
+            --branch "$BRANCH"
 
   intake_handoff_check:
     needs: profile_policy

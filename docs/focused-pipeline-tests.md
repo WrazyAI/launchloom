@@ -1,12 +1,17 @@
 # Focused cloud generation tests
 
 Use the Generate client site manual workflow with `test_profile` set to
-`seo-only`, `creative-only`, or `full-preview`. The `full` default retains
+`seo-only`, `creative-only`, `full-preview`, or `access-only`. The `full` default retains
 normal automatic/production generation. The reusable `test-generation.yml`
 workflow is reached through test-profile dispatch. Manual dispatch exposes the
 `test_profile` selector. The runner CLI also
 accepts `--skip-creative-author-checks` for SEO-only and `--skip-seo-addon`
 for creative-only. Conflicting choices fail before generation.
+
+`access-only` requires no intake issue and runs no research, model authorship,
+SEO, lead capture, email, or release checks. It creates a content-free noindex
+probe and verifies anonymous Access denial plus service-token access through
+the same Wrangler/Pages path used by private diagnostic previews.
 
 `full-preview` runs SEO research, authors all three independent candidates,
 evaluates creative quality, builds and verifies the rendered site, then runs
@@ -64,24 +69,27 @@ project.
 
 Configure these once:
 
-1. Set the repository variable `LAUNCHLOOM_TEST_PAGES_PROJECT` if the default
-   project name is not desired. The Cloudflare API token needs permission to
-   create and deploy Pages projects.
-2. In Cloudflare, enable the Pages project's **Settings > General > Enable
-   access policy** for preview deployments. Allow the approved developer
-   identity and add a **Service Auth** policy for the CI service token. Keep
-   production deployment access unchanged.
-3. Create a Cloudflare Access service token and store its client ID and secret
-   as GitHub repository secrets `CLOUDFLARE_ACCESS_CLIENT_ID` and
-   `CLOUDFLARE_ACCESS_CLIENT_SECRET`.
-4. Dispatch the test workflow. On first use it may create the dedicated Pages
-   project and content-free access probe, then stop if Access has not yet been
-   enabled. After enabling Access, rerun the workflow; it will verify privacy
-   before doing research or site authoring.
+1. Use a dedicated Pages project for test previews. The configured project is
+   `launchloom-pipeline-preview`; set the repository variable
+   `LAUNCHLOOM_TEST_PAGES_PROJECT` only if its name changes. The Pages project
+   and Access application are provisioned separately from the client projects.
+2. Protect only `*.<project>.pages.dev` with a Cloudflare Access application.
+   The current application allows the approved developer identity and has a
+   **Service Auth** policy restricted to the CI service token. The apex
+   `<project>.pages.dev` hostname and production/client projects are not covered
+   by this wildcard application.
+3. Store the Access service-token client ID and secret as GitHub repository
+   secrets `CLOUDFLARE_ACCESS_CLIENT_ID` and
+   `CLOUDFLARE_ACCESS_CLIENT_SECRET`. The Pages deployment step also needs the
+   existing `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` secrets.
+4. Run `Generate client site` manually with `test_profile=access-only` and no
+   issue number to verify the content-free probe. Generation profiles still
+   require an intake issue. The smoke must prove anonymous denial and a
+   service-token HTTP 200 before any client content is uploaded. Do not run a
+   generation profile until that smoke passes.
 
-The Access policy should target Pages preview deployments only. Cloudflare
-documents that this policy protects preview URLs and does not automatically
-protect the project's production `*.pages.dev` hostname. Do not add client
+The wildcard Access application protects immutable Pages preview URLs without
+changing access to the project's root `*.pages.dev` hostname. Do not add client
 content or send a preview link until the workflow's anonymous/authenticated
 checks pass.
 

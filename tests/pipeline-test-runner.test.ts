@@ -193,7 +193,9 @@ describe("focused pipeline orchestration", () => {
     expect(privatePreview.assertPrivateDiagnosticOutput).toBeTypeOf("function");
     const directory = await makePrivateDiagnosticDirectory();
     try {
-      await expect(privatePreview.assertPrivateDiagnosticOutput(directory)).resolves.toBe(true);
+      await expect(
+        privatePreview.assertPrivateDiagnosticOutput(directory),
+      ).resolves.toBe(true);
       await fs.writeFile(path.join(directory, "robots.txt"), "User-agent: *\nDisallow: /\n");
       await expect(privatePreview.assertPrivateDiagnosticOutput(directory)).rejects.toThrow(/robots\.txt must allow crawling/i);
       await fs.writeFile(path.join(directory, "robots.txt"), "User-agent: *\nAllow: /\n");
@@ -202,6 +204,21 @@ describe("focused pipeline orchestration", () => {
       await fs.rm(path.join(directory, "sitemap.xml"));
       await fs.writeFile(path.join(directory, "_headers"), "/*\n");
       await expect(privatePreview.assertPrivateDiagnosticOutput(directory)).rejects.toThrow(/X-Robots-Tag noindex/i);
+    } finally {
+      await fs.rm(directory, { recursive: true, force: true });
+    }
+  });
+  it("creates a crawler-safe, content-free access probe without intake data", async () => {
+    expect(privatePreview.createPrivatePreviewProbe).toBeTypeOf("function");
+    const directory = await fs.mkdtemp(path.join(os.tmpdir(), "ll-access-probe-"));
+    try {
+      await privatePreview.createPrivatePreviewProbe(directory);
+      const html = await fs.readFile(path.join(directory, "index.html"), "utf8");
+      const headers = await fs.readFile(path.join(directory, "_headers"), "utf8");
+      expect(html).toContain("This page contains no client or business data");
+      expect(html).not.toContain("@example");
+      expect(headers).toContain("X-Robots-Tag: noindex");
+      await expect(privatePreview.assertPrivateDiagnosticOutput(directory)).resolves.toBe(true);
     } finally {
       await fs.rm(directory, { recursive: true, force: true });
     }

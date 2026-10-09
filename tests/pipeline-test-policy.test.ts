@@ -4,6 +4,30 @@ import * as generationPolicy from "../scripts/pipeline-test-policy.mjs";
 import { pipelineTestBannerMessage } from "../templates/client-site/src/lib/pipeline-test-preview.mjs";
 
 describe("focused pipeline execution policy", () => {
+  it("allows a no-issue access-only manual workflow without entering generation profiles", () => {
+    expect(generationPolicy.resolveWorkflowTestDispatch).toBeTypeOf("function");
+    expect(
+      generationPolicy.resolveWorkflowTestDispatch({
+        profile: "access-only",
+        eventName: "workflow_dispatch",
+        issue: "",
+      }),
+    ).toEqual({ profile: "access-only", requiresIntakeIssue: false });
+    expect(() =>
+      generationPolicy.resolveWorkflowTestDispatch({
+        profile: "access-only",
+        eventName: "repository_dispatch",
+        issue: "",
+      }),
+    ).toThrow(/manual/i);
+    expect(() =>
+      generationPolicy.resolveWorkflowTestDispatch({
+        profile: "seo-only",
+        eventName: "workflow_dispatch",
+        issue: "",
+      }),
+    ).toThrow(/issue/i);
+  });
   it("rejects synthetic demo provenance from the default production generation mode", () => {
     expect(generationPolicy.assertGenerationMode).toBeTypeOf("function");
     expect(() => generationPolicy.assertGenerationMode(

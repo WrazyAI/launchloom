@@ -12,7 +12,11 @@ import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readi
 import { businessFactReadiness } from "../templates/client-site/src/lib/business-facts.mjs";
 import { pageBriefReadiness } from "../templates/client-site/src/lib/page-briefs.mjs";
 export { classifyPagesPreviewResponse, waitForPagesPreview } from "./pages-preview-readiness.mjs";
-export { assertPrivateDiagnosticOutput, deployPrivatePagesPreview } from "./private-pages-preview.mjs";
+export {
+  assertPrivateDiagnosticOutput,
+  createPrivatePreviewProbe,
+  deployPrivatePagesPreview,
+} from "./private-pages-preview.mjs";
 
 // Research verdict only: never a production authorization. The persisted
 // provenance and every release guard retain the original, marked config.

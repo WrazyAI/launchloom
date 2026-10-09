@@ -69,7 +69,9 @@ export async function assertPrivateDiagnosticOutput(directory) {
   );
 }
 
-async function writeProbe(directory) {
+export async function createPrivatePreviewProbe(directory) {
+  if (!directory)
+    throw new Error("A private preview probe directory is required.");
   await fs.mkdir(directory, { recursive: true });
   await fs.writeFile(
     path.join(directory, "index.html"),
@@ -83,6 +85,8 @@ async function writeProbe(directory) {
     path.join(directory, "robots.txt"),
     "User-agent: *\nAllow: /\n",
   );
+  await assertPrivateDiagnosticOutput(directory);
+  return directory;
 }
 
 /**
@@ -134,7 +138,7 @@ export async function deployPrivatePagesPreview({
   await ensureProject({ projectName: project });
   const probeDirectory = await makeProbe();
   try {
-    await writeProbe(probeDirectory);
+    await createPrivatePreviewProbe(probeDirectory);
     const probe = await deploy({
       directory: probeDirectory,
       projectName: project,
