@@ -31,7 +31,7 @@
 .launchloom-lead-form textarea {
   width: 100%;
   min-height: 2.75rem;
-  border: 1px solid currentColor;
+  border: 1px solid var(--ll-border, currentColor);
   border-radius: 0.35rem;
   padding: 0.65rem 0.75rem;
   color: inherit;
@@ -46,7 +46,7 @@
 .launchloom-lead-form button {
   min-height: 2.75rem;
   width: fit-content;
-  border: 1px solid currentColor;
+  border: 1px solid var(--ll-border, currentColor);
   border-radius: 999px;
   padding: 0.65rem 1rem;
   color: inherit;
@@ -72,7 +72,7 @@
 .launchloom-lead-form textarea:focus-visible,
 .launchloom-contact-links a:focus-visible,
 .launchloom-chat-launcher:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid var(--ll-focus, currentColor);
   outline-offset: 3px;
 }
 

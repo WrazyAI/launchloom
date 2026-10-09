@@ -11,7 +11,10 @@ import {
   pageBriefExpectedContent,
 } from "../templates/client-site/src/lib/page-briefs.mjs";
 import { redactPrivateLocation } from "../templates/client-site/src/lib/business-facts.mjs";
-import { hasPipelineTest, hasTestOnlySite } from "../templates/client-site/src/lib/seo-readiness.mjs";
+import {
+  hasPipelineTest,
+  hasTestOnlySite,
+} from "../templates/client-site/src/lib/seo-readiness.mjs";
 const message = (error) =>
   String(error?.message || error)
     .split("\n")[0]
@@ -20,50 +23,127 @@ const message = (error) =>
 export function diagnosticFormMode(config, mode = "review") {
   if (mode === "production") {
     if (hasTestOnlySite(config))
-      throw new Error("Diagnostic test-only site provenance cannot use production form verification.");
+      throw new Error(
+        "Diagnostic test-only site provenance cannot use production form verification.",
+      );
     return "mocked";
   }
   if (!hasTestOnlySite(config)) return "mocked";
   if (!hasPipelineTest(config) && config.demoNotice) return "test-preview";
   const provenance = config.pipelineTest;
-  if (!provenance || provenance.version !== 1 || provenance.testOnly !== true || !["seo-only", "creative-only", "full-preview"].includes(provenance.profile) || !/^[a-f0-9]{40}$/iu.test(provenance.sourceSha || "") || typeof provenance.runId !== "string" || !provenance.runId.trim() || config.lead?.apiUrl || config.lead?.token)
-    throw new Error("Diagnostic test-preview form checks require valid persisted test provenance and empty API URL/token.");
+  if (
+    !provenance ||
+    provenance.version !== 1 ||
+    provenance.testOnly !== true ||
+    !["seo-only", "creative-only", "full-preview"].includes(
+      provenance.profile,
+    ) ||
+    !/^[a-f0-9]{40}$/iu.test(provenance.sourceSha || "") ||
+    typeof provenance.runId !== "string" ||
+    !provenance.runId.trim() ||
+    config.lead?.apiUrl ||
+    config.lead?.token
+  )
+    throw new Error(
+      "Diagnostic test-preview form checks require valid persisted test provenance and empty API URL/token.",
+    );
   return "test-preview";
 }
 
-async function verifyDiagnosticForm(page, form, phase, requests, network, timeout) {
-  const result = { renderer: "preview", rendering: "pass", initialization: "not_verified", previewDisabled: "not_verified", delivery: { success: "not_verified", failure: "not_verified", networkFailure: "not_verified" }, externalDelivery: "not_verified", syntheticRequests: 0, failures: [] };
+async function verifyDiagnosticForm(
+  page,
+  form,
+  phase,
+  requests,
+  network,
+  timeout,
+) {
+  const result = {
+    renderer: "preview",
+    rendering: "pass",
+    initialization: "not_verified",
+    previewDisabled: "not_verified",
+    delivery: {
+      success: "not_verified",
+      failure: "not_verified",
+      networkFailure: "not_verified",
+    },
+    externalDelivery: "not_verified",
+    syntheticRequests: 0,
+    failures: [],
+  };
   try {
-    if (!(await form.isVisible()) || await form.getAttribute("data-lead-preview") !== "true")
+    if (
+      !(await form.isVisible()) ||
+      (await form.getAttribute("data-lead-preview")) !== "true"
+    )
       throw new Error("Diagnostic form must be visible and preview-marked.");
-    if (await form.locator('[name="lead-token"]').evaluateAll(nodes => nodes.some(node => node.value)))
+    if (
+      await form
+        .locator('[name="lead-token"]')
+        .evaluateAll((nodes) => nodes.some((node) => node.value))
+    )
       throw new Error("Diagnostic form exposes a live token.");
     for (let count = 0; count < 8; count++) {
-      const radio = form.locator('[data-lead-step]:not([hidden]) input[type=radio]').first();
+      const radio = form
+        .locator("[data-lead-step]:not([hidden]) input[type=radio]")
+        .first();
       if (!(await radio.count())) break;
       await radio.check();
       await page.waitForTimeout(180);
     }
-    for (const [name, value] of Object.entries({ name: "Stage 4 Synthetic", phone: "555-0101", email: "stage4@example.test", message: "Synthetic disabled-preview verification." })) await form.locator(`[name="${name}"]`).fill(value);
-    for (const select of await form.locator('select[required]').all()) {
-      const value = await select.locator("option").evaluateAll(nodes => nodes.find(node => node.value && !node.disabled)?.value);
+    for (const [name, value] of Object.entries({
+      name: "Stage 4 Synthetic",
+      phone: "555-0101",
+      email: "stage4@example.test",
+      message: "Synthetic disabled-preview verification.",
+    }))
+      await form.locator(`[name="${name}"]`).fill(value);
+    for (const select of await form.locator("select[required]").all()) {
+      const value = await select
+        .locator("option")
+        .evaluateAll(
+          (nodes) => nodes.find((node) => node.value && !node.disabled)?.value,
+        );
       if (value) await select.selectOption(value);
     }
-    await page.evaluate(() => { window.__llQaPreviewSubmitted = 0; window.addEventListener("launchloom:lead-submitted", () => window.__llQaPreviewSubmitted++); });
+    await page.evaluate(() => {
+      window.__llQaPreviewSubmitted = 0;
+      window.addEventListener(
+        "launchloom:lead-submitted",
+        () => window.__llQaPreviewSubmitted++,
+      );
+    });
     const before = requests.length + network.length;
-    const status = form.locator('[role=status]').last();
-    await status.evaluate(node => { node.textContent = ""; });
+    const status = form.locator("[role=status]").last();
+    await status.evaluate((node) => {
+      node.textContent = "";
+    });
     phase.value = "preview-submit";
-    await form.locator('button[type=submit]').click();
-    await status.filter({ hasText: /(?:test-only preview|developer preview only).*(?:disabled|nothing was sent|not connected)/iu }).waitFor({ timeout });
+    await form.locator("button[type=submit]").click();
+    await status
+      .filter({
+        hasText:
+          /(?:test-only preview|developer preview only).*(?:disabled|nothing was sent|not connected)/iu,
+      })
+      .waitFor({ timeout });
     // Keep the submission guard active during the bounded post-response observation.
     await page.waitForTimeout(500);
     result.syntheticRequests = requests.length + network.length - before;
-    if (result.syntheticRequests || await page.evaluate(() => window.__llQaPreviewSubmitted)) throw new Error("Diagnostic submission attempted network delivery or reported success.");
+    if (
+      result.syntheticRequests ||
+      (await page.evaluate(() => window.__llQaPreviewSubmitted))
+    )
+      throw new Error(
+        "Diagnostic submission attempted network delivery or reported success.",
+      );
     result.previewDisabled = "pass";
     result.initialization = "pass";
-  } catch (error) { result.failures.push("Diagnostic preview lifecycle: " + message(error)); }
-  finally { phase.value = "observe"; }
+  } catch (error) {
+    result.failures.push("Diagnostic preview lifecycle: " + message(error));
+  } finally {
+    phase.value = "observe";
+  }
   return result;
 }
 const profiles = [
@@ -286,8 +366,13 @@ export async function verifyApprovedRoutes({
   timeout = 5000,
   browser: existingBrowser,
 }) {
-  if (formMode === "test-preview" && diagnosticFormMode(config, mode) !== "test-preview")
-    throw new Error("Diagnostic test-preview checks cannot replace ordinary or production delivery checks.");
+  if (
+    formMode === "test-preview" &&
+    diagnosticFormMode(config, mode) !== "test-preview"
+  )
+    throw new Error(
+      "Diagnostic test-preview checks cannot replace ordinary or production delivery checks.",
+    );
   const target = new URL(origin);
   if (
     !["http:", "https:"].includes(target.protocol) ||
@@ -498,7 +583,16 @@ export async function verifyApprovedRoutes({
             .locator("main form.lead-form,main form.launchloom-lead-form")
             .all()) {
             if (formMode === "test-preview") {
-              forms.push(await verifyDiagnosticForm(page, form, phase, requests, network, timeout));
+              forms.push(
+                await verifyDiagnosticForm(
+                  page,
+                  form,
+                  phase,
+                  requests,
+                  network,
+                  timeout,
+                ),
+              );
               continue;
             }
             if ((await form.getAttribute("data-lead-preview")) === "true") {
@@ -508,7 +602,12 @@ export async function verifyApprovedRoutes({
                 renderer: "preview",
                 rendering: "pass",
                 delivery: { success: "not_verified", failure: "not_verified" },
-                failures: mode === "production" ? ["Production forms require terminal synthetic lifecycle evidence."] : [],
+                failures:
+                  mode === "production"
+                    ? [
+                        "Production forms require terminal synthetic lifecycle evidence.",
+                      ]
+                    : [],
               });
               continue;
             }
@@ -545,13 +644,28 @@ export async function verifyApprovedRoutes({
               forms.every((form) => form.failures.length === 0),
             "Required service/location/contact forms must render and have terminal synthetic lifecycle evidence.",
           );
-          if (formMode === "test-preview" && forms.some(form => form.failures.length))
-            throw new Error(forms.flatMap(form => form.failures).join(" ") + " Close the page before navigation can replay a submission target.");
+          if (
+            formMode === "test-preview" &&
+            forms.some((form) => form.failures.length)
+          )
+            throw new Error(
+              forms.flatMap((form) => form.failures).join(" ") +
+                " Close the page before navigation can replay a submission target.",
+            );
           const reload = await page.reload({ waitUntil: "networkidle" });
           add(
             "refresh",
-            reload?.status() === 200 && (await h1.count()) === 1,
-            "Refresh preserves route rendering.",
+            reload?.status() === 200 &&
+              new URL(page.url()).pathname === record.path,
+            "Refreshing the approved route returns HTTP 200 and preserves its path.",
+          );
+          const refreshedH1 = page.locator("main h1");
+          add(
+            "main-heading-after-refresh",
+            (await refreshedH1.count()) === 1 &&
+              Boolean(await refreshedH1.first().innerText()) &&
+              (await refreshedH1.first().isVisible()),
+            "After refresh, the main landmark still contains one visible meaningful H1.",
           );
           const links = page.locator("main a[href]");
           let navigated = false;

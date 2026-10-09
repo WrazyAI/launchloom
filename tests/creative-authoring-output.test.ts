@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   AUTHORING_STAGE_BUDGETS,
+  CLIENT_PALETTE_ROLE_CONTRACT,
   authoringCompletionDiagnostics,
   completionLimitRequestField,
   referenceImplementationChecklist,
@@ -11,9 +12,7 @@ describe("creative authoring output budgets", () => {
     expect(completionLimitRequestField(48000)).toEqual({
       max_completion_tokens: 48000,
     });
-    expect(() => completionLimitRequestField(0)).toThrow(
-      /positive integer/u,
-    );
+    expect(() => completionLimitRequestField(0)).toThrow(/positive integer/u);
   });
 
   it("gives each authoring stage generous output and time headroom", () => {
@@ -34,9 +33,7 @@ describe("creative authoring output budgets", () => {
       routeId: "route-01",
       maxTokens: AUTHORING_STAGE_BUDGETS.experience.maxTokens,
       payload: {
-        choices: [
-          { finish_reason: "length", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "length", message: { content: null } }],
         usage: {
           completion_tokens: 48000,
           completion_tokens_details: { reasoning_tokens: 47980 },
@@ -68,10 +65,28 @@ describe("creative authoring output budgets", () => {
     expect(checklist.indexOf('data-reference-section="hero"')).toBeLessThan(
       checklist.indexOf('data-reference-section="image-chapter"'),
     );
-    expect(checklist.indexOf('data-reference-section="image-chapter"')).toBeLessThan(
+    expect(
+      checklist.indexOf('data-reference-section="image-chapter"'),
+    ).toBeLessThan(
       checklist.indexOf('data-reference-section="magazine-archive"'),
     );
     expect(checklist).toContain("semantically matching section");
+  });
+
+  it("requires one meaningful H1 inside the main landmark", () => {
+    const checklist = referenceImplementationChecklist({
+      sectionSequence: ["hero", "services", "faqs", "contact"],
+    });
+
+    expect(checklist).toContain(
+      "Render exactly one meaningful H1 inside the page's single <main> landmark",
+    );
+  });
+
+  it("requires action hover states to keep matched foreground and surface roles", () => {
+    expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain(
+      "Never pair --ll-text as an action fill with --ll-on-action text",
+    );
   });
 
   it("states distinct desktop and mobile hero topologies as separate layout contracts", () => {
@@ -89,7 +104,9 @@ describe("creative authoring output budgets", () => {
     expect(checklist).toContain("Desktop media relation: copy-over-media");
     expect(checklist).toContain("Mobile hero topology: type-led-statement");
     expect(checklist).toContain("Mobile media relation: copy-leads-opening");
-    expect(checklist).toContain("do not carry desktop image occupancy into mobile");
+    expect(checklist).toContain(
+      "do not carry desktop image occupancy into mobile",
+    );
     expect(checklist).not.toContain("IMAGE-INDEPENDENT REFERENCE GUARDRAIL");
   });
 
@@ -145,13 +162,25 @@ describe("creative authoring output budgets", () => {
       motion: { primitive: "native-scroll-snap-gallery" },
     });
 
-    expect(checklist).toContain('data-hero-geometry="dark-photo-led-home-promise"');
-    expect(checklist).toContain('data-navigation-geometry="thin-utility-strip-over-airy-service-nav"');
-    expect(checklist).toContain('data-service-presentation="three-captioned-surface-studies"');
+    expect(checklist).toContain(
+      'data-hero-geometry="dark-photo-led-home-promise"',
+    );
+    expect(checklist).toContain(
+      'data-navigation-geometry="thin-utility-strip-over-airy-service-nav"',
+    );
+    expect(checklist).toContain(
+      'data-service-presentation="three-captioned-surface-studies"',
+    );
     expect(checklist).toContain('data-cta-placement="hero-estimate-anchor"');
-    expect(checklist).toContain('data-mobile-recomposition="stacked-room-sample-sequence"');
-    expect(checklist).toContain('data-motion-primitive="native-scroll-snap-gallery"');
-    expect(checklist).toContain("machine-readable verification markers, not visual substitutions");
+    expect(checklist).toContain(
+      'data-mobile-recomposition="stacked-room-sample-sequence"',
+    );
+    expect(checklist).toContain(
+      'data-motion-primitive="native-scroll-snap-gallery"',
+    );
+    expect(checklist).toContain(
+      "machine-readable verification markers, not visual substitutions",
+    );
   });
 
   it("promotes distinctive signature and art-direction mechanics into rendered obligations", () => {
@@ -172,7 +201,8 @@ describe("creative authoring output budgets", () => {
       imageTreatment: {
         mode: "finished rooms and paint sample-like color strips",
         crop: "wide room reveal followed by contained material studies",
-        focalPoint: "keep the finished surface visible beside the service choice",
+        focalPoint:
+          "keep the finished surface visible beside the service choice",
       },
       servicePresentation: {
         pattern: "vertical service menu that changes the featured room image",

@@ -32,6 +32,7 @@ export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "Runtime colour roles are read-only. Never declare, assign, override, or register --ll-surface, --ll-text, --ll-muted-text, --ll-link, --ll-action, --ll-on-action, --ll-border, or --ll-focus, including CSS declarations, @property, inline styles, or motion setProperty calls. Read them only through var(...). Use --ll-creative-* for candidate-owned variables.",
   "Use these local role variables for foreground/background CSS; never inherit a light text token across a transition onto a light surface. Mark muted copy data-ll-muted and actions data-ll-action. Preserve the chosen primary as brand identity; use derived readable variants for links and text.",
   "Ordinary copy, navigation and button text require 4.5:1; large text requires 3:1; required control boundaries and focus indicators require 3:1. Hover, focus, open menus and mobile must retain readable pairings. Decorative rules need not be forced to 3:1.",
+  "Treat each hover, active, and focus style as a separate foreground/background pair. When an action fill changes, also choose a readable foreground for that changed fill. Never pair --ll-text as an action fill with --ll-on-action text unless that exact pair is verified to meet contrast.",
   "Image text needs a local contrasting plate or independently verified scrim. Do not rely on a dark average photo or text shadow. Unknown image, pseudo-element, blend and filter backdrops are unresolved until proved or repaired. The same deterministic rendered contrast gate applies to all pages.",
   "- surfaceColor is the dominant page surface. The page body and the large content fields use it.",
   "- heroColor is the opening hero surface. It stays distinct from the page surface.",
@@ -67,7 +68,10 @@ export function completionLimitRequestField(tokens) {
 export function referenceImplementationChecklist(referenceDna) {
   const navigationRequirement =
     'REQUIRED NAVIGATION LINKS (EVERY ROUTE, INCLUDING WHEN REFERENCE DNA IS NULL): include visible native lowercase <nav> containing literal JSX anchors <a href="#services">Services</a>, <a href="#faqs">FAQs</a>, and <a href="#contact">Contact</a>. Do not remove, replace, or convert these anchors to components or click handlers.';
-  if (referenceDna == null) return navigationRequirement;
+  const semanticHeadingRequirement =
+    "Render exactly one meaningful H1 inside the page's single <main> landmark. The main landmark must contain the hero heading and unique page content; do not place the H1 before or after main.";
+  if (referenceDna == null)
+    return `${navigationRequirement}\n${semanticHeadingRequirement}`;
 
   const sections = Array.isArray(referenceDna?.sectionSequence)
     ? referenceDna.sectionSequence
@@ -194,6 +198,7 @@ export function referenceImplementationChecklist(referenceDna) {
   return [
     'REQUIRED LITERAL SECTION IDS: put id="services", id="faqs", and id="contact" on the actual matching content sections. These must be literal JSX string attributes, not variables, expressions, aliases, or empty anchor elements.',
     navigationRequirement,
+    semanticHeadingRequirement,
     ...(viewportTopology
       ? [
           "VIEWPORT-SPECIFIC HERO TOPOLOGY (HARD REQUIREMENT):",

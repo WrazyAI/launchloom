@@ -2,7 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { safeAuthorFailureText } from "./author-failure-evidence.mjs";
-import { parsePipelineTestArgs, resolvePipelineTestPolicy } from "./pipeline-test-policy.mjs";
+import {
+  parsePipelineTestArgs,
+  resolvePipelineTestPolicy,
+} from "./pipeline-test-policy.mjs";
 import { parseModelJson } from "./model-json.mjs";
 import {
   assertModelPromptTextBudget,
@@ -14,7 +17,11 @@ import {
   referenceDossierPromptBlock,
 } from "./reference-dossier.mjs";
 import { typographyPalettePrompt } from "./creative-typography.mjs";
-import { authorExperienceCandidates, creativeLocationPageShape, creativeServicePageShape } from "./production-experience-author.mjs";
+import {
+  authorExperienceCandidates,
+  creativeLocationPageShape,
+  creativeServicePageShape,
+} from "./production-experience-author.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
@@ -45,7 +52,10 @@ import {
 } from "./creative-authoring-output.mjs";
 
 const args = parsePipelineTestArgs(process.argv.slice(2));
-const testPolicy = resolvePipelineTestPolicy({ profile: args.profile, eventName: process.env.GITHUB_EVENT_NAME || "workflow_dispatch" });
+const testPolicy = resolvePipelineTestPolicy({
+  profile: args.profile,
+  eventName: process.env.GITHUB_EVENT_NAME || "workflow_dispatch",
+});
 const configPath = path.resolve(args.config || "src/site.config.json");
 const inspirationPath = path.resolve(
   args.inspiration || ".launchloom/inspiration-pack.json",
@@ -400,7 +410,7 @@ AUTHORED EXPERIENCE JSX
 ${request.experienceSource}
 ${request.servicePageSource ? `\nAUTHORED SERVICE PAGE JSX\n${request.servicePageSource}\n` : ""}${request.locationPageSource ? `\nAUTHORED LOCATION PAGE JSX\n${request.locationPageSource}\n` : ""}${request.servicesIndexSource ? `\nAUTHORED SERVICES INDEX JSX\n${request.servicesIndexSource}\n` : ""}
 STYLES STAGE
-Return complete styles.css in content. Return CSS text only, never an HTML document, JSX, markdown fences, or script tags. One stylesheet must style every authored page (Experience.jsx, ServicePage.jsx, LocationPage.jsx, and ServicesIndexPage.jsx) without changing their structure. The homepage header plus hero must have a measured bounding bottom no greater than the viewport height at 1536x864 and 1366x768 at 100 percent zoom. Use a compact hero composition: one headline, short body, one early CTA, and the image treatment. ${routeUsesUtilityPanel(request) ? "The assigned utility-panel form belongs in the hero; keep that panel concise, usable, and within the viewport-fit contract." : "Do not make the hero grow to accommodate a contact form, service list, or long copy."} Every inner page opening must keep its H1, summary, and primary action readable at 1536x864 and must not overflow at 390x844; inner pages are allowed to be taller than one viewport. Avoid large fixed padding and min-heights that exceed the viewport; use min-height: 0 where content can wrap. Recompose for 390x844 without horizontal overflow. Include visible focus, adequate contrast, readable body type, and prefers-reduced-motion. Use no remote URLs.`;
+Return complete styles.css in content. Return CSS text only, never an HTML document, JSX, markdown fences, or script tags. One stylesheet must style every authored page (Experience.jsx, ServicePage.jsx, LocationPage.jsx, and ServicesIndexPage.jsx) without changing their structure. The homepage header plus hero must have a measured bounding bottom no greater than the viewport height at 1536x864 and 1366x768 at 100 percent zoom. Use a compact hero composition: one headline, short body, one early CTA, and the image treatment. ${routeUsesUtilityPanel(request) ? "The assigned utility-panel form belongs in the hero; keep that panel concise, usable, and within the viewport-fit contract." : "Do not make the hero grow to accommodate a contact form, service list, or long copy."} Every inner page opening must keep its H1, summary, and primary action readable at 1536x864 and must not overflow at 390x844; inner pages are allowed to be taller than one viewport. At 390px, let nav rows wrap, stack, or deliberately recompose so the wordmark, all links and primary action remain inside the viewport. Never let min-content width, a nowrap row, or fixed padding create horizontal overflow. Size hero containers for their actual content and do not clip headings, summaries or actions with fixed-height overflow-hidden boxes; fixed reference geometry is allowed only when every authored child fits its bounds. Avoid large fixed padding and min-heights that exceed the viewport; use min-height: 0 where content can wrap. Recompose for 390x844 without horizontal overflow. Include visible focus, adequate contrast, readable body type, and prefers-reduced-motion. Use no remote URLs.`;
 
   return `${repair}
 DESIGN CONTRACT
@@ -529,7 +539,8 @@ async function requestStage(request) {
             request.route.referenceDossier?.id ||
             request.route.referenceIds?.[0] ||
             null,
-          referenceDossierDigest: request.route.referenceDossier?.digest || null,
+          referenceDossierDigest:
+            request.route.referenceDossier?.digest || null,
           stage: request.stage,
           repair: Boolean(request.validationError),
           effort,
@@ -756,8 +767,15 @@ async function writeFailure(error) {
   // Never turn an input/configuration failure into deletion of its workspace.
   for (const protectedPath of [process.cwd(), configPath, inspirationPath]) {
     const relative = path.relative(outputPath, protectedPath);
-    if (!relative || (relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative)))
-      throw new Error("Failure evidence output may not contain the workspace or input files.");
+    if (
+      !relative ||
+      (relative !== ".." &&
+        !relative.startsWith(`..${path.sep}`) &&
+        !path.isAbsolute(relative))
+    )
+      throw new Error(
+        "Failure evidence output may not contain the workspace or input files.",
+      );
   }
   const destination = await fs.lstat(outputPath).catch((error) => {
     if (error.code === "ENOENT") return null;

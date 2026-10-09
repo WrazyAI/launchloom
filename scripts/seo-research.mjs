@@ -452,11 +452,14 @@ function seedQueryRecords(seo, intentPlanning) {
       intentPlanning.services?.find(
         (item) => keywordKey(item.service) === keywordKey(service),
       )?.phrases || [];
-    const modelVariants = phrases.flatMap((phrase) => [
-      phrase,
-      `${phrase} near me`,
-      localServiceQuery(phrase, seo.primaryCity),
-    ]);
+    const primaryPhrase = phrases[0];
+    const modelVariants = primaryPhrase
+      ? [
+          ...phrases,
+          `${primaryPhrase} near me`,
+          localServiceQuery(primaryPhrase, seo.primaryCity),
+        ]
+      : [];
     const fallbackVariants = variantsFor(
       service,
       seo.primaryCity,
@@ -1517,62 +1520,120 @@ async function researchSingleCity(intake = {}, options = {}) {
       stageCosts.push({ stage, tasks: 0, usd: 0, status: "unavailable" });
       return { ok: false, skipped: false, value: null };
     }
-    if (
-      stoppedForBudget ||
-      cost.tasks >= limits.maxTasks ||
-      limits.maxUsd - cost.usd < limits.reserveUsd
-    ) {
-      stoppedForBudget = true;
-      warnings.push(
-        `Research stopped at the configured task budget or cost cap before ${stage}.`,
-      );
-      stageCosts.push({ stage, tasks: 0, usd: 0, status: "budget_skipped" });
-      return { ok: false, skipped: true, value: null };
-    }
-    cost.tasks += 1;
-    try {
-      const value = await method(args);
-      const rawCost = finiteMetric(value?.cost);
-      if (rawCost === null || rawCost < 0) {
-        cost.complete = false;
-        cost.unreportedTasks += 1;
+    const maxTransientRetries = 1;
+    const retryableDataForSeoStatuses = new Set([40101, 40103]);
+    let retries = 0;
+    while (true) {
+      if (
+        stoppedForBudget ||
+        cost.tasks >= limits.maxTasks ||
+        limits.maxUsd - cost.usd < limits.reserveUsd
+      ) {
         stoppedForBudget = true;
+        warnings.push(
+          `Research stopped at the configured task budget or cost cap before ${stage}.`,
+        );
+        if (retries === 0)
+          stageCosts.push({
+            stage,
+            tasks: 0,
+            usd: 0,
+            status: "budget_skipped",
+          });
+        else
+          warnings.push(
+            `${stage} retry was not started because it would violate the task or reserved-cost budget.`,
+          );
+        return { ok: false, skipped: true, value: null };
+      }
+      cost.tasks += 1;
+      try {
+        const value = await method(args);
+        const rawCost = finiteMetric(value?.cost);
+        if (rawCost === null || rawCost < 0) {
+          cost.complete = false;
+          cost.unreportedTasks += 1;
+          stoppedForBudget = true;
+          stageCosts.push({
+            stage,
+            tasks: 1,
+            usd: null,
+            status: "cost_unavailable",
+          });
+          warnings.push(
+            `${stage} returned data without provider-reported spend; no further paid tasks were started and measured SEO research remains incomplete.`,
+          );
+          return { ok: true, skipped: false, value };
+        }
+        const providerCost = roundCost(rawCost);
+        cost.usd = roundCost(cost.usd + providerCost);
         stageCosts.push({
           stage,
           tasks: 1,
-          usd: null,
-          status: "cost_unavailable",
+          usd: providerCost,
+          status: "complete",
         });
-        warnings.push(
-          `${stage} returned data without provider-reported spend; no further paid tasks were started and measured SEO research remains incomplete.`,
-        );
+        if (cost.usd > limits.maxUsd) {
+          cost.overBudget = true;
+          stoppedForBudget = true;
+          warnings.push(
+            `Provider-reported spend is $${cost.usd.toFixed(5)}, above the configured cost cap of $${limits.maxUsd.toFixed(5)}; no further paid tasks were started.`,
+          );
+        }
         return { ok: true, skipped: false, value };
-      }
-      const providerCost = roundCost(rawCost);
-      cost.usd = roundCost(cost.usd + providerCost);
-      stageCosts.push({
-        stage,
-        tasks: 1,
-        usd: providerCost,
-        status: "complete",
-      });
-      if (cost.usd > limits.maxUsd) {
-        cost.overBudget = true;
-        stoppedForBudget = true;
+      } catch (error) {
+        const providerStatusCode = Number(error?.dataForSeo?.statusCode);
+        const rawFailureCost = finiteMetric(error?.dataForSeo?.reportedCost);
+        if (rawFailureCost === null || rawFailureCost < 0) {
+          cost.complete = false;
+          cost.unreportedTasks += 1;
+          stoppedForBudget = true;
+          stageCosts.push({ stage, tasks: 1, usd: null, status: "failed" });
+          warnings.push(
+            `${stage} research unavailable: ${text(error instanceof Error ? error.message : error, 300)}`,
+          );
+          return { ok: false, skipped: false, value: null };
+        }
+
+        const providerFailureCost = roundCost(rawFailureCost);
+        cost.usd = roundCost(cost.usd + providerFailureCost);
+        const retryable = retryableDataForSeoStatuses.has(providerStatusCode);
+        const canRetry =
+          retryable &&
+          retries < maxTransientRetries &&
+          cost.tasks < limits.maxTasks &&
+          limits.maxUsd - cost.usd >= limits.reserveUsd &&
+          cost.usd <= limits.maxUsd;
+        stageCosts.push({
+          stage,
+          tasks: 1,
+          usd: providerFailureCost,
+          status: canRetry ? "retryable_failure" : "failed",
+        });
+        if (cost.usd > limits.maxUsd) {
+          cost.overBudget = true;
+          stoppedForBudget = true;
+          warnings.push(
+            `Provider-reported spend is $${cost.usd.toFixed(5)}, above the configured cost cap of $${limits.maxUsd.toFixed(5)}; no further paid tasks were started.`,
+          );
+        }
+        if (canRetry) {
+          retries += 1;
+          const delay = Math.max(
+            0,
+            Math.min(2_000, Number(options.dataForSeoRetryDelayMs ?? 250) || 0),
+          );
+          warnings.push(
+            `${stage} received retryable DataForSEO task ${providerStatusCode}; retrying once after accounting for its reported cost.`,
+          );
+          if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
         warnings.push(
-          `Provider-reported spend is $${cost.usd.toFixed(5)}, above the configured cost cap of $${limits.maxUsd.toFixed(5)}; no further paid tasks were started.`,
+          `${stage} research unavailable: ${text(error instanceof Error ? error.message : error, 300)}`,
         );
+        return { ok: false, skipped: false, value: null };
       }
-      return { ok: true, skipped: false, value };
-    } catch (error) {
-      cost.complete = false;
-      cost.unreportedTasks += 1;
-      stoppedForBudget = true;
-      stageCosts.push({ stage, tasks: 1, usd: null, status: "failed" });
-      warnings.push(
-        `${stage} research unavailable: ${text(error instanceof Error ? error.message : error, 300)}`,
-      );
-      return { ok: false, skipped: false, value: null };
     }
   }
 
@@ -2193,6 +2254,14 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
   if (!login || !password)
     throw new Error("DataForSEO credentials are required.");
   const authorization = `Basic ${Buffer.from(`${login}:${password}`).toString("base64")}`;
+  const taskFailure = (message, statusCode, reportedCost) => {
+    const error = new Error(message);
+    error.dataForSeo = {
+      statusCode: Number.isFinite(statusCode) ? statusCode : null,
+      reportedCost: finiteMetric(reportedCost),
+    };
+    return error;
+  };
   async function post(path, payload) {
     const response = await fetchImpl(`https://api.dataforseo.com${path}`, {
       method: "POST",
@@ -2208,8 +2277,10 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
     const body = await response.json();
     const statusCode = Number(body?.status_code);
     if (!Number.isFinite(statusCode) || statusCode !== 20000)
-      throw new Error(
+      throw taskFailure(
         `DataForSEO response ${Number.isFinite(statusCode) ? statusCode : "with an invalid status code"}: ${text(body?.status_message || "DataForSEO request failed.", 300)}`,
+        Number.isFinite(statusCode) ? statusCode : null,
+        body?.cost,
       );
     const tasks = Array.isArray(body.tasks) ? body.tasks : [];
     const tasksError = Number(body.tasks_error ?? 0);
@@ -2219,15 +2290,26 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
       (item) => Number(item?.status_code) !== 20000,
     );
     if (failedTask)
-      throw new Error(
+      throw taskFailure(
         `DataForSEO task ${Number.isFinite(Number(failedTask.status_code)) ? Number(failedTask.status_code) : "with an invalid status code"}: ${text(failedTask.status_message || "DataForSEO task failed.", 300)}`,
+        Number.isFinite(Number(failedTask.status_code))
+          ? Number(failedTask.status_code)
+          : null,
+        body?.cost ?? failedTask.cost,
       );
     if (tasksError > 0)
-      throw new Error(
+      throw taskFailure(
         `DataForSEO reported ${tasksError} task error(s) without failed-task details.`,
+        null,
+        body?.cost,
       );
     const task = tasks[0];
-    if (!task) throw new Error("DataForSEO returned no task details.");
+    if (!task)
+      throw taskFailure(
+        "DataForSEO returned no task details.",
+        null,
+        body?.cost,
+      );
     return { body, task, cost: finiteMetric(body.cost ?? task.cost) };
   }
   const locationFields = (locationName, languageCode) => ({

@@ -15,6 +15,7 @@ import {
   renderSeoMapMarkdown,
   researchSiteContext,
 } from "../scripts/seo-research.mjs";
+import { validateIntentQueryPlan } from "../scripts/seo-intent-planner.mjs";
 
 const intake = {
   businessName: "Harbor Plumbing",
@@ -131,6 +132,33 @@ function researchProvider(
 }
 
 describe("SEO market map", () => {
+  it("accepts up to three service-bound model phrases and ignores excess suggestions", () => {
+    const plan = validateIntentQueryPlan(
+      {
+        services: [
+          {
+            service: "Pre-order pastry boxes",
+            phrases: [
+              "pastry box order",
+              "pastry gift box",
+              "order a box of pastries",
+              "fresh pastry box",
+            ],
+          },
+        ],
+      },
+      ["Pre-order pastry boxes"],
+    );
+
+    expect(plan.services[0].phrases).toEqual([
+      "pastry box order",
+      "pastry gift box",
+      "order a box of pastries",
+    ]);
+    expect(plan.acceptedPhraseCount).toBe(3);
+    expect(plan.complete).toBe(true);
+  });
+
   it("retains an explicit research language through every relevant provider request", async () => {
     const provider = researchProvider();
     const dossier = await researchSiteContext(
@@ -227,7 +255,11 @@ describe("SEO market map", () => {
           services: [
             {
               service: services[0],
-              phrases: ["sourdough bread", "order sourdough bread"],
+              phrases: [
+                "sourdough bread",
+                "order sourdough bread",
+                "naturally leavened bread",
+              ],
             },
           ],
         },
@@ -270,8 +302,10 @@ describe("SEO market map", () => {
         "sourdough bread near me",
         "sourdough bread Seattle WA",
         "order sourdough bread",
+        "naturally leavened bread",
       ]),
     );
+    expect(planned).toHaveLength(6);
     expect(planned.every((keyword) => !keyword.includes(","))).toBe(true);
     expect(provider.googleSearchVolume.mock.calls[0]?.[0]).toMatchObject({
       locationName: "Seattle,Washington,United States",
@@ -304,7 +338,7 @@ describe("SEO market map", () => {
     expect(dossier.intentPlanning).toMatchObject({
       status: "model",
       model: "z-ai/glm-5.3-flash",
-      acceptedPhraseCount: 2,
+      acceptedPhraseCount: 3,
       usage: {
         costUsd: 0.002,
         promptTokens: 120,
@@ -767,6 +801,38 @@ describe("SEO market map", () => {
     ).rejects.toThrow(
       "DataForSEO task 40501: The supplied location is unavailable.",
     );
+  });
+
+  it("retains retryable task status and explicit provider-reported failure cost", async () => {
+    const client = createDataForSeoClient({
+      login: "test-login",
+      password: "test-password",
+      fetchImpl: vi.fn(async () =>
+        Response.json({
+          status_code: 20000,
+          status_message: "Ok.",
+          cost: 0.012,
+          tasks_error: 1,
+          tasks: [
+            {
+              status_code: 40101,
+              status_message: "Internal SE Server Error.",
+              cost: 0.012,
+            },
+          ],
+        }),
+      ),
+    });
+
+    await expect(
+      client.organicSerp({
+        keyword: "drain cleaning Tacoma",
+        locationName: "Tacoma,Washington,United States",
+        languageCode: "en",
+      }),
+    ).rejects.toMatchObject({
+      dataForSeo: { statusCode: 40101, reportedCost: 0.012 },
+    });
   });
 
   it("accepts numeric-string DataForSEO success codes and zero task errors", async () => {
@@ -1333,6 +1399,220 @@ describe("SEO market map", () => {
     expect(dossier.publishReady).toBe(false);
     expect(dossier.cost.tasks).toBeGreaterThan(0);
     expect(dossier.warnings.join(" ")).toContain("SERP provider unavailable");
+  });
+
+  it("retries one transient SERP failure only when its cost is known and within budget", async () => {
+    const provider = researchProvider();
+    provider.organicSerp.mockRejectedValueOnce(
+      Object.assign(
+        new Error("DataForSEO task 40101: temporary search error"),
+        {
+          dataForSeo: { statusCode: 40101, reportedCost: 0.01 },
+        },
+      ),
+    );
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: provider,
+      maxTasks: 16,
+      maxUsd: 0.25,
+      dataForSeoRetryDelayMs: 0,
+    });
+    const firstSerpStage = dossier.cost.stageCosts.filter(
+      (stage) => stage.stage === "organic_serp:drain-cleaning",
+    );
+
+    expect(provider.organicSerp).toHaveBeenCalledTimes(3);
+    expect(firstSerpStage).toEqual([
+      expect.objectContaining({
+        tasks: 1,
+        usd: 0.01,
+        status: "retryable_failure",
+      }),
+      expect.objectContaining({ tasks: 1, usd: 0.01, status: "complete" }),
+    ]);
+    expect(dossier.cost.tasks).toBeGreaterThan(
+      provider.organicSerp.mock.calls.length,
+    );
+    expect(dossier.cost.usd).toBeGreaterThanOrEqual(0.08);
+    expect(dossier.cost.complete).toBe(true);
+  });
+
+  it("does not retry transient failures when the provider cost is unknown", async () => {
+    const provider = researchProvider();
+    provider.organicSerp.mockRejectedValueOnce(
+      Object.assign(new Error("DataForSEO task 40103: execution failed"), {
+        dataForSeo: { statusCode: 40103, reportedCost: null },
+      }),
+    );
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: provider,
+      maxTasks: 16,
+      maxUsd: 0.25,
+      dataForSeoRetryDelayMs: 0,
+    });
+
+    expect(provider.organicSerp).toHaveBeenCalledTimes(1);
+    expect(dossier.cost).toMatchObject({
+      tasks: 4,
+      complete: false,
+      unreportedTasks: 1,
+    });
+  });
+
+  it("does not retry permanent DataForSEO task failures even when their cost is known", async () => {
+    const provider = researchProvider();
+    provider.organicSerp.mockRejectedValueOnce(
+      Object.assign(new Error("DataForSEO task 40501: invalid input"), {
+        dataForSeo: { statusCode: 40501, reportedCost: 0.01 },
+      }),
+    );
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: provider,
+      maxTasks: 16,
+      maxUsd: 0.25,
+      dataForSeoRetryDelayMs: 0,
+    });
+
+    expect(provider.organicSerp).toHaveBeenCalledTimes(2);
+    expect(dossier.cost.unreportedTasks).toBe(0);
+    expect(dossier.warnings.join(" ")).toContain("task 40501");
+  });
+
+  it("does not retry when a reported failure cost leaves less than the reserved budget", async () => {
+    const provider = researchProvider();
+    provider.organicSerp.mockRejectedValueOnce(
+      Object.assign(
+        new Error("DataForSEO task 40101: temporary search error"),
+        {
+          dataForSeo: { statusCode: 40101, reportedCost: 0.03 },
+        },
+      ),
+    );
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: provider,
+      maxTasks: 16,
+      maxUsd: 0.1,
+      dataForSeoRetryDelayMs: 0,
+    });
+
+    expect(provider.organicSerp).toHaveBeenCalledTimes(1);
+    expect(dossier.cost).toMatchObject({
+      tasks: 4,
+      usd: 0.09,
+      complete: true,
+      unreportedTasks: 0,
+    });
+  });
+
+  it("does not retry when the failed attempt consumes the final task slot", async () => {
+    const provider = researchProvider();
+    provider.organicSerp.mockRejectedValueOnce(
+      Object.assign(
+        new Error("DataForSEO task 40101: temporary search error"),
+        {
+          dataForSeo: { statusCode: 40101, reportedCost: 0.01 },
+        },
+      ),
+    );
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: provider,
+      maxTasks: 4,
+      maxUsd: 0.25,
+      dataForSeoRetryDelayMs: 0,
+    });
+
+    expect(provider.organicSerp).toHaveBeenCalledTimes(1);
+    expect(dossier.cost).toMatchObject({
+      tasks: 4,
+      usd: 0.07,
+      complete: true,
+      unreportedTasks: 0,
+    });
+  });
+
+  it("accounts for known failure spend that exceeds the cap without retrying", async () => {
+    const provider = researchProvider();
+    provider.organicSerp.mockRejectedValueOnce(
+      Object.assign(
+        new Error("DataForSEO task 40101: temporary search error"),
+        {
+          dataForSeo: { statusCode: 40101, reportedCost: 0.08 },
+        },
+      ),
+    );
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: provider,
+      maxTasks: 16,
+      maxUsd: 0.1,
+      dataForSeoRetryDelayMs: 0,
+    });
+
+    expect(provider.organicSerp).toHaveBeenCalledTimes(1);
+    expect(dossier.cost).toMatchObject({
+      tasks: 4,
+      usd: 0.14,
+      complete: true,
+      unreportedTasks: 0,
+      overBudget: true,
+    });
+    expect(dossier.publishReady).toBe(false);
+  });
+
+  it("keeps SEO not-ready after one charged transient retry also fails", async () => {
+    const provider = researchProvider();
+    provider.organicSerp
+      .mockRejectedValueOnce(
+        Object.assign(
+          new Error("DataForSEO task 40101: temporary search error"),
+          {
+            dataForSeo: { statusCode: 40101, reportedCost: 0.01 },
+          },
+        ),
+      )
+      .mockRejectedValueOnce(
+        Object.assign(new Error("DataForSEO task 40103: execution failed"), {
+          dataForSeo: { statusCode: 40103, reportedCost: 0.02 },
+        }),
+      );
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: provider,
+      maxTasks: 16,
+      maxUsd: 0.25,
+      dataForSeoRetryDelayMs: 0,
+    });
+    const firstSerpStage = dossier.cost.stageCosts.filter(
+      (stage) => stage.stage === "organic_serp:drain-cleaning",
+    );
+
+    expect(provider.organicSerp).toHaveBeenCalledTimes(3);
+    expect(firstSerpStage).toEqual([
+      expect.objectContaining({
+        tasks: 1,
+        usd: 0.01,
+        status: "retryable_failure",
+      }),
+      expect.objectContaining({ tasks: 1, usd: 0.02, status: "failed" }),
+    ]);
+    expect(dossier.cost).toMatchObject({
+      complete: true,
+      unreportedTasks: 0,
+    });
+    expect(dossier.cost.usd).toBeGreaterThan(0.09);
+    expect(
+      dossier.cost.stageCosts.reduce(
+        (sum, stage) => sum + (typeof stage.usd === "number" ? stage.usd : 0),
+        0,
+      ),
+    ).toBeCloseTo(dossier.cost.usd, 5);
+    const completeness: any = dossier.completeness;
+    expect(
+      completeness.serviceMetrics.every((item: any) => item.complete),
+    ).toBe(true);
+    expect(dossier.completeness.serviceSerps).toBeLessThan(
+      dossier.completeness.serviceSerpsRequired,
+    );
+    expect(dossier.mode).toBe("context-only");
+    expect(dossier.publishReady).toBe(false);
   });
 
   it("stops starting paid tasks at the configured task ceiling", async () => {

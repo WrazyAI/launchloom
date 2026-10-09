@@ -175,6 +175,16 @@ export default function LocationPage({ content, runtime, location }) {
 }
 
 describe("production experience author", () => {
+  it("uses the authored native main landmark without adding a nested host main role", () => {
+    const source = readFileSync(
+      "templates/client-site/src/components/CreativeExperience.astro",
+      "utf8",
+    );
+
+    expect(source).toContain('data-creative-host="true"');
+    expect(source).not.toContain('role="main"');
+  });
+
   it("rejects unsealed or non-navigation URL attributes", () => {
     const route = { id: "route-url-safety" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
@@ -364,7 +374,7 @@ export default function Experience`,
       )
       .replace(
         "<section data-hero>",
-        '<section data-hero><a href={`/services/${selectedService.slug}/`}>Selected service</a>',
+        "<section data-hero><a href={`/services/${selectedService.slug}/`}>Selected service</a>",
       );
     expect(() =>
       validateProductionCandidateFiles({
@@ -402,9 +412,15 @@ export default function Experience`,
   it("rejects candidate files that exceed the rendered-repair source bound", () => {
     const route = { id: "route-repairable-source-size" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
-    const experience = String(safeStage({ ...request, stage: "experience" }).content || "");
-    const styles = String(safeStage({ ...request, stage: "styles" }).content || "");
-    const motion = String(safeStage({ ...request, stage: "motion" }).content || "");
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
     const oversizedStyles = `${styles}\n/*${"x".repeat(80_001)}*/`;
 
     expect(() =>
@@ -416,14 +432,20 @@ export default function Experience`,
           brand: { phone: "+12125550186" },
         },
       }),
-    ).toThrow(/styles\.css exceeds the 80000-character repairable source limit/iu);
+    ).toThrow(
+      /styles\.css exceeds the 80000-character repairable source limit/iu,
+    );
   });
 
   it("rejects CSS that only exceeds the repair bound after variable isolation", () => {
     const route = { id: "route-namespaced-source-size" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
-    const experience = String(safeStage({ ...request, stage: "experience" }).content || "");
-    const motion = String(safeStage({ ...request, stage: "motion" }).content || "");
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
     const styles = `.root{--x:1;}\n${"a{color:var(--x)}\n".repeat(3_000)}`;
     expect(styles.length).toBeLessThan(80_000);
     expect(namespaceCreativeCss(styles).length).toBeGreaterThan(80_000);
@@ -437,7 +459,9 @@ export default function Experience`,
           brand: { phone: "+12125550186" },
         },
       }),
-    ).toThrow(/styles\.css exceeds the 80000-character repairable source limit/iu);
+    ).toThrow(
+      /styles\.css exceeds the 80000-character repairable source limit/iu,
+    );
   });
 
   it("allows only a const phone href normalized from the sealed phone token", () => {
@@ -618,18 +642,30 @@ export default function Experience`,
   it("authors only the first complete route for SEO-only without changing full defaults", async () => {
     const routeIds = new Set<string>();
     const result = await authorExperienceCandidates({
-      site, inspirationPack, testProfile: "seo-only",
-      generate: async (request) => { routeIds.add(request.route.id); return safeStage(request); },
+      site,
+      inspirationPack,
+      testProfile: "seo-only",
+      generate: async (request) => {
+        routeIds.add(request.route.id);
+        return safeStage(request);
+      },
     });
     expect(result.candidates).toHaveLength(1);
     expect([...routeIds]).toEqual(["route-01"]);
   });
 
   it("still rejects incomplete inspiration contracts in an SEO-only authoring test", async () => {
-    await expect(authorExperienceCandidates({
-      site, inspirationPack: { ...inspirationPack, routes: inspirationPack.routes.slice(0, 1) }, testProfile: "seo-only",
-      generate: async (request) => safeStage(request),
-    })).rejects.toThrow(/exactly three/i);
+    await expect(
+      authorExperienceCandidates({
+        site,
+        inspirationPack: {
+          ...inspirationPack,
+          routes: inspirationPack.routes.slice(0, 1),
+        },
+        testProfile: "seo-only",
+        generate: async (request) => safeStage(request),
+      }),
+    ).rejects.toThrow(/exactly three/i);
   });
 
   it("retries an empty optional image with the exact safe rendering rule", async () => {
@@ -754,43 +790,104 @@ export default function Experience`,
     "const selectedService = content.services[0];",
     "const firstService = content.services[0]; const selectedService = firstService;",
     "const selectedService = content.services.length > 1 ? content.services[1] : content.services[0];",
-  ])("allows fragment anchors and sealed local service bindings: %s", (binding) => {
-    const route = { id: "route-service-links" };
-    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
-    const base = String(
-      safeStage({ ...request, stage: "experience" }).content || "",
-    );
-    const experience = base
-      .replace(
-        "export default function Experience({ content, runtime }) {",
-        `export default function Experience({ content, runtime }) {\n  ${binding}`,
-      )
-      .replace(
-        "<article key={service.name}>",
-        "<article key={service.name}><a href={`#practice-${service.slug}`}>{service.name}</a>",
-      )
-      .replace(
-        '<section id="services">',
-        '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>',
+  ])(
+    "allows fragment anchors and sealed local service bindings: %s",
+    (binding) => {
+      const route = { id: "route-service-links" };
+      const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+      const base = String(
+        safeStage({ ...request, stage: "experience" }).content || "",
       );
-    const styles = String(
-      safeStage({ ...request, stage: "styles" }).content || "",
-    );
-    const motion = String(
-      safeStage({ ...request, stage: "motion" }).content || "",
-    );
+      const experience = base
+        .replace(
+          "export default function Experience({ content, runtime }) {",
+          `export default function Experience({ content, runtime }) {\n  ${binding}`,
+        )
+        .replace(
+          "<article key={service.name}>",
+          "<article key={service.name}><a href={`#practice-${service.slug}`}>{service.name}</a>",
+        )
+        .replace(
+          '<section id="services">',
+          '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>',
+        );
+      const styles = String(
+        safeStage({ ...request, stage: "styles" }).content || "",
+      );
+      const motion = String(
+        safeStage({ ...request, stage: "motion" }).content || "",
+      );
 
-    expect(() =>
-      validateProductionCandidateFiles({
-        files: { experience, styles, motion },
-        route,
-        content: {
-          hero: { image: "/images/hero.webp" },
-          brand: { phone: "+12125550186" },
-          services: [{ slug: "repair", name: "repair" }],
-        },
-      }),
-    ).not.toThrow();
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: { experience, styles, motion },
+          route,
+          content: {
+            hero: { image: "/images/hero.webp" },
+            brand: { phone: "+12125550186" },
+            services: [{ slug: "repair", name: "repair" }],
+          },
+        }),
+      ).not.toThrow();
+    },
+  );
+
+  it("repairs an experience H1 that is outside the semantic main landmark", async () => {
+    const repairRequests: AuthorStageRequest[] = [];
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        if (request.stage !== "experience" || request.route.id !== "route-01")
+          return safeStage(request);
+        if (request.validationError) {
+          repairRequests.push(request);
+          return safeStage(request);
+        }
+        const base = String(safeStage(request).content || "");
+        return {
+          content: base
+            .replace("<main><section data-hero>", "<section data-hero>")
+            .replace(
+              '<section id="services">',
+              '<main><section id="services">',
+            ),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(repairRequests).toHaveLength(1);
+    expect(repairRequests[0].validationError).toMatch(
+      /H1.*inside.*main landmark/iu,
+    );
+  });
+
+  it("tells every authoring stage to place the single H1 inside main", async () => {
+    const requests: AuthorStageRequest[] = [];
+    await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        requests.push(request);
+        return safeStage(request);
+      },
+    });
+
+    expect(
+      requests.every((request) =>
+        request.rules.includes(
+          "Render exactly one meaningful H1 inside the page's single <main> landmark",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      requests.every((request) =>
+        request.rules.includes(
+          "At 390px, recombine every navigation row so the wordmark, all navigation links, and the primary action fit within the viewport",
+        ),
+      ),
+    ).toBe(true);
   });
 
   it.each([
@@ -808,50 +905,60 @@ export default function Experience`,
     `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); Reflect.setPrototypeOf(selectedService, { slug: "invented-route" });`,
     `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); const { defineProperty } = Reflect; defineProperty(selectedService, "slug", { value: "invented-route", configurable: true });`,
     `const selectedService = content.services.find((item) => { item.slug = "invented-route"; return true; });`,
-  ])("rejects service links after sealed provenance is mutated: %s", (setup) => {
-    const route = { id: "route-mutated-service-provenance" };
-    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
-    const experience = String(safeStage({ ...request, stage: "experience" }).content)
-      .replace(
-        "export default function Experience({ content, runtime }) {",
-        `export default function Experience({ content, runtime }) {\n ${setup}`,
+  ])(
+    "rejects service links after sealed provenance is mutated: %s",
+    (setup) => {
+      const route = { id: "route-mutated-service-provenance" };
+      const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+      const experience = String(
+        safeStage({ ...request, stage: "experience" }).content,
       )
-      .replace(
-        '<section id="services">',
-        '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>',
-      );
-    expect(() => validateProductionCandidateFiles({
-      files: {
-        experience,
-        styles: String(safeStage({ ...request, stage: "styles" }).content),
-        motion: String(safeStage({ ...request, stage: "motion" }).content),
-      },
-      route,
-      content: {
-        hero: { image: "/images/hero.webp" },
-        brand: { phone: "+12125550186" },
-        services: [{ slug: "repair", name: "repair" }],
-      },
-    })).toThrow(/unsafe URL attribute/iu);
-  });
+        .replace(
+          "export default function Experience({ content, runtime }) {",
+          `export default function Experience({ content, runtime }) {\n ${setup}`,
+        )
+        .replace(
+          '<section id="services">',
+          '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>',
+        );
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: {
+            experience,
+            styles: String(safeStage({ ...request, stage: "styles" }).content),
+            motion: String(safeStage({ ...request, stage: "motion" }).content),
+          },
+          route,
+          content: {
+            hero: { image: "/images/hero.webp" },
+            brand: { phone: "+12125550186" },
+            services: [{ slug: "repair", name: "repair" }],
+          },
+        }),
+      ).toThrow(/unsafe URL attribute/iu);
+    },
+  );
 
   it("rejects service links when nested content.services is mutated after destructuring", () => {
     const route = { id: "route-mutated-destructured-services" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
-    const original = String(safeStage({ ...request, stage: "experience" }).content);
-    const experienceFor = (mutation = "") => original
-      .replace(
-        "export default function Experience({ content, runtime }) {",
-        `export default function Experience({ content, content: { hero, services, faqs, brand }, runtime }) {\n ${mutation}`,
-      )
-      .replaceAll("content.hero.", "hero.")
-      .replaceAll("content.services", "services")
-      .replaceAll("content.faqs", "faqs")
-      .replaceAll("content.brand.", "brand.")
-      .replace(
-        "<article key={service.name}>",
-        "<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>",
-      );
+    const original = String(
+      safeStage({ ...request, stage: "experience" }).content,
+    );
+    const experienceFor = (mutation = "") =>
+      original
+        .replace(
+          "export default function Experience({ content, runtime }) {",
+          `export default function Experience({ content, content: { hero, services, faqs, brand }, runtime }) {\n ${mutation}`,
+        )
+        .replaceAll("content.hero.", "hero.")
+        .replaceAll("content.services", "services")
+        .replaceAll("content.faqs", "faqs")
+        .replaceAll("content.brand.", "brand.")
+        .replace(
+          "<article key={service.name}>",
+          "<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>",
+        );
 
     const validate = (experience: string) =>
       validateProductionCandidateFiles({
@@ -869,56 +976,88 @@ export default function Experience`,
       });
 
     expect(() => validate(experienceFor())).not.toThrow();
-    expect(() => validate(experienceFor('services[0].slug = "invented-route";')))
-      .toThrow(/unsafe URL attribute/iu);
+    expect(() =>
+      validate(experienceFor('services[0].slug = "invented-route";')),
+    ).toThrow(/unsafe URL attribute/iu);
   });
 
   it.each([
     'content.services.length ? { slug: "fabricated" } : content.services[0]',
     'content.services.map(() => ({ slug: "fabricated" }))[0]',
     '({ slug: "fabricated", source: content.services })',
-    'makeService(content.services)',
-  ])("rejects service slug bindings that only mention sealed services: %s", (initializer) => {
-    const route = { id: "route-unsealed-binding" };
-    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
-    const experience = String(safeStage({ ...request, stage: "experience" }).content)
-      .replace("export default function Experience({ content, runtime }) {",
-        `export default function Experience({ content, runtime }) {\n const selectedService = ${initializer};`)
-      .replace('<section id="services">',
-        '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>');
-    expect(() => validateProductionCandidateFiles({
-      files: { experience, styles: String(safeStage({ ...request, stage: "styles" }).content),
-        motion: String(safeStage({ ...request, stage: "motion" }).content) },
-      route, content: { hero: { image: "/images/hero.webp" }, brand: { phone: "+12125550186" },
-        services: [{ slug: "repair", name: "repair" }] },
-    })).toThrow(/unsafe URL attribute/iu);
-  });
+    "makeService(content.services)",
+  ])(
+    "rejects service slug bindings that only mention sealed services: %s",
+    (initializer) => {
+      const route = { id: "route-unsealed-binding" };
+      const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+      const experience = String(
+        safeStage({ ...request, stage: "experience" }).content,
+      )
+        .replace(
+          "export default function Experience({ content, runtime }) {",
+          `export default function Experience({ content, runtime }) {\n const selectedService = ${initializer};`,
+        )
+        .replace(
+          '<section id="services">',
+          '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>',
+        );
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: {
+            experience,
+            styles: String(safeStage({ ...request, stage: "styles" }).content),
+            motion: String(safeStage({ ...request, stage: "motion" }).content),
+          },
+          route,
+          content: {
+            hero: { image: "/images/hero.webp" },
+            brand: { phone: "+12125550186" },
+            services: [{ slug: "repair", name: "repair" }],
+          },
+        }),
+      ).toThrow(/unsafe URL attribute/iu);
+    },
+  );
 
   it("rejects mutable collection aliases that can replace sealed service records", () => {
     const route = { id: "route-mutable-collection" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
-    const experience = String(safeStage({ ...request, stage: "experience" }).content)
-      .replace("export default function Experience({ content, runtime }) {",
-        'export default function Experience({ content, runtime }) {\n let serviceItems = content.services; serviceItems = [{ slug: "fabricated" }]; const selectedService = serviceItems[0];')
-      .replace('<section id="services">',
-        '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>');
-    expect(() => validateProductionCandidateFiles({
-      files: { experience, styles: String(safeStage({ ...request, stage: "styles" }).content),
-        motion: String(safeStage({ ...request, stage: "motion" }).content) },
-      route, content: { hero: { image: "/images/hero.webp" }, brand: { phone: "+12125550186" },
-        services: [{ slug: "repair", name: "repair" }] },
-    })).toThrow(/unsafe URL attribute/iu);
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content,
+    )
+      .replace(
+        "export default function Experience({ content, runtime }) {",
+        'export default function Experience({ content, runtime }) {\n let serviceItems = content.services; serviceItems = [{ slug: "fabricated" }]; const selectedService = serviceItems[0];',
+      )
+      .replace(
+        '<section id="services">',
+        '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>',
+      );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles: String(safeStage({ ...request, stage: "styles" }).content),
+          motion: String(safeStage({ ...request, stage: "motion" }).content),
+        },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "repair" }],
+        },
+      }),
+    ).toThrow(/unsafe URL attribute/iu);
   });
 
-  it("names the nearby source for a hardcoded sealed literal", () => {    const route = { id: "route-hardcode" };
+  it("names the nearby source for a hardcoded sealed literal", () => {
+    const route = { id: "route-hardcode" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
     const sealedName = "Heirloom redesign services";
     const experience = String(
       safeStage({ ...request, stage: "experience" }).content || "",
-    ).replace(
-      "<section data-hero>",
-      `<section data-hero><p>${sealedName}</p>`,
-    );
+    ).replace("<section data-hero>", `<section data-hero><p>${sealedName}</p>`);
     const styles = String(
       safeStage({ ...request, stage: "styles" }).content || "",
     );
@@ -1759,13 +1898,13 @@ export default function Experience`,
         "utf8",
       );
       await page.setContent(
-        `<style>${styles}</style><body style="--ink:#14201d"><div data-creative-host="true" style="--ll-creative-ink:#ffffff;--ll-creative-muted:#cccccc;background:#14201d"><form class="launchloom-lead-form"><label>Name<input></label><small>Prepare for your visit</small></form></div></body>`,
+        `<style>${styles}</style><body style="--ink:#14201d"><div data-creative-host="true" style="--ll-creative-ink:#ffffff;--ll-creative-muted:#cccccc;background:#14201d"><section data-ll-surface="brand" style="--ll-text:#14201d;--ll-muted-text:#cccccc;--ll-border:#ffffff;--ll-focus:#ffff00;--ll-surface:#2948d8;background:#2948d8"><form class="launchloom-lead-form"><label>Name<input></label><small>Prepare for your visit</small></form></section></div></body>`,
       );
       expect(
         await page
           .locator("label")
           .evaluate((el) => getComputedStyle(el).color),
-      ).toBe("rgb(255, 255, 255)");
+      ).toBe("rgb(20, 32, 29)");
       expect(
         await page
           .locator("small")
@@ -1776,6 +1915,17 @@ export default function Experience`,
           .locator("[data-creative-host]")
           .evaluate((el) => getComputedStyle(el).overflowX),
       ).toBe("clip");
+      await page.keyboard.press("Tab");
+      expect(
+        await page
+          .locator("input")
+          .evaluate((el) => getComputedStyle(el).borderTopColor),
+      ).toBe("rgb(255, 255, 255)");
+      expect(
+        await page
+          .locator("input")
+          .evaluate((el) => getComputedStyle(el).outlineColor),
+      ).toBe("rgb(255, 255, 0)");
     } finally {
       await browser.close();
     }
@@ -1960,9 +2110,13 @@ export default function Experience`,
     });
 
     expect(requests.length).toBeGreaterThan(0);
-    expect(requests.every((request) => request.rules.includes(
-      "For service-page links, use the validator-approved same-origin form href={`/services/${service.slug}/`} only inside a direct map over a sealed service list. Do not search for a selected service, bind its slug into a computed href, concatenate arbitrary path parts, or derive href values from unsealed input.",
-    ))).toBe(true);
+    expect(
+      requests.every((request) =>
+        request.rules.includes(
+          "For service-page links, use the validator-approved same-origin form href={`/services/${service.slug}/`} only inside a direct map over a sealed service list. Do not search for a selected service, bind its slug into a computed href, concatenate arbitrary path parts, or derive href values from unsealed input.",
+        ),
+      ),
+    ).toBe(true);
   });
 
   it("omits equal cloned route design templates without dropping explicit null", () => {
@@ -2589,7 +2743,9 @@ export default function Experience`,
       inspirationPack,
       generate: async (request) => {
         if (request.stage === "styles" && !request.validationError) {
-          return { content: `/*${"x".repeat(80_001)}*/\n${safeStage(request).content}` };
+          return {
+            content: `/*${"x".repeat(80_001)}*/\n${safeStage(request).content}`,
+          };
         }
         if (request.stage === "styles" && request.validationError)
           retryErrors.push(request.validationError);
@@ -2599,8 +2755,18 @@ export default function Experience`,
 
     expect(result.candidates).toHaveLength(3);
     expect(retryErrors).toHaveLength(3);
-    expect(retryErrors.every((error) => /styles\.css exceeds the 80000-character repairable source limit/iu.test(error))).toBe(true);
-    expect(result.candidates.every((candidate) => candidate.files["styles.css"].length <= 80_000)).toBe(true);
+    expect(
+      retryErrors.every((error) =>
+        /styles\.css exceeds the 80000-character repairable source limit/iu.test(
+          error,
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      result.candidates.every(
+        (candidate) => candidate.files["styles.css"].length <= 80_000,
+      ),
+    ).toBe(true);
   });
 
   it("repairs missing LeadForm content and anchor navigation bindings", async () => {
@@ -3144,29 +3310,39 @@ export default function ServicePage({ content, runtime, service: { name, slug, d
   it("rejects unsupported price and availability claims in authored service-page copy", () => {
     const route = { id: "service:brake repair" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
-    const valid = String(safeStage({ ...request, stage: "service" }).content || "");
+    const valid = String(
+      safeStage({ ...request, stage: "service" }).content || "",
+    );
     const claimed = valid.replace(
       "</section>",
       "<p>Same-day brake repairs start at $99.</p></section>",
     );
-    expect(() => validateServicePage(claimed, route, { claimEvidence: {} })).toThrow(
-      /unsupported business claims.*availability.*pricing/iu,
-    );
+    expect(() =>
+      validateServicePage(claimed, route, { claimEvidence: {} }),
+    ).toThrow(/unsupported business claims.*availability.*pricing/iu);
   });
 
   it.each([
-    ["outcomes", "<p>Our home-care visits <strong>reduce</strong> <em>fall risk</em>.</p>"],
+    [
+      "outcomes",
+      "<p>Our home-care visits <strong>reduce</strong> <em>fall risk</em>.</p>",
+    ],
     ["staff", "<p>Meet <strong>Maya, your care coordinator</strong>.</p>"],
-  ])("preserves inline JSX text when auditing unsupported %s claims", (category, markup) => {
-    const route = { id: "service:care" };
-    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
-    const valid = String(safeStage({ ...request, stage: "service" }).content || "");
-    const claimed = valid.replace("</main>", `${markup}</main>`);
+  ])(
+    "preserves inline JSX text when auditing unsupported %s claims",
+    (category, markup) => {
+      const route = { id: "service:care" };
+      const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+      const valid = String(
+        safeStage({ ...request, stage: "service" }).content || "",
+      );
+      const claimed = valid.replace("</main>", `${markup}</main>`);
 
-    expect(() => validateServicePage(claimed, route, { claimEvidence: {} })).toThrow(
-      new RegExp(`unsupported business claims.*${category}`, "iu"),
-    );
-  });
+      expect(() =>
+        validateServicePage(claimed, route, { claimEvidence: {} }),
+      ).toThrow(new RegExp(`unsupported business claims.*${category}`, "iu"));
+    },
+  );
 
   it("includes confirmed claim evidence in the creative manifest without exposing private addresses", () => {
     const manifest = buildCreativeContentManifest({
@@ -3179,7 +3355,9 @@ export default function ServicePage({ content, runtime, service: { name, slug, d
         addressVisibility: "private",
       },
     });
-    expect(manifest.values.claimEvidence.business.offer).toBe("$99 brake inspection");
+    expect(manifest.values.claimEvidence.business.offer).toBe(
+      "$99 brake inspection",
+    );
     expect(manifest.values.claimEvidence.business.credentials).toEqual([
       "Licensed technicians",
     ]);
@@ -3336,14 +3514,50 @@ it("seals only route-approved location links in new explicit configurations", ()
   expect(config.locations).toHaveLength(1);
 });
 
-it('requires the shared route-bound page primitive for a rich service source',()=>{
- const rich=readFileSync('tests/fixtures/page-briefs/ServicePage.jsx.txt','utf8');
- expect(()=>validateServicePage(rich,{id:'synthetic-rich'}, {pageBriefContractVersion:1})).not.toThrow();
- expect(()=>validateServicePage(rich.replace('<PageBriefSections brief={service.brief} />',''),{id:'synthetic-rich'},{pageBriefContractVersion:1})).toThrow('PageBriefSections');
- expect(()=>validateServicePage(rich.replace('brief={service.brief}','brief={content}'),{id:'synthetic-rich'},{pageBriefContractVersion:1})).toThrow('PageBriefSections');
+it("requires the shared route-bound page primitive for a rich service source", () => {
+  const rich = readFileSync(
+    "tests/fixtures/page-briefs/ServicePage.jsx.txt",
+    "utf8",
+  );
+  expect(() =>
+    validateServicePage(
+      rich,
+      { id: "synthetic-rich" },
+      { pageBriefContractVersion: 1 },
+    ),
+  ).not.toThrow();
+  expect(() =>
+    validateServicePage(
+      rich.replace("<PageBriefSections brief={service.brief} />", ""),
+      { id: "synthetic-rich" },
+      { pageBriefContractVersion: 1 },
+    ),
+  ).toThrow("PageBriefSections");
+  expect(() =>
+    validateServicePage(
+      rich.replace("brief={service.brief}", "brief={content}"),
+      { id: "synthetic-rich" },
+      { pageBriefContractVersion: 1 },
+    ),
+  ).toThrow("PageBriefSections");
 });
-it('requires the shared route-bound page primitive for a rich location source',()=>{
- const rich=readFileSync('tests/fixtures/page-briefs/LocationPage.jsx.txt','utf8');
- expect(()=>validateLocationPage(rich,{id:'synthetic-rich'},{pageBriefContractVersion:1})).not.toThrow();
- expect(()=>validateLocationPage(rich.replace('<PageBriefSections brief={location.brief} />',''),{id:'synthetic-rich'},{pageBriefContractVersion:1})).toThrow('PageBriefSections');
+it("requires the shared route-bound page primitive for a rich location source", () => {
+  const rich = readFileSync(
+    "tests/fixtures/page-briefs/LocationPage.jsx.txt",
+    "utf8",
+  );
+  expect(() =>
+    validateLocationPage(
+      rich,
+      { id: "synthetic-rich" },
+      { pageBriefContractVersion: 1 },
+    ),
+  ).not.toThrow();
+  expect(() =>
+    validateLocationPage(
+      rich.replace("<PageBriefSections brief={location.brief} />", ""),
+      { id: "synthetic-rich" },
+      { pageBriefContractVersion: 1 },
+    ),
+  ).toThrow("PageBriefSections");
 });

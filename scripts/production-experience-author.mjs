@@ -177,7 +177,18 @@ export function creativeServicePageShape() {
       name: "string",
       slug: "string",
       description: "string",
-      brief: { version: "number", routeId: "string", mode: "string", sections: [{kind:"string",heading:"string",items:[{text:"string",evidenceIds:["string"]}]}] },
+      brief: {
+        version: "number",
+        routeId: "string",
+        mode: "string",
+        sections: [
+          {
+            kind: "string",
+            heading: "string",
+            items: [{ text: "string", evidenceIds: ["string"] }],
+          },
+        ],
+      },
       support: {
         scope: "string",
         preparation: "string",
@@ -214,7 +225,20 @@ export function creativeLocationPageShape() {
       name: "string",
       slug: "string",
       description: "string",
-      brief: { version: "number", routeId: "string", mode: "string", sections: [{kind:"string",heading:"string",items:[{text:"string",evidenceIds:["string"]}]}], faqs:[{question:"string",answer:"string"}], process:["string"] },
+      brief: {
+        version: "number",
+        routeId: "string",
+        mode: "string",
+        sections: [
+          {
+            kind: "string",
+            heading: "string",
+            items: [{ text: "string", evidenceIds: ["string"] }],
+          },
+        ],
+        faqs: [{ question: "string", answer: "string" }],
+        process: ["string"],
+      },
       localNote: "string",
       services: [{ name: "string", slug: "string", description: "string" }],
       otherAreas: [{ name: "string", slug: "string" }],
@@ -365,9 +389,10 @@ function contentShape(site, route) {
     site.socialProof.google?.apiUrl &&
     site.socialProof.google?.token,
   );
-  const publicAddress = business.addressVisibility === "private"
-    ? ""
-    : String(business.address || "");
+  const publicAddress =
+    business.addressVisibility === "private"
+      ? ""
+      : String(business.address || "");
   const claimEvidence = {
     credentials: site.credentials || business.credentials || [],
     offer: site.offer || business.offer || "",
@@ -442,7 +467,11 @@ function contentShape(site, route) {
         assets.photoThree || routeImages.tertiary || images.tertiary || "",
       offer: String(business.offer || ""),
     },
-    pageBriefContractVersion: compilePageBriefs(site).briefs.some(brief => brief.mode === "supported") ? 1 : null,
+    pageBriefContractVersion: compilePageBriefs(site).briefs.some(
+      (brief) => brief.mode === "supported",
+    )
+      ? 1
+      : null,
     claimEvidence,
     services: site.services || [],
     proof: (site.differentiators || []).slice(0, 3).map(String),
@@ -723,6 +752,40 @@ function collectJsxElements(source) {
   };
   visit(file);
   return { file, elements };
+}
+
+function jsxHasAncestorElementTag(node, tagName) {
+  let ancestor = node?.parent;
+  while (ancestor) {
+    if (
+      ts.isJsxElement(ancestor) &&
+      jsxOpeningName(ancestor.openingElement).toLowerCase() === tagName
+    )
+      return true;
+    ancestor = ancestor.parent;
+  }
+  return false;
+}
+
+function assertSingleMainHeading(elements, route, fileName) {
+  const mains = elements.filter(
+    ({ opening }) => jsxOpeningName(opening).toLowerCase() === "main",
+  );
+  const headings = elements.filter(
+    ({ opening }) => jsxOpeningName(opening).toLowerCase() === "h1",
+  );
+  if (mains.length !== 1)
+    throw new Error(
+      `Candidate ${route.id} ${fileName} must render exactly one main landmark.`,
+    );
+  if (headings.length !== 1)
+    throw new Error(
+      `Candidate ${route.id} ${fileName} must render exactly one H1 heading.`,
+    );
+  if (!jsxHasAncestorElementTag(headings[0].node, "main"))
+    throw new Error(
+      `Candidate ${route.id} ${fileName} must render its single H1 heading inside the main landmark.`,
+    );
 }
 
 const contentBoundRuntimeHelpers = new Set([
@@ -1315,7 +1378,10 @@ function isBindingMutated(bindingNode, file) {
           node.initializer.text,
           node.initializer,
         );
-        if (initializerBinding && trackedBindings.has(initializerBinding.node)) {
+        if (
+          initializerBinding &&
+          trackedBindings.has(initializerBinding.node)
+        ) {
           trackedBindings.add(node);
           discoveredAlias = true;
         }
@@ -1325,9 +1391,8 @@ function isBindingMutated(bindingNode, file) {
     collectAliases(file);
   }
   const targetWritesBinding = (target) =>
-    assignmentTargetRoots(target).some(
-      (identifier) =>
-        trackedBindings.has(visibleBinding(identifier.text, identifier)?.node),
+    assignmentTargetRoots(target).some((identifier) =>
+      trackedBindings.has(visibleBinding(identifier.text, identifier)?.node),
     );
   const isAssignmentOperator = (kind) =>
     kind >= ts.SyntaxKind.FirstAssignment &&
@@ -1385,8 +1450,7 @@ function isBindingMutated(bindingNode, file) {
       bindingPath &&
       initializer &&
       ts.isIdentifier(initializer) &&
-      ((initializer.text === "Object" &&
-        objectMutators.has(bindingPath)) ||
+      ((initializer.text === "Object" && objectMutators.has(bindingPath)) ||
         (initializer.text === "Reflect" && reflectMutators.has(bindingPath)))
     )
       return true;
@@ -1673,8 +1737,8 @@ function bindingPathForName(bindingName, name, prefix = []) {
       ts.isStringLiteral(property.expression)
         ? property.expression.text
         : ts.isIdentifier(property) || ts.isStringLiteral(property)
-        ? property.text
-        : null;
+          ? property.text
+          : null;
     if (!propertyName) continue;
     const result = bindingPathForName(element.name, name, [
       ...prefix,
@@ -1889,11 +1953,14 @@ function isSealedServiceSlugBinding(expression, file) {
   const identifier = node.expression;
   if (!ts.isIdentifier(identifier)) return false;
   const binding = visibleBinding(identifier.text, identifier);
-  if (!binding || binding.kind !== "variable" ||
-      !ts.isIdentifier(binding.node.name) ||
-      !(binding.node.parent.flags & ts.NodeFlags.Const) ||
-      !binding.node.initializer ||
-      isBindingMutated(binding.node, file))
+  if (
+    !binding ||
+    binding.kind !== "variable" ||
+    !ts.isIdentifier(binding.node.name) ||
+    !(binding.node.parent.flags & ts.NodeFlags.Const) ||
+    !binding.node.initializer ||
+    isBindingMutated(binding.node, file)
+  )
     return false;
   return isSealedServiceRecordExpression(binding.node.initializer, file);
 }
@@ -1933,10 +2000,14 @@ function isSealedServiceRecordExpression(expression, file, seen = new Set()) {
   if (!ts.isIdentifier(node) || seen.has(node.text)) return false;
   seen.add(node.text);
   const binding = visibleBinding(node.text, node);
-  if (!binding || binding.kind !== "variable" ||
-      !ts.isIdentifier(binding.node.name) ||
-      !(binding.node.parent.flags & ts.NodeFlags.Const) ||
-      isBindingMutated(binding.node, file)) return false;
+  if (
+    !binding ||
+    binding.kind !== "variable" ||
+    !ts.isIdentifier(binding.node.name) ||
+    !(binding.node.parent.flags & ts.NodeFlags.Const) ||
+    isBindingMutated(binding.node, file)
+  )
+    return false;
   return isSealedServiceRecordExpression(binding.node.initializer, file, seen);
 }
 
@@ -2851,10 +2922,12 @@ function authoredSourceText(source) {
     )
       values.push(node.text);
     else if (ts.isTemplateExpression(node))
-      values.push([
-        node.head.text,
-        ...node.templateSpans.map((span) => span.literal.text),
-      ].join(" "));
+      values.push(
+        [
+          node.head.text,
+          ...node.templateSpans.map((span) => span.literal.text),
+        ].join(" "),
+      );
     ts.forEachChild(node, visit);
   }
   visit(file);
@@ -3041,21 +3114,7 @@ function validateInnerPageSource({
       `Candidate ${route.id} ${file} must include a contact section with id="contact".`,
     );
   const { elements } = collectJsxElements(source);
-  const headings = elements.filter(
-    ({ opening }) => jsxOpeningName(opening).toLowerCase() === "h1",
-  );
-  if (headings.length !== 1)
-    throw new Error(
-      `Candidate ${route.id} ${file} must render exactly one H1 heading.`,
-    );
-  if (
-    !elements.some(
-      ({ opening }) => jsxOpeningName(opening).toLowerCase() === "main",
-    )
-  )
-    throw new Error(
-      `Candidate ${route.id} ${file} must render a main landmark.`,
-    );
+  assertSingleMainHeading(elements, route, file);
   for (const path of requiredPaths)
     if (!referencesObjectPath(source, pathRoot, path))
       throw new Error(
@@ -3099,10 +3158,7 @@ function validateInnerPageSource({
   if (embeddedFact) {
     const matchAt = source.indexOf(embeddedFact);
     const nearby = source
-      .slice(
-        Math.max(0, matchAt - 80),
-        matchAt + embeddedFact.length + 80,
-      )
+      .slice(Math.max(0, matchAt - 80), matchAt + embeddedFact.length + 80)
       .replace(/\s+/gu, " ")
       .trim();
     throw new Error(
@@ -3120,13 +3176,33 @@ function validateInnerPageSource({
 function assertPageBriefBinding(source, root, route, content) {
   if (content?.pageBriefContractVersion !== 1) return;
   const { file, elements } = collectJsxElements(source);
-  const bound = elements.some(({opening}) => jsxOpeningName(opening) === "PageBriefSections" && jsxAttributeValue(jsxAttribute(opening,"brief"),file) === `${root}.brief`);
-  const imported = file.statements.some(statement => ts.isImportDeclaration(statement) && statement.moduleSpecifier.text === "@launchloom/runtime" && statement.importClause?.namedBindings && ts.isNamedImports(statement.importClause.namedBindings) && statement.importClause.namedBindings.elements.some(binding => binding.name.text === "PageBriefSections" && (!binding.propertyName || binding.propertyName.text === "PageBriefSections")));
-  if (!bound || !imported) throw new Error(`Candidate ${route.id} must render shared PageBriefSections bound to ${root}.brief.`);
+  const bound = elements.some(
+    ({ opening }) =>
+      jsxOpeningName(opening) === "PageBriefSections" &&
+      jsxAttributeValue(jsxAttribute(opening, "brief"), file) ===
+        `${root}.brief`,
+  );
+  const imported = file.statements.some(
+    (statement) =>
+      ts.isImportDeclaration(statement) &&
+      statement.moduleSpecifier.text === "@launchloom/runtime" &&
+      statement.importClause?.namedBindings &&
+      ts.isNamedImports(statement.importClause.namedBindings) &&
+      statement.importClause.namedBindings.elements.some(
+        (binding) =>
+          binding.name.text === "PageBriefSections" &&
+          (!binding.propertyName ||
+            binding.propertyName.text === "PageBriefSections"),
+      ),
+  );
+  if (!bound || !imported)
+    throw new Error(
+      `Candidate ${route.id} must render shared PageBriefSections bound to ${root}.brief.`,
+    );
 }
 
 export function validateServicePage(source, route, content) {
-  assertPageBriefBinding(source,"service",route,content);
+  assertPageBriefBinding(source, "service", route, content);
   validateInnerPageSource({
     source,
     route,
@@ -3154,7 +3230,7 @@ export function validateServicePage(source, route, content) {
  * coverage language truthful for the listed service area.
  */
 export function validateLocationPage(source, route, content) {
-  assertPageBriefBinding(source,"location",route,content);
+  assertPageBriefBinding(source, "location", route, content);
   validateInnerPageSource({
     source,
     route,
@@ -3237,6 +3313,8 @@ function validateExperience(source, route, content, visualBrief = {}) {
     if (pattern.test(source))
       throw new Error(`Candidate ${route.id} contains forbidden ${label}.`);
   assertRequiredSectionAnchors(source, route);
+  const { elements } = collectJsxElements(source);
+  assertSingleMainHeading(elements, route, "Experience.jsx");
   if (
     !/import\s+\{[^}]*\bLeadForm\b[^}]*\}\s+from\s+["']@launchloom\/runtime["']/u.test(
       source,
@@ -3283,7 +3361,6 @@ function validateExperience(source, route, content, visualBrief = {}) {
         `Candidate ${route.id} has an image that must have a usable alt attribute; use alt="" only for decorative or redundant imagery.`,
       );
   }
-  const { elements } = collectJsxElements(source);
   const navigations = elements.filter(
     ({ opening }) => jsxOpeningName(opening) === "nav",
   );
@@ -3324,10 +3401,7 @@ function validateExperience(source, route, content, visualBrief = {}) {
   if (embeddedFact) {
     const matchAt = source.indexOf(embeddedFact);
     const nearby = source
-      .slice(
-        Math.max(0, matchAt - 80),
-        matchAt + embeddedFact.length + 80,
-      )
+      .slice(Math.max(0, matchAt - 80), matchAt + embeddedFact.length + 80)
       .replace(/\s+/gu, " ")
       .trim();
     throw new Error(
@@ -3531,7 +3605,8 @@ function authorRules() {
     EARLY_CONVERSION_OUTPUT_CONTRACT,
     REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
-    "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
+    "Render exactly one meaningful H1 inside the page's single <main> landmark. The main landmark must contain the hero heading and unique page content; keep the H1 out of sibling headers or sections. Use semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
+    "At 390px, recombine every navigation row so the wordmark, all navigation links, and the primary action fit within the viewport; allow a deliberate second row or stack instead of a fixed non-wrapping min-content row. At all viewports, hero copy, image and CTA must remain inside the hero's visible bounds; prefer content-driven sizing and never clip text with a fixed-height overflow-hidden box. If the reference requires a fixed opening composition, prove every element fits it.",
     `Keep every individual authored source file at or below ${MAX_REPAIR_FILE_SOURCE_CHARS} characters so the safe bounded repair path can represent it. Prefer concise markup and avoid repeated CSS rules; simplify an oversized file without changing the assigned composition.`,
     'Phone and email links must use their sealed tokens. Telephone links may prefix content.brand.phone with tel: and may normalize it only with replace(/[^\\d+]/g, "") or replace(/[^0-9+]/g, ""); a local const href is allowed only when its initializer is that exact safe expression. Do not compute URLs from any other data.',
     "For service-page links, use the validator-approved same-origin form href={`/services/${service.slug}/`} only inside a direct map over a sealed service list. Do not search for a selected service, bind its slug into a computed href, concatenate arbitrary path parts, or derive href values from unsealed input.",
@@ -3719,7 +3794,10 @@ export async function authorExperienceCandidates({
   const policy = resolvePipelineTestPolicy({ profile: testProfile });
   // Validate the complete reference contract first; a focused test limits
   // provider work, not reference/source safety or normal intake diversity.
-  const routes = assertInspirationPack(inspirationPack).slice(0, policy.candidateCount);
+  const routes = assertInspirationPack(inspirationPack).slice(
+    0,
+    policy.candidateCount,
+  );
   // OpenRouter's in-flight budget is shared across the account. Keep the
   // independent candidates, but never put more than two model stages in
   // flight at once. This protects the creative lane without falling back to a
