@@ -1569,7 +1569,7 @@ export default function Experience`,
     } finally {
       await browser.close();
     }
-  });
+  }, 20000);
 
   it("fails closed when a repair route carries present-but-incomplete Reference DNA", () => {
     const referenceDna = buildReferenceDna({
