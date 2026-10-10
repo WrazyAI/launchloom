@@ -4,6 +4,7 @@ import {
   CLIENT_PALETTE_ROLE_CONTRACT,
   authoringCompletionDiagnostics,
   appendReferencePersonnelCue,
+  adaptReferencePersonnelCuesForClient,
   completionLimitRequestField,
   referenceImplementationChecklist,
   referencePersonnelCueTranslation,
@@ -79,6 +80,49 @@ describe("creative authoring output budgets", () => {
         },
       }),
     ).toBe("");
+  });
+
+  it("rewrites person-dependent model context while preserving stable signature IDs", () => {
+    const route = {
+      label: "Morris-Jenkins home services homepage",
+      signature:
+        "uniformed technician beside promise|technician campaign hero|people-led explanation",
+      referenceDna: {
+        requiredSignatureElements: [
+          {
+            id: "technician-campaign-poster",
+            description: "technician campaign poster with a uniformed technician",
+          },
+        ],
+        sectionSequence: ["technician campaign hero", "person-led reassurance"],
+        imageTreatment: {
+          mode: "friendly uniformed technician photography",
+          focalPoint: "technician and promise together",
+        },
+      },
+      referenceDossier: {
+        id: "morris-jenkins-home-services",
+        referenceName: "Morris-Jenkins",
+        designPrompt:
+          "A uniformed technician beside a promise, technician campaign poster, and people-led explanation.",
+      },
+    };
+
+    const adapted = adaptReferencePersonnelCuesForClient(route, {
+      claimEvidence: { staff: [], teamMembers: [], team: [] },
+    });
+
+    expect(adapted).not.toBe(route);
+    expect(JSON.stringify(adapted)).not.toMatch(
+      /uniformed technician|technician campaign hero|people-led explanation|person-led reassurance|friendly uniformed technician photography/iu,
+    );
+    expect(adapted.referenceDna.requiredSignatureElements[0].id).toBe(
+      "technician-campaign-poster",
+    );
+    expect(adapted.referenceDna.requiredSignatureElements[0].description).toContain(
+      "object-led campaign poster",
+    );
+    expect(route.referenceDossier.designPrompt).toContain("uniformed technician");
   });
 
   it("uses OpenRouter's current completion limit request field", () => {

@@ -18,6 +18,7 @@ import {
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
   VERIFIED_CLIENT_PERSONNEL_CONTRACT,
+  adaptReferencePersonnelCuesForClient,
   referencePersonnelCueTranslation,
 } from "./creative-authoring-output.mjs";
 import {
@@ -3842,8 +3843,9 @@ export async function authorExperienceCandidates({
     routes.map(async (route, index) => {
       const routeContentManifest = buildCreativeContentManifest(site, route);
       const content = routeContentManifest.values;
+      const modelRoute = adaptReferencePersonnelCuesForClient(route, content);
       const base = {
-        route,
+        route: modelRoute,
         contentTokens,
         contentShape: content,
         finalSafetyInstruction: referencePersonnelCueTranslation({

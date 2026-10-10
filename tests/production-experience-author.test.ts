@@ -2263,16 +2263,25 @@ export default function Experience`,
     const requests: AuthorStageRequest[] = [];
     const personnelReferencePack = {
       ...inspirationPack,
-      routes: inspirationPack.routes.map((route) =>
-        route.id === "route-02"
-          ? {
+      routes: inspirationPack.routes.map((route, index) => {
+        if (route.id === "route-02")
+          return {
               ...route,
+              referenceId: "morris-jenkins-home-services",
               label: "Morris-Jenkins home-services reference",
               signature:
                 "technician campaign poster and person-led reassurance",
-            }
-          : route,
-      ),
+              referenceDossier: {
+                id: "morris-jenkins-home-services",
+                familyId: "home-services",
+                referenceName: "Morris-Jenkins",
+                source: { rights: "licensed" },
+                designPrompt:
+                  "A uniformed technician beside a promise, technician campaign poster, and people-led explanation.",
+              },
+            };
+        return { ...route, referenceId: `test-reference-${index + 1}` };
+      }),
     };
 
     const result = await authorExperienceCandidates({
@@ -2342,6 +2351,17 @@ export default function Experience`,
           ),
       ),
     ).toBe(true);
+    expect(
+      routeRequests.every(
+        (request) =>
+          !/uniformed technician|technician campaign hero|people-led explanation|person-led reassurance/iu.test(
+            request.route.referenceDossier.designPrompt,
+          ),
+      ),
+    ).toBe(true);
+    expect(JSON.stringify(personnelReferencePack.routes)).toContain(
+      "uniformed technician",
+    );
   });
 
   it("rejects unsafe imports and network-capable authored code", async () => {

@@ -107,6 +107,72 @@ export function referencePersonnelCueTranslation({
   ].join("\n");
 }
 
+const sourceMetadataKeys = new Set([
+  "id",
+  "familyId",
+  "referenceName",
+  "source",
+  "rights",
+  "url",
+  "provenance",
+  "path",
+  "absolutePath",
+  "sha256",
+  "selector",
+]);
+
+function translatePersonnelDescription(value) {
+  return value
+    .replace(
+      /friendly uniformed technician photography/giu,
+      "object-led household-service photography without people",
+    )
+    .replace(/uniformed technicians?/giu, "household-service detail")
+    .replace(/technician campaign (poster|hero)/giu, "object-led campaign $1")
+    .replace(
+      /technician and promise together/giu,
+      "object-led service detail and promise together",
+    )
+    .replace(
+      /technician and trust explanation/giu,
+      "service-process trust explanation",
+    )
+    .replace(/technician reassurance/giu, "service-process reassurance")
+    .replace(/person-led reassurance/giu, "process-led reassurance")
+    .replace(/people-led explanation/giu, "process-led explanation")
+    .replace(/people-led/giu, "process-led")
+    .replace(/person-led/giu, "process-led")
+    .replace(/technicians?/giu, "service detail")
+    .replace(/portraits?/giu, "object-led focal imagery");
+}
+
+function adaptReferenceValue(value, key = "") {
+  if (typeof value === "string")
+    return sourceMetadataKeys.has(key)
+      ? value
+      : translatePersonnelDescription(value);
+  if (Array.isArray(value))
+    return value.map((item) => adaptReferenceValue(item, key));
+  if (value && typeof value === "object")
+    return Object.fromEntries(
+      Object.entries(value).map(([childKey, childValue]) => [
+        childKey,
+        adaptReferenceValue(childValue, childKey),
+      ]),
+    );
+  return value;
+}
+
+/**
+ * Remove conflicting source-person wording from model-bound route context
+ * when the client has no verified personnel. Stable IDs and provenance stay
+ * intact; only descriptive design language is translated.
+ */
+export function adaptReferencePersonnelCuesForClient(route, contentShape = {}) {
+  if (!referencePersonnelCueTranslation({ route, contentShape })) return route;
+  return adaptReferenceValue(route);
+}
+
 export function appendReferencePersonnelCue(prompt, request) {
   const instruction =
     request?.finalSafetyInstruction ??
