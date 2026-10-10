@@ -16,6 +16,7 @@ import {
 } from "./creative-compiler.mjs";
 import {
   EARLY_CONVERSION_OUTPUT_CONTRACT,
+  HERO_MEDIA_FOCUS_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
   VERIFIED_CLIENT_PERSONNEL_CONTRACT,
   adaptReferencePersonnelCuesForClient,
@@ -3625,6 +3626,7 @@ function authorRules() {
     "Keep literal Services, FAQs, and Contact section anchors in the page. For dossier-backed routes, let the primary navigation follow the assigned reference geometry instead of forcing all three anchors into one conventional menu. Put conversion in the hero or immediately after it.",
     "Import LeadForm from @launchloom/runtime and render exactly one instance in the reference-directed location: when desktop or mobile compositionTopology is utility-panel, place it in that utility panel inside the hero and retain the contact section for contact details; otherwise place it inside the contact section. Never fake a form or create a second lead endpoint.",
     EARLY_CONVERSION_OUTPUT_CONTRACT,
+    HERO_MEDIA_FOCUS_CONTRACT,
     REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
     VERIFIED_CLIENT_PERSONNEL_CONTRACT,
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",

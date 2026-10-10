@@ -17,6 +17,7 @@ import {
   type AuthorStageRequest,
 } from "../scripts/production-experience-author.mjs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
+import { HERO_MEDIA_FOCUS_CONTRACT } from "../scripts/creative-authoring-output.mjs";
 
 const site = {
   business: {
@@ -2354,6 +2355,7 @@ export default function Experience`,
     expect(
       routeRequests.every(
         (request) =>
+          request.rules.includes(HERO_MEDIA_FOCUS_CONTRACT) &&
           !/uniformed technician|technician campaign hero|people-led explanation|person-led reassurance/iu.test(
             request.route.referenceDossier.designPrompt,
           ),

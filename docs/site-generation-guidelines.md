@@ -113,6 +113,10 @@ Composited alpha is measured; unsupported effects and ambiguous image backdrops
 are unresolved, not presumed readable. Image overlays may use a local opaque
 plate or a scrim whose worst-case backdrop passes. Text shadows alone do not
 prove contrast. Existing visual, source and reference-fidelity gates still run.
+When hero copy or a CTA sits over media, its keyboard-focus outline must also be
+inside a provable opaque role-surface plate at every viewport. Do not remove or
+translucently fade that plate on mobile while the media remains behind it; move
+the image to a non-overlapping field when the reference needs unplated copy.
 Interaction audits include summary controls and links revealed by disclosures
 and menus. Inset focus indicators use their local paint and block unmeasured
 border overlap. Unrelated paint remains unresolved unless bounded geometry

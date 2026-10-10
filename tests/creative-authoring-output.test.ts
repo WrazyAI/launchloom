@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AUTHORING_STAGE_BUDGETS,
   CLIENT_PALETTE_ROLE_CONTRACT,
+  HERO_MEDIA_FOCUS_CONTRACT,
   authoringCompletionDiagnostics,
   appendReferencePersonnelCue,
   adaptReferencePersonnelCuesForClient,
@@ -206,6 +207,18 @@ describe("creative authoring output budgets", () => {
     );
     expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain(
       "use native list markers or an explicit aria-hidden child marker instead",
+    );
+  });
+
+  it("keeps hero focus indicators on an opaque surface when media remains behind them", () => {
+    expect(HERO_MEDIA_FOCUS_CONTRACT).toContain(
+      "provable opaque local surface covering the entire control and focus ring",
+    );
+    expect(HERO_MEDIA_FOCUS_CONTRACT).toContain(
+      "Do not set the hero copy/action surface to transparent or translucent at mobile while media remains behind it.",
+    );
+    expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain(
+      "HERO MEDIA FOCUS CONTRACT",
     );
   });
 

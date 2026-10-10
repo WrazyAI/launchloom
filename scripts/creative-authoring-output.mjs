@@ -180,6 +180,13 @@ export function appendReferencePersonnelCue(prompt, request) {
   return instruction ? `${String(prompt).trimEnd()}\n\n${instruction}` : prompt;
 }
 
+export const HERO_MEDIA_FOCUS_CONTRACT = [
+  "HERO MEDIA FOCUS CONTRACT",
+  "At every viewport, hero text and CTA focus indicators that overlap image or variable media need a provable opaque local surface covering the entire control and focus ring, or the media must move to a non-overlapping field.",
+  "Do not set the hero copy/action surface to transparent or translucent at mobile while media remains behind it. Keep a data-ll-surface role plate with an opaque host-provided surface token; an opaque button fill does not protect a focus outline outside the button bounds.",
+  "Do not rely on text shadow, photo averages, or a translucent wash to prove contrast. Preserve the assigned composition around this local plate; do not delete or flatten the hero image chapter.",
+].join("\n");
+
 export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "CLIENT PALETTE ROLE CONTRACT",
   "Map the client visual brief palette to page surfaces by role:",
@@ -189,6 +196,7 @@ export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "Ordinary copy, navigation and button text require 4.5:1; large text requires 3:1; required control boundaries and focus indicators require 3:1. Hover, focus, open menus and mobile must retain readable pairings. Decorative rules need not be forced to 3:1.",
   "Treat each hover, active, and focus style as a separate foreground/background pair. When an action fill changes, also choose a readable foreground for that changed fill. Never pair --ll-text as an action fill with --ll-on-action text unless that exact pair is verified to meet contrast.",
   "Image text needs a local contrasting plate or independently verified scrim. Do not rely on a dark average photo or text shadow. Unknown image, pseudo-element, blend and filter backdrops are unresolved until proved or repaired. Do not paint text-bearing elements with pseudo-element backdrops; use native list markers or an explicit aria-hidden child marker instead. The same deterministic rendered contrast gate applies to all pages.",
+  HERO_MEDIA_FOCUS_CONTRACT,
   "- surfaceColor is the dominant page surface. The page body and the large content fields use it.",
   "- heroColor is the opening hero surface. It stays distinct from the page surface.",
   "- brandSurfaceColor and brandSurfaceTextColor are limited brand bands, such as one conversion band or the footer, and never the dominant page surface.",
