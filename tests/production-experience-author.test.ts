@@ -2268,7 +2268,8 @@ export default function Experience`,
           ? {
               ...route,
               label: "Morris-Jenkins home-services reference",
-              signature: "technician campaign poster and person-led reassurance",
+              signature:
+                "technician campaign poster and person-led reassurance",
             }
           : route,
       ),
@@ -2324,6 +2325,17 @@ export default function Experience`,
           ) &&
           request.rules.includes(
             "When none of those fields contains matching verified detail, do not invent named people, headcount, technician attendance, uniforms, or a client team. Translate person-led reference mechanics into a non-personnel process or decision chapter using only verified facts and available content tokens. Never use generated or stock people as this client's employees or customers.",
+          ),
+      ),
+    ).toBe(true);
+    expect(
+      routeRequests.every(
+        (request) =>
+          request.finalSafetyInstruction?.includes(
+            "REFERENCE PERSONNEL-CUE TRANSLATION — FINAL FACT OVERRIDE",
+          ) &&
+          request.finalSafetyInstruction.includes(
+            "Preserve the poster composition",
           ),
       ),
     ).toBe(true);

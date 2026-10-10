@@ -1611,19 +1611,25 @@ describe("creative repair loop", () => {
       model: "test/model",
       referenceDna: {
         familyId: "service-editorial",
-        referenceName: "Licensed service template",
+        referenceName: "Technician campaign service template",
         rights: "licensed",
         sectionSequence: repairSectionSequence,
+        requiredSignatureElements: [
+          {
+            id: "technician-campaign-poster",
+            description: "A uniformed technician portrait anchors the hero.",
+          },
+        ],
         evidence: { desktopScreenshot: { path: desktop } },
       },
       referenceDossier: {
-        id: "licensed-service-template",
+        id: "technician-campaign-service-template",
         familyId: "service-editorial",
-        referenceName: "Licensed service template",
+        referenceName: "Technician campaign service template",
         source: { rights: "licensed" },
         tags: { business: ["hvac"] },
         designPrompt:
-          "A source reference whose exact identity and credit must not become client copy.",
+          "A source reference uses a technician campaign poster and person-led reassurance. Its exact identity and credit must not become client copy.",
       },
       findings: [
         {
@@ -1659,6 +1665,10 @@ describe("creative repair loop", () => {
     expect(prompt).toContain(
       "When none of those fields contains matching verified detail, do not invent named people, headcount, technician attendance, uniforms, or a client team.",
     );
+    expect(prompt).toContain("REFERENCE PERSONNEL-CUE TRANSLATION");
+    expect(
+      prompt.lastIndexOf("REFERENCE PERSONNEL-CUE TRANSLATION"),
+    ).toBeGreaterThan(prompt.lastIndexOf("CURRENT EXPERIENCE.JSX"));
     expect(prompt).toContain("EARLY CONVERSION INVARIANT");
     expect(prompt).toContain("native anchor to #contact");
     expect(prompt).toContain("content.hero.primaryLabel");

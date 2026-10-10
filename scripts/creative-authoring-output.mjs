@@ -32,6 +32,88 @@ export const VERIFIED_CLIENT_PERSONNEL_CONTRACT = [
   "When none of those fields contains matching verified detail, do not invent named people, headcount, technician attendance, uniforms, or a client team. Translate person-led reference mechanics into a non-personnel process or decision chapter using only verified facts and available content tokens. Never use generated or stock people as this client's employees or customers.",
 ].join("\n");
 
+function hasVerifiedPersonnel(contentShape) {
+  const evidence = contentShape?.claimEvidence || {};
+  return [evidence.staff, evidence.teamMembers, evidence.team].some((value) => {
+    if (Array.isArray(value))
+      return value.some((item) =>
+        typeof item === "string"
+          ? Boolean(item.trim())
+          : Boolean(
+              item &&
+              typeof item === "object" &&
+              Object.values(item).some((entry) =>
+                typeof entry === "string"
+                  ? Boolean(entry.trim())
+                  : entry != null,
+              ),
+            ),
+      );
+    if (typeof value === "string") return Boolean(value.trim());
+    return Boolean(
+      value && typeof value === "object" && Object.keys(value).length,
+    );
+  });
+}
+
+/**
+ * Translate people-centered reference mechanics when the sealed client facts
+ * contain no verified personnel. The source-person imagery is not client
+ * evidence, so preserve its composition while replacing the person-specific
+ * role with a factual, object-led treatment.
+ */
+export function referencePersonnelCueTranslation({
+  route = {},
+  contentShape = {},
+} = {}) {
+  if (hasVerifiedPersonnel(contentShape)) return "";
+
+  const dna = route.referenceDna || {};
+  const signatures = Array.isArray(dna.requiredSignatureElements)
+    ? dna.requiredSignatureElements
+        .map((item) => `${item?.id || ""} ${item?.description || ""}`)
+        .join(" ")
+    : "";
+  const dossierPrompt =
+    typeof route.referenceDossier === "string"
+      ? route.referenceDossier
+      : route.referenceDossier?.designPrompt || "";
+  const cues = [
+    route.label,
+    route.signature,
+    dna.referenceName,
+    signatures,
+    dna.imageTreatment?.mode,
+    dna.imageTreatment?.crop,
+    dna.imageTreatment?.focalPoint,
+    dna.servicePresentation?.pattern,
+    ...(Array.isArray(dna.sectionSequence) ? dna.sectionSequence : []),
+    dossierPrompt,
+  ]
+    .filter((value) => typeof value === "string")
+    .join(" ");
+  if (
+    !/\b(?:person[- ]led|people[- ]led|people|person|portrait|technician|employee|staff|uniform|crew|mechanic|nurse|therapist|inspector|contractor|founder|owner[- ]led)\b/iu.test(
+      cues,
+    )
+  )
+    return "";
+
+  return [
+    "REFERENCE PERSONNEL-CUE TRANSLATION — FINAL FACT OVERRIDE",
+    "This assigned reference contains people-centered or personnel cues, but the sealed client content has no verified personnel. Its people, names, faces, roles, uniforms, quotes, and employee depictions belong only to the source reference; they are not facts about this client.",
+    "Preserve the poster composition and its non-personnel mechanics: scale, asymmetry, framing, typography hierarchy, palette, service-tile rhythm, and benefit-band placement. Replace the source-person role with a non-human, object-led visual using only an existing sealed client asset or a restrained abstract service-system graphic. Realize person-led reassurance through verified client content about the service process or customer decision, not an invented employee or implied technician attendance.",
+    "Do not copy or describe a source person as this client's employee or customer. Do not add names, roles, headcount, uniforms, first-person team claims, employee testimonials, or claims about who will visit. Use verified client content only, and keep every business-specific sentence bound to sealed content tokens.",
+  ].join("\n");
+}
+
+export function appendReferencePersonnelCue(prompt, request) {
+  const instruction =
+    request?.finalSafetyInstruction ??
+    referencePersonnelCueTranslation(request);
+  return instruction ? `${String(prompt).trimEnd()}\n\n${instruction}` : prompt;
+}
+
 export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "CLIENT PALETTE ROLE CONTRACT",
   "Map the client visual brief palette to page surfaces by role:",

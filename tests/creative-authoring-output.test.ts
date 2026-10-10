@@ -3,11 +3,84 @@ import {
   AUTHORING_STAGE_BUDGETS,
   CLIENT_PALETTE_ROLE_CONTRACT,
   authoringCompletionDiagnostics,
+  appendReferencePersonnelCue,
   completionLimitRequestField,
   referenceImplementationChecklist,
+  referencePersonnelCueTranslation,
 } from "../scripts/creative-authoring-output.mjs";
 
 describe("creative authoring output budgets", () => {
+  it("translates source-personnel mechanics when client personnel are unverified", () => {
+    const instruction = referencePersonnelCueTranslation({
+      route: {
+        label: "Morris-Jenkins home-services reference",
+        signature: "technician campaign poster and person-led reassurance",
+        referenceDna: {
+          requiredSignatureElements: [
+            {
+              id: "technician-campaign-poster",
+              description: "A uniformed technician portrait anchors the hero.",
+            },
+          ],
+        },
+      },
+      contentShape: { claimEvidence: { staff: [], teamMembers: [], team: [] } },
+    });
+
+    expect(instruction).toContain("REFERENCE PERSONNEL-CUE TRANSLATION");
+    expect(instruction).toContain("Preserve the poster composition");
+    expect(instruction).toMatch(/replace the source-person role/iu);
+    expect(instruction).toContain("non-human, object-led visual");
+    expect(instruction).toContain("verified client content only");
+  });
+
+  it("places the personnel translation after the stage-specific reference instructions", () => {
+    const prompt = appendReferencePersonnelCue(
+      "Reference and screenshots are supplied above.\nEXPERIENCE STAGE final requirements.",
+      {
+        route: {
+          signature: "technician campaign poster",
+          referenceDna: {
+            requiredSignatureElements: [
+              {
+                id: "technician-campaign-poster",
+                description: "Portrait-led hero",
+              },
+            ],
+          },
+        },
+        contentShape: {
+          claimEvidence: { staff: [], teamMembers: [], team: [] },
+        },
+      },
+    );
+
+    expect(prompt.indexOf("EXPERIENCE STAGE final requirements.")).toBeLessThan(
+      prompt.indexOf("REFERENCE PERSONNEL-CUE TRANSLATION"),
+    );
+    expect(prompt.trimEnd()).toMatch(/Use verified client content only/u);
+  });
+
+  it("does not apply the source-person translation without personnel cues or when staff are verified", () => {
+    const route = { label: "Roofing reference", signature: "roof-form atlas" };
+    expect(referencePersonnelCueTranslation({ route, contentShape: {} })).toBe(
+      "",
+    );
+    expect(
+      referencePersonnelCueTranslation({
+        route: {
+          ...route,
+          signature: "technician campaign poster and person-led reassurance",
+        },
+        contentShape: {
+          claimEvidence: {
+            staff: [{ name: "Verified person", role: "Technician" }],
+          },
+        },
+      }),
+    ).toBe("");
+  });
+
   it("uses OpenRouter's current completion limit request field", () => {
     expect(completionLimitRequestField(48000)).toEqual({
       max_completion_tokens: 48000,

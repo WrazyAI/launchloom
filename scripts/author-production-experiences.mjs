@@ -41,6 +41,7 @@ import {
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 import {
   AUTHORING_STAGE_BUDGETS,
+  appendReferencePersonnelCue,
   CLIENT_PALETTE_ROLE_CONTRACT,
   CLIENT_TYPOGRAPHY_CONTRACT,
   EARLY_CONVERSION_OUTPUT_CONTRACT,
@@ -448,7 +449,17 @@ async function requestStage(request) {
   );
   try {
     const routePrompt = routePromptPrefix(request);
-    const stagePrompt = stagePromptSuffix(request);
+    const stagePromptBase = stagePromptSuffix(request);
+    const personnelAwareStages = new Set([
+      "contract",
+      "experience",
+      "service",
+      "location",
+      "service-index",
+    ]);
+    const stagePrompt = personnelAwareStages.has(request.stage)
+      ? appendReferencePersonnelCue(stagePromptBase, request)
+      : stagePromptBase;
     const systemPrompt = authorSystemPrompt(request);
     const userContent = [{ type: "text", text: routePrompt }];
     const evidencePaths = selectAuthorReferenceScreenshots(

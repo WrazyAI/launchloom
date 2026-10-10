@@ -18,6 +18,7 @@ import {
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
   VERIFIED_CLIENT_PERSONNEL_CONTRACT,
+  referencePersonnelCueTranslation,
 } from "./creative-authoring-output.mjs";
 import {
   assertCreativeInnerPageSource,
@@ -34,6 +35,7 @@ import { MAX_REPAIR_FILE_SOURCE_CHARS } from "./creative-repair-contract.mjs";
  *   route: Record<string, any>;
  *   contentTokens: string[];
  *   contentShape: Record<string, any>;
+ *   finalSafetyInstruction?: string;
  *   visualBrief?: Record<string, any>;
  *   rules: string;
  *   designContract?: string;
@@ -3819,6 +3821,10 @@ export async function authorExperienceCandidates({
         route,
         contentTokens,
         contentShape: content,
+        finalSafetyInstruction: referencePersonnelCueTranslation({
+          route,
+          contentShape: content,
+        }),
         visualBrief: routeContentManifest.visualBrief,
         rules,
       };
