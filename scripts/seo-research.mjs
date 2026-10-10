@@ -26,7 +26,7 @@ const HARD_MAX_TASKS = 32;
 const DEFAULT_MAX_USD = 0.25;
 const HARD_MAX_USD = 2;
 const MAX_CORE_SERVICES = 5;
-const MAX_SERVICE_VARIANTS = 6;
+const MAX_SERVICE_VARIANTS = 8;
 const DEFAULT_FALLBACK_SEARCH_QUERIES = 3;
 const HARD_MAX_FALLBACK_SEARCH_QUERIES = 5;
 const DEFAULT_FALLBACK_MAX_USD = 0.05;
@@ -664,22 +664,27 @@ function fallbackQuestionEvidence(seo) {
 function finiteResultKeyword(item, provenance) {
   const keyword = text(item?.keyword || item?.keyword_data?.keyword, 180);
   const source = item?.keyword_info || item?.keyword_data?.keyword_info || {};
+  const properties =
+    item?.keyword_properties || item?.keyword_data?.keyword_properties || {};
   const intentInfo =
     item?.search_intent_info || item?.keyword_data?.search_intent_info;
   const intent =
     text(intentInfo?.main_intent || intentInfo?.label || item?.intent, 40) ||
     null;
   const volume = finiteMetric(source.search_volume ?? item?.searchVolume);
+  const kd = finiteMetric(
+    properties.keyword_difficulty ?? item?.keyword_difficulty,
+  );
   const cpc = finiteMetric(source.cpc ?? item?.cpc);
   const competition = finiteMetric(source.competition ?? item?.competition);
   return {
     keyword,
     volume,
-    kd: null,
+    kd,
     cpc,
     competition,
     intent,
-    provenance: [volume, cpc, competition, intent].some(
+    provenance: [volume, kd, cpc, competition, intent].some(
       (value) => value !== null,
     )
       ? provenance
@@ -2559,6 +2564,7 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
         keywords: flattenItems(task.result).map((item) => ({
           keyword: item.keyword_data?.keyword,
           keyword_info: item.keyword_data?.keyword_info,
+          keyword_properties: item.keyword_data?.keyword_properties,
           search_intent_info: item.keyword_data?.search_intent_info,
         })),
       };

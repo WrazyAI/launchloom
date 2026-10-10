@@ -161,7 +161,7 @@ function researchProvider(
 }
 
 describe("SEO market map", () => {
-  it("accepts up to three service-bound model phrases and ignores excess suggestions", () => {
+  it("accepts up to five service-bound model phrases and ignores excess suggestions", () => {
     const plan = validateIntentQueryPlan(
       {
         services: [
@@ -172,6 +172,8 @@ describe("SEO market map", () => {
               "pastry gift box",
               "order a box of pastries",
               "fresh pastry box",
+              "pastry box delivery",
+              "pastry treats",
             ],
           },
         ],
@@ -183,8 +185,10 @@ describe("SEO market map", () => {
       "pastry box order",
       "pastry gift box",
       "order a box of pastries",
+      "fresh pastry box",
+      "pastry box delivery",
     ]);
-    expect(plan.acceptedPhraseCount).toBe(3);
+    expect(plan.acceptedPhraseCount).toBe(5);
     expect(plan.complete).toBe(true);
   });
 
@@ -346,7 +350,7 @@ describe("SEO market map", () => {
         "naturally leavened bread",
       ]),
     );
-    expect(planned).toHaveLength(6);
+    expect(planned).toHaveLength(8);
     expect(planned.every((keyword) => !keyword.includes(","))).toBe(true);
     expect(provider.googleSearchVolume.mock.calls[0]?.[0]).toMatchObject({
       locationName: "Seattle,Washington,United States",
@@ -449,6 +453,7 @@ describe("SEO market map", () => {
     });
     expect(messages).toContain("Rivet and Road Auto Repair");
     expect(messages).toContain("Brake repair");
+    expect(messages).toContain("up to five distinct short customer phrases");
     expect(messages).not.toContain("private@example.test");
     expect(messages).not.toContain("555 0100");
     expect(messages).not.toContain("private address");
@@ -1251,6 +1256,7 @@ describe("SEO market map", () => {
                             cpc: 3.4,
                             competition: 0.5,
                           },
+                          keyword_properties: { keyword_difficulty: 18 },
                           search_intent_info: { main_intent: "informational" },
                         },
                       },
@@ -1361,6 +1367,7 @@ describe("SEO market map", () => {
         {
           keyword: "drain cleaning cost tacoma",
           keyword_info: { search_volume: 20 },
+          keyword_properties: { keyword_difficulty: 18 },
           search_intent_info: { main_intent: "informational" },
         },
       ],
@@ -1545,6 +1552,75 @@ describe("SEO market map", () => {
       provenance: "dataforseo_unavailable",
     });
     expect(dossier.warnings.join(" ")).toMatch(/metrics remain null/iu);
+  });
+
+  it("validates five model-assisted service phrases in the existing batched local metric requests", async () => {
+    const provider = researchProvider();
+    const intentPlanner = vi.fn(async ({ services }: { services: string[] }) => ({
+      plan: {
+        services: services.map((service) => ({
+          service,
+          phrases:
+            service === "Drain cleaning"
+              ? [
+                  "drain cleaning",
+                  "drain unclogging",
+                  "drain cleaning cost",
+                  "drain cleaning quote",
+                  "drain cleaning appointment",
+                ]
+              : [
+                  "water heater repair",
+                  "water heater replacement",
+                  "water heater leak repair",
+                  "water heater repair cost",
+                  "water heater service appointment",
+                ],
+        })),
+      },
+    }));
+
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: provider,
+      intentPlanner,
+      maxTasks: 16,
+      maxUsd: 0.25,
+    });
+
+    expect(dossier.intentPlanning.acceptedPhraseCount).toBe(10);
+    expect(provider.googleSearchVolume).toHaveBeenCalledTimes(1);
+    const metricRequests = [
+      provider.googleSearchVolume,
+      provider.searchIntent,
+      provider.bulkKeywordDifficulty,
+    ];
+    const expectedPhrases = [
+      "drain cleaning",
+      "drain unclogging",
+      "drain cleaning cost",
+      "drain cleaning quote",
+      "drain cleaning appointment",
+      "water heater repair",
+      "water heater replacement",
+      "water heater leak repair",
+      "water heater repair cost",
+      "water heater service appointment",
+    ];
+    for (const request of metricRequests) {
+      expect(request).toHaveBeenCalledTimes(1);
+      const requested = request.mock.calls[0]?.[0].keywords || [];
+      for (const phrase of expectedPhrases)
+        expect(requested).toContain(phrase);
+    }
+    expect(provider.googleSearchVolume.mock.calls[0]?.[0].keywords).toContain(
+      "drain cleaning Tacoma WA",
+    );
+    const serviceMetrics = dossier.completeness.serviceMetrics as Array<{
+      complete: boolean;
+    }>;
+    expect(serviceMetrics.every((item) => item.complete)).toBe(true);
+    expect(dossier.publishReady).toBe(true);
+    expect(dossier.cost.usd).toBeLessThanOrEqual(0.25);
   });
 
   it("blocks publication when any confirmed service lacks a complete measured primary query", async () => {

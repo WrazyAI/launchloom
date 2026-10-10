@@ -3950,6 +3950,7 @@ export async function authorExperienceCandidates({
         }
       }
       let referenceRepairCycles = 0;
+      let referenceFidelity = null;
       if (route.referenceDna?.complete) {
         let fidelity = validateReferenceCandidate({
           referenceDna: route.referenceDna,
@@ -3961,6 +3962,7 @@ export async function authorExperienceCandidates({
           motionSource: "export function mountExperienceMotion() {}",
         });
         while (
+          policy.runCreativeChecks &&
           (!fidelity.pass || !fidelity.visualPass) &&
           referenceRepairCycles < 2
         ) {
@@ -3992,10 +3994,11 @@ export async function authorExperienceCandidates({
             motionSource: "export function mountExperienceMotion() {}",
           });
         }
-        if (!fidelity.pass || !fidelity.visualPass)
+        if (!fidelity.pass || (policy.runCreativeChecks && !fidelity.visualPass))
           throw new Error(
             `Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
           );
+        referenceFidelity = fidelity;
       }
       const servicePageOutput = await generateValidatedSource({
         generate: limitedGenerate,
@@ -4084,10 +4087,11 @@ export async function authorExperienceCandidates({
           stylesSource: styles,
           motionSource: motion,
         });
-        if (!finalFidelity.pass || !finalFidelity.visualPass)
+        if (!finalFidelity.pass || (policy.runCreativeChecks && !finalFidelity.visualPass))
           throw new Error(
             `Reference fidelity failed for ${route.id}: ${finalFidelity.findings.map((item) => item.message).join(" | ")}`,
           );
+        referenceFidelity = finalFidelity;
       }
       const creativeManifest = buildCandidateManifest({
         candidate: {
@@ -4138,6 +4142,17 @@ export async function authorExperienceCandidates({
         intakeFitScore: Number(route.intakeFitScore || 0),
         explicitReferenceMatch: route.explicitReferenceMatch === true,
         referenceDna: route.referenceDna,
+        referenceFidelity: referenceFidelity
+          ? {
+              status: policy.runCreativeChecks
+                ? "enforced"
+                : "visual-checks-skipped",
+              hardChecksPassed: referenceFidelity.pass,
+              visualPass: referenceFidelity.visualPass,
+              score: referenceFidelity.score,
+              findings: referenceFidelity.findings,
+            }
+          : { status: "not-available" },
         mobileBehavior: route.mobileBehavior,
         fingerprint: creativeManifest.fingerprint,
         complianceRepaired,

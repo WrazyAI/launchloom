@@ -346,7 +346,10 @@ export async function runPipelineTest(input, dependencies) {
     if (!(await stage("select"))) return report;
     // Source selection, browser transitions and painted contrast are delivery gates.
     if (!(await stage("technical"))) return report;
-    if (policy.runSeoResearch) await stage("seo");
+    if (policy.runSeoResearch) {
+      const seo = await stage("seo");
+      if (input.profile === "seo-only" && !seo) return report;
+    }
     const relevant =
       input.profile === "seo-only"
         ? ["research", "select", "technical", "seo"]

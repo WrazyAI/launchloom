@@ -624,11 +624,13 @@ describe("focused pipeline orchestration", () => {
     expect(calls).not.toContain("deploy");
     expect(calls).not.toContain("notify");
   });
-  it("SEO failure remains failed even when a safe preview is delivered", async () => {
-    const { dependencies } = adapter("seo");
+  it("does not deliver an SEO-only preview when measured SEO readiness fails", async () => {
+    const { calls, dependencies } = adapter("seo");
     const report = await runPipelineTest(input, dependencies);
     expect(report.verdict).toBe("failed");
-    expect(report.previewDelivered).toBe(true);
+    expect(report.previewDelivered).toBe(false);
+    expect(calls).not.toContain("deploy");
+    expect(calls).not.toContain("notify");
   });
   it("rejects nonmanual events before external work", async () => {
     const { calls, dependencies } = adapter();

@@ -11,7 +11,7 @@ import { parseModelJson } from "./model-json.mjs";
 const DEFAULT_MODEL = "z-ai/glm-5.3-flash";
 const MAX_OUTPUT_TOKENS = 768;
 const MAX_SERVICES = 5;
-const MAX_PHRASES_PER_SERVICE = 3;
+const MAX_PHRASES_PER_SERVICE = 5;
 const STOP_WORDS = new Set([
   "a",
   "an",
@@ -212,7 +212,7 @@ export function createOpenRouterIntentQueryPlanner({
     const systemPrompt = [
       "You are a local-search language planner for small businesses.",
       'Return only a JSON object with this shape: {"services":[{"service":"exact confirmed service name","phrases":["customer query phrase"]}]}.',
-      "For every supplied service, propose up to three short customer phrases: the most common service wording, a natural equivalent people search for, and a purchase or booking phrase when that clearly means the same confirmed service.",
+      "For every supplied service, propose up to five distinct short customer phrases: direct service wording, natural equivalent wording, a customer need/problem wording, and cost/quote or booking wording when relevant to that same confirmed service. Do not force a category when it is not natural.",
       "Keep a meaningful word from the confirmed service in each phrase. Use a direct everyday synonym only when it clearly means the same offering.",
       "Do not invent or broaden services, products, ingredients, attributes, delivery, urgency, prices, availability, guarantees, outcomes, or business policies.",
       "Do not add a city, business name, or near-me wording; the research system adds location variants separately.",

@@ -655,6 +655,53 @@ export default function Experience`,
     expect([...routeIds]).toEqual(["route-01"]);
   });
 
+  it("skips visual fidelity repairs in SEO-only while retaining source-safety findings", async () => {
+    const registry = JSON.parse(
+      readFileSync("data/inspiration-registry.json", "utf8"),
+    );
+    const referenceDna = buildReferenceDna(registry.records[0], {
+      requireEvidence: true,
+    });
+    const requests: AuthorStageRequest[] = [];
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack: {
+        ...inspirationPack,
+        routes: inspirationPack.routes.map((route, index) =>
+          index === 0 ? { ...route, referenceDna } : route,
+        ),
+      },
+      testProfile: "seo-only",
+      generate: async (request) => {
+        requests.push(request);
+        const safe = safeStage(request);
+        if (request.stage !== "experience" || request.route.id !== "route-01")
+          return safe;
+        return {
+          content: String(safe.content).replace(
+            "<section data-hero>",
+            '<section data-hero>{content.hero.image && <img src={content.hero.image} alt="Reviewed jewelry" />}',
+          ),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(1);
+    expect(
+      requests.filter(
+        (request) =>
+          request.route.id === "route-01" && request.stage === "experience",
+      ),
+    ).toHaveLength(1);
+    expect(result.candidates[0]?.metadata.referenceFidelity).toMatchObject({
+      status: "visual-checks-skipped",
+      hardChecksPassed: true,
+      visualPass: false,
+    });
+    const fidelity = result.candidates[0]?.metadata.referenceFidelity;
+    expect(fidelity?.findings?.length || 0).toBeGreaterThan(0);
+  });
+
   it("still rejects incomplete inspiration contracts in an SEO-only authoring test", async () => {
     await expect(
       authorExperienceCandidates({
