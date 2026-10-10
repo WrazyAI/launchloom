@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { auditUnsupportedBusinessClaims } from "../scripts/business-copy-claims.mjs";
+import {
+  auditUnsupportedBusinessClaims,
+  findUnsupportedBusinessClaimMatches,
+} from "../scripts/business-copy-claims.mjs";
 
 describe("auditUnsupportedBusinessClaims", () => {
   it("does not treat the positive claim after 'not only' as negated", () => {
@@ -52,6 +55,18 @@ describe("auditUnsupportedBusinessClaims", () => {
         copy: { heroBody: "Meet Maya, your care coordinator." },
       }),
     ).toContain("staff");
+  });
+
+  it("returns exact unsupported claim text for private same-author repair", () => {
+    expect(
+      findUnsupportedBusinessClaimMatches("Meet Maya, your technician.", {}),
+    ).toEqual([
+      {
+        category: "staff",
+        match: "Meet Maya, your technician",
+        index: 0,
+      },
+    ]);
   });
 
   it("does not extend a price fact to a different service", () => {

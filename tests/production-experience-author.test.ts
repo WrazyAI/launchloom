@@ -2310,6 +2310,9 @@ export default function Experience`,
     expect(experienceRequests[1]?.validationError).toMatch(
       /unsupported business claims: staff/iu,
     );
+    expect(experienceRequests[1]?.validationError).toContain(
+      "Meet Maya, your technician",
+    );
     expect(
       routeRequests.every((request) =>
         request.rules.includes(

@@ -1,6 +1,6 @@
 import { compilePageBriefs } from "../templates/client-site/src/lib/page-briefs.mjs";
 import { redactPrivateLocation } from "../templates/client-site/src/lib/business-facts.mjs";
-import { auditUnsupportedBusinessClaims } from "./business-copy-claims.mjs";
+import { findUnsupportedBusinessClaimMatches } from "./business-copy-claims.mjs";
 import { routeLinkedContent } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import { fontFamilyById, resolveFontPairing } from "./font-catalog.mjs";
@@ -2941,14 +2941,32 @@ function authoredSourceText(source) {
 }
 
 function assertAuthoredCopyClaims(source, route, content, fileLabel) {
-  const unsupported = auditUnsupportedBusinessClaims(
-    { copy: { authoredSource: authoredSourceText(source) } },
+  const unsupported = findUnsupportedBusinessClaimMatches(
+    authoredSourceText(source),
     content?.claimEvidence || {},
   );
-  if (unsupported.length)
-    throw new Error(
-      `Candidate ${route.id} ${fileLabel} contains unsupported business claims: ${unsupported.join(", ")}.`,
+  if (unsupported.length) {
+    const categories = [
+      ...new Set(unsupported.map((item) => item.category)),
+    ].sort();
+    const error = new Error(
+      `Candidate ${route.id} ${fileLabel} contains unsupported business claims: ${categories.join(", ")}.`,
     );
+    const claimExamples = unsupported
+      .slice(0, 4)
+      .map((item) => `- ${item.category}: ${JSON.stringify(item.match)}`)
+      .join("\n");
+    Object.defineProperty(error, "repairDirective", {
+      enumerable: false,
+      value: [
+        `The deterministic business-fact gate rejected these exact visitor-facing phrases in ${fileLabel}:`,
+        claimExamples,
+        "Remove the listed phrases and any equivalent implication; do not rename or paraphrase unsupported personnel.",
+        "Preserve the reference composition with a non-personnel service/process treatment, and bind all remaining business copy to verified content tokens.",
+      ].join("\n"),
+    });
+    throw error;
+  }
 }
 
 function scalarContentValues(value) {
@@ -3630,6 +3648,13 @@ function stageValue(value, key, stage) {
   return asText(value[key], `${stage}.${key}`);
 }
 
+function validationRepairMessage(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return typeof error?.repairDirective === "string"
+    ? `${message}\n\n${error.repairDirective}`
+    : message;
+}
+
 async function generateStageValue(generate, request, key, stage) {
   let result;
   try {
@@ -3638,7 +3663,7 @@ async function generateStageValue(generate, request, key, stage) {
   } catch (error) {
     result = await generate({
       ...request,
-      validationError: error instanceof Error ? error.message : String(error),
+      validationError: validationRepairMessage(error),
       previousSource: boundedRepairContext(result),
     });
     return { value: stageValue(result, key, stage), repaired: true };
@@ -3861,8 +3886,7 @@ export async function authorExperienceCandidates({
               stage: "experience",
               designContract,
               previousSource: experience,
-              validationError:
-                error instanceof Error ? error.message : String(error),
+              validationError: validationRepairMessage(error),
             },
             "content",
             "experience",
@@ -3875,10 +3899,7 @@ export async function authorExperienceCandidates({
             routeContentManifest.visualBrief,
           );
         } catch (repairError) {
-          const repairMessage =
-            repairError instanceof Error
-              ? repairError.message
-              : String(repairError);
+          const repairMessage = validationRepairMessage(repairError);
           const finalRepair = await generateStageValue(
             limitedGenerate,
             {
@@ -3901,9 +3922,7 @@ export async function authorExperienceCandidates({
             );
           } catch (finalRepairError) {
             const finalRepairMessage =
-              finalRepairError instanceof Error
-                ? finalRepairError.message
-                : String(finalRepairError);
+              validationRepairMessage(finalRepairError);
             const lastRepair = await generateStageValue(
               limitedGenerate,
               {

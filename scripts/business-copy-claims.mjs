@@ -382,3 +382,33 @@ export function auditUnsupportedBusinessClaims(config = {}, intake = {}) {
     ),
   ].sort();
 }
+
+/**
+ * Return the bounded exact phrases that triggered authored-copy claim rules.
+ * Callers use this only to give the same author a precise private repair note;
+ * public audit and failure summaries should continue to expose categories only.
+ */
+export function findUnsupportedBusinessClaimMatches(text, intake = {}) {
+  const source = String(text || "");
+  const findings = [];
+  for (const rule of claimRules) {
+    const pattern = new RegExp(rule.pattern.source, rule.pattern.flags);
+    for (const match of source.matchAll(pattern)) {
+      if (
+        isNegated(source, match.index || 0) ||
+        isCautiousInquiry(source, match.index || 0) ||
+        supportedByEvidence(rule, match, intake, source)
+      )
+        continue;
+      findings.push({
+        category: rule.category,
+        match: match[0].slice(0, 180),
+        index: match.index || 0,
+      });
+    }
+  }
+  return findings.sort(
+    (left, right) =>
+      left.index - right.index || left.category.localeCompare(right.category),
+  );
+}
