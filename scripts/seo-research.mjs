@@ -2262,6 +2262,7 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
     };
     return error;
   };
+  const googleAdsLocationLists = new Map();
   async function post(path, payload) {
     const response = await fetchImpl(`https://api.dataforseo.com${path}`, {
       method: "POST",
@@ -2312,6 +2313,149 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
       );
     return { body, task, cost: finiteMetric(body.cost ?? task.cost) };
   }
+  const countryIsoCodeForLocation = (locationName) => {
+    const country = text(locationName, 180).split(",").at(-1)?.trim() || "";
+    const upper = country.toUpperCase();
+    if (upper === "USA") return "US";
+    if (upper === "UK") return "GB";
+    if (/^[A-Z]{2}$/u.test(upper)) return upper;
+    return (
+      Object.entries(COUNTRY_NAMES).find(
+        ([code, name]) =>
+          code.length === 2 &&
+          code !== "UK" &&
+          name.toLocaleLowerCase() === country.toLocaleLowerCase(),
+      )?.[0] || null
+    );
+  };
+  const locationParts = (value) =>
+    text(value, 180)
+      .split(",")
+      .map((part) =>
+        part
+          .normalize("NFKD")
+          .replace(/\p{M}/gu, "")
+          .toLocaleLowerCase()
+          .replace(/[^\p{L}\p{N}]+/gu, " ")
+          .trim(),
+      )
+      .filter(Boolean);
+  async function googleAdsLocationList(countryCode) {
+    const cached = googleAdsLocationLists.get(countryCode);
+    if (cached) return cached;
+    const pending = (async () => {
+      const response = await fetchImpl(
+        `https://api.dataforseo.com/v3/keywords_data/google_ads/locations/${countryCode.toLocaleLowerCase()}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: authorization,
+            "Content-Type": "application/json",
+          },
+          signal: AbortSignal.timeout(30_000),
+        },
+      );
+      if (!response.ok)
+        throw new Error(`DataForSEO returned HTTP ${response.status}.`);
+      const body = await response.json();
+      const statusCode = Number(body?.status_code);
+      if (!Number.isFinite(statusCode) || statusCode !== 20000)
+        throw taskFailure(
+          `DataForSEO location lookup response ${Number.isFinite(statusCode) ? statusCode : "with an invalid status code"}: ${text(body?.status_message || "DataForSEO location lookup failed.", 300)}`,
+          Number.isFinite(statusCode) ? statusCode : null,
+          body?.cost,
+        );
+      const tasks = Array.isArray(body.tasks) ? body.tasks : [];
+      const failedTask = tasks.find(
+        (item) => Number(item?.status_code) !== 20000,
+      );
+      if (failedTask)
+        throw taskFailure(
+          `DataForSEO location lookup task ${Number.isFinite(Number(failedTask.status_code)) ? Number(failedTask.status_code) : "with an invalid status code"}: ${text(failedTask.status_message || "DataForSEO location lookup failed.", 300)}`,
+          Number.isFinite(Number(failedTask.status_code))
+            ? Number(failedTask.status_code)
+            : null,
+          body?.cost ?? failedTask.cost,
+        );
+      const tasksError = Number(body.tasks_error ?? 0);
+      if (!Number.isFinite(tasksError) || tasksError < 0)
+        throw new Error("DataForSEO returned an invalid location lookup task count.");
+      if (tasksError > 0)
+        throw taskFailure(
+          `DataForSEO reported ${tasksError} location lookup task error(s) without task details.`,
+          null,
+          body?.cost,
+        );
+      const task = tasks[0];
+      if (!task || !Array.isArray(task.result))
+        throw taskFailure(
+          "DataForSEO returned no location lookup results.",
+          null,
+          body?.cost ?? task?.cost,
+        );
+      return task.result;
+    })();
+    googleAdsLocationLists.set(countryCode, pending);
+    try {
+      return await pending;
+    } catch (error) {
+      if (googleAdsLocationLists.get(countryCode) === pending)
+        googleAdsLocationLists.delete(countryCode);
+      throw error;
+    }
+  }
+  async function googleAdsLocationCode(locationName) {
+    const requestedName = text(locationName, 180);
+    if (!requestedName) return 2840;
+    const countryCode = countryIsoCodeForLocation(requestedName);
+    if (!countryCode)
+      throw new Error(
+        "DataForSEO could not resolve an ISO country code for Google Ads search volume.",
+      );
+    const requestedParts = locationParts(requestedName);
+    const available = await googleAdsLocationList(countryCode);
+    const candidates = available.filter(
+      (location) =>
+        String(location?.country_iso_code || "").toUpperCase() ===
+          countryCode.toUpperCase() &&
+        Number.isFinite(Number(location?.location_code)) &&
+        Number(location.location_code) > 0,
+    );
+    const exact = candidates.filter(
+      (location) =>
+        locationParts(location.location_name).join(" ") ===
+        requestedParts.join(" "),
+    );
+    const matches = exact.length
+      ? exact
+      : candidates.filter((location) => {
+          const availableParts = locationParts(location.location_name);
+          if (requestedParts.length === 1)
+            return (
+              String(location.location_type || "").toLocaleLowerCase() ===
+                "country" &&
+              availableParts.length === 1 &&
+              availableParts[0] === requestedParts[0]
+            );
+          let offset = 0;
+          for (const part of requestedParts) {
+            const matchIndex = availableParts.indexOf(part, offset);
+            if (matchIndex < 0) return false;
+            offset = matchIndex + 1;
+          }
+          return true;
+        });
+    const uniqueCodes = [
+      ...new Set(
+        matches.map((location) => Number(location.location_code)),
+      ),
+    ];
+    if (uniqueCodes.length !== 1)
+      throw new Error(
+        "DataForSEO could not resolve a unique local location code for Google Ads search volume.",
+      );
+    return uniqueCodes[0];
+  }
   const locationFields = (locationName, languageCode) => ({
     ...(locationName
       ? { location_name: locationName }
@@ -2324,7 +2468,7 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
         "/v3/keywords_data/google_ads/search_volume/live",
         {
           keywords,
-          location_name: locationName,
+          location_code: await googleAdsLocationCode(locationName),
           language_code: languageCode || "en",
         },
       );

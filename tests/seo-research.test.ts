@@ -28,6 +28,35 @@ const intake = {
   differentiators: "Clear communication",
 };
 
+function dataForSeoLocationsResponse(locations: Array<Record<string, unknown>>) {
+  return Response.json({
+    status_code: 20000,
+    tasks_error: 0,
+    tasks: [{ status_code: 20000, result: locations }],
+  });
+}
+
+const commonUsGoogleAdsLocations = [
+  {
+    location_code: 1010001,
+    location_name: "Seattle,Washington,United States",
+    country_iso_code: "US",
+    location_type: "City",
+  },
+  {
+    location_code: 1010002,
+    location_name: "Tacoma,Washington,United States",
+    country_iso_code: "US",
+    location_type: "City",
+  },
+  {
+    location_code: 1010003,
+    location_name: "Austin,Texas,United States",
+    country_iso_code: "US",
+    location_type: "City",
+  },
+];
+
 function researchProvider(
   options: { searchVolumeCost?: number; serpFailure?: boolean } = {},
 ) {
@@ -774,11 +803,192 @@ describe("SEO market map", () => {
     ).toBe("United States");
   });
 
-  it("surfaces the Google Ads task error instead of a top-level Ok message", async () => {
+  it("resolves the local Google Ads location code and never sends location_name to search volume", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          status_code: 20000,
+          tasks_error: 0,
+          tasks: [
+            {
+              status_code: 20000,
+              result: [
+                {
+                  location_code: 1012345,
+                  location_name: "Madison,Wisconsin,United States",
+                  country_iso_code: "US",
+                  location_type: "City",
+                },
+              ],
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          status_code: 20000,
+          tasks_error: 0,
+          cost: 0.09,
+          tasks: [
+            {
+              status_code: 20000,
+              result: [
+                {
+                  keyword: "skin care consultation madison",
+                  search_volume: 170,
+                  cpc: 2.4,
+                  competition: 0.6,
+                },
+              ],
+            },
+          ],
+        }),
+      );
     const client = createDataForSeoClient({
       login: "test-login",
       password: "test-password",
-      fetchImpl: vi.fn(async () =>
+      fetchImpl,
+    });
+
+    await expect(
+      client.googleSearchVolume({
+        keywords: ["skin care consultation madison"],
+        locationName: "Madison,Wisconsin,United States",
+      }),
+    ).resolves.toMatchObject({
+      keywords: [
+        {
+          keyword: "skin care consultation madison",
+          searchVolume: 170,
+        },
+      ],
+    });
+
+    expect(fetchImpl.mock.calls[0]?.[0]).toBe(
+      "https://api.dataforseo.com/v3/keywords_data/google_ads/locations/us",
+    );
+    expect(fetchImpl.mock.calls[0]?.[1]).toMatchObject({ method: "GET" });
+    expect(fetchImpl.mock.calls[1]?.[0]).toBe(
+      "https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live",
+    );
+    const payload = JSON.parse(fetchImpl.mock.calls[1]?.[1]?.body as string);
+    expect(payload).toEqual([
+      {
+        keywords: ["skin care consultation madison"],
+        location_code: 1012345,
+        language_code: "en",
+      },
+    ]);
+    expect(payload[0]).not.toHaveProperty("location_name");
+  });
+
+  it("fails closed when a local Google Ads place name resolves ambiguously", async () => {
+    const fetchImpl = vi.fn(async () =>
+      Response.json({
+        status_code: 20000,
+        tasks_error: 0,
+        tasks: [
+          {
+            status_code: 20000,
+            result: [
+              {
+                location_code: 101,
+                location_name: "Springfield,Illinois,United States",
+                country_iso_code: "US",
+                location_type: "City",
+              },
+              {
+                location_code: 202,
+                location_name: "Springfield,Missouri,United States",
+                country_iso_code: "US",
+                location_type: "City",
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    const client = createDataForSeoClient({
+      login: "test-login",
+      password: "test-password",
+      fetchImpl,
+    });
+
+    await expect(
+      client.googleSearchVolume({
+        keywords: ["plumber Springfield"],
+        locationName: "Springfield,United States",
+      }),
+    ).rejects.toThrow("DataForSEO could not resolve a unique local location code");
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("caches location lists and resolves country aliases for local search volume", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        dataForSeoLocationsResponse([
+          {
+            location_code: 1005001,
+            location_name: "London,England,United Kingdom",
+            country_iso_code: "GB",
+            location_type: "City",
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          status_code: 20000,
+          tasks_error: 0,
+          cost: 0.09,
+          tasks: [{ status_code: 20000, result: [{ keyword: "facial care", search_volume: 50 }] }],
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          status_code: 20000,
+          tasks_error: 0,
+          cost: 0.09,
+          tasks: [{ status_code: 20000, result: [{ keyword: "skin consultation", search_volume: 30 }] }],
+        }),
+      );
+    const client = createDataForSeoClient({
+      login: "test-login",
+      password: "test-password",
+      fetchImpl,
+    });
+
+    await client.googleSearchVolume({
+      keywords: ["facial care"],
+      locationName: "London,United Kingdom",
+    });
+    await client.googleSearchVolume({
+      keywords: ["skin consultation"],
+      locationName: "London,United Kingdom",
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(fetchImpl.mock.calls[0]?.[0]).toBe(
+      "https://api.dataforseo.com/v3/keywords_data/google_ads/locations/gb",
+    );
+    expect(JSON.parse(fetchImpl.mock.calls[1]?.[1]?.body as string)[0]).toMatchObject({
+      keywords: ["facial care"],
+      location_code: 1005001,
+    });
+    expect(JSON.parse(fetchImpl.mock.calls[2]?.[1]?.body as string)[0]).toMatchObject({
+      keywords: ["skin consultation"],
+      location_code: 1005001,
+    });
+  });
+
+  it("surfaces the Google Ads task error instead of a top-level Ok message", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        dataForSeoLocationsResponse(commonUsGoogleAdsLocations),
+      )
+      .mockResolvedValueOnce(
         Response.json({
           status_code: 20000,
           status_message: "Ok.",
@@ -790,7 +1000,11 @@ describe("SEO market map", () => {
             },
           ],
         }),
-      ),
+      );
+    const client = createDataForSeoClient({
+      login: "test-login",
+      password: "test-password",
+      fetchImpl,
     });
 
     await expect(
@@ -836,10 +1050,12 @@ describe("SEO market map", () => {
   });
 
   it("accepts numeric-string DataForSEO success codes and zero task errors", async () => {
-    const client = createDataForSeoClient({
-      login: "test-login",
-      password: "test-password",
-      fetchImpl: vi.fn(async () =>
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        dataForSeoLocationsResponse(commonUsGoogleAdsLocations),
+      )
+      .mockResolvedValueOnce(
         Response.json({
           status_code: "20000",
           status_message: "Ok.",
@@ -859,7 +1075,11 @@ describe("SEO market map", () => {
             },
           ],
         }),
-      ),
+      );
+    const client = createDataForSeoClient({
+      login: "test-login",
+      password: "test-password",
+      fetchImpl,
     });
 
     await expect(
@@ -883,6 +1103,13 @@ describe("SEO market map", () => {
   it("maps local Google Ads metrics, measured search intent, KD, SERP, related-keyword, and ranked-keyword fields", async () => {
     const fetchImpl = vi
       .fn()
+      .mockResolvedValueOnce(
+        dataForSeoLocationsResponse([
+          commonUsGoogleAdsLocations.find(
+            (location) => location.location_name.startsWith("Tacoma,"),
+          )!,
+        ]),
+      )
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
@@ -1147,14 +1374,18 @@ describe("SEO market map", () => {
         },
       ],
     });
-    expect(fetchImpl).toHaveBeenCalledTimes(6);
+    expect(fetchImpl).toHaveBeenCalledTimes(7);
     expect(fetchImpl.mock.calls[0][0]).toBe(
+      "https://api.dataforseo.com/v3/keywords_data/google_ads/locations/us",
+    );
+    expect(fetchImpl.mock.calls[0][1]).toMatchObject({ method: "GET" });
+    expect(fetchImpl.mock.calls[1][0]).toBe(
       "https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live",
     );
-    expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toEqual([
+    expect(JSON.parse(fetchImpl.mock.calls[1][1].body)).toEqual([
       {
         keywords: ["drain cleaning tacoma"],
-        location_name: "Tacoma,Washington,United States",
+        location_code: 1010002,
         language_code: "en",
       },
     ]);
@@ -2095,10 +2326,16 @@ describe("SEO market map", () => {
 });
 
 it("maps real Google Ads competition indexes without inventing values from categorical labels", async () => {
-  const client = createDataForSeoClient({
-    login: "fixture",
-    password: "fixture",
-    fetchImpl: vi.fn(async () =>
+  const fetchImpl = vi
+    .fn()
+    .mockResolvedValueOnce(
+      dataForSeoLocationsResponse([
+        commonUsGoogleAdsLocations.find(
+          (location) => location.location_name.startsWith("Austin,"),
+        )!,
+      ]),
+    )
+    .mockResolvedValueOnce(
       Response.json({
         status_code: 20000,
         tasks_error: 0,
@@ -2132,7 +2369,11 @@ it("maps real Google Ads competition indexes without inventing values from categ
           },
         ],
       }),
-    ),
+    );
+  const client = createDataForSeoClient({
+    login: "fixture",
+    password: "fixture",
+    fetchImpl,
   });
   const result = await client.googleSearchVolume({
     keywords: ["dental checkups", "zero competition", "missing index"],
