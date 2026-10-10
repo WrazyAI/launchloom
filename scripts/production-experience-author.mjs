@@ -17,6 +17,7 @@ import {
 import {
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
+  VERIFIED_CLIENT_PERSONNEL_CONTRACT,
 } from "./creative-authoring-output.mjs";
 import {
   assertCreativeInnerPageSource,
@@ -3604,6 +3605,7 @@ function authorRules() {
     "Import LeadForm from @launchloom/runtime and render exactly one instance in the reference-directed location: when desktop or mobile compositionTopology is utility-panel, place it in that utility panel inside the hero and retain the contact section for contact details; otherwise place it inside the contact section. Never fake a form or create a second lead endpoint.",
     EARLY_CONVERSION_OUTPUT_CONTRACT,
     REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
+    VERIFIED_CLIENT_PERSONNEL_CONTRACT,
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "Render exactly one meaningful H1 inside the page's single <main> landmark. The main landmark must contain the hero heading and unique page content; keep the H1 out of sibling headers or sections. Use semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
     "At 390px, recombine every navigation row so the wordmark, all navigation links, and the primary action fit within the viewport; allow a deliberate second row or stack instead of a fixed non-wrapping min-content row. At all viewports, hero copy, image and CTA must remain inside the hero's visible bounds; prefer content-driven sizing and never clip text with a fixed-height overflow-hidden box. If the reference requires a fixed opening composition, prove every element fits it.",

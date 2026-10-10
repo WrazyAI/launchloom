@@ -2259,6 +2259,76 @@ export default function Experience`,
     ).toBe(true);
   });
 
+  it("keeps reference staff imagery separate from client facts through authoring repairs", async () => {
+    const requests: AuthorStageRequest[] = [];
+    const personnelReferencePack = {
+      ...inspirationPack,
+      routes: inspirationPack.routes.map((route) =>
+        route.id === "route-02"
+          ? {
+              ...route,
+              label: "Morris-Jenkins home-services reference",
+              signature: "technician campaign poster and person-led reassurance",
+            }
+          : route,
+      ),
+    };
+
+    const result = await authorExperienceCandidates({
+      site: {
+        ...site,
+        business: { ...site.business, staff: [], team: [], teamMembers: [] },
+      },
+      inspirationPack: personnelReferencePack,
+      generate: async (request) => {
+        requests.push(request);
+        const value = safeStage(request);
+        if (
+          request.route.id === "route-02" &&
+          request.stage === "experience" &&
+          !request.validationError
+        )
+          return {
+            content: String(value.content).replace(
+              "</main>",
+              "<section><p>Meet Maya, your technician</p></section></main>",
+            ),
+          };
+        return value;
+      },
+    });
+
+    const routeRequests = requests.filter(
+      (request) => request.route.id === "route-02",
+    );
+    const experienceRequests = routeRequests.filter(
+      (request) => request.stage === "experience",
+    );
+    expect(result.candidates).toHaveLength(3);
+    expect(experienceRequests).toHaveLength(2);
+    expect(experienceRequests[1]?.validationError).toMatch(
+      /unsupported business claims: staff/iu,
+    );
+    expect(
+      routeRequests.every((request) =>
+        request.rules.includes(
+          "Reference screenshots, Reference DNA, and dossiers describe the source brand only; they do not verify this client's employees, technicians, staff count, names, roles, credentials, uniforms, or team.",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      routeRequests.every(
+        (request) =>
+          request.rules.includes(
+            "Only claim or depict client staff when the corresponding verified staff/person detail appears in content.claimEvidence.staff, content.claimEvidence.teamMembers, or content.claimEvidence.team.",
+          ) &&
+          request.rules.includes(
+            "When none of those fields contains matching verified detail, do not invent named people, headcount, technician attendance, uniforms, or a client team. Translate person-led reference mechanics into a non-personnel process or decision chapter using only verified facts and available content tokens. Never use generated or stock people as this client's employees or customers.",
+          ),
+      ),
+    ).toBe(true);
+  });
+
   it("rejects unsafe imports and network-capable authored code", async () => {
     await expect(
       authorExperienceCandidates({

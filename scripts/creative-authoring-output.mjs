@@ -25,6 +25,13 @@ export const REFERENCE_PROVENANCE_OUTPUT_CONTRACT = [
   "Never render them in visitor-facing copy, page titles or descriptions, Open Graph metadata, structured data, image alt text, link labels, or credits; they are not client business facts.",
 ].join("\n");
 
+export const VERIFIED_CLIENT_PERSONNEL_CONTRACT = [
+  "CLIENT PERSONNEL FACT BOUNDARY",
+  "Reference screenshots, Reference DNA, and dossiers describe the source brand only; they do not verify this client's employees, technicians, staff count, names, roles, credentials, uniforms, or team.",
+  "Only claim or depict client staff when the corresponding verified staff/person detail appears in content.claimEvidence.staff, content.claimEvidence.teamMembers, or content.claimEvidence.team.",
+  "When none of those fields contains matching verified detail, do not invent named people, headcount, technician attendance, uniforms, or a client team. Translate person-led reference mechanics into a non-personnel process or decision chapter using only verified facts and available content tokens. Never use generated or stock people as this client's employees or customers.",
+].join("\n");
+
 export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "CLIENT PALETTE ROLE CONTRACT",
   "Map the client visual brief palette to page surfaces by role:",

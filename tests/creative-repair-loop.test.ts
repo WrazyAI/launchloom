@@ -1650,6 +1650,15 @@ describe("creative repair loop", () => {
       "rights and attribution are research metadata only",
     );
     expect(prompt).toContain("Never render them in visitor-facing copy");
+    expect(prompt).toContain(
+      "Reference screenshots, Reference DNA, and dossiers describe the source brand only; they do not verify this client's employees, technicians, staff count, names, roles, credentials, uniforms, or team.",
+    );
+    expect(prompt).toContain(
+      "Only claim or depict client staff when the corresponding verified staff/person detail appears in content.claimEvidence.staff, content.claimEvidence.teamMembers, or content.claimEvidence.team.",
+    );
+    expect(prompt).toContain(
+      "When none of those fields contains matching verified detail, do not invent named people, headcount, technician attendance, uniforms, or a client team.",
+    );
     expect(prompt).toContain("EARLY CONVERSION INVARIANT");
     expect(prompt).toContain("native anchor to #contact");
     expect(prompt).toContain("content.hero.primaryLabel");
