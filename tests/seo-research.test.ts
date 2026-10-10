@@ -242,6 +242,18 @@ describe("SEO market map", () => {
     });
   });
 
+  it("qualifies a full US state name with the United States for metric targeting", () => {
+    expect(
+      normaliseSeoIntake({
+        services: "Skin-care consultation",
+        primaryCity: "Madison, Wisconsin",
+      }),
+    ).toMatchObject({
+      metricLocation: "Madison,Wisconsin,United States",
+      labsLocation: "United States",
+    });
+  });
+
   it("infers local, cost, and booking query families from minimal confirmed intake", async () => {
     const provider = researchProvider();
     const dossier = await researchSiteContext(

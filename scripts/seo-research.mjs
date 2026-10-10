@@ -204,8 +204,12 @@ function metricLocationForCity(
   }
   if (parts.length >= 2) {
     const region = parts[1].toUpperCase();
-    if (US_STATE_NAMES[region])
-      return `${parts[0]},${US_STATE_NAMES[region]},United States`;
+    const usState =
+      US_STATE_NAMES[region] ||
+      Object.values(US_STATE_NAMES).find(
+        (name) => name.toLocaleLowerCase() === parts[1].toLocaleLowerCase(),
+      );
+    if (usState) return `${parts[0]},${usState},United States`;
     if (COUNTRY_NAMES[region]) return `${parts[0]},${COUNTRY_NAMES[region]}`;
     return `${parts[0]},${parts[1]}`;
   }
