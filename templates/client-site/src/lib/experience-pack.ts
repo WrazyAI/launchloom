@@ -768,6 +768,9 @@ function contentFor(site: SiteConfig): ExperienceContent {
   const eventOrderServices = site.services
     .filter((service) => /cater|cake|event/iu.test(service.name))
     .map((service) => service.name.toLocaleLowerCase());
+  const selectedRouteAssets = site.design?.experience?.routeId
+    ? site.creativeAssets?.[site.design.experience.routeId]
+    : undefined;
   const locationMap = resolveLocationMap({
     businessName: site.business.name,
     address: site.business.address,
@@ -789,9 +792,20 @@ function contentFor(site: SiteConfig): ExperienceContent {
       heading: copy.heroHeading || site.business.tagline,
       body: copy.heroBody || site.business.description,
       primaryLabel: site.business.primaryCta,
-      image: site.assets?.photoOne || site.images.hero || site.images.secondary,
-      secondaryImage: site.assets?.photoTwo || site.images.secondary,
-      tertiaryImage: site.assets?.photoThree || site.images.tertiary || "",
+      image:
+        site.assets?.photoOne ||
+        selectedRouteAssets?.hero ||
+        site.images.hero ||
+        site.images.secondary,
+      secondaryImage:
+        site.assets?.photoTwo ||
+        selectedRouteAssets?.secondary ||
+        site.images.secondary,
+      tertiaryImage:
+        site.assets?.photoThree ||
+        selectedRouteAssets?.tertiary ||
+        site.images.tertiary ||
+        "",
       offer: site.business.offer,
     },
     services: site.services,

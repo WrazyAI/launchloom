@@ -1,6 +1,8 @@
 import { publicGenerationIntake } from "../templates/client-site/src/lib/business-facts.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { normalizeBusinessKind } from "./business-kind.mjs";
+import { inferBusinessFocusTerms } from "./business-focus.mjs";
 import { launchesForBusinessKind } from "./launch-history.mjs";
 import { buildInspirationPack } from "./inspiration-registry.mjs";
 
@@ -77,7 +79,9 @@ function positiveStyleTerms(value) {
     const positiveClauses = [negation < 0 ? clause : clause.slice(0, negation)];
     if (negation >= 0) {
       const tail = clause.slice(negation);
-      const contrast = tail.match(/\b(?:but|however|instead|rather|yet|still)\b(?:\s+(?:keep|use|prefer|include|retain|choose))?/iu);
+      const contrast = tail.match(
+        /\b(?:but|however|instead|rather|yet|still)\b(?:\s+(?:keep|use|prefer|include|retain|choose))?/iu,
+      );
       if (contrast?.index !== undefined) {
         positiveClauses.push(tail.slice(contrast.index + contrast[0].length));
       }
@@ -123,19 +127,45 @@ const [config, baseRegistry, history, intake] = await Promise.all([
   fs.readFile(configPath, "utf8").then(JSON.parse),
   fs.readFile(registryPath, "utf8").then(JSON.parse),
   fs.readFile(historyPath, "utf8").then(JSON.parse),
-  args.intake
-    ? intakeFromFile(path.resolve(args.intake))
-    : {},
+  args.intake ? intakeFromFile(path.resolve(args.intake)) : {},
 ]);
 const registry = baseRegistry;
-const normalizedIndustry = String(config.businessKind || config.industry || "").toLowerCase();
-const industry = ["", "all", "general", "other"].includes(normalizedIndustry)
+const publicIntake = publicGenerationIntake(intake);
+const normalizedIndustry = String(
+  config.businessKind || config.industry || "",
+).toLowerCase();
+let industry = ["", "all", "general", "other"].includes(normalizedIndustry)
   ? intake.industry || config.businessKind || config.preset || "all"
   : normalizedIndustry;
+const businessFocusTerms = inferBusinessFocusTerms({
+  businessName: publicIntake.businessName || config.business?.name,
+  businessKind: intake.businessKind || config.businessKind,
+  industry: intake.industry || config.industry,
+  services:
+    Array.isArray(intake.services) && intake.services.length
+      ? intake.services
+      : config.services || [],
+});
+if (businessFocusTerms.length === 1) {
+  const focus = normalizeBusinessKind(businessFocusTerms[0]);
+  const coreCollection = await fs
+    .readFile(
+      path.join(repository, "data/reference-library/core-collection.json"),
+      "utf8",
+    )
+    .then(JSON.parse);
+  const dedicatedNiche = (coreCollection?.niches || []).find(
+    (niche) =>
+      normalizeBusinessKind(niche.businessKind) === focus &&
+      Array.isArray(niche.referenceIds) &&
+      niche.referenceIds.length >= 6,
+  );
+  if (dedicatedNiche) industry = dedicatedNiche.businessKind;
+}
 const recent = launchesForBusinessKind(history, industry);
 const styleText = [
-  publicGenerationIntake(intake).stylePreference,
-  publicGenerationIntake(intake).brandNotes,
+  publicIntake.stylePreference,
+  publicIntake.brandNotes,
   config.style?.preference,
   config.style?.visualDirection,
   config.style?.artDirection,
@@ -154,6 +184,7 @@ const pack = buildInspirationPack(
       config.business?.name ||
       "launchloom-intake",
     industry,
+    businessFocusTerms,
     styleTerms,
     styleText,
     recentLaunches: recent,
@@ -161,9 +192,7 @@ const pack = buildInspirationPack(
       Array.isArray(launch.referenceIds) ? launch.referenceIds : [],
     ),
     recentFamilyIds: recent.flatMap((launch) => [
-      ...(Array.isArray(launch.routeFamilyIds)
-        ? launch.routeFamilyIds
-        : []),
+      ...(Array.isArray(launch.routeFamilyIds) ? launch.routeFamilyIds : []),
       launch.creativeFamilyId,
       launch.referenceFamilyId,
     ]),
@@ -177,8 +206,11 @@ const pack = buildInspirationPack(
 pack.referenceLibrary = {
   policy: "permission-cleared-only",
   source: "data/reference-library/core-collection.json",
-  selectedDossierCount: pack.routes.filter((route) => route.referenceDossier).length,
-  recordIds: pack.routes.map((route) => route.referenceDossier?.id).filter(Boolean),
+  selectedDossierCount: pack.routes.filter((route) => route.referenceDossier)
+    .length,
+  recordIds: pack.routes
+    .map((route) => route.referenceDossier?.id)
+    .filter(Boolean),
 };
 
 await fs.mkdir(path.dirname(outputPath), { recursive: true });

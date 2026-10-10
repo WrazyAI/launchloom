@@ -246,6 +246,7 @@ describe("creative candidate promotion", () => {
     );
     expect(config.design.experience.renderer).toBe("creative-candidate");
     expect(config.design.experience.familyId).toBe("editorial-monument");
+    expect(config.design.experience.routeId).toBe("route-01");
   });
 
   it("normalizes service slug fragments to real SEO routes before promotion", async () => {
