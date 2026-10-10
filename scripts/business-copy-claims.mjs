@@ -49,7 +49,7 @@ const claimRules = [
   {
     category: "ratings",
     pattern:
-      /\b(?:award[- ]winning|five[- ]star|5[- ]star|top[- ]rated|best[- ]rated|rated\s+\d(?:\.\d)?|\d(?:\.\d)?\s+stars?|[\d,]+\s+(?:reviews?|customers?|clients?|families?|homeowners?|drivers?|patients?))\b/giu,
+      /\b(?:award[- ]winning|five[- ]star|5[- ]star|top[- ]rated|best[- ]rated|rated\s+\d(?:\.\d)?|\d(?:\.\d)?\s+stars?|\d[\d,]*\s+(?:reviews?|customers?|clients?|families?|homeowners?|drivers?|patients?))\b/giu,
     fields: [
       "reviews",
       "testimonials",
@@ -87,7 +87,7 @@ const claimRules = [
   {
     category: "staff",
     pattern:
-      /\b(?:(?:our|meet)\s+\d+\s+(?:technicians|employees|staff|specialists|experts|team members)|(?:owner|founder|director|technician|specialist)\s+[A-Z][a-z]+\s+[A-Z][a-z]+|meet\s+[A-Z][\p{L}'-]+(?:\s+[A-Z][\p{L}'-]+)?\s*,\s+(?:your|our)\s+(?:[\p{L}'-]+\s+){0,3}(?:care coordinator|technician|specialist|nurse|therapist|inspector|contractor|mechanic|painter|technician|owner|founder|director)\b)/giu,
+      /\b(?:(?:[Oo]ur|[Mm]eet)\s+\d+\s+(?:[Tt]echnicians|[Ee]mployees|staff|[Ss]pecialists|[Ee]xperts|[Tt]eam members)|(?:[Oo]wner|[Ff]ounder|[Dd]irector|[Tt]echnician|[Ss]pecialist)\s+\p{Lu}[\p{L}'-]+(?:\s+\p{Lu}[\p{L}'-]+)+|[Mm]eet\s+\p{Lu}[\p{L}'-]+(?:\s+\p{Lu}[\p{L}'-]+)?\s*,\s*(?:[Yy]our|[Oo]ur)\s+(?:[\p{L}'-]+\s+){0,3}(?:[Cc]are [Cc]oordinator|[Tt]echnician|[Ss]pecialist|[Nn]urse|[Tt]herapist|[Ii]nspector|[Cc]ontractor|[Mm]echanic|[Pp]ainter|[Oo]wner|[Ff]ounder|[Dd]irector)\b)/gu,
     fields: ["staff", "teamMembers", "team", "business.staff"],
   },
   {

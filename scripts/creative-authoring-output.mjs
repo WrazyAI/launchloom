@@ -170,7 +170,31 @@ function adaptReferenceValue(value, key = "") {
  */
 export function adaptReferencePersonnelCuesForClient(route, contentShape = {}) {
   if (!referencePersonnelCueTranslation({ route, contentShape })) return route;
-  return adaptReferenceValue(route);
+  const adapted = adaptReferenceValue(route);
+  const originalDna = route.referenceDna;
+  const adaptedDna = adapted.referenceDna;
+  if (originalDna && adaptedDna) {
+    // These values are machine-readable identifiers checked against the
+    // assigned route, not prose for the authoring model to rewrite.
+    if (Array.isArray(originalDna.sectionSequence))
+      adaptedDna.sectionSequence = [...originalDna.sectionSequence];
+    for (const [group, field] of [
+      ["heroGeometry", "mode"],
+      ["navigationGeometry", "mode"],
+      ["servicePresentation", "pattern"],
+      ["ctaPlacement", "early"],
+      ["mobileRecomposition", "strategy"],
+      ["motion", "primitive"],
+    ]) {
+      if (
+        originalDna[group]?.[field] !== undefined &&
+        adaptedDna[group] &&
+        typeof adaptedDna[group] === "object"
+      )
+        adaptedDna[group][field] = originalDna[group][field];
+    }
+  }
+  return adapted;
 }
 
 export function appendReferencePersonnelCue(prompt, request) {

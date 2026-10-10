@@ -41,9 +41,26 @@ become invented numeric scores. Missing numeric competition remains unavailable.
 
 ## Research stages
 
+- **Customer-language planning:** OpenRouter proposes up to five short phrases
+  for each client-confirmed service, using only the business context and
+  confirmed service list. Unsupported services and phrases that do not remain
+  bound to the confirmed service are rejected. Accepted phrases are measured in
+  the existing batched local volume, intent, and difficulty requests; the
+  per-service query set remains capped at eight, including the exact service
+  and local variants.
 - **Market snapshot:** local Google Ads search volume, CPC, and competition for
   grounded service/city variants; DataForSEO Labs search intent and Keyword
   Difficulty are captured separately with provenance.
+- **Sparse-service recovery:** after the initial metric batch, a service with no
+  complete measured query receives a bounded DataForSEO Labs Related Keywords
+  request targeted to the confirmed primary-city metric location. At most five
+  related phrases that remain service-bound are retained per uncovered service.
+  Their returned fields are merged without overwriting existing measurements,
+  and each field keeps its DataForSEO source and metric location. Missing values
+  remain null; if this bounded expansion still cannot complete the service
+  metrics, `publishReady` remains false. Related lookup is skipped for services
+  that already have a complete metric row, preserving the shared provider task
+  and USD caps.
 - **Competitor structure:** local organic SERPs record query, rank, title, URL,
   and domain. Competitor page patterns inform structure only; competitor copy
   is not reused.

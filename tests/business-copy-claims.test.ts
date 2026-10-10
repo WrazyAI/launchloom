@@ -57,6 +57,17 @@ describe("auditUnsupportedBusinessClaims", () => {
     ).toContain("staff");
   });
 
+  it("does not reject ordinary process copy or comma-separated audience nouns as claims", () => {
+    expect(
+      auditUnsupportedBusinessClaims({
+        copy: {
+          heroBody:
+            "Our technician will review your request. We help homes, customers and families.",
+        },
+      }),
+    ).toEqual([]);
+  });
+
   it("returns exact unsupported claim text for private same-author repair", () => {
     expect(
       findUnsupportedBusinessClaimMatches("Meet Maya, your technician.", {}),

@@ -27,6 +27,7 @@ const DEFAULT_MAX_USD = 0.25;
 const HARD_MAX_USD = 2;
 const MAX_CORE_SERVICES = 5;
 const MAX_SERVICE_VARIANTS = 8;
+const MAX_RELATED_KEYWORDS_PER_SERVICE = 5;
 const DEFAULT_FALLBACK_SEARCH_QUERIES = 3;
 const HARD_MAX_FALLBACK_SEARCH_QUERIES = 5;
 const DEFAULT_FALLBACK_MAX_USD = 0.05;
@@ -692,6 +693,92 @@ function finiteResultKeyword(item, provenance) {
   };
 }
 
+function relatedKeywordMetric(item, service, metricLocation) {
+  const mapped = finiteResultKeyword(
+    item,
+    "dataforseo_labs_related_location",
+  );
+  const validation = validateIntentQueryPlan(
+    { services: [{ service, phrases: [mapped.keyword] }] },
+    [service],
+  );
+  if (!mapped.keyword || validation.acceptedPhraseCount !== 1) return null;
+  const metricSources = {
+    volume:
+      mapped.volume !== null ? "dataforseo_labs_related_location" : null,
+    kd: mapped.kd !== null ? "dataforseo_labs_related_location" : null,
+    cpc: mapped.cpc !== null ? "dataforseo_labs_related_location" : null,
+    competition:
+      mapped.competition !== null
+        ? "dataforseo_labs_related_location"
+        : null,
+    intent:
+      mapped.intent !== null ? "dataforseo_labs_related_location" : null,
+  };
+  return {
+    ...mapped,
+    confirmedService: service,
+    metricLocation,
+    metricSources,
+    provenance: Object.values(metricSources).every(Boolean)
+      ? "dataforseo"
+      : "dataforseo_metric_partial",
+  };
+}
+
+function mergeRelatedKeywordMetrics(primaryRows, relatedRows) {
+  const merged = primaryRows.map((item) => ({
+    ...item,
+    metricSources: { ...(item.metricSources || {}) },
+  }));
+  const metricIdentity = (item) =>
+    `${keywordKey(item.confirmedService || "")}::${keywordKey(item.keyword)}`;
+  const indexByKeyword = new Map(
+    merged.map((item, index) => [metricIdentity(item), index]),
+  );
+  const fields = ["volume", "kd", "cpc", "competition", "intent"];
+
+  for (const related of relatedRows) {
+    const key = metricIdentity(related);
+    if (!key) continue;
+    const existingIndex = indexByKeyword.get(key);
+    if (existingIndex === undefined) {
+      indexByKeyword.set(key, merged.length);
+      merged.push(related);
+      continue;
+    }
+
+    const existing = merged[existingIndex];
+    const metricSources = { ...(existing.metricSources || {}) };
+    const next = { ...existing, metricSources };
+    for (const field of fields) {
+      if (
+        (next[field] === null || next[field] === undefined || next[field] === "") &&
+        related[field] !== null &&
+        related[field] !== undefined &&
+        related[field] !== ""
+      ) {
+        next[field] = related[field];
+        metricSources[field] = related.metricSources?.[field] || null;
+      }
+    }
+    if (related.metricLocation) next.metricLocation = related.metricLocation;
+    const complete = fields.every(
+      (field) => next[field] !== null && next[field] !== undefined && next[field] !== "",
+    );
+    const known = fields.some(
+      (field) => next[field] !== null && next[field] !== undefined && next[field] !== "",
+    );
+    next.provenance = complete
+      ? "dataforseo"
+      : known
+        ? "dataforseo_metric_partial"
+        : "dataforseo_unavailable";
+    merged[existingIndex] = next;
+  }
+  return merged;
+}
+
 function flattenItems(value) {
   if (!Array.isArray(value)) return [];
   return value.flatMap((result) =>
@@ -726,7 +813,10 @@ function makePageMap(seo, metrics, kdByKeyword, serps, questionEvidence) {
     const primary = preferred
       ? {
           ...preferred,
-          kd: kdByKeyword.get(keywordKey(preferred.keyword)) ?? null,
+          kd:
+            preferred.kd ??
+            kdByKeyword.get(keywordKey(preferred.keyword)) ??
+            null,
         }
       : {
           keyword: `${service}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`,
@@ -743,7 +833,7 @@ function makePageMap(seo, metrics, kdByKeyword, serps, questionEvidence) {
       )
       .map((item) => ({
         ...item,
-        kd: kdByKeyword.get(keywordKey(item.keyword)) ?? null,
+        kd: item.kd ?? kdByKeyword.get(keywordKey(item.keyword)) ?? null,
       }))
       .slice(0, 12);
     const serviceSerps = serps.filter(
@@ -1529,7 +1619,6 @@ async function researchSingleCity(intake = {}, options = {}) {
       stageCosts.push({ stage, tasks: 0, usd: 0, status: "unavailable" });
       return { ok: false, skipped: false, value: null };
     }
-    const maxTransientRetries = 1;
     const retryableDataForSeoStatuses = new Set([40101, 40103]);
     let retries = 0;
     while (true) {
@@ -1607,6 +1696,7 @@ async function researchSingleCity(intake = {}, options = {}) {
         const providerFailureCost = roundCost(rawFailureCost);
         cost.usd = roundCost(cost.usd + providerFailureCost);
         const retryable = retryableDataForSeoStatuses.has(providerStatusCode);
+        const maxTransientRetries = providerStatusCode === 40101 ? 2 : 1;
         const canRetry =
           retryable &&
           retries < maxTransientRetries &&
@@ -1852,7 +1942,7 @@ async function researchSingleCity(intake = {}, options = {}) {
     [...kdByKeyword.values()].some((value) => value !== null);
   if (!difficultyStage.ok)
     warnings.push("Required Keyword Difficulty evidence is incomplete.");
-  const metrics = seeds.map((keyword) => {
+  let metrics = seeds.map((keyword) => {
     const local = volumeByKeyword.get(keywordKey(keyword));
     const intent = intentByKeyword.get(keywordKey(keyword)) ?? null;
     const kd = kdByKeyword.get(keywordKey(keyword)) ?? null;
@@ -1898,44 +1988,94 @@ async function researchSingleCity(intake = {}, options = {}) {
     };
   });
   base.validatedQueries = metrics;
-  const researchQueryByService = new Map();
-  const serviceMetricCoverage = seo.services.map((service) => {
-    const matching = metrics.filter((item) =>
-      metricBelongsToService(item, service),
+  const assessServiceMetrics = (metricRows) => {
+    const researchQueryByService = new Map();
+    const serviceMetricCoverage = seo.services.map((service) => {
+      const matching = metricRows.filter((item) =>
+        metricBelongsToService(item, service),
+      );
+      const completePrimary =
+        matching.find(
+          (item) =>
+            hasCompletePrimaryMetrics(item) &&
+            keywordKey(item.keyword).includes(keywordKey(seo.primaryCity)),
+        ) ||
+        matching.find(
+          (item) =>
+            hasCompletePrimaryMetrics(item) &&
+            (item.intent === "commercial" || item.intent === "transactional"),
+        ) ||
+        matching.find(hasCompletePrimaryMetrics) ||
+        null;
+      const researchCandidate =
+        completePrimary ||
+        matching.find(
+          (item) =>
+            item.volume !== null ||
+            item.intent === "commercial" ||
+            item.intent === "transactional",
+        ) ||
+        matching[0] ||
+        null;
+      researchQueryByService.set(
+        keywordKey(service),
+        researchCandidate?.keyword || service,
+      );
+      return {
+        service,
+        complete: Boolean(completePrimary),
+        primaryKeyword: completePrimary?.keyword || null,
+      };
+    });
+    return { researchQueryByService, serviceMetricCoverage };
+  };
+
+  let serviceAssessment = assessServiceMetrics(metrics);
+  const relatedRows = [];
+  const servicesNeedingRelatedMetrics = serviceAssessment.serviceMetricCoverage
+    .filter((item) => !item.complete)
+    .map((item) => item.service);
+  for (const service of servicesNeedingRelatedMetrics) {
+    if (stoppedForBudget) break;
+    const stage = await paidTask(
+      `related_keywords:${slugify(service)}`,
+      options.dataForSeo.relatedKeywords,
+      {
+        keyword: service,
+        locationName: seo.metricLocation,
+        languageCode: seo.languageCode,
+      },
     );
-    const completePrimary =
-      matching.find(
-        (item) =>
-          hasCompletePrimaryMetrics(item) &&
-          keywordKey(item.keyword).includes(keywordKey(seo.primaryCity)),
-      ) ||
-      matching.find(
-        (item) =>
-          hasCompletePrimaryMetrics(item) &&
-          (item.intent === "commercial" || item.intent === "transactional"),
-      ) ||
-      matching.find(hasCompletePrimaryMetrics) ||
-      null;
-    const researchCandidate =
-      completePrimary ||
-      matching.find(
-        (item) =>
-          item.volume !== null ||
-          item.intent === "commercial" ||
-          item.intent === "transactional",
-      ) ||
-      matching[0] ||
-      null;
-    researchQueryByService.set(
-      keywordKey(service),
-      researchCandidate?.keyword || service,
-    );
-    return {
-      service,
-      complete: Boolean(completePrimary),
-      primaryKeyword: completePrimary?.keyword || null,
-    };
-  });
+    if (!stage.ok) continue;
+    let acceptedForService = 0;
+    for (const item of flattenItems(
+      stage.value?.keywords || stage.value?.items || [],
+    )) {
+      const mapped = relatedKeywordMetric(item, service, seo.metricLocation);
+      if (!mapped) continue;
+      relatedRows.push(mapped);
+      acceptedForService += 1;
+      if (acceptedForService >= MAX_RELATED_KEYWORDS_PER_SERVICE) break;
+    }
+  }
+
+  if (relatedRows.length) metrics = mergeRelatedKeywordMetrics(metrics, relatedRows);
+  base.validatedQueries = metrics;
+  base.marketSnapshot.measuredKeywords = metrics.filter(
+    (item) => item.metricSources?.volume,
+  ).length;
+  base.completeness.keywordOverview ||= relatedRows.some(
+    (item) => item.volume !== null || item.cpc !== null || item.competition !== null,
+  );
+  base.completeness.searchIntent ||= relatedRows.some(
+    (item) => item.intent !== null,
+  );
+  base.completeness.keywordDifficulty ||= relatedRows.some(
+    (item) => item.kd !== null,
+  );
+
+  serviceAssessment = assessServiceMetrics(metrics);
+  const { researchQueryByService, serviceMetricCoverage } = serviceAssessment;
   base.completeness.serviceMetrics = serviceMetricCoverage;
   if (serviceMetricCoverage.some((item) => !item.complete))
     warnings.push(
@@ -1999,41 +2139,7 @@ async function researchSingleCity(intake = {}, options = {}) {
     warnings.push(
       "Fewer than three distinct ranking competitor domains were found in the returned SERPs.",
     );
-
-  const relatedRows = [];
-  for (const service of seo.services.slice(0, 5)) {
-    if (stoppedForBudget) break;
-    const query = localServiceQuery(
-      researchQueryByService.get(keywordKey(service)) || service,
-      seo.primaryCity,
-    );
-    const stage = await paidTask(
-      `related_keywords:${slugify(service)}`,
-      options.dataForSeo.relatedKeywords,
-      {
-        keyword: query,
-        locationName: seo.labsLocation,
-        languageCode: seo.languageCode,
-      },
-    );
-    if (!stage.ok) continue;
-    for (const item of flattenItems(
-      stage.value?.keywords || stage.value?.items || [],
-    )) {
-      const mapped = finiteResultKeyword(item, "dataforseo_related_keywords");
-      if (mapped.keyword)
-        relatedRows.push({ ...mapped, confirmedService: service });
-    }
-  }
-  const combinedMetrics = [...metrics];
-  for (const row of relatedRows) {
-    if (
-      !combinedMetrics.some(
-        (item) => keywordKey(item.keyword) === keywordKey(row.keyword),
-      )
-    )
-      combinedMetrics.push(row);
-  }
+  const combinedMetrics = metrics;
 
   let quickWins = [];
   let rankingStageComplete = false;
@@ -2171,18 +2277,40 @@ async function researchSingleCity(intake = {}, options = {}) {
         .filter((item) => item.metricSources?.volume)
         .map((item) => item.keyword),
       metricLocation: seo.metricLocation,
-      provenance: "DataForSEO Google Ads",
+      queryMetrics: metrics
+        .filter((item) => item.metricSources?.volume)
+        .map((item) => ({
+          keyword: item.keyword,
+          source: item.metricSources.volume,
+          metricLocation: item.metricLocation || seo.metricLocation,
+        })),
+      provenance:
+        "DataForSEO location-targeted Google Ads and Labs related-keyword metrics",
     },
     {
       type: "search_intent",
       queries: metrics
         .filter((item) => item.metricSources?.intent)
         .map((item) => item.keyword),
+      queryMetrics: metrics
+        .filter((item) => item.metricSources?.intent)
+        .map((item) => ({
+          keyword: item.keyword,
+          source: item.metricSources.intent,
+          metricLocation: item.metricLocation || null,
+        })),
       provenance: "DataForSEO Labs",
     },
     {
       type: "keyword_difficulty",
       metricLocation: seo.labsLocation,
+      queryMetrics: metrics
+        .filter((item) => item.metricSources?.kd)
+        .map((item) => ({
+          keyword: item.keyword,
+          source: item.metricSources.kd,
+          metricLocation: item.metricLocation || seo.labsLocation,
+        })),
       provenance: "DataForSEO Labs",
     },
     ...allSerps.map((serp) => ({
@@ -2194,6 +2322,16 @@ async function researchSingleCity(intake = {}, options = {}) {
     ...relatedRows.map((item) => ({
       type: "related_keyword",
       query: item.keyword,
+      confirmedService: item.confirmedService,
+      metricLocation: item.metricLocation,
+      metricValues: {
+        volume: item.volume,
+        kd: item.kd,
+        cpc: item.cpc,
+        competition: item.competition,
+        intent: item.intent,
+      },
+      metricSources: item.metricSources,
       provenance: item.provenance,
     })),
     ...(rankingStageComplete

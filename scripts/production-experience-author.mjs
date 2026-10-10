@@ -2919,14 +2919,33 @@ function authoredSourceText(source) {
     ts.ScriptKind.TSX,
   );
   const values = [];
+  const visibleAttributes = new Set([
+    "alt",
+    "aria-label",
+    "placeholder",
+    "title",
+  ]);
+  function isVisitorVisibleLiteral(node) {
+    for (let parent = node.parent; parent; parent = parent.parent) {
+      if (ts.isImportDeclaration(parent)) return false;
+      if (ts.isJsxAttribute(parent))
+        return visibleAttributes.has(parent.name.getText(file));
+      if (ts.isJsxElement(parent)) {
+        const tag = parent.openingElement.tagName.getText(file);
+        return tag.toLowerCase() !== "style" && tag.toLowerCase() !== "script";
+      }
+      if (ts.isJsxFragment(parent)) return true;
+    }
+    return false;
+  }
   function visit(node) {
     if (ts.isJsxText(node)) values.push(node.text.trim());
     else if (
       ts.isStringLiteral(node) ||
       ts.isNoSubstitutionTemplateLiteral(node)
-    )
-      values.push(node.text);
-    else if (ts.isTemplateExpression(node))
+    ) {
+      if (isVisitorVisibleLiteral(node)) values.push(node.text);
+    } else if (ts.isTemplateExpression(node) && isVisitorVisibleLiteral(node))
       values.push(
         [
           node.head.text,

@@ -26,10 +26,11 @@ with compatible authored evidence. Reuse requires frozen source/session/dossier
 validation, identical sealed token definitions and current content source
 validation. No compatible source means one authored route from the validated
 three-route pack. This profile skips aesthetic evaluation and repair, while
-keeping Astro/build failures as hard blockers and running browser-transition,
-painted-contrast and SEO review checks as diagnostics. A rendered or contrast
-quality failure leaves the report verdict failed but does not suppress the
-protected noindex diagnostic preview. The preview is never a client release.
+keeping Astro/build failures as hard blockers and running browser-transition
+and painted-contrast checks as diagnostics. A rendered or contrast quality
+failure leaves the report verdict failed but does not suppress the protected
+noindex diagnostic preview. A failed SEO release/readiness stage stops the run
+before deployment and notification. The preview is never a client release.
 
 Creative-only writes an explicit skipped SEO research artifact and keeps
 `publishReady: false`. It authors the normal three candidates and runs the

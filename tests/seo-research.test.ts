@@ -126,18 +126,23 @@ function researchProvider(
       questions: ["How much does drain cleaning cost?"],
     };
   });
-  const relatedKeywords = vi.fn(async ({ keyword }: { keyword: string }) => ({
-    cost: 0.01,
-    keywords: [
-      {
-        keyword: `${keyword} cost`,
-        searchVolume: 20,
-        cpc: 3.4,
-        competition: 0.5,
-        intent: "informational",
-      },
-    ],
-  }));
+  const relatedKeywords = vi.fn(
+    async ({ keyword }: { keyword: string; locationName?: string }): Promise<{
+      cost: number;
+      keywords: Array<Record<string, any>>;
+    }> => ({
+      cost: 0.01,
+      keywords: [
+        {
+          keyword: `${keyword} cost`,
+          searchVolume: 20,
+          cpc: 3.4,
+          competition: 0.5,
+          intent: "informational",
+        },
+      ],
+    }),
+  );
   const rankedKeywords = vi.fn(async () => ({
     cost: 0.01,
     keywords: [
@@ -377,9 +382,7 @@ describe("SEO market map", () => {
     expect(provider.organicSerp.mock.calls[0]?.[0].keyword).toBe(
       "sourdough bread Seattle WA",
     );
-    expect(provider.relatedKeywords.mock.calls[0]?.[0].keyword).toBe(
-      "sourdough bread Seattle WA",
-    );
+    expect(provider.relatedKeywords).not.toHaveBeenCalled();
     expect(dossier.intentPlanning).toMatchObject({
       status: "model",
       model: "z-ai/glm-5.3-flash",
@@ -1421,8 +1424,8 @@ describe("SEO market map", () => {
     expect(dossier.mode).toBe("researched");
     expect(dossier.publishReady).toBe(true);
     expect(dossier.cost).toMatchObject({
-      tasks: 8,
-      usd: 0.11,
+      tasks: 6,
+      usd: 0.09,
       limitUsd: 0.25,
       overBudget: false,
     });
@@ -1623,8 +1626,133 @@ describe("SEO market map", () => {
     expect(dossier.cost.usd).toBeLessThanOrEqual(0.25);
   });
 
+  it("uses city-targeted related keywords to complete sparse service metrics", async () => {
+    const provider = researchProvider();
+    provider.googleSearchVolume.mockImplementation(
+      async ({ keywords }: { keywords: string[] }) => ({
+        cost: 0.09,
+        keywords: keywords.map((keyword) => ({
+          keyword,
+          searchVolume: 10,
+          cpc: null,
+          competition: 0.5,
+        })),
+      }),
+    );
+    provider.relatedKeywords.mockImplementation(
+      async () => ({
+        cost: 0.012,
+        keywords: [
+          {
+            keyword: "skincare routine review",
+            keyword_info: { search_volume: 40, cpc: 2.1, competition: 0.6 },
+            keyword_properties: { keyword_difficulty: 21 },
+            search_intent_info: { main_intent: "commercial" },
+          },
+          {
+            keyword: "med spa appointment",
+            keyword_info: { search_volume: 90, cpc: 4, competition: 0.8 },
+            keyword_properties: { keyword_difficulty: 12 },
+            search_intent_info: { main_intent: "transactional" },
+          },
+        ],
+      }),
+    );
+
+    const dossier = await researchSiteContext(
+      {
+        businessName: "Velvet Fern Skin Studio",
+        businessKind: "skin clinic",
+        industry: "wellness",
+        services: "Routine review",
+        primaryCity: "Madison, WI",
+      },
+      { dataForSeo: provider, maxTasks: 16, maxUsd: 0.25 },
+    );
+
+    expect(provider.relatedKeywords).toHaveBeenCalledTimes(1);
+    expect(provider.relatedKeywords.mock.calls[0]?.[0]).toMatchObject({
+      keyword: "Routine review",
+      locationName: "Madison,Wisconsin,United States",
+    });
+    expect(dossier.validatedQueries).toContainEqual(
+      expect.objectContaining({
+        keyword: "skincare routine review",
+        confirmedService: "Routine review",
+        volume: 40,
+        kd: 21,
+        cpc: 2.1,
+        competition: 0.6,
+        intent: "commercial",
+        provenance: "dataforseo",
+        metricLocation: "Madison,Wisconsin,United States",
+        metricSources: {
+          volume: "dataforseo_labs_related_location",
+          kd: "dataforseo_labs_related_location",
+          cpc: "dataforseo_labs_related_location",
+          competition: "dataforseo_labs_related_location",
+          intent: "dataforseo_labs_related_location",
+        },
+      }),
+    );
+    expect(dossier.validatedQueries).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ keyword: "med spa appointment" }),
+      ]),
+    );
+    expect(dossier.completeness.serviceMetrics).toEqual([
+      { service: "Routine review", complete: true, primaryKeyword: "skincare routine review" },
+    ]);
+    const servicePage = dossier.pageMap.find(
+      (page) => page.pageType === "service",
+    );
+    expect(servicePage?.primaryKeyword).toMatchObject({
+      keyword: "skincare routine review",
+      kd: 21,
+      metricSources: {
+        kd: "dataforseo_labs_related_location",
+      },
+    });
+    expect(dossier.evidence).toContainEqual(
+      expect.objectContaining({
+        type: "related_keyword",
+        query: "skincare routine review",
+        confirmedService: "Routine review",
+        metricLocation: "Madison,Wisconsin,United States",
+        provenance: "dataforseo",
+      }),
+    );
+    expect(provider.organicSerp.mock.calls[0]?.[0].keyword).toBe(
+      "skincare routine review Madison WI",
+    );
+    expect(dossier.publishReady).toBe(true);
+    expect(dossier.cost.usd).toBeLessThanOrEqual(0.25);
+
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        businessName: "Velvet Fern Skin Studio",
+        businessKind: "skin clinic",
+        industry: "wellness",
+        services: "Routine review",
+        primaryCity: "Madison, WI",
+        phone: "555-0100",
+        email: "owner@example.test",
+        leadEmail: "leads@example.test",
+      },
+      enrichment: {},
+      research: dossier,
+    });
+    expect(seoResearchReadiness(normalise({}, brief)).allowed).toBe(true);
+  });
+
   it("blocks publication when any confirmed service lacks a complete measured primary query", async () => {
     const provider = researchProvider();
+    provider.relatedKeywords.mockImplementation(
+      async ({ keyword }: { keyword: string }) => ({
+        cost: 0.01,
+        keywords: keyword === "Water heater repair" ? [] : [],
+      }),
+    );
     provider.googleSearchVolume.mockResolvedValueOnce({
       cost: 0.04,
       keywords: [
@@ -1932,6 +2060,50 @@ describe("SEO market map", () => {
     );
     expect(dossier.mode).toBe("context-only");
     expect(dossier.publishReady).toBe(false);
+  });
+
+  it("allows one additional bounded retry for repeated DataForSEO 40101 errors", async () => {
+    const provider = researchProvider();
+    const temporaryFailure = () =>
+      Object.assign(new Error("DataForSEO task 40101: temporary search error"), {
+        dataForSeo: { statusCode: 40101, reportedCost: 0.002 },
+      });
+    provider.organicSerp
+      .mockRejectedValueOnce(temporaryFailure())
+      .mockRejectedValueOnce(temporaryFailure())
+      .mockResolvedValueOnce({
+        cost: 0.01,
+        query: "drain cleaning Tacoma WA",
+        results: [
+          {
+            position: 1,
+            title: "Drain cleaning",
+            url: "https://one.test/drain-cleaning/",
+            domain: "one.test",
+          },
+        ],
+        questions: [],
+      });
+
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: provider,
+      maxTasks: 16,
+      maxUsd: 0.25,
+      dataForSeoRetryDelayMs: 0,
+    });
+
+    const firstSerpStage = dossier.cost.stageCosts.filter(
+      (stage) => stage.stage === "organic_serp:drain-cleaning",
+    );
+    expect(provider.organicSerp).toHaveBeenCalledTimes(4);
+    expect(firstSerpStage).toEqual([
+      expect.objectContaining({ tasks: 1, usd: 0.002, status: "retryable_failure" }),
+      expect.objectContaining({ tasks: 1, usd: 0.002, status: "retryable_failure" }),
+      expect.objectContaining({ tasks: 1, usd: 0.01, status: "complete" }),
+    ]);
+    expect(dossier.completeness.serviceSerps).toBe(2);
+    expect(dossier.publishReady).toBe(true);
+    expect(dossier.cost.usd).toBeLessThanOrEqual(0.25);
   });
 
   it("stops starting paid tasks at the configured task ceiling", async () => {
@@ -2608,7 +2780,7 @@ it("stops further measured city calls when the primary provider task has unrepor
   expect(dossier.coverageResearch!.cities[1].status).toBe("pending");
 });
 
-it("keeps primary approval and pending coverage visible through the canonical brief and generated config", async () => {
+it("keeps primary approval and partial coverage visible through the canonical brief and generated config", async () => {
   const selected = {
     ...intake,
     phone: "555-0100",
@@ -2638,7 +2810,7 @@ it("keeps primary approval and pending coverage visible through the canonical br
   });
   const config = normalise({}, brief);
   expect(config.business.serviceAreas).toEqual(selected.coverageAreas);
-  expect(config.seoResearch.coverageResearch.cities[1].status).toBe("pending");
+  expect(config.seoResearch.coverageResearch.cities[1].status).toBe("partial");
   expect(seoResearchReadiness(config).allowed).toBe(true);
   expect(
     seoResearchReadiness({

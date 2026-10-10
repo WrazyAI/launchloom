@@ -95,7 +95,7 @@ describe("creative authoring output budgets", () => {
             description: "technician campaign poster with a uniformed technician",
           },
         ],
-        sectionSequence: ["technician campaign hero", "person-led reassurance"],
+        sectionSequence: ["technician-campaign-hero", "person-led-reassurance"],
         imageTreatment: {
           mode: "friendly uniformed technician photography",
           focalPoint: "technician and promise together",
@@ -124,6 +124,36 @@ describe("creative authoring output budgets", () => {
       "object-led campaign poster",
     );
     expect(route.referenceDossier.designPrompt).toContain("uniformed technician");
+  });
+
+  it("preserves machine-readable Reference DNA markers while adapting prose", () => {
+    const route = {
+      signature: "technician campaign poster and person-led process",
+      referenceDna: {
+        sectionSequence: ["technician-campaign-hero", "person-led-reassurance"],
+        heroGeometry: { mode: "technician-led-statement" },
+        servicePresentation: { pattern: "technician-service-rail" },
+        motion: { primitive: "technician-portrait-reveal" },
+      },
+    };
+
+    const adapted = adaptReferencePersonnelCuesForClient(route, {
+      claimEvidence: { staff: [], teamMembers: [], team: [] },
+    });
+
+    expect(adapted.referenceDna.sectionSequence).toEqual(
+      route.referenceDna.sectionSequence,
+    );
+    expect(adapted.referenceDna.heroGeometry.mode).toBe(
+      route.referenceDna.heroGeometry.mode,
+    );
+    expect(adapted.referenceDna.servicePresentation.pattern).toBe(
+      route.referenceDna.servicePresentation.pattern,
+    );
+    expect(adapted.referenceDna.motion.primitive).toBe(
+      route.referenceDna.motion.primitive,
+    );
+    expect(adapted.signature).not.toBe(route.signature);
   });
 
   it("uses OpenRouter's current completion limit request field", () => {

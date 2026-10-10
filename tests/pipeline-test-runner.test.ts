@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -73,6 +73,15 @@ function adapter(fail = "", authoredCandidateCount = 3) {
   return { calls, dependencies };
 }
 describe("focused pipeline orchestration", () => {
+  it("uses the configured private Pages project when no explicit name is passed", () => {
+    vi.stubEnv("LAUNCHLOOM_TEST_PAGES_PROJECT", "launchloom-custom-preview");
+    try {
+      expect(resolveTestPreviewProject()).toBe("launchloom-custom-preview");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("classifies explicit rendered and contrast findings but not verifier execution failures", async () => {
     expect(privatePreview.classifyDiagnosticQualityGateFailure).toBeTypeOf(
       "function",
@@ -321,6 +330,69 @@ describe("focused pipeline orchestration", () => {
       "CF-Access-Client-Id": "synthetic-client-id",
       "CF-Access-Client-Secret": "synthetic-client-secret",
     });
+  });
+  it("retries transient authenticated preview responses until Pages is ready", async () => {
+    const statuses = [302, 404, 503, 200];
+    const waits: number[] = [];
+    const result = await verifyTestPreviewAccess({
+      url: "https://hash.launchloom-pipeline-preview.pages.dev",
+      clientId: "synthetic-client-id",
+      clientSecret: "synthetic-client-secret",
+      send: async () =>
+        new Response(null, {
+          status: statuses.shift(),
+          headers: { location: "/cdn-cgi/access/login/test" },
+        }),
+      wait: async (milliseconds: number) => {
+        waits.push(milliseconds);
+      },
+    });
+
+    expect(result).toEqual({ anonymousStatus: 302, authenticatedStatus: 200 });
+    expect(waits).toEqual([5_000, 5_000]);
+  });
+  it("fails immediately for rejected service-token credentials", async () => {
+    let calls = 0;
+    let waits = 0;
+    await expect(
+      verifyTestPreviewAccess({
+        url: "https://hash.launchloom-pipeline-preview.pages.dev",
+        clientId: "synthetic-client-id",
+        clientSecret: "synthetic-client-secret",
+        send: async () =>
+          new Response(null, {
+            status: ++calls === 1 ? 302 : 403,
+            headers: { location: "/cdn-cgi/access/login/test" },
+          }),
+        wait: async () => {
+          waits += 1;
+        },
+      }),
+    ).rejects.toThrow(/authorize.*developer request/i);
+    expect(calls).toBe(2);
+    expect(waits).toBe(0);
+  });
+  it("bounds retries when a private Pages deployment never becomes ready", async () => {
+    let calls = 0;
+    let waits = 0;
+    await expect(
+      verifyTestPreviewAccess({
+        url: "https://hash.launchloom-pipeline-preview.pages.dev",
+        clientId: "synthetic-client-id",
+        clientSecret: "synthetic-client-secret",
+        attempts: 3,
+        send: async () =>
+          new Response(null, {
+            status: ++calls === 1 ? 302 : 503,
+            headers: { location: "/cdn-cgi/access/login/test" },
+          }),
+        wait: async () => {
+          waits += 1;
+        },
+      }),
+    ).rejects.toThrow(/did not become reachable.*3 attempts.*503/i);
+    expect(calls).toBe(4);
+    expect(waits).toBe(2);
   });
   it("accepts only a stable safe Pages project slug", () => {
     expect(resolveTestPreviewProject()).toBe("launchloom-pipeline-preview");

@@ -3498,6 +3498,26 @@ export default function ServicePage({ content, runtime, service: { name, slug, d
     },
   );
 
+  it("ignores machine-only class words while still auditing visible copy", () => {
+    const route = { id: "service:care" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const valid = String(
+      safeStage({ ...request, stage: "service" }).content || "",
+    );
+    const marked = valid.replace("<main", '<main className="licensed technician"');
+    expect(() =>
+      validateServicePage(marked, route, { claimEvidence: {} }),
+    ).not.toThrow();
+
+    const visibleClaim = marked.replace(
+      "</main>",
+      "<p>Meet Maya, your technician.</p></main>",
+    );
+    expect(() =>
+      validateServicePage(visibleClaim, route, { claimEvidence: {} }),
+    ).toThrow(/unsupported business claims.*staff/iu);
+  });
+
   it("includes confirmed claim evidence in the creative manifest without exposing private addresses", () => {
     const manifest = buildCreativeContentManifest({
       ...site,

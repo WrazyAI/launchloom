@@ -98,18 +98,63 @@ export async function verifyTestPreviewAccess({
   clientId,
   clientSecret,
   send = fetch,
+  attempts = 12,
+  wait = (milliseconds) =>
+    new Promise((resolve) => setTimeout(resolve, milliseconds)),
 }) {
   if (!clientId || !clientSecret)
     throw new Error("Cloudflare Access service-token credentials are required.");
+  if (!Number.isInteger(attempts) || attempts < 1 || attempts > 12)
+    throw new Error("Access verification attempts must be an integer from 1 to 12.");
   const anonymous = await send(url, { method: "GET", redirect: "manual" });
-  const authenticated = await send(url, {
-    method: "GET",
-    redirect: "manual",
-    headers: {
-      "CF-Access-Client-Id": clientId,
-      "CF-Access-Client-Secret": clientSecret,
-    },
-  });
+  let authenticated = null;
+  let lastNetworkError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      authenticated = await send(url, {
+        method: "GET",
+        redirect: "manual",
+        headers: {
+          "CF-Access-Client-Id": clientId,
+          "CF-Access-Client-Secret": clientSecret,
+        },
+      });
+    } catch (error) {
+      authenticated = null;
+      lastNetworkError = error instanceof Error ? error : new Error(String(error));
+      if (attempt < attempts) await wait(5_000);
+      continue;
+    }
+
+    lastNetworkError = null;
+    if (authenticated.status === 200) break;
+    if ([401, 403].includes(authenticated.status))
+      assertTestPreviewAccessPolicy({
+        anonymousStatus: anonymous.status,
+        anonymousLocation: anonymous.headers.get("location") || "",
+        authenticatedStatus: authenticated.status,
+      });
+    const transient =
+      authenticated.status === 404 ||
+      [408, 425, 429].includes(authenticated.status) ||
+      authenticated.status >= 500;
+    if (!transient)
+      assertTestPreviewAccessPolicy({
+        anonymousStatus: anonymous.status,
+        anonymousLocation: anonymous.headers.get("location") || "",
+        authenticatedStatus: authenticated.status,
+      });
+    if (attempt < attempts) await wait(5_000);
+  }
+  if (authenticated?.status !== 200) {
+    if (lastNetworkError)
+      throw new Error(
+        `Private Pages preview could not be checked with the service token after ${attempts} attempts (${lastNetworkError.message}).`,
+      );
+    throw new Error(
+      `Private Pages preview did not become reachable with the service token after ${attempts} attempts (last HTTP ${authenticated?.status ?? "unknown"}).`,
+    );
+  }
   assertTestPreviewAccessPolicy({
     anonymousStatus: anonymous.status,
     anonymousLocation: anonymous.headers.get("location") || "",
@@ -121,7 +166,10 @@ export async function verifyTestPreviewAccess({
   };
 }
 
-export function resolveTestPreviewProject(value = "launchloom-pipeline-preview") {
+export function resolveTestPreviewProject(
+  value = process.env.LAUNCHLOOM_TEST_PAGES_PROJECT ||
+    "launchloom-pipeline-preview",
+) {
   const project = String(value || "").trim().toLowerCase();
   if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(project))
     throw new Error("Test preview Pages project name is invalid.");
