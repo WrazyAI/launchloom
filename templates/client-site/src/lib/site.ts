@@ -122,7 +122,7 @@ export type ExperiencePackId =
 export type SiteConfig = {
   pipelineTest?: {
     version: 1;
-    profile: "seo-only" | "creative-only";
+    profile: "seo-only" | "creative-only" | "full-preview";
     testOnly: true;
     sourceSha: string;
     runId: string;
@@ -205,6 +205,10 @@ export type SiteConfig = {
   locations: Location[];
   blogArticles?: BlogArticle[];
   images: { hero?: string; secondary?: string; tertiary?: string };
+  creativeAssets?: Record<
+    string,
+    { hero?: string; secondary?: string; tertiary?: string }
+  >;
   assets?: {
     logo?: string;
     photoOne?: string;
@@ -301,6 +305,7 @@ export type SiteConfig = {
       blueprintVersion?: 2;
       renderer?: "reviewed-pack" | "creative-candidate" | "legacy" | string;
       candidateId?: string;
+      routeId?: string;
       familyId?: string;
       referenceFamilyId?: string;
       referenceDnaVersion?: number | null;
@@ -427,7 +432,11 @@ const site = {
 // Always compile from current content/policy; stored reports cannot authorize routes.
 export const routeInventory = compileRouteInventory(site);
 export const pageBriefs = compilePageBriefs(site);
-export const routePageBrief = (routeId: string) => pageBriefs.briefs.find(brief => brief.routeId === routeId.trim().toLowerCase().replace(/\s+/gu, " ")) || null;
+export const routePageBrief = (routeId: string) =>
+  pageBriefs.briefs.find(
+    (brief) =>
+      brief.routeId === routeId.trim().toLowerCase().replace(/\s+/gu, " "),
+  ) || null;
 export const renderedRoutes = approvedRoutes(routeInventory, {
   production: productionRouteMode(import.meta.env),
 });
@@ -439,7 +448,11 @@ export const homeSectionHref = (type: string) => {
   const section = resolvePageRecipe(site).sections.find(
     (section) => section.type === type,
   );
-  const id = site.design?.experience?.packId || site.design?.experience?.renderer === "creative-candidate"
+  const hasAuthoredExperience = Boolean(
+    site.design?.experience?.packId ||
+    site.design?.experience?.renderer === "creative-candidate",
+  );
+  const id = hasAuthoredExperience
     ? type === "faq"
       ? "faqs"
       : type

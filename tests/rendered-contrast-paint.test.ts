@@ -56,6 +56,54 @@ describe("rendered contrast backdrop geometry", () => {
       expect(report.pass, JSON.stringify(report.findings)).toBe(true);
     },
   );
+  it("proves an opaque nav plate inside a positive-z header over negative-z hero media", async () => {
+    const report = await scan(
+      '<style>body{margin:0;background:#fff}.hero{position:relative;isolation:isolate;width:600px;height:240px;background:#f8f6f0;color:#14201d}.hero__media{position:absolute;z-index:-1;inset:0;overflow:hidden;background:#222}.hero__media img{display:block;width:100%;height:100%;object-fit:cover;transform:scale(1.01)}.hero__header{position:absolute;z-index:3;top:0;left:0;right:0}.hero__nav{display:flex;min-height:58px;padding:18px;background:#f8f6f0;color:#14201d}.hero__nav a{color:#14201d}</style><section class="hero"><div class="hero__media"><img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="></div><header class="hero__header"><nav class="hero__nav"><a href="#">Juniper &amp; Loaf Bakehouse</a></nav></header></section>',
+      1440,
+      { states: false },
+    );
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+  });
+  it("does not treat a proven non-overlapping decorative pseudo marker as text backdrop", async () => {
+    const report = await scan(
+      '<style>body{margin:0;background:#e8eee5;color:#14201d}ul{margin:0;padding:0;list-style:none}li{position:relative;width:320px;padding:8px 8px 8px 24px;color:#14201d}li::before{position:absolute;top:14px;left:4px;width:6px;height:6px;border-radius:50%;background:#c8ec58;content:""}</style><ul><li>Service coverage in Tacoma, Washington</li></ul>',
+      1440,
+      { states: false },
+    );
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+  });
+  it("keeps overlapping pseudo-element paint unresolved", async () => {
+    const report = await scan(
+      '<style>body{margin:0;background:#e8eee5;color:#14201d}li{position:relative;width:320px;color:#14201d}li::before{position:absolute;inset:0;background:#000;content:""}</style><ul><li>Text over a pseudo backdrop</li></ul>',
+      1440,
+      { states: false },
+    );
+    expect(report.pass).toBe(false);
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Text over a pseudo backdrop",
+          status: "unresolved",
+        }),
+      ]),
+    );
+  });
+  it("does not prove pseudo-element separation through a transformed owner", async () => {
+    const report = await scan(
+      '<style>body{margin:0;background:#e8eee5;color:#14201d}li{position:relative;width:320px;padding:8px 8px 8px 120px;color:#14201d;transform:rotate(45deg)}li::before{position:absolute;top:0;left:0;width:6px;height:6px;background:#c8ec58;content:""}</style><ul><li>Service coverage in Tacoma, Washington</li></ul>',
+      1440,
+      { states: false },
+    );
+    expect(report.pass).toBe(false);
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Service coverage in Tacoma, Washington",
+          status: "unresolved",
+        }),
+      ]),
+    );
+  });
   it("proves a pill plate only when glyph bounds lie inside its normalized fill", async () => {
     const report = await scan(
       '<style>body{color:black;background:white}.rear{height:200px;background:black}a{position:fixed;top:30px;left:30px;z-index:2;background:black;color:white;padding:20px;border-radius:999px}</style><div class="rear"></div><a href="#">Readable pill plate</a>',
@@ -188,16 +236,50 @@ describe("bounded deterministic plate repairs", () => {
     expect(withPlate.pass, JSON.stringify(withPlate.findings)).toBe(true);
   });
 
-  it("still refuses a plate when an intervening context orders the layer", async () => {
+  it("proves a plate in a higher-z sibling context over a lower-z context", async () => {
     const html = (plate: string) =>
       `<style>body{margin:0;background:#fff}.context{isolation:isolate;position:relative;width:320px;height:110px}.inner{position:absolute;inset:0;z-index:1}.paint{position:absolute;inset:0;background:#000}.text{margin:0;color:#f4f1ea;font-size:14px}${plate}</style><div class="context"><div class="inner"><div class="paint"></div></div><p class="text">Layer under its own context</p></div>`;
-    // The layer sits inside .inner, which creates its own ordered context, so
-    // z-index comparison against the plate is not valid evidence.
     const withPlate = await scan(
       html(plateCss(".text", "#1d3143", "#f4f1ea")),
       1440,
       { states: false },
     );
-    expect(withPlate.pass).toBe(false);
+    expect(withPlate.pass, JSON.stringify(withPlate.findings)).toBe(true);
+  });
+
+  it("keeps equal-z sibling stacking contexts unresolved", async () => {
+    const report = await scan(
+      '<style>body{margin:0;background:#fff}.context{isolation:isolate;position:relative;width:320px;height:110px}.media{position:absolute;inset:0;z-index:2;background:#000}.header{position:absolute;inset:0;z-index:2}.nav{background:#fff;color:#111;padding:20px}</style><div class="context"><div class="media"></div><header class="header"><nav class="nav"><a href="#">Equal z-order navigation</a></nav></header></div>',
+      1440,
+      { states: false },
+    );
+    expect(report.pass).toBe(false);
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Equal z-order navigation",
+          status: "unresolved",
+          repairEligible: false,
+        }),
+      ]),
+    );
+  });
+
+  it("does not prove a plate when a higher-z sibling context can cover it", async () => {
+    const report = await scan(
+      '<style>body{margin:0;background:#fff}.context{isolation:isolate;position:relative;width:320px;height:110px}.media{position:absolute;inset:0;z-index:2;background:#000}.header{position:absolute;inset:0;z-index:1}.nav{background:#fff;color:#111;padding:20px}</style><div class="context"><div class="media"></div><header class="header"><nav class="nav"><a href="#">Covered navigation</a></nav></header></div>',
+      1440,
+      { states: false },
+    );
+    expect(report.pass).toBe(false);
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Covered navigation",
+          status: "unresolved",
+          repairEligible: false,
+        }),
+      ]),
+    );
   });
 });

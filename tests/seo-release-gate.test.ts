@@ -214,16 +214,15 @@ describe("SEO release gate", () => {
       ).some((error) => error.includes("SEO research is incomplete")),
     ).toBe(true);
   });
-  it("allows completed cited fallback research for production without inventing measured metrics", async () => {
+  it("blocks completed cited fallback research from production without measured metrics", async () => {
     const dist = await fixture();
-    expect(
-      await checkSeoRelease({
-        mode: "production",
-        config: { ...config, seoResearch: fallback },
-        dist,
-        origin,
-      }),
-    ).toEqual([]);
+    const blocked = await checkSeoRelease({
+      mode: "production",
+      config: { ...config, seoResearch: { ...fallback, publishReady: true } },
+      dist,
+      origin,
+    });
+    expect(blocked.some((error) => error.includes("SEO research is incomplete"))).toBe(true);
     expect(
       (
         await checkSeoRelease({

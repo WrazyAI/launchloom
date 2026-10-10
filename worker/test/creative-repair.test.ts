@@ -114,7 +114,7 @@ function userRequest(
 }
 
 describe("developer-triggered creative repair", () => {
-  it.each(["seo-only", "creative-only"])(
+  it.each(["seo-only", "creative-only", "full-preview"])(
     "rejects send-anyway for %s without promotion",
     async (profile) => {
       let writes = 0;

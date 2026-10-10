@@ -1,19 +1,166 @@
 import { describe, expect, it } from "vitest";
 import {
   AUTHORING_STAGE_BUDGETS,
+  CLIENT_PALETTE_ROLE_CONTRACT,
+  HERO_MEDIA_FOCUS_CONTRACT,
   authoringCompletionDiagnostics,
+  appendReferencePersonnelCue,
+  adaptReferencePersonnelCuesForClient,
   completionLimitRequestField,
   referenceImplementationChecklist,
+  referencePersonnelCueTranslation,
 } from "../scripts/creative-authoring-output.mjs";
 
 describe("creative authoring output budgets", () => {
+  it("translates source-personnel mechanics when client personnel are unverified", () => {
+    const instruction = referencePersonnelCueTranslation({
+      route: {
+        label: "Morris-Jenkins home-services reference",
+        signature: "technician campaign poster and person-led reassurance",
+        referenceDna: {
+          requiredSignatureElements: [
+            {
+              id: "technician-campaign-poster",
+              description: "A uniformed technician portrait anchors the hero.",
+            },
+          ],
+        },
+      },
+      contentShape: { claimEvidence: { staff: [], teamMembers: [], team: [] } },
+    });
+
+    expect(instruction).toContain("REFERENCE PERSONNEL-CUE TRANSLATION");
+    expect(instruction).toContain("Preserve the poster composition");
+    expect(instruction).toMatch(/replace the source-person role/iu);
+    expect(instruction).toContain("non-human, object-led visual");
+    expect(instruction).toContain("verified client content only");
+  });
+
+  it("places the personnel translation after the stage-specific reference instructions", () => {
+    const prompt = appendReferencePersonnelCue(
+      "Reference and screenshots are supplied above.\nEXPERIENCE STAGE final requirements.",
+      {
+        route: {
+          signature: "technician campaign poster",
+          referenceDna: {
+            requiredSignatureElements: [
+              {
+                id: "technician-campaign-poster",
+                description: "Portrait-led hero",
+              },
+            ],
+          },
+        },
+        contentShape: {
+          claimEvidence: { staff: [], teamMembers: [], team: [] },
+        },
+      },
+    );
+
+    expect(prompt.indexOf("EXPERIENCE STAGE final requirements.")).toBeLessThan(
+      prompt.indexOf("REFERENCE PERSONNEL-CUE TRANSLATION"),
+    );
+    expect(prompt.trimEnd()).toMatch(/Use verified client content only/u);
+  });
+
+  it("does not apply the source-person translation without personnel cues or when staff are verified", () => {
+    const route = { label: "Roofing reference", signature: "roof-form atlas" };
+    expect(referencePersonnelCueTranslation({ route, contentShape: {} })).toBe(
+      "",
+    );
+    expect(
+      referencePersonnelCueTranslation({
+        route: {
+          ...route,
+          signature: "technician campaign poster and person-led reassurance",
+        },
+        contentShape: {
+          claimEvidence: {
+            staff: [{ name: "Verified person", role: "Technician" }],
+          },
+        },
+      }),
+    ).toBe("");
+  });
+
+  it("rewrites person-dependent model context while preserving stable signature IDs", () => {
+    const route = {
+      label: "Morris-Jenkins home services homepage",
+      signature:
+        "uniformed technician beside promise|technician campaign hero|people-led explanation",
+      referenceDna: {
+        requiredSignatureElements: [
+          {
+            id: "technician-campaign-poster",
+            description: "technician campaign poster with a uniformed technician",
+          },
+        ],
+        sectionSequence: ["technician-campaign-hero", "person-led-reassurance"],
+        imageTreatment: {
+          mode: "friendly uniformed technician photography",
+          focalPoint: "technician and promise together",
+        },
+      },
+      referenceDossier: {
+        id: "morris-jenkins-home-services",
+        referenceName: "Morris-Jenkins",
+        designPrompt:
+          "A uniformed technician beside a promise, technician campaign poster, and people-led explanation.",
+      },
+    };
+
+    const adapted = adaptReferencePersonnelCuesForClient(route, {
+      claimEvidence: { staff: [], teamMembers: [], team: [] },
+    });
+
+    expect(adapted).not.toBe(route);
+    expect(JSON.stringify(adapted)).not.toMatch(
+      /uniformed technician|technician campaign hero|people-led explanation|person-led reassurance|friendly uniformed technician photography/iu,
+    );
+    expect(adapted.referenceDna.requiredSignatureElements[0].id).toBe(
+      "technician-campaign-poster",
+    );
+    expect(adapted.referenceDna.requiredSignatureElements[0].description).toContain(
+      "object-led campaign poster",
+    );
+    expect(route.referenceDossier.designPrompt).toContain("uniformed technician");
+  });
+
+  it("preserves machine-readable Reference DNA markers while adapting prose", () => {
+    const route = {
+      signature: "technician campaign poster and person-led process",
+      referenceDna: {
+        sectionSequence: ["technician-campaign-hero", "person-led-reassurance"],
+        heroGeometry: { mode: "technician-led-statement" },
+        servicePresentation: { pattern: "technician-service-rail" },
+        motion: { primitive: "technician-portrait-reveal" },
+      },
+    };
+
+    const adapted = adaptReferencePersonnelCuesForClient(route, {
+      claimEvidence: { staff: [], teamMembers: [], team: [] },
+    });
+
+    expect(adapted.referenceDna.sectionSequence).toEqual(
+      route.referenceDna.sectionSequence,
+    );
+    expect(adapted.referenceDna.heroGeometry.mode).toBe(
+      route.referenceDna.heroGeometry.mode,
+    );
+    expect(adapted.referenceDna.servicePresentation.pattern).toBe(
+      route.referenceDna.servicePresentation.pattern,
+    );
+    expect(adapted.referenceDna.motion.primitive).toBe(
+      route.referenceDna.motion.primitive,
+    );
+    expect(adapted.signature).not.toBe(route.signature);
+  });
+
   it("uses OpenRouter's current completion limit request field", () => {
     expect(completionLimitRequestField(48000)).toEqual({
       max_completion_tokens: 48000,
     });
-    expect(() => completionLimitRequestField(0)).toThrow(
-      /positive integer/u,
-    );
+    expect(() => completionLimitRequestField(0)).toThrow(/positive integer/u);
   });
 
   it("gives each authoring stage generous output and time headroom", () => {
@@ -34,9 +181,7 @@ describe("creative authoring output budgets", () => {
       routeId: "route-01",
       maxTokens: AUTHORING_STAGE_BUDGETS.experience.maxTokens,
       payload: {
-        choices: [
-          { finish_reason: "length", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "length", message: { content: null } }],
         usage: {
           completion_tokens: 48000,
           completion_tokens_details: { reasoning_tokens: 47980 },
@@ -68,10 +213,43 @@ describe("creative authoring output budgets", () => {
     expect(checklist.indexOf('data-reference-section="hero"')).toBeLessThan(
       checklist.indexOf('data-reference-section="image-chapter"'),
     );
-    expect(checklist.indexOf('data-reference-section="image-chapter"')).toBeLessThan(
+    expect(
+      checklist.indexOf('data-reference-section="image-chapter"'),
+    ).toBeLessThan(
       checklist.indexOf('data-reference-section="magazine-archive"'),
     );
     expect(checklist).toContain("semantically matching section");
+  });
+
+  it("requires one meaningful H1 inside the main landmark", () => {
+    const checklist = referenceImplementationChecklist({
+      sectionSequence: ["hero", "services", "faqs", "contact"],
+    });
+
+    expect(checklist).toContain(
+      "Render exactly one meaningful H1 inside the page's single <main> landmark",
+    );
+  });
+
+  it("requires action hover states to keep matched foreground and surface roles", () => {
+    expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain(
+      "Never pair --ll-text as an action fill with --ll-on-action text",
+    );
+    expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain(
+      "use native list markers or an explicit aria-hidden child marker instead",
+    );
+  });
+
+  it("keeps hero focus indicators on an opaque surface when media remains behind them", () => {
+    expect(HERO_MEDIA_FOCUS_CONTRACT).toContain(
+      "provable opaque local surface covering the entire control and focus ring",
+    );
+    expect(HERO_MEDIA_FOCUS_CONTRACT).toContain(
+      "Do not set the hero copy/action surface to transparent or translucent at mobile while media remains behind it.",
+    );
+    expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain(
+      "HERO MEDIA FOCUS CONTRACT",
+    );
   });
 
   it("states distinct desktop and mobile hero topologies as separate layout contracts", () => {
@@ -89,7 +267,9 @@ describe("creative authoring output budgets", () => {
     expect(checklist).toContain("Desktop media relation: copy-over-media");
     expect(checklist).toContain("Mobile hero topology: type-led-statement");
     expect(checklist).toContain("Mobile media relation: copy-leads-opening");
-    expect(checklist).toContain("do not carry desktop image occupancy into mobile");
+    expect(checklist).toContain(
+      "do not carry desktop image occupancy into mobile",
+    );
     expect(checklist).not.toContain("IMAGE-INDEPENDENT REFERENCE GUARDRAIL");
   });
 
@@ -145,13 +325,25 @@ describe("creative authoring output budgets", () => {
       motion: { primitive: "native-scroll-snap-gallery" },
     });
 
-    expect(checklist).toContain('data-hero-geometry="dark-photo-led-home-promise"');
-    expect(checklist).toContain('data-navigation-geometry="thin-utility-strip-over-airy-service-nav"');
-    expect(checklist).toContain('data-service-presentation="three-captioned-surface-studies"');
+    expect(checklist).toContain(
+      'data-hero-geometry="dark-photo-led-home-promise"',
+    );
+    expect(checklist).toContain(
+      'data-navigation-geometry="thin-utility-strip-over-airy-service-nav"',
+    );
+    expect(checklist).toContain(
+      'data-service-presentation="three-captioned-surface-studies"',
+    );
     expect(checklist).toContain('data-cta-placement="hero-estimate-anchor"');
-    expect(checklist).toContain('data-mobile-recomposition="stacked-room-sample-sequence"');
-    expect(checklist).toContain('data-motion-primitive="native-scroll-snap-gallery"');
-    expect(checklist).toContain("machine-readable verification markers, not visual substitutions");
+    expect(checklist).toContain(
+      'data-mobile-recomposition="stacked-room-sample-sequence"',
+    );
+    expect(checklist).toContain(
+      'data-motion-primitive="native-scroll-snap-gallery"',
+    );
+    expect(checklist).toContain(
+      "machine-readable verification markers, not visual substitutions",
+    );
   });
 
   it("promotes distinctive signature and art-direction mechanics into rendered obligations", () => {
@@ -172,7 +364,8 @@ describe("creative authoring output budgets", () => {
       imageTreatment: {
         mode: "finished rooms and paint sample-like color strips",
         crop: "wide room reveal followed by contained material studies",
-        focalPoint: "keep the finished surface visible beside the service choice",
+        focalPoint:
+          "keep the finished surface visible beside the service choice",
       },
       servicePresentation: {
         pattern: "vertical service menu that changes the featured room image",

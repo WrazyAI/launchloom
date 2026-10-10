@@ -1,4 +1,7 @@
-import { compilePageBriefs } from "../templates/client-site/src/lib/page-briefs.mjs";
+import {
+  compilePageBriefs,
+  pageBriefReadiness,
+} from "../templates/client-site/src/lib/page-briefs.mjs";
 import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
 import {
   publicGenerationIntake,
@@ -30,6 +33,7 @@ import {
   selectExperiencePackId,
   selectExperienceVariantId,
 } from "../templates/client-site/src/lib/experience-pack.ts";
+import { findUnsupportedBusinessClaimLocations } from "./business-copy-claims.mjs";
 
 // Bounded per-process usage evidence so the generation workflow can report
 // provider cost without parsing runner logs. Never changes the generated
@@ -79,6 +83,7 @@ function recentFingerprintsForSelection(businessKind) {
 const MODEL = "z-ai/glm-5.3-flash";
 const SITE_COPY_MAX_COMPLETION_TOKENS = 8192;
 const SITE_COPY_REFINEMENT_MAX_COMPLETION_TOKENS = 4096;
+const SITE_COPY_REFINEMENT_RETRY_MAX_COMPLETION_TOKENS = 8192;
 const MAX_CORE_SERVICES = 5;
 
 const SHARED_CREATIVE_DIRECTION =
@@ -100,8 +105,8 @@ function seoResearchForConfig(value) {
     mode,
     languageCode: value.languageCode || "en",
     publishReady:
-      value.publishReady === true ||
-      (sourceVersion < 2 && mode === "researched"),
+      mode === "researched" &&
+      (value.publishReady === true || sourceVersion < 2),
     validatedQueries: list(
       value.validatedQueries,
       sourceVersion >= 2 ? 120 : 12,
@@ -153,6 +158,295 @@ export function prepareGenerationIntake(intake = {}) {
     ...projection,
     seoResearch: seoResearchForConfig(projection.seoResearch || {}),
   };
+}
+
+function compactStringList(value, limit = 12) {
+  const items = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/\r?\n/u)
+      : [];
+  return items
+    .map((item) => text(item, 240))
+    .filter(Boolean)
+    .slice(0, limit);
+}
+
+function copywriterPageContext(page) {
+  if (!page || typeof page !== "object") return null;
+  const primary = page.primaryKeyword;
+  const primaryKeyword =
+    typeof primary === "string"
+      ? primary
+      : text(primary?.keyword || primary?.query, 180);
+  const result = {
+    pageType: text(page.pageType, 40),
+    ...(page.pageType === "service"
+      ? { service: text(page.service || page.title, 120) }
+      : {}),
+    ...(page.pageType === "location"
+      ? { location: text(page.location || page.title, 120) }
+      : {}),
+    ...(text(page.slug, 180) ? { slug: text(page.slug, 180) } : {}),
+    ...(primaryKeyword
+      ? {
+          primaryKeyword: {
+            keyword: primaryKeyword,
+            ...(text(primary?.intent, 40)
+              ? { intent: text(primary.intent, 40) }
+              : {}),
+          },
+        }
+      : {}),
+    supportingKeywords: compactStringList(page.supportingKeywords, 6),
+    fanOutQuestions: compactStringList(page.fanOutQuestions, 6),
+  };
+  return result.pageType ? result : null;
+}
+
+/**
+ * Give copy models verified facts and useful search intent, not competitor
+ * claims, raw search snippets, costs, or the complete evidence dossier.
+ */
+function copywriterContext(intake = {}) {
+  const seo = intake.seoResearch || {};
+  const pageMap = (Array.isArray(seo.pageMap) ? seo.pageMap : [])
+    .filter((page) => ["service", "location"].includes(page?.pageType))
+    .slice(0, MAX_CORE_SERVICES + 12)
+    .map(copywriterPageContext)
+    .filter(Boolean);
+  const verifiedFacts = Object.fromEntries(
+    Object.entries({
+      hours: intake.hours,
+      offer: intake.offer,
+      pricing: intake.pricing || intake.priceRange,
+      credentials: intake.credentials,
+      guarantees: intake.guarantees || intake.warranties,
+      availability: intake.availability,
+      responseTime: intake.responseTime,
+      results: intake.results,
+      staff: intake.staff,
+      yearsExperience: intake.yearsExperience,
+      yearEstablished: intake.yearEstablished,
+    }).filter(
+      ([, value]) => value !== undefined && value !== null && value !== "",
+    ),
+  );
+  const routeFacts = (intake.routePolicy?.decisions || [])
+    .slice(0, 24)
+    .map((decision) => ({
+      pageType: text(decision?.pageType, 40),
+      target: text(decision?.target, 120),
+      status: text(decision?.status, 40),
+      localFacts: compactStringList(
+        (Array.isArray(decision?.admission?.localFacts)
+          ? decision.admission.localFacts
+          : []
+        ).map((fact) => fact?.value),
+        6,
+      ),
+    }))
+    .filter((decision) => decision.pageType && decision.target);
+  const serviceNames = compactStringList(
+    intake.confirmedServices || intake.services,
+    MAX_CORE_SERVICES,
+  );
+  const customerQuestions = [
+    ...compactStringList(seo.customerQuestions, 12),
+    ...(Array.isArray(seo.questionEvidence) ? seo.questionEvidence : [])
+      .map((item) => text(item?.question, 240))
+      .filter(Boolean),
+  ].slice(0, 24);
+
+  return {
+    businessName: text(intake.businessName || intake.business?.name, 120),
+    businessKind: text(intake.businessKind || intake.business?.kind, 100),
+    industry: text(intake.industry, 100),
+    languageCode: text(
+      seo.languageCode || intake.researchLanguageCode || "en",
+      16,
+    ),
+    services: serviceNames,
+    excludedServices: compactStringList(
+      intake.excludedServices,
+      MAX_CORE_SERVICES,
+    ),
+    primaryCity: text(intake.primaryCity, 120),
+    serviceAreas: compactStringList(
+      intake.serviceAreas || intake.coverageAreas,
+      20,
+    ),
+    serviceRadius: intake.serviceRadius ?? null,
+    primaryCta: text(intake.primaryCta, 100),
+    differentiators: compactStringList(intake.differentiators, 12),
+    faqNotes: text(intake.faqNotes, 1200),
+    feedback: text(intake.feedback, 2400),
+    brandNotes: text(intake.brandNotes, 2400),
+    qualityConstraints: text(intake.qualityConstraints, 2400),
+    addressVisibility: text(intake.addressVisibility, 32),
+    verifiedFacts,
+    prohibitedClaims: compactStringList(seo.prohibitedClaims, 24),
+    routeFacts,
+    seoResearch: {
+      mode: text(seo.mode, 32) || "baseline",
+      publishReady: seo.publishReady === true,
+      pageMap,
+      customerQuestions: [...new Set(customerQuestions)],
+    },
+  };
+}
+
+function copyRefinementDraft(draft = {}) {
+  const textFields = (source) =>
+    Object.fromEntries(
+      Object.entries(source || {}).filter(
+        ([, value]) => typeof value === "string",
+      ),
+    );
+  return {
+    business: textFields({
+      tagline: draft.business?.tagline,
+      description: draft.business?.description,
+    }),
+    copy: textFields(draft.copy),
+    services: (Array.isArray(draft.services) ? draft.services : []).map(
+      (service) => ({
+        name: text(service?.name, 120),
+        ...textFields({
+          description: service?.description,
+          pageIntroduction: service?.pageIntroduction,
+          pageMetaDescription: service?.pageMetaDescription,
+        }),
+        decisionSupport: textFields(service?.decisionSupport),
+        pageSections: textFields(service?.pageSections),
+        pageFaqs: (Array.isArray(service?.pageFaqs)
+          ? service.pageFaqs
+          : []
+        ).map((faq) => ({
+          question: text(faq?.question, 240),
+          answer: text(faq?.answer, 800),
+        })),
+      }),
+    ),
+    locations: (Array.isArray(draft.locations) ? draft.locations : []).map(
+      (location) => ({
+        name: text(location?.name, 120),
+        ...textFields({
+          description: location?.description,
+          localNote: location?.localNote,
+          pageIntroduction: location?.pageIntroduction,
+          pageMetaDescription: location?.pageMetaDescription,
+          pageLocalContext: location?.pageLocalContext,
+        }),
+      }),
+    ),
+    differentiators: compactStringList(draft.differentiators, 12),
+    conversion: {
+      process: compactStringList(draft.conversion?.process, 6),
+      faqs: (Array.isArray(draft.conversion?.faqs)
+        ? draft.conversion.faqs
+        : []
+      ).map((faq) => ({
+        question: text(faq?.question, 240),
+        answer: text(faq?.answer, 800),
+      })),
+    },
+  };
+}
+
+function mergeCopyFields(current = {}, patch = {}) {
+  const result = { ...current };
+  for (const [key, value] of Object.entries(patch || {}))
+    if (Object.hasOwn(current, key) && typeof value === "string")
+      result[key] = value;
+  return result;
+}
+
+function mergeFaqAnswers(current = [], patch = []) {
+  if (!Array.isArray(current) || !Array.isArray(patch)) return current;
+  return current.map((faq) => {
+    const replacement = patch.find(
+      (item) =>
+        item?.question === faq?.question && typeof item.answer === "string",
+    );
+    return replacement ? { ...faq, answer: replacement.answer } : faq;
+  });
+}
+
+function mergeCopyRefinementPatch(draft, patch) {
+  if (!patch || typeof patch !== "object" || Array.isArray(patch))
+    throw new Error(
+      "OpenRouter copy refinement did not return a JSON copy patch.",
+    );
+  const merged = { ...draft };
+  const currentBusinessCopy = {
+    tagline: draft.business?.tagline,
+    description: draft.business?.description,
+  };
+  merged.business = {
+    ...draft.business,
+    ...mergeCopyFields(currentBusinessCopy, patch.business),
+  };
+  merged.copy = mergeCopyFields(draft.copy, patch.copy);
+  const servicePatches = Array.isArray(patch.services) ? patch.services : [];
+  merged.services = (Array.isArray(draft.services) ? draft.services : []).map(
+    (service) => {
+      const edit = servicePatches.find((item) => item?.name === service?.name);
+      if (!edit) return service;
+      const serviceCopy = mergeCopyFields(
+        {
+          description: service.description,
+          pageIntroduction: service.pageIntroduction,
+          pageMetaDescription: service.pageMetaDescription,
+        },
+        edit,
+      );
+      return {
+        ...service,
+        ...serviceCopy,
+        decisionSupport: mergeCopyFields(
+          service.decisionSupport,
+          edit.decisionSupport,
+        ),
+        pageSections: mergeCopyFields(service.pageSections, edit.pageSections),
+        pageFaqs: mergeFaqAnswers(service.pageFaqs, edit.pageFaqs),
+      };
+    },
+  );
+  const locationPatches = Array.isArray(patch.locations) ? patch.locations : [];
+  merged.locations = (
+    Array.isArray(draft.locations) ? draft.locations : []
+  ).map((location) => {
+    const edit = locationPatches.find((item) => item?.name === location?.name);
+    if (!edit) return location;
+    return {
+      ...location,
+      ...mergeCopyFields(
+        {
+          description: location.description,
+          localNote: location.localNote,
+          pageIntroduction: location.pageIntroduction,
+          pageMetaDescription: location.pageMetaDescription,
+          pageLocalContext: location.pageLocalContext,
+        },
+        edit,
+      ),
+    };
+  });
+  if (
+    Array.isArray(patch.differentiators) &&
+    patch.differentiators.every((item) => typeof item === "string")
+  )
+    merged.differentiators = patch.differentiators;
+  merged.conversion = {
+    ...draft.conversion,
+    ...(Array.isArray(patch.conversion?.process) &&
+    patch.conversion.process.every((item) => typeof item === "string")
+      ? { process: patch.conversion.process }
+      : {}),
+    faqs: mergeFaqAnswers(draft.conversion?.faqs, patch.conversion?.faqs),
+  };
+  return merged;
 }
 
 const STOCK_PACKS = {
@@ -1291,6 +1585,10 @@ const GENERIC_COPY =
   /tailored to your needs|talk through your needs|personalized support|quality you can trust|when it matters|next level|we are here for you|your trusted partner|one[- ]stop/i;
 const REPAIR_OUTCOME_ISSUE =
   "Generated copy includes a repair outcome prohibited by the client art direction.";
+const DUPLICATE_SERVICE_CONTENT_ISSUE =
+  "Service pages repeat generic guidance after service-name substitution.";
+const UNSUPPORTED_BUSINESS_CLAIMS_PREFIX =
+  "Generated copy includes unsupported business claims:";
 const REPAIR_OUTCOME_CLAIM =
   /\b(?:gets?|got|will be|is|are|was|were)\s+(?:(?:completely|fully)\s+)?(?:fixed|repaired|solved|restored|resolved)\b|\b(?:we|our team)\s+(?:will|can)\s+(?:fix|repair|solve|restore)\b/i;
 const REPAIR_OUTCOME_NEGATION =
@@ -1331,6 +1629,46 @@ function visitorFacingCopy(config) {
     .join("\n");
 }
 
+function routeCopyWithoutServiceName(value, serviceName) {
+  const normalizedName = text(serviceName, 120).toLocaleLowerCase();
+  return String(value || "")
+    .toLocaleLowerCase()
+    .split(normalizedName)
+    .join(" service ")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
+function hasRepeatedModelServiceContent(modelOutput) {
+  const services = Array.isArray(modelOutput?.services)
+    ? modelOutput.services
+    : [];
+  if (services.length < 2) return false;
+  const repeatsAfterNameRemoval = (values, owners) => {
+    const normalized = values
+      .map((value, index) =>
+        typeof value === "string" && value.trim()
+          ? routeCopyWithoutServiceName(value, owners[index]?.name)
+          : "",
+      )
+      .filter(Boolean);
+    return normalized.length > 1 && new Set(normalized).size < normalized.length;
+  };
+  if (
+    repeatsAfterNameRemoval(
+      services.map((service) => service?.description),
+      services,
+    )
+  )
+    return true;
+  return ["scope", "nextStep", "preparation"].some((field) =>
+    repeatsAfterNameRemoval(
+      services.map((service) => service?.decisionSupport?.[field]),
+      services,
+    ),
+  );
+}
+
 function hasUnnegatedRepairOutcomeClaim(copy) {
   const text = String(copy || "");
   const claimPattern = new RegExp(REPAIR_OUTCOME_CLAIM.source, "giu");
@@ -1354,7 +1692,7 @@ function violatesExplicitRepairOutcomeProhibition(config) {
   );
 }
 
-export function evaluateDraft(config) {
+export function evaluateDraft(config, { modelOutput, intake } = {}) {
   const issues = [];
   const businessName = text(config.business?.name, 100);
   const services = Array.isArray(config.services) ? config.services : [];
@@ -1378,6 +1716,18 @@ export function evaluateDraft(config) {
   )
     issues.push(
       "At least one service card lacks a specific, customer-useful outcome.",
+    );
+  if (hasRepeatedModelServiceContent(modelOutput))
+    issues.push(DUPLICATE_SERVICE_CONTENT_ISSUE);
+  const pageReadiness = pageBriefReadiness(config);
+  if (!pageReadiness.allowed)
+    issues.push(pageReadiness.error || "Route-specific page content is incomplete.");
+  const unsupportedClaims = findUnsupportedBusinessClaimLocations(config, intake);
+  if (unsupportedClaims.length)
+    issues.push(
+      `Generated copy includes unsupported business claims: ${unsupportedClaims
+        .map(({ category, path }) => `${category} at ${path}`)
+        .join("; ")}.`,
     );
   if (
     text(copy.heroKicker, 160).length < 8 ||
@@ -1999,6 +2349,11 @@ export function normalise(candidate, intake) {
     supportingPages: intake.supportingPages || {},
     pageContent: intake.pageContent || {},
     pageEvidence: intake.pageEvidence || [],
+    ...(intake.pageContentContractVersion !== undefined
+      ? { pageContentContractVersion: Number(intake.pageContentContractVersion) }
+      : seoResearch?.version >= 2 && seoResearch.mode === "researched"
+        ? { pageContentContractVersion: 1 }
+        : {}),
     excludedServices: lines(intake.excludedServices),
     seoPageMap: seoResearch?.pageMap || [],
     style: {
@@ -2072,6 +2427,217 @@ export function normalise(candidate, intake) {
       ? { lead: intake.lead }
       : {}),
   });
+  if (normalized.pageContentContractVersion === 1) {
+    const evidence = Array.isArray(normalized.pageEvidence)
+      ? [...normalized.pageEvidence]
+      : [];
+    const resolveSource = (dottedPath) =>
+      dottedPath
+        .split(".")
+        .reduce((current, part) => current?.[part], normalized);
+    const copyClaim = (value, routeId, suffix, sourceRefs, limit) => {
+      const cleaned = text(value, limit);
+      const refs = [...new Set(sourceRefs)].filter((ref) => {
+        const source = resolveSource(ref);
+        return (
+          (typeof source === "string" ||
+            (typeof source === "number" && Number.isFinite(source))) &&
+          text(source, 1000)
+        );
+      });
+      if (
+        !cleaned ||
+        !matchesWritingSystem(cleaned, clientSource) ||
+        refs.length === 0
+      )
+        return null;
+      const baseId = `generated-${slugify(routeId)}-${suffix}`;
+      let id = baseId;
+      for (let duplicate = 2; evidence.some((item) => item?.id === id); duplicate++)
+        id = `${baseId}-${duplicate}`;
+      evidence.push({
+        id,
+        value: cleaned,
+        source:
+          "Generated route copy grounded in verified business facts and measured search intent.",
+        kind: "generated_copy",
+        confirmed: true,
+        public: true,
+        routeIds: [routeId],
+        sourceRefs: refs,
+      });
+      return { text: cleaned, evidenceIds: [id] };
+    };
+    const routeName = (value) =>
+      String(value || "").toLowerCase().replace(/\s+/gu, " ").trim();
+    for (const [serviceIndex, service] of normalized.services.entries()) {
+      const routeId = `service:${routeName(service.name)}`;
+      if (normalized.pageContent[routeId]) continue;
+      const rawService = proposedServiceFor(service.name);
+      const mapIndex = normalized.seoPageMap.findIndex(
+        (page) =>
+          page.pageType === "service" &&
+          routeName(page.service || page.title) === routeName(service.name),
+      );
+      if (mapIndex < 0) continue;
+      const map = normalized.seoPageMap[mapIndex];
+      const mapRef = (field) => `seoPageMap.${mapIndex}.${field}`;
+      const serviceRef = (field) => `services.${serviceIndex}.${field}`;
+      const keywordRef =
+        typeof map.primaryKeyword === "string"
+          ? mapRef("primaryKeyword")
+          : mapRef("primaryKeyword.keyword");
+      const baseRefs = [
+        serviceRef("name"),
+        serviceRef("description"),
+        keywordRef,
+        mapRef("supportingKeywords.0.keyword"),
+      ];
+      const rawSections = rawService?.pageSections || {};
+      const rawSupport = rawService?.decisionSupport || {};
+      const sections = {};
+      for (const field of ["scope", "preparation", "nextStep"]) {
+        const sectionText = rawSections[field] || rawSupport[field];
+        const result = copyClaim(
+          sectionText,
+          routeId,
+          `${field}-0`,
+          [
+            serviceRef(`decisionSupport.${field}`),
+            ...baseRefs,
+            mapRef("fanOutQuestions.0"),
+          ],
+          480,
+        );
+        if (result) sections[field] = [result];
+      }
+      const introduction = copyClaim(
+        rawService?.pageIntroduction,
+        routeId,
+        "introduction-0",
+        [...baseRefs, mapRef("fanOutQuestions.0")],
+        680,
+      );
+      const metadataDescription = copyClaim(
+        rawService?.pageMetaDescription,
+        routeId,
+        "metadata-description-0",
+        baseRefs,
+        240,
+      );
+      const faqs = [];
+      const searchQuestions = Array.isArray(map.fanOutQuestions)
+        ? map.fanOutQuestions
+        : [];
+      for (const [faqIndex, faq] of (Array.isArray(rawService?.pageFaqs)
+        ? rawService.pageFaqs
+        : []).entries()) {
+        const question = text(faq?.question, 180);
+        const questionIndex = searchQuestions.findIndex(
+          (item) => routeName(item) === routeName(question),
+        );
+        if (questionIndex < 0) continue;
+        const questionClaim = copyClaim(
+          question,
+          routeId,
+          `faq-${faqIndex}-question`,
+          [mapRef(`fanOutQuestions.${questionIndex}`), serviceRef("name")],
+          180,
+        );
+        const answerClaim = copyClaim(
+          faq?.answer,
+          routeId,
+          `faq-${faqIndex}-answer`,
+          [
+            serviceRef("description"),
+            serviceRef("decisionSupport.scope"),
+            serviceRef("decisionSupport.preparation"),
+            serviceRef("decisionSupport.nextStep"),
+            mapRef(`fanOutQuestions.${questionIndex}`),
+          ],
+          520,
+        );
+        if (questionClaim && answerClaim)
+          faqs.push({ question: questionClaim, answer: answerClaim });
+      }
+      normalized.pageContent[routeId] = {
+        ...(introduction ? { introduction } : {}),
+        metadata: metadataDescription
+          ? { description: metadataDescription }
+          : {},
+        ...sections,
+        faqs,
+      };
+    }
+    for (const [locationIndex, location] of normalized.locations.entries()) {
+      const routeId = `location:${routeName(location.name)}`;
+      if (normalized.pageContent[routeId]) continue;
+      const rawLocation = (Array.isArray(value.locations) ? value.locations : []).find(
+        (item) => routeName(item?.name) === routeName(location.name),
+      );
+      const decisionIndex = normalized.routePolicy.decisions.findIndex(
+        (decision) =>
+          decision.pageType === "location" &&
+          routeName(decision.target) === routeName(location.name),
+      );
+      const mapIndex = normalized.seoPageMap.findIndex(
+        (page) =>
+          page.pageType === "location" &&
+          routeName(page.location || page.title) === routeName(location.name),
+      );
+      if (!rawLocation || decisionIndex < 0 || mapIndex < 0) continue;
+      const admission = normalized.routePolicy.decisions[decisionIndex].admission || {};
+      const localFactRefs = (Array.isArray(admission.localFacts)
+        ? admission.localFacts
+        : [])
+        .map((fact, factIndex) =>
+          text(fact?.value)
+            ? `routePolicy.decisions.${decisionIndex}.admission.localFacts.${factIndex}.value`
+            : "",
+        )
+        .filter(Boolean);
+      const mapRef = (field) => `seoPageMap.${mapIndex}.${field}`;
+      const locationRef = (field) => `locations.${locationIndex}.${field}`;
+      const sourceRefs = [
+        locationRef("name"),
+        `routePolicy.decisions.${decisionIndex}.admission.visitorNeed`,
+        `routePolicy.decisions.${decisionIndex}.admission.distinctValue`,
+        ...localFactRefs,
+        typeof normalized.seoPageMap[mapIndex].primaryKeyword === "string"
+          ? mapRef("primaryKeyword")
+          : mapRef("primaryKeyword.keyword"),
+      ];
+      const introduction = copyClaim(
+        rawLocation.pageIntroduction,
+        routeId,
+        "introduction-0",
+        sourceRefs,
+        680,
+      );
+      const metadataDescription = copyClaim(
+        rawLocation.pageMetaDescription,
+        routeId,
+        "metadata-description-0",
+        sourceRefs,
+        240,
+      );
+      const localContext = copyClaim(
+        rawLocation.pageLocalContext,
+        routeId,
+        "local-context-0",
+        [...localFactRefs, ...sourceRefs],
+        520,
+      );
+      normalized.pageContent[routeId] = {
+        ...(introduction ? { introduction } : {}),
+        metadata: metadataDescription
+          ? { description: metadataDescription }
+          : {},
+        localContext: localContext ? [localContext] : [],
+      };
+    }
+    normalized.pageEvidence = evidence;
+  }
   normalized.leadForm = leadFormFor(normalized, intake);
   normalized.routeInventory = compileRouteInventory(normalized);
   normalized.pageBriefs = compilePageBriefs(normalized);
@@ -2089,13 +2655,13 @@ export function removeEmDashes(value) {
 }
 
 async function askModel(intake, effort, model = MODEL) {
-  const systemPrompt = `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-language website copy from verified facts. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When an seoResearch dossier is present, use its keyword-to-page map to keep each confirmed service attached to its researched intent and use page-level fan-out questions for decision support. Never add services absent from the confirmed services list. Keep location pages only when the canonical map contains them. Blog opportunities are for future articles; do not generate initial blog posts or filler. Never present search metrics, SERP language, or competitor titles as a business fact, and never include anything listed under prohibitedClaims. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`;
+  intake = copywriterContext(intake);
+  const systemPrompt = `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-language website copy from verified facts. Use the language and writing system indicated by languageCode in the verified context, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When an seoResearch dossier is present, use each service's matching page-map entry, measured primary intent, supporting keywords, and fan-out questions for its own descriptions, route introduction, page sections, and FAQs. For every measured service route, write a distinct pageIntroduction, pageMetaDescription, pageSections.scope, pageSections.preparation, pageSections.nextStep, and at least two pageFaqs. Each pageFaq question must exactly match a fan-out question for that service; answer with confirmed facts or cautious preparation and next-step guidance only. Do not copy generic service guidance between routes with only the service name changed. If evidence cannot support a useful answer, do not invent one; leave the field absent so the route fails review. For a selected location route, provide pageIntroduction, pageMetaDescription, and pageLocalContext only when routePolicy admission includes supporting localFacts; use those exact local details and distinguish coverage from a physical office. If the research supplies a question but no business-specific answer, frame the response as a cautious question or next-step prompt instead of asserting undocumented business practices. Never add services absent from the confirmed services list. Keep location pages only when the canonical map contains them. Blog opportunities are for future articles; do not generate initial blog posts or filler. Never present search metrics, SERP language, or competitor titles as a business fact, and never include anything listed under prohibitedClaims. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`;
   const identity = {
-    businessName: intake.businessName || intake.business?.name || "",
-    email: intake.email || intake.business?.email || "",
-    phone: intake.phone || intake.business?.phone || "",
-    domain:
-      intake.desiredDomain || intake.domain || intake.business?.domain || "",
+    businessName: intake.businessName,
+    businessKind: intake.businessKind,
+    industry: intake.industry,
+    services: intake.services,
   };
   const sessionId = openRouterSessionId("site-copy", model, identity);
   const promptCacheKey = openRouterPromptCacheKey(
@@ -2120,7 +2686,7 @@ async function askModel(intake, effort, model = MODEL) {
         },
         {
           role: "user",
-          content: `Transform this verified client brief into JSON with keys preset, business, style, services, differentiators, locations, copy, conversion. business must include name, tagline, description, phone, email, address, serviceAreas, hours, primaryCta, offer, domain, leadEmail. services is an array of {name, description, slug, decisionSupport:{scope,nextStep,preparation}}. Keep every submitted service name exactly as provided. Each service description is one concrete sentence under 22 words. Each decisionSupport field must answer a different practical buying question using only supported facts and cautious next-step language. locations is an array of {name, description, localNote}; include only submitted service areas, distinguish serving an area from having a physical office there, and avoid interchangeable city-swap copy. copy must include heroKicker, heroHeading, heroBody, servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. heroHeading is a catchy 4-10 word customer promise, not a service inventory. heroBody is one sentence under 28 words. servicesHeading is a short, memorable section promise and servicesIntro is one sentence. aboutBody adds useful context instead of repeating the hero description or proof points. conversion must include process (2-4 concise steps) and faqs (2-5 {question, answer} objects). The tagline is a concise, differentiated promise; description is a 2-3 sentence customer-facing introduction. Treat submitted business facts as authoritative.\n\n${JSON.stringify(intake)}`,
+          content: `Transform this verified client brief into JSON with keys preset, business, style, services, differentiators, locations, copy, conversion. business must include name, tagline, description, phone, email, address, serviceAreas, hours, primaryCta, offer, domain, leadEmail. Each service object must include {name, description, slug, decisionSupport:{scope,nextStep,preparation}, pageIntroduction, pageMetaDescription, pageSections:{scope,preparation,nextStep}, pageFaqs:[{question,answer}]}. Keep every submitted service name exactly as provided. Each service description is one concrete sentence under 22 words. Each decisionSupport field must answer a different practical buying question using only supported facts and cautious next-step language. For each measured service route, the page introduction is 2-3 specific sentences; the three page sections each add distinct, useful route guidance; the metadata description is concise; pageFaqs has at least two answers to that route's exact fan-out questions. Do not answer questions with invented policy, prices, timelines, guarantees, or outcomes. A location object may include {name,description,localNote,pageIntroduction,pageMetaDescription,pageLocalContext}; include only selected service areas and use local facts from its explicit routePolicy admission, never infer an office. If local facts are absent, omit the route copy instead of manufacturing city-specific detail. copy must include heroKicker, heroHeading, heroBody, servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. heroHeading is a catchy 4-10 word customer promise, not a service inventory. heroBody is one sentence under 28 words. servicesHeading is a short, memorable section promise and servicesIntro is one sentence. aboutBody adds useful context instead of repeating the hero description or proof points. conversion must include process (2-4 concise steps) and faqs (2-5 {question, answer} objects). The tagline is a concise, differentiated promise; description is a 2-3 sentence customer-facing introduction. Treat submitted business facts as authoritative.\n\n${JSON.stringify(intake)}`,
         },
       ],
     },
@@ -2137,14 +2703,27 @@ async function askModel(intake, effort, model = MODEL) {
   return parseModelJson(content);
 }
 
-async function refineDraft(intake, draft, report, model = MODEL) {
-  const systemPrompt = `You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Fix only the listed quality issues. Treat explicit negative instructions in client art direction and prohibitedClaims as hard constraints. Preserve the selected design recipe, every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, staff, or claims. Do not return HTML, CSS, code, explanations, or markdown.`;
+async function refineDraft(
+  intake,
+  draft,
+  report,
+  model = MODEL,
+  {
+    maxCompletionTokens = SITE_COPY_REFINEMENT_MAX_COMPLETION_TOKENS,
+    truncatedRetry = false,
+  } = {},
+) {
+  const retryInstruction = truncatedRetry
+    ? "The previous copy-patch response was cut off at its output limit. Return one complete, concise JSON copy patch; do not add commentary or repeat the truncated response."
+    : "";
+  const context = copywriterContext(intake);
+  const currentCopy = copyRefinementDraft(draft);
+  const systemPrompt = `You are the final conversion copy editor for a local-business website. Return JSON only as a copy patch, not a complete site config. Use the language and writing system indicated by languageCode in the verified context. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} ${retryInstruction} Fix only the listed quality issues. Use the measured primary keyword, supporting terms, intent, and fan-out questions only for the matching route. Every service FAQ question must exactly match one of that service's supplied fan-out questions; return its answer only. Location copy may use only supplied local facts. Never invent business policies, proof, pricing, credentials, outcomes, locations, staff, hours, availability, guarantees, or claims. The patch may contain only these fields: business {tagline,description}; copy (copy strings); services [{name,description,pageIntroduction,pageMetaDescription,decisionSupport:{scope,nextStep,preparation},pageSections:{scope,preparation,nextStep},pageFaqs:[{question,answer}]}]; locations [{name,description,localNote,pageIntroduction,pageMetaDescription,pageLocalContext}]; differentiators (strings); conversion {process (strings),faqs:[{question,answer}]}. Preserve every submitted fact and all unlisted fields. Do not return contact details, SEO evidence/dossiers, route inventory, service names as edits, slugs, assets, styles, layout, HTML, CSS, code, explanations, or markdown. Unknown patch fields are ignored by the deterministic merger.`;
   const identity = {
-    businessName: intake.businessName || intake.business?.name || "",
-    email: intake.email || intake.business?.email || "",
-    phone: intake.phone || intake.business?.phone || "",
-    domain:
-      intake.desiredDomain || intake.domain || intake.business?.domain || "",
+    businessName: context.businessName,
+    businessKind: context.businessKind,
+    industry: context.industry,
+    services: context.services,
   };
   const sessionId = openRouterSessionId("site-copy", model, identity);
   const promptCacheKey = openRouterPromptCacheKey(
@@ -2157,7 +2736,7 @@ async function refineDraft(intake, draft, report, model = MODEL) {
     sessionId,
     body: {
       model,
-      max_completion_tokens: SITE_COPY_REFINEMENT_MAX_COMPLETION_TOKENS,
+      max_completion_tokens: maxCompletionTokens,
       ...promptCacheRequestFields(model, promptCacheKey),
       reasoning_effort: "medium",
       temperature: 0.2,
@@ -2169,7 +2748,7 @@ async function refineDraft(intake, draft, report, model = MODEL) {
         },
         {
           role: "user",
-          content: `Verified intake facts:\n${JSON.stringify(intake)}\n\nCurrent draft:\n${JSON.stringify(draft)}\n\nQuality issues to fix:\n${report.issues.map((issue, index) => `${index + 1}. ${issue}`).join("\n")}`,
+          content: `Verified facts and measured search context:\n${JSON.stringify(context)}\n\nCurrent editable copy:\n${JSON.stringify(currentCopy)}\n\nQuality issues to fix:\n${report.issues.map((issue, index) => `${index + 1}. ${issue}`).join("\n")}`,
         },
       ],
     },
@@ -2181,9 +2760,22 @@ async function refineDraft(intake, draft, report, model = MODEL) {
   const result = await response.json();
   logOpenRouterCacheUsage("site-refinement", result.usage);
   recordModelUsage("site-refinement", model, result.usage);
-  const content = result.choices?.[0]?.message?.content;
+  const choice = result.choices?.[0];
+  const content = choice?.message?.content;
   if (!content) throw new Error("OpenRouter refinement returned no content.");
-  return parseModelJson(content);
+  try {
+    return parseModelJson(content);
+  } catch (error) {
+    if (choice?.finish_reason === "length") {
+      const truncated = new Error(
+        `OpenRouter refinement JSON was truncated (finish_reason=length; content_chars=${typeof content === "string" ? content.length : "non-string"}).`,
+        { cause: error },
+      );
+      truncated.code = "OPENROUTER_OUTPUT_TRUNCATED";
+      throw truncated;
+    }
+    throw error;
+  }
 }
 
 export async function generateSiteConfigWithModel(intake, model = MODEL) {
@@ -2191,11 +2783,10 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
     throw new Error("OPENROUTER_API_KEY is required to generate client copy.");
   const groundedIntake = prepareGenerationIntake(intake);
   let draft;
+  let modelOutput;
   try {
-    draft = normalise(
-      await askModel(groundedIntake, "medium", model),
-      groundedIntake,
-    );
+    modelOutput = await askModel(groundedIntake, "medium", model);
+    draft = normalise(modelOutput, groundedIntake);
   } catch (firstError) {
     if (
       /^OpenRouter returned 402\b/u.test(
@@ -2207,32 +2798,78 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
       "Low-effort generation failed; retrying once with high effort.",
       firstError.message,
     );
-    draft = normalise(
-      await askModel(groundedIntake, "high", model),
-      groundedIntake,
-    );
+    modelOutput = await askModel(groundedIntake, "high", model);
+    draft = normalise(modelOutput, groundedIntake);
   }
-  const initialReport = evaluateDraft(draft);
+  const initialReport = evaluateDraft(draft, {
+    modelOutput,
+    intake: groundedIntake,
+  });
   if (!initialReport.issues.length)
     return {
       ...draft,
       qualityReport: { ...initialReport, refined: false },
     };
 
+  let refinementAttempts = 0;
   try {
-    const refined = normalise(
-      await refineDraft(groundedIntake, draft, initialReport, model),
-      groundedIntake,
-    );
-    const finalReport = evaluateDraft(refined);
+    let refinedPatch;
+    refinementAttempts = 1;
+    try {
+      refinedPatch = await refineDraft(
+        groundedIntake,
+        modelOutput,
+        initialReport,
+        model,
+      );
+    } catch (error) {
+      if (error?.code !== "OPENROUTER_OUTPUT_TRUNCATED") throw error;
+      refinementAttempts = 2;
+      refinedPatch = await refineDraft(
+        groundedIntake,
+        modelOutput,
+        initialReport,
+        model,
+        {
+          maxCompletionTokens: SITE_COPY_REFINEMENT_RETRY_MAX_COMPLETION_TOKENS,
+          truncatedRetry: true,
+        },
+      );
+    }
+    const refinedOutput = mergeCopyRefinementPatch(modelOutput, refinedPatch);
+    const refined = normalise(refinedOutput, groundedIntake);
+    const finalReport = evaluateDraft(refined, {
+      modelOutput: refinedOutput,
+      intake: groundedIntake,
+    });
     const initialHasProhibitedClaim =
       initialReport.issues.includes(REPAIR_OUTCOME_ISSUE);
     const refinedHasProhibitedClaim =
       finalReport.issues.includes(REPAIR_OUTCOME_ISSUE);
+    const initialHasRepeatedServiceCopy = initialReport.issues.includes(
+      DUPLICATE_SERVICE_CONTENT_ISSUE,
+    );
+    const refinedHasRepeatedServiceCopy = finalReport.issues.includes(
+      DUPLICATE_SERVICE_CONTENT_ISSUE,
+    );
+    const initialHasUnsupportedClaims = initialReport.issues.some((issue) =>
+      issue.startsWith(UNSUPPORTED_BUSINESS_CLAIMS_PREFIX),
+    );
+    const refinedHasUnsupportedClaims = finalReport.issues.some((issue) =>
+      issue.startsWith(UNSUPPORTED_BUSINESS_CLAIMS_PREFIX),
+    );
+    const initialHasCriticalIssue =
+      initialHasProhibitedClaim ||
+      initialHasRepeatedServiceCopy ||
+      initialHasUnsupportedClaims;
+    const refinedHasCriticalIssue =
+      refinedHasProhibitedClaim ||
+      refinedHasRepeatedServiceCopy ||
+      refinedHasUnsupportedClaims;
     const selected =
-      initialHasProhibitedClaim && !refinedHasProhibitedClaim
+      initialHasCriticalIssue && !refinedHasCriticalIssue
         ? refined
-        : !initialHasProhibitedClaim && refinedHasProhibitedClaim
+        : !initialHasCriticalIssue && refinedHasCriticalIssue
           ? draft
           : finalReport.score >= initialReport.score
             ? refined
@@ -2240,6 +2877,18 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
     const selectedReport = selected === refined ? finalReport : initialReport;
     if (selectedReport.issues.includes(REPAIR_OUTCOME_ISSUE))
       throw new Error(REPAIR_OUTCOME_ISSUE);
+    if (selectedReport.issues.includes(DUPLICATE_SERVICE_CONTENT_ISSUE))
+      throw new Error(DUPLICATE_SERVICE_CONTENT_ISSUE);
+    if (
+      selectedReport.issues.some((issue) =>
+        issue.startsWith(UNSUPPORTED_BUSINESS_CLAIMS_PREFIX),
+      )
+    )
+      throw new Error(
+        selectedReport.issues.find((issue) =>
+          issue.startsWith(UNSUPPORTED_BUSINESS_CLAIMS_PREFIX),
+        ),
+      );
     return {
       ...selected,
       qualityReport: {
@@ -2248,11 +2897,33 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
       },
     };
   } catch (error) {
+    const attempts =
+      refinementAttempts > 1
+        ? `${refinementAttempts} bounded refinement attempts`
+        : "one refinement";
     if (initialReport.issues.includes(REPAIR_OUTCOME_ISSUE))
       throw new Error(
-        "Copy generation stopped because the explicit repair-outcome prohibition could not be satisfied.",
+        `Copy generation stopped because the explicit repair-outcome prohibition could not be satisfied after ${attempts}.`,
         { cause: error },
       );
+    if (initialReport.issues.includes(DUPLICATE_SERVICE_CONTENT_ISSUE))
+      throw new Error(
+        `Copy generation stopped because service pages remained repetitive after ${attempts}.`,
+        { cause: error },
+      );
+    if (
+      initialReport.issues.some((issue) =>
+        issue.startsWith(UNSUPPORTED_BUSINESS_CLAIMS_PREFIX),
+      )
+    ) {
+      const issue = initialReport.issues.find((item) =>
+        item.startsWith(UNSUPPORTED_BUSINESS_CLAIMS_PREFIX),
+      );
+      throw new Error(
+        `Copy generation stopped because ${issue} remained after ${attempts}.`,
+        { cause: error },
+      );
+    }
     console.warn(
       "Quality refinement failed; keeping validated initial draft.",
       error instanceof Error ? error.message : error,

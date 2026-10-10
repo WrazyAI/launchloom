@@ -67,10 +67,25 @@ export function collectContrastTargets({
     "opacity",
     "backgroundImage",
     "backgroundColor",
+    "position",
+    "top",
+    "left",
+    "width",
+    "height",
+    "transform",
+    "translate",
+    "rotate",
+    "scale",
+    "boxSizing",
+    "writingMode",
     "fontSize",
     "fontWeight",
     "color",
     "webkitTextFillColor",
+    ...["Top", "Right", "Bottom", "Left"].flatMap((side) => [
+      `margin${side}`,
+      `border${side}Width`,
+    ]),
   ];
   const styleFor = (el, pseudo = "") => {
     if (!styles.has(el)) styles.set(el, new Map());
@@ -162,6 +177,62 @@ export function collectContrastTargets({
     a.right > b.left &&
     a.top < b.bottom &&
     a.bottom > b.top;
+  const pseudoBackdropRect = (el, style) => {
+    const ownerStyle = styleFor(el);
+    if (
+      style.position !== "absolute" ||
+      ownerStyle.position === "static" ||
+      style.transform !== "none" ||
+      style.translate !== "none" ||
+      style.rotate !== "none" ||
+      style.scale !== "none" ||
+      ownerStyle.transform !== "none" ||
+      ownerStyle.translate !== "none" ||
+      ownerStyle.rotate !== "none" ||
+      ownerStyle.scale !== "none" ||
+      ownerStyle.perspective !== "none" ||
+      style.writingMode !== "horizontal-tb"
+    )
+      return null;
+    const px = (value) =>
+      /^-?(?:\d+|\d*\.\d+)px$/u.test(value) ? Number.parseFloat(value) : NaN;
+    const left = px(style.left),
+      top = px(style.top),
+      rawWidth = px(style.width),
+      rawHeight = px(style.height);
+    if (![left, top, rawWidth, rawHeight].every(Number.isFinite)) return null;
+    const box = rectFor(el),
+      borderLeft = parseFloat(ownerStyle.borderLeftWidth) || 0,
+      borderTop = parseFloat(ownerStyle.borderTopWidth) || 0,
+      marginLeft = px(style.marginLeft),
+      marginTop = px(style.marginTop),
+      marginRight = px(style.marginRight),
+      marginBottom = px(style.marginBottom);
+    if (
+      ![marginLeft, marginTop, marginRight, marginBottom].every(Number.isFinite)
+    )
+      return null;
+    const width =
+      rawWidth +
+      (style.boxSizing === "border-box"
+        ? 0
+        : (parseFloat(style.borderLeftWidth) || 0) +
+          (parseFloat(style.borderRightWidth) || 0));
+    const height =
+      rawHeight +
+      (style.boxSizing === "border-box"
+        ? 0
+        : (parseFloat(style.borderTopWidth) || 0) +
+          (parseFloat(style.borderBottomWidth) || 0));
+    return {
+      left: box.left + borderLeft + left + marginLeft,
+      top: box.top + borderTop + top + marginTop,
+      right: box.left + borderLeft + left + marginLeft + width + marginRight,
+      bottom: box.top + borderTop + top + marginTop + height + marginBottom,
+      width: width + marginLeft + marginRight,
+      height: height + marginTop + marginBottom,
+    };
+  };
   const visible = (el, rect) => {
     if (
       !rect.width ||
@@ -325,7 +396,9 @@ export function collectContrastTargets({
     );
   };
   const opaqueRootPlate = (plate) =>
-    opaquePlateSurface(plate) && stackZ(plate) > 0 && rootContext(plate) === plate;
+    opaquePlateSurface(plate) &&
+    stackZ(plate) > 0 &&
+    rootContext(plate) === plate;
   // Context creators strictly between an element and a shared ancestor context
   // govern how that element's paint is ordered inside the ancestor, so paint
   // order may only be compared directly when neither side has one.
@@ -333,6 +406,19 @@ export function collectContrastTargets({
     for (let p = el.parentElement; p && p !== root; p = p.parentElement)
       if (createsContext(p)) return true;
     return false;
+  };
+  const outermostStackingContextUnder = (el, root) => {
+    let context = null;
+    for (let p = el; p && p !== root; p = p.parentElement)
+      if (createsContext(p)) context = p;
+    return context;
+  };
+  const hasPaintPseudoThroughRoot = (el, root) => {
+    for (let p = el; p; p = p.parentElement) {
+      if (hasPaintPseudo(p)) return true;
+      if (p === root) return false;
+    }
+    return true;
   };
   const roundedFillCovers = (plate, rect) => {
     const box = rectFor(plate),
@@ -425,9 +511,10 @@ export function collectContrastTargets({
       plate = plate.parentElement
     ) {
       if (!opaquePlateSurface(plate)) continue;
-      if (
-        !((ownRoundedContour && plate === el) || roundedFillCovers(plate, rect))
-      )
+      if (!(
+        (ownRoundedContour && plate === el) ||
+        roundedFillCovers(plate, rect)
+      ))
         continue;
       const plateContext = rootContext(plate);
       if (plateContext && stackZ(layerContext) < stackZ(plateContext))
@@ -442,6 +529,29 @@ export function collectContrastTargets({
         !interveningContexts(plate, plateContext) &&
         !interveningContexts(layer, layerContext) &&
         stackZ(layer) < stackZ(plate)
+      )
+        return true;
+      // An isolated hero may add nested contexts on both sides (for example,
+      // a transformed image inside a negative-z media wrapper and an opaque
+      // nav link inside a positive-z header). Compare the outermost child
+      // contexts immediately below their shared root. Only strict sibling
+      // ordering proves the plate is above the image; equal or unknown order,
+      // or any pseudo paint on the plate path, remains unresolved.
+      const plateStackingContext = outermostStackingContextUnder(
+        plate,
+        plateContext,
+      );
+      const layerStackingContext = outermostStackingContextUnder(
+        layer,
+        layerContext,
+      );
+      if (
+        plateContext === layerContext &&
+        plateStackingContext &&
+        layerStackingContext &&
+        plateStackingContext !== layerStackingContext &&
+        !hasPaintPseudoThroughRoot(plate, plateContext) &&
+        stackZ(layerStackingContext) < stackZ(plateStackingContext)
       )
         return true;
     }
@@ -542,8 +652,11 @@ export function collectContrastTargets({
           ps.visibility === "visible" &&
           Number(ps.opacity) > 0 &&
           (ps.backgroundImage !== "none" || color(ps.backgroundColor)?.[3] > 0)
-        )
+        ) {
+          const pseudoRect = pseudoBackdropRect(p, ps);
+          if (pseudoRect && !intersects(pseudoRect, rect)) continue;
           issues.push("pseudo-element backdrop requires rendered review");
+        }
       }
     }
     const overlap = paintedLayers.some((layer) => {
@@ -577,7 +690,9 @@ export function collectContrastTargets({
           "--ll-surface": String(
             computed.getPropertyValue("--ll-surface") || "",
           ).trim(),
-          "--ll-text": String(computed.getPropertyValue("--ll-text") || "").trim(),
+          "--ll-text": String(
+            computed.getPropertyValue("--ll-text") || "",
+          ).trim(),
         });
       }
       const value = roleCache.get(p)[name];

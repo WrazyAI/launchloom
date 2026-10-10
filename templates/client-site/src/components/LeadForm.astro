@@ -1,7 +1,8 @@
 ---
 import site from "../lib/site";
-import { hasPipelineTest } from "../lib/seo-readiness.mjs";
-const testPreview = hasPipelineTest(site);
+import { hasTestOnlySite } from "../lib/seo-readiness.mjs";
+const testPreview =
+  hasTestOnlySite(site) || import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 const { id = "lead-form" } = Astro.props;
 type LeadFormConfig = NonNullable<typeof site.leadForm>;
 const config = (site.leadForm || {}) as LeadFormConfig;

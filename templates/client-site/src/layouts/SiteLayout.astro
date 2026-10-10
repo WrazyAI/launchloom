@@ -3,7 +3,8 @@ import { resolvePalette, semanticColorCss } from "../lib/color-policy.mjs";
 import { fontFaceCss, resolveFontPairing } from "../lib/font-catalog.mjs";
 import site, { routeInventory, routePageBrief } from "../lib/site";
 import ReviewBanner from "../components/ReviewBanner.astro";
-import { hasPipelineTest } from "../lib/seo-readiness.mjs";
+import { hasTestOnlySite } from "../lib/seo-readiness.mjs";
+import { pipelineTestBannerMessage } from "../lib/pipeline-test-preview.mjs";
 import QuickAnswers from "../components/QuickAnswers.astro";
 import ExitOffer from "../components/ExitOffer.astro";
 import "../styles/site.css";
@@ -44,9 +45,9 @@ const colorRoles = semanticColorCss(palette) + `
 .lead-form :is(input,textarea,select) {border-color:var(--ll-border,${palette.surfaces.light.border});}
 .split-section :is(a,button):focus-visible {outline:2px solid ${palette.surfaces.brand.focus};outline-offset:3px;}
 `;
-const testPreview = hasPipelineTest(site);
-const testProfile = site.pipelineTest?.profile;
-const skippedLane = testProfile === "seo-only" ? "Creative evaluation and visual promotion" : testProfile === "creative-only" ? "SEO research" : "Unknown pipeline lane";
+const testPreview = hasTestOnlySite(site);
+const testProfile = site.pipelineTest?.profile || (site.demoNotice ? "fictional-demo" : undefined);
+const skippedLane = pipelineTestBannerMessage(testProfile);
 const diagnosticPreview = testPreview || import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 // Judge previews render the authored candidate only. Platform chrome such as
 // the floating website-assistant launcher and the exit offer must not appear
@@ -109,7 +110,7 @@ const schemaBlocks = (Array.isArray(schemas) ? schemas : []).map((schema) =>
     {testPreview ? (
       <aside class="ll-demo-notice" data-pipeline-test-preview role="note" aria-label="Test-only pipeline preview">
         <strong>Test-only preview: {testProfile || "invalid profile"}</strong>
-        <span>{skippedLane} skipped. Approval, client release and form submissions are disabled.</span>
+        <span>{skippedLane}. Approval, client release and form submissions are disabled.</span>
       </aside>
     ) : <ReviewBanner diagnosticPreview={diagnosticPreview} />}
     <slot />

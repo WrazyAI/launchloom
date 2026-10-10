@@ -246,6 +246,7 @@ describe("creative candidate promotion", () => {
     );
     expect(config.design.experience.renderer).toBe("creative-candidate");
     expect(config.design.experience.familyId).toBe("editorial-monument");
+    expect(config.design.experience.routeId).toBe("route-01");
   });
 
   it("normalizes service slug fragments to real SEO routes before promotion", async () => {
@@ -451,8 +452,14 @@ describe("creative candidate promotion", () => {
   });
 
   it.each([
-    ["style element", (source: string) => source.replace("<main>", "<main><style></style>")],
-    ["inline style", (source: string) => source.replace("<main>", '<main style="color:red">')],
+    [
+      "style element",
+      (source: string) => source.replace("<main>", "<main><style></style>"),
+    ],
+    [
+      "inline style",
+      (source: string) => source.replace("<main>", '<main style="color:red">'),
+    ],
   ])("rejects a candidate with an Experience.jsx %s", async (_label, edit) => {
     const root = await makeFixture();
     const file = path.join(root, "candidate-a/Experience.jsx");
@@ -626,6 +633,16 @@ describe("creative candidate promotion", () => {
 
     const fidelityEvidence: any[] = [];
     const diversityEvidence: any[] = [];
+    const contrastEvidence: any[] = [];
+    const contrastEvaluator = async (input: any) => {
+      contrastEvidence.push(input);
+      return {
+        pass: true,
+        repairs: [],
+        before: { findings: [] },
+        after: { findings: [] },
+      };
+    };
     const renderedReferenceEvaluator = async (input: any) => {
       fidelityEvidence.push(input);
       return {
@@ -656,6 +673,7 @@ describe("creative candidate promotion", () => {
         candidatesDir: root,
         reportPath: path.join(root, "v2-diversity-report.json"),
         screenshotsDir: path.join(root, "v2-diversity-screenshots"),
+        contrastEvaluator,
         renderedReferenceEvaluator,
         renderedDiversityEvaluator: async (input: any) => {
           diversityEvidence.push(input);
@@ -712,6 +730,7 @@ describe("creative candidate promotion", () => {
       ).toBe(true);
       expect(report.selectedCandidateId).not.toBeNull();
       expect(report.promotionReady).toBe(true);
+      expect(contrastEvidence).toHaveLength(2);
 
       const convergedPreview = await runCreativeBakeoff({
         siteDir: siteRoot,
@@ -720,6 +739,7 @@ describe("creative candidate promotion", () => {
         screenshotsDir: path.join(root, "v2-preview-converged-screenshots"),
         preview: true,
         deferPromotion: true,
+        contrastEvaluator,
         renderedReferenceEvaluator,
         renderedDiversityEvaluator: async () => ({
           version: 1,
@@ -763,6 +783,7 @@ describe("creative candidate promotion", () => {
         screenshotsDir: path.join(root, "v2-diversity-blocked-screenshots"),
         promote: true,
         requireDiversity: false,
+        contrastEvaluator,
         renderedReferenceEvaluator,
         renderedDiversityEvaluator: async () => ({
           version: 1,
@@ -799,8 +820,11 @@ describe("creative candidate promotion", () => {
         ),
         preview: true,
         deferPromotion: true,
+        contrastEvaluator,
         renderedReferenceEvaluator: async (input: any) => {
-          if (String(input.candidateScreenshots.desktop).includes("candidate-b"))
+          if (
+            String(input.candidateScreenshots.desktop).includes("candidate-b")
+          )
             return {
               version: 1,
               model: "test/model",
@@ -825,7 +849,8 @@ describe("creative candidate promotion", () => {
                     severity: "major",
                     category: "spatial-rhythm",
                     viewport: "desktop",
-                    evidence: "The opening rhythm does not match the reference.",
+                    evidence:
+                      "The opening rhythm does not match the reference.",
                     repair: "Restore the reference opening rhythm.",
                   },
                 ],
@@ -882,13 +907,14 @@ describe("creative candidate promotion", () => {
         strategy: "single-eligible",
         eligibleCandidateIds: ["candidate-a"],
       });
+      expect(contrastEvidence).toHaveLength(8);
     } finally {
       await fs.writeFile(configPath, originalConfig);
       await fs.rm(selectedPath, { recursive: true, force: true });
       await fs.cp(selectedBackup, selectedPath, { recursive: true });
       await fs.rm(selectedBackup, { recursive: true, force: true });
     }
-  }, 900_000);
+  }, 180_000);
 
   it("does not trust hero geometry markers when rendered composition violates topology", async () => {
     const root = await makeFixture();

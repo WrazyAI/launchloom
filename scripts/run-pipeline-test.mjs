@@ -10,6 +10,13 @@ import {
 import { summarizeGenerationCosts } from "./generation-cost-summary.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { businessFactReadiness } from "../templates/client-site/src/lib/business-facts.mjs";
+import { pageBriefReadiness } from "../templates/client-site/src/lib/page-briefs.mjs";
+export { classifyPagesPreviewResponse, waitForPagesPreview } from "./pages-preview-readiness.mjs";
+export {
+  assertPrivateDiagnosticOutput,
+  createPrivatePreviewProbe,
+  deployPrivatePagesPreview,
+} from "./private-pages-preview.mjs";
 
 // Research verdict only: never a production authorization. The persisted
 // provenance and every release guard retain the original, marked config.
@@ -39,6 +46,134 @@ export function pagesDeploymentUrl(output) {
   const matches = [...String(output).matchAll(/Deployment complete![^\r\n]*?(https:\/\/[a-z0-9.-]+\.pages\.dev)/giu)];
   if (matches.length !== 1) throw new Error("Immutable Pages deployment URL was not returned.");
   return new URL(matches[0][1]).href.replace(/\/$/u, "");
+}
+
+export function assertTestPreviewIndexingPolicy({
+  robotsTxt = "",
+  sitemapXml = "",
+  xRobotsTag = "",
+} = {}) {
+  if (
+    !/^User-agent:\s*\*\s*$/imu.test(robotsTxt) ||
+    !/^Allow:\s*\/\s*$/imu.test(robotsTxt) ||
+    /^Disallow:\s*\/\s*$/imu.test(robotsTxt)
+  )
+    throw new Error("Test preview robots.txt must allow crawling.");
+  if (String(sitemapXml).trim())
+    throw new Error("Test preview must not publish a sitemap.");
+  if (!/\bnoindex\b/iu.test(xRobotsTag))
+    throw new Error("Test preview response must include an X-Robots-Tag noindex directive.");
+  return true;
+}
+
+/**
+ * @param {{anonymousStatus?: number, anonymousLocation?: string, authenticatedStatus?: number}} [input]
+ */
+export function assertTestPreviewAccessPolicy({
+  anonymousStatus,
+  anonymousLocation = "",
+  authenticatedStatus,
+} = {}) {
+  const redirectedToAccess =
+    Number(anonymousStatus) >= 300 &&
+    Number(anonymousStatus) < 400 &&
+    /(?:^|\/)cdn-cgi\/access\/login(?:\/|\?|$)/iu.test(
+      String(anonymousLocation),
+    );
+  const anonymouslyBlocked =
+    [401, 403].includes(Number(anonymousStatus)) || redirectedToAccess;
+  if (!anonymouslyBlocked)
+    throw new Error(
+      "Test preview is not protected behind Cloudflare Access; refusing to release its URL.",
+    );
+  if (Number(authenticatedStatus) !== 200)
+    throw new Error(
+      "Cloudflare Access did not authorize the configured developer request (service token).",
+    );
+  return true;
+}
+
+export async function verifyTestPreviewAccess({
+  url,
+  clientId,
+  clientSecret,
+  send = fetch,
+  attempts = 12,
+  wait = (milliseconds) =>
+    new Promise((resolve) => setTimeout(resolve, milliseconds)),
+}) {
+  if (!clientId || !clientSecret)
+    throw new Error("Cloudflare Access service-token credentials are required.");
+  if (!Number.isInteger(attempts) || attempts < 1 || attempts > 12)
+    throw new Error("Access verification attempts must be an integer from 1 to 12.");
+  const anonymous = await send(url, { method: "GET", redirect: "manual" });
+  let authenticated = null;
+  let lastNetworkError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      authenticated = await send(url, {
+        method: "GET",
+        redirect: "manual",
+        headers: {
+          "CF-Access-Client-Id": clientId,
+          "CF-Access-Client-Secret": clientSecret,
+        },
+      });
+    } catch (error) {
+      authenticated = null;
+      lastNetworkError = error instanceof Error ? error : new Error(String(error));
+      if (attempt < attempts) await wait(5_000);
+      continue;
+    }
+
+    lastNetworkError = null;
+    if (authenticated.status === 200) break;
+    if ([401, 403].includes(authenticated.status))
+      assertTestPreviewAccessPolicy({
+        anonymousStatus: anonymous.status,
+        anonymousLocation: anonymous.headers.get("location") || "",
+        authenticatedStatus: authenticated.status,
+      });
+    const transient =
+      authenticated.status === 404 ||
+      [408, 425, 429].includes(authenticated.status) ||
+      authenticated.status >= 500;
+    if (!transient)
+      assertTestPreviewAccessPolicy({
+        anonymousStatus: anonymous.status,
+        anonymousLocation: anonymous.headers.get("location") || "",
+        authenticatedStatus: authenticated.status,
+      });
+    if (attempt < attempts) await wait(5_000);
+  }
+  if (authenticated?.status !== 200) {
+    if (lastNetworkError)
+      throw new Error(
+        `Private Pages preview could not be checked with the service token after ${attempts} attempts (${lastNetworkError.message}).`,
+      );
+    throw new Error(
+      `Private Pages preview did not become reachable with the service token after ${attempts} attempts (last HTTP ${authenticated?.status ?? "unknown"}).`,
+    );
+  }
+  assertTestPreviewAccessPolicy({
+    anonymousStatus: anonymous.status,
+    anonymousLocation: anonymous.headers.get("location") || "",
+    authenticatedStatus: authenticated.status,
+  });
+  return {
+    anonymousStatus: anonymous.status,
+    authenticatedStatus: authenticated.status,
+  };
+}
+
+export function resolveTestPreviewProject(
+  value = process.env.LAUNCHLOOM_TEST_PAGES_PROJECT ||
+    "launchloom-pipeline-preview",
+) {
+  const project = String(value || "").trim().toLowerCase();
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(project))
+    throw new Error("Test preview Pages project name is invalid.");
+  return project;
 }
 
 export async function assertCompatibleTestAssets(current, previous, manifest, publicRoot) {
@@ -75,6 +210,28 @@ const STAGES = [
   "notify",
   "persist",
 ];
+
+function pipelineQualityGateError(gates) {
+  const error = new Error("Rendered quality checks did not pass.");
+  error.code = "PIPELINE_QUALITY_GATE";
+  error.gates = gates;
+  return error;
+}
+
+export function classifyDiagnosticQualityGateFailure(name, error) {
+  // Only a completed verifier's explicit failure marker is non-blocking.
+  const output = String(error?.output || error?.message || "");
+  const marker = {
+    rendered: /Rendered revision verification failed:/u,
+    contrast: /\bcontrast_verified=false\b/u,
+  }[name];
+  if (!marker?.test(output)) return null;
+  return {
+    name,
+    passed: false,
+    error: output.slice(-800),
+  };
+}
 
 export async function sendPipelineTestNotification({
   report,
@@ -125,7 +282,7 @@ export async function sendPipelineTestNotification({
 }
 
 export function validatePipelineTestInput(input) {
-  if (!["seo-only", "creative-only"].includes(input.profile))
+  if (!["full-preview", "seo-only", "creative-only"].includes(input.profile))
     throw new Error("A focused test profile is required.");
   if (!/^[1-9]\d*$/u.test(input.issue))
     throw new Error("Issue must be a positive integer.");
@@ -160,7 +317,8 @@ export async function runPipelineTest(input, dependencies) {
     issue: input.issue,
     sourceSha: input.sourceSha,
     runId: input.runId,
-    candidateCount: policy.candidateCount,
+    candidateCount: 0,
+    candidateTarget: policy.candidateCount,
     startedAt: new Date().toISOString(),
     verdict: "failed",
     previewDelivered: false,
@@ -180,11 +338,24 @@ export async function runPipelineTest(input, dependencies) {
       };
       return result;
     } catch (error) {
+      const diagnosticQualityFailure =
+        name === "technical" &&
+        error?.code === "PIPELINE_QUALITY_GATE" &&
+        ["seo-only", "creative-only"].includes(input.profile);
       report.stages[name] = {
         status: "failed",
         durationMs: Date.now() - started,
         error: String(error.message || error).slice(0, 1000),
+        ...(error?.code === "PIPELINE_QUALITY_GATE"
+          ? { gates: error.gates }
+          : {}),
       };
+      if (diagnosticQualityFailure)
+        return {
+          status: "failed",
+          error: String(error.message || error).slice(0, 1000),
+          gates: error.gates,
+        };
       return null;
     }
   }
@@ -193,23 +364,56 @@ export async function runPipelineTest(input, dependencies) {
     if (policy.runSeoResearch && !(await stage("research"))) return report;
     if (!(await stage("configure"))) return report;
     let reused = false;
-    if (input.profile === "seo-only")
-      reused = (await stage("reuse"))?.reused === true;
-    if (!reused && !(await stage("author"))) return report;
+    if (input.profile === "seo-only") {
+      const reuse = await stage("reuse");
+      reused = reuse?.reused === true;
+      if (reused)
+        report.candidateCount = Number.isInteger(reuse.candidateCount)
+          ? reuse.candidateCount
+          : 1;
+    }
+    if (!reused) {
+      const authorship = await stage("author");
+      if (!authorship) return report;
+      report.candidateCount = Number.isInteger(authorship.candidateCount)
+        ? authorship.candidateCount
+        : 0;
+      if (
+        input.profile === "full-preview" &&
+        report.candidateCount !== policy.candidateCount
+      ) {
+        report.stages.author = {
+          ...report.stages.author,
+          status: "failed",
+          error: `Expected ${policy.candidateCount} authored candidates, received ${report.candidateCount}.`,
+        };
+        return report;
+      }
+    }
     if (policy.runCreativeChecks) await stage("creative");
     if (!(await stage("select"))) return report;
     // Source selection, browser transitions and painted contrast are delivery gates.
     if (!(await stage("technical"))) return report;
-    if (input.profile === "seo-only") await stage("seo");
+    if (policy.runSeoResearch) {
+      const seo = await stage("seo");
+      if (input.profile === "seo-only" && !seo) return report;
+    }
     const relevant =
       input.profile === "seo-only"
         ? ["research", "select", "technical", "seo"]
-        : ["author", "creative", "select", "technical"];
+        : input.profile === "creative-only"
+          ? ["author", "creative", "select", "technical"]
+          : ["research", "author", "creative", "select", "technical", "seo"];
     report.verdict = relevant.every(
       (name) => report.stages[name].status === "passed",
     )
       ? "passed"
       : "failed";
+    // A combined preview is the end-to-end acceptance canary. Unlike the
+    // isolated diagnostic profiles, it is deployed only after both quality
+    // lanes and all shared rendered gates pass.
+    if (input.profile === "full-preview" && report.verdict !== "passed")
+      return report;
     const deployment = await stage("deploy");
     if (deployment?.url) {
       report.previewUrl = deployment.url;
@@ -226,7 +430,7 @@ export async function runPipelineTest(input, dependencies) {
 export async function command(
   binary,
   args,
-  { cwd, env = {}, capture = false } = {},
+  { cwd, env = {}, capture = false, captureOutputOnError = false } = {},
 ) {
   return await new Promise((resolve, reject) => {
     const child = spawn(binary, args, {
@@ -246,15 +450,26 @@ export async function command(
       });
     }
     child.on("error", reject);
-    child.on("close", (code) =>
-      code === 0
-        ? resolve(output.trim())
-        : reject(
-            new Error(
-              `${binary} ${args[0]} exited ${code}${capture ? `: ${stderr.slice(-500)}` : ""}`,
-            ),
-          ),
-    );
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve(output.trim());
+        return;
+      }
+      const combinedOutput = `${output}\n${stderr}`.trim();
+      const failureOutput = captureOutputOnError
+        ? combinedOutput.length <= 4_000
+          ? combinedOutput
+          : `${combinedOutput.slice(0, 2_000)}\n[output truncated]\n${combinedOutput.slice(-2_000)}`
+        : capture
+          ? stderr.slice(-500)
+          : "";
+      const error = new Error(
+        `${binary} ${args[0]} exited ${code}${failureOutput ? `: ${failureOutput}` : ""}`,
+      );
+      error.output = failureOutput;
+      error.exitCode = code;
+      reject(error);
+    });
   });
 }
 
@@ -295,10 +510,18 @@ export function createCloudDependencies(
 ) {
   if (!work)
     throw new Error("RUNNER_TEMP is required for the isolated test workspace.");
-  const slug = `llqa-${input.issue}-${input.profile === "seo-only" ? "seo" : "creative"}-${input.runId}`;
+  const profileSlug = input.profile === "seo-only"
+    ? "seo"
+    : input.profile === "creative-only"
+      ? "creative"
+      : "full";
+  const slug = `llqa-${input.issue}-${profileSlug}-${input.runId}`;
   const site = path.join(work, slug);
   const evidence = path.join(site, ".launchloom");
   const repo = `WrazyAI/${slug}`;
+  const pagesProject = resolveTestPreviewProject(
+    process.env.LAUNCHLOOM_TEST_PAGES_PROJECT,
+  );
   const branch = `qa/${input.profile}/${input.runId}`;
   const config = path.join(site, "src/site.config.json");
   const research = path.join(evidence, "seo-research.json");
@@ -318,7 +541,7 @@ export function createCloudDependencies(
   async function costSummary(report) {
     const { readGenerationCostInputs } = await import("./generation-cost-summary.mjs");
     const costs = await readGenerationCostInputs({
-      seo: input.profile === "seo-only" ? research : undefined,
+      seo: input.profile !== "creative-only" ? research : undefined,
       siteConfigUsage: path.join(evidence, "site-config-usage.json"),
       referenceDnaUsage: path.join(evidence, "reference-dna-usage.json"),
       preflight: session,
@@ -335,6 +558,63 @@ export function createCloudDependencies(
       report,
       process.env.FAL_IMAGE_USD_PER_IMAGE,
     );
+  }
+  async function ensurePrivatePreviewProject() {
+    const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)}/pages/projects/${encodeURIComponent(pagesProject)}`;
+    const current = await fetch(apiUrl, {
+      headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` },
+      cache: "no-store",
+    });
+    if (current.status === 404) {
+      await command(
+        path.join(root, "node_modules/.bin/wrangler"),
+        ["pages", "project", "create", pagesProject, "--production-branch", "main"],
+        { cwd: root },
+      );
+    } else if (!current.ok) {
+      throw new Error(
+        `Could not safely inspect the dedicated Pages preview project (HTTP ${current.status}).`,
+      );
+    }
+    const probeDir = path.join(work, `${slug}-access-probe`);
+    await fs.mkdir(probeDir, { recursive: true });
+    await fs.writeFile(
+      path.join(probeDir, "index.html"),
+      "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"noindex,nofollow\"><title>LaunchLoom preview access probe</title></head><body><main><h1>Access control probe</h1><p>This page contains no client or business data.</p></main></body></html>\n",
+    );
+    await fs.writeFile(
+      path.join(probeDir, "_headers"),
+      "/*\n  X-Robots-Tag: noindex, nofollow, noarchive\n",
+    );
+    await fs.writeFile(
+      path.join(probeDir, "robots.txt"),
+      "User-agent: *\nAllow: /\n",
+    );
+    const deployment = await command(
+      path.join(root, "node_modules/.bin/wrangler"),
+      [
+        "pages",
+        "deploy",
+        probeDir,
+        "--project-name",
+        pagesProject,
+        "--branch",
+        "access-probe",
+        "--commit-hash",
+        input.sourceSha,
+        "--commit-message",
+        "Verify private pipeline preview access",
+      ],
+      { cwd: root, capture: true },
+    );
+    const probeUrl = pagesDeploymentUrl(deployment);
+    await node("wait-for-pages-preview.mjs", ["--url", probeUrl, "--protected-preview", "true"]);
+    const access = await verifyTestPreviewAccess({
+      url: probeUrl,
+      clientId: process.env.CLOUDFLARE_ACCESS_CLIENT_ID,
+      clientSecret: process.env.CLOUDFLARE_ACCESS_CLIENT_SECRET,
+    });
+    return { probeUrl, access };
   }
   async function initializeAuthorship() {
     await node("compile-inspiration-pack.mjs", [
@@ -411,11 +691,18 @@ export function createCloudDependencies(
         "GH_TOKEN",
         "CLOUDFLARE_API_TOKEN",
         "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_ACCESS_CLIENT_ID",
+        "CLOUDFLARE_ACCESS_CLIENT_SECRET",
         "LAUNCHLOOM_DEVELOPER_EMAIL",
         "RESEND_API_KEY",
         "LAUNCHLOOM_FROM_EMAIL",
       ])
         if (!process.env[key]) throw new Error(`${key} is required.`);
+      const accessProbe = await ensurePrivatePreviewProject();
+      report.previewAccess = {
+        anonymousStatus: accessProbe.access.anonymousStatus,
+        authenticatedStatus: accessProbe.access.authenticatedStatus,
+      };
       await fs.mkdir(site, { recursive: false });
       await fs.cp(path.join(root, "templates/client-site"), site, {
         recursive: true,
@@ -457,8 +744,13 @@ export function createCloudDependencies(
       );
       report.repository = repo;
       report.branch = branch;
-      report.project = slug;
-      return { repository: repo, branch, project: slug };
+      report.project = pagesProject;
+      return {
+        repository: repo,
+        branch,
+        project: pagesProject,
+        previewAccess: report.previewAccess,
+      };
     },
     async research() {
       await node("coverage-areas.mjs", [
@@ -695,6 +987,7 @@ export function createCloudDependencies(
               await writeJson(config, current);
               return {
                 reused: true,
+                candidateCount: 1,
                 repository,
                 sourceCommit: await command("git", ["rev-parse", "HEAD"], {
                   cwd: source,
@@ -740,7 +1033,15 @@ export function createCloudDependencies(
         "--test-profile",
         input.profile,
       ]);
-      return { artifact: ".launchloom/generated-experiences" };
+      const authored = await readJson(
+        path.join(candidates, "creative-run.json"),
+      );
+      return {
+        artifact: ".launchloom/generated-experiences",
+        candidateCount: Array.isArray(authored.candidates)
+          ? authored.candidates.length
+          : 0,
+      };
     },
     async creative({ policy }) {
       await command("npm", ["ci"], { cwd: site });
@@ -848,22 +1149,50 @@ export function createCloudDependencies(
       await command("npm", ["ci"], { cwd: site });
       await command("npm", ["run", "check"], { cwd: site, env: reviewEnv });
       await command("npm", ["run", "build"], { cwd: site, env: reviewEnv });
-      await node(
-        "verify-rendered-revision.mjs",
-        [
-          "--config",
-          config,
-          "--dist",
-          path.join(site, "dist"),
-          "--screenshots",
-          path.join(evidence, "screenshots"),
-        ],
-        { env: reviewEnv },
-      );
-      await node("verify-contrast.mjs", ["--site", site], { env: reviewEnv });
+      const gates = [];
+      try {
+        await node(
+          "verify-rendered-revision.mjs",
+          [
+            "--config",
+            config,
+            "--dist",
+            path.join(site, "dist"),
+            "--screenshots",
+            path.join(evidence, "screenshots"),
+          ],
+          { env: reviewEnv, capture: true, captureOutputOnError: true },
+        );
+        gates.push({ name: "rendered", passed: true });
+      } catch (error) {
+        const finding = classifyDiagnosticQualityGateFailure(
+          "rendered",
+          error,
+        );
+        if (!finding) throw error;
+        gates.push(finding);
+      }
+      try {
+        await node("verify-contrast.mjs", ["--site", site], {
+          env: reviewEnv,
+          capture: true,
+          captureOutputOnError: true,
+        });
+        gates.push({ name: "contrast", passed: true });
+      } catch (error) {
+        const finding = classifyDiagnosticQualityGateFailure(
+          "contrast",
+          error,
+        );
+        if (!finding) throw error;
+        gates.push(finding);
+      }
+      if (gates.some((gate) => !gate.passed))
+        throw pipelineQualityGateError(gates);
       return {
         screenshots: ".launchloom/screenshots",
         contrast: ".launchloom/contrast-report.json",
+        gates,
       };
     },
     async seo() {
@@ -881,7 +1210,8 @@ export function createCloudDependencies(
         ],
         { env: reviewEnv },
       );
-      const readiness = focusedSeoReadiness(await readJson(config));
+      const finalConfig = await readJson(config);
+      const readiness = focusedSeoReadiness(finalConfig);
       await writeJson(
         path.join(evidence, "seo-research-readiness.json"),
         readiness,
@@ -889,6 +1219,11 @@ export function createCloudDependencies(
       if (!readiness.allowed)
         throw new Error(
           readiness.error || "SEO research readiness did not pass.",
+        );
+      const pageReadiness = pageBriefReadiness(finalConfig);
+      if (!pageReadiness.allowed)
+        throw new Error(
+          pageReadiness.error || "Route-specific content readiness did not pass.",
         );
       return { artifact: ".launchloom/seo-review-report.json" };
     },
@@ -899,13 +1234,9 @@ export function createCloudDependencies(
       );
       await fs.writeFile(
         path.join(site, "dist/robots.txt"),
-        "User-agent: *\nDisallow: /\n",
+        "User-agent: *\nAllow: /\n",
       );
-      await command(
-        path.join(root, "node_modules/.bin/wrangler"),
-        ["pages", "project", "create", slug, "--production-branch", "main"],
-        { cwd: site },
-      );
+      await fs.rm(path.join(site, "dist/sitemap.xml"), { force: true });
       const deployed = await command(
         path.join(root, "node_modules/.bin/wrangler"),
         [
@@ -913,7 +1244,7 @@ export function createCloudDependencies(
           "deploy",
           path.join(site, "dist"),
           "--project-name",
-          slug,
+          pagesProject,
           "--branch",
           branch,
           "--commit-hash",
@@ -924,15 +1255,38 @@ export function createCloudDependencies(
         { cwd: site, capture: true },
       );
       const url = pagesDeploymentUrl(deployed);
-      await node("wait-for-pages-preview.mjs", ["--url", url]);
-      const response = await fetch(url);
-      if (
-        !response.ok ||
-        !/noindex/iu.test(response.headers.get("x-robots-tag") || "")
-      )
-        throw new Error("Live diagnostic did not return a noindex response.");
+      await node("wait-for-pages-preview.mjs", ["--url", url, "--protected-preview", "true"]);
+      const previewAccess = await verifyTestPreviewAccess({
+        url,
+        clientId: process.env.CLOUDFLARE_ACCESS_CLIENT_ID,
+        clientSecret: process.env.CLOUDFLARE_ACCESS_CLIENT_SECRET,
+      });
+      report.previewAccess = previewAccess;
+      const accessHeaders = {
+        "CF-Access-Client-Id": process.env.CLOUDFLARE_ACCESS_CLIENT_ID,
+        "CF-Access-Client-Secret": process.env.CLOUDFLARE_ACCESS_CLIENT_SECRET,
+      };
+      const response = await fetch(url, {
+        redirect: "manual",
+        headers: accessHeaders,
+      });
+      const robotsResponse = await fetch(new URL("robots.txt", url), {
+        redirect: "manual",
+        headers: accessHeaders,
+      });
+      const sitemapResponse = await fetch(new URL("sitemap.xml", url), {
+        redirect: "manual",
+        headers: accessHeaders,
+      });
+      assertTestPreviewIndexingPolicy({
+        robotsTxt: robotsResponse.ok ? await robotsResponse.text() : "",
+        sitemapXml: sitemapResponse.ok ? await sitemapResponse.text() : "",
+        xRobotsTag: response.headers.get("x-robots-tag") || "",
+      });
+      if (!response.ok)
+        throw new Error("Live diagnostic did not return a successful homepage response.");
       report.previewUrl = url;
-      return { url };
+      return { url, access: previewAccess };
     },
     async notify({ report }) {
       report.costs = await costSummary(report);

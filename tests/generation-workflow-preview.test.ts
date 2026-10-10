@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import { expect, it } from "vitest";
+import { parse } from "yaml";
 
 it("supports a preview-only workflow-dispatch canary without a production-branch deploy", async () => {
   const workflow = await fs.readFile(
@@ -86,4 +87,32 @@ it("initializes private QA receipts before authoring can fail and commit old evi
  expect(source.slice(source.lastIndexOf('if [ "$QA_REPAIR_EXPERIMENT"',init),init)).toContain('= "true"');
  expect(init).toBeLessThan(source.indexOf('git commit -m "Create client site configuration"'));
  expect(init).toBeLessThan(source.indexOf('- name: Generate or reuse contextual imagery'));
+});
+
+it("blocks synthetic demo configs before client provisioning and lead-token creation", async () => {
+ const source=await fs.readFile(".github/workflows/generate-client.yml","utf8");
+ const workflow=parse(source);
+ const steps=workflow.jobs.generate.steps;
+ const guardIndex=steps.findIndex((step:any)=>step.name==="Reject synthetic demos from the production intake path");
+ const provisionIndex=steps.findIndex((step:any)=>step.name==="Create private repository and Cloudflare Pages project");
+ const tokenIndex=steps.findIndex((step:any)=>step.name==="Build private review branch");
+ expect(guardIndex).toBeGreaterThanOrEqual(0);
+ expect(guardIndex).toBeLessThan(provisionIndex);
+ expect(guardIndex).toBeLessThan(tokenIndex);
+ expect(steps[guardIndex].run).toContain("assert-client-generation-mode.mjs");
+});
+
+it("deploys failed diagnostic content only to the private preview after the Access probe passes", async () => {
+ const source=await fs.readFile(".github/workflows/generate-client.yml","utf8");
+ const workflow=parse(source);
+ const steps=workflow.jobs.generate.steps;
+ const diagnostic=steps.find((step:any)=>step.name==="Build and deploy noindex diagnostic preview");
+ expect(diagnostic).toBeTruthy();
+ const script=String(diagnostic.run);
+ expect(script).toContain("deploy-private-diagnostic-preview.mjs");
+ expect(script).not.toContain("steps.client.outputs.project");
+ expect(diagnostic.env).toMatchObject({
+   CLOUDFLARE_ACCESS_CLIENT_ID: "${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}",
+   CLOUDFLARE_ACCESS_CLIENT_SECRET: "${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}",
+ });
 });

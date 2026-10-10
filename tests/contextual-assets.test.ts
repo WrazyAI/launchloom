@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
 import { generateContextualAssets } from "../scripts/generate-contextual-assets.mjs";
+import { CREATIVE_FAMILIES } from "../scripts/creative-compiler.mjs";
 
 const generate = generateContextualAssets as any;
 
@@ -54,6 +55,51 @@ async function fakeImageResponse() {
 }
 
 describe("contextual image generation", () => {
+  it("uses distinct image art direction for every production creative family", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-family-assets-"));
+    const families = Object.keys(CREATIVE_FAMILIES);
+    const heroBriefs = new Map<string, string>();
+
+    for (const familyId of families) {
+      let prompt = "";
+      await generate({
+        site: fixture(),
+        inspiration: {
+          routes: [{
+            id: `route-${familyId}`,
+            familyId,
+            referenceDna: { familyId },
+          }],
+        },
+        outputDir,
+        key: "test-fal-key",
+        maxImages: 1,
+        maxRequests: 1,
+        falClient: {
+          config() {},
+          async subscribe(_model: string, options: { input: { prompt: string } }) {
+            prompt = options.input.prompt;
+            return {
+              data: { images: [{ url: `https://fal.example/${familyId}.jpg` }] },
+            };
+          },
+        },
+        fetchImpl: async () => fakeImageResponse(),
+      });
+
+      heroBriefs.set(
+        familyId,
+        prompt.split("Primary request: ")[1]?.split(" Business context: ")[0] || "",
+      );
+    }
+
+    expect([...heroBriefs.values()]).not.toContain("");
+    expect([...heroBriefs.values()].some((brief) =>
+      brief.includes("Create a distinctive, service-relevant scene using the assigned reference's physical subject cues"),
+    )).toBe(false);
+    expect(new Set(heroBriefs.values()).size).toBe(families.length);
+  });
+
   it("passes its per-request limit to the FAL queue so timed-out work is cancelled", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const timeouts: number[] = [];

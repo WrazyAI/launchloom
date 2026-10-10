@@ -15,6 +15,8 @@ import {
   CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
+  VERIFIED_CLIENT_PERSONNEL_CONTRACT,
+  appendReferencePersonnelCue,
   authoringCompletionDiagnostics,
   completionLimitRequestField,
   formatAuthoringCompletionDiagnostics,
@@ -920,6 +922,8 @@ ${CLIENT_TYPOGRAPHY_CONTRACT}
 
 ${REFERENCE_PROVENANCE_OUTPUT_CONTRACT}
 
+${VERIFIED_CLIENT_PERSONNEL_CONTRACT}
+
 ${EARLY_CONVERSION_OUTPUT_CONTRACT}
 
 TRUSTED @launchloom/runtime HELPERS
@@ -1014,7 +1018,7 @@ Use these helpers instead of inventing network calls or duplicating platform beh
               typeof currentFiles[key] === "string" && currentFiles[key].trim(),
           )),
     ];
-    return `${repairInstruction}
+    const prompt = `${repairInstruction}
 
 
 ${scopedHumanRepair ? `RESOLVED SECTION SCOPE\n${JSON.stringify(creativeRepairScope, null, 2)}\nOnly these section IDs may change.` : ""}
@@ -1089,6 +1093,10 @@ ${
       : "Return complete files required by the response schema and no unrelated explanation. Return the complete corrected source for any authored page named in the findings in its matching response field, and return an empty string for authored pages that should stay unchanged."
 
 } Keep required reference signatures and safety/content contracts unless the explicit repair requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`;
+    return appendReferencePersonnelCue(prompt, {
+      route: { referenceDna, referenceDossier },
+      contentShape,
+    });
   };
 
   const buildRepairContent = (

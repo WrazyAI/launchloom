@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import {
   runPipelineTest,
   sendPipelineTestNotification,
@@ -6,12 +9,17 @@ import {
   currentRunCostInputs,
   currentRunCostSummary,
   assertPipelineTestFacts,
+  assertTestPreviewIndexingPolicy,
+  assertTestPreviewAccessPolicy,
+  verifyTestPreviewAccess,
+  resolveTestPreviewProject,
   assertCompatibleTestAssets,
   pagesDeploymentUrl,
   pushPipelineTestEvidence,
 } from "../scripts/run-pipeline-test.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { summarizeGenerationCosts } from "../scripts/generation-cost-summary.mjs";
+import * as privatePreview from "../scripts/run-pipeline-test.mjs";
 
 const input = {
   eventName: "workflow_dispatch",
@@ -20,9 +28,22 @@ const input = {
   sourceSha: "a".repeat(40),
   runId: "123-1",
 };
-function adapter(fail = "") {
+async function makePrivateDiagnosticDirectory() {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "ll-private-diagnostic-"));
+  await fs.writeFile(
+    path.join(directory, "index.html"),
+    '<html><head><meta name="robots" content="noindex, nofollow"></head></html>',
+  );
+  await fs.writeFile(path.join(directory, "robots.txt"), "User-agent: *\nAllow: /\n");
+  await fs.writeFile(
+    path.join(directory, "_headers"),
+    "/*\n  X-Robots-Tag: noindex, nofollow, noarchive\n",
+  );
+  return directory;
+}
+function adapter(fail = "", authoredCandidateCount = 3) {
   const calls: string[] = [];
-  const dependencies = Object.fromEntries(
+  const dependencies: Record<string, any> = Object.fromEntries(
     [
       "prepare",
       "research",
@@ -41,7 +62,9 @@ function adapter(fail = "") {
       async () => {
         calls.push(stage);
         if (stage === fail) throw new Error(`${stage} failed`);
-        if (stage === "reuse") return { reused: true };
+        if (stage === "reuse") return { reused: true, candidateCount: 1 };
+        if (stage === "author")
+          return { candidateCount: authoredCandidateCount };
         if (stage === "deploy") return { url: "https://qa.pages.dev" };
         return {};
       },
@@ -50,6 +73,362 @@ function adapter(fail = "") {
   return { calls, dependencies };
 }
 describe("focused pipeline orchestration", () => {
+  it("uses the configured private Pages project when no explicit name is passed", () => {
+    vi.stubEnv("LAUNCHLOOM_TEST_PAGES_PROJECT", "launchloom-custom-preview");
+    try {
+      expect(resolveTestPreviewProject()).toBe("launchloom-custom-preview");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("classifies explicit rendered and contrast findings but not verifier execution failures", async () => {
+    expect(privatePreview.classifyDiagnosticQualityGateFailure).toBeTypeOf(
+      "function",
+    );
+    expect(
+      privatePreview.classifyDiagnosticQualityGateFailure("rendered", {
+        output:
+          "Rendered revision verification failed: mobile hero overlaps navigation.",
+      }),
+    ).toMatchObject({ name: "rendered", passed: false });
+    expect(
+      privatePreview.classifyDiagnosticQualityGateFailure("contrast", {
+        output: "contrast_verified=false routes=3 unresolved=4",
+      }),
+    ).toMatchObject({ name: "contrast", passed: false });
+    expect(
+      privatePreview.classifyDiagnosticQualityGateFailure("rendered", {
+        output: "browserType.launch: Executable doesn't exist",
+      }),
+    ).toBeNull();
+    expect(
+      privatePreview.classifyDiagnosticQualityGateFailure("contrast", {
+        output: "Error: Route HTTP 404",
+      }),
+    ).toBeNull();
+
+    const contrastProcessError = await privatePreview
+      .command(
+        process.execPath,
+        [
+          "-e",
+          "process.stdout.write('contrast_verified=false routes=1'); process.exitCode = 1",
+        ],
+        { capture: true, captureOutputOnError: true },
+      )
+      .then(() => null, (error: Error) => error);
+    expect(
+      privatePreview.classifyDiagnosticQualityGateFailure(
+        "contrast",
+        contrastProcessError,
+      ),
+    ).toMatchObject({ name: "contrast", passed: false });
+
+    const renderedProcessError = await privatePreview
+      .command(
+        process.execPath,
+        [
+          "-e",
+          "process.stderr.write('Error: Rendered revision verification failed: mobile hero overlaps navigation.'); process.exitCode = 1",
+        ],
+        { capture: true, captureOutputOnError: true },
+      )
+      .then(() => null, (error: Error) => error);
+    expect(
+      privatePreview.classifyDiagnosticQualityGateFailure(
+        "rendered",
+        renderedProcessError,
+      ),
+    ).toMatchObject({ name: "rendered", passed: false });
+  });
+  it("treats a Cloudflare Access challenge as readiness only in protected-preview mode", () => {
+    expect(privatePreview.classifyPagesPreviewResponse).toBeTypeOf("function");
+    expect(
+      privatePreview.classifyPagesPreviewResponse({
+        status: 302,
+        location: "/cdn-cgi/access/login/preview",
+        protectedPreview: true,
+      }),
+    ).toBe("access-challenge");
+    expect(
+      privatePreview.classifyPagesPreviewResponse({
+        status: 200,
+        protectedPreview: true,
+      }),
+    ).toBe("unsafe-public");
+    expect(
+      privatePreview.classifyPagesPreviewResponse({
+        status: 302,
+        location: "/ordinary-login",
+        protectedPreview: true,
+      }),
+    ).toBe("retry");
+  });
+  it("waits for an Access challenge rather than demanding a public 2xx from private previews", async () => {
+    expect(privatePreview.waitForPagesPreview).toBeTypeOf("function");
+    const ready = await privatePreview.waitForPagesPreview({
+      url: "https://candidate-hash.launchloom-private-test.pages.dev",
+      protectedPreview: true,
+      timeoutSeconds: 10,
+      intervalSeconds: 1,
+      send: async () => new Response(null, {
+        status: 302,
+        headers: { location: "/cdn-cgi/access/login/preview" },
+      }),
+      wait: async () => {},
+    });
+    expect(ready).toEqual({ state: "access-challenge", status: 302 });
+    await expect(privatePreview.waitForPagesPreview({
+      url: "https://candidate-hash.launchloom-private-test.pages.dev",
+      protectedPreview: true,
+      timeoutSeconds: 10,
+      intervalSeconds: 1,
+      send: async () => new Response("public HTML", { status: 200 }),
+      wait: async () => {},
+    })).rejects.toThrow(/without an Access challenge/i);
+  });
+  it("never deploys diagnostic content until a no-data private preview probe passes", async () => {
+    expect(privatePreview.deployPrivatePagesPreview).toBeTypeOf("function");
+    const events: string[] = [];
+    const candidateDirectory = await makePrivateDiagnosticDirectory();
+    await fs.writeFile(path.join(candidateDirectory, "index.html"), '<html><head><meta name="robots" content="noindex"></head><body>candidate-specific content</body></html>');
+    try {
+    const deployed = await privatePreview.deployPrivatePagesPreview({
+      projectName: "launchloom-private-test",
+      directory: candidateDirectory,
+      sourceSha: "a".repeat(40),
+      branch: "creative-diagnostic-123",
+      ensureProject: async () => { events.push("ensure-project"); },
+      deploy: async ({ directory, branch }: { directory: string; branch: string }) => {
+        if (branch === "access-probe") {
+          const probe = await import("node:fs/promises");
+          const html = await probe.readFile(`${directory}/index.html`, "utf8");
+          expect(html).toContain("contains no client or business data");
+          expect(html).not.toContain("candidate-specific content");
+        }
+        events.push(`deploy:${branch}`);
+        return { url: branch === "access-probe"
+          ? "https://probe-hash.launchloom-private-test.pages.dev"
+          : "https://candidate-hash.launchloom-private-test.pages.dev" };
+      },
+      waitForReady: async (url: string, options: { protectedPreview: boolean }) => {
+        expect(options.protectedPreview).toBe(true);
+        events.push(`wait:${url.includes("probe-hash") ? "probe" : "candidate"}`);
+      },
+      verifyAccess: async (url: string) => {
+        events.push(`verify:${url.includes("probe-hash") ? "probe" : "candidate"}`);
+      },
+    });
+    expect(deployed.url).toBe("https://candidate-hash.launchloom-private-test.pages.dev");
+    expect(events).toEqual([
+      "ensure-project",
+      "deploy:access-probe",
+      "wait:probe",
+      "verify:probe",
+      "deploy:creative-diagnostic-123",
+      "wait:candidate",
+      "verify:candidate",
+    ]);
+    } finally {
+      await fs.rm(candidateDirectory, { recursive: true, force: true });
+    }
+  });
+  it("fails closed without uploading candidate content when the access probe is public", async () => {
+    expect(privatePreview.deployPrivatePagesPreview).toBeTypeOf("function");
+    const deployments: string[] = [];
+    const candidateDirectory = await makePrivateDiagnosticDirectory();
+    await fs.writeFile(path.join(candidateDirectory, "index.html"), '<html><head><meta name="robots" content="noindex"></head><body>must remain private</body></html>');
+    try {
+    await expect(privatePreview.deployPrivatePagesPreview({
+      projectName: "launchloom-private-test",
+      directory: candidateDirectory,
+      sourceSha: "b".repeat(40),
+      branch: "creative-diagnostic-456",
+      ensureProject: async () => {},
+      deploy: async ({ branch }: { branch: string }) => {
+        deployments.push(branch);
+        return { url: `https://${branch}.launchloom-private-test.pages.dev` };
+      },
+      waitForReady: async () => {},
+      verifyAccess: async () => { throw new Error("not protected behind Cloudflare Access"); },
+    })).rejects.toThrow(/not protected behind Cloudflare Access/i);
+    expect(deployments).toEqual(["access-probe"]);
+    } finally {
+      await fs.rm(candidateDirectory, { recursive: true, force: true });
+    }
+  });
+  it("requires private diagnostic output to be noindex, crawler-allowed, and sitemap-free before deployment", async () => {
+    expect(privatePreview.assertPrivateDiagnosticOutput).toBeTypeOf("function");
+    const directory = await makePrivateDiagnosticDirectory();
+    try {
+      await expect(
+        privatePreview.assertPrivateDiagnosticOutput(directory),
+      ).resolves.toBe(true);
+      await fs.writeFile(path.join(directory, "robots.txt"), "User-agent: *\nDisallow: /\n");
+      await expect(privatePreview.assertPrivateDiagnosticOutput(directory)).rejects.toThrow(/robots\.txt must allow crawling/i);
+      await fs.writeFile(path.join(directory, "robots.txt"), "User-agent: *\nAllow: /\n");
+      await fs.writeFile(path.join(directory, "sitemap.xml"), "");
+      await expect(privatePreview.assertPrivateDiagnosticOutput(directory)).rejects.toThrow(/must not contain a sitemap/i);
+      await fs.rm(path.join(directory, "sitemap.xml"));
+      await fs.writeFile(path.join(directory, "_headers"), "/*\n");
+      await expect(privatePreview.assertPrivateDiagnosticOutput(directory)).rejects.toThrow(/X-Robots-Tag noindex/i);
+    } finally {
+      await fs.rm(directory, { recursive: true, force: true });
+    }
+  });
+  it("creates a crawler-safe, content-free access probe without intake data", async () => {
+    expect(privatePreview.createPrivatePreviewProbe).toBeTypeOf("function");
+    const directory = await fs.mkdtemp(path.join(os.tmpdir(), "ll-access-probe-"));
+    try {
+      await privatePreview.createPrivatePreviewProbe(directory);
+      const html = await fs.readFile(path.join(directory, "index.html"), "utf8");
+      const headers = await fs.readFile(path.join(directory, "_headers"), "utf8");
+      expect(html).toContain("This page contains no client or business data");
+      expect(html).not.toContain("@example");
+      expect(headers).toContain("X-Robots-Tag: noindex");
+      await expect(privatePreview.assertPrivateDiagnosticOutput(directory)).resolves.toBe(true);
+    } finally {
+      await fs.rm(directory, { recursive: true, force: true });
+    }
+  });
+  it("requires an Access challenge for anonymous preview traffic and a successful authenticated check", async () => {
+    expect(assertTestPreviewAccessPolicy).toBeTypeOf("function");
+    expect(assertTestPreviewAccessPolicy({
+      anonymousStatus: 302,
+      anonymousLocation: "/cdn-cgi/access/login/preview",
+      authenticatedStatus: 200,
+    })).toBe(true);
+    expect(() => assertTestPreviewAccessPolicy?.({
+      anonymousStatus: 200,
+      anonymousLocation: "",
+      authenticatedStatus: 200,
+    })).toThrow(/not protected behind Cloudflare Access/i);
+    expect(() => assertTestPreviewAccessPolicy?.({
+      anonymousStatus: 302,
+      anonymousLocation: "/cdn-cgi/access/login/preview",
+      authenticatedStatus: 403,
+    })).toThrow(/authorize.*developer request/i);
+  });
+  it("probes preview access anonymously and with only the configured service token", async () => {
+    const calls: Array<{ url: string; init: RequestInit }> = [];
+    const result = await verifyTestPreviewAccess({
+      url: "https://hash.launchloom-pipeline-preview.pages.dev",
+      clientId: "synthetic-client-id",
+      clientSecret: "synthetic-client-secret",
+      send: async (url: any, init: any) => {
+        calls.push({ url: String(url), init });
+        return calls.length === 1
+          ? new Response(null, { status: 302, headers: { location: "/cdn-cgi/access/login/test" } })
+          : new Response("ok", { status: 200 });
+      },
+    });
+    expect(result).toEqual({ anonymousStatus: 302, authenticatedStatus: 200 });
+    expect(calls).toHaveLength(2);
+    expect(calls[0].init.headers).toBeUndefined();
+    expect(calls[1].init.headers).toEqual({
+      "CF-Access-Client-Id": "synthetic-client-id",
+      "CF-Access-Client-Secret": "synthetic-client-secret",
+    });
+  });
+  it("retries transient authenticated preview responses until Pages is ready", async () => {
+    const statuses = [302, 404, 503, 200];
+    const waits: number[] = [];
+    const result = await verifyTestPreviewAccess({
+      url: "https://hash.launchloom-pipeline-preview.pages.dev",
+      clientId: "synthetic-client-id",
+      clientSecret: "synthetic-client-secret",
+      send: async () =>
+        new Response(null, {
+          status: statuses.shift(),
+          headers: { location: "/cdn-cgi/access/login/test" },
+        }),
+      wait: async (milliseconds: number) => {
+        waits.push(milliseconds);
+      },
+    });
+
+    expect(result).toEqual({ anonymousStatus: 302, authenticatedStatus: 200 });
+    expect(waits).toEqual([5_000, 5_000]);
+  });
+  it("fails immediately for rejected service-token credentials", async () => {
+    let calls = 0;
+    let waits = 0;
+    await expect(
+      verifyTestPreviewAccess({
+        url: "https://hash.launchloom-pipeline-preview.pages.dev",
+        clientId: "synthetic-client-id",
+        clientSecret: "synthetic-client-secret",
+        send: async () =>
+          new Response(null, {
+            status: ++calls === 1 ? 302 : 403,
+            headers: { location: "/cdn-cgi/access/login/test" },
+          }),
+        wait: async () => {
+          waits += 1;
+        },
+      }),
+    ).rejects.toThrow(/authorize.*developer request/i);
+    expect(calls).toBe(2);
+    expect(waits).toBe(0);
+  });
+  it("bounds retries when a private Pages deployment never becomes ready", async () => {
+    let calls = 0;
+    let waits = 0;
+    await expect(
+      verifyTestPreviewAccess({
+        url: "https://hash.launchloom-pipeline-preview.pages.dev",
+        clientId: "synthetic-client-id",
+        clientSecret: "synthetic-client-secret",
+        attempts: 3,
+        send: async () =>
+          new Response(null, {
+            status: ++calls === 1 ? 302 : 503,
+            headers: { location: "/cdn-cgi/access/login/test" },
+          }),
+        wait: async () => {
+          waits += 1;
+        },
+      }),
+    ).rejects.toThrow(/did not become reachable.*3 attempts.*503/i);
+    expect(calls).toBe(4);
+    expect(waits).toBe(2);
+  });
+  it("accepts only a stable safe Pages project slug", () => {
+    expect(resolveTestPreviewProject()).toBe("launchloom-pipeline-preview");
+    expect(resolveTestPreviewProject("LLQA-Previews")).toBe("llqa-previews");
+    expect(() => resolveTestPreviewProject("https://evil.test/x")).toThrow(/project name/i);
+  });
+  it("requires crawler-accessible noindex headers and no deployed sitemap", () => {
+    expect(
+      assertTestPreviewIndexingPolicy({
+        robotsTxt: "User-agent: *\nAllow: /\n",
+        sitemapXml: "",
+        xRobotsTag: "noindex, nofollow, noarchive",
+      }),
+    ).toBe(true);
+    expect(() =>
+      assertTestPreviewIndexingPolicy({
+        robotsTxt: "User-agent: *\nDisallow: /\n",
+        sitemapXml: "",
+        xRobotsTag: "noindex, nofollow",
+      }),
+    ).toThrow(/robots\.txt must allow crawling/i);
+    expect(() =>
+      assertTestPreviewIndexingPolicy({
+        robotsTxt: "User-agent: *\nAllow: /\n",
+        sitemapXml: "<urlset></urlset>",
+        xRobotsTag: "noindex, nofollow",
+      }),
+    ).toThrow(/must not publish a sitemap/i);
+    expect(() =>
+      assertTestPreviewIndexingPolicy({
+        robotsTxt: "User-agent: *\nAllow: /\n",
+        sitemapXml: "",
+        xRobotsTag: "index, follow",
+      }),
+    ).toThrow(/noindex/i);
+  });
   it("retries a transient GitHub evidence push without regenerating the site", async () => {
     let calls = 0;
     const waits: number[] = [];
@@ -181,11 +560,12 @@ describe("focused pipeline orchestration", () => {
     expect(report.previewDelivered).toBe(true);
   });
   it("authors one source only when reuse is unavailable", async () => {
-    const { calls, dependencies } = adapter();
+    const { calls, dependencies } = adapter("", 1);
     dependencies.reuse = async () => ({ reused: false });
     const report = await runPipelineTest(input, dependencies);
     expect(calls).toContain("author");
     expect(report.candidateCount).toBe(1);
+    expect(report.candidateTarget).toBe(1);
     expect(calls).not.toContain("creative");
   });
   it("creative failure can deliver a diagnostic without claiming a pass", async () => {
@@ -198,10 +578,68 @@ describe("focused pipeline orchestration", () => {
     expect(calls).not.toContain("seo");
     expect(calls).not.toContain("reuse");
     expect(report.candidateCount).toBe(3);
+    expect(report.candidateTarget).toBe(3);
     expect(report.stages.creative.status).toBe("failed");
     expect(report.stages.research.status).toBe("not_run");
     expect(report.verdict).toBe("failed");
     expect(report.previewDelivered).toBe(true);
+  });
+  it("full-preview runs research and creative and passes only when both lanes pass", async () => {
+    const { calls, dependencies } = adapter();
+    const report = await runPipelineTest(
+      { ...input, profile: "full-preview" },
+      dependencies,
+    );
+    expect(calls).toEqual([
+      "prepare",
+      "research",
+      "configure",
+      "author",
+      "creative",
+      "select",
+      "technical",
+      "seo",
+      "deploy",
+      "notify",
+      "persist",
+    ]);
+    expect(report.candidateCount).toBe(3);
+    expect(report.candidateTarget).toBe(3);
+    expect(report.stages.research.status).toBe("passed");
+    expect(report.stages.creative.status).toBe("passed");
+    expect(report.stages.seo.status).toBe("passed");
+    expect(report.verdict).toBe("passed");
+    expect(report.previewDelivered).toBe(true);
+  });
+  it.each(["creative", "seo"])(
+    "full-preview does not deploy when the %s quality lane fails",
+    async (failedLane) => {
+      const { calls, dependencies } = adapter(failedLane);
+      const report = await runPipelineTest(
+        { ...input, profile: "full-preview" },
+        dependencies,
+      );
+      expect(report.verdict).toBe("failed");
+      expect(report.previewDelivered).toBe(false);
+      expect(calls).not.toContain("deploy");
+      expect(calls).not.toContain("notify");
+      expect(calls.at(-1)).toBe("persist");
+    },
+  );
+  it("fails full-preview before creative evaluation when fewer than three candidates were authored", async () => {
+    const { calls, dependencies } = adapter("", 2);
+    const report = await runPipelineTest(
+      { ...input, profile: "full-preview" },
+      dependencies,
+    );
+    expect(report.candidateCount).toBe(2);
+    expect(report.candidateTarget).toBe(3);
+    expect(report.stages.author.status).toBe("failed");
+    expect((report.stages.author as any).error).toMatch(/expected 3 authored candidates, received 2/i);
+    expect(calls).not.toContain("creative");
+    expect(calls).not.toContain("select");
+    expect(calls).not.toContain("deploy");
+    expect(calls).not.toContain("notify");
   });
   it("technical failure prevents deployment and notification", async () => {
     const { calls, dependencies } = adapter("technical");
@@ -212,11 +650,59 @@ describe("focused pipeline orchestration", () => {
     expect(calls).not.toContain("notify");
     expect(calls.at(-1)).toBe("persist");
   });
-  it("SEO failure remains failed even when a safe preview is delivered", async () => {
-    const { dependencies } = adapter("seo");
+  it("delivers an isolated SEO preview after rendered quality gates fail without claiming a pass", async () => {
+    const { calls, dependencies } = adapter();
+    dependencies.technical = async () => {
+      calls.push("technical");
+      const error: any = new Error("Rendered quality checks did not pass.");
+      error.code = "PIPELINE_QUALITY_GATE";
+      error.gates = [
+        { name: "rendered", passed: false },
+        { name: "contrast", passed: false },
+      ];
+      throw error;
+    };
+
     const report = await runPipelineTest(input, dependencies);
+
+    expect(report.stages.technical.status).toBe("failed");
     expect(report.verdict).toBe("failed");
     expect(report.previewDelivered).toBe(true);
+    expect((report.stages.technical as any).gates).toEqual([
+      { name: "rendered", passed: false },
+      { name: "contrast", passed: false },
+    ]);
+    expect(calls).toContain("deploy");
+    expect(calls).toContain("notify");
+  });
+  it("keeps full-preview deployment blocked when rendered quality gates fail", async () => {
+    const { calls, dependencies } = adapter();
+    dependencies.technical = async () => {
+      calls.push("technical");
+      const error: any = new Error("Rendered quality checks did not pass.");
+      error.code = "PIPELINE_QUALITY_GATE";
+      error.gates = [{ name: "contrast", passed: false }];
+      throw error;
+    };
+
+    const report = await runPipelineTest(
+      { ...input, profile: "full-preview" },
+      dependencies,
+    );
+
+    expect(report.stages.technical.status).toBe("failed");
+    expect(report.verdict).toBe("failed");
+    expect(report.previewDelivered).toBe(false);
+    expect(calls).not.toContain("deploy");
+    expect(calls).not.toContain("notify");
+  });
+  it("does not deliver an SEO-only preview when measured SEO readiness fails", async () => {
+    const { calls, dependencies } = adapter("seo");
+    const report = await runPipelineTest(input, dependencies);
+    expect(report.verdict).toBe("failed");
+    expect(report.previewDelivered).toBe(false);
+    expect(calls).not.toContain("deploy");
+    expect(calls).not.toContain("notify");
   });
   it("rejects nonmanual events before external work", async () => {
     const { calls, dependencies } = adapter();

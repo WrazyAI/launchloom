@@ -84,6 +84,17 @@ become client-site assets.
    populated token must still resolve to a safe local or LaunchLoom-hosted
    asset. Invalid authored output gets bounded source-validation retries with
    the exact validator finding before the candidate is rejected.
+   When a reference describes personnel but the sealed client facts do not
+   verify staff, model-bound route descriptions are adapted to preserve the
+   reference's composition, hierarchy, palette, service rhythm, and conversion
+   placement while translating person-specific roles into object-led imagery
+   or process-led reassurance. The original dossier, stable signature IDs,
+   rights/provenance, and screenshot evidence remain unchanged. The explicit
+   personnel/fact boundary follows reference screenshots in each content stage
+   and every repair. If the claim auditor still rejects authored copy, the
+   exact bounded phrase is sent privately to the same author for repair; stored
+   failure summaries continue to expose categories only. Claim and promotion
+   gates remain strict.
    The authoring budget defaults to 85 minutes and can be bounded with
    `CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS`; it never turns an expired author
    run into a legacy renderer. Completion ceilings are stage-specific: 24k

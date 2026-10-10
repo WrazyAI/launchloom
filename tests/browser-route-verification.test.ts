@@ -1,6 +1,9 @@
 import { it, expect, afterEach, vi } from "vitest";
 import http from "node:http";
-import { verifyApprovedRoutes } from "../scripts/browser-route-verification.mjs";
+import {
+  diagnosticFormMode,
+  verifyApprovedRoutes,
+} from "../scripts/browser-route-verification.mjs";
 vi.setConfig({ testTimeout: 60000 });
 const owned: http.Server[] = [];
 afterEach(async () => {
@@ -33,8 +36,41 @@ const config: any = {
   },
   lead: { apiUrl: "https://stage4-provider.invalid", token: "synthetic-token" },
 };
-function html(route: string, broken = false) {
-  return `<html><head><title>Browser fixture</title></head><body><main><h1>${route === "/" ? "Browser Fixture" : "Drain cleaning"}</h1><a href="${route === "/" ? "/services/drain-cleaning/" : "/"}">Other page</a><details><summary>What should I share?</summary><p>Explain which drain is affected.</p></details><form class="lead-form"><label>Name<input name="name" required></label><label>Phone<input name="phone" required></label><label>Email<input name="email" type="email" required></label><label>Message<textarea name="message" required></textarea></label><button type="submit">Send</button><small role="status"></small></form></main><script>${broken ? 'throw new Error("synthetic hydration failure");' : ""}const form=document.querySelector('form');form.addEventListener('submit',async event=>{event.preventDefault();try{const fields=Object.fromEntries(new FormData(form));const r=await fetch('https://stage4-provider.invalid/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...fields,token:'synthetic-token',pageUrl:location.href})});const data=await r.json();if(!r.ok)throw new Error(data.error);form.reset();form.querySelector('[role=status]').textContent='Thank you. We will be in touch shortly.';dispatchEvent(new CustomEvent('launchloom:lead-submitted'));}catch(error){form.querySelector('[role=status]').textContent=error.message;}});</script></body></html>`;
+it.each(["seo-only", "creative-only", "full-preview"])(
+  "accepts %s as a disabled, test-only diagnostic form profile",
+  (profile) => {
+    expect(
+      diagnosticFormMode({
+        lead: { apiUrl: "", token: "" },
+        pipelineTest: {
+          version: 1,
+          profile,
+          testOnly: true,
+          sourceSha: "a".repeat(40),
+          runId: "synthetic",
+        },
+      }),
+    ).toBe("test-preview");
+  },
+);
+it("treats a fictional full-path demo as a disabled preview and rejects production form mode", () => {
+  const fictional = {
+    ...config,
+    demoNotice: "Fictional pipeline demo",
+    lead: { apiUrl: "", token: "" },
+  };
+  expect(diagnosticFormMode(fictional)).toBe("test-preview");
+  expect(() => diagnosticFormMode(fictional, "production")).toThrow(
+    /test-only/i,
+  );
+});
+function html(route: string, broken = false, h1OutsideMain = false) {
+  const pageHeading = `<h1>${route === "/" ? "Browser Fixture" : "Drain cleaning"}</h1>`;
+  const body = `<a href="${route === "/" ? "/services/drain-cleaning/" : "/"}">Other page</a><details><summary>What should I share?</summary><p>Explain which drain is affected.</p></details><form class="lead-form"><label>Name<input name="name" required></label><label>Phone<input name="phone" required></label><label>Email<input name="email" type="email" required></label><label>Message<textarea name="message" required></textarea></label><button type="submit">Send</button><small role="status"></small></form>`;
+  const page = h1OutsideMain
+    ? `${pageHeading}<main>${body}</main>`
+    : `<main>${pageHeading}${body}</main>`;
+  return `<html><head><title>Browser fixture</title></head><body>${page}<script>${broken ? 'throw new Error("synthetic hydration failure");' : ""}const form=document.querySelector('form');form.addEventListener('submit',async event=>{event.preventDefault();try{const fields=Object.fromEntries(new FormData(form));const r=await fetch('https://stage4-provider.invalid/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...fields,token:'synthetic-token',pageUrl:location.href})});const data=await r.json();if(!r.ok)throw new Error(data.error);form.reset();form.querySelector('[role=status]').textContent='Thank you. We will be in touch shortly.';dispatchEvent(new CustomEvent('launchloom:lead-submitted'));}catch(error){form.querySelector('[role=status]').textContent=error.message;}});</script></body></html>`;
 }
 async function server(
   options: {
@@ -45,7 +81,16 @@ async function server(
     noForms?: boolean;
     fragmentLink?: boolean;
     relativeNavigation?: boolean;
-    preview?: "safe" | "hidden" | "no-marker" | "live-token" | "network" | "native-get" | "stale-status" | "image-get";
+    h1OutsideMain?: boolean;
+    preview?:
+      | "safe"
+      | "hidden"
+      | "no-marker"
+      | "live-token"
+      | "network"
+      | "native-get"
+      | "stale-status"
+      | "image-get";
   } = {},
 ) {
   let mutations = 0;
@@ -69,13 +114,30 @@ async function server(
     res.setHeader("Content-Type", "text/html");
     if (options.preview) {
       const base = html(route).replace(/<script>[\s\S]*?<\/script>/u, "");
-      const body = base.replace('<form class="lead-form">', `<form class="lead-form" ${options.preview === "hidden" ? "hidden" : ""} ${options.preview === "no-marker" ? "" : 'data-lead-preview="true"'}><input type="hidden" name="lead-token" value="${options.preview === "live-token" ? "live-secret" : ""}">`);
-      const diagnosticBody = options.preview === "native-get" ? body.replace('<form class="lead-form"', '<form method="get" action="/unexpected-submission" class="lead-form"') : options.preview === "stale-status" ? body.replace('<small role="status"></small>', '<small role="status">Test-only preview: submissions are disabled.</small>') : body;
-      res.end(diagnosticBody + `<script>document.querySelector('form').addEventListener('submit', async event => { ${options.preview === "native-get" ? "" : "event.preventDefault();"} ${options.preview === "network" ? "await fetch('/unexpected-submission',{method:'POST'});" : ""} ${options.preview === "image-get" ? "const beacon = new Image(); beacon.src = '/unexpected-submission?name=Synthetic'; document.body.append(beacon);" : ""} ${options.preview === "stale-status" ? "" : "document.querySelector('form [role=status]').textContent='Test-only preview: submissions are disabled.';"} });</script>`);
+      const body = base.replace(
+        '<form class="lead-form">',
+        `<form class="lead-form" ${options.preview === "hidden" ? "hidden" : ""} ${options.preview === "no-marker" ? "" : 'data-lead-preview="true"'}><input type="hidden" name="lead-token" value="${options.preview === "live-token" ? "live-secret" : ""}">`,
+      );
+      const diagnosticBody =
+        options.preview === "native-get"
+          ? body.replace(
+              '<form class="lead-form"',
+              '<form method="get" action="/unexpected-submission" class="lead-form"',
+            )
+          : options.preview === "stale-status"
+            ? body.replace(
+                '<small role="status"></small>',
+                '<small role="status">Test-only preview: submissions are disabled.</small>',
+              )
+            : body;
+      res.end(
+        diagnosticBody +
+          `<script>document.querySelector('form').addEventListener('submit', async event => { ${options.preview === "native-get" ? "" : "event.preventDefault();"} ${options.preview === "network" ? "await fetch('/unexpected-submission',{method:'POST'});" : ""} ${options.preview === "image-get" ? "const beacon = new Image(); beacon.src = '/unexpected-submission?name=Synthetic'; document.body.append(beacon);" : ""} ${options.preview === "stale-status" ? "" : "document.querySelector('form [role=status]').textContent='Test-only preview: submissions are disabled.';"} });</script>`,
+      );
       return;
     }
     if (options.fragmentLink || options.relativeNavigation) {
-      let body = html(route, options.broken);
+      let body = html(route, options.broken, options.h1OutsideMain);
       if (route !== "/" && options.relativeNavigation) {
         body = body.replace(
           '<a href="/">Other page</a>',
@@ -93,7 +155,7 @@ async function server(
     }
     if (options.noForms) {
       res.end(
-        html(route, options.broken)
+        html(route, options.broken, options.h1OutsideMain)
           .replace(/<form[\s\S]*?<\/form>/u, "")
           .replace(/<script>[\s\S]*?<\/script>/u, ""),
       );
@@ -101,11 +163,11 @@ async function server(
     }
     res.end(
       (options.fakeSuccess
-        ? html(route, options.broken).replace(
+        ? html(route, options.broken, options.h1OutsideMain).replace(
             "dispatchEvent(new CustomEvent('launchloom:lead-submitted'));",
             "",
           )
-        : html(route, options.broken)) +
+        : html(route, options.broken, options.h1OutsideMain)) +
         (options.asset
           ? '<img src="/missing.webp" alt="Missing context">'
           : ""),
@@ -119,37 +181,164 @@ async function server(
     deliveries: () => deliveries,
   };
 }
-it.each(["safe", "hidden", "no-marker", "live-token", "network"] as const)("verifies bounded diagnostic form behavior: %s", async (preview) => {
-  const s = await server({ preview });
-  const diagnosticConfig = { ...config, lead: { apiUrl: "", token: "" }, pipelineTest: { version: 1, profile: "seo-only", testOnly: true, sourceSha: "a".repeat(40), runId: "synthetic" } };
-  const report: any = await verifyApprovedRoutes({ config: diagnosticConfig, origin: s.origin, mode: "review", formMode: "test-preview", viewports: [{ name: "mobile", width: 390, height: 844 }], representativeViewports: [], timeout: 1500 });
-  expect(report.status).toBe(preview === "safe" ? "pass" : "fail");
-  if (preview === "safe") {
-    expect(report.routes.every((route: any) => route.profiles.every((profile: any) => profile.forms.every((form: any) => form.previewDisabled === "pass" && form.externalDelivery === "not_verified" && form.syntheticRequests === 0)))).toBe(true);
-  }
+it.each(["safe", "hidden", "no-marker", "live-token", "network"] as const)(
+  "verifies bounded diagnostic form behavior: %s",
+  async (preview) => {
+    const s = await server({ preview });
+    const diagnosticConfig = {
+      ...config,
+      lead: { apiUrl: "", token: "" },
+      pipelineTest: {
+        version: 1,
+        profile: "seo-only",
+        testOnly: true,
+        sourceSha: "a".repeat(40),
+        runId: "synthetic",
+      },
+    };
+    const report: any = await verifyApprovedRoutes({
+      config: diagnosticConfig,
+      origin: s.origin,
+      mode: "review",
+      formMode: "test-preview",
+      viewports: [{ name: "mobile", width: 390, height: 844 }],
+      representativeViewports: [],
+      timeout: 1500,
+    });
+    expect(report.status).toBe(preview === "safe" ? "pass" : "fail");
+    if (preview === "safe") {
+      expect(
+        report.routes.every((route: any) =>
+          route.profiles.every((profile: any) =>
+            profile.forms.every(
+              (form: any) =>
+                form.previewDisabled === "pass" &&
+                form.externalDelivery === "not_verified" &&
+                form.syntheticRequests === 0,
+            ),
+          ),
+        ),
+      ).toBe(true);
+    }
+    expect(s.mutations()).toBe(0);
+  },
+);
+it("runs the disabled-form browser check for full-preview provenance", async () => {
+  const s = await server({ preview: "safe" });
+  const diagnosticConfig = {
+    ...config,
+    lead: { apiUrl: "", token: "" },
+    pipelineTest: {
+      version: 1,
+      profile: "full-preview",
+      testOnly: true,
+      sourceSha: "a".repeat(40),
+      runId: "synthetic",
+    },
+  };
+  const report: any = await verifyApprovedRoutes({
+    config: diagnosticConfig,
+    origin: s.origin,
+    mode: "review",
+    formMode: diagnosticFormMode(diagnosticConfig),
+    viewports: [{ name: "mobile", width: 390, height: 844 }],
+    representativeViewports: [],
+    timeout: 1500,
+  });
+  expect(report.status).toBe("pass");
   expect(s.mutations()).toBe(0);
 });
-it.each(["native-get", "stale-status", "image-get"] as const)("rejects diagnostic GET delivery or stale disabled status: %s", async (preview) => {
-  const s = await server({ preview });
-  const diagnosticConfig = { ...config, lead: { apiUrl: "", token: "" }, pipelineTest: { version: 1, profile: "seo-only", testOnly: true, sourceSha: "a".repeat(40), runId: "synthetic" } };
-  const report: any = await verifyApprovedRoutes({ config: diagnosticConfig, origin: s.origin, mode: "review", formMode: "test-preview", viewports: [{ name: "mobile", width: 390, height: 844 }], representativeViewports: [], timeout: 1500 });
-  expect(s.deliveries()).toBe(0);
-  expect(report.status).toBe("fail");
-  expect(report.routes.every((route: any) => route.profiles.every((profile: any) => profile.forms.length > 0 && profile.forms.some((form: any) => form.failures.length > 0)))).toBe(true);
-});
-it.each(["production", "unmarked", "malformed", "live-config"])("refuses unauthorized diagnostic form relaxation: %s", async (variant) => {
-  const s = await server({ preview: "safe" });
-  const diagnosticConfig: any = { ...config, lead: { apiUrl: "", token: "" }, pipelineTest: { version: 1, profile: "seo-only", testOnly: true, sourceSha: "a".repeat(40), runId: "synthetic" } };
-  if (variant === "unmarked") delete diagnosticConfig.pipelineTest;
-  if (variant === "malformed") diagnosticConfig.pipelineTest = { testOnly: true };
-  if (variant === "live-config") diagnosticConfig.lead = config.lead;
-  await expect(verifyApprovedRoutes({ config: diagnosticConfig, origin: s.origin, mode: variant === "production" ? "production" : "review", formMode: "test-preview", viewports: [{ name: "mobile", width: 390, height: 844 }], timeout: 500 })).rejects.toThrow(/test-preview|Diagnostic/);
-});
+it.each(["native-get", "stale-status", "image-get"] as const)(
+  "rejects diagnostic GET delivery or stale disabled status: %s",
+  async (preview) => {
+    const s = await server({ preview });
+    const diagnosticConfig = {
+      ...config,
+      lead: { apiUrl: "", token: "" },
+      pipelineTest: {
+        version: 1,
+        profile: "seo-only",
+        testOnly: true,
+        sourceSha: "a".repeat(40),
+        runId: "synthetic",
+      },
+    };
+    const report: any = await verifyApprovedRoutes({
+      config: diagnosticConfig,
+      origin: s.origin,
+      mode: "review",
+      formMode: "test-preview",
+      viewports: [{ name: "mobile", width: 390, height: 844 }],
+      representativeViewports: [],
+      timeout: 1500,
+    });
+    expect(s.deliveries()).toBe(0);
+    expect(report.status).toBe("fail");
+    expect(
+      report.routes.every((route: any) =>
+        route.profiles.every(
+          (profile: any) =>
+            profile.forms.length > 0 &&
+            profile.forms.some((form: any) => form.failures.length > 0),
+        ),
+      ),
+    ).toBe(true);
+  },
+);
+it.each(["production", "unmarked", "malformed", "live-config"])(
+  "refuses unauthorized diagnostic form relaxation: %s",
+  async (variant) => {
+    const s = await server({ preview: "safe" });
+    const diagnosticConfig: any = {
+      ...config,
+      lead: { apiUrl: "", token: "" },
+      pipelineTest: {
+        version: 1,
+        profile: "seo-only",
+        testOnly: true,
+        sourceSha: "a".repeat(40),
+        runId: "synthetic",
+      },
+    };
+    if (variant === "unmarked") delete diagnosticConfig.pipelineTest;
+    if (variant === "malformed")
+      diagnosticConfig.pipelineTest = { testOnly: true };
+    if (variant === "live-config") diagnosticConfig.lead = config.lead;
+    await expect(
+      verifyApprovedRoutes({
+        config: diagnosticConfig,
+        origin: s.origin,
+        mode: variant === "production" ? "production" : "review",
+        formMode: "test-preview",
+        viewports: [{ name: "mobile", width: 390, height: 844 }],
+        timeout: 500,
+      }),
+    ).rejects.toThrow(/test-preview|Diagnostic/);
+  },
+);
 it("retains terminal synthetic delivery requirements for preview-marked production forms", async () => {
   const s = await server({ preview: "safe" });
-  const report: any = await verifyApprovedRoutes({ config, origin: s.origin, mode: "production", formMode: "mocked", viewports: [{ name: "mobile", width: 390, height: 844 }], representativeViewports: [], timeout: 1500 });
+  const report: any = await verifyApprovedRoutes({
+    config,
+    origin: s.origin,
+    mode: "production",
+    formMode: "mocked",
+    viewports: [{ name: "mobile", width: 390, height: 844 }],
+    representativeViewports: [],
+    timeout: 1500,
+  });
   expect(report.status).toBe("fail");
-  expect(report.routes.some((route: any) => route.profiles.some((profile: any) => profile.forms.some((form: any) => form.failures.includes("Production forms require terminal synthetic lifecycle evidence."))))).toBe(true);
+  expect(
+    report.routes.some((route: any) =>
+      route.profiles.some((profile: any) =>
+        profile.forms.some((form: any) =>
+          form.failures.includes(
+            "Production forms require terminal synthetic lifecycle evidence.",
+          ),
+        ),
+      ),
+    ),
+  ).toBe(true);
 });
 it("records every admitted route and synthetic success/failure delivery without external writes", async () => {
   const s = await server();
@@ -177,6 +366,29 @@ it("records every admitted route and synthetic success/failure delivery without 
   expect(s.mutations()).toBe(0);
 });
 
+it("reports out-of-main H1 separately from a successful route refresh", async () => {
+  const s = await server({ h1OutsideMain: true });
+  const report: any = await verifyApprovedRoutes({
+    config,
+    origin: s.origin,
+    formMode: "mocked",
+    viewports: [{ name: "mobile", width: 390, height: 844 }],
+    representativeViewports: [],
+    timeout: 1500,
+  });
+  const homepage = report.routes.find((route: any) => route.path === "/");
+  const checks = homepage.profiles[0].checks;
+
+  expect(checks.find((check: any) => check.name === "h1")?.status).toBe("fail");
+  expect(checks.find((check: any) => check.name === "refresh")?.status).toBe(
+    "pass",
+  );
+  expect(
+    checks.find((check: any) => check.name === "main-heading-after-refresh")
+      ?.status,
+  ).toBe("fail");
+});
+
 it("keeps fragment-only links on the current route before verifying cross-route navigation", async () => {
   const s = await server({ fragmentLink: true });
   const report: any = await verifyApprovedRoutes({
@@ -199,7 +411,11 @@ it("resolves relative sibling links from the current service route", async () =>
       ...config,
       services: [
         ...config.services,
-        { name: "Pipe repair", slug: "pipe-repair", description: "Describe the pipe problem." },
+        {
+          name: "Pipe repair",
+          slug: "pipe-repair",
+          description: "Describe the pipe problem.",
+        },
       ],
     },
     origin: s.origin,

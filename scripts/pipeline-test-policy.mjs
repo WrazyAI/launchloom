@@ -1,3 +1,5 @@
+import { hasTestOnlySite } from "../templates/client-site/src/lib/seo-readiness.mjs";
+
 /**
  * One execution policy shared by workflow, author and focused runner.
  * @param {{profile?: string, skipCreativeAuthorChecks?: boolean|string, skipSeoAddon?: boolean|string, eventName?: string}} [input]
@@ -14,7 +16,7 @@ export function resolvePipelineTestPolicy({ profile, skipCreativeAuthorChecks = 
   const alias = skipCreative ? "seo-only" : skipSeo ? "creative-only" : null;
   if (profile && alias && profile !== alias) throw new Error("Conflicting test profile and skip flag.");
   const selected = profile || alias || "full";
-  if (!["full", "seo-only", "creative-only"].includes(selected)) throw new Error("Unknown pipeline test profile.");
+  if (!["full", "full-preview", "seo-only", "creative-only"].includes(selected)) throw new Error("Unknown pipeline test profile.");
   if (selected !== "full" && eventName !== "workflow_dispatch") throw new Error("Isolated profiles require a manual workflow dispatch.");
   return Object.freeze({
     profile: selected,
@@ -24,6 +26,31 @@ export function resolvePipelineTestPolicy({ profile, skipCreativeAuthorChecks = 
     runCreativeChecks: selected !== "seo-only",
     repairCycles: selected === "seo-only" ? 0 : 3,
   });
+}
+
+/**
+ * Resolve the manual Generate-client dispatch without allowing the access
+ * smoke to enter any generation lane.
+ * @param {{profile?: string, eventName?: string, issue?: string}} [input]
+ */
+export function resolveWorkflowTestDispatch({
+  profile = "full",
+  eventName = "workflow_dispatch",
+  issue = "",
+} = {}) {
+  if (profile === "access-only") {
+    if (eventName !== "workflow_dispatch")
+      throw new Error(
+        "The access-only preview check requires a manual workflow dispatch.",
+      );
+    return Object.freeze({ profile, requiresIntakeIssue: false });
+  }
+  const resolved = resolvePipelineTestPolicy({ profile, eventName });
+  if (!String(issue || "").trim())
+    throw new Error(
+      "An intake issue is required for generation workflow dispatches.",
+    );
+  return Object.freeze({ profile: resolved.profile, requiresIntakeIssue: true });
 }
 
 export function parsePipelineTestArgs(argv = []) {
@@ -47,4 +74,20 @@ export function parsePipelineTestArgs(argv = []) {
     skipSeoAddon: args["skip-seo-addon"] ?? false,
   });
   return { ...args, profile: policy.profile };
+}
+
+
+/**
+ * Prevent test-only site provenance from entering the full production route.
+ * Focused profiles remain preview-only even when their SEO evidence is complete.
+ */
+export function assertGenerationMode(config, { profile = "full" } = {}) {
+  if (!["full", "full-preview", "seo-only", "creative-only"].includes(profile))
+    throw new Error("Unknown generation profile.");
+  const testOnly = profile !== "full" || hasTestOnlySite(config);
+  if (profile === "full" && testOnly)
+    throw new Error(
+      "Test-only site provenance cannot enter production generation; run the full-preview profile.",
+    );
+  return Object.freeze({ profile, testOnly });
 }

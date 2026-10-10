@@ -6,6 +6,7 @@ const list = (value) => (Array.isArray(value) ? value : []);
 const kinds = new Set([
   "client_supplied",
   "verified_business_fact",
+  "generated_copy",
   "reviewed_copy",
 ]);
 const fields = [
@@ -35,6 +36,8 @@ const headings = {
   projects: "Approved project details",
 };
 const key = (value) => text(value).toLowerCase().replace(/\s+/gu, " ");
+const resolvePath = (value, path) =>
+  path.split(".").reduce((current, part) => current?.[part], value);
 export function compilePageBriefs(raw = {}) {
   const config = redactPrivateLocation(raw, {
     addressVisibility: raw.business?.addressVisibility,
@@ -66,6 +69,9 @@ export function compilePageBriefs(raw = {}) {
     evidence.set(record.id, record);
   }
   const briefs = [];
+  const contentContractVersion = Number(config.pageContentContractVersion) || 0;
+  if (contentContractVersion !== 0 && contentContractVersion !== 1)
+    issues.push("Page content contract version is unsupported.");
   for (const route of approved.filter((route) =>
     [
       "service",
@@ -112,6 +118,14 @@ export function compilePageBriefs(raw = {}) {
             record.public === true &&
             kinds.has(record.kind) &&
             text(record.source) &&
+            (contentContractVersion !== 1 ||
+              !["generated_copy", "reviewed_copy"].includes(record.kind) ||
+              (list(record.sourceRefs).length > 0 &&
+                list(record.sourceRefs).every(
+                  (sourceRef) =>
+                    typeof sourceRef === "string" &&
+                    text(resolvePath(config, sourceRef)),
+                ))) &&
             list(record.routeIds).includes(route.id) &&
             text(record.value) === text(value.text)
           );
@@ -153,13 +167,28 @@ export function compilePageBriefs(raw = {}) {
     const faqs = list(supplied?.faqs)
       .slice(0, 8)
       .flatMap((faq, index) => {
+        const question =
+          faq?.question && typeof faq.question === "object"
+            ? claim(faq.question, `faqs.${index}.question`)
+            : contentContractVersion === 1
+              ? null
+              : { text: text(faq?.question) };
         const answer = claim(faq?.answer, `faqs.${index}.answer`);
-        return answer && text(faq.question)
+        if (!question && contentContractVersion === 1)
+          routeIssues.push(
+            `${route.id}: researched page FAQ questions need route-scoped evidence.`,
+          );
+        return answer && question?.text
           ? [
               {
-                question: text(faq.question),
+                question: question.text,
                 answer: answer.text,
-                evidenceIds: answer.evidenceIds,
+                evidenceIds: [
+                  ...new Set([
+                    ...(question.evidenceIds || []),
+                    ...(answer.evidenceIds || []),
+                  ]),
+                ],
               },
             ]
           : [];
@@ -253,6 +282,14 @@ export function compilePageBriefs(raw = {}) {
       });
     }
     const rich = Boolean(supplied);
+    const contractRequired =
+      contentContractVersion === 1 &&
+      route.discovery?.indexable !== false &&
+      ["service", "location"].includes(route.pageType);
+    if (contractRequired && !rich)
+      routeIssues.push(
+        `${route.id}: an evidence-backed supported route brief is required for indexable ${route.pageType} pages.`,
+      );
     if (rich && !introduction)
       routeIssues.push(
         `${route.id}: a supplied page brief needs its own supported introduction.`,
@@ -264,6 +301,26 @@ export function compilePageBriefs(raw = {}) {
     )
       routeIssues.push(
         `${route.id}: independent supported page metadata is required.`,
+      );
+    if (contractRequired && route.pageType === "service") {
+      const sectionKinds = new Set(sections.map((section) => section.kind));
+      for (const field of ["scope", "preparation", "nextStep"])
+        if (!sectionKinds.has(field))
+          routeIssues.push(
+            `${route.id}: supported service page content must include ${field}.`,
+          );
+      if (faqs.length < 2)
+        routeIssues.push(
+          `${route.id}: supported service page content must include two supported FAQs.`,
+        );
+    }
+    if (
+      contractRequired &&
+      route.pageType === "location" &&
+      !sections.some((section) => section.kind === "localContext")
+    )
+      routeIssues.push(
+        `${route.id}: supported location page content needs route-specific local context.`,
       );
     if (rich && introduction?.text === cardDescription)
       routeIssues.push(`${route.id}: full introduction repeats card copy.`);
@@ -338,7 +395,11 @@ export function pageBriefFor(config, routeId) {
   );
 }
 export function pageBriefReadiness(config) {
-  if (config.pageContent === undefined && config.pageBriefs === undefined)
+  if (
+    config.pageContentContractVersion === undefined &&
+    config.pageContent === undefined &&
+    config.pageBriefs === undefined
+  )
     return { allowed: true };
   const report = compilePageBriefs(config);
   return report.issues.length

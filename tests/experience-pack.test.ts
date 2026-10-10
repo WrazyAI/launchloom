@@ -50,6 +50,39 @@ function site(name: string, packId?: string): SiteConfig {
 }
 
 describe("experience-pack compiler", () => {
+  it("binds generated hero media to the selected creative route while preferring client photos", () => {
+    const local = site("Harbor Glow Plumbing", "bold-utility");
+    local.industry = "home-services";
+    local.businessKind = "home-services";
+    local.design = {
+      ...local.design!,
+      recipe: "local-trades",
+      sections: [],
+      experience: {
+        renderer: "creative-candidate",
+        candidateId: "candidate-b",
+        routeId: "route-02",
+      },
+    };
+    local.images = { hero: "/images/shared-default.webp" };
+    (local as any).creativeAssets = {
+      "route-01": { hero: "/images/route-01-plumbing.webp" },
+      "route-02": {
+        hero: "/images/route-02-plumbing.webp",
+        secondary: "/images/route-02-detail.webp",
+      },
+    };
+
+    expect(
+      compileExperiencePack(local, "local-trades").content.hero.image,
+    ).toBe("/images/route-02-plumbing.webp");
+
+    local.assets = { photoOne: "/images/client-provided.webp" };
+    expect(
+      compileExperiencePack(local, "local-trades").content.hero.image,
+    ).toBe("/images/client-provided.webp");
+  });
+
   it("describes local coverage using the business category without changing its page structure", () => {
     const local = site("Harbor Plumbing", "kinetic-poster");
     local.industry = "home-services";

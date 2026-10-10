@@ -6,7 +6,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 import { it, expect } from "vitest";
 
-it.each(["seo-only", "creative-only", "full"])(
+it.each(["seo-only", "creative-only", "full-preview", "fictional-demo", "creative-diagnostic", "full"])(
   "renders %s provenance and enforces form delivery behavior at desktop and mobile",
   async (profile) => {
     const repository = path.resolve(".");
@@ -54,11 +54,16 @@ it.each(["seo-only", "creative-only", "full"])(
       const config = JSON.parse(
         await fs.readFile(path.join(root, "src/site.config.json"), "utf8"),
       );
+      // Every profile receives active synthetic credentials so the test-only
+      // assertions prove that preview rendering strips them, rather than
+      // passing because the fixture started with empty values.
       config.lead = {
         apiUrl: "https://synthetic-lead.invalid",
         token: "synthetic-active-token",
       };
-      if (profile !== "full")
+      if (profile === "fictional-demo") {
+        config.demoNotice = "Fictional pipeline demo";
+      } else if (profile !== "full" && profile !== "creative-diagnostic")
         config.pipelineTest = {
           version: 1,
           profile,
@@ -82,7 +87,7 @@ it.each(["seo-only", "creative-only", "full"])(
           env: {
             ...process.env,
             PUBLIC_REVIEW_MODE: "false",
-            PUBLIC_CREATIVE_DIAGNOSTIC: "false",
+            PUBLIC_CREATIVE_DIAGNOSTIC: profile === "creative-diagnostic" ? "true" : "false",
           },
           stdio: "pipe",
         },
@@ -135,25 +140,44 @@ it.each(["seo-only", "creative-only", "full"])(
         await page.goto(`http://127.0.0.1:${(server.address() as any).port}`);
         const banner = page.locator("[data-pipeline-test-preview]");
         if (profile !== "full") {
-          expect(await banner.isVisible()).toBe(true);
-          expect(await banner.textContent()).toContain(profile);
-          expect(await banner.textContent()).toContain(
-            profile === "seo-only"
-              ? "Creative evaluation and visual promotion skipped"
-              : "SEO research skipped",
-          );
-          expect(
-            await page.locator(".ll-approve, .ll-send-anyway").count(),
-          ).toBe(0);
+          if (profile === "fictional-demo") {
+            const demoBanner = page.locator("[data-demo-notice]");
+            expect(await demoBanner.isVisible()).toBe(true);
+            expect(await demoBanner.textContent()).toContain("Fictional pipeline demo");
+          } else if (profile === "creative-diagnostic") {
+            expect(await page.locator('meta[name="robots"]').getAttribute("content")).toBe("noindex, nofollow");
+            expect(await page.locator('link[rel="canonical"]').count()).toBe(0);
+            expect(await page.locator("[data-lead-preview='true']").count()).toBe(1);
+            expect(await page.locator(".ll-approve:visible, .ll-send-anyway:visible").count()).toBe(0);
+            expect(html).not.toContain("synthetic-active-token");
+            expect(html).not.toContain("synthetic-lead.invalid");
+          } else {
+            expect(await banner.isVisible()).toBe(true);
+            expect(await banner.textContent()).toContain(profile);
+            expect(await banner.textContent()).toContain(
+              profile === "seo-only"
+                ? "Creative evaluation and visual promotion skipped"
+                : profile === "creative-only"
+                  ? "SEO research skipped"
+                  : "SEO and creative lanes ran",
+            );
+          }
+          if (profile !== "creative-diagnostic")
+            expect(
+              await page.locator(".ll-approve, .ll-send-anyway").count(),
+            ).toBe(0);
           expect(
             await page.locator('meta[name="robots"]').getAttribute("content"),
           ).toBe("noindex, nofollow");
           expect(await page.locator('link[rel="canonical"]').count()).toBe(0);
-        expect(html).not.toContain("synthetic-active-token");
-        expect(await page.locator("form.lead-form").getAttribute("data-lead-preview")).toBe("true");
+          expect(html).not.toContain("synthetic-active-token");
+          expect(html).not.toContain("synthetic-lead.invalid");
+          expect(await page.locator("form.lead-form").getAttribute("data-lead-preview")).toBe("true");
         } else {
           expect(await banner.count()).toBe(0);
           expect(await page.locator('link[rel="canonical"]').count()).toBe(1);
+          expect(html).toContain("synthetic-active-token");
+          expect(html).toContain("synthetic-lead.invalid");
         }
         for (const [name, value] of Object.entries({
           name: "Synthetic",

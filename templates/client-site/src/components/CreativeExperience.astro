@@ -3,13 +3,13 @@ import "../generated-experiences/selected/styles.css";
 import "../styles/creative-runtime.css";
 import CreativeCandidateHost from "./CreativeCandidateHost";
 import site from "../lib/site";
-import { hasPipelineTest } from "../lib/seo-readiness.mjs";
+import { hasTestOnlySite } from "../lib/seo-readiness.mjs";
 import { creativeColorOverrideCss } from "../lib/creative-palette-bindings.mjs";
 const colorOverrides = creativeColorOverrideCss(site.style);
 
 const { experience } = Astro.props;
 const candidateId = site.design?.experience?.candidateId || "selected";
-const diagnostic = hasPipelineTest(site) || site.design?.experience?.selectionMode === "creative-diagnostic" ||
+const diagnostic = hasTestOnlySite(site) || site.design?.experience?.selectionMode === "creative-diagnostic" ||
   import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 const runtime = {
   candidateId,
@@ -26,7 +26,6 @@ const runtime = {
 ---
 
 <div
-  role="main"
   data-creative-host="true"
   data-creative-renderer="creative-candidate"
   data-creative-diagnostic={diagnostic ? "true" : undefined}

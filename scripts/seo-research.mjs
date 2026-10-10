@@ -1,8 +1,18 @@
-import { publicGenerationIntake, normalizeResearchLanguageCode } from "../templates/client-site/src/lib/business-facts.mjs";
-import { confirmedCoverageFromIntake, applyCoverageEnrichment } from "./confirmed-coverage.mjs";
-import { hasCompletedFallbackResearch } from "../templates/client-site/src/lib/seo-readiness.mjs";
+import {
+  publicGenerationIntake,
+  normalizeResearchLanguageCode,
+} from "../templates/client-site/src/lib/business-facts.mjs";
+import {
+  confirmedCoverageFromIntake,
+  applyCoverageEnrichment,
+} from "./confirmed-coverage.mjs";
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import {
+  createOpenRouterIntentQueryPlanner,
+  validateIntentQueryPlan,
+} from "./seo-intent-planner.mjs";
+export { createOpenRouterIntentQueryPlanner, validateIntentQueryPlan };
 import {
   openRouterApiError,
   openRouterChatCompletion,
@@ -16,7 +26,8 @@ const HARD_MAX_TASKS = 32;
 const DEFAULT_MAX_USD = 0.25;
 const HARD_MAX_USD = 2;
 const MAX_CORE_SERVICES = 5;
-const MAX_SERVICE_VARIANTS = 6;
+const MAX_SERVICE_VARIANTS = 8;
+const MAX_RELATED_KEYWORDS_PER_SERVICE = 5;
 const DEFAULT_FALLBACK_SEARCH_QUERIES = 3;
 const HARD_MAX_FALLBACK_SEARCH_QUERIES = 5;
 const DEFAULT_FALLBACK_MAX_USD = 0.05;
@@ -37,45 +48,169 @@ const GENERIC_BUSINESS_KINDS = new Set([
   "care",
   "other",
 ]);
+const BROAD_SEARCH_CATEGORIES = new Set([
+  "restaurant",
+  "retail",
+  "shop",
+  "store",
+]);
 const IMPLICIT_NICHE_SERVICE_TERMS = new Map([
-  ["auto repair", /\b(?:auto|car|vehicle|brake|engine|transmission|oil change|tire|alignment|mechanic)\b/u],
+  [
+    "auto repair",
+    /\b(?:auto|car|vehicle|brake|engine|transmission|oil change|tire|alignment|mechanic)\b/u,
+  ],
   ["roofing", /\b(?:roof|roofer|shingle|gutter)\b/u],
   ["painting", /\b(?:paint|painter|coating)\b/u],
-  ["hvac", /\b(?:hvac|heating|cooling|air conditioning|furnace|boiler|heat pump)\b/u],
+  [
+    "hvac",
+    /\b(?:hvac|heating|cooling|air conditioning|furnace|boiler|heat pump)\b/u,
+  ],
 ]);
 const US_STATE_NAMES = {
-  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
+  AL: "Alabama",
+  AK: "Alaska",
+  AZ: "Arizona",
+  AR: "Arkansas",
+  CA: "California",
+  CO: "Colorado",
+  CT: "Connecticut",
+  DE: "Delaware",
+  FL: "Florida",
+  GA: "Georgia",
+  HI: "Hawaii",
+  ID: "Idaho",
+  IL: "Illinois",
+  IN: "Indiana",
+  IA: "Iowa",
+  KS: "Kansas",
+  KY: "Kentucky",
+  LA: "Louisiana",
+  ME: "Maine",
+  MD: "Maryland",
+  MA: "Massachusetts",
+  MI: "Michigan",
+  MN: "Minnesota",
+  MS: "Mississippi",
+  MO: "Missouri",
+  MT: "Montana",
+  NE: "Nebraska",
+  NV: "Nevada",
+  NH: "New Hampshire",
+  NJ: "New Jersey",
+  NM: "New Mexico",
+  NY: "New York",
+  NC: "North Carolina",
+  ND: "North Dakota",
+  OH: "Ohio",
+  OK: "Oklahoma",
+  OR: "Oregon",
+  PA: "Pennsylvania",
+  RI: "Rhode Island",
+  SC: "South Carolina",
+  SD: "South Dakota",
+  TN: "Tennessee",
+  TX: "Texas",
+  UT: "Utah",
+  VT: "Vermont",
+  VA: "Virginia",
+  WA: "Washington",
+  WV: "West Virginia",
+  WI: "Wisconsin",
+  WY: "Wyoming",
+  DC: "District of Columbia",
 };
 const COUNTRY_NAMES = {
-  US: "United States", USA: "United States", UK: "United Kingdom", GB: "United Kingdom", CA: "Canada", AU: "Australia",
-  NZ: "New Zealand", IE: "Ireland", DE: "Germany", FR: "France", ES: "Spain",
-  IT: "Italy", NL: "Netherlands", BE: "Belgium", CH: "Switzerland", ZA: "South Africa",
+  US: "United States",
+  USA: "United States",
+  UK: "United Kingdom",
+  GB: "United Kingdom",
+  CA: "Canada",
+  AU: "Australia",
+  NZ: "New Zealand",
+  IE: "Ireland",
+  DE: "Germany",
+  FR: "France",
+  ES: "Spain",
+  IT: "Italy",
+  NL: "Netherlands",
+  BE: "Belgium",
+  CH: "Switzerland",
+  ZA: "South Africa",
 };
 
-const text = (value, limit = 500) => String(value ?? "").replace(/\u0000/gu, "").replace(/—/gu, "-").trim().slice(0, limit);
-const keywordKey = (value) => text(value, 180).toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+const text = (value, limit = 500) =>
+  String(value ?? "")
+    .replace(/\u0000/gu, "")
+    .replace(/—/gu, "-")
+    .trim()
+    .slice(0, limit);
+const keywordKey = (value) =>
+  text(value, 180)
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
 const splitList = (value, limit = 20, splitCommas = false) => {
   const raw = Array.isArray(value) ? value : [value];
-  const entries = raw.flatMap((item) => text(item, 400).split(/\r?\n/u)
-    .flatMap((part) => splitCommas && !Array.isArray(value) ? part.split(",") : [part])
-    .map((part) => text(part, 160))).filter(Boolean);
-  return [...new Map(entries.map((item) => [item.toLocaleLowerCase(), item])).values()].slice(0, limit);
+  const entries = raw
+    .flatMap((item) =>
+      text(item, 400)
+        .split(/\r?\n/u)
+        .flatMap((part) =>
+          splitCommas && !Array.isArray(value) ? part.split(",") : [part],
+        )
+        .map((part) => text(part, 160)),
+    )
+    .filter(Boolean);
+  return [
+    ...new Map(
+      entries.map((item) => [item.toLocaleLowerCase(), item]),
+    ).values(),
+  ].slice(0, limit);
 };
 const areaList = (value, limit = 20) => parseServiceAreas(value, { limit });
-const finiteMetric = (value) => value === null || value === undefined || value === "" || !Number.isFinite(Number(value)) ? null : Number(value);
-const roundCost = (value) => Math.round((Number(value) || 0) * 100_000) / 100_000;
-const slugify = (value) => text(value, 180).toLocaleLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "").slice(0, 90);
-const numericRadius = (value) => value === "50+" ? 50 : [10, 20, 30, 50].includes(Number(value)) ? Number(value) : null;
+const finiteMetric = (value) =>
+  value === null ||
+  value === undefined ||
+  value === "" ||
+  !Number.isFinite(Number(value))
+    ? null
+    : Number(value);
+const roundCost = (value) =>
+  Math.round((Number(value) || 0) * 100_000) / 100_000;
+const slugify = (value) =>
+  text(value, 180)
+    .toLocaleLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/gu, "-")
+    .replace(/^-|-$/gu, "")
+    .slice(0, 90);
+const numericRadius = (value) =>
+  value === "50+"
+    ? 50
+    : [10, 20, 30, 50].includes(Number(value))
+      ? Number(value)
+      : null;
 
-function metricLocationForCity(city, fallback = process.env.SEO_RESEARCH_LOCATION_NAME || "United States") {
-  const parts = text(city, 160).split(",").map((part) => part.trim());
+function metricLocationForCity(
+  city,
+  fallback = process.env.SEO_RESEARCH_LOCATION_NAME || "United States",
+) {
+  const parts = text(city, 160)
+    .split(",")
+    .map((part) => part.trim());
   if (parts.length >= 3) {
-    const country = COUNTRY_NAMES[parts[2].toUpperCase()] || parts.slice(2).join(", ");
+    const country =
+      COUNTRY_NAMES[parts[2].toUpperCase()] || parts.slice(2).join(", ");
     return `${parts[0]},${parts[1]},${country}`;
   }
   if (parts.length >= 2) {
     const region = parts[1].toUpperCase();
-    if (US_STATE_NAMES[region]) return `${parts[0]},${US_STATE_NAMES[region]},United States`;
+    const usState =
+      US_STATE_NAMES[region] ||
+      Object.values(US_STATE_NAMES).find(
+        (name) => name.toLocaleLowerCase() === parts[1].toLocaleLowerCase(),
+      );
+    if (usState) return `${parts[0]},${usState},United States`;
     if (COUNTRY_NAMES[region]) return `${parts[0]},${COUNTRY_NAMES[region]}`;
     return `${parts[0]},${parts[1]}`;
   }
@@ -85,31 +220,54 @@ function metricLocationForCity(city, fallback = process.env.SEO_RESEARCH_LOCATIO
 export function normaliseSeoIntake(intake = {}) {
   intake = publicGenerationIntake(intake);
   const legacy = text(intake.intakeVersion, 10) !== "2";
-  const allConfirmedServices = splitList(intake.confirmedServices || intake.services, 100, legacy);
+  const allConfirmedServices = splitList(
+    intake.confirmedServices || intake.services,
+    100,
+    legacy,
+  );
   const services = allConfirmedServices.slice(0, MAX_CORE_SERVICES);
   const omittedServices = allConfirmedServices.slice(MAX_CORE_SERVICES);
-  const primaryCity = areaList(intake.primaryCity, 1)[0] || areaList(intake.serviceAreas, 20)[0] || "";
+  const primaryCity =
+    areaList(intake.primaryCity, 1)[0] ||
+    areaList(intake.serviceAreas, 20)[0] ||
+    "";
   const confirmedCoverage = confirmedCoverageFromIntake(intake);
-  const coverageAreas = confirmedCoverage?.coverageAreas || [...new Map(
-    [...areaList(intake.serviceAreas, 20), ...areaList(intake.coverageAreas, 20)]
-      .map((area) => [area.toLowerCase(), area]),
-  ).values()].slice(0, 20);
+  const coverageAreas =
+    confirmedCoverage?.coverageAreas ||
+    [
+      ...new Map(
+        [
+          ...areaList(intake.serviceAreas, 20),
+          ...areaList(intake.coverageAreas, 20),
+        ].map((area) => [area.toLowerCase(), area]),
+      ).values(),
+    ].slice(0, 20);
   if (!coverageAreas.length && primaryCity) coverageAreas.push(primaryCity);
   const serviceRadius = numericRadius(intake.serviceRadius);
   const industry = text(intake.industry, 100);
   const explicitBusinessKind = text(
-    intake.businessKind || intake.businessType || intake.business?.kind || intake.business?.businessKind,
+    intake.businessKind ||
+      intake.businessType ||
+      intake.business?.kind ||
+      intake.business?.businessKind,
     100,
   );
-  const businessKind = explicitBusinessKind || (
-    industry && !GENERIC_BUSINESS_KINDS.has(keywordKey(industry)) ? industry : ""
-  );
+  const businessKind =
+    explicitBusinessKind ||
+    (industry && !GENERIC_BUSINESS_KINDS.has(keywordKey(industry))
+      ? industry
+      : "");
   const website = text(intake.website || intake.existingWebsite, 500);
   let websiteUrl = "";
   try {
-    const url = new URL(/^https?:/iu.test(website) ? website : `https://${website}`);
-    if (["http:", "https:"].includes(url.protocol)) websiteUrl = url.hostname.replace(/^www\./iu, "");
-  } catch { /* no existing site to inspect */ }
+    const url = new URL(
+      /^https?:/iu.test(website) ? website : `https://${website}`,
+    );
+    if (["http:", "https:"].includes(url.protocol))
+      websiteUrl = url.hostname.replace(/^www\./iu, "");
+  } catch {
+    /* no existing site to inspect */
+  }
   return {
     services,
     languageCode: normalizeResearchLanguageCode(intake.researchLanguageCode),
@@ -118,11 +276,21 @@ export function normaliseSeoIntake(intake = {}) {
     serviceRadius,
     coverageAreas,
     coverageConfirmation: confirmedCoverage?.coverageConfirmation,
-    metricLocation: text(intake.metricLocation, 180) || metricLocationForCity(primaryCity),
-    labsLocation: text(intake.labsLocation, 180) || process.env.SEO_RESEARCH_LABS_LOCATION_NAME ||
-      (metricLocationForCity(primaryCity).split(",").at(-1) || "United States").trim(),
-    coverageEvidence: intake.coverageEvidence || { source: "client_supplied_primary_city", lookups: 0 },
-    coverageWarnings: Array.isArray(intake.coverageWarnings) ? intake.coverageWarnings.map((item) => text(item, 300)) : [],
+    metricLocation:
+      text(intake.metricLocation, 180) || metricLocationForCity(primaryCity),
+    labsLocation:
+      text(intake.labsLocation, 180) ||
+      process.env.SEO_RESEARCH_LABS_LOCATION_NAME ||
+      (
+        metricLocationForCity(primaryCity).split(",").at(-1) || "United States"
+      ).trim(),
+    coverageEvidence: intake.coverageEvidence || {
+      source: "client_supplied_primary_city",
+      lookups: 0,
+    },
+    coverageWarnings: Array.isArray(intake.coverageWarnings)
+      ? intake.coverageWarnings.map((item) => text(item, 300))
+      : [],
     businessKind,
     industry,
     businessName: text(intake.businessName || intake.business?.name, 120),
@@ -133,48 +301,207 @@ export function normaliseSeoIntake(intake = {}) {
 
 function searchServiceTerm(seo, service) {
   const businessKind = keywordKey(seo.businessKind);
-  if (!businessKind || GENERIC_BUSINESS_KINDS.has(businessKind)) return service;
+  if (
+    !businessKind ||
+    GENERIC_BUSINESS_KINDS.has(businessKind) ||
+    BROAD_SEARCH_CATEGORIES.has(businessKind)
+  )
+    return service;
   const serviceKey = keywordKey(service);
   if (
     serviceKey.includes(businessKind) ||
     IMPLICIT_NICHE_SERVICE_TERMS.get(businessKind)?.test(serviceKey)
-  ) return service;
-  return `${businessKind} ${service.toLocaleLowerCase()}`;
+  )
+    return service;
+  return `${seo.businessKind.toLocaleLowerCase()} ${service.toLocaleLowerCase()}`;
 }
 
 function localServiceQuery(service, city) {
-  const cityTerm = text(city, 160).replace(/\s+/gu, " ").trim();
+  const cityTerm = text(city, 160)
+    .replace(/,/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
   const cityKey = keywordKey(cityTerm);
-  return !cityKey || ` ${keywordKey(service)} `.includes(` ${cityKey} `) ? service : `${service} ${cityTerm}`;
+  return !cityKey || ` ${keywordKey(service)} `.includes(` ${cityKey} `)
+    ? service
+    : `${service} ${cityTerm}`;
 }
 
 function variantsFor(service, city, industry) {
   const variants = [service, `${service} near me`];
-  const cityTerm = text(city, 160).replace(/,/gu, " ").replace(/\s+/gu, " ").trim();
+  const cityTerm = text(city, 160)
+    .replace(/,/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
   if (cityTerm) variants.push(localServiceQuery(service, cityTerm));
   variants.push(`${service} cost`);
-  const urgent = /plumb|drain|electric|hvac|water damage|restor|garage door|locksmith|roof leak|tree removal|pest/iu.test(`${service} ${industry}`);
-  if (urgent) variants.push(`emergency ${localServiceQuery(service, cityTerm)}`);
-  if (/home-services|professional-services/iu.test(industry) || /repair|installation|painting|restoration|tax preparation|bookkeeping/iu.test(service))
+  const urgent =
+    /plumb|drain|electric|hvac|water damage|restor|garage door|locksmith|roof leak|tree removal|pest/iu.test(
+      `${service} ${industry}`,
+    );
+  if (urgent)
+    variants.push(`emergency ${localServiceQuery(service, cityTerm)}`);
+  if (
+    /home-services|professional-services/iu.test(industry) ||
+    /repair|installation|painting|restoration|tax preparation|bookkeeping/iu.test(
+      service,
+    )
+  )
     variants.push(`${service} quote`);
-  if (/wellness|care|health/iu.test(industry) && /consultation|treatment|therapy|session|care/iu.test(service))
+  if (
+    /wellness|care|health/iu.test(industry) &&
+    /consultation|treatment|therapy|session|care/iu.test(service)
+  )
     variants.push(`${service} appointment`);
   return variants;
 }
 
-function defaultSeeds(seo) {
-  return [...new Set(seo.services.flatMap((service) =>
-    variantsFor(searchServiceTerm(seo, service), seo.primaryCity, seo.industry),
-  ))].slice(0, MAX_CORE_SERVICES * MAX_SERVICE_VARIANTS);
+function deterministicIntentPlanning(
+  seo,
+  { attempted = false, model = null, usage = null, warning = null } = {},
+) {
+  return {
+    version: 1,
+    status: "deterministic-fallback",
+    provider: attempted ? "openrouter" : null,
+    model,
+    attempted,
+    services: seo.services.map((service) => ({ service, phrases: [] })),
+    acceptedPhraseCount: 0,
+    rejectedPhraseCount: 0,
+    rejectedServices: [],
+    coveredServiceCount: 0,
+    complete: false,
+    usage,
+    warning,
+  };
+}
+
+function normalizePlannerUsage(usage, model) {
+  if (!usage || typeof usage !== "object") return null;
+  return {
+    costUsd: finiteMetric(usage.costUsd ?? usage.cost),
+    model: text(usage.model || model, 120) || null,
+    promptTokens: finiteMetric(usage.promptTokens) ?? 0,
+    completionTokens: finiteMetric(usage.completionTokens) ?? 0,
+    reasoningTokens: finiteMetric(usage.reasoningTokens) ?? 0,
+    cachedTokens: finiteMetric(usage.cachedTokens) ?? 0,
+    cacheStatus: text(usage.cacheStatus, 20) || null,
+    cacheDiscount: finiteMetric(usage.cacheDiscount),
+  };
+}
+
+async function resolveIntentPlanning(seo, options) {
+  if (!seo.services.length)
+    return { ...deterministicIntentPlanning(seo), status: "not-needed" };
+  if (typeof options.intentPlanner !== "function")
+    return deterministicIntentPlanning(seo, {
+      warning:
+        "No model-assisted search-intent planner is configured; exact confirmed-service queries will be measured.",
+    });
+
+  let model =
+    text(
+      options.intentPlannerModel || process.env.SEO_QUERY_PLANNER_MODEL,
+      120,
+    ) || null;
+  try {
+    const response = await options.intentPlanner({
+      businessName: seo.businessName,
+      businessKind: seo.businessKind,
+      industry: seo.industry,
+      services: [...seo.services],
+      languageCode: seo.languageCode,
+    });
+    model =
+      text(response?.model || response?.usage?.model || model, 120) || null;
+    const validation = validateIntentQueryPlan(
+      response?.plan || response,
+      seo.services,
+    );
+    const status = validation.acceptedPhraseCount
+      ? validation.complete
+        ? "model"
+        : "partial"
+      : "deterministic-fallback";
+    return {
+      version: 1,
+      ...validation,
+      status,
+      provider: text(response?.provider || "openrouter", 40),
+      model,
+      attempted: true,
+      usage: normalizePlannerUsage(response?.usage, model),
+      warning:
+        status === "partial"
+          ? "The model planner returned phrases for only some confirmed services; exact service queries fill the remaining gaps."
+          : status === "deterministic-fallback"
+            ? "The model planner returned no usable service-bound phrases; exact confirmed-service queries will be measured."
+            : null,
+    };
+  } catch (error) {
+    model = text(error?.model || model, 120) || null;
+    return deterministicIntentPlanning(seo, {
+      attempted: true,
+      model,
+      usage: normalizePlannerUsage(error?.usage, model),
+      warning: `The model-assisted search-intent planner failed; exact confirmed-service queries will be measured. ${text(error instanceof Error ? error.message : error, 240)}`,
+    });
+  }
+}
+
+function seedQueryRecords(seo, intentPlanning) {
+  const records = [];
+  for (const service of seo.services) {
+    const phrases =
+      intentPlanning.services?.find(
+        (item) => keywordKey(item.service) === keywordKey(service),
+      )?.phrases || [];
+    const primaryPhrase = phrases[0];
+    const modelVariants = primaryPhrase
+      ? [
+          ...phrases,
+          `${primaryPhrase} near me`,
+          localServiceQuery(primaryPhrase, seo.primaryCity),
+        ]
+      : [];
+    const fallbackVariants = variantsFor(
+      service,
+      seo.primaryCity,
+      seo.industry,
+    );
+    const variants = [
+      ...new Set([service, ...modelVariants, ...fallbackVariants]),
+    ]
+      .filter(Boolean)
+      .slice(0, MAX_SERVICE_VARIANTS);
+    for (const keyword of variants)
+      records.push({ keyword, confirmedService: service });
+  }
+  return records.slice(0, MAX_CORE_SERVICES * MAX_SERVICE_VARIANTS);
 }
 
 function findService(query, services) {
   const normalized = keywordKey(query);
-  return services.find((service) => normalized.includes(keywordKey(service))) ||
+  return (
+    services.find((service) => normalized.includes(keywordKey(service))) ||
     services.find((service) => {
-      const terms = keywordKey(service).split(/\s+/u).filter((term) => term.length > 2);
-      return terms.length > 0 && terms.every((term) => normalized.includes(term));
-    }) || null;
+      const terms = keywordKey(service)
+        .split(/\s+/u)
+        .filter((term) => term.length > 2);
+      return (
+        terms.length > 0 && terms.every((term) => normalized.includes(term))
+      );
+    }) ||
+    null
+  );
+}
+
+function metricBelongsToService(item, service) {
+  return (
+    keywordKey(item?.confirmedService) === keywordKey(service) ||
+    findService(item?.keyword, [service]) === service
+  );
 }
 
 function serviceQuestions(service, industry) {
@@ -184,45 +511,130 @@ function serviceQuestions(service, industry) {
     `How should I prepare for ${service.toLocaleLowerCase()}?`,
   ];
   if (/wellness|care|health/iu.test(industry))
-    return [`Who may be a good fit for ${service.toLocaleLowerCase()}?`, `What should I ask before choosing ${service.toLocaleLowerCase()}?`, ...base.slice(0, 1)];
+    return [
+      `Who may be a good fit for ${service.toLocaleLowerCase()}?`,
+      `What should I ask before choosing ${service.toLocaleLowerCase()}?`,
+      ...base.slice(0, 1),
+    ];
   if (/plumb|electric|hvac|restor|roof|garage|home-services/iu.test(industry))
-    return [`What signs mean I should ask about ${service.toLocaleLowerCase()}?`, `What details help a team assess ${service.toLocaleLowerCase()}?`, ...base.slice(0, 1)];
+    return [
+      `What signs mean I should ask about ${service.toLocaleLowerCase()}?`,
+      `What details help a team assess ${service.toLocaleLowerCase()}?`,
+      ...base.slice(0, 1),
+    ];
   return base;
 }
 
 function generalPageQuestionEntries() {
   return [
-    { pageId: "home", questions: ["What should I know before choosing a local service provider?", "How do I decide which service fits my situation?"] },
-    { pageId: "services-hub", questions: ["Which confirmed service may fit my need?", "What should I ask before arranging a service?"] },
-    { pageId: "about", questions: ["What should I look for when choosing a local provider?"] },
-    { pageId: "contact", questions: ["What details help the team respond to an enquiry?"] },
+    {
+      pageId: "home",
+      questions: [
+        "What should I know before choosing a local service provider?",
+        "How do I decide which service fits my situation?",
+      ],
+    },
+    {
+      pageId: "services-hub",
+      questions: [
+        "Which confirmed service may fit my need?",
+        "What should I ask before arranging a service?",
+      ],
+    },
+    {
+      pageId: "about",
+      questions: ["What should I look for when choosing a local provider?"],
+    },
+    {
+      pageId: "contact",
+      questions: ["What details help the team respond to an enquiry?"],
+    },
   ];
 }
 
 function hasCompletePrimaryMetrics(item) {
-  return [item?.volume, item?.kd, item?.cpc, item?.competition, item?.intent]
-    .every((value) => value !== null && value !== undefined && value !== "");
+  return [
+    item?.volume,
+    item?.kd,
+    item?.cpc,
+    item?.competition,
+    item?.intent,
+  ].every((value) => value !== null && value !== undefined && value !== "");
 }
 
 function emptyMap(seo) {
   const pages = [
-    { id: "home", pageType: "home", title: seo.businessName || "Home", slug: "/", priority: "high", supportingKeywords: [], fanOutQuestions: [], evidence: [] },
-    { id: "services-hub", pageType: "services-hub", title: "Services", slug: "/services/", priority: "high", supportingKeywords: [], fanOutQuestions: [], evidence: [] },
+    {
+      id: "home",
+      pageType: "home",
+      title: seo.businessName || "Home",
+      slug: "/",
+      priority: "high",
+      supportingKeywords: [],
+      fanOutQuestions: [],
+      evidence: [],
+    },
+    {
+      id: "services-hub",
+      pageType: "services-hub",
+      title: "Services",
+      slug: "/services/",
+      priority: "high",
+      supportingKeywords: [],
+      fanOutQuestions: [],
+      evidence: [],
+    },
     ...seo.services.map((service) => ({
       id: `service:${slugify(service)}`,
       pageType: "service",
       title: service,
       slug: `/services/${slugify(service)}/`,
       service,
-      primaryKeyword: { keyword: `${searchServiceTerm(seo, service)}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`, volume: null, kd: null, cpc: null, competition: null, intent: null, provenance: "confirmed_service_city_not_measured" },
+      primaryKeyword: {
+        keyword: `${service}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`,
+        volume: null,
+        kd: null,
+        cpc: null,
+        competition: null,
+        intent: null,
+        provenance: "confirmed_service_city_not_measured",
+      },
       supportingKeywords: [],
       fanOutQuestions: serviceQuestions(service, seo.industry),
       priority: "medium",
       evidence: [],
     })),
-    { id: "about", pageType: "about", title: "About", slug: "/about/", priority: "medium", supportingKeywords: [], fanOutQuestions: [], evidence: [] },
-    { id: "contact", pageType: "contact", title: "Contact", slug: "/contact/", priority: "high", supportingKeywords: [], fanOutQuestions: [], evidence: [] },
-    { id: "blog-index", pageType: "blog-index", title: "Blog", slug: "/blog/", priority: "low", supportingKeywords: [], fanOutQuestions: [], evidence: [], renderWhenArticlesExist: true },
+    {
+      id: "about",
+      pageType: "about",
+      title: "About",
+      slug: "/about/",
+      priority: "medium",
+      supportingKeywords: [],
+      fanOutQuestions: [],
+      evidence: [],
+    },
+    {
+      id: "contact",
+      pageType: "contact",
+      title: "Contact",
+      slug: "/contact/",
+      priority: "high",
+      supportingKeywords: [],
+      fanOutQuestions: [],
+      evidence: [],
+    },
+    {
+      id: "blog-index",
+      pageType: "blog-index",
+      title: "Blog",
+      slug: "/blog/",
+      priority: "low",
+      supportingKeywords: [],
+      fanOutQuestions: [],
+      evidence: [],
+      renderWhenArticlesExist: true,
+    },
   ];
   for (const entry of generalPageQuestionEntries()) {
     const page = pages.find((item) => item.id === entry.pageId);
@@ -233,69 +645,227 @@ function emptyMap(seo) {
 
 function fallbackQuestionEvidence(seo) {
   return [
-    ...seo.services.flatMap((service) => serviceQuestions(service, seo.industry).map((question) => ({
-      question,
-      pageId: `service:${slugify(service)}`,
-      provenance: "reasoned_gap",
-    }))),
-    ...generalPageQuestionEntries().flatMap((entry) => entry.questions.map((question) => ({
-      question,
-      pageId: entry.pageId,
-      provenance: "reasoned_gap",
-    }))),
+    ...seo.services.flatMap((service) =>
+      serviceQuestions(service, seo.industry).map((question) => ({
+        question,
+        pageId: `service:${slugify(service)}`,
+        provenance: "reasoned_gap",
+      })),
+    ),
+    ...generalPageQuestionEntries().flatMap((entry) =>
+      entry.questions.map((question) => ({
+        question,
+        pageId: entry.pageId,
+        provenance: "reasoned_gap",
+      })),
+    ),
   ];
 }
 
 function finiteResultKeyword(item, provenance) {
   const keyword = text(item?.keyword || item?.keyword_data?.keyword, 180);
   const source = item?.keyword_info || item?.keyword_data?.keyword_info || {};
-  const intentInfo = item?.search_intent_info || item?.keyword_data?.search_intent_info;
-  const intent = text(intentInfo?.main_intent || intentInfo?.label || item?.intent, 40) || null;
+  const properties =
+    item?.keyword_properties || item?.keyword_data?.keyword_properties || {};
+  const intentInfo =
+    item?.search_intent_info || item?.keyword_data?.search_intent_info;
+  const intent =
+    text(intentInfo?.main_intent || intentInfo?.label || item?.intent, 40) ||
+    null;
   const volume = finiteMetric(source.search_volume ?? item?.searchVolume);
+  const kd = finiteMetric(
+    properties.keyword_difficulty ?? item?.keyword_difficulty,
+  );
   const cpc = finiteMetric(source.cpc ?? item?.cpc);
   const competition = finiteMetric(source.competition ?? item?.competition);
   return {
     keyword,
     volume,
-    kd: null,
+    kd,
     cpc,
     competition,
     intent,
-    provenance: [volume, cpc, competition, intent].some((value) => value !== null) ? provenance : "dataforseo_unavailable",
+    provenance: [volume, kd, cpc, competition, intent].some(
+      (value) => value !== null,
+    )
+      ? provenance
+      : "dataforseo_unavailable",
   };
+}
+
+function relatedKeywordMetric(item, service, metricLocation) {
+  const mapped = finiteResultKeyword(
+    item,
+    "dataforseo_labs_related_location",
+  );
+  const validation = validateIntentQueryPlan(
+    { services: [{ service, phrases: [mapped.keyword] }] },
+    [service],
+  );
+  if (!mapped.keyword || validation.acceptedPhraseCount !== 1) return null;
+  const metricSources = {
+    volume:
+      mapped.volume !== null ? "dataforseo_labs_related_location" : null,
+    kd: mapped.kd !== null ? "dataforseo_labs_related_location" : null,
+    cpc: mapped.cpc !== null ? "dataforseo_labs_related_location" : null,
+    competition:
+      mapped.competition !== null
+        ? "dataforseo_labs_related_location"
+        : null,
+    intent:
+      mapped.intent !== null ? "dataforseo_labs_related_location" : null,
+  };
+  return {
+    ...mapped,
+    confirmedService: service,
+    metricLocation,
+    metricSources,
+    provenance: Object.values(metricSources).every(Boolean)
+      ? "dataforseo"
+      : "dataforseo_metric_partial",
+  };
+}
+
+function mergeRelatedKeywordMetrics(primaryRows, relatedRows) {
+  const merged = primaryRows.map((item) => ({
+    ...item,
+    metricSources: { ...(item.metricSources || {}) },
+  }));
+  const metricIdentity = (item) =>
+    `${keywordKey(item.confirmedService || "")}::${keywordKey(item.keyword)}`;
+  const indexByKeyword = new Map(
+    merged.map((item, index) => [metricIdentity(item), index]),
+  );
+  const fields = ["volume", "kd", "cpc", "competition", "intent"];
+
+  for (const related of relatedRows) {
+    const key = metricIdentity(related);
+    if (!key) continue;
+    const existingIndex = indexByKeyword.get(key);
+    if (existingIndex === undefined) {
+      indexByKeyword.set(key, merged.length);
+      merged.push(related);
+      continue;
+    }
+
+    const existing = merged[existingIndex];
+    const metricSources = { ...(existing.metricSources || {}) };
+    const next = { ...existing, metricSources };
+    for (const field of fields) {
+      if (
+        (next[field] === null || next[field] === undefined || next[field] === "") &&
+        related[field] !== null &&
+        related[field] !== undefined &&
+        related[field] !== ""
+      ) {
+        next[field] = related[field];
+        metricSources[field] = related.metricSources?.[field] || null;
+      }
+    }
+    if (related.metricLocation) next.metricLocation = related.metricLocation;
+    const complete = fields.every(
+      (field) => next[field] !== null && next[field] !== undefined && next[field] !== "",
+    );
+    const known = fields.some(
+      (field) => next[field] !== null && next[field] !== undefined && next[field] !== "",
+    );
+    next.provenance = complete
+      ? "dataforseo"
+      : known
+        ? "dataforseo_metric_partial"
+        : "dataforseo_unavailable";
+    merged[existingIndex] = next;
+  }
+  return merged;
 }
 
 function flattenItems(value) {
   if (!Array.isArray(value)) return [];
-  return value.flatMap((result) => Array.isArray(result?.items) ? result.items : result);
+  return value.flatMap((result) =>
+    Array.isArray(result?.items) ? result.items : result,
+  );
 }
 
 function makePageMap(seo, metrics, kdByKeyword, serps, questionEvidence) {
   const map = emptyMap(seo);
   const servicePages = [];
   for (const service of seo.services) {
-    const matching = metrics.filter((item) => findService(item.keyword, [service]));
-    const preferred = matching.find((item) => hasCompletePrimaryMetrics(item) && keywordKey(item.keyword).includes(keywordKey(seo.primaryCity))) ||
-      matching.find((item) => hasCompletePrimaryMetrics(item) && (item.intent === "commercial" || item.intent === "transactional")) ||
-      matching.find(hasCompletePrimaryMetrics) || matching.find((item) => item.intent === "commercial" || item.intent === "transactional") || matching[0];
+    const matching = metrics.filter((item) =>
+      metricBelongsToService(item, service),
+    );
+    const preferred =
+      matching.find(
+        (item) =>
+          hasCompletePrimaryMetrics(item) &&
+          keywordKey(item.keyword).includes(keywordKey(seo.primaryCity)),
+      ) ||
+      matching.find(
+        (item) =>
+          hasCompletePrimaryMetrics(item) &&
+          (item.intent === "commercial" || item.intent === "transactional"),
+      ) ||
+      matching.find(hasCompletePrimaryMetrics) ||
+      matching.find(
+        (item) =>
+          item.intent === "commercial" || item.intent === "transactional",
+      ) ||
+      matching[0];
     const primary = preferred
-      ? { ...preferred, kd: kdByKeyword.get(keywordKey(preferred.keyword)) ?? null }
-      : { keyword: `${service}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`, volume: null, kd: null, cpc: null, competition: null, intent: null, provenance: "confirmed_service_city_not_measured" };
+      ? {
+          ...preferred,
+          kd:
+            preferred.kd ??
+            kdByKeyword.get(keywordKey(preferred.keyword)) ??
+            null,
+        }
+      : {
+          keyword: `${service}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`,
+          volume: null,
+          kd: null,
+          cpc: null,
+          competition: null,
+          intent: null,
+          provenance: "confirmed_service_city_not_measured",
+        };
     const support = matching
-      .filter((item) => keywordKey(item.keyword) !== keywordKey(primary.keyword))
-      .map((item) => ({ ...item, kd: kdByKeyword.get(keywordKey(item.keyword)) ?? null }))
+      .filter(
+        (item) => keywordKey(item.keyword) !== keywordKey(primary.keyword),
+      )
+      .map((item) => ({
+        ...item,
+        kd: item.kd ?? kdByKeyword.get(keywordKey(item.keyword)) ?? null,
+      }))
       .slice(0, 12);
-    const serviceSerps = serps.filter((item) => keywordKey(item.service) === keywordKey(service));
-    const measuredQuestions = serviceSerps.flatMap((item) => item.questions.map((question) => ({
-      question,
-      pageId: `service:${slugify(service)}`,
-      provenance: "dataforseo_people_also_ask",
-      query: item.query,
-    })));
-    const questions = [...new Set([...measuredQuestions.map((item) => item.question), ...serviceQuestions(service, seo.industry)])].slice(0, 8);
+    const serviceSerps = serps.filter(
+      (item) => keywordKey(item.service) === keywordKey(service),
+    );
+    const measuredQuestions = serviceSerps.flatMap((item) =>
+      item.questions.map((question) => ({
+        question,
+        pageId: `service:${slugify(service)}`,
+        provenance: "dataforseo_people_also_ask",
+        query: item.query,
+      })),
+    );
+    const questions = [
+      ...new Set([
+        ...measuredQuestions.map((item) => item.question),
+        ...serviceQuestions(service, seo.industry),
+      ]),
+    ].slice(0, 8);
     for (const question of questions) {
-      if (!questionEvidence.some((item) => item.pageId === `service:${slugify(service)}` && item.question === question)) {
-        questionEvidence.push({ question, pageId: `service:${slugify(service)}`, provenance: "reasoned_gap" });
+      if (
+        !questionEvidence.some(
+          (item) =>
+            item.pageId === `service:${slugify(service)}` &&
+            item.question === question,
+        )
+      ) {
+        questionEvidence.push({
+          question,
+          pageId: `service:${slugify(service)}`,
+          provenance: "reasoned_gap",
+        });
       }
     }
     servicePages.push({
@@ -307,10 +877,29 @@ function makePageMap(seo, metrics, kdByKeyword, serps, questionEvidence) {
       primaryKeyword: primary,
       supportingKeywords: support,
       fanOutQuestions: questions,
-      priority: primary.volume === null ? "medium" : primary.volume > 0 ? "high" : "low",
+      priority:
+        primary.volume === null
+          ? "medium"
+          : primary.volume > 0
+            ? "high"
+            : "low",
       evidence: [
-        ...serviceSerps.map((serp) => ({ type: "organic_serp", query: serp.query, results: serp.results.map(({ position, title, url, domain }) => ({ position, title, url, domain })) })),
-        ...measuredQuestions.map((item) => ({ type: "people_also_ask", question: item.question, query: item.query, provenance: item.provenance })),
+        ...serviceSerps.map((serp) => ({
+          type: "organic_serp",
+          query: serp.query,
+          results: serp.results.map(({ position, title, url, domain }) => ({
+            position,
+            title,
+            url,
+            domain,
+          })),
+        })),
+        ...measuredQuestions.map((item) => ({
+          type: "people_also_ask",
+          question: item.question,
+          query: item.query,
+          provenance: item.provenance,
+        })),
       ],
     });
   }
@@ -320,65 +909,141 @@ function makePageMap(seo, metrics, kdByKeyword, serps, questionEvidence) {
 
 function aggregateCompetitors(serps) {
   const domains = new Map();
-  for (const serp of serps) for (const result of serp.results) {
-    const domain = text(result.domain, 180).toLocaleLowerCase().replace(/^www\./u, "");
-    if (!domain) continue;
-    if (!domains.has(domain)) domains.set(domain, { domain, queries: [], results: [], pagePatterns: [] });
-    const competitor = domains.get(domain);
-    competitor.queries.push(serp.query);
-    competitor.results.push({ query: serp.query, position: result.position, title: result.title, url: result.url });
-    try {
-      const path = new URL(result.url).pathname;
-      const locationPattern = /\/(?:locations?|areas?|cities|service-area)(?:\/|$)|\/(?:[a-z-]+-(?:wa|ca|tx|fl|ny))(?:\/|$)/iu.test(path);
-      const servicePattern = /\/(?:services?|repairs?|installations?|cleaning|consultations?|treatments?|restoration)(?:\/|$)/iu.test(path);
-      if (locationPattern) competitor.pagePatterns.push("location-oriented page path");
-      if (servicePattern) competitor.pagePatterns.push("service-oriented page path");
-    } catch { /* ignore invalid provider URL */ }
-  }
+  for (const serp of serps)
+    for (const result of serp.results) {
+      const domain = text(result.domain, 180)
+        .toLocaleLowerCase()
+        .replace(/^www\./u, "");
+      if (!domain) continue;
+      if (!domains.has(domain))
+        domains.set(domain, {
+          domain,
+          queries: [],
+          results: [],
+          pagePatterns: [],
+        });
+      const competitor = domains.get(domain);
+      competitor.queries.push(serp.query);
+      competitor.results.push({
+        query: serp.query,
+        position: result.position,
+        title: result.title,
+        url: result.url,
+      });
+      try {
+        const path = new URL(result.url).pathname;
+        const locationPattern =
+          /\/(?:locations?|areas?|cities|service-area)(?:\/|$)|\/(?:[a-z-]+-(?:wa|ca|tx|fl|ny))(?:\/|$)/iu.test(
+            path,
+          );
+        const servicePattern =
+          /\/(?:services?|repairs?|installations?|cleaning|consultations?|treatments?|restoration)(?:\/|$)/iu.test(
+            path,
+          );
+        if (locationPattern)
+          competitor.pagePatterns.push("location-oriented page path");
+        if (servicePattern)
+          competitor.pagePatterns.push("service-oriented page path");
+      } catch {
+        /* ignore invalid provider URL */
+      }
+    }
   return [...domains.values()]
-    .map((item) => ({ ...item, queries: [...new Set(item.queries)], pagePatterns: [...new Set(item.pagePatterns)] }))
-    .sort((a, b) => b.results.length - a.results.length || a.domain.localeCompare(b.domain))
+    .map((item) => ({
+      ...item,
+      queries: [...new Set(item.queries)],
+      pagePatterns: [...new Set(item.pagePatterns)],
+    }))
+    .sort(
+      (a, b) =>
+        b.results.length - a.results.length || a.domain.localeCompare(b.domain),
+    )
     .slice(0, 6);
 }
 
 function makeBlogOpportunities(metrics, questionEvidence) {
-  const informational = metrics.filter((item) => item.intent === "informational" && item.provenance.startsWith("dataforseo"));
+  const informational = metrics.filter(
+    (item) =>
+      item.intent === "informational" &&
+      item.provenance.startsWith("dataforseo"),
+  );
   const candidates = [
-    ...informational.map((item) => ({ title: `A practical guide to ${item.keyword}`, keyword: item.keyword, keywordMetrics: item, provenance: item.metricSources?.intent ? "dataforseo_search_intent" : item.provenance, evidence: [{ query: item.keyword, volume: item.volume, intent: item.intent, metricSources: item.metricSources || null }] })),
-    ...questionEvidence.filter((item) => item.provenance === "dataforseo_people_also_ask").map((item) => ({ title: item.question, keyword: null, provenance: item.provenance, evidence: [{ query: item.query, question: item.question }] })),
+    ...informational.map((item) => ({
+      title: `A practical guide to ${item.keyword}`,
+      keyword: item.keyword,
+      keywordMetrics: item,
+      provenance: item.metricSources?.intent
+        ? "dataforseo_search_intent"
+        : item.provenance,
+      evidence: [
+        {
+          query: item.keyword,
+          volume: item.volume,
+          intent: item.intent,
+          metricSources: item.metricSources || null,
+        },
+      ],
+    })),
+    ...questionEvidence
+      .filter((item) => item.provenance === "dataforseo_people_also_ask")
+      .map((item) => ({
+        title: item.question,
+        keyword: null,
+        provenance: item.provenance,
+        evidence: [{ query: item.query, question: item.question }],
+      })),
   ];
   const seen = new Set();
-  return candidates.filter((item) => {
-    const key = item.title.toLocaleLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  }).slice(0, 5).map((item, index) => ({
-    id: `blog-opportunity:${index + 1}`,
-    pageType: "blog-opportunity",
-    slug: `/blog/${slugify(item.title)}/`,
-    priority: index < 2 ? "medium" : "low",
-    renderWhenArticlesExist: true,
-    supportingKeywords: item.keyword ? [{
-      keyword: item.keyword,
-      volume: item.keywordMetrics?.volume ?? null,
-      kd: item.keywordMetrics?.kd ?? null,
-      cpc: item.keywordMetrics?.cpc ?? null,
-      competition: item.keywordMetrics?.competition ?? null,
-      intent: "informational",
-      provenance: item.provenance,
-    }] : [],
-    fanOutQuestions: [],
-    ...item,
-  }));
+  return candidates
+    .filter((item) => {
+      const key = item.title.toLocaleLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 5)
+    .map((item, index) => ({
+      id: `blog-opportunity:${index + 1}`,
+      pageType: "blog-opportunity",
+      slug: `/blog/${slugify(item.title)}/`,
+      priority: index < 2 ? "medium" : "low",
+      renderWhenArticlesExist: true,
+      supportingKeywords: item.keyword
+        ? [
+            {
+              keyword: item.keyword,
+              volume: item.keywordMetrics?.volume ?? null,
+              kd: item.keywordMetrics?.kd ?? null,
+              cpc: item.keywordMetrics?.cpc ?? null,
+              competition: item.keywordMetrics?.competition ?? null,
+              intent: "informational",
+              provenance: item.provenance,
+            },
+          ]
+        : [],
+      fanOutQuestions: [],
+      ...item,
+    }));
 }
 
 function boundedOptions(options) {
   const requestedTasks = Number(options.maxTasks ?? DEFAULT_MAX_TASKS);
   const requestedUsd = Number(options.maxUsd ?? DEFAULT_MAX_USD);
   return {
-    maxTasks: Math.max(0, Math.min(HARD_MAX_TASKS, Number.isFinite(requestedTasks) ? requestedTasks : DEFAULT_MAX_TASKS)),
-    maxUsd: Math.max(0, Math.min(HARD_MAX_USD, Number.isFinite(requestedUsd) ? requestedUsd : DEFAULT_MAX_USD)),
+    maxTasks: Math.max(
+      0,
+      Math.min(
+        HARD_MAX_TASKS,
+        Number.isFinite(requestedTasks) ? requestedTasks : DEFAULT_MAX_TASKS,
+      ),
+    ),
+    maxUsd: Math.max(
+      0,
+      Math.min(
+        HARD_MAX_USD,
+        Number.isFinite(requestedUsd) ? requestedUsd : DEFAULT_MAX_USD,
+      ),
+    ),
     reserveUsd: Math.max(0, Number(options.reserveUsd ?? 0.015)),
   };
 }
@@ -407,19 +1072,35 @@ export function createOpenRouterWebSearchClient({
         signal: AbortSignal.timeout(20_000),
         body: {
           model,
-          messages: [{
-            role: "user",
-            content: `Search the public web for this local-market query and return at most four concise source-backed observations. Include a direct citation for each observation using only a source returned by the search. If no relevant result is found, say no relevant source was returned. Do not claim keyword volume, rankings, difficulty, or CPC; this fallback collects qualitative source observations only. Query: ${boundedQuery}`,
-          }],
-          tools: [{
-            type: "openrouter:web_search",
-            parameters: {
-              engine: "parallel",
-              max_results: Math.max(1, Math.min(FALLBACK_RESULTS_PER_QUERY, Number(maxResults) || FALLBACK_RESULTS_PER_QUERY)),
-              max_total_results: Math.max(1, Math.min(FALLBACK_RESULTS_PER_QUERY, Number(maxResults) || FALLBACK_RESULTS_PER_QUERY)),
-              max_characters: 1200,
+          messages: [
+            {
+              role: "user",
+              content: `Search the public web for this local-market query and return at most four concise source-backed observations. Include a direct citation for each observation using only a source returned by the search. If no relevant result is found, say no relevant source was returned. Do not claim keyword volume, rankings, difficulty, or CPC; this fallback collects qualitative source observations only. Query: ${boundedQuery}`,
             },
-          }],
+          ],
+          tools: [
+            {
+              type: "openrouter:web_search",
+              parameters: {
+                engine: "parallel",
+                max_results: Math.max(
+                  1,
+                  Math.min(
+                    FALLBACK_RESULTS_PER_QUERY,
+                    Number(maxResults) || FALLBACK_RESULTS_PER_QUERY,
+                  ),
+                ),
+                max_total_results: Math.max(
+                  1,
+                  Math.min(
+                    FALLBACK_RESULTS_PER_QUERY,
+                    Number(maxResults) || FALLBACK_RESULTS_PER_QUERY,
+                  ),
+                ),
+                max_characters: 1200,
+              },
+            },
+          ],
           max_tool_calls: 1,
           tool_choice: "required",
           max_tokens: 256,
@@ -428,15 +1109,23 @@ export function createOpenRouterWebSearchClient({
       });
       const envelope = await readOpenRouterResponseEnvelope(response);
       if (envelope.parseError)
-        throw new Error("OpenRouter web search returned an unreadable response.");
+        throw new Error(
+          "OpenRouter web search returned an unreadable response.",
+        );
       const apiError = openRouterApiError(envelope.payload, response.status);
       if (!response.ok || apiError)
-        throw apiError || new Error(`OpenRouter web search returned HTTP ${response.status}.`);
+        throw (
+          apiError ||
+          new Error(`OpenRouter web search returned HTTP ${response.status}.`)
+        );
       const body = envelope.payload;
       const reportedCostUsd = finiteMetric(body?.usage?.cost);
       const annotations = body?.choices?.[0]?.message?.annotations;
       const results = (Array.isArray(annotations) ? annotations : [])
-        .filter((annotation) => annotation?.type === "url_citation" && annotation?.url_citation)
+        .filter(
+          (annotation) =>
+            annotation?.type === "url_citation" && annotation?.url_citation,
+        )
         .map((annotation) => annotation.url_citation)
         .map((citation) => {
           const url = safeHttpsUrl(citation?.url);
@@ -454,16 +1143,43 @@ export function createOpenRouterWebSearchClient({
   };
 }
 
-async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnings) {
-  const requested = Number(options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES);
-  const maxQueries = Math.max(1, Math.min(HARD_MAX_FALLBACK_SEARCH_QUERIES, Number.isFinite(requested) ? requested : DEFAULT_FALLBACK_SEARCH_QUERIES));
-  const requestedUsd = Number(options.maxFallbackUsd ?? DEFAULT_FALLBACK_MAX_USD);
-  const maxUsd = Math.max(0, Math.min(HARD_MAX_FALLBACK_USD, Number.isFinite(requestedUsd) ? requestedUsd : DEFAULT_FALLBACK_MAX_USD));
+async function collectFallbackWebEvidence(
+  seo,
+  seeds,
+  webSearch,
+  options,
+  warnings,
+) {
+  const requested = Number(
+    options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES,
+  );
+  const maxQueries = Math.max(
+    1,
+    Math.min(
+      HARD_MAX_FALLBACK_SEARCH_QUERIES,
+      Number.isFinite(requested) ? requested : DEFAULT_FALLBACK_SEARCH_QUERIES,
+    ),
+  );
+  const requestedUsd = Number(
+    options.maxFallbackUsd ?? DEFAULT_FALLBACK_MAX_USD,
+  );
+  const maxUsd = Math.max(
+    0,
+    Math.min(
+      HARD_MAX_FALLBACK_USD,
+      Number.isFinite(requestedUsd) ? requestedUsd : DEFAULT_FALLBACK_MAX_USD,
+    ),
+  );
   const queries = [];
   for (const service of seo.services) {
-    queries.push(localServiceQuery(searchServiceTerm(seo, service), seo.primaryCity));
+    const plannedPhrase = options.intentPlanning?.services?.find(
+      (item) => keywordKey(item.service) === keywordKey(service),
+    )?.phrases?.[0];
+    const phrase = plannedPhrase || searchServiceTerm(seo, service);
+    queries.push(localServiceQuery(phrase, seo.primaryCity));
   }
-  if (seo.businessName && seo.primaryCity) queries.push(`${seo.businessName} ${seo.primaryCity}`);
+  if (seo.businessName && seo.primaryCity)
+    queries.push(`${seo.businessName} ${seo.primaryCity}`);
   for (const seed of seeds) if (!queries.includes(seed)) queries.push(seed);
   const selected = queries.filter(Boolean).slice(0, maxQueries);
   const evidence = [];
@@ -473,16 +1189,23 @@ async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnin
   let costComplete = true;
   let budgetExhausted = maxUsd <= 0;
   if (budgetExhausted)
-    warnings.push("Fallback web search budget is zero; no online fallback requests were attempted.");
+    warnings.push(
+      "Fallback web search budget is zero; no online fallback requests were attempted.",
+    );
   for (const query of selected) {
     if (budgetExhausted) break;
     try {
-      const observed = await webSearch.search({ query, maxResults: FALLBACK_RESULTS_PER_QUERY });
+      const observed = await webSearch.search({
+        query,
+        maxResults: FALLBACK_RESULTS_PER_QUERY,
+      });
       queriesAttempted += 1;
       const reportedCost = finiteMetric(observed?.costUsd);
       if (reportedCost === null) {
         costComplete = false;
-        warnings.push("Fallback web search did not report request cost; additional fallback queries were stopped to preserve the configured spend bound.");
+        warnings.push(
+          "Fallback web search did not report request cost; additional fallback queries were stopped to preserve the configured spend bound.",
+        );
       } else {
         costUsd = roundCost(costUsd + Math.max(0, reportedCost));
       }
@@ -503,10 +1226,14 @@ async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnin
       if (!costComplete) break;
       if (costUsd > maxUsd) {
         budgetExhausted = true;
-        warnings.push(`Fallback web search exceeded the configured USD ${maxUsd.toFixed(3)} spend bound on the final completed request; no additional fallback queries were issued.`);
+        warnings.push(
+          `Fallback web search exceeded the configured USD ${maxUsd.toFixed(3)} spend bound on the final completed request; no additional fallback queries were issued.`,
+        );
       } else if (costUsd >= maxUsd && queriesAttempted < selected.length) {
         budgetExhausted = true;
-        warnings.push(`Fallback web search stopped at the configured USD ${maxUsd.toFixed(3)} spend bound after ${queriesAttempted} query(s).`);
+        warnings.push(
+          `Fallback web search stopped at the configured USD ${maxUsd.toFixed(3)} spend bound after ${queriesAttempted} query(s).`,
+        );
       }
     } catch (error) {
       queriesAttempted += 1;
@@ -526,7 +1253,9 @@ async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnin
   return {
     evidence,
     status: evidence.length
-      ? (incomplete ? "partial" : "complete")
+      ? incomplete
+        ? "partial"
+        : "complete"
       : failed
         ? "failed"
         : budgetExhausted
@@ -545,80 +1274,169 @@ async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnin
 }
 
 export async function researchSiteContext(intake = {}, options = {}) {
+  const seo = normaliseSeoIntake(intake);
+  const intentPlanning = await resolveIntentPlanning(seo, options);
+  const plannedOptions = { ...options, intentPlanning };
   const confirmed = confirmedCoverageFromIntake(intake);
   if (!confirmed || confirmed.coverageAreas.length <= 1)
-    return researchSingleCity(intake, options);
+    return researchSingleCity(intake, plannedOptions);
   const limits = boundedOptions(options);
-  const fallbackLimit = Math.max(0, Math.min(HARD_MAX_FALLBACK_USD, Number(options.maxFallbackUsd ?? DEFAULT_FALLBACK_MAX_USD)));
-  const queryLimit = Math.max(1, Math.min(HARD_MAX_FALLBACK_SEARCH_QUERIES, Number(options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES)));
-  const total = { tasks: 0, usd: 0, limitUsd: limits.maxUsd, complete: true, unreportedTasks: 0, overBudget: false, stageCosts: [] };
+  const fallbackLimit = Math.max(
+    0,
+    Math.min(
+      HARD_MAX_FALLBACK_USD,
+      Number(options.maxFallbackUsd ?? DEFAULT_FALLBACK_MAX_USD),
+    ),
+  );
+  const queryLimit = Math.max(
+    1,
+    Math.min(
+      HARD_MAX_FALLBACK_SEARCH_QUERIES,
+      Number(
+        options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES,
+      ),
+    ),
+  );
+  const total = {
+    tasks: 0,
+    usd: 0,
+    limitUsd: limits.maxUsd,
+    complete: true,
+    unreportedTasks: 0,
+    overBudget: false,
+    stageCosts: [],
+  };
   let fallbackUsd = 0;
   let fallbackQueries = 0;
   let fallbackCostComplete = true;
   const cities = [];
   for (const city of confirmed.coverageAreas) {
-    const hasMeasuredBudget = options.dataForSeo && total.complete && !total.overBudget && total.tasks < limits.maxTasks && limits.maxUsd - total.usd >= limits.reserveUsd;
-    const hasFallbackBudget = options.webSearch && fallbackCostComplete && fallbackQueries < queryLimit && fallbackUsd < fallbackLimit;
+    const hasMeasuredBudget =
+      plannedOptions.dataForSeo &&
+      total.complete &&
+      !total.overBudget &&
+      total.tasks < limits.maxTasks &&
+      limits.maxUsd - total.usd >= limits.reserveUsd;
+    const hasFallbackBudget =
+      plannedOptions.webSearch &&
+      fallbackCostComplete &&
+      fallbackQueries < queryLimit &&
+      fallbackUsd < fallbackLimit;
     if (cities.length && !hasMeasuredBudget && !hasFallbackBudget) {
-      cities.push({ city, status: "pending", research: null, reason: "Shared research budget exhausted or provider spend unavailable." });
+      cities.push({
+        city,
+        status: "pending",
+        research: null,
+        reason:
+          "Shared research budget exhausted or provider spend unavailable.",
+      });
       continue;
     }
-    const research = await researchSingleCity({
-      ...intake,
-      primaryCity: city,
-      serviceAreas: city,
-      coverageAreas: [city],
-      coverageConfirmation: undefined,
-      metricLocation: metricLocationForCity(city),
-      website: cities.length ? "" : intake.website,
-      existingWebsite: cities.length ? "" : intake.existingWebsite,
-    }, {
-      ...options,
-      dataForSeo: hasMeasuredBudget ? options.dataForSeo : undefined,
-      webSearch: hasFallbackBudget ? options.webSearch : undefined,
-      maxTasks: Math.max(0, limits.maxTasks - total.tasks),
-      maxUsd: Math.max(0, roundCost(limits.maxUsd - total.usd)),
-      maxFallbackUsd: Math.max(0, roundCost(fallbackLimit - fallbackUsd)),
-      maxFallbackSearchQueries: Math.max(1, queryLimit - fallbackQueries),
+    const research = await researchSingleCity(
+      {
+        ...intake,
+        primaryCity: city,
+        serviceAreas: city,
+        coverageAreas: [city],
+        coverageConfirmation: undefined,
+        metricLocation: metricLocationForCity(city),
+        website: cities.length ? "" : intake.website,
+        existingWebsite: cities.length ? "" : intake.existingWebsite,
+      },
+      {
+        ...plannedOptions,
+        dataForSeo: hasMeasuredBudget ? plannedOptions.dataForSeo : undefined,
+        webSearch: hasFallbackBudget ? plannedOptions.webSearch : undefined,
+        maxTasks: Math.max(0, limits.maxTasks - total.tasks),
+        maxUsd: Math.max(0, roundCost(limits.maxUsd - total.usd)),
+        maxFallbackUsd: Math.max(0, roundCost(fallbackLimit - fallbackUsd)),
+        maxFallbackSearchQueries: Math.max(1, queryLimit - fallbackQueries),
+      },
+    );
+    cities.push({
+      city,
+      status: research.publishReady ? "complete" : "partial",
+      research,
     });
-    cities.push({ city, status: research.publishReady ? "complete" : "partial", research });
     total.tasks += research.cost.tasks;
     total.usd = roundCost(total.usd + research.cost.usd);
     total.complete = total.complete && research.cost.complete;
     total.unreportedTasks += research.cost.unreportedTasks;
     total.overBudget = total.overBudget || research.cost.overBudget;
-    total.stageCosts.push(...research.cost.stageCosts.map(stage => ({ ...stage, city })));
+    total.stageCosts.push(
+      ...research.cost.stageCosts.map((stage) => ({ ...stage, city })),
+    );
     fallbackUsd = roundCost(fallbackUsd + research.fallbackSearch.costUsd);
     fallbackQueries += research.fallbackSearch.queriesAttempted;
-    fallbackCostComplete = fallbackCostComplete && research.fallbackSearch.costComplete;
+    fallbackCostComplete =
+      fallbackCostComplete && research.fallbackSearch.costComplete;
   }
   const primary = cities[0]?.research;
   if (!primary) throw new Error("Primary-city research result is missing.");
-  const complete = cities.every(item => item.status === "complete");
+  const complete = cities.every((item) => item.status === "complete");
   const requireAll = options.requireAllCoverageCities === true;
-  const primaryReady = primary.publishReady && (primary.mode !== "researched" || (total.complete && !total.overBudget));
+  const primaryReady =
+    primary.publishReady &&
+    (primary.mode !== "researched" || (total.complete && !total.overBudget));
   return {
     ...primary,
     coverageAreas: confirmed.coverageAreas,
     coverageEvidence: confirmed.coverageEvidence,
     coverageConfirmation: confirmed.coverageConfirmation,
-    coverageResearch: { version: 1, areas: confirmed.coverageAreas, complete, approvalPolicy: requireAll ? "all-confirmed-cities" : "primary-city", cities, fallbackCostUsd: fallbackUsd, fallbackQueries, fallbackCostComplete, fallbackMaxUsd: fallbackLimit, fallbackMaxQueries: queryLimit },
-    marketSnapshot: { ...primary.marketSnapshot, coverageAreas: confirmed.coverageAreas },
+    coverageResearch: {
+      version: 1,
+      areas: confirmed.coverageAreas,
+      complete,
+      approvalPolicy: requireAll ? "all-confirmed-cities" : "primary-city",
+      cities,
+      fallbackCostUsd: fallbackUsd,
+      fallbackQueries,
+      fallbackCostComplete,
+      fallbackMaxUsd: fallbackLimit,
+      fallbackMaxQueries: queryLimit,
+    },
+    marketSnapshot: {
+      ...primary.marketSnapshot,
+      coverageAreas: confirmed.coverageAreas,
+    },
     cost: total,
     mode: primary.mode,
     publishReady: primaryReady && (!requireAll || complete),
-    warnings: [...new Set([...primary.warnings, ...confirmed.warnings, ...cities.filter(item => item.status !== "complete").map(item => `${item.city}: coverage research ${item.status}; no completed or measured research is claimed for this city.`)])],
+    warnings: [
+      ...new Set([
+        ...primary.warnings,
+        ...confirmed.warnings,
+        ...cities
+          .filter((item) => item.status !== "complete")
+          .map(
+            (item) =>
+              `${item.city}: coverage research ${item.status}; no completed or measured research is claimed for this city.`,
+          ),
+      ]),
+    ],
   };
 }
 
 async function researchSingleCity(intake = {}, options = {}) {
   const seo = normaliseSeoIntake(intake);
   const limits = boundedOptions(options);
-  const seeds = defaultSeeds(seo);
+  const intentPlanning =
+    options.intentPlanning || deterministicIntentPlanning(seo);
+  const seedRecords = seedQueryRecords(seo, intentPlanning);
+  const seeds = seedRecords.map((item) => item.keyword);
+  const confirmedServiceByKeyword = new Map(
+    seedRecords.map((item) => [
+      keywordKey(item.keyword),
+      item.confirmedService,
+    ]),
+  );
   const warnings = [];
+  if (intentPlanning.warning) warnings.push(intentPlanning.warning);
   warnings.push(...seo.coverageWarnings);
   if (seo.omittedServices.length)
-    warnings.push(`Only the first ${MAX_CORE_SERVICES} client-confirmed services were researched; review the additional confirmed services before generation: ${seo.omittedServices.join(", ")}.`);
+    warnings.push(
+      `Only the first ${MAX_CORE_SERVICES} client-confirmed services were researched; review the additional confirmed services before generation: ${seo.omittedServices.join(", ")}.`,
+    );
   const stageCosts = [];
   const pageMap = emptyMap(seo);
   const base = {
@@ -633,12 +1451,38 @@ async function researchSingleCity(intake = {}, options = {}) {
     coverageConfirmation: seo.coverageConfirmation,
     coverageResearch: undefined,
     coverageEvidence: seo.coverageEvidence,
+    intentPlanning,
     seedQueries: seeds,
-    validatedQueries: seeds.map((keyword) => ({ keyword, volume: null, kd: null, cpc: null, competition: null, intent: null, provenance: "dataforseo_unavailable", metricSources: { volume: null, kd: null, cpc: null, competition: null, intent: null } })),
+    validatedQueries: seeds.map((keyword) => ({
+      keyword,
+      confirmedService:
+        confirmedServiceByKeyword.get(keywordKey(keyword)) || null,
+      volume: null,
+      kd: null,
+      cpc: null,
+      competition: null,
+      intent: null,
+      provenance: "dataforseo_unavailable",
+      metricSources: {
+        volume: null,
+        kd: null,
+        cpc: null,
+        competition: null,
+        intent: null,
+      },
+    })),
     pageMap,
     competitors: [],
     questionEvidence: fallbackQuestionEvidence(seo),
-    fanOutQuestionGroups: pageMap.filter((page) => page.fanOutQuestions.length > 0).map((page) => ({ pageId: page.id, questions: page.fanOutQuestions.map((question) => ({ question, provenance: "reasoned_gap" })) })),
+    fanOutQuestionGroups: pageMap
+      .filter((page) => page.fanOutQuestions.length > 0)
+      .map((page) => ({
+        pageId: page.id,
+        questions: page.fanOutQuestions.map((question) => ({
+          question,
+          provenance: "reasoned_gap",
+        })),
+      })),
     blogOpportunities: [],
     quickWins: [],
     evidence: [],
@@ -648,107 +1492,255 @@ async function researchSingleCity(intake = {}, options = {}) {
       provider: options.webSearch ? "OpenRouter web search (Parallel)" : null,
       queriesAttempted: 0,
       failedQueries: 0,
-      maxQueries: Math.max(1, Math.min(HARD_MAX_FALLBACK_SEARCH_QUERIES, Number(options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES) || DEFAULT_FALLBACK_SEARCH_QUERIES)),
+      maxQueries: Math.max(
+        1,
+        Math.min(
+          HARD_MAX_FALLBACK_SEARCH_QUERIES,
+          Number(
+            options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES,
+          ) || DEFAULT_FALLBACK_SEARCH_QUERIES,
+        ),
+      ),
       maxResultsPerQuery: FALLBACK_RESULTS_PER_QUERY,
       costUsd: 0,
       maxUsd: (() => {
-        const requested = Number(options.maxFallbackUsd ?? DEFAULT_FALLBACK_MAX_USD);
-        return Math.max(0, Math.min(HARD_MAX_FALLBACK_USD, Number.isFinite(requested) ? requested : DEFAULT_FALLBACK_MAX_USD));
+        const requested = Number(
+          options.maxFallbackUsd ?? DEFAULT_FALLBACK_MAX_USD,
+        );
+        return Math.max(
+          0,
+          Math.min(
+            HARD_MAX_FALLBACK_USD,
+            Number.isFinite(requested) ? requested : DEFAULT_FALLBACK_MAX_USD,
+          ),
+        );
       })(),
       costComplete: true,
       budgetExhausted: false,
     },
-    completeness: { keywordOverview: false, searchIntent: false, keywordDifficulty: false, serviceMetrics: [], serviceSerps: 0, serviceSerpsRequired: seo.services.length, competitors: 0 },
-    marketSnapshot: { primaryCity: seo.primaryCity, coverageAreas: seo.coverageAreas, businessKind: seo.businessKind || null, confirmedServices: seo.services, metricLocation: seo.metricLocation, labsMetricLocation: seo.labsLocation, queriedKeywords: seeds.length, measuredKeywords: 0, competitorDomains: 0 },
-    cost: { tasks: 0, usd: 0, limitUsd: limits.maxUsd, overBudget: false, complete: true, unreportedTasks: 0, stageCosts },
+    completeness: {
+      keywordOverview: false,
+      searchIntent: false,
+      keywordDifficulty: false,
+      serviceMetrics: [],
+      serviceSerps: 0,
+      serviceSerpsRequired: seo.services.length,
+      competitors: 0,
+    },
+    marketSnapshot: {
+      primaryCity: seo.primaryCity,
+      coverageAreas: seo.coverageAreas,
+      businessKind: seo.businessKind || null,
+      confirmedServices: seo.services,
+      metricLocation: seo.metricLocation,
+      labsMetricLocation: seo.labsLocation,
+      queriedKeywords: seeds.length,
+      measuredKeywords: 0,
+      competitorDomains: 0,
+    },
+    cost: {
+      tasks: 0,
+      usd: 0,
+      limitUsd: limits.maxUsd,
+      overBudget: false,
+      complete: true,
+      unreportedTasks: 0,
+      stageCosts,
+    },
     warnings,
   };
   if (!seo.services.length) {
     warnings.push("Research needs at least one client-confirmed service.");
     return { ...base, mode: "baseline" };
   }
-  if (!seo.primaryCity) warnings.push("No confirmed primary city was supplied; city-specific queries were not generated.");
+  if (!seo.primaryCity)
+    warnings.push(
+      "No confirmed primary city was supplied; city-specific queries were not generated.",
+    );
   if (!options.dataForSeo) {
-    warnings.push("DataForSEO is unavailable; measured keyword volume, difficulty, intent, ranking, and competitor-position evidence remain unavailable.");
+    warnings.push(
+      "DataForSEO is unavailable; measured keyword volume, difficulty, intent, ranking, and competitor-position evidence remain unavailable.",
+    );
     if (!options.webSearch) {
       base.fallbackSearch.status = "unavailable";
-      warnings.push("No supported online-search fallback is configured; SEO research remains context-only and production approval stays blocked.");
+      warnings.push(
+        "No supported online-search fallback is configured; SEO research remains context-only and production approval stays blocked.",
+      );
       base.warnings = [...new Set(warnings)];
       return base;
     }
-    const fallback = await collectFallbackWebEvidence(seo, seeds, options.webSearch, options, warnings);
+    const fallback = await collectFallbackWebEvidence(
+      seo,
+      seeds,
+      options.webSearch,
+      options,
+      warnings,
+    );
     base.externalSearchEvidence = fallback.evidence;
     base.fallbackSearch = { ...fallback };
-    base.publishReady = hasCompletedFallbackResearch(base);
-    base.evidence.push(...fallback.evidence.map((item) => ({
-      type: "external_web_search",
-      query: item.query,
-      sourceUrl: item.sourceUrl,
-      title: item.title,
-      snippet: item.snippet,
-      retrievedAt: item.retrievedAt,
-      provider: item.provider,
-      provenance: item.provenance,
-    })));
+    base.publishReady = false;
+    base.evidence.push(
+      ...fallback.evidence.map((item) => ({
+        type: "external_web_search",
+        query: item.query,
+        sourceUrl: item.sourceUrl,
+        title: item.title,
+        snippet: item.snippet,
+        retrievedAt: item.retrievedAt,
+        provider: item.provider,
+        provenance: item.provenance,
+      })),
+    );
     if (fallback.evidence.length)
-      warnings.push("Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts.");
+      warnings.push(
+        "Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts.",
+      );
     else
-      warnings.push("The online-search fallback returned no usable cited evidence; SEO research remains context-only and production approval stays blocked.");
+      warnings.push(
+        "The online-search fallback returned no usable cited evidence; SEO research remains context-only and production approval stays blocked.",
+      );
     base.warnings = [...new Set(warnings)];
     return base;
   }
 
-  const cost = { tasks: 0, usd: 0, overBudget: false, complete: true, unreportedTasks: 0 };
+  const cost = {
+    tasks: 0,
+    usd: 0,
+    overBudget: false,
+    complete: true,
+    unreportedTasks: 0,
+  };
   let stoppedForBudget = false;
   async function paidTask(stage, method, args) {
     if (typeof method !== "function") {
-      warnings.push(`${stage} research is unavailable from the configured provider client.`);
+      warnings.push(
+        `${stage} research is unavailable from the configured provider client.`,
+      );
       stageCosts.push({ stage, tasks: 0, usd: 0, status: "unavailable" });
       return { ok: false, skipped: false, value: null };
     }
-    if (stoppedForBudget || cost.tasks >= limits.maxTasks || limits.maxUsd - cost.usd < limits.reserveUsd) {
-      stoppedForBudget = true;
-      warnings.push(`Research stopped at the configured task budget or cost cap before ${stage}.`);
-      stageCosts.push({ stage, tasks: 0, usd: 0, status: "budget_skipped" });
-      return { ok: false, skipped: true, value: null };
-    }
-    cost.tasks += 1;
-    try {
-      const value = await method(args);
-      const rawCost = finiteMetric(value?.cost);
-      if (rawCost === null || rawCost < 0) {
-        cost.complete = false;
-        cost.unreportedTasks += 1;
+    const retryableDataForSeoStatuses = new Set([40101, 40103]);
+    let retries = 0;
+    while (true) {
+      if (
+        stoppedForBudget ||
+        cost.tasks >= limits.maxTasks ||
+        limits.maxUsd - cost.usd < limits.reserveUsd
+      ) {
         stoppedForBudget = true;
-        stageCosts.push({ stage, tasks: 1, usd: null, status: "cost_unavailable" });
-        warnings.push(`${stage} returned data without provider-reported spend; no further paid tasks were started and measured SEO research remains incomplete.`);
+        warnings.push(
+          `Research stopped at the configured task budget or cost cap before ${stage}.`,
+        );
+        if (retries === 0)
+          stageCosts.push({
+            stage,
+            tasks: 0,
+            usd: 0,
+            status: "budget_skipped",
+          });
+        else
+          warnings.push(
+            `${stage} retry was not started because it would violate the task or reserved-cost budget.`,
+          );
+        return { ok: false, skipped: true, value: null };
+      }
+      cost.tasks += 1;
+      try {
+        const value = await method(args);
+        const rawCost = finiteMetric(value?.cost);
+        if (rawCost === null || rawCost < 0) {
+          cost.complete = false;
+          cost.unreportedTasks += 1;
+          stoppedForBudget = true;
+          stageCosts.push({
+            stage,
+            tasks: 1,
+            usd: null,
+            status: "cost_unavailable",
+          });
+          warnings.push(
+            `${stage} returned data without provider-reported spend; no further paid tasks were started and measured SEO research remains incomplete.`,
+          );
+          return { ok: true, skipped: false, value };
+        }
+        const providerCost = roundCost(rawCost);
+        cost.usd = roundCost(cost.usd + providerCost);
+        stageCosts.push({
+          stage,
+          tasks: 1,
+          usd: providerCost,
+          status: "complete",
+        });
+        if (cost.usd > limits.maxUsd) {
+          cost.overBudget = true;
+          stoppedForBudget = true;
+          warnings.push(
+            `Provider-reported spend is $${cost.usd.toFixed(5)}, above the configured cost cap of $${limits.maxUsd.toFixed(5)}; no further paid tasks were started.`,
+          );
+        }
         return { ok: true, skipped: false, value };
+      } catch (error) {
+        const providerStatusCode = Number(error?.dataForSeo?.statusCode);
+        const rawFailureCost = finiteMetric(error?.dataForSeo?.reportedCost);
+        if (rawFailureCost === null || rawFailureCost < 0) {
+          cost.complete = false;
+          cost.unreportedTasks += 1;
+          stoppedForBudget = true;
+          stageCosts.push({ stage, tasks: 1, usd: null, status: "failed" });
+          warnings.push(
+            `${stage} research unavailable: ${text(error instanceof Error ? error.message : error, 300)}`,
+          );
+          return { ok: false, skipped: false, value: null };
+        }
+
+        const providerFailureCost = roundCost(rawFailureCost);
+        cost.usd = roundCost(cost.usd + providerFailureCost);
+        const retryable = retryableDataForSeoStatuses.has(providerStatusCode);
+        const maxTransientRetries = providerStatusCode === 40101 ? 2 : 1;
+        const canRetry =
+          retryable &&
+          retries < maxTransientRetries &&
+          cost.tasks < limits.maxTasks &&
+          limits.maxUsd - cost.usd >= limits.reserveUsd &&
+          cost.usd <= limits.maxUsd;
+        stageCosts.push({
+          stage,
+          tasks: 1,
+          usd: providerFailureCost,
+          status: canRetry ? "retryable_failure" : "failed",
+        });
+        if (cost.usd > limits.maxUsd) {
+          cost.overBudget = true;
+          stoppedForBudget = true;
+          warnings.push(
+            `Provider-reported spend is $${cost.usd.toFixed(5)}, above the configured cost cap of $${limits.maxUsd.toFixed(5)}; no further paid tasks were started.`,
+          );
+        }
+        if (canRetry) {
+          retries += 1;
+          const delay = Math.max(
+            0,
+            Math.min(2_000, Number(options.dataForSeoRetryDelayMs ?? 250) || 0),
+          );
+          warnings.push(
+            `${stage} received retryable DataForSEO task ${providerStatusCode}; retrying once after accounting for its reported cost.`,
+          );
+          if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+        warnings.push(
+          `${stage} research unavailable: ${text(error instanceof Error ? error.message : error, 300)}`,
+        );
+        return { ok: false, skipped: false, value: null };
       }
-      const providerCost = roundCost(rawCost);
-      cost.usd = roundCost(cost.usd + providerCost);
-      stageCosts.push({ stage, tasks: 1, usd: providerCost, status: "complete" });
-      if (cost.usd > limits.maxUsd) {
-        cost.overBudget = true;
-        stoppedForBudget = true;
-        warnings.push(`Provider-reported spend is $${cost.usd.toFixed(5)}, above the configured cost cap of $${limits.maxUsd.toFixed(5)}; no further paid tasks were started.`);
-      }
-      return { ok: true, skipped: false, value };
-    } catch (error) {
-      cost.complete = false;
-      cost.unreportedTasks += 1;
-      stoppedForBudget = true;
-      stageCosts.push({ stage, tasks: 1, usd: null, status: "failed" });
-      warnings.push(`${stage} research unavailable: ${text(error instanceof Error ? error.message : error, 300)}`);
-      return { ok: false, skipped: false, value: null };
     }
   }
 
   async function attachFallbackEvidenceAfterProviderFailure() {
-    const hasProviderFailure = stageCosts.some((stage) =>
-      stage.status === "failed" || stage.status === "unavailable",
+    const hasProviderFailure = stageCosts.some(
+      (stage) => stage.status === "failed" || stage.status === "unavailable",
     );
-    if (base.fallbackSearch.status !== "pending")
-      return;
+    if (base.fallbackSearch.status !== "pending") return;
     if (!options.webSearch) {
       base.fallbackSearch.status = "unavailable";
       return;
@@ -767,20 +1759,24 @@ async function researchSingleCity(intake = {}, options = {}) {
     );
     base.externalSearchEvidence = fallback.evidence;
     base.fallbackSearch = { ...fallback };
-    base.publishReady = hasCompletedFallbackResearch(base);
-    base.evidence.push(...fallback.evidence.map((item) => ({
-      type: "external_web_search",
-      query: item.query,
-      sourceUrl: item.sourceUrl,
-      title: item.title,
-      snippet: item.snippet,
-      retrievedAt: item.retrievedAt,
-      provider: item.provider,
-      provenance: item.provenance,
-    })));
-    warnings.push(fallback.evidence.length
-      ? "Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts."
-      : "The online-search fallback returned no usable cited evidence; SEO research remains context-only and production approval stays blocked.");
+    base.publishReady = false;
+    base.evidence.push(
+      ...fallback.evidence.map((item) => ({
+        type: "external_web_search",
+        query: item.query,
+        sourceUrl: item.sourceUrl,
+        title: item.title,
+        snippet: item.snippet,
+        retrievedAt: item.retrievedAt,
+        provider: item.provider,
+        provenance: item.provenance,
+      })),
+    );
+    warnings.push(
+      fallback.evidence.length
+        ? "Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts."
+        : "The online-search fallback returned no usable cited evidence; SEO research remains context-only and production approval stays blocked.",
+    );
   }
 
   async function returnPartialResearch() {
@@ -790,99 +1786,198 @@ async function researchSingleCity(intake = {}, options = {}) {
     return base;
   }
 
-  const volumeStage = await paidTask("local_search_volume", options.dataForSeo.googleSearchVolume, {
-    keywords: seeds,
-    locationName: seo.metricLocation,
-    languageCode: seo.languageCode,
-  });
-  const volumeRows = volumeStage.ok ? flattenItems(volumeStage.value?.keywords || volumeStage.value?.items || []) : [];
-  const volumeByKeyword = new Map(volumeRows.map((item) => {
-    const keyword = text(item.keyword, 180);
-    return [keywordKey(keyword), {
-      volume: finiteMetric(item.searchVolume ?? item.search_volume),
-      cpc: finiteMetric(item.cpc),
-      competition: finiteMetric(item.competition),
-    }];
-  }).filter(([keyword]) => keyword));
-  base.completeness.keywordOverview = volumeStage.ok && [...volumeByKeyword.values()].some((item) =>
-    [item.volume, item.cpc, item.competition].some((value) => value !== null),
+  const volumeStage = await paidTask(
+    "local_search_volume",
+    options.dataForSeo.googleSearchVolume,
+    {
+      keywords: seeds,
+      locationName: seo.metricLocation,
+      languageCode: seo.languageCode,
+    },
   );
+  const volumeRows = volumeStage.ok
+    ? flattenItems(
+        volumeStage.value?.keywords || volumeStage.value?.items || [],
+      )
+    : [];
+  const volumeByKeyword = new Map(
+    volumeRows
+      .map((item) => {
+        const keyword = text(item.keyword, 180);
+        return [
+          keywordKey(keyword),
+          {
+            volume: finiteMetric(item.searchVolume ?? item.search_volume),
+            cpc: finiteMetric(item.cpc),
+            competition: finiteMetric(item.competition),
+          },
+        ];
+      })
+      .filter(([keyword]) => keyword),
+  );
+  base.completeness.keywordOverview =
+    volumeStage.ok &&
+    [...volumeByKeyword.values()].some((item) =>
+      [item.volume, item.cpc, item.competition].some((value) => value !== null),
+    );
   base.validatedQueries = seeds.map((keyword) => {
     const local = volumeByKeyword.get(keywordKey(keyword));
     const sources = {
-      volume: local?.volume !== null && local?.volume !== undefined ? "dataforseo_google_ads_location" : null,
+      volume:
+        local?.volume !== null && local?.volume !== undefined
+          ? "dataforseo_google_ads_location"
+          : null,
       kd: null,
-      cpc: local?.cpc !== null && local?.cpc !== undefined ? "dataforseo_google_ads_location" : null,
-      competition: local?.competition !== null && local?.competition !== undefined ? "dataforseo_google_ads_location" : null,
+      cpc:
+        local?.cpc !== null && local?.cpc !== undefined
+          ? "dataforseo_google_ads_location"
+          : null,
+      competition:
+        local?.competition !== null && local?.competition !== undefined
+          ? "dataforseo_google_ads_location"
+          : null,
       intent: null,
     };
     const known = Object.values(sources).some(Boolean);
     return {
       keyword,
+      confirmedService:
+        confirmedServiceByKeyword.get(keywordKey(keyword)) || null,
       volume: local?.volume ?? null,
       kd: null,
       cpc: local?.cpc ?? null,
       competition: local?.competition ?? null,
       intent: null,
-      provenance: known ? "dataforseo_metric_partial" : "dataforseo_unavailable",
+      provenance: known
+        ? "dataforseo_metric_partial"
+        : "dataforseo_unavailable",
       metricSources: sources,
     };
   });
-  base.marketSnapshot.measuredKeywords = base.validatedQueries.filter((item) => item.metricSources?.volume).length;
-  if (!volumeStage.ok) warnings.push("Required local keyword volume, CPC, and competition research is incomplete.");
-  if (volumeStage.ok && seeds.some((keyword) => !volumeByKeyword.has(keywordKey(keyword))))
-    warnings.push("Some planned local keywords were absent from the provider response; their metrics remain null.");
-  if (!volumeStage.ok || cost.overBudget || stoppedForBudget) return returnPartialResearch();
+  base.marketSnapshot.measuredKeywords = base.validatedQueries.filter(
+    (item) => item.metricSources?.volume,
+  ).length;
+  if (!volumeStage.ok)
+    warnings.push(
+      "Required local keyword volume, CPC, and competition research is incomplete.",
+    );
+  if (
+    volumeStage.ok &&
+    seeds.some((keyword) => !volumeByKeyword.has(keywordKey(keyword)))
+  )
+    warnings.push(
+      "Some planned local keywords were absent from the provider response; their metrics remain null.",
+    );
+  if (!volumeStage.ok || cost.overBudget || stoppedForBudget)
+    return returnPartialResearch();
 
-  const intentStage = await paidTask("search_intent", options.dataForSeo.searchIntent, { keywords: seeds });
-  const intentRows = intentStage.ok ? flattenItems(intentStage.value?.keywords || intentStage.value?.items || []) : [];
-  const intentByKeyword = new Map(intentRows.map((item) => [
-    keywordKey(item.keyword),
-    text(item.intent || item.keyword_intent?.label, 40) || null,
-  ]).filter(([keyword]) => keyword));
-  base.completeness.searchIntent = intentStage.ok && [...intentByKeyword.values()].some(Boolean);
-  if (!intentStage.ok) warnings.push("Required measured search intent research is incomplete.");
+  const intentStage = await paidTask(
+    "search_intent",
+    options.dataForSeo.searchIntent,
+    { keywords: seeds },
+  );
+  const intentRows = intentStage.ok
+    ? flattenItems(
+        intentStage.value?.keywords || intentStage.value?.items || [],
+      )
+    : [];
+  const intentByKeyword = new Map(
+    intentRows
+      .map((item) => [
+        keywordKey(item.keyword),
+        text(item.intent || item.keyword_intent?.label, 40) || null,
+      ])
+      .filter(([keyword]) => keyword),
+  );
+  base.completeness.searchIntent =
+    intentStage.ok && [...intentByKeyword.values()].some(Boolean);
+  if (!intentStage.ok)
+    warnings.push("Required measured search intent research is incomplete.");
   if (cost.overBudget || stoppedForBudget) {
     base.validatedQueries = seeds.map((keyword) => {
-      const previous = base.validatedQueries.find((item) => keywordKey(item.keyword) === keywordKey(keyword));
+      const previous = base.validatedQueries.find(
+        (item) => keywordKey(item.keyword) === keywordKey(keyword),
+      );
       const intent = intentByKeyword.get(keywordKey(keyword)) ?? null;
-      const metricSources = { ...(previous?.metricSources || {}), intent: intent ? "dataforseo_labs_search_intent" : null };
+      const metricSources = {
+        ...(previous?.metricSources || {}),
+        intent: intent ? "dataforseo_labs_search_intent" : null,
+      };
       return {
         ...previous,
         intent,
         metricSources,
-        provenance: Object.values(metricSources).every(Boolean) ? "dataforseo" : previous?.provenance || "dataforseo_unavailable",
+        provenance: Object.values(metricSources).every(Boolean)
+          ? "dataforseo"
+          : previous?.provenance || "dataforseo_unavailable",
       };
     });
     return returnPartialResearch();
   }
 
-  const difficultyStage = await paidTask("bulk_keyword_difficulty", options.dataForSeo.bulkKeywordDifficulty, {
-    keywords: seeds,
-    locationName: seo.labsLocation,
-    languageCode: seo.languageCode,
-  });
-  const difficultyRows = difficultyStage.ok ? flattenItems(difficultyStage.value?.keywords || difficultyStage.value?.items || []) : [];
-  const kdByKeyword = new Map(difficultyRows.map((item) => [keywordKey(item.keyword), finiteMetric(item.difficulty ?? item.keywordDifficulty ?? item.keyword_difficulty)]));
-  base.completeness.keywordDifficulty = difficultyStage.ok && [...kdByKeyword.values()].some((value) => value !== null);
-  if (!difficultyStage.ok) warnings.push("Required Keyword Difficulty evidence is incomplete.");
-  const metrics = seeds.map((keyword) => {
+  const difficultyStage = await paidTask(
+    "bulk_keyword_difficulty",
+    options.dataForSeo.bulkKeywordDifficulty,
+    {
+      keywords: seeds,
+      locationName: seo.labsLocation,
+      languageCode: seo.languageCode,
+    },
+  );
+  const difficultyRows = difficultyStage.ok
+    ? flattenItems(
+        difficultyStage.value?.keywords || difficultyStage.value?.items || [],
+      )
+    : [];
+  const kdByKeyword = new Map(
+    difficultyRows.map((item) => [
+      keywordKey(item.keyword),
+      finiteMetric(
+        item.difficulty ?? item.keywordDifficulty ?? item.keyword_difficulty,
+      ),
+    ]),
+  );
+  base.completeness.keywordDifficulty =
+    difficultyStage.ok &&
+    [...kdByKeyword.values()].some((value) => value !== null);
+  if (!difficultyStage.ok)
+    warnings.push("Required Keyword Difficulty evidence is incomplete.");
+  let metrics = seeds.map((keyword) => {
     const local = volumeByKeyword.get(keywordKey(keyword));
     const intent = intentByKeyword.get(keywordKey(keyword)) ?? null;
     const kd = kdByKeyword.get(keywordKey(keyword)) ?? null;
-    const values = [local?.volume ?? null, local?.cpc ?? null, local?.competition ?? null, intent, kd];
+    const values = [
+      local?.volume ?? null,
+      local?.cpc ?? null,
+      local?.competition ?? null,
+      intent,
+      kd,
+    ];
     const metricSources = {
-      volume: local?.volume !== null && local?.volume !== undefined ? "dataforseo_google_ads_location" : null,
-      cpc: local?.cpc !== null && local?.cpc !== undefined ? "dataforseo_google_ads_location" : null,
-      competition: local?.competition !== null && local?.competition !== undefined ? "dataforseo_google_ads_location" : null,
+      volume:
+        local?.volume !== null && local?.volume !== undefined
+          ? "dataforseo_google_ads_location"
+          : null,
+      cpc:
+        local?.cpc !== null && local?.cpc !== undefined
+          ? "dataforseo_google_ads_location"
+          : null,
+      competition:
+        local?.competition !== null && local?.competition !== undefined
+          ? "dataforseo_google_ads_location"
+          : null,
       intent: intent ? "dataforseo_labs_search_intent" : null,
       kd: kd !== null ? "dataforseo_labs_bulk_keyword_difficulty" : null,
     };
     const provenance = values.some((value) => value !== null)
-      ? values.every((value) => value !== null) ? "dataforseo" : "dataforseo_metric_partial"
+      ? values.every((value) => value !== null)
+        ? "dataforseo"
+        : "dataforseo_metric_partial"
       : "dataforseo_unavailable";
     return {
       keyword,
+      confirmedService:
+        confirmedServiceByKeyword.get(keywordKey(keyword)) || null,
       volume: local?.volume ?? null,
       kd,
       cpc: local?.cpc ?? null,
@@ -893,117 +1988,277 @@ async function researchSingleCity(intake = {}, options = {}) {
     };
   });
   base.validatedQueries = metrics;
-  const serviceMetricCoverage = seo.services.map((service) => {
-    const matching = metrics.filter((item) => findService(item.keyword, [service]));
-    const completePrimary = matching.find((item) => hasCompletePrimaryMetrics(item) && keywordKey(item.keyword).includes(keywordKey(seo.primaryCity))) ||
-      matching.find((item) => hasCompletePrimaryMetrics(item) && (item.intent === "commercial" || item.intent === "transactional")) ||
-      matching.find(hasCompletePrimaryMetrics) || null;
-    return { service, complete: Boolean(completePrimary), primaryKeyword: completePrimary?.keyword || null };
-  });
+  const assessServiceMetrics = (metricRows) => {
+    const researchQueryByService = new Map();
+    const serviceMetricCoverage = seo.services.map((service) => {
+      const matching = metricRows.filter((item) =>
+        metricBelongsToService(item, service),
+      );
+      const completePrimary =
+        matching.find(
+          (item) =>
+            hasCompletePrimaryMetrics(item) &&
+            keywordKey(item.keyword).includes(keywordKey(seo.primaryCity)),
+        ) ||
+        matching.find(
+          (item) =>
+            hasCompletePrimaryMetrics(item) &&
+            (item.intent === "commercial" || item.intent === "transactional"),
+        ) ||
+        matching.find(hasCompletePrimaryMetrics) ||
+        null;
+      const researchCandidate =
+        completePrimary ||
+        matching.find(
+          (item) =>
+            item.volume !== null ||
+            item.intent === "commercial" ||
+            item.intent === "transactional",
+        ) ||
+        matching[0] ||
+        null;
+      researchQueryByService.set(
+        keywordKey(service),
+        researchCandidate?.keyword || service,
+      );
+      return {
+        service,
+        complete: Boolean(completePrimary),
+        primaryKeyword: completePrimary?.keyword || null,
+      };
+    });
+    return { researchQueryByService, serviceMetricCoverage };
+  };
+
+  let serviceAssessment = assessServiceMetrics(metrics);
+  const relatedRows = [];
+  const servicesNeedingRelatedMetrics = serviceAssessment.serviceMetricCoverage
+    .filter((item) => !item.complete)
+    .map((item) => item.service);
+  for (const service of servicesNeedingRelatedMetrics) {
+    if (stoppedForBudget) break;
+    const stage = await paidTask(
+      `related_keywords:${slugify(service)}`,
+      options.dataForSeo.relatedKeywords,
+      {
+        keyword: service,
+        locationName: seo.metricLocation,
+        languageCode: seo.languageCode,
+      },
+    );
+    if (!stage.ok) continue;
+    let acceptedForService = 0;
+    for (const item of flattenItems(
+      stage.value?.keywords || stage.value?.items || [],
+    )) {
+      const mapped = relatedKeywordMetric(item, service, seo.metricLocation);
+      if (!mapped) continue;
+      relatedRows.push(mapped);
+      acceptedForService += 1;
+      if (acceptedForService >= MAX_RELATED_KEYWORDS_PER_SERVICE) break;
+    }
+  }
+
+  if (relatedRows.length) metrics = mergeRelatedKeywordMetrics(metrics, relatedRows);
+  base.validatedQueries = metrics;
+  base.marketSnapshot.measuredKeywords = metrics.filter(
+    (item) => item.metricSources?.volume,
+  ).length;
+  base.completeness.keywordOverview ||= relatedRows.some(
+    (item) => item.volume !== null || item.cpc !== null || item.competition !== null,
+  );
+  base.completeness.searchIntent ||= relatedRows.some(
+    (item) => item.intent !== null,
+  );
+  base.completeness.keywordDifficulty ||= relatedRows.some(
+    (item) => item.kd !== null,
+  );
+
+  serviceAssessment = assessServiceMetrics(metrics);
+  const { researchQueryByService, serviceMetricCoverage } = serviceAssessment;
   base.completeness.serviceMetrics = serviceMetricCoverage;
   if (serviceMetricCoverage.some((item) => !item.complete))
-    warnings.push("One or more confirmed services lack a primary query with measured volume, CPC, competition, Keyword Difficulty, and intent; measured SEO research remains incomplete.");
+    warnings.push(
+      "One or more confirmed services lack a primary query with measured volume, CPC, competition, Keyword Difficulty, and intent; measured SEO research remains incomplete.",
+    );
   if (cost.overBudget || stoppedForBudget) return returnPartialResearch();
 
   const allSerps = [];
   const servicesForSerp = seo.services.slice(0, 5);
   for (const service of servicesForSerp) {
-    const query = localServiceQuery(service, seo.primaryCity);
-    const stage = await paidTask(`organic_serp:${slugify(service)}`, options.dataForSeo.organicSerp, {
-      keyword: query,
-      locationName: metricLocationForCity(seo.primaryCity, seo.metricLocation),
-      languageCode: seo.languageCode,
-    });
+    const query = localServiceQuery(
+      researchQueryByService.get(keywordKey(service)) || service,
+      seo.primaryCity,
+    );
+    const stage = await paidTask(
+      `organic_serp:${slugify(service)}`,
+      options.dataForSeo.organicSerp,
+      {
+        keyword: query,
+        locationName: metricLocationForCity(
+          seo.primaryCity,
+          seo.metricLocation,
+        ),
+        languageCode: seo.languageCode,
+      },
+    );
     if (!stage.ok) continue;
     const value = stage.value || {};
     allSerps.push({
       service,
       query: text(value.query || query, 180),
-      results: (Array.isArray(value.results) ? value.results : []).map((item) => ({
-        position: finiteMetric(item.position ?? item.rank_group ?? item.rank_absolute),
-        title: text(item.title, 180),
-        url: safeHttpsUrl(item.url),
-        domain: text(item.domain || safeDomain(item.url), 180).toLocaleLowerCase().replace(/^www\./u, ""),
-      })).filter((item) => item.position !== null && item.title && item.url && item.domain).slice(0, 10),
-      questions: (Array.isArray(value.questions) ? value.questions : []).map((item) => text(item, 180)).filter(Boolean).slice(0, 12),
+      results: (Array.isArray(value.results) ? value.results : [])
+        .map((item) => ({
+          position: finiteMetric(
+            item.position ?? item.rank_group ?? item.rank_absolute,
+          ),
+          title: text(item.title, 180),
+          url: safeHttpsUrl(item.url),
+          domain: text(item.domain || safeDomain(item.url), 180)
+            .toLocaleLowerCase()
+            .replace(/^www\./u, ""),
+        }))
+        .filter(
+          (item) =>
+            item.position !== null && item.title && item.url && item.domain,
+        )
+        .slice(0, 10),
+      questions: (Array.isArray(value.questions) ? value.questions : [])
+        .map((item) => text(item, 180))
+        .filter(Boolean)
+        .slice(0, 12),
     });
     base.completeness.serviceSerps += 1;
   }
   base.completeness.competitors = aggregateCompetitors(allSerps).length;
   if (base.completeness.serviceSerps < seo.services.length)
-    warnings.push("One or more confirmed services are missing a successful local SERP snapshot.");
+    warnings.push(
+      "One or more confirmed services are missing a successful local SERP snapshot.",
+    );
   if (base.completeness.competitors < 3)
-    warnings.push("Fewer than three distinct ranking competitor domains were found in the returned SERPs.");
-
-  const relatedRows = [];
-  for (const service of seo.services.slice(0, 5)) {
-    if (stoppedForBudget) break;
-    const query = localServiceQuery(service, seo.primaryCity);
-    const stage = await paidTask(`related_keywords:${slugify(service)}`, options.dataForSeo.relatedKeywords, {
-      keyword: query,
-      locationName: seo.labsLocation,
-      languageCode: seo.languageCode,
-    });
-    if (!stage.ok) continue;
-    for (const item of flattenItems(stage.value?.keywords || stage.value?.items || [])) {
-      const mapped = finiteResultKeyword(item, "dataforseo_related_keywords");
-      if (mapped.keyword && findService(mapped.keyword, [service])) relatedRows.push(mapped);
-    }
-  }
-  const combinedMetrics = [...metrics];
-  for (const row of relatedRows) {
-    if (!combinedMetrics.some((item) => keywordKey(item.keyword) === keywordKey(row.keyword))) combinedMetrics.push(row);
-  }
+    warnings.push(
+      "Fewer than three distinct ranking competitor domains were found in the returned SERPs.",
+    );
+  const combinedMetrics = metrics;
 
   let quickWins = [];
   let rankingStageComplete = false;
   if (seo.existingWebsite && !stoppedForBudget) {
-    const stage = await paidTask("ranked_keywords", options.dataForSeo.rankedKeywords, {
-      target: seo.existingWebsite,
-      locationName: seo.labsLocation,
-      languageCode: seo.languageCode,
-    });
+    const stage = await paidTask(
+      "ranked_keywords",
+      options.dataForSeo.rankedKeywords,
+      {
+        target: seo.existingWebsite,
+        locationName: seo.labsLocation,
+        languageCode: seo.languageCode,
+      },
+    );
     if (stage.ok) {
       rankingStageComplete = true;
-      quickWins = flattenItems(stage.value?.keywords || stage.value?.items || []).map((item) => {
-        const ranked = item.ranked_serp_element?.serp_item || {};
-        return {
-          keyword: text(item.keyword || item.keyword_data?.keyword, 180),
-          currentPosition: finiteMetric(item.position ?? ranked.rank_group ?? ranked.rank_absolute),
-          title: text(item.title || ranked.title, 180),
-          url: safeHttpsUrl(item.url || ranked.url),
-          volume: finiteMetric(item.searchVolume ?? item.keyword_info?.search_volume ?? item.keyword_data?.keyword_info?.search_volume),
-          provenance: "dataforseo_ranked_keywords",
-        };
-      }).filter((item) => item.keyword && item.currentPosition !== null && item.url && item.currentPosition >= 4 && item.currentPosition <= 20).slice(0, 10);
+      quickWins = flattenItems(
+        stage.value?.keywords || stage.value?.items || [],
+      )
+        .map((item) => {
+          const ranked = item.ranked_serp_element?.serp_item || {};
+          return {
+            keyword: text(item.keyword || item.keyword_data?.keyword, 180),
+            currentPosition: finiteMetric(
+              item.position ?? ranked.rank_group ?? ranked.rank_absolute,
+            ),
+            title: text(item.title || ranked.title, 180),
+            url: safeHttpsUrl(item.url || ranked.url),
+            volume: finiteMetric(
+              item.searchVolume ??
+                item.keyword_info?.search_volume ??
+                item.keyword_data?.keyword_info?.search_volume,
+            ),
+            provenance: "dataforseo_ranked_keywords",
+          };
+        })
+        .filter(
+          (item) =>
+            item.keyword &&
+            item.currentPosition !== null &&
+            item.url &&
+            item.currentPosition >= 4 &&
+            item.currentPosition <= 20,
+        )
+        .slice(0, 10);
     }
   }
   base.quickWins = quickWins;
-  base.completeness.existingWebsiteRankings = seo.existingWebsite ? rankingStageComplete : null;
+  base.completeness.existingWebsiteRankings = seo.existingWebsite
+    ? rankingStageComplete
+    : null;
 
   const questionEvidence = [];
-  for (const serp of allSerps) for (const question of serp.questions)
-    questionEvidence.push({ question, pageId: `service:${slugify(serp.service)}`, provenance: "dataforseo_people_also_ask", query: serp.query });
-  for (const service of seo.services) for (const question of serviceQuestions(service, seo.industry))
-    questionEvidence.push({ question, pageId: `service:${slugify(service)}`, provenance: "reasoned_gap" });
-  for (const { pageId, questions } of generalPageQuestionEntries()) for (const question of questions)
-    questionEvidence.push({ question, pageId, provenance: "reasoned_gap" });
-  const uniqueQuestions = [...new Map(questionEvidence.map((item) => [`${item.pageId}:${item.question.toLocaleLowerCase()}`, item])).values()];
+  for (const serp of allSerps)
+    for (const question of serp.questions)
+      questionEvidence.push({
+        question,
+        pageId: `service:${slugify(serp.service)}`,
+        provenance: "dataforseo_people_also_ask",
+        query: serp.query,
+      });
+  for (const service of seo.services)
+    for (const question of serviceQuestions(service, seo.industry))
+      questionEvidence.push({
+        question,
+        pageId: `service:${slugify(service)}`,
+        provenance: "reasoned_gap",
+      });
+  for (const { pageId, questions } of generalPageQuestionEntries())
+    for (const question of questions)
+      questionEvidence.push({ question, pageId, provenance: "reasoned_gap" });
+  const uniqueQuestions = [
+    ...new Map(
+      questionEvidence.map((item) => [
+        `${item.pageId}:${item.question.toLocaleLowerCase()}`,
+        item,
+      ]),
+    ).values(),
+  ];
   base.questionEvidence = uniqueQuestions;
-  base.fanOutQuestionGroups = ["home", "services-hub", ...seo.services.map((service) => `service:${slugify(service)}`), "about", "contact"]
-    .map((pageId) => ({
-      pageId,
-      questions: uniqueQuestions.filter((item) => item.pageId === pageId).map(({ question, provenance, query }) => ({ question, provenance, ...(query ? { query } : {}) })),
-    }));
-  const servicePageMap = makePageMap(seo, combinedMetrics, kdByKeyword, allSerps, uniqueQuestions);
+  base.fanOutQuestionGroups = [
+    "home",
+    "services-hub",
+    ...seo.services.map((service) => `service:${slugify(service)}`),
+    "about",
+    "contact",
+  ].map((pageId) => ({
+    pageId,
+    questions: uniqueQuestions
+      .filter((item) => item.pageId === pageId)
+      .map(({ question, provenance, query }) => ({
+        question,
+        provenance,
+        ...(query ? { query } : {}),
+      })),
+  }));
+  const servicePageMap = makePageMap(
+    seo,
+    combinedMetrics,
+    kdByKeyword,
+    allSerps,
+    uniqueQuestions,
+  );
   for (const page of servicePageMap)
-    page.fanOutQuestions = uniqueQuestions.filter((item) => item.pageId === page.id).map((item) => item.question);
-  base.blogOpportunities = makeBlogOpportunities(combinedMetrics, uniqueQuestions);
+    page.fanOutQuestions = uniqueQuestions
+      .filter((item) => item.pageId === page.id)
+      .map((item) => item.question);
+  base.blogOpportunities = makeBlogOpportunities(
+    combinedMetrics,
+    uniqueQuestions,
+  );
   if (base.blogOpportunities.length < 3)
-    warnings.push("Fewer than three evidence-backed informational topics were returned; no unsupported blog topics were added.");
+    warnings.push(
+      "Fewer than three evidence-backed informational topics were returned; no unsupported blog topics were added.",
+    );
   base.pageMap = [...servicePageMap, ...base.blogOpportunities];
   base.competitors = aggregateCompetitors(allSerps);
-  base.serpPatterns = allSerps.flatMap((serp) => serp.results.map((result) => ({ query: serp.query, ...result })));
+  base.serpPatterns = allSerps.flatMap((serp) =>
+    serp.results.map((result) => ({ query: serp.query, ...result })),
+  );
   base.marketSnapshot = {
     primaryCity: seo.primaryCity,
     coverageAreas: seo.coverageAreas,
@@ -1011,16 +2266,84 @@ async function researchSingleCity(intake = {}, options = {}) {
     metricLocation: seo.metricLocation,
     labsMetricLocation: seo.labsLocation,
     queriedKeywords: metrics.length,
-    measuredKeywords: metrics.filter((item) => item.provenance === "dataforseo").length,
+    measuredKeywords: metrics.filter((item) => item.provenance === "dataforseo")
+      .length,
     competitorDomains: base.competitors.length,
   };
   base.evidence = [
-    { type: "local_search_volume", queries: metrics.filter((item) => item.metricSources?.volume).map((item) => item.keyword), metricLocation: seo.metricLocation, provenance: "DataForSEO Google Ads" },
-    { type: "search_intent", queries: metrics.filter((item) => item.metricSources?.intent).map((item) => item.keyword), provenance: "DataForSEO Labs" },
-    { type: "keyword_difficulty", metricLocation: seo.labsLocation, provenance: "DataForSEO Labs" },
-    ...allSerps.map((serp) => ({ type: "organic_serp", query: serp.query, resultCount: serp.results.length, provenance: "DataForSEO" })),
-    ...relatedRows.map((item) => ({ type: "related_keyword", query: item.keyword, provenance: item.provenance })),
-    ...(rankingStageComplete ? [{ type: "ranked_keywords", target: seo.existingWebsite, resultCount: quickWins.length, provenance: "DataForSEO" }] : []),
+    {
+      type: "local_search_volume",
+      queries: metrics
+        .filter((item) => item.metricSources?.volume)
+        .map((item) => item.keyword),
+      metricLocation: seo.metricLocation,
+      queryMetrics: metrics
+        .filter((item) => item.metricSources?.volume)
+        .map((item) => ({
+          keyword: item.keyword,
+          source: item.metricSources.volume,
+          metricLocation: item.metricLocation || seo.metricLocation,
+        })),
+      provenance:
+        "DataForSEO location-targeted Google Ads and Labs related-keyword metrics",
+    },
+    {
+      type: "search_intent",
+      queries: metrics
+        .filter((item) => item.metricSources?.intent)
+        .map((item) => item.keyword),
+      queryMetrics: metrics
+        .filter((item) => item.metricSources?.intent)
+        .map((item) => ({
+          keyword: item.keyword,
+          source: item.metricSources.intent,
+          metricLocation: item.metricLocation || null,
+        })),
+      provenance: "DataForSEO Labs",
+    },
+    {
+      type: "keyword_difficulty",
+      metricLocation: seo.labsLocation,
+      queryMetrics: metrics
+        .filter((item) => item.metricSources?.kd)
+        .map((item) => ({
+          keyword: item.keyword,
+          source: item.metricSources.kd,
+          metricLocation: item.metricLocation || seo.labsLocation,
+        })),
+      provenance: "DataForSEO Labs",
+    },
+    ...allSerps.map((serp) => ({
+      type: "organic_serp",
+      query: serp.query,
+      resultCount: serp.results.length,
+      provenance: "DataForSEO",
+    })),
+    ...relatedRows.map((item) => ({
+      type: "related_keyword",
+      query: item.keyword,
+      confirmedService: item.confirmedService,
+      metricLocation: item.metricLocation,
+      metricValues: {
+        volume: item.volume,
+        kd: item.kd,
+        cpc: item.cpc,
+        competition: item.competition,
+        intent: item.intent,
+      },
+      metricSources: item.metricSources,
+      provenance: item.provenance,
+    })),
+    ...(rankingStageComplete
+      ? [
+          {
+            type: "ranked_keywords",
+            target: seo.existingWebsite,
+            resultCount: quickWins.length,
+            provenance: "DataForSEO",
+          },
+        ]
+      : []),
   ];
   await attachFallbackEvidenceAfterProviderFailure();
   const requiredResearchComplete =
@@ -1031,11 +2354,15 @@ async function researchSingleCity(intake = {}, options = {}) {
     serviceMetricCoverage.every((item) => item.complete) &&
     base.completeness.serviceSerps === seo.services.length &&
     base.completeness.competitors >= 3 &&
-    !cost.overBudget && cost.complete && cost.unreportedTasks === 0;
-  base.publishReady = requiredResearchComplete || hasCompletedFallbackResearch(base);
+    !cost.overBudget &&
+    cost.complete &&
+    cost.unreportedTasks === 0;
+  base.publishReady = requiredResearchComplete;
   base.mode = requiredResearchComplete ? "researched" : "context-only";
   if (!requiredResearchComplete)
-    warnings.push("The complete measured market map is unavailable. Developer approval is available only if the bounded cited web research completed.");
+    warnings.push(
+      "The complete measured market map is unavailable. Bounded cited web observations may inform private review, but production approval remains blocked until measured research is complete.",
+    );
   base.cost = { ...cost, limitUsd: limits.maxUsd, stageCosts };
   base.warnings = [...new Set(warnings)];
   return base;
@@ -1049,11 +2376,17 @@ function safeHttpsUrl(value) {
     url.password = "";
     url.hash = "";
     return url.href;
-  } catch { return ""; }
+  } catch {
+    return "";
+  }
 }
 
 function safeDomain(value) {
-  try { return new URL(text(value, 1000)).hostname; } catch { return ""; }
+  try {
+    return new URL(text(value, 1000)).hostname;
+  } catch {
+    return "";
+  }
 }
 
 function googleAdsCompetition(item) {
@@ -1065,35 +2398,227 @@ function googleAdsCompetition(item) {
 }
 
 export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
-  if (!login || !password) throw new Error("DataForSEO credentials are required.");
+  if (!login || !password)
+    throw new Error("DataForSEO credentials are required.");
   const authorization = `Basic ${Buffer.from(`${login}:${password}`).toString("base64")}`;
+  const taskFailure = (message, statusCode, reportedCost) => {
+    const error = new Error(message);
+    error.dataForSeo = {
+      statusCode: Number.isFinite(statusCode) ? statusCode : null,
+      reportedCost: finiteMetric(reportedCost),
+    };
+    return error;
+  };
+  const googleAdsLocationLists = new Map();
   async function post(path, payload) {
     const response = await fetchImpl(`https://api.dataforseo.com${path}`, {
       method: "POST",
-      headers: { Authorization: authorization, "Content-Type": "application/json" },
+      headers: {
+        Authorization: authorization,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify([payload]),
       signal: AbortSignal.timeout(30_000),
     });
-    if (!response.ok) throw new Error(`DataForSEO returned HTTP ${response.status}.`);
+    if (!response.ok)
+      throw new Error(`DataForSEO returned HTTP ${response.status}.`);
     const body = await response.json();
-    if (body.status_code !== 20000 || body.tasks_error)
-      throw new Error(text(body.status_message || "DataForSEO task failed.", 300));
-    const task = body.tasks?.[0];
-    if (!task || task.status_code !== 20000)
-      throw new Error(text(task?.status_message || "DataForSEO task failed.", 300));
+    const statusCode = Number(body?.status_code);
+    if (!Number.isFinite(statusCode) || statusCode !== 20000)
+      throw taskFailure(
+        `DataForSEO response ${Number.isFinite(statusCode) ? statusCode : "with an invalid status code"}: ${text(body?.status_message || "DataForSEO request failed.", 300)}`,
+        Number.isFinite(statusCode) ? statusCode : null,
+        body?.cost,
+      );
+    const tasks = Array.isArray(body.tasks) ? body.tasks : [];
+    const tasksError = Number(body.tasks_error ?? 0);
+    if (!Number.isFinite(tasksError) || tasksError < 0)
+      throw new Error("DataForSEO returned an invalid tasks_error count.");
+    const failedTask = tasks.find(
+      (item) => Number(item?.status_code) !== 20000,
+    );
+    if (failedTask)
+      throw taskFailure(
+        `DataForSEO task ${Number.isFinite(Number(failedTask.status_code)) ? Number(failedTask.status_code) : "with an invalid status code"}: ${text(failedTask.status_message || "DataForSEO task failed.", 300)}`,
+        Number.isFinite(Number(failedTask.status_code))
+          ? Number(failedTask.status_code)
+          : null,
+        body?.cost ?? failedTask.cost,
+      );
+    if (tasksError > 0)
+      throw taskFailure(
+        `DataForSEO reported ${tasksError} task error(s) without failed-task details.`,
+        null,
+        body?.cost,
+      );
+    const task = tasks[0];
+    if (!task)
+      throw taskFailure(
+        "DataForSEO returned no task details.",
+        null,
+        body?.cost,
+      );
     return { body, task, cost: finiteMetric(body.cost ?? task.cost) };
   }
+  const countryIsoCodeForLocation = (locationName) => {
+    const country = text(locationName, 180).split(",").at(-1)?.trim() || "";
+    const upper = country.toUpperCase();
+    if (upper === "USA") return "US";
+    if (upper === "UK") return "GB";
+    if (/^[A-Z]{2}$/u.test(upper)) return upper;
+    return (
+      Object.entries(COUNTRY_NAMES).find(
+        ([code, name]) =>
+          code.length === 2 &&
+          code !== "UK" &&
+          name.toLocaleLowerCase() === country.toLocaleLowerCase(),
+      )?.[0] || null
+    );
+  };
+  const locationParts = (value) =>
+    text(value, 180)
+      .split(",")
+      .map((part) =>
+        part
+          .normalize("NFKD")
+          .replace(/\p{M}/gu, "")
+          .toLocaleLowerCase()
+          .replace(/[^\p{L}\p{N}]+/gu, " ")
+          .trim(),
+      )
+      .filter(Boolean);
+  async function googleAdsLocationList(countryCode) {
+    const cached = googleAdsLocationLists.get(countryCode);
+    if (cached) return cached;
+    const pending = (async () => {
+      const response = await fetchImpl(
+        `https://api.dataforseo.com/v3/keywords_data/google_ads/locations/${countryCode.toLocaleLowerCase()}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: authorization,
+            "Content-Type": "application/json",
+          },
+          signal: AbortSignal.timeout(30_000),
+        },
+      );
+      if (!response.ok)
+        throw new Error(`DataForSEO returned HTTP ${response.status}.`);
+      const body = await response.json();
+      const statusCode = Number(body?.status_code);
+      if (!Number.isFinite(statusCode) || statusCode !== 20000)
+        throw taskFailure(
+          `DataForSEO location lookup response ${Number.isFinite(statusCode) ? statusCode : "with an invalid status code"}: ${text(body?.status_message || "DataForSEO location lookup failed.", 300)}`,
+          Number.isFinite(statusCode) ? statusCode : null,
+          body?.cost,
+        );
+      const tasks = Array.isArray(body.tasks) ? body.tasks : [];
+      const failedTask = tasks.find(
+        (item) => Number(item?.status_code) !== 20000,
+      );
+      if (failedTask)
+        throw taskFailure(
+          `DataForSEO location lookup task ${Number.isFinite(Number(failedTask.status_code)) ? Number(failedTask.status_code) : "with an invalid status code"}: ${text(failedTask.status_message || "DataForSEO location lookup failed.", 300)}`,
+          Number.isFinite(Number(failedTask.status_code))
+            ? Number(failedTask.status_code)
+            : null,
+          body?.cost ?? failedTask.cost,
+        );
+      const tasksError = Number(body.tasks_error ?? 0);
+      if (!Number.isFinite(tasksError) || tasksError < 0)
+        throw new Error("DataForSEO returned an invalid location lookup task count.");
+      if (tasksError > 0)
+        throw taskFailure(
+          `DataForSEO reported ${tasksError} location lookup task error(s) without task details.`,
+          null,
+          body?.cost,
+        );
+      const task = tasks[0];
+      if (!task || !Array.isArray(task.result))
+        throw taskFailure(
+          "DataForSEO returned no location lookup results.",
+          null,
+          body?.cost ?? task?.cost,
+        );
+      return task.result;
+    })();
+    googleAdsLocationLists.set(countryCode, pending);
+    try {
+      return await pending;
+    } catch (error) {
+      if (googleAdsLocationLists.get(countryCode) === pending)
+        googleAdsLocationLists.delete(countryCode);
+      throw error;
+    }
+  }
+  async function googleAdsLocationCode(locationName) {
+    const requestedName = text(locationName, 180);
+    if (!requestedName) return 2840;
+    const countryCode = countryIsoCodeForLocation(requestedName);
+    if (!countryCode)
+      throw new Error(
+        "DataForSEO could not resolve an ISO country code for Google Ads search volume.",
+      );
+    const requestedParts = locationParts(requestedName);
+    const available = await googleAdsLocationList(countryCode);
+    const candidates = available.filter(
+      (location) =>
+        String(location?.country_iso_code || "").toUpperCase() ===
+          countryCode.toUpperCase() &&
+        Number.isFinite(Number(location?.location_code)) &&
+        Number(location.location_code) > 0,
+    );
+    const exact = candidates.filter(
+      (location) =>
+        locationParts(location.location_name).join(" ") ===
+        requestedParts.join(" "),
+    );
+    const matches = exact.length
+      ? exact
+      : candidates.filter((location) => {
+          const availableParts = locationParts(location.location_name);
+          if (requestedParts.length === 1)
+            return (
+              String(location.location_type || "").toLocaleLowerCase() ===
+                "country" &&
+              availableParts.length === 1 &&
+              availableParts[0] === requestedParts[0]
+            );
+          let offset = 0;
+          for (const part of requestedParts) {
+            const matchIndex = availableParts.indexOf(part, offset);
+            if (matchIndex < 0) return false;
+            offset = matchIndex + 1;
+          }
+          return true;
+        });
+    const uniqueCodes = [
+      ...new Set(
+        matches.map((location) => Number(location.location_code)),
+      ),
+    ];
+    if (uniqueCodes.length !== 1)
+      throw new Error(
+        "DataForSEO could not resolve a unique local location code for Google Ads search volume.",
+      );
+    return uniqueCodes[0];
+  }
   const locationFields = (locationName, languageCode) => ({
-    ...(locationName ? { location_name: locationName } : { location_code: 2840 }),
+    ...(locationName
+      ? { location_name: locationName }
+      : { location_code: 2840 }),
     language_code: languageCode || "en",
   });
   return {
     async googleSearchVolume({ keywords, locationName, languageCode = "en" }) {
-      const { task, cost } = await post("/v3/keywords_data/google_ads/search_volume/live", {
-        keywords,
-        location_name: locationName,
-        language_code: languageCode || "en",
-      });
+      const { task, cost } = await post(
+        "/v3/keywords_data/google_ads/search_volume/live",
+        {
+          keywords,
+          location_code: await googleAdsLocationCode(locationName),
+          language_code: languageCode || "en",
+        },
+      );
       return {
         cost,
         keywords: flattenItems(task.result).map((item) => ({
@@ -1105,7 +2630,10 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
       };
     },
     async searchIntent({ keywords }) {
-      const { task, cost } = await post("/v3/dataforseo_labs/google/search_intent/live", { keywords });
+      const { task, cost } = await post(
+        "/v3/dataforseo_labs/google/search_intent/live",
+        { keywords },
+      );
       return {
         cost,
         keywords: flattenItems(task.result).map((item) => ({
@@ -1116,10 +2644,13 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
       };
     },
     async bulkKeywordDifficulty({ keywords, locationName, languageCode }) {
-      const { task, cost } = await post("/v3/dataforseo_labs/google/bulk_keyword_difficulty/live", {
-        keywords,
-        ...locationFields(locationName, languageCode),
-      });
+      const { task, cost } = await post(
+        "/v3/dataforseo_labs/google/bulk_keyword_difficulty/live",
+        {
+          keywords,
+          ...locationFields(locationName, languageCode),
+        },
+      );
       return {
         cost,
         keywords: flattenItems(task.result).map((item) => ({
@@ -1129,48 +2660,63 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
       };
     },
     async organicSerp({ keyword, locationName, languageCode }) {
-      const { task, cost } = await post("/v3/serp/google/organic/live/advanced", {
-        keyword,
-        location_name: locationName || "United States",
-        language_code: languageCode || "en",
-        depth: 10,
-      });
+      const { task, cost } = await post(
+        "/v3/serp/google/organic/live/advanced",
+        {
+          keyword,
+          location_name: locationName || "United States",
+          language_code: languageCode || "en",
+          depth: 10,
+        },
+      );
       const items = task.result?.[0]?.items || [];
       return {
         cost,
         query: keyword,
-        results: items.filter((item) => item.type === "organic").map((item) => ({
-          position: item.rank_group ?? item.rank_absolute,
-          title: item.title,
-          url: item.url,
-          domain: item.domain,
-        })),
-        questions: items.filter((item) => item.type === "people_also_ask").flatMap((item) => item.items || []).map((item) => item.title),
+        results: items
+          .filter((item) => item.type === "organic")
+          .map((item) => ({
+            position: item.rank_group ?? item.rank_absolute,
+            title: item.title,
+            url: item.url,
+            domain: item.domain,
+          })),
+        questions: items
+          .filter((item) => item.type === "people_also_ask")
+          .flatMap((item) => item.items || [])
+          .map((item) => item.title),
       };
     },
     async relatedKeywords({ keyword, locationName, languageCode }) {
-      const { task, cost } = await post("/v3/dataforseo_labs/google/related_keywords/live", {
-        keyword,
-        ...locationFields(locationName, languageCode),
-        depth: 1,
-        limit: 20,
-      });
+      const { task, cost } = await post(
+        "/v3/dataforseo_labs/google/related_keywords/live",
+        {
+          keyword,
+          ...locationFields(locationName, languageCode),
+          depth: 1,
+          limit: 20,
+        },
+      );
       return {
         cost,
         keywords: flattenItems(task.result).map((item) => ({
           keyword: item.keyword_data?.keyword,
           keyword_info: item.keyword_data?.keyword_info,
+          keyword_properties: item.keyword_data?.keyword_properties,
           search_intent_info: item.keyword_data?.search_intent_info,
         })),
       };
     },
     async rankedKeywords({ target, locationName, languageCode }) {
-      const { task, cost } = await post("/v3/dataforseo_labs/google/ranked_keywords/live", {
-        target,
-        ...locationFields(locationName, languageCode),
-        limit: 100,
-        load_rank_absolute: true,
-      });
+      const { task, cost } = await post(
+        "/v3/dataforseo_labs/google/ranked_keywords/live",
+        {
+          target,
+          ...locationFields(locationName, languageCode),
+          limit: 100,
+          load_rank_absolute: true,
+        },
+      );
       return { cost, keywords: flattenItems(task.result) };
     },
   };
@@ -1184,10 +2730,18 @@ function extractIntake(body) {
 
 export function renderSeoMapMarkdown(dossier) {
   const pages = dossier.pageMap || [];
+  const intentPlanning = dossier.intentPlanning || {};
+  const plannedServices = Array.isArray(intentPlanning.services)
+    ? intentPlanning.services
+    : [];
+  const plannedServiceCount = plannedServices.filter(
+    (item) => Array.isArray(item.phrases) && item.phrases.length > 0,
+  ).length;
   const spend = Number(dossier.cost?.usd || 0).toFixed(5);
-  const spendSummary = dossier.cost?.complete === false
-    ? `$${spend} known; spend unavailable for ${dossier.cost?.unreportedTasks || 1} task(s)`
-    : `$${spend} reported across ${dossier.cost?.tasks || 0} tasks`;
+  const spendSummary =
+    dossier.cost?.complete === false
+      ? `$${spend} known; spend unavailable for ${dossier.cost?.unreportedTasks || 1} task(s)`
+      : `$${spend} reported across ${dossier.cost?.tasks || 0} tasks`;
   const lines = [
     `# SEO Market Map: ${dossier.marketSnapshot?.primaryCity || "Location unavailable"}`,
     "",
@@ -1199,49 +2753,101 @@ export function renderSeoMapMarkdown(dossier) {
     "",
     `Confirmed services: ${(dossier.marketSnapshot?.confirmedServices || []).join(", ") || "none"}`,
     `Coverage communities (facts, not automatic pages): ${(dossier.marketSnapshot?.coverageAreas || []).join(", ") || "primary city only"}`,
+    `Customer-language query planning: ${intentPlanning.status || "unavailable"}; ${plannedServiceCount}/${dossier.marketSnapshot?.confirmedServices?.length || 0} confirmed services have accepted model phrases; DataForSEO remains the only source of measured metrics.`,
     `Keyword metrics measured: ${dossier.marketSnapshot?.measuredKeywords || 0}/${dossier.marketSnapshot?.queriedKeywords || 0}`,
     `DataForSEO provider-reported spend: ${spendSummary} (cap ${Number(dossier.cost?.limitUsd || 0).toFixed(2)}).`,
     dossier.fallbackSearch?.status === "not-needed"
       ? "Fallback web search: not needed (no provider stage failed)."
-      : dossier.fallbackSearch?.status && dossier.fallbackSearch.status !== "unavailable"
-      ? `Fallback web search: ${dossier.fallbackSearch.status}; ${dossier.externalSearchEvidence?.length || 0} cited observation(s) from ${dossier.fallbackSearch.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(dossier.fallbackSearch.costUsd || 0).toFixed(5)} / USD ${Number(dossier.fallbackSearch.maxUsd || 0).toFixed(2)} cap${dossier.fallbackSearch.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}. These observations are qualitative research; measured SEO metrics remain unavailable.`
-      : "Fallback web search: unavailable.",
+      : dossier.fallbackSearch?.status &&
+          dossier.fallbackSearch.status !== "unavailable"
+        ? `Fallback web search: ${dossier.fallbackSearch.status}; ${dossier.externalSearchEvidence?.length || 0} cited observation(s) from ${dossier.fallbackSearch.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(dossier.fallbackSearch.costUsd || 0).toFixed(5)} / USD ${Number(dossier.fallbackSearch.maxUsd || 0).toFixed(2)} cap${dossier.fallbackSearch.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}. These observations are qualitative research; measured SEO metrics remain unavailable.`
+        : "Fallback web search: unavailable.",
     "",
-    ...(dossier.coverageResearch ? ["## Confirmed-city research", ...dossier.coverageResearch.cities.map(item => `- ${item.city}: ${item.status}${item.research ? ` (${item.research.mode}; metric location ${item.research.metricLocation})` : " - not researched"}`), ""] : []),
+    ...(dossier.coverageResearch
+      ? [
+          "## Confirmed-city research",
+          ...dossier.coverageResearch.cities.map(
+            (item) =>
+              `- ${item.city}: ${item.status}${item.research ? ` (${item.research.mode}; metric location ${item.research.metricLocation})` : " - not researched"}`,
+          ),
+          "",
+        ]
+      : []),
     "## B. Competitors and structural observations",
     "",
   ];
-  if (!dossier.competitors?.length) lines.push("No measured ranking competitor evidence was available.");
+  if (!dossier.competitors?.length)
+    lines.push("No measured ranking competitor evidence was available.");
   for (const competitor of dossier.competitors || []) {
-    lines.push(`- **${competitor.domain}**${competitor.pagePatterns?.length ? `: ${competitor.pagePatterns.join("; ")}` : ""}`);
-    for (const result of competitor.results.slice(0, 3)) lines.push(`  - ${result.query}: position ${result.position}, [${result.title}](${result.url})`);
+    lines.push(
+      `- **${competitor.domain}**${competitor.pagePatterns?.length ? `: ${competitor.pagePatterns.join("; ")}` : ""}`,
+    );
+    for (const result of competitor.results.slice(0, 3))
+      lines.push(
+        `  - ${result.query}: position ${result.position}, [${result.title}](${result.url})`,
+      );
   }
   if (dossier.externalSearchEvidence?.length) {
-    lines.push("", "### External web observations (not verified business facts or ranking data)", "");
+    lines.push(
+      "",
+      "### External web observations (not verified business facts or ranking data)",
+      "",
+    );
     for (const observation of dossier.externalSearchEvidence)
-      lines.push(`- ${observation.query}: [${observation.title || observation.sourceUrl}](${observation.sourceUrl}) - ${observation.snippet || "No extract returned."} (retrieved ${observation.retrievedAt}; ${observation.provider})`);
+      lines.push(
+        `- ${observation.query}: [${observation.title || observation.sourceUrl}](${observation.sourceUrl}) - ${observation.snippet || "No extract returned."} (retrieved ${observation.retrievedAt}; ${observation.provider})`,
+      );
   }
   lines.push("", "## C. Keyword-to-page map", "");
   for (const page of pages) {
     const primary = page.primaryKeyword;
     lines.push(`### ${page.title} (${page.slug})`);
-    if (primary) lines.push(`- Primary: ${primary.keyword} | volume ${primary.volume ?? "unavailable"} | KD ${primary.kd ?? "unavailable"} | CPC ${primary.cpc ?? "unavailable"} | competition ${primary.competition ?? "unavailable"} | intent ${primary.intent ?? "unavailable"} | ${primary.provenance}`);
-    if (page.supportingKeywords?.length) lines.push(`- Supporting: ${page.supportingKeywords.map((item) => `${item.keyword} (${item.volume ?? "n/a"}, ${item.provenance})`).join("; ")}`);
+    if (primary)
+      lines.push(
+        `- Primary: ${primary.keyword} | volume ${primary.volume ?? "unavailable"} | KD ${primary.kd ?? "unavailable"} | CPC ${primary.cpc ?? "unavailable"} | competition ${primary.competition ?? "unavailable"} | intent ${primary.intent ?? "unavailable"} | ${primary.provenance}`,
+      );
+    if (page.supportingKeywords?.length)
+      lines.push(
+        `- Supporting: ${page.supportingKeywords.map((item) => `${item.keyword} (${item.volume ?? "n/a"}, ${item.provenance})`).join("; ")}`,
+      );
   }
   lines.push("", "## D. Fan-out questions by page", "");
   for (const group of dossier.fanOutQuestionGroups || []) {
     lines.push(`### ${group.pageId}`);
-    for (const question of group.questions) lines.push(`- ${question.question} (${question.provenance}${question.query ? `: ${question.query}` : ""})`);
+    for (const question of group.questions)
+      lines.push(
+        `- ${question.question} (${question.provenance}${question.query ? `: ${question.query}` : ""})`,
+      );
   }
   lines.push("", "## E. Recommended build-order sitemap", "");
-  for (const page of pages) if (page.pageType !== "blog-opportunity") lines.push(`- ${page.slug} — ${page.title}${page.renderWhenArticlesExist ? " (render only when articles exist)" : ""}`);
+  for (const page of pages)
+    if (page.pageType !== "blog-opportunity")
+      lines.push(
+        `- ${page.slug} — ${page.title}${page.renderWhenArticlesExist ? " (render only when articles exist)" : ""}`,
+      );
   lines.push("", "## F. Blog/content opportunities", "");
-  for (const opportunity of dossier.blogOpportunities || []) lines.push(`- ${opportunity.title} (${opportunity.provenance})`);
-  if (!dossier.blogOpportunities?.length) lines.push("No evidence-backed informational opportunities were available.");
+  for (const opportunity of dossier.blogOpportunities || [])
+    lines.push(`- ${opportunity.title} (${opportunity.provenance})`);
+  if (!dossier.blogOpportunities?.length)
+    lines.push(
+      "No evidence-backed informational opportunities were available.",
+    );
   lines.push("", "## G. Research warnings and missing evidence", "");
   for (const warning of dossier.warnings || []) lines.push(`- ${warning}`);
   if (!dossier.warnings?.length) lines.push("- None.");
-  lines.push("", "## H. Provider-reported research cost", "", `- ${dossier.cost?.tasks || 0} DataForSEO tasks; ${spendSummary}; configured cap $${Number(dossier.cost?.limitUsd || 0).toFixed(5)}.${dossier.cost?.overBudget ? " Provider reported an overrun on the final task." : ""}`);
+  lines.push(
+    "",
+    "## H. Provider-reported research cost",
+    "",
+    `- ${dossier.cost?.tasks || 0} DataForSEO tasks; ${spendSummary}; configured cap $${Number(dossier.cost?.limitUsd || 0).toFixed(5)}.${dossier.cost?.overBudget ? " Provider reported an overrun on the final task." : ""}`,
+    ...(intentPlanning.attempted
+      ? [
+          `- OpenRouter intent planner (${intentPlanning.model || intentPlanning.usage?.model || "model unavailable"}): ${intentPlanning.usage?.costUsd === null || intentPlanning.usage?.costUsd === undefined ? "cost unreported" : `$${Number(intentPlanning.usage.costUsd).toFixed(5)}`}; ${Number(intentPlanning.usage?.cachedTokens || 0)} cached tokens; response cache ${intentPlanning.usage?.cacheStatus || "not reported"}.`,
+        ]
+      : [
+          "- OpenRouter intent planner: not run; deterministic exact-service query variants were used.",
+        ]),
+  );
   lines.push("");
   return lines.join("\n");
 }
@@ -1257,7 +2863,9 @@ async function main() {
   const markdownDestination = argumentValue("--map-out");
   const enrichmentFile = argumentValue("--enrichment");
   if (!source || !destination)
-    throw new Error("Usage: node seo-research.mjs --source intake.md --out seo-research.json [--map-out seo-map.md] [--enrichment business-enrichment.json]");
+    throw new Error(
+      "Usage: node seo-research.mjs --source intake.md --out seo-research.json [--map-out seo-map.md] [--enrichment business-enrichment.json]",
+    );
   let intake = extractIntake(await fs.readFile(source, "utf8"));
   if (enrichmentFile) {
     const enrichment = JSON.parse(await fs.readFile(enrichmentFile, "utf8"));
@@ -1265,19 +2873,31 @@ async function main() {
   }
   const login = process.env.DATAFORSEO_LOGIN || process.env.DATAFORSEO_USERNAME;
   const password = process.env.DATAFORSEO_PASSWORD;
-  const dataForSeo = login && password ? createDataForSeoClient({ login, password }) : undefined;
+  const dataForSeo =
+    login && password ? createDataForSeoClient({ login, password }) : undefined;
   const openRouterKey = process.env.OPENROUTER_API_KEY;
-  const webSearch = openRouterKey ? createOpenRouterWebSearchClient({ apiKey: openRouterKey }) : undefined;
+  const webSearch = openRouterKey
+    ? createOpenRouterWebSearchClient({ apiKey: openRouterKey })
+    : undefined;
+  const intentPlanner = openRouterKey
+    ? createOpenRouterIntentQueryPlanner({ apiKey: openRouterKey })
+    : undefined;
   const dossier = await researchSiteContext(intake, {
     dataForSeo,
     webSearch,
+    intentPlanner,
     maxTasks: Number(process.env.SEO_RESEARCH_MAX_TASKS || DEFAULT_MAX_TASKS),
     maxUsd: Number(process.env.SEO_RESEARCH_MAX_USD || DEFAULT_MAX_USD),
-    maxFallbackSearchQueries: Number(process.env.SEO_FALLBACK_MAX_QUERIES || DEFAULT_FALLBACK_SEARCH_QUERIES),
-    maxFallbackUsd: Number(process.env.SEO_FALLBACK_MAX_USD || DEFAULT_FALLBACK_MAX_USD),
+    maxFallbackSearchQueries: Number(
+      process.env.SEO_FALLBACK_MAX_QUERIES || DEFAULT_FALLBACK_SEARCH_QUERIES,
+    ),
+    maxFallbackUsd: Number(
+      process.env.SEO_FALLBACK_MAX_USD || DEFAULT_FALLBACK_MAX_USD,
+    ),
   });
   await fs.writeFile(destination, `${JSON.stringify(dossier, null, 2)}\n`);
-  if (markdownDestination) await fs.writeFile(markdownDestination, renderSeoMapMarkdown(dossier));
+  if (markdownDestination)
+    await fs.writeFile(markdownDestination, renderSeoMapMarkdown(dossier));
   console.log(`seo_research_mode=${dossier.mode}`);
   console.log(`seo_research_publish_ready=${dossier.publishReady}`);
   console.log(`seo_research_tasks=${dossier.cost.tasks}`);

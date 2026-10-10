@@ -1,4 +1,6 @@
 import { compilePageBriefs } from "../templates/client-site/src/lib/page-briefs.mjs";
+import { redactPrivateLocation } from "../templates/client-site/src/lib/business-facts.mjs";
+import { findUnsupportedBusinessClaimMatches } from "./business-copy-claims.mjs";
 import { routeLinkedContent } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import { fontFamilyById, resolveFontPairing } from "./font-catalog.mjs";
@@ -14,8 +16,11 @@ import {
 } from "./creative-compiler.mjs";
 import {
   EARLY_CONVERSION_OUTPUT_CONTRACT,
+  HERO_MEDIA_FOCUS_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
-  CLIENT_TYPOGRAPHY_CONTRACT,
+  VERIFIED_CLIENT_PERSONNEL_CONTRACT,
+  adaptReferencePersonnelCuesForClient,
+  referencePersonnelCueTranslation,
 } from "./creative-authoring-output.mjs";
 import {
   assertCreativeInnerPageSource,
@@ -32,6 +37,7 @@ import { MAX_REPAIR_FILE_SOURCE_CHARS } from "./creative-repair-contract.mjs";
  *   route: Record<string, any>;
  *   contentTokens: string[];
  *   contentShape: Record<string, any>;
+ *   finalSafetyInstruction?: string;
  *   visualBrief?: Record<string, any>;
  *   rules: string;
  *   designContract?: string;
@@ -176,7 +182,18 @@ export function creativeServicePageShape() {
       name: "string",
       slug: "string",
       description: "string",
-      brief: { version: "number", routeId: "string", mode: "string", sections: [{kind:"string",heading:"string",items:[{text:"string",evidenceIds:["string"]}]}] },
+      brief: {
+        version: "number",
+        routeId: "string",
+        mode: "string",
+        sections: [
+          {
+            kind: "string",
+            heading: "string",
+            items: [{ text: "string", evidenceIds: ["string"] }],
+          },
+        ],
+      },
       support: {
         scope: "string",
         preparation: "string",
@@ -213,7 +230,20 @@ export function creativeLocationPageShape() {
       name: "string",
       slug: "string",
       description: "string",
-      brief: { version: "number", routeId: "string", mode: "string", sections: [{kind:"string",heading:"string",items:[{text:"string",evidenceIds:["string"]}]}], faqs:[{question:"string",answer:"string"}], process:["string"] },
+      brief: {
+        version: "number",
+        routeId: "string",
+        mode: "string",
+        sections: [
+          {
+            kind: "string",
+            heading: "string",
+            items: [{ text: "string", evidenceIds: ["string"] }],
+          },
+        ],
+        faqs: [{ question: "string", answer: "string" }],
+        process: ["string"],
+      },
       localNote: "string",
       services: [{ name: "string", slug: "string", description: "string" }],
       otherAreas: [{ name: "string", slug: "string" }],
@@ -339,6 +369,13 @@ function visualBrief(site) {
 }
 
 function contentShape(site, route) {
+  const sourceBusiness = site.business || {};
+  site = redactPrivateLocation(site, {
+    addressVisibility: sourceBusiness.addressVisibility,
+    address: sourceBusiness.address,
+    placeId: sourceBusiness.placeId,
+    googleMapsUrl: sourceBusiness.googleMapsUrl,
+  });
   site = routeLinkedContent(site);
   const business = site.business || {};
   const copy = site.copy || {};
@@ -357,6 +394,58 @@ function contentShape(site, route) {
     site.socialProof.google?.apiUrl &&
     site.socialProof.google?.token,
   );
+  const publicAddress =
+    business.addressVisibility === "private"
+      ? ""
+      : String(business.address || "");
+  const claimEvidence = {
+    credentials: site.credentials || business.credentials || [],
+    offer: site.offer || business.offer || "",
+    price: site.price || business.price || "",
+    prices: site.prices || business.prices || [],
+    pricing: site.pricing || business.pricing || "",
+    priceRange: site.priceRange || business.priceRange || "",
+    startingPrice: site.startingPrice || business.startingPrice || "",
+    guarantee: site.guarantee || business.guarantee || "",
+    guarantees: site.guarantees || business.guarantees || [],
+    warranty: site.warranty || business.warranty || "",
+    reviews: site.reviews || business.reviews || [],
+    testimonials: site.testimonials || business.testimonials || [],
+    awards: site.awards || business.awards || [],
+    rating: site.rating || business.rating || "",
+    reviewCount: site.reviewCount || business.reviewCount || "",
+    yearEstablished: site.yearEstablished || business.yearEstablished || "",
+    yearsExperience: site.yearsExperience || business.yearsExperience || "",
+    yearsInBusiness: site.yearsInBusiness || business.yearsInBusiness || "",
+    businessSince: site.businessSince || business.businessSince || "",
+    experience: site.experience || business.experience || "",
+    availability: site.availability || business.availability || "",
+    responseTime: site.responseTime || business.responseTime || "",
+    emergencyAvailability:
+      site.emergencyAvailability || business.emergencyAvailability || "",
+    hours: business.hours || "",
+    results: site.results || business.results || [],
+    metrics: site.metrics || business.metrics || [],
+    caseStudies: site.caseStudies || business.caseStudies || [],
+    proofPoints: site.proofPoints || site.differentiators || [],
+    staff: site.staff || business.staff || [],
+    teamMembers: site.teamMembers || business.teamMembers || [],
+    team: site.team || business.team || [],
+    address: publicAddress,
+    addressVisibility: business.addressVisibility || "public",
+    business: {
+      credentials: business.credentials || [],
+      offer: business.offer || "",
+      address: publicAddress,
+      addressVisibility: business.addressVisibility || "public",
+      yearEstablished: business.yearEstablished || "",
+      yearsExperience: business.yearsExperience || "",
+      yearsInBusiness: business.yearsInBusiness || "",
+      businessSince: business.businessSince || "",
+      experience: business.experience || "",
+      staff: business.staff || [],
+    },
+  };
   return {
     brand: {
       name: String(business.name || ""),
@@ -383,7 +472,12 @@ function contentShape(site, route) {
         assets.photoThree || routeImages.tertiary || images.tertiary || "",
       offer: String(business.offer || ""),
     },
-    pageBriefContractVersion: compilePageBriefs(site).briefs.some(brief => brief.mode === "supported") ? 1 : null,
+    pageBriefContractVersion: compilePageBriefs(site).briefs.some(
+      (brief) => brief.mode === "supported",
+    )
+      ? 1
+      : null,
+    claimEvidence,
     services: site.services || [],
     proof: (site.differentiators || []).slice(0, 3).map(String),
     process: (site.conversion?.process || []).slice(0, 4).map(String),
@@ -663,6 +757,40 @@ function collectJsxElements(source) {
   };
   visit(file);
   return { file, elements };
+}
+
+function jsxHasAncestorElementTag(node, tagName) {
+  let ancestor = node?.parent;
+  while (ancestor) {
+    if (
+      ts.isJsxElement(ancestor) &&
+      jsxOpeningName(ancestor.openingElement).toLowerCase() === tagName
+    )
+      return true;
+    ancestor = ancestor.parent;
+  }
+  return false;
+}
+
+function assertSingleMainHeading(elements, route, fileName) {
+  const mains = elements.filter(
+    ({ opening }) => jsxOpeningName(opening).toLowerCase() === "main",
+  );
+  const headings = elements.filter(
+    ({ opening }) => jsxOpeningName(opening).toLowerCase() === "h1",
+  );
+  if (mains.length !== 1)
+    throw new Error(
+      `Candidate ${route.id} ${fileName} must render exactly one main landmark.`,
+    );
+  if (headings.length !== 1)
+    throw new Error(
+      `Candidate ${route.id} ${fileName} must render exactly one H1 heading.`,
+    );
+  if (!jsxHasAncestorElementTag(headings[0].node, "main"))
+    throw new Error(
+      `Candidate ${route.id} ${fileName} must render its single H1 heading inside the main landmark.`,
+    );
 }
 
 const contentBoundRuntimeHelpers = new Set([
@@ -1255,7 +1383,10 @@ function isBindingMutated(bindingNode, file) {
           node.initializer.text,
           node.initializer,
         );
-        if (initializerBinding && trackedBindings.has(initializerBinding.node)) {
+        if (
+          initializerBinding &&
+          trackedBindings.has(initializerBinding.node)
+        ) {
           trackedBindings.add(node);
           discoveredAlias = true;
         }
@@ -1265,9 +1396,8 @@ function isBindingMutated(bindingNode, file) {
     collectAliases(file);
   }
   const targetWritesBinding = (target) =>
-    assignmentTargetRoots(target).some(
-      (identifier) =>
-        trackedBindings.has(visibleBinding(identifier.text, identifier)?.node),
+    assignmentTargetRoots(target).some((identifier) =>
+      trackedBindings.has(visibleBinding(identifier.text, identifier)?.node),
     );
   const isAssignmentOperator = (kind) =>
     kind >= ts.SyntaxKind.FirstAssignment &&
@@ -1325,8 +1455,7 @@ function isBindingMutated(bindingNode, file) {
       bindingPath &&
       initializer &&
       ts.isIdentifier(initializer) &&
-      ((initializer.text === "Object" &&
-        objectMutators.has(bindingPath)) ||
+      ((initializer.text === "Object" && objectMutators.has(bindingPath)) ||
         (initializer.text === "Reflect" && reflectMutators.has(bindingPath)))
     )
       return true;
@@ -1613,8 +1742,8 @@ function bindingPathForName(bindingName, name, prefix = []) {
       ts.isStringLiteral(property.expression)
         ? property.expression.text
         : ts.isIdentifier(property) || ts.isStringLiteral(property)
-        ? property.text
-        : null;
+          ? property.text
+          : null;
     if (!propertyName) continue;
     const result = bindingPathForName(element.name, name, [
       ...prefix,
@@ -1829,11 +1958,14 @@ function isSealedServiceSlugBinding(expression, file) {
   const identifier = node.expression;
   if (!ts.isIdentifier(identifier)) return false;
   const binding = visibleBinding(identifier.text, identifier);
-  if (!binding || binding.kind !== "variable" ||
-      !ts.isIdentifier(binding.node.name) ||
-      !(binding.node.parent.flags & ts.NodeFlags.Const) ||
-      !binding.node.initializer ||
-      isBindingMutated(binding.node, file))
+  if (
+    !binding ||
+    binding.kind !== "variable" ||
+    !ts.isIdentifier(binding.node.name) ||
+    !(binding.node.parent.flags & ts.NodeFlags.Const) ||
+    !binding.node.initializer ||
+    isBindingMutated(binding.node, file)
+  )
     return false;
   return isSealedServiceRecordExpression(binding.node.initializer, file);
 }
@@ -1873,10 +2005,14 @@ function isSealedServiceRecordExpression(expression, file, seen = new Set()) {
   if (!ts.isIdentifier(node) || seen.has(node.text)) return false;
   seen.add(node.text);
   const binding = visibleBinding(node.text, node);
-  if (!binding || binding.kind !== "variable" ||
-      !ts.isIdentifier(binding.node.name) ||
-      !(binding.node.parent.flags & ts.NodeFlags.Const) ||
-      isBindingMutated(binding.node, file)) return false;
+  if (
+    !binding ||
+    binding.kind !== "variable" ||
+    !ts.isIdentifier(binding.node.name) ||
+    !(binding.node.parent.flags & ts.NodeFlags.Const) ||
+    isBindingMutated(binding.node, file)
+  )
+    return false;
   return isSealedServiceRecordExpression(binding.node.initializer, file, seen);
 }
 
@@ -2774,6 +2910,86 @@ function unsupportedClaimLiterals(source) {
   );
 }
 
+function authoredSourceText(source) {
+  const file = ts.createSourceFile(
+    "authored-claim-copy.jsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  const values = [];
+  const visibleAttributes = new Set([
+    "alt",
+    "aria-label",
+    "placeholder",
+    "title",
+  ]);
+  function isVisitorVisibleLiteral(node) {
+    for (let parent = node.parent; parent; parent = parent.parent) {
+      if (ts.isImportDeclaration(parent)) return false;
+      if (ts.isJsxAttribute(parent))
+        return visibleAttributes.has(parent.name.getText(file));
+      if (ts.isJsxElement(parent)) {
+        const tag = parent.openingElement.tagName.getText(file);
+        return tag.toLowerCase() !== "style" && tag.toLowerCase() !== "script";
+      }
+      if (ts.isJsxFragment(parent)) return true;
+    }
+    return false;
+  }
+  function visit(node) {
+    if (ts.isJsxText(node)) values.push(node.text.trim());
+    else if (
+      ts.isStringLiteral(node) ||
+      ts.isNoSubstitutionTemplateLiteral(node)
+    ) {
+      if (isVisitorVisibleLiteral(node)) values.push(node.text);
+    } else if (ts.isTemplateExpression(node) && isVisitorVisibleLiteral(node))
+      values.push(
+        [
+          node.head.text,
+          ...node.templateSpans.map((span) => span.literal.text),
+        ].join(" "),
+      );
+    ts.forEachChild(node, visit);
+  }
+  visit(file);
+  // JSX tags can split one visitor-visible claim into several AST text nodes.
+  // Preserve source order with whitespace only; inserting sentence punctuation
+  // between inline nodes can hide phrases such as "reduce fall risk".
+  return values.filter(Boolean).join(" ");
+}
+
+function assertAuthoredCopyClaims(source, route, content, fileLabel) {
+  const unsupported = findUnsupportedBusinessClaimMatches(
+    authoredSourceText(source),
+    content?.claimEvidence || {},
+  );
+  if (unsupported.length) {
+    const categories = [
+      ...new Set(unsupported.map((item) => item.category)),
+    ].sort();
+    const error = new Error(
+      `Candidate ${route.id} ${fileLabel} contains unsupported business claims: ${categories.join(", ")}.`,
+    );
+    const claimExamples = unsupported
+      .slice(0, 4)
+      .map((item) => `- ${item.category}: ${JSON.stringify(item.match)}`)
+      .join("\n");
+    Object.defineProperty(error, "repairDirective", {
+      enumerable: false,
+      value: [
+        `The deterministic business-fact gate rejected these exact visitor-facing phrases in ${fileLabel}:`,
+        claimExamples,
+        "Remove the listed phrases and any equivalent implication; do not rename or paraphrase unsupported personnel.",
+        "Preserve the reference composition with a non-personnel service/process treatment, and bind all remaining business copy to verified content tokens.",
+      ].join("\n"),
+    });
+    throw error;
+  }
+}
+
 function scalarContentValues(value) {
   if (Array.isArray(value)) return value.flatMap(scalarContentValues);
   if (value && typeof value === "object")
@@ -2940,21 +3156,7 @@ function validateInnerPageSource({
       `Candidate ${route.id} ${file} must include a contact section with id="contact".`,
     );
   const { elements } = collectJsxElements(source);
-  const headings = elements.filter(
-    ({ opening }) => jsxOpeningName(opening).toLowerCase() === "h1",
-  );
-  if (headings.length !== 1)
-    throw new Error(
-      `Candidate ${route.id} ${file} must render exactly one H1 heading.`,
-    );
-  if (
-    !elements.some(
-      ({ opening }) => jsxOpeningName(opening).toLowerCase() === "main",
-    )
-  )
-    throw new Error(
-      `Candidate ${route.id} ${file} must render a main landmark.`,
-    );
+  assertSingleMainHeading(elements, route, file);
   for (const path of requiredPaths)
     if (!referencesObjectPath(source, pathRoot, path))
       throw new Error(
@@ -2991,16 +3193,14 @@ function validateInnerPageSource({
     throw new Error(
       `Candidate ${route.id} ${file} contains an unsupported claim literal: ${literals[0]}`,
     );
+  assertAuthoredCopyClaims(source, route, content, file);
   const embeddedFact = scalarContentValues(content).find((value) =>
     source.includes(value),
   );
   if (embeddedFact) {
     const matchAt = source.indexOf(embeddedFact);
     const nearby = source
-      .slice(
-        Math.max(0, matchAt - 80),
-        matchAt + embeddedFact.length + 80,
-      )
+      .slice(Math.max(0, matchAt - 80), matchAt + embeddedFact.length + 80)
       .replace(/\s+/gu, " ")
       .trim();
     throw new Error(
@@ -3018,13 +3218,33 @@ function validateInnerPageSource({
 function assertPageBriefBinding(source, root, route, content) {
   if (content?.pageBriefContractVersion !== 1) return;
   const { file, elements } = collectJsxElements(source);
-  const bound = elements.some(({opening}) => jsxOpeningName(opening) === "PageBriefSections" && jsxAttributeValue(jsxAttribute(opening,"brief"),file) === `${root}.brief`);
-  const imported = file.statements.some(statement => ts.isImportDeclaration(statement) && statement.moduleSpecifier.text === "@launchloom/runtime" && statement.importClause?.namedBindings && ts.isNamedImports(statement.importClause.namedBindings) && statement.importClause.namedBindings.elements.some(binding => binding.name.text === "PageBriefSections" && (!binding.propertyName || binding.propertyName.text === "PageBriefSections")));
-  if (!bound || !imported) throw new Error(`Candidate ${route.id} must render shared PageBriefSections bound to ${root}.brief.`);
+  const bound = elements.some(
+    ({ opening }) =>
+      jsxOpeningName(opening) === "PageBriefSections" &&
+      jsxAttributeValue(jsxAttribute(opening, "brief"), file) ===
+        `${root}.brief`,
+  );
+  const imported = file.statements.some(
+    (statement) =>
+      ts.isImportDeclaration(statement) &&
+      statement.moduleSpecifier.text === "@launchloom/runtime" &&
+      statement.importClause?.namedBindings &&
+      ts.isNamedImports(statement.importClause.namedBindings) &&
+      statement.importClause.namedBindings.elements.some(
+        (binding) =>
+          binding.name.text === "PageBriefSections" &&
+          (!binding.propertyName ||
+            binding.propertyName.text === "PageBriefSections"),
+      ),
+  );
+  if (!bound || !imported)
+    throw new Error(
+      `Candidate ${route.id} must render shared PageBriefSections bound to ${root}.brief.`,
+    );
 }
 
 export function validateServicePage(source, route, content) {
-  assertPageBriefBinding(source,"service",route,content);
+  assertPageBriefBinding(source, "service", route, content);
   validateInnerPageSource({
     source,
     route,
@@ -3052,7 +3272,7 @@ export function validateServicePage(source, route, content) {
  * coverage language truthful for the listed service area.
  */
 export function validateLocationPage(source, route, content) {
-  assertPageBriefBinding(source,"location",route,content);
+  assertPageBriefBinding(source, "location", route, content);
   validateInnerPageSource({
     source,
     route,
@@ -3135,6 +3355,8 @@ function validateExperience(source, route, content, visualBrief = {}) {
     if (pattern.test(source))
       throw new Error(`Candidate ${route.id} contains forbidden ${label}.`);
   assertRequiredSectionAnchors(source, route);
+  const { elements } = collectJsxElements(source);
+  assertSingleMainHeading(elements, route, "Experience.jsx");
   if (
     !/import\s+\{[^}]*\bLeadForm\b[^}]*\}\s+from\s+["']@launchloom\/runtime["']/u.test(
       source,
@@ -3181,7 +3403,6 @@ function validateExperience(source, route, content, visualBrief = {}) {
         `Candidate ${route.id} has an image that must have a usable alt attribute; use alt="" only for decorative or redundant imagery.`,
       );
   }
-  const { elements } = collectJsxElements(source);
   const navigations = elements.filter(
     ({ opening }) => jsxOpeningName(opening) === "nav",
   );
@@ -3215,16 +3436,14 @@ function validateExperience(source, route, content, visualBrief = {}) {
     throw new Error(
       `Candidate ${route.id} contains an unsupported claim literal: ${literals[0]}`,
     );
+  assertAuthoredCopyClaims(source, route, content, "Experience.jsx");
   const embeddedFact = scalarContentValues(content).find((value) =>
     source.includes(value),
   );
   if (embeddedFact) {
     const matchAt = source.indexOf(embeddedFact);
     const nearby = source
-      .slice(
-        Math.max(0, matchAt - 80),
-        matchAt + embeddedFact.length + 80,
-      )
+      .slice(Math.max(0, matchAt - 80), matchAt + embeddedFact.length + 80)
       .replace(/\s+/gu, " ")
       .trim();
     throw new Error(
@@ -3426,11 +3645,15 @@ function authorRules() {
     "Keep literal Services, FAQs, and Contact section anchors in the page. For dossier-backed routes, let the primary navigation follow the assigned reference geometry instead of forcing all three anchors into one conventional menu. Put conversion in the hero or immediately after it.",
     "Import LeadForm from @launchloom/runtime and render exactly one instance in the reference-directed location: when desktop or mobile compositionTopology is utility-panel, place it in that utility panel inside the hero and retain the contact section for contact details; otherwise place it inside the contact section. Never fake a form or create a second lead endpoint.",
     EARLY_CONVERSION_OUTPUT_CONTRACT,
+    HERO_MEDIA_FOCUS_CONTRACT,
     REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
+    VERIFIED_CLIENT_PERSONNEL_CONTRACT,
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
-    "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
+    "Render exactly one meaningful H1 inside the page's single <main> landmark. The main landmark must contain the hero heading and unique page content; keep the H1 out of sibling headers or sections. Use semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
+    "At 390px, recombine every navigation row so the wordmark, all navigation links, and the primary action fit within the viewport; allow a deliberate second row or stack instead of a fixed non-wrapping min-content row. At all viewports, hero copy, image and CTA must remain inside the hero's visible bounds; prefer content-driven sizing and never clip text with a fixed-height overflow-hidden box. If the reference requires a fixed opening composition, prove every element fits it.",
     `Keep every individual authored source file at or below ${MAX_REPAIR_FILE_SOURCE_CHARS} characters so the safe bounded repair path can represent it. Prefer concise markup and avoid repeated CSS rules; simplify an oversized file without changing the assigned composition.`,
     'Phone and email links must use their sealed tokens. Telephone links may prefix content.brand.phone with tel: and may normalize it only with replace(/[^\\d+]/g, "") or replace(/[^0-9+]/g, ""); a local const href is allowed only when its initializer is that exact safe expression. Do not compute URLs from any other data.',
+    "For service-page links, use the validator-approved same-origin form href={`/services/${service.slug}/`} only inside a direct map over a sealed service list. Do not search for a selected service, bind its slug into a computed href, concatenate arbitrary path parts, or derive href values from unsealed input.",
     "The sealed hero image tokens may be empty. Render each optional image only inside a direct truthiness guard for that same token, such as {content.hero.secondaryImage && <img src={content.hero.secondaryImage} ... />}; do not emit an img with a blank src, remote URL, or a fallback that reuses the hero for a missing supporting image.",
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
     "Do not silently reuse the primary hero image to fill missing secondary or tertiary image roles. When supporting image tokens are unavailable, keep the hero unique and adapt that chapter to a non-duplicative text-led or graphic treatment that still preserves the assigned reference mechanics.",
@@ -3447,6 +3670,13 @@ function stageValue(value, key, stage) {
   return asText(value[key], `${stage}.${key}`);
 }
 
+function validationRepairMessage(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return typeof error?.repairDirective === "string"
+    ? `${message}\n\n${error.repairDirective}`
+    : message;
+}
+
 async function generateStageValue(generate, request, key, stage) {
   let result;
   try {
@@ -3455,7 +3685,7 @@ async function generateStageValue(generate, request, key, stage) {
   } catch (error) {
     result = await generate({
       ...request,
-      validationError: error instanceof Error ? error.message : String(error),
+      validationError: validationRepairMessage(error),
       previousSource: boundedRepairContext(result),
     });
     return { value: stageValue(result, key, stage), repaired: true };
@@ -3596,7 +3826,7 @@ function safeAuthorFailureStack(error) {
  *   generate: (request: AuthorStageRequest) => Promise<Record<string, any>>;
  *   model?: string;
  *   creativeSession?: Record<string, any> | null;
- *   testProfile?: "full" | "seo-only" | "creative-only";
+ *   testProfile?: "full" | "full-preview" | "seo-only" | "creative-only";
  * }} input
  */
 export async function authorExperienceCandidates({
@@ -3615,7 +3845,10 @@ export async function authorExperienceCandidates({
   const policy = resolvePipelineTestPolicy({ profile: testProfile });
   // Validate the complete reference contract first; a focused test limits
   // provider work, not reference/source safety or normal intake diversity.
-  const routes = assertInspirationPack(inspirationPack).slice(0, policy.candidateCount);
+  const routes = assertInspirationPack(inspirationPack).slice(
+    0,
+    policy.candidateCount,
+  );
   // OpenRouter's in-flight budget is shared across the account. Keep the
   // independent candidates, but never put more than two model stages in
   // flight at once. This protects the creative lane without falling back to a
@@ -3631,10 +3864,15 @@ export async function authorExperienceCandidates({
     routes.map(async (route, index) => {
       const routeContentManifest = buildCreativeContentManifest(site, route);
       const content = routeContentManifest.values;
+      const modelRoute = adaptReferencePersonnelCuesForClient(route, content);
       const base = {
-        route,
+        route: modelRoute,
         contentTokens,
         contentShape: content,
+        finalSafetyInstruction: referencePersonnelCueTranslation({
+          route,
+          contentShape: content,
+        }),
         visualBrief: routeContentManifest.visualBrief,
         rules,
       };
@@ -3671,8 +3909,7 @@ export async function authorExperienceCandidates({
               stage: "experience",
               designContract,
               previousSource: experience,
-              validationError:
-                error instanceof Error ? error.message : String(error),
+              validationError: validationRepairMessage(error),
             },
             "content",
             "experience",
@@ -3685,10 +3922,7 @@ export async function authorExperienceCandidates({
             routeContentManifest.visualBrief,
           );
         } catch (repairError) {
-          const repairMessage =
-            repairError instanceof Error
-              ? repairError.message
-              : String(repairError);
+          const repairMessage = validationRepairMessage(repairError);
           const finalRepair = await generateStageValue(
             limitedGenerate,
             {
@@ -3702,15 +3936,40 @@ export async function authorExperienceCandidates({
             "experience",
           );
           experience = normalizeAuthoredSource(finalRepair.value);
-          validateExperience(
-            experience,
-            route,
-            content,
-            routeContentManifest.visualBrief,
-          );
+          try {
+            validateExperience(
+              experience,
+              route,
+              content,
+              routeContentManifest.visualBrief,
+            );
+          } catch (finalRepairError) {
+            const finalRepairMessage =
+              validationRepairMessage(finalRepairError);
+            const lastRepair = await generateStageValue(
+              limitedGenerate,
+              {
+                ...base,
+                stage: "experience",
+                designContract,
+                previousSource: experience,
+                validationError: `The previous validation repairs still failed: ${finalRepairMessage}. This is the final bounded retry. Correct that exact source-safety issue while preserving the assigned composition, sealed content bindings, required sections, and all other validated structure.`,
+              },
+              "content",
+              "experience",
+            );
+            experience = normalizeAuthoredSource(lastRepair.value);
+            validateExperience(
+              experience,
+              route,
+              content,
+              routeContentManifest.visualBrief,
+            );
+          }
         }
       }
       let referenceRepairCycles = 0;
+      let referenceFidelity = null;
       if (route.referenceDna?.complete) {
         let fidelity = validateReferenceCandidate({
           referenceDna: route.referenceDna,
@@ -3722,6 +3981,7 @@ export async function authorExperienceCandidates({
           motionSource: "export function mountExperienceMotion() {}",
         });
         while (
+          policy.runCreativeChecks &&
           (!fidelity.pass || !fidelity.visualPass) &&
           referenceRepairCycles < 2
         ) {
@@ -3753,10 +4013,11 @@ export async function authorExperienceCandidates({
             motionSource: "export function mountExperienceMotion() {}",
           });
         }
-        if (!fidelity.pass || !fidelity.visualPass)
+        if (!fidelity.pass || (policy.runCreativeChecks && !fidelity.visualPass))
           throw new Error(
             `Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
           );
+        referenceFidelity = fidelity;
       }
       const servicePageOutput = await generateValidatedSource({
         generate: limitedGenerate,
@@ -3845,10 +4106,11 @@ export async function authorExperienceCandidates({
           stylesSource: styles,
           motionSource: motion,
         });
-        if (!finalFidelity.pass || !finalFidelity.visualPass)
+        if (!finalFidelity.pass || (policy.runCreativeChecks && !finalFidelity.visualPass))
           throw new Error(
             `Reference fidelity failed for ${route.id}: ${finalFidelity.findings.map((item) => item.message).join(" | ")}`,
           );
+        referenceFidelity = finalFidelity;
       }
       const creativeManifest = buildCandidateManifest({
         candidate: {
@@ -3899,6 +4161,17 @@ export async function authorExperienceCandidates({
         intakeFitScore: Number(route.intakeFitScore || 0),
         explicitReferenceMatch: route.explicitReferenceMatch === true,
         referenceDna: route.referenceDna,
+        referenceFidelity: referenceFidelity
+          ? {
+              status: policy.runCreativeChecks
+                ? "enforced"
+                : "visual-checks-skipped",
+              hardChecksPassed: referenceFidelity.pass,
+              visualPass: referenceFidelity.visualPass,
+              score: referenceFidelity.score,
+              findings: referenceFidelity.findings,
+            }
+          : { status: "not-available" },
         mobileBehavior: route.mobileBehavior,
         fingerprint: creativeManifest.fingerprint,
         complianceRepaired,

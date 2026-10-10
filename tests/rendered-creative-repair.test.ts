@@ -2053,37 +2053,50 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
     ).toBe("candidate-a-desktop-round-2");
   });
 
-  it("repairs the selected candidate when promotion is blocked without diversity pairs", async () => {
-    const { root, candidates } = await fixture();
+  it("does not repair a sole candidate when rendered pairwise diversity is unmeasurable", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
     let bakeoffCalls = 0;
     const repairs: string[] = [];
+    const promotions: string[] = [];
 
-    const result = await runRenderedCreativeRepair({
-      siteDir: root,
-      candidatesDir: candidates,
-      outDir: path.join(root, "evidence"),
-      mode: "promote",
-      runBakeoffImpl: async (options: any) => {
-        bakeoffCalls += 1;
-        return writeBakeoffEvidence(
-          options,
-          bakeoffCalls === 1
-            ? report({
-                promotionReady: false,
-                visualDiversity: { pass: true, pairs: [] },
-              })
-            : report(),
-        );
-      },
-      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
-      repairCandidateImpl: async ({ candidateId }: any) => {
-        repairs.push(candidateId);
-      },
-      promoteImpl: async () => ({ candidateId: "candidate-a" }),
-    });
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "promote",
+        maxCycles: 3,
+        runBakeoffImpl: async (options: any) => {
+          bakeoffCalls += 1;
+          return writeBakeoffEvidence(
+            options,
+            report({
+              promotionReady: false,
+              selectedCandidateId: "candidate-a",
+              candidates: [candidate("candidate-a")],
+              visualDiversity: {
+                pass: false,
+                minimumDistance: 0,
+                pairs: [],
+                source: "incomplete-rendered-evidence",
+              },
+            }),
+          );
+        },
+        runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+        repairCandidateImpl: async ({ candidateId }: any) => {
+          repairs.push(candidateId);
+        },
+        promoteImpl: async ({ candidateDir }: any) => {
+          promotions.push(path.basename(candidateDir));
+          return { candidateId: "candidate-a" };
+        },
+      }),
+    ).rejects.toThrow(/insufficient candidate count.*pairwise diversity/iu);
 
-    expect(result.status).toBe("passed");
-    expect(repairs).toEqual(["candidate-a"]);
+    expect(bakeoffCalls).toBe(1);
+    expect(repairs).toEqual([]);
+    expect(promotions).toEqual([]);
   });
 
   it("repairs each diversity candidate once per rendered round even when multiple pairs fail", async () => {
@@ -2541,6 +2554,68 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
 
     expect(repairCalls).toBe(2);
     expect(bakeoffCalls).toBe(3);
+  });
+
+  it("allows the final render after independent reference and visual-gate repair budgets are used", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let bakeoffCalls = 0;
+    let gateCalls = 0;
+    let repairCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 2,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        const needsReferenceRepair = bakeoffCalls <= 2;
+        const candidateState = needsReferenceRepair
+          ? candidate("candidate-a", {
+              valid: false,
+              eligible: false,
+              referenceFidelity: { pass: false },
+              renderedReferenceFidelity: {
+                pass: false,
+                audit: {
+                  overallScore: 64,
+                  findings: [{
+                    severity: "major",
+                    category: "composition",
+                    viewport: "desktop",
+                    evidence: "The reference composition is not yet met.",
+                  }],
+                },
+              },
+              failures: ["Reference fidelity is below its hard threshold."],
+            })
+          : candidate("candidate-a");
+        return writeBakeoffEvidence(
+          options,
+          report({
+            selectedCandidateId: needsReferenceRepair
+              ? null
+              : "candidate-a",
+            promotionReady: !needsReferenceRepair,
+            candidates: [candidateState],
+          }),
+        );
+      },
+      runVisualGateImpl: (options: any) => {
+        gateCalls += 1;
+        return visualGate(options, gateCalls <= 2 ? "revise" : "pass");
+      },
+      repairCandidateImpl: async () => {
+        repairCalls += 1;
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(bakeoffCalls).toBe(5);
+    expect(gateCalls).toBe(3);
+    expect(repairCalls).toBe(4);
   });
 
   it("rejects a passing visual-gate report when the process exits nonzero", async () => {
