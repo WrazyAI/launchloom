@@ -4,11 +4,54 @@ import path from "node:path";
 import { fal as defaultFal } from "@fal-ai/client";
 import sharp from "sharp";
 import { buildRouteContract } from "./creative-compiler.mjs";
+import {
+  openRouterApiError,
+  openRouterChatCompletion,
+  openRouterResponseCacheMetrics,
+  openRouterSessionId,
+  readOpenRouterResponseEnvelope,
+} from "./openrouter-client.mjs";
+import { VISUAL_GATE_MODEL } from "./visual-quality-gate-lib.mjs";
 
 export const DEFAULT_FAL_MODEL = "fal-ai/minimax/image-01";
 export const DEFAULT_MAX_IMAGES = 3;
 export const DEFAULT_MAX_REQUESTS = 6;
 export const DEFAULT_MAX_PROMPT_LENGTH = 1500;
+export const GENERATED_ASSET_REVIEW_POLICY_VERSION = "visual-review-v1";
+
+const GENERATED_ASSET_REVIEW_MODEL =
+  process.env.FAL_IMAGE_REVIEW_MODEL || VISUAL_GATE_MODEL;
+const GENERATED_ASSET_REVIEW_REASONS = new Set([
+  "not_standalone_image",
+  "website_or_interface",
+  "visible_text",
+  "logo_or_watermark",
+  "irrelevant_subject",
+  "review_unavailable",
+  "review_rejected",
+]);
+const GENERATED_ASSET_REVIEW_SCHEMA = {
+  name: "launchloom_generated_asset_review",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "isStandaloneImage",
+      "containsWebsiteOrInterface",
+      "containsVisibleTextOrTextLikeMarks",
+      "containsLogoOrWatermark",
+      "isRelevantToBusiness",
+    ],
+    properties: {
+      isStandaloneImage: { type: "boolean" },
+      containsWebsiteOrInterface: { type: "boolean" },
+      containsVisibleTextOrTextLikeMarks: { type: "boolean" },
+      containsLogoOrWatermark: { type: "boolean" },
+      isRelevantToBusiness: { type: "boolean" },
+    },
+  },
+};
 
 function configuredNumber(value, fallback) {
   if (value === undefined || value === null || value === "") return fallback;
@@ -93,13 +136,206 @@ function sceneOnlyDirection(value, limit = 280) {
     " ",
   );
   return imageOnlyDirection(safeReferenceText, limit)
-    .replace(/\b(?:full[- ]width|wide[- ]screen|desktop|mobile|viewport)\b/giu, " ")
+    .replace(
+      /\b(?:full[- ]width|wide[- ]screen|desktop|mobile|viewport)\b/giu,
+      " ",
+    )
     .replace(/[,:;\s]+/gu, " ")
     .trim();
 }
 
 function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function reviewUsageSummary(usage) {
+  if (!usage || typeof usage !== "object") return null;
+  const summary = {};
+  for (const key of [
+    "prompt_tokens",
+    "completion_tokens",
+    "total_tokens",
+    "cost",
+    "cache_discount",
+  ]) {
+    const number = Number(usage[key]);
+    if (usage[key] !== undefined && Number.isFinite(number))
+      summary[key] = number;
+  }
+  const details = usage.prompt_tokens_details;
+  if (details && typeof details === "object") {
+    for (const key of ["cached_tokens", "cache_write_tokens"]) {
+      const number = Number(details[key]);
+      if (details[key] !== undefined && Number.isFinite(number))
+        summary[key] = number;
+    }
+  }
+  return Object.keys(summary).length ? summary : null;
+}
+
+function normalizeImageReview(
+  review,
+  fallbackModel = GENERATED_ASSET_REVIEW_MODEL,
+) {
+  const available = review?.available !== false;
+  const approved = available && review?.approved === true;
+  const reasons = Array.isArray(review?.reasonCodes)
+    ? review.reasonCodes.filter((reason) =>
+        GENERATED_ASSET_REVIEW_REASONS.has(reason),
+      )
+    : [];
+  return {
+    status: !available ? "unavailable" : approved ? "approved" : "rejected",
+    model: text(review?.model || fallbackModel, 100),
+    reasonCodes: approved
+      ? []
+      : reasons.length
+        ? [...new Set(reasons)].slice(0, 6)
+        : [available ? "review_rejected" : "review_unavailable"],
+    usage: reviewUsageSummary(review?.usage),
+    ...(review?.cache?.status
+      ? { cacheStatus: text(review.cache.status, 20).toLowerCase() }
+      : {}),
+  };
+}
+
+function assetReviewReasonCodes(checks) {
+  const reasons = [];
+  if (checks.isStandaloneImage !== true) reasons.push("not_standalone_image");
+  if (checks.containsWebsiteOrInterface === true)
+    reasons.push("website_or_interface");
+  if (checks.containsVisibleTextOrTextLikeMarks === true)
+    reasons.push("visible_text");
+  if (checks.containsLogoOrWatermark === true)
+    reasons.push("logo_or_watermark");
+  if (checks.isRelevantToBusiness !== true) reasons.push("irrelevant_subject");
+  return reasons;
+}
+
+/**
+ * Inspect a newly generated image as pixels before it is persisted or bound to
+ * the client config. Provider/model errors are represented as an unavailable
+ * review so callers can fall back without leaking unsafe assets.
+ *
+ * @param {{ imageData: Buffer, placement: string, businessKind?: string, services?: string[], familyId?: string, model?: string, apiKey?: string, timeoutMs?: number }} input
+ */
+export async function reviewGeneratedAsset({
+  imageData,
+  placement,
+  businessKind = "local business",
+  services = [],
+  familyId = "",
+  model = GENERATED_ASSET_REVIEW_MODEL,
+  apiKey = process.env.OPENROUTER_API_KEY,
+  timeoutMs = 45_000,
+} = {}) {
+  if (!apiKey)
+    return {
+      available: false,
+      approved: false,
+      reasonCodes: ["review_unavailable"],
+      model,
+      usage: null,
+    };
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const content = [
+      {
+        type: "text",
+        text: [
+          `Review this generated ${text(placement, 30)} image asset for a ${safePromptPart(businessKind, 90) || "local business"}.`,
+          `Relevant service context: ${
+            services
+              .map((service) => safePromptPart(service, 80))
+              .filter(Boolean)
+              .slice(0, 4)
+              .join(", ") || "general business context"
+          }.`,
+          `Reference family: ${safePromptPart(familyId || "unspecified", 80) || "unspecified"}.`,
+          "Judge visible pixels, not the prompt or filename. Reject a fake website/page screenshot, browser or UI layout, collage of interface panels, gibberish or readable text, text-like marks, logos, watermarks, or an unrelated subject.",
+          "Approve only one standalone image asset with a relevant subject, no visible text-like marks, and no interface or branding.",
+        ].join(" "),
+      },
+      {
+        type: "image_url",
+        image_url: {
+          url: `data:image/webp;base64,${imageData.toString("base64")}`,
+          detail: "high",
+        },
+      },
+    ];
+    const response = await openRouterChatCompletion({
+      title: "LaunchLoom generated asset review",
+      signal: controller.signal,
+      sessionId: openRouterSessionId(
+        "generated-asset-review",
+        model,
+        sha256(imageData),
+      ),
+      responseCache: true,
+      responseCacheTtlSeconds: 86_400,
+      body: {
+        model,
+        temperature: 0,
+        max_completion_tokens: 180,
+        provider: { require_parameters: true },
+        response_format: {
+          type: "json_schema",
+          json_schema: GENERATED_ASSET_REVIEW_SCHEMA,
+        },
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a strict visual asset integrity reviewer. Evaluate only what is visible in the supplied pixels. A fake website screenshot with nonsense text is still a website screenshot and must be rejected. Do not infer that a design mockup is acceptable because its text is unreadable. Return only the required structured fields.",
+          },
+          { role: "user", content },
+        ],
+      },
+    });
+    const envelope = await readOpenRouterResponseEnvelope(response);
+    const apiError = openRouterApiError(envelope.payload, response.status);
+    if (!response.ok || apiError || envelope.parseError)
+      throw new Error("Generated asset review provider response was invalid.");
+    const raw = envelope.payload.choices?.[0]?.message?.content;
+    if (typeof raw !== "string" || !raw.trim())
+      throw new Error("Generated asset review omitted structured checks.");
+    const checks = JSON.parse(raw);
+    const requiredChecks = [
+      "isStandaloneImage",
+      "containsWebsiteOrInterface",
+      "containsVisibleTextOrTextLikeMarks",
+      "containsLogoOrWatermark",
+      "isRelevantToBusiness",
+    ];
+    if (
+      !checks ||
+      typeof checks !== "object" ||
+      requiredChecks.some((key) => typeof checks[key] !== "boolean")
+    )
+      throw new Error("Generated asset review returned incomplete checks.");
+    const reasonCodes = assetReviewReasonCodes(checks);
+    return {
+      available: true,
+      approved: reasonCodes.length === 0,
+      reasonCodes,
+      model,
+      usage: reviewUsageSummary(envelope.payload.usage),
+      cache: openRouterResponseCacheMetrics(response),
+    };
+  } catch {
+    return {
+      available: false,
+      approved: false,
+      reasonCodes: ["review_unavailable"],
+      model,
+      usage: null,
+    };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function list(value, limit = 6) {
@@ -355,8 +591,10 @@ function promptFor(site, route, placement) {
   const familyBrief = familyAssetBriefs[dna.familyId] || {
     medium: "commercial editorial photography",
     hero: "Create a distinctive, service-relevant scene using the assigned reference's physical subject cues.",
-    secondary: "Create a distinct supporting service scene using the assigned reference's physical subject cues.",
-    tertiary: "Create a tactile material or service detail using the assigned reference's physical subject cues.",
+    secondary:
+      "Create a distinct supporting service scene using the assigned reference's physical subject cues.",
+    tertiary:
+      "Create a tactile material or service detail using the assigned reference's physical subject cues.",
   };
   const subject = services.length
     ? services.join(", ")
@@ -411,9 +649,45 @@ function promptFor(site, route, placement) {
 }
 
 function fallbackImage(site, placement) {
-  if (placement.id === "hero") return site.images?.hero || "";
-  if (placement.id === "secondary") return site.images?.secondary || "";
-  return site.images?.tertiary || "";
+  const candidate =
+    placement.id === "hero"
+      ? site.images?.hero || ""
+      : placement.id === "secondary"
+        ? site.images?.secondary || ""
+        : site.images?.tertiary || "";
+  const wasGenerated = (site.assetReport?.used || []).some(
+    (entry) =>
+      entry?.source === "fal-generated" &&
+      entry?.placement === placement.id &&
+      entry?.asset === candidate,
+  );
+  return wasGenerated ? "" : candidate;
+}
+
+function applyFallbackImage(site, placement) {
+  const fallback = fallbackImage(site, placement);
+  if (fallback) {
+    setImage(site, placement, fallback);
+    return fallback;
+  }
+  const current =
+    placement.id === "hero"
+      ? site.images?.hero
+      : placement.id === "secondary"
+        ? site.images?.secondary
+        : site.images?.tertiary;
+  const wasGenerated = (site.assetReport?.used || []).some(
+    (entry) =>
+      entry?.source === "fal-generated" &&
+      entry?.placement === placement.id &&
+      entry?.asset === current,
+  );
+  if (wasGenerated) {
+    const images = { ...(site.images || {}) };
+    delete images[placement.id];
+    site.images = images;
+  }
+  return "";
 }
 
 function pathFor(placement, promptHash) {
@@ -509,7 +783,9 @@ function existingEntry(manifest, placement, promptHash, outputDir) {
   const entry = manifest?.placements?.find(
     (candidate) =>
       candidate.placement === placement.id &&
-      candidate.promptHash === promptHash,
+      candidate.promptHash === promptHash &&
+      candidate.reviewPolicyVersion === GENERATED_ASSET_REVIEW_POLICY_VERSION &&
+      candidate.imageReview?.status === "approved",
   );
   if (!entry?.path || !entry.path.startsWith("/images/generated/")) return null;
   const filename = path.basename(entry.path);
@@ -536,6 +812,7 @@ async function generateContextualAssetsForRoute({
   timeoutMs = Number(process.env.FAL_IMAGE_TIMEOUT_MS) || 120_000,
   falClient = /** @type {any} */ (defaultFal),
   fetchImpl = fetch,
+  imageReviewer = reviewGeneratedAsset,
   force = false,
 } = {}) {
   if (!site || typeof site !== "object")
@@ -560,9 +837,10 @@ async function generateContextualAssetsForRoute({
     (placement) => !clientAssetFor(site, placement),
   );
   const manifest = {
-    version: 2,
+    version: 3,
     provider: "fal.ai",
     model,
+    reviewPolicyVersion: GENERATED_ASSET_REVIEW_POLICY_VERSION,
     strategy: "client-first-fill-missing-route-directed",
     routeId: routeContract.id,
     familyId: routeContract.familyId,
@@ -573,16 +851,22 @@ async function generateContextualAssetsForRoute({
   };
   let requests = 0;
   let filled = 0;
-  const canGenerate = Boolean(key && !force);
+  const hasReviewProvider =
+    imageReviewer !== reviewGeneratedAsset ||
+    Boolean(process.env.OPENROUTER_API_KEY);
+  const canGenerate = Boolean(key && !force && hasReviewProvider);
   if (canGenerate) falClient.config({ credentials: key });
 
   for (const placement of placements) {
     const prompt = promptFor(site, route, placement);
-    const promptHash = sha256(prompt);
+    // Bump this contract whenever image acceptance policy changes so a stale
+    // unreviewed (or rejected) bitmap cannot be reused by its old prompt hash.
+    const promptHash = sha256(
+      `${GENERATED_ASSET_REVIEW_POLICY_VERSION}\n${prompt}`,
+    );
 
     if (filled >= imageBudget) {
-      const fallback = fallbackImage(site, placement);
-      if (fallback) setImage(site, placement, fallback);
+      const fallback = applyFallbackImage(site, placement);
       manifest.skipped.push({
         placement: placement.id,
         reason: "image-budget-exhausted",
@@ -611,12 +895,15 @@ async function generateContextualAssetsForRoute({
     }
 
     if (!canGenerate || requests >= maxRequests) {
-      const fallback = fallbackImage(site, placement);
-      if (fallback) setImage(site, placement, fallback);
+      const fallback = applyFallbackImage(site, placement);
       manifest.skipped.push({
         placement: placement.id,
         reason: !canGenerate
-          ? "FAL_KEY-not-configured"
+          ? !key
+            ? "FAL_KEY-not-configured"
+            : !hasReviewProvider
+              ? "OPENROUTER_API_KEY-not-configured"
+              : "image-generation-disabled"
           : "request-budget-exhausted",
         fallback,
       });
@@ -625,6 +912,8 @@ async function generateContextualAssetsForRoute({
 
     let outcome;
     let failure = "";
+    let finalReview;
+    const imageReviews = [];
     for (let attempt = 0; attempt < 2 && requests < maxRequests; attempt += 1) {
       requests += 1;
       try {
@@ -634,7 +923,7 @@ async function generateContextualAssetsForRoute({
           prompt:
             attempt === 0
               ? prompt
-              : `${prompt} Make the subject simpler, remove all incidental text-like marks, and keep the composition clear at a small mobile crop.`,
+              : `${prompt} Do not create a webpage, interface, or any visible text. Regenerate only a single standalone image asset.`,
           aspectRatio: placement.aspectRatio,
           timeoutMs,
         });
@@ -644,6 +933,39 @@ async function generateContextualAssetsForRoute({
           timeoutMs,
         );
         const normalized = await normalizeImage(downloaded.data, placement);
+        let review;
+        try {
+          review = await imageReviewer({
+            imageData: normalized.data,
+            placement: placement.id,
+            businessKind:
+              site.businessKind || site.industry || "local business",
+            services: (site.services || [])
+              .map((service) => service?.name)
+              .filter(Boolean)
+              .slice(0, 4),
+            familyId: routeContract.familyId,
+            attempt: attempt + 1,
+          });
+        } catch {
+          review = {
+            available: false,
+            approved: false,
+            reasonCodes: ["review_unavailable"],
+          };
+        }
+        const reviewSummary = normalizeImageReview(review);
+        imageReviews.push(reviewSummary);
+        finalReview = reviewSummary;
+        if (reviewSummary.status === "unavailable") {
+          failure = "image-review-unavailable";
+          break;
+        }
+        if (reviewSummary.status !== "approved") {
+          failure = "image-review-rejected";
+          if (attempt === 0 && requests < maxRequests) continue;
+          break;
+        }
         const fileName = `${placement.id}-${promptHash.slice(0, 12)}.webp`;
         const filePath = path.join(outputDir, fileName);
         await fs.writeFile(filePath, normalized.data);
@@ -651,6 +973,8 @@ async function generateContextualAssetsForRoute({
           placement: placement.id,
           path: pathFor(placement, promptHash),
           promptHash,
+          reviewPolicyVersion: GENERATED_ASSET_REVIEW_POLICY_VERSION,
+          imageReview: reviewSummary,
           requestId: requested.requestId,
           providerSourceUrl: requested.url,
           sha256: sha256(normalized.data),
@@ -675,12 +999,12 @@ async function generateContextualAssetsForRoute({
       setImage(site, placement, outcome.path);
       manifest.placements.push(outcome);
     } else {
-      const fallback = fallbackImage(site, placement);
-      if (fallback) setImage(site, placement, fallback);
+      const fallback = applyFallbackImage(site, placement);
       manifest.skipped.push({
         placement: placement.id,
         reason: failure || "FAL image generation failed.",
         fallback,
+        ...(finalReview ? { imageReviews } : {}),
       });
     }
   }
@@ -691,8 +1015,18 @@ async function generateContextualAssetsForRoute({
   const generatedPlacements = new Set(
     manifest.placements.map((entry) => entry.placement),
   );
+  const resolvedPlacements = new Set([
+    ...generatedPlacements,
+    ...manifest.skipped.map((entry) => entry.placement),
+  ]);
   site.assetReport = {
-    used: used.filter((entry) => !generatedPlacements.has(entry.placement)),
+    used: used.filter(
+      (entry) =>
+        !(
+          entry.source === "fal-generated" &&
+          resolvedPlacements.has(entry.placement)
+        ),
+    ),
     skipped: Array.isArray(site.assetReport?.skipped)
       ? [...site.assetReport.skipped]
       : [],
@@ -722,6 +1056,7 @@ async function generateContextualAssetsForRoute({
         : skipped.reason,
     });
   }
+  manifest.generationRequests = requests;
   if (manifestPath) {
     await fs.mkdir(path.dirname(manifestPath), { recursive: true });
     await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
@@ -796,27 +1131,21 @@ export async function generateContextualAssets(options = {}) {
     if (!firstRouteSite) firstRouteSite = result.site;
     creativeAssets[route.id] = {
       hero:
-        clientAssetPath(site, PLACEMENTS[0]) ||
-        result.site.images?.hero ||
-        site.images?.hero ||
-        "",
+        clientAssetPath(site, PLACEMENTS[0]) || result.site.images?.hero || "",
       secondary:
         clientAssetPath(site, PLACEMENTS[1]) ||
         result.site.images?.secondary ||
-        site.images?.secondary ||
         "",
       tertiary:
         clientAssetPath(site, PLACEMENTS[2]) ||
         result.site.images?.tertiary ||
-        site.images?.tertiary ||
         "",
       familyId: result.manifest.familyId,
       routeFingerprint: result.manifest.routeFingerprint,
     };
   }
 
-  if (firstRouteSite?.images)
-    site.images = { ...(site.images || {}), ...firstRouteSite.images };
+  site.images = { ...(firstRouteSite?.images || {}) };
   site.creativeAssets = creativeAssets;
 
   const existingUsed = Array.isArray(site.assetReport?.used)
@@ -864,11 +1193,13 @@ export async function generateContextualAssets(options = {}) {
   }
 
   const manifest = {
-    version: 3,
+    version: 4,
     provider: "fal.ai",
     model: options.model || process.env.FAL_IMAGE_MODEL || DEFAULT_FAL_MODEL,
+    reviewPolicyVersion: GENERATED_ASSET_REVIEW_POLICY_VERSION,
     strategy: "client-first-per-route-reference-directed",
     generatedAt: new Date().toISOString(),
+    generationRequests: totalRequests,
     routes: routeManifests,
     placements,
     skipped,

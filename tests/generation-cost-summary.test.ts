@@ -249,6 +249,91 @@ describe("generation cost summary", () => {
     ).toBe(true);
   });
 
+  it("counts rejected FAL attempts and visual-review inference separately", () => {
+    const summary = summarizeGenerationCosts(
+      {
+        generatedAssets: {
+          provider: "fal.ai",
+          model: "fal-ai/minimax/image-01",
+          generationRequests: 2,
+          placements: [],
+          skipped: [
+            {
+              placement: "hero",
+              reason: "image-review-rejected",
+              imageReviews: [
+                {
+                  status: "rejected",
+                  model: "z-ai/glm-5.3-flash",
+                  usage: {
+                    prompt_tokens: 120,
+                    completion_tokens: 20,
+                    total_tokens: 140,
+                    cost: 0.001,
+                  },
+                },
+                {
+                  status: "rejected",
+                  model: "z-ai/glm-5.3-flash",
+                  usage: {
+                    prompt_tokens: 120,
+                    completion_tokens: 20,
+                    total_tokens: 140,
+                    cost: 0.001,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+      { falImageUsdPerImage: 0.08 },
+    );
+    const stages = Object.fromEntries(
+      summary.stages.map((stage) => [stage.stage, stage]),
+    );
+
+    expect(stages.images).toMatchObject({
+      costUsd: 0.16,
+      costKind: "estimated",
+      detail: { requests: 2, acceptedImages: 0 },
+    });
+    expect(stages.image_review).toMatchObject({
+      provider: "openrouter",
+      model: "z-ai/glm-5.3-flash",
+      costUsd: 0.002,
+      costKind: "actual",
+      detail: { calls: 2, rejected: 2, promptTokens: 240 },
+    });
+  });
+
+  it("does not count reused placements as current image review spend", () => {
+    const summary = summarizeGenerationCosts({
+      generatedAssets: {
+        provider: "fal.ai",
+        model: "fal-ai/minimax/image-01",
+        generationRequests: 0,
+        placements: [
+          {
+            placement: "hero",
+            reused: true,
+            imageReview: {
+              status: "approved",
+              model: "z-ai/glm-5.3-flash",
+              usage: { prompt_tokens: 400, completion_tokens: 30, cost: 0.001 },
+            },
+          },
+        ],
+        skipped: [],
+      },
+    });
+
+    expect(summary.stages.some((stage) => stage.stage === "image_review")).toBe(
+      false,
+    );
+    expect(summary.actualUsd).toBe(0);
+  });
+
   it("omits stages with no activity", () => {
     const summary = summarizeGenerationCosts({}, {});
     expect(summary.stages).toEqual([]);

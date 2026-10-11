@@ -193,7 +193,9 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
     const placements = Array.isArray(assets.placements)
       ? assets.placements
       : [];
-    const images = placements.length;
+    const requests = finiteNumber(assets.generationRequests);
+    const images =
+      requests === null ? placements.length : Math.max(0, requests);
     if (images > 0) {
       const unitPrice = options.falImageUsdPerImage ?? null;
       const cost =
@@ -206,9 +208,56 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
         costKind: cost === null ? "unreported" : "estimated",
         complete: cost !== null,
         detail: {
-          images,
+          requests: images,
+          acceptedImages: placements.length,
           skipped: Array.isArray(assets.skipped) ? assets.skipped.length : 0,
           unitPriceUsd: cost === null ? null : unitPrice,
+        },
+      });
+    }
+
+    const reviewRecords = [
+      ...placements
+        .filter((entry) => entry.reused !== true)
+        .map((entry) => entry.imageReview)
+        .filter(Boolean),
+      ...(Array.isArray(assets.skipped) ? assets.skipped : []).flatMap(
+        (entry) =>
+          Array.isArray(entry.imageReviews) ? entry.imageReviews : [],
+      ),
+    ];
+    if (reviewRecords.length) {
+      const summed = sumUsage(
+        reviewRecords.map((record) => ({ usage: record.usage || {} })),
+      );
+      const model = reviewRecords.find((record) => record.model)?.model || null;
+      stages.push({
+        stage: "image_review",
+        provider: "openrouter",
+        model,
+        costUsd: summed.unpriced === 0 ? summed.cost : null,
+        costKind: summed.unpriced === 0 ? "actual" : "unreported",
+        complete: summed.unpriced === 0,
+        detail: {
+          calls: reviewRecords.length,
+          pricedCalls: summed.priced,
+          unpricedCalls: summed.unpriced,
+          rejected: reviewRecords.filter(
+            (record) => record.status === "rejected",
+          ).length,
+          unavailable: reviewRecords.filter(
+            (record) => record.status === "unavailable",
+          ).length,
+          promptTokens: reviewRecords.reduce(
+            (total, record) =>
+              total + (finiteNumber(record.usage?.prompt_tokens) || 0),
+            0,
+          ),
+          completionTokens: reviewRecords.reduce(
+            (total, record) =>
+              total + (finiteNumber(record.usage?.completion_tokens) || 0),
+            0,
+          ),
         },
       });
     }
