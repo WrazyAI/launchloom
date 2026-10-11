@@ -262,7 +262,7 @@ function copywriterContext(intake = {}) {
     businessKind: text(intake.businessKind || intake.business?.kind, 100),
     industry: text(intake.industry, 100),
     languageCode: text(
-      seo.languageCode || intake.researchLanguageCode || "en",
+      intake.researchLanguageCode || seo.languageCode || "en",
       16,
     ),
     services: serviceNames,

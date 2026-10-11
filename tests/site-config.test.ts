@@ -1986,6 +1986,7 @@ describe("site configuration", () => {
     const seoResearch = {
       version: 2,
       mode: "context-only",
+      languageCode: "en",
       publishReady: false,
       validatedQueries: [
         {
@@ -2077,7 +2078,7 @@ describe("site configuration", () => {
       faqNotes: "Mention what to share about brake squeal.",
       feedback: "Remove any wording that says the shop is open now.",
       excludedServices: "Engine replacement",
-      researchLanguageCode: "en",
+      researchLanguageCode: "es",
       seoResearch,
     });
     const refinementBody = JSON.parse(
@@ -2087,6 +2088,12 @@ describe("site configuration", () => {
       String(fetchMock.mock.calls[0]?.[1]?.body || "{}"),
     );
     const initialPrompt = JSON.stringify(initialBody.messages);
+    const initialUserMessage = initialBody.messages.find(
+      (message: { role?: string }) => message.role === "user",
+    )?.content || "";
+    const initialContext = JSON.parse(
+      initialUserMessage.slice(initialUserMessage.lastIndexOf("\n") + 1),
+    );
     const refinementPrompt = JSON.stringify(refinementBody.messages);
 
     expect(initialPrompt).toContain("brake repair near me");
@@ -2098,6 +2105,7 @@ describe("site configuration", () => {
     );
     expect(initialPrompt).toContain("Engine replacement");
     expect(initialPrompt).toContain("languageCode");
+    expect(initialContext.languageCode).toBe("es");
     expect(initialPrompt).not.toContain("RAW_COMPETITOR_TITLE_SENTINEL");
     expect(initialPrompt).not.toContain("RAW_EXTERNAL_TITLE_SENTINEL");
     expect(initialPrompt).not.toContain("RAW_UNVERIFIED_CLAIM_SENTINEL");
