@@ -505,10 +505,9 @@ function findService(query, services) {
 }
 
 function metricBelongsToService(item, service) {
-  return (
-    keywordKey(item?.confirmedService) === keywordKey(service) ||
-    findService(item?.keyword, [service]) === service
-  );
+  if (item?.confirmedService)
+    return keywordKey(item.confirmedService) === keywordKey(service);
+  return findService(item?.keyword, [service]) === service;
 }
 
 function hasStrongRelatedServiceMatch(keyword, service) {

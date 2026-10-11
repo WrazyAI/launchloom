@@ -2085,6 +2085,65 @@ describe("SEO market map", () => {
     });
   });
 
+  it("does not attribute a specifically tagged subservice query to its parent service", async () => {
+    const provider = researchProvider();
+    provider.googleSearchVolume.mockImplementation(
+      async ({ keywords }: { keywords: string[]; locationName?: string }) => ({
+        cost: 0.04,
+        keywords: keywords.map((keyword) => {
+          const isEmergency = keyword.toLocaleLowerCase().includes("emergency plumbing");
+          return {
+            keyword,
+            searchVolume: isEmergency ? 90 : null,
+            cpc: isEmergency ? 4.1 : null,
+            competition: isEmergency ? 0.7 : null,
+          };
+        }),
+      }),
+    );
+    provider.searchIntent.mockImplementation(
+      async ({ keywords }: { keywords: string[] }) => ({
+        cost: 0.01,
+        keywords: keywords
+          .filter((keyword) => keyword.toLocaleLowerCase().includes("emergency plumbing"))
+          .map((keyword) => ({ keyword, intent: "transactional" })),
+      }),
+    );
+    provider.bulkKeywordDifficulty.mockImplementation(
+      async ({ keywords }: { keywords: string[] }) => ({
+        cost: 0.01,
+        keywords: keywords
+          .filter((keyword) => keyword.toLocaleLowerCase().includes("emergency plumbing"))
+          .map((keyword) => ({ keyword, difficulty: 37 })),
+      }),
+    );
+    provider.relatedKeywords.mockResolvedValue({ cost: 0.01, keywords: [] });
+
+    const dossier = await researchSiteContext(
+      {
+        businessKind: "plumbing",
+        industry: "home-services",
+        confirmedServices: ["Plumbing", "Emergency plumbing"],
+        primaryCity: "Tacoma, WA",
+      },
+      { dataForSeo: provider, maxTasks: 16, maxUsd: 0.25 },
+    );
+    const servicePage = dossier.pageMap.find(
+      (page) => page.pageType === "service" && page.service === "Plumbing",
+    );
+
+    expect(dossier.completeness.serviceMetrics).toEqual([
+      { service: "Plumbing", complete: false, primaryKeyword: null },
+      {
+        service: "Emergency plumbing",
+        complete: true,
+        primaryKeyword: expect.stringMatching(/emergency plumbing/iu),
+      },
+    ]);
+    expect(servicePage?.primaryKeyword?.keyword).not.toMatch(/emergency plumbing/iu);
+    expect(dossier.publishReady).toBe(false);
+  });
+
   it("degrades to context-only when a required measured research stage fails", async () => {
     const provider = researchProvider({ serpFailure: true });
     const dossier = await researchSiteContext(intake, {
