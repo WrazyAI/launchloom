@@ -1676,6 +1676,64 @@ describe("SEO market map", () => {
     });
   });
 
+  it("splits semicolon-delimited services before local intent planning and measured attribution", async () => {
+    const provider = researchProvider();
+    const services = [
+      "Roof leak repair",
+      "Asphalt shingle roof replacement",
+      "Storm-damage inspection",
+    ];
+    const intentPlanner = vi.fn(
+      async ({ services: plannedServices }: { services: string[] }) => ({
+        plan: {
+          services: plannedServices.map((service) => ({
+            service,
+            phrases: [service.toLowerCase()],
+          })),
+        },
+      }),
+    );
+    const dossier = await researchSiteContext(
+      {
+        businessName: "Lumen Ridge Roofing",
+        businessKind: "roofing contractor",
+        industry: "home-services",
+        services: services.join("; "),
+        primaryCity: "Boulder, CO",
+        serviceAreas: "Boulder, CO",
+      },
+      { dataForSeo: provider, intentPlanner, maxTasks: 16, maxUsd: 0.25 },
+    );
+
+    expect(intentPlanner).toHaveBeenCalledWith(
+      expect.objectContaining({ services }),
+    );
+    expect(dossier.marketSnapshot.confirmedServices).toEqual(services);
+    expect(dossier.completeness.serviceMetrics).toEqual(
+      services.map((service) =>
+        expect.objectContaining({ service, complete: true }),
+      ),
+    );
+    for (const service of services)
+      expect(dossier.validatedQueries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            confirmedService: service,
+            metricLocations: expect.objectContaining({
+              volume: "Boulder,Colorado,United States",
+            }),
+          }),
+        ]),
+      );
+    const measuredKeywords = provider.googleSearchVolume.mock.calls.flatMap(
+      ([request]) => request.keywords,
+    );
+    expect(measuredKeywords.some((keyword) => keyword.includes(";"))).toBe(
+      false,
+    );
+    expect(dossier.cost.usd).toBeLessThanOrEqual(0.25);
+  });
+
   it("uses the strongest planned service phrase for related discovery and rejects ambiguous one-token matches", async () => {
     const provider = researchProvider();
     const intentPlanner = vi.fn(async ({ services }: { services: string[] }) => ({
