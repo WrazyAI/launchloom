@@ -1849,6 +1849,153 @@ describe("SEO market map", () => {
     expect(dossier.cost.usd).toBeLessThanOrEqual(0.25);
   });
 
+  it("uses the bounded SERP reserve to complete required service snapshots under the unchanged cost cap", async () => {
+    const provider = researchProvider();
+    let volumeCalls = 0;
+    provider.googleSearchVolume.mockImplementation(
+      async ({ keywords }: { keywords: string[]; locationName?: string }) => {
+        volumeCalls += 1;
+        const isLocalRemeasurement = volumeCalls > 1;
+        return {
+          cost: 0.09,
+          keywords: keywords.map((keyword) => {
+            const completeLocalMetrics =
+              isLocalRemeasurement || /facial/iu.test(keyword);
+            return {
+              keyword,
+              searchVolume: 10,
+              cpc: completeLocalMetrics ? 1.1 : null,
+              competition: completeLocalMetrics ? 0.45 : null,
+            };
+          }),
+        };
+      },
+    );
+    provider.searchIntent.mockImplementation(
+      async ({ keywords }: { keywords: string[] }) => ({
+        cost: 0.01488,
+        keywords: keywords.map((keyword) => ({
+          keyword,
+          intent: /appointment|book/iu.test(keyword)
+            ? "transactional"
+            : "commercial",
+        })),
+      }),
+    );
+    provider.bulkKeywordDifficulty.mockImplementation(
+      async ({ keywords }: { keywords: string[] }) => ({
+        cost: 0.01476,
+        keywords: keywords.map((keyword) => ({ keyword, difficulty: 31 })),
+      }),
+    );
+    provider.relatedKeywords.mockImplementation(
+      async ({ keyword }: { keyword: string; locationName?: string }) => {
+        const routine = /routine/iu.test(keyword);
+        return {
+          cost: routine ? 0.01296 : 0.01308,
+          keywords: [
+            {
+              keyword: routine
+                ? "routine review appointment"
+                : "skin consultation",
+              keyword_info: { search_volume: 40 },
+              keyword_properties: { keyword_difficulty: 21 },
+              search_intent_info: {
+                main_intent: routine ? "transactional" : "commercial",
+              },
+            },
+          ],
+        };
+      },
+    );
+    provider.organicSerp.mockImplementation(
+      async ({ keyword }: { keyword: string }) => ({
+        cost: 0.002,
+        query: keyword,
+        results: [
+          {
+            position: 1,
+            title: "Local services",
+            url: "https://one.test/services/",
+            domain: "one.test",
+          },
+          {
+            position: 2,
+            title: "Service guide",
+            url: "https://two.test/guide/",
+            domain: "two.test",
+          },
+          {
+            position: 3,
+            title: "Local options",
+            url: "https://three.test/options/",
+            domain: "three.test",
+          },
+        ],
+        questions: [],
+      }),
+    );
+    const intentPlanner = vi.fn(
+      async ({ services }: { services: string[] }) => ({
+        plan: {
+          services: services.map((service) => ({
+            service,
+            phrases:
+              service === "Skin-care consultation"
+                ? [
+                    "skin consultation",
+                    "skin care consultation",
+                    "skin care consultation cost",
+                  ]
+                : service === "Routine review"
+                  ? [
+                      "skincare routine review",
+                      "skin routine review",
+                      "routine review appointment",
+                    ]
+                  : [
+                      "facial care",
+                      "facial treatment",
+                      "facial care appointment",
+                    ],
+          })),
+        },
+      }),
+    );
+
+    const dossier = await researchSiteContext(
+      {
+        businessName: "Velvet Fern Skin Studio",
+        businessKind: "skin studio",
+        industry: "wellness",
+        confirmedServices: [
+          "Skin-care consultation",
+          "Facial care",
+          "Routine review",
+        ],
+        primaryCity: "Madison, WI",
+      },
+      { dataForSeo: provider, intentPlanner, maxTasks: 16, maxUsd: 0.25 },
+    );
+
+    expect(provider.organicSerp).toHaveBeenCalledTimes(3);
+    expect(dossier.completeness.serviceSerps).toBe(3);
+    expect(dossier.completeness.serviceSerpsRequired).toBe(3);
+    expect(
+      dossier.cost.stageCosts.filter((stage) =>
+        stage.stage.startsWith("organic_serp:"),
+      ),
+    ).toEqual([
+      expect.objectContaining({ usd: 0.002, status: "complete" }),
+      expect.objectContaining({ usd: 0.002, status: "complete" }),
+      expect.objectContaining({ usd: 0.002, status: "complete" }),
+    ]);
+    expect(dossier.cost.usd).toBeCloseTo(0.24168, 5);
+    expect(dossier.cost.overBudget).toBe(false);
+    expect(dossier.cost.usd).toBeLessThanOrEqual(0.25);
+    expect(dossier.publishReady).toBe(true);
+  });
+
   it("uses country-level related discovery and city-local remeasurement for sparse services", async () => {
     const provider = researchProvider();
     provider.googleSearchVolume.mockImplementation(

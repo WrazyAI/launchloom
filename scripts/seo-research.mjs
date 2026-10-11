@@ -25,6 +25,8 @@ const DEFAULT_MAX_TASKS = 16;
 const HARD_MAX_TASKS = 32;
 const DEFAULT_MAX_USD = 0.25;
 const HARD_MAX_USD = 2;
+const ORGANIC_SERP_ESTIMATED_TASK_USD = 0.0025;
+const ORGANIC_SERP_BUDGET_BUFFER_USD = 0.002;
 const MAX_CORE_SERVICES = 5;
 const MAX_SERVICE_VARIANTS = 8;
 const MAX_RELATED_KEYWORDS_PER_SERVICE = 5;
@@ -1709,7 +1711,7 @@ async function researchSingleCity(intake = {}, options = {}) {
     unreportedTasks: 0,
   };
   let stoppedForBudget = false;
-  async function paidTask(stage, method, args) {
+  async function paidTask(stage, method, args, taskOptions = {}) {
     if (typeof method !== "function") {
       warnings.push(
         `${stage} research is unavailable from the configured provider client.`,
@@ -1717,13 +1719,20 @@ async function researchSingleCity(intake = {}, options = {}) {
       stageCosts.push({ stage, tasks: 0, usd: 0, status: "unavailable" });
       return { ok: false, skipped: false, value: null };
     }
+    const requestedReserveUsd = Number(taskOptions.reserveUsd);
+    const reserveUsd =
+      taskOptions.reserveUsd === undefined ||
+      !Number.isFinite(requestedReserveUsd)
+        ? limits.reserveUsd
+        : Math.max(0, requestedReserveUsd);
     const retryableDataForSeoStatuses = new Set([40101, 40103]);
     let retries = 0;
     while (true) {
+      const attemptReserveUsd = retries > 0 ? limits.reserveUsd : reserveUsd;
       if (
         stoppedForBudget ||
         cost.tasks >= limits.maxTasks ||
-        limits.maxUsd - cost.usd < limits.reserveUsd
+        limits.maxUsd - cost.usd < attemptReserveUsd
       ) {
         stoppedForBudget = true;
         warnings.push(
@@ -1812,6 +1821,11 @@ async function researchSingleCity(intake = {}, options = {}) {
           stoppedForBudget = true;
           warnings.push(
             `Provider-reported spend is $${cost.usd.toFixed(5)}, above the configured cost cap of $${limits.maxUsd.toFixed(5)}; no further paid tasks were started.`,
+          );
+        } else if (!canRetry && limits.maxUsd - cost.usd < limits.reserveUsd) {
+          stoppedForBudget = true;
+          warnings.push(
+            `${stage} failure consumed the remaining reserved-cost buffer; no further paid tasks were started.`,
           );
         }
         if (canRetry) {
@@ -2307,10 +2321,16 @@ async function researchSingleCity(intake = {}, options = {}) {
 
   const allSerps = [];
   const servicesForSerp = seo.services.slice(0, 5);
-  for (const service of servicesForSerp) {
+  for (const [serviceIndex, service] of servicesForSerp.entries()) {
     const query = localServiceQuery(
       researchQueryByService.get(keywordKey(service)) || service,
       seo.primaryCity,
+    );
+    const pendingSerpTasks = servicesForSerp.length - serviceIndex;
+    const serpReserveUsd = Math.min(
+      limits.reserveUsd,
+      pendingSerpTasks * ORGANIC_SERP_ESTIMATED_TASK_USD +
+        ORGANIC_SERP_BUDGET_BUFFER_USD,
     );
     const stage = await paidTask(
       `organic_serp:${slugify(service)}`,
@@ -2323,6 +2343,7 @@ async function researchSingleCity(intake = {}, options = {}) {
         ),
         languageCode: seo.languageCode,
       },
+      { reserveUsd: serpReserveUsd },
     );
     if (!stage.ok) continue;
     const value = stage.value || {};
