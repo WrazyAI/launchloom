@@ -772,6 +772,54 @@ function jsxHasAncestorElementTag(node, tagName) {
   return false;
 }
 
+function jsxFunctionComponentName(node) {
+  if (ts.isFunctionDeclaration(node) && ts.isIdentifier(node.name))
+    return node.name.text;
+  if (!ts.isArrowFunction(node) && !ts.isFunctionExpression(node)) return "";
+
+  let owner = node.parent;
+  while (owner && ts.isParenthesizedExpression(owner)) owner = owner.parent;
+  if (
+    owner &&
+    ts.isVariableDeclaration(owner) &&
+    ts.isIdentifier(owner.name)
+  )
+    return owner.name.text;
+  return "";
+}
+
+function jsxFunctionComponentContaining(node) {
+  let ancestor = node?.parent;
+  while (ancestor) {
+    if (
+      ts.isFunctionDeclaration(ancestor) ||
+      ts.isArrowFunction(ancestor) ||
+      ts.isFunctionExpression(ancestor)
+    ) {
+      const name = jsxFunctionComponentName(ancestor);
+      return /^[A-Z]/u.test(name) ? name : "";
+    }
+    ancestor = ancestor.parent;
+  }
+  return "";
+}
+
+function jsxComponentRendersInsideMain(componentName, elements, visited = new Set()) {
+  if (!componentName || visited.has(componentName)) return false;
+  visited.add(componentName);
+  const uses = elements.filter(
+    ({ opening }) => jsxOpeningName(opening) === componentName,
+  );
+  if (uses.length !== 1) return false;
+  const use = uses[0].node;
+  if (jsxHasAncestorElementTag(use, "main")) return true;
+
+  const owner = jsxFunctionComponentContaining(use);
+  return owner
+    ? jsxComponentRendersInsideMain(owner, elements, visited)
+    : false;
+}
+
 function assertSingleMainHeading(elements, route, fileName) {
   const mains = elements.filter(
     ({ opening }) => jsxOpeningName(opening).toLowerCase() === "main",
@@ -787,7 +835,11 @@ function assertSingleMainHeading(elements, route, fileName) {
     throw new Error(
       `Candidate ${route.id} ${fileName} must render exactly one H1 heading.`,
     );
-  if (!jsxHasAncestorElementTag(headings[0].node, "main"))
+  const headingComponent = jsxFunctionComponentContaining(headings[0].node);
+  const renderedInsideMain =
+    jsxHasAncestorElementTag(headings[0].node, "main") ||
+    jsxComponentRendersInsideMain(headingComponent, elements);
+  if (!renderedInsideMain)
     throw new Error(
       `Candidate ${route.id} ${fileName} must render its single H1 heading inside the main landmark.`,
     );
@@ -3752,7 +3804,7 @@ async function generateValidatedSource({ generate, request, stage, validate }) {
         repaired,
       };
     } catch (error) {
-      validationError = error instanceof Error ? error.message : String(error);
+      validationError = validationRepairMessage(error);
       if (cycle === 2) throw error;
     }
   }
@@ -3981,8 +4033,8 @@ export async function authorExperienceCandidates({
           motionSource: "export function mountExperienceMotion() {}",
         });
         while (
-          policy.runCreativeChecks &&
-          (!fidelity.pass || !fidelity.visualPass) &&
+          (!fidelity.pass ||
+            (policy.runCreativeChecks && !fidelity.visualPass)) &&
           referenceRepairCycles < 2
         ) {
           referenceRepairCycles += 1;

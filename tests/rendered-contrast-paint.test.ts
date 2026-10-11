@@ -88,6 +88,25 @@ describe("rendered contrast backdrop geometry", () => {
       ]),
     );
   });
+  it("includes content-box pseudo padding when checking text overlap", async () => {
+    const report = await scan(
+      '<style>body{margin:0;background:#fff}li{position:relative;margin:0;width:320px;color:#222;font:16px/24px Arial}li::before{position:absolute;top:0;left:-200px;width:120px;height:24px;padding-left:280px;background:#000;content:""}</style><ul><li>Text painted over the padded pseudo backdrop</li></ul>',
+      1440,
+      { states: false },
+    );
+    expect(report.pass).toBe(false);
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Text painted over the padded pseudo backdrop",
+          status: "unresolved",
+          issues: expect.arrayContaining([
+            "pseudo-element backdrop requires rendered review",
+          ]),
+        }),
+      ]),
+    );
+  });
   it("does not prove pseudo-element separation through a transformed owner", async () => {
     const report = await scan(
       '<style>body{margin:0;background:#e8eee5;color:#14201d}li{position:relative;width:320px;padding:8px 8px 8px 120px;color:#14201d;transform:rotate(45deg)}li::before{position:absolute;top:0;left:0;width:6px;height:6px;background:#c8ec58;content:""}</style><ul><li>Service coverage in Tacoma, Washington</li></ul>',

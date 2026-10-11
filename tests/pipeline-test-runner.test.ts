@@ -20,6 +20,7 @@ import {
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { summarizeGenerationCosts } from "../scripts/generation-cost-summary.mjs";
 import * as privatePreview from "../scripts/run-pipeline-test.mjs";
+import { parseWaitForPagesPreviewArgs } from "../scripts/pages-preview-readiness.mjs";
 
 const input = {
   eventName: "workflow_dispatch",
@@ -312,27 +313,33 @@ describe("focused pipeline orchestration", () => {
   });
   it("probes preview access anonymously and with only the configured service token", async () => {
     const calls: Array<{ url: string; init: RequestInit }> = [];
+    const responses = [
+      new Response(null, { status: 302, headers: { location: "/cdn-cgi/access/login/test" } }),
+      new Response("ok", { status: 200 }),
+      new Response(null, { status: 302, headers: { location: "/cdn-cgi/access/login/test" } }),
+    ];
     const result = await verifyTestPreviewAccess({
       url: "https://hash.launchloom-pipeline-preview.pages.dev",
       clientId: "synthetic-client-id",
       clientSecret: "synthetic-client-secret",
       send: async (url: any, init: any) => {
         calls.push({ url: String(url), init });
-        return calls.length === 1
-          ? new Response(null, { status: 302, headers: { location: "/cdn-cgi/access/login/test" } })
-          : new Response("ok", { status: 200 });
+        const response = responses.shift();
+        if (!response) throw new Error("Unexpected access probe");
+        return response;
       },
     });
     expect(result).toEqual({ anonymousStatus: 302, authenticatedStatus: 200 });
-    expect(calls).toHaveLength(2);
+    expect(calls).toHaveLength(3);
     expect(calls[0].init.headers).toBeUndefined();
     expect(calls[1].init.headers).toEqual({
       "CF-Access-Client-Id": "synthetic-client-id",
       "CF-Access-Client-Secret": "synthetic-client-secret",
     });
+    expect(calls[2].init.headers).toBeUndefined();
   });
   it("retries transient authenticated preview responses until Pages is ready", async () => {
-    const statuses = [302, 404, 503, 200];
+    const statuses = [302, 404, 503, 200, 302];
     const waits: number[] = [];
     const result = await verifyTestPreviewAccess({
       url: "https://hash.launchloom-pipeline-preview.pages.dev",
@@ -350,6 +357,36 @@ describe("focused pipeline orchestration", () => {
 
     expect(result).toEqual({ anonymousStatus: 302, authenticatedStatus: 200 });
     expect(waits).toEqual([5_000, 5_000]);
+  });
+  it("rechecks anonymous Access protection after the authenticated preview is ready", async () => {
+    const responses = [
+      new Response(null, { status: 404 }),
+      new Response(null, { status: 404 }),
+      new Response("ready", { status: 200 }),
+      new Response(null, {
+        status: 302,
+        headers: { location: "/cdn-cgi/access/login/preview" },
+      }),
+    ];
+    const calls: RequestInit[] = [];
+    const result = await verifyTestPreviewAccess({
+      url: "https://hash.launchloom-pipeline-preview.pages.dev",
+      clientId: "synthetic-client-id",
+      clientSecret: "synthetic-client-secret",
+      attempts: 3,
+      send: async (_url: any, init?: RequestInit) => {
+        calls.push(init || {});
+        const response = responses.shift();
+        if (!response) throw new Error("Unexpected access probe");
+        return response;
+      },
+      wait: async () => {},
+    });
+
+    expect(result).toEqual({ anonymousStatus: 302, authenticatedStatus: 200 });
+    expect(calls).toHaveLength(4);
+    expect(calls[0].headers).toBeUndefined();
+    expect(calls[3].headers).toBeUndefined();
   });
   it("fails immediately for rejected service-token credentials", async () => {
     let calls = 0;
@@ -738,3 +775,25 @@ describe("focused pipeline orchestration", () => {
     },
   );
 });
+  it("parses the valueless protected-preview flag without shifting following options", () => {
+    expect(parseWaitForPagesPreviewArgs([
+      "--protected-preview",
+      "--url",
+      "https://candidate-hash.launchloom-private-test.pages.dev",
+      "--timeout-seconds",
+      "30",
+    ])).toEqual({
+      "protected-preview": true,
+      url: "https://candidate-hash.launchloom-private-test.pages.dev",
+      "timeout-seconds": "30",
+    });
+    expect(parseWaitForPagesPreviewArgs([
+      "--url",
+      "https://candidate-hash.launchloom-private-test.pages.dev",
+      "--protected-preview",
+      "false",
+    ])).toEqual({
+      url: "https://candidate-hash.launchloom-private-test.pages.dev",
+      "protected-preview": false,
+    });
+  });

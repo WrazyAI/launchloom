@@ -11,7 +11,11 @@ import { summarizeGenerationCosts } from "./generation-cost-summary.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { businessFactReadiness } from "../templates/client-site/src/lib/business-facts.mjs";
 import { pageBriefReadiness } from "../templates/client-site/src/lib/page-briefs.mjs";
-export { classifyPagesPreviewResponse, waitForPagesPreview } from "./pages-preview-readiness.mjs";
+export {
+  classifyPagesPreviewResponse,
+  parseWaitForPagesPreviewArgs,
+  waitForPagesPreview,
+} from "./pages-preview-readiness.mjs";
 export {
   assertPrivateDiagnosticOutput,
   createPrivatePreviewProbe,
@@ -106,7 +110,7 @@ export async function verifyTestPreviewAccess({
     throw new Error("Cloudflare Access service-token credentials are required.");
   if (!Number.isInteger(attempts) || attempts < 1 || attempts > 12)
     throw new Error("Access verification attempts must be an integer from 1 to 12.");
-  const anonymous = await send(url, { method: "GET", redirect: "manual" });
+  let anonymous = await send(url, { method: "GET", redirect: "manual" });
   let authenticated = null;
   let lastNetworkError = null;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -155,6 +159,11 @@ export async function verifyTestPreviewAccess({
       `Private Pages preview did not become reachable with the service token after ${attempts} attempts (last HTTP ${authenticated?.status ?? "unknown"}).`,
     );
   }
+  // Pages can briefly return 404 anonymously while a new deployment is
+  // propagating, even if the authenticated request has since become ready.
+  // Recheck without credentials so the final safety decision uses current
+  // Access state rather than that stale propagation response.
+  anonymous = await send(url, { method: "GET", redirect: "manual" });
   assertTestPreviewAccessPolicy({
     anonymousStatus: anonymous.status,
     anonymousLocation: anonymous.headers.get("location") || "",
@@ -608,7 +617,7 @@ export function createCloudDependencies(
       { cwd: root, capture: true },
     );
     const probeUrl = pagesDeploymentUrl(deployment);
-    await node("wait-for-pages-preview.mjs", ["--url", probeUrl, "--protected-preview", "true"]);
+    await node("wait-for-pages-preview.mjs", ["--url", probeUrl, "--protected-preview"]);
     const access = await verifyTestPreviewAccess({
       url: probeUrl,
       clientId: process.env.CLOUDFLARE_ACCESS_CLIENT_ID,
@@ -1255,7 +1264,7 @@ export function createCloudDependencies(
         { cwd: site, capture: true },
       );
       const url = pagesDeploymentUrl(deployed);
-      await node("wait-for-pages-preview.mjs", ["--url", url, "--protected-preview", "true"]);
+      await node("wait-for-pages-preview.mjs", ["--url", url, "--protected-preview"]);
       const previewAccess = await verifyTestPreviewAccess({
         url,
         clientId: process.env.CLOUDFLARE_ACCESS_CLIENT_ID,

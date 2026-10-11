@@ -28,6 +28,7 @@ const HARD_MAX_USD = 2;
 const MAX_CORE_SERVICES = 5;
 const MAX_SERVICE_VARIANTS = 8;
 const MAX_RELATED_KEYWORDS_PER_SERVICE = 5;
+const MAX_REMEASURED_RELATED_KEYWORDS_PER_SERVICE = 3;
 const DEFAULT_FALLBACK_SEARCH_QUERIES = 3;
 const HARD_MAX_FALLBACK_SEARCH_QUERIES = 5;
 const DEFAULT_FALLBACK_MAX_USD = 0.05;
@@ -258,6 +259,18 @@ export function normaliseSeoIntake(intake = {}) {
       ? industry
       : "");
   const website = text(intake.website || intake.existingWebsite, 500);
+  const metricLocation =
+    text(intake.metricLocation, 180) || metricLocationForCity(primaryCity);
+  const configuredLabsLocation =
+    text(intake.labsLocation, 180) ||
+    process.env.SEO_RESEARCH_LABS_LOCATION_NAME ||
+    metricLocation;
+  // Labs location catalogs are country-level; local demand uses the separate
+  // metricLocation and is measured by the Google Ads endpoint.
+  const labsLocationPart =
+    configuredLabsLocation.split(",").at(-1)?.trim() || "United States";
+  const labsLocation =
+    COUNTRY_NAMES[labsLocationPart.toUpperCase()] || labsLocationPart;
   let websiteUrl = "";
   try {
     const url = new URL(
@@ -276,14 +289,8 @@ export function normaliseSeoIntake(intake = {}) {
     serviceRadius,
     coverageAreas,
     coverageConfirmation: confirmedCoverage?.coverageConfirmation,
-    metricLocation:
-      text(intake.metricLocation, 180) || metricLocationForCity(primaryCity),
-    labsLocation:
-      text(intake.labsLocation, 180) ||
-      process.env.SEO_RESEARCH_LABS_LOCATION_NAME ||
-      (
-        metricLocationForCity(primaryCity).split(",").at(-1) || "United States"
-      ).trim(),
+    metricLocation,
+    labsLocation,
     coverageEvidence: intake.coverageEvidence || {
       source: "client_supplied_primary_city",
       lookups: 0,
@@ -693,36 +700,69 @@ function finiteResultKeyword(item, provenance) {
   };
 }
 
-function relatedKeywordMetric(item, service, metricLocation) {
+function relatedKeywordCandidate(item, service, discoveryLocation) {
   const mapped = finiteResultKeyword(
     item,
-    "dataforseo_labs_related_location",
+    "dataforseo_labs_related_keyword_discovery",
   );
   const validation = validateIntentQueryPlan(
     { services: [{ service, phrases: [mapped.keyword] }] },
     [service],
   );
   if (!mapped.keyword || validation.acceptedPhraseCount !== 1) return null;
-  const metricSources = {
-    volume:
-      mapped.volume !== null ? "dataforseo_labs_related_location" : null,
-    kd: mapped.kd !== null ? "dataforseo_labs_related_location" : null,
-    cpc: mapped.cpc !== null ? "dataforseo_labs_related_location" : null,
-    competition:
-      mapped.competition !== null
-        ? "dataforseo_labs_related_location"
-        : null,
-    intent:
-      mapped.intent !== null ? "dataforseo_labs_related_location" : null,
-  };
   return {
-    ...mapped,
+    keyword: mapped.keyword,
     confirmedService: service,
+    discoveryLocation,
+    discoveryMetrics: {
+      volume: mapped.volume,
+      kd: mapped.kd,
+      cpc: mapped.cpc,
+      competition: mapped.competition,
+      intent: mapped.intent,
+    },
+  };
+}
+
+function relatedKeywordMetric(candidate, localItem, metricLocation) {
+  const volume = finiteMetric(
+    localItem?.searchVolume ?? localItem?.search_volume,
+  );
+  const cpc = finiteMetric(localItem?.cpc);
+  const competition = finiteMetric(localItem?.competition);
+  const kd = finiteMetric(candidate.discoveryMetrics?.kd);
+  const intent = candidate.discoveryMetrics?.intent || null;
+  const metricSources = {
+    volume: volume !== null ? "dataforseo_google_ads_location" : null,
+    kd: kd !== null ? "dataforseo_labs_related_keywords" : null,
+    cpc: cpc !== null ? "dataforseo_google_ads_location" : null,
+    competition: competition !== null ? "dataforseo_google_ads_location" : null,
+    intent: intent ? "dataforseo_labs_related_keywords" : null,
+  };
+  const metricLocations = {
+    volume: volume !== null ? metricLocation : null,
+    kd: kd !== null ? candidate.discoveryLocation : null,
+    cpc: cpc !== null ? metricLocation : null,
+    competition: competition !== null ? metricLocation : null,
+    intent: intent ? candidate.discoveryLocation : null,
+  };
+  const values = [volume, kd, cpc, competition, intent];
+  return {
+    keyword: candidate.keyword,
+    confirmedService: candidate.confirmedService,
+    volume,
+    kd,
+    cpc,
+    competition,
+    intent,
     metricLocation,
     metricSources,
-    provenance: Object.values(metricSources).every(Boolean)
+    metricLocations,
+    provenance: values.every((value) => value !== null)
       ? "dataforseo"
-      : "dataforseo_metric_partial",
+      : values.some((value) => value !== null)
+        ? "dataforseo_metric_partial"
+        : "dataforseo_unavailable",
   };
 }
 
@@ -730,6 +770,7 @@ function mergeRelatedKeywordMetrics(primaryRows, relatedRows) {
   const merged = primaryRows.map((item) => ({
     ...item,
     metricSources: { ...(item.metricSources || {}) },
+    metricLocations: { ...(item.metricLocations || {}) },
   }));
   const metricIdentity = (item) =>
     `${keywordKey(item.confirmedService || "")}::${keywordKey(item.keyword)}`;
@@ -750,7 +791,8 @@ function mergeRelatedKeywordMetrics(primaryRows, relatedRows) {
 
     const existing = merged[existingIndex];
     const metricSources = { ...(existing.metricSources || {}) };
-    const next = { ...existing, metricSources };
+    const metricLocations = { ...(existing.metricLocations || {}) };
+    const next = { ...existing, metricSources, metricLocations };
     for (const field of fields) {
       if (
         (next[field] === null || next[field] === undefined || next[field] === "") &&
@@ -760,6 +802,7 @@ function mergeRelatedKeywordMetrics(primaryRows, relatedRows) {
       ) {
         next[field] = related[field];
         metricSources[field] = related.metricSources?.[field] || null;
+        metricLocations[field] = related.metricLocations?.[field] || null;
       }
     }
     if (related.metricLocation) next.metricLocation = related.metricLocation;
@@ -2031,7 +2074,7 @@ async function researchSingleCity(intake = {}, options = {}) {
   };
 
   let serviceAssessment = assessServiceMetrics(metrics);
-  const relatedRows = [];
+  const relatedCandidates = [];
   const servicesNeedingRelatedMetrics = serviceAssessment.serviceMetricCoverage
     .filter((item) => !item.complete)
     .map((item) => item.service);
@@ -2042,7 +2085,10 @@ async function researchSingleCity(intake = {}, options = {}) {
       options.dataForSeo.relatedKeywords,
       {
         keyword: service,
-        locationName: seo.metricLocation,
+        // DataForSEO Labs currently exposes country-level locations only.
+        // Its values are discovery evidence; local Google Ads metrics are
+        // requested separately below before a candidate can complete a service.
+        locationName: seo.labsLocation,
         languageCode: seo.languageCode,
       },
     );
@@ -2051,28 +2097,96 @@ async function researchSingleCity(intake = {}, options = {}) {
     for (const item of flattenItems(
       stage.value?.keywords || stage.value?.items || [],
     )) {
-      const mapped = relatedKeywordMetric(item, service, seo.metricLocation);
-      if (!mapped) continue;
-      relatedRows.push(mapped);
+      const candidate = relatedKeywordCandidate(item, service, seo.labsLocation);
+      if (!candidate) continue;
+      relatedCandidates.push(candidate);
       acceptedForService += 1;
       if (acceptedForService >= MAX_RELATED_KEYWORDS_PER_SERVICE) break;
     }
   }
 
-  if (relatedRows.length) metrics = mergeRelatedKeywordMetrics(metrics, relatedRows);
+  const relatedCandidatesToRemeasure = [];
+  const remeasuredPerService = new Map();
+  for (const candidate of relatedCandidates) {
+    const serviceKey = keywordKey(candidate.confirmedService);
+    const count = remeasuredPerService.get(serviceKey) || 0;
+    if (count >= MAX_REMEASURED_RELATED_KEYWORDS_PER_SERVICE) continue;
+    remeasuredPerService.set(serviceKey, count + 1);
+    relatedCandidatesToRemeasure.push(candidate);
+  }
+
+  let relatedMetricRows = [];
+  if (relatedCandidatesToRemeasure.length) {
+    const localStage = await paidTask(
+      "related_local_search_volume",
+      options.dataForSeo.googleSearchVolume,
+      {
+        keywords: [
+          ...new Set(relatedCandidatesToRemeasure.map((item) => item.keyword)),
+        ],
+        locationName: seo.metricLocation,
+        languageCode: seo.languageCode,
+      },
+    );
+    const localRows = localStage.ok
+      ? flattenItems(
+          localStage.value?.keywords || localStage.value?.items || [],
+        )
+      : [];
+    const localByKeyword = new Map(
+      localRows
+        .map((item) => [
+          keywordKey(item.keyword),
+          {
+            searchVolume: item.searchVolume ?? item.search_volume,
+            cpc: item.cpc,
+            competition: item.competition,
+          },
+        ])
+        .filter(([keyword]) => keyword),
+    );
+    relatedMetricRows = relatedCandidatesToRemeasure.map((candidate) =>
+      relatedKeywordMetric(
+        candidate,
+        localByKeyword.get(keywordKey(candidate.keyword)),
+        seo.metricLocation,
+      ),
+    );
+    metrics = mergeRelatedKeywordMetrics(metrics, relatedMetricRows);
+  }
   base.validatedQueries = metrics;
   base.marketSnapshot.measuredKeywords = metrics.filter(
     (item) => item.metricSources?.volume,
   ).length;
-  base.completeness.keywordOverview ||= relatedRows.some(
-    (item) => item.volume !== null || item.cpc !== null || item.competition !== null,
+  base.completeness.keywordOverview ||= metrics.some(
+    (item) =>
+      item.metricSources?.volume ||
+      item.metricSources?.cpc ||
+      item.metricSources?.competition,
   );
-  base.completeness.searchIntent ||= relatedRows.some(
-    (item) => item.intent !== null,
+  base.completeness.searchIntent ||= metrics.some(
+    (item) => item.metricSources?.intent,
   );
-  base.completeness.keywordDifficulty ||= relatedRows.some(
-    (item) => item.kd !== null,
+  base.completeness.keywordDifficulty ||= metrics.some(
+    (item) => item.metricSources?.kd,
   );
+  const relatedMetricByIdentity = new Map(
+    relatedMetricRows.map((item) => [
+      `${keywordKey(item.confirmedService)}::${keywordKey(item.keyword)}`,
+      item,
+    ]),
+  );
+  const relatedEvidenceRows = relatedCandidates.map((candidate) => {
+    const measured = relatedMetricByIdentity.get(
+      `${keywordKey(candidate.confirmedService)}::${keywordKey(candidate.keyword)}`,
+    );
+    return {
+      ...candidate,
+      locallyMeasured: Boolean(measured?.metricSources?.volume),
+      localMetricSources: measured?.metricSources || null,
+      localMetricLocations: measured?.metricLocations || null,
+    };
+  });
 
   serviceAssessment = assessServiceMetrics(metrics);
   const { researchQueryByService, serviceMetricCoverage } = serviceAssessment;
@@ -2282,10 +2396,12 @@ async function researchSingleCity(intake = {}, options = {}) {
         .map((item) => ({
           keyword: item.keyword,
           source: item.metricSources.volume,
-          metricLocation: item.metricLocation || seo.metricLocation,
+          metricLocation:
+            item.metricLocations?.volume ||
+            item.metricLocation ||
+            seo.metricLocation,
         })),
-      provenance:
-        "DataForSEO location-targeted Google Ads and Labs related-keyword metrics",
+      provenance: "DataForSEO location-targeted Google Ads metrics",
     },
     {
       type: "search_intent",
@@ -2297,7 +2413,7 @@ async function researchSingleCity(intake = {}, options = {}) {
         .map((item) => ({
           keyword: item.keyword,
           source: item.metricSources.intent,
-          metricLocation: item.metricLocation || null,
+          metricLocation: item.metricLocations?.intent || null,
         })),
       provenance: "DataForSEO Labs",
     },
@@ -2309,7 +2425,10 @@ async function researchSingleCity(intake = {}, options = {}) {
         .map((item) => ({
           keyword: item.keyword,
           source: item.metricSources.kd,
-          metricLocation: item.metricLocation || seo.labsLocation,
+          metricLocation:
+            item.metricLocations?.kd ||
+            item.metricLocation ||
+            seo.labsLocation,
         })),
       provenance: "DataForSEO Labs",
     },
@@ -2319,20 +2438,16 @@ async function researchSingleCity(intake = {}, options = {}) {
       resultCount: serp.results.length,
       provenance: "DataForSEO",
     })),
-    ...relatedRows.map((item) => ({
+    ...relatedEvidenceRows.map((item) => ({
       type: "related_keyword",
       query: item.keyword,
       confirmedService: item.confirmedService,
-      metricLocation: item.metricLocation,
-      metricValues: {
-        volume: item.volume,
-        kd: item.kd,
-        cpc: item.cpc,
-        competition: item.competition,
-        intent: item.intent,
-      },
-      metricSources: item.metricSources,
-      provenance: item.provenance,
+      discoveryLocation: item.discoveryLocation,
+      discoveryMetrics: item.discoveryMetrics,
+      locallyMeasured: item.locallyMeasured,
+      localMetricSources: item.localMetricSources,
+      localMetricLocations: item.localMetricLocations,
+      provenance: "dataforseo_labs_related_keyword_discovery",
     })),
     ...(rankingStageComplete
       ? [
@@ -2556,8 +2671,10 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
     if (!requestedName) return 2840;
     const countryCode = countryIsoCodeForLocation(requestedName);
     if (!countryCode)
-      throw new Error(
+      throw taskFailure(
         "DataForSEO could not resolve an ISO country code for Google Ads search volume.",
+        null,
+        0,
       );
     const requestedParts = locationParts(requestedName);
     const available = await googleAdsLocationList(countryCode);
@@ -2598,8 +2715,10 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
       ),
     ];
     if (uniqueCodes.length !== 1)
-      throw new Error(
+      throw taskFailure(
         "DataForSEO could not resolve a unique local location code for Google Ads search volume.",
+        null,
+        0,
       );
     return uniqueCodes[0];
   }

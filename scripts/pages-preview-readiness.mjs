@@ -4,6 +4,32 @@ function isAccessLogin(location) {
   );
 }
 
+export function parseWaitForPagesPreviewArgs(argv = []) {
+  const args = {};
+  const valueFlags = new Set(["url", "timeout-seconds", "interval-seconds"]);
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = String(argv[index] || "");
+    if (!token.startsWith("--"))
+      throw new Error(`Unexpected argument: ${token || "<empty>"}`);
+    const key = token.slice(2);
+    if (key === "protected-preview") {
+      const next = String(argv[index + 1] || "").toLowerCase();
+      if (next === "true" || next === "false") {
+        args[key] = next === "true";
+        index += 1;
+      } else args[key] = true;
+      continue;
+    }
+    if (!valueFlags.has(key)) throw new Error(`Unknown option: ${token}`);
+    const value = String(argv[index + 1] || "");
+    if (!value || value.startsWith("--"))
+      throw new Error(`Missing value for ${token}`);
+    args[key] = value;
+    index += 1;
+  }
+  return args;
+}
+
 /** @param {{status?: number, location?: string, protectedPreview?: boolean}} input */
 export function classifyPagesPreviewResponse({
   status,

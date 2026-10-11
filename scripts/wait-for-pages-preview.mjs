@@ -1,18 +1,10 @@
-import { waitForPagesPreview } from "./pages-preview-readiness.mjs";
+import {
+  parseWaitForPagesPreviewArgs,
+  waitForPagesPreview,
+} from "./pages-preview-readiness.mjs";
 
-const args = Object.fromEntries(
-  process.argv
-    .slice(2)
-    .reduce(
-      (pairs, value, index, all) =>
-        index % 2 === 0
-          ? [...pairs, [value.replace(/^--/, ""), all[index + 1]]]
-          : pairs,
-      [],
-    ),
-);
-
-const protectedPreview = Object.hasOwn(args, "protected-preview");
+const args = parseWaitForPagesPreviewArgs(process.argv.slice(2));
+const protectedPreview = args["protected-preview"] === true;
 const result = await waitForPagesPreview({
   url: args.url,
   timeoutSeconds: Number.parseInt(String(args["timeout-seconds"] || "600"), 10),

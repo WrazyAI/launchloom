@@ -935,13 +935,46 @@ describe("SEO market map", () => {
       fetchImpl,
     });
 
-    await expect(
-      client.googleSearchVolume({
+    const error = await client
+      .googleSearchVolume({
         keywords: ["plumber Springfield"],
         locationName: "Springfield,United States",
-      }),
-    ).rejects.toThrow("DataForSEO could not resolve a unique local location code");
+      })
+      .then(() => null, (failure: any) => failure);
+
+    expect(error?.message).toContain(
+      "DataForSEO could not resolve a unique local location code",
+    );
+    expect(error?.dataForSeo).toMatchObject({
+      statusCode: null,
+      reportedCost: 0,
+    });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports pre-request country-resolution errors as known zero spend", async () => {
+    const fetchImpl = vi.fn();
+    const client = createDataForSeoClient({
+      login: "test-login",
+      password: "test-password",
+      fetchImpl,
+    });
+
+    const error = await client
+      .googleSearchVolume({
+        keywords: ["drain cleaning"],
+        locationName: "Atlantis",
+      })
+      .then(() => null, (failure: any) => failure);
+
+    expect(error?.message).toContain(
+      "DataForSEO could not resolve an ISO country code",
+    );
+    expect(error?.dataForSeo).toMatchObject({
+      statusCode: null,
+      reportedCost: 0,
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it("caches location lists and resolves country aliases for local search volume", async () => {
@@ -1626,17 +1659,26 @@ describe("SEO market map", () => {
     expect(dossier.cost.usd).toBeLessThanOrEqual(0.25);
   });
 
-  it("uses city-targeted related keywords to complete sparse service metrics", async () => {
+  it("uses country-level related discovery and city-local remeasurement for sparse services", async () => {
     const provider = researchProvider();
     provider.googleSearchVolume.mockImplementation(
-      async ({ keywords }: { keywords: string[] }) => ({
-        cost: 0.09,
-        keywords: keywords.map((keyword) => ({
-          keyword,
-          searchVolume: 10,
-          cpc: null,
-          competition: 0.5,
-        })),
+      async ({ keywords }: { keywords: string[]; locationName?: string }) => ({
+        cost: keywords.includes("skincare routine review") ? 0.002 : 0.09,
+        keywords: keywords.map((keyword) =>
+          keyword === "skincare routine review"
+            ? {
+                keyword,
+                searchVolume: 17,
+                cpc: 1.75,
+                competition: 0.42,
+              }
+            : {
+                keyword,
+                searchVolume: 10,
+                cpc: null,
+                competition: 0.5,
+              },
+        ),
       }),
     );
     provider.relatedKeywords.mockImplementation(
@@ -1666,6 +1708,7 @@ describe("SEO market map", () => {
         industry: "wellness",
         services: "Routine review",
         primaryCity: "Madison, WI",
+        labsLocation: "Madison,Wisconsin,United States",
       },
       { dataForSeo: provider, maxTasks: 16, maxUsd: 0.25 },
     );
@@ -1673,25 +1716,36 @@ describe("SEO market map", () => {
     expect(provider.relatedKeywords).toHaveBeenCalledTimes(1);
     expect(provider.relatedKeywords.mock.calls[0]?.[0]).toMatchObject({
       keyword: "Routine review",
+      locationName: "United States",
+    });
+    expect(provider.googleSearchVolume.mock.calls[1]?.[0]).toMatchObject({
+      keywords: ["skincare routine review"],
       locationName: "Madison,Wisconsin,United States",
     });
     expect(dossier.validatedQueries).toContainEqual(
       expect.objectContaining({
         keyword: "skincare routine review",
         confirmedService: "Routine review",
-        volume: 40,
+        volume: 17,
         kd: 21,
-        cpc: 2.1,
-        competition: 0.6,
+        cpc: 1.75,
+        competition: 0.42,
         intent: "commercial",
         provenance: "dataforseo",
         metricLocation: "Madison,Wisconsin,United States",
         metricSources: {
-          volume: "dataforseo_labs_related_location",
-          kd: "dataforseo_labs_related_location",
-          cpc: "dataforseo_labs_related_location",
-          competition: "dataforseo_labs_related_location",
-          intent: "dataforseo_labs_related_location",
+          volume: "dataforseo_google_ads_location",
+          kd: "dataforseo_labs_related_keywords",
+          cpc: "dataforseo_google_ads_location",
+          competition: "dataforseo_google_ads_location",
+          intent: "dataforseo_labs_related_keywords",
+        },
+        metricLocations: {
+          volume: "Madison,Wisconsin,United States",
+          kd: "United States",
+          cpc: "Madison,Wisconsin,United States",
+          competition: "Madison,Wisconsin,United States",
+          intent: "United States",
         },
       }),
     );
@@ -1710,7 +1764,7 @@ describe("SEO market map", () => {
       keyword: "skincare routine review",
       kd: 21,
       metricSources: {
-        kd: "dataforseo_labs_related_location",
+        kd: "dataforseo_labs_related_keywords",
       },
     });
     expect(dossier.evidence).toContainEqual(
@@ -1718,8 +1772,15 @@ describe("SEO market map", () => {
         type: "related_keyword",
         query: "skincare routine review",
         confirmedService: "Routine review",
-        metricLocation: "Madison,Wisconsin,United States",
-        provenance: "dataforseo",
+        discoveryLocation: "United States",
+        discoveryMetrics: {
+          volume: 40,
+          kd: 21,
+          cpc: 2.1,
+          competition: 0.6,
+          intent: "commercial",
+        },
+        provenance: "dataforseo_labs_related_keyword_discovery",
       }),
     );
     expect(provider.organicSerp.mock.calls[0]?.[0].keyword).toBe(

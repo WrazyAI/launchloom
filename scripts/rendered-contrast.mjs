@@ -85,6 +85,7 @@ export function collectContrastTargets({
     ...["Top", "Right", "Bottom", "Left"].flatMap((side) => [
       `margin${side}`,
       `border${side}Width`,
+      `padding${side}`,
     ]),
   ];
   const styleFor = (el, pseudo = "") => {
@@ -207,22 +208,39 @@ export function collectContrastTargets({
       marginLeft = px(style.marginLeft),
       marginTop = px(style.marginTop),
       marginRight = px(style.marginRight),
-      marginBottom = px(style.marginBottom);
+      marginBottom = px(style.marginBottom),
+      paddingLeft = px(style.paddingLeft),
+      paddingTop = px(style.paddingTop),
+      paddingRight = px(style.paddingRight),
+      paddingBottom = px(style.paddingBottom);
     if (
-      ![marginLeft, marginTop, marginRight, marginBottom].every(Number.isFinite)
+      ![
+        marginLeft,
+        marginTop,
+        marginRight,
+        marginBottom,
+        paddingLeft,
+        paddingTop,
+        paddingRight,
+        paddingBottom,
+      ].every(Number.isFinite)
     )
       return null;
     const width =
       rawWidth +
       (style.boxSizing === "border-box"
         ? 0
-        : (parseFloat(style.borderLeftWidth) || 0) +
+        : paddingLeft +
+          paddingRight +
+          (parseFloat(style.borderLeftWidth) || 0) +
           (parseFloat(style.borderRightWidth) || 0));
     const height =
       rawHeight +
       (style.boxSizing === "border-box"
         ? 0
-        : (parseFloat(style.borderTopWidth) || 0) +
+        : paddingTop +
+          paddingBottom +
+          (parseFloat(style.borderTopWidth) || 0) +
           (parseFloat(style.borderBottomWidth) || 0));
     return {
       left: box.left + borderLeft + left + marginLeft,

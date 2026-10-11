@@ -247,10 +247,9 @@ function copywriterContext(intake = {}) {
       ),
     }))
     .filter((decision) => decision.pageType && decision.target);
-  const serviceNames = compactStringList(
+  const serviceNames = lines(
     intake.confirmedServices || intake.services,
-    MAX_CORE_SERVICES,
-  );
+  ).slice(0, MAX_CORE_SERVICES);
   const customerQuestions = [
     ...compactStringList(seo.customerQuestions, 12),
     ...(Array.isArray(seo.questionEvidence) ? seo.questionEvidence : [])
@@ -267,10 +266,7 @@ function copywriterContext(intake = {}) {
       16,
     ),
     services: serviceNames,
-    excludedServices: compactStringList(
-      intake.excludedServices,
-      MAX_CORE_SERVICES,
-    ),
+    excludedServices: lines(intake.excludedServices).slice(0, MAX_CORE_SERVICES),
     primaryCity: text(intake.primaryCity, 120),
     serviceAreas: compactStringList(
       intake.serviceAreas || intake.coverageAreas,
@@ -373,7 +369,72 @@ function mergeFaqAnswers(current = [], patch = []) {
   });
 }
 
-function mergeCopyRefinementPatch(draft, patch) {
+const COPY_REFINEMENT_FIELDS = [
+  "heroKicker",
+  "heroHeading",
+  "heroBody",
+  "servicesHeading",
+  "servicesIntro",
+  "aboutKicker",
+  "aboutHeading",
+  "aboutBody",
+  "contactKicker",
+  "contactHeading",
+  "processKicker",
+  "processHeading",
+  "faqKicker",
+  "faqHeading",
+  "formIntro",
+];
+
+function servicePageFaqQuestionKey(value) {
+  return String(value || "")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function mergeServicePageFaqs(current = [], patch = [], allowedQuestions = []) {
+  if (!Array.isArray(patch)) return Array.isArray(current) ? current : [];
+  const currentItems = Array.isArray(current) ? current : [];
+  const allowed = new Map(
+    allowedQuestions
+      .filter((question) => typeof question === "string")
+      .map((question) => [servicePageFaqQuestionKey(question), question])
+      .filter(([key, question]) => key && question),
+  );
+  const currentByQuestion = new Map();
+  for (const faq of currentItems) {
+    const key = servicePageFaqQuestionKey(faq?.question);
+    const canonicalQuestion = allowed.get(key);
+    if (
+      canonicalQuestion &&
+      typeof faq?.answer === "string" &&
+      !currentByQuestion.has(key)
+    )
+      currentByQuestion.set(key, {
+        question: canonicalQuestion,
+        answer: faq.answer,
+      });
+  }
+  const patchByQuestion = new Map();
+  for (const faq of patch) {
+    const key = servicePageFaqQuestionKey(faq?.question);
+    if (allowed.has(key) && typeof faq?.answer === "string")
+      patchByQuestion.set(key, faq.answer);
+  }
+  return [...allowed.entries()]
+    .map(([key, question]) => {
+      const existing = currentByQuestion.get(key);
+      const answer = patchByQuestion.has(key)
+        ? patchByQuestion.get(key)
+        : existing?.answer;
+      return typeof answer === "string" ? { question, answer } : null;
+    })
+    .filter(Boolean);
+}
+
+function mergeCopyRefinementPatch(draft, patch, intake = {}) {
   if (!patch || typeof patch !== "object" || Array.isArray(patch))
     throw new Error(
       "OpenRouter copy refinement did not return a JSON copy patch.",
@@ -387,12 +448,24 @@ function mergeCopyRefinementPatch(draft, patch) {
     ...draft.business,
     ...mergeCopyFields(currentBusinessCopy, patch.business),
   };
-  merged.copy = mergeCopyFields(draft.copy, patch.copy);
+  const editableCopy = Object.fromEntries(
+    COPY_REFINEMENT_FIELDS.map((field) => [field, draft.copy?.[field]]),
+  );
+  merged.copy = mergeCopyFields(editableCopy, patch.copy);
   const servicePatches = Array.isArray(patch.services) ? patch.services : [];
+  const pageMap = Array.isArray(intake.seoResearch?.pageMap)
+    ? intake.seoResearch.pageMap
+    : [];
   merged.services = (Array.isArray(draft.services) ? draft.services : []).map(
     (service) => {
       const edit = servicePatches.find((item) => item?.name === service?.name);
       if (!edit) return service;
+      const servicePage = pageMap.find(
+        (page) =>
+          page?.pageType === "service" &&
+          servicePageFaqQuestionKey(page.service || page.title) ===
+            servicePageFaqQuestionKey(service.name),
+      );
       const serviceCopy = mergeCopyFields(
         {
           description: service.description,
@@ -405,11 +478,26 @@ function mergeCopyRefinementPatch(draft, patch) {
         ...service,
         ...serviceCopy,
         decisionSupport: mergeCopyFields(
-          service.decisionSupport,
+          {
+            scope: service.decisionSupport?.scope,
+            nextStep: service.decisionSupport?.nextStep,
+            preparation: service.decisionSupport?.preparation,
+          },
           edit.decisionSupport,
         ),
-        pageSections: mergeCopyFields(service.pageSections, edit.pageSections),
-        pageFaqs: mergeFaqAnswers(service.pageFaqs, edit.pageFaqs),
+        pageSections: mergeCopyFields(
+          {
+            scope: service.pageSections?.scope,
+            preparation: service.pageSections?.preparation,
+            nextStep: service.pageSections?.nextStep,
+          },
+          edit.pageSections,
+        ),
+        pageFaqs: mergeServicePageFaqs(
+          service.pageFaqs,
+          edit.pageFaqs,
+          servicePage?.fanOutQuestions,
+        ),
       };
     },
   );
@@ -2621,13 +2709,15 @@ export function normalise(candidate, intake) {
         sourceRefs,
         240,
       );
-      const localContext = copyClaim(
-        rawLocation.pageLocalContext,
-        routeId,
-        "local-context-0",
-        [...localFactRefs, ...sourceRefs],
-        520,
-      );
+      const localContext = localFactRefs.length
+        ? copyClaim(
+            rawLocation.pageLocalContext,
+            routeId,
+            "local-context-0",
+            localFactRefs,
+            520,
+          )
+        : null;
       normalized.pageContent[routeId] = {
         ...(introduction ? { introduction } : {}),
         metadata: metadataDescription
@@ -2836,7 +2926,11 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
         },
       );
     }
-    const refinedOutput = mergeCopyRefinementPatch(modelOutput, refinedPatch);
+    const refinedOutput = mergeCopyRefinementPatch(
+      modelOutput,
+      refinedPatch,
+      groundedIntake,
+    );
     const refined = normalise(refinedOutput, groundedIntake);
     const finalReport = evaluateDraft(refined, {
       modelOutput: refinedOutput,

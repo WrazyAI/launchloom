@@ -410,6 +410,107 @@ export default function Experience`,
     ).toThrow(/unsafe URL attribute/iu);
   });
 
+  it("accepts a locally authored hero component when its only use is inside main", () => {
+    const route = { id: "route-component-heading" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const original = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const experience = original
+      .replace(
+        "<h1>{content.hero.heading}</h1>",
+        "<HeroHeading content={content} />",
+      )
+      .replace(
+        "export default function Experience",
+        "function HeroHeading({ content }) { return <h1>{content.hero.heading}</h1>; }\nexport default function Experience",
+      );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).not.toThrow();
+  });
+
+  it("traces a heading through locally composed components to main", () => {
+    const route = { id: "route-nested-component-heading" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const original = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const experience = original
+      .replace(
+        "<h1>{content.hero.heading}</h1>",
+        "<HeroFrame content={content} />",
+      )
+      .replace(
+        "export default function Experience",
+        `function HeroHeading({ content }) { return <h1>{content.hero.heading}</h1>; }
+function HeroFrame({ content }) { return <div><HeroHeading content={content} /></div>; }
+export default function Experience`,
+      );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles: String(safeStage({ ...request, stage: "styles" }).content),
+          motion: String(safeStage({ ...request, stage: "motion" }).content),
+        },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).not.toThrow();
+  });
+
+  it("rejects a helper H1 whose component is only used outside main", () => {
+    const route = { id: "route-component-heading-outside-main" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    )
+      .replace(
+        "<h1>{content.hero.heading}</h1>",
+        "<HeroHeading content={content} />",
+      )
+      .replace(
+        "export default function Experience",
+        "function HeroHeading({ content }) { return <h1>{content.hero.heading}</h1>; }\nexport default function Experience",
+      )
+      .replace("<main><section data-hero>", "<section data-hero>")
+      .replace('<section id="services">', '<main><section id="services">');
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles: String(safeStage({ ...request, stage: "styles" }).content),
+          motion: String(safeStage({ ...request, stage: "motion" }).content),
+        },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).toThrow(/H1.*inside.*main landmark/iu);
+  });
+
   it("rejects candidate files that exceed the rendered-repair source bound", () => {
     const route = { id: "route-repairable-source-size" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
@@ -700,6 +801,72 @@ export default function Experience`,
     });
     const fidelity = result.candidates[0]?.metadata.referenceFidelity;
     expect(fidelity?.findings?.length || 0).toBeGreaterThan(0);
+  });
+
+  it("repairs a hard source-fidelity failure in SEO-only without repairing visual-only findings", async () => {
+    const registry = JSON.parse(
+      readFileSync("data/inspiration-registry.json", "utf8"),
+    );
+    const referenceDna = buildReferenceDna(registry.records[0], {
+      requireEvidence: true,
+    });
+    const requests: AuthorStageRequest[] = [];
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack: {
+        ...inspirationPack,
+        routes: inspirationPack.routes.map((route, index) =>
+          index === 0 ? { ...route, referenceDna } : route,
+        ),
+      },
+      testProfile: "seo-only",
+      generate: async (request) => {
+        requests.push(request);
+        const safe = safeStage(request);
+        if (request.stage !== "experience" || request.route.id !== "route-01")
+          return safe;
+        if (request.validationError?.includes("Reference fidelity repair cycle"))
+          return {
+            content: String(safe.content).replace(
+              "<section data-hero>",
+              '<section data-hero>{content.hero.image && <img src={content.hero.image} alt="Reviewed image" />}',
+            ),
+          };
+        if (!request.validationError) {
+          return {
+            content: String(safe.content)
+              .replace(
+                "<section data-hero>",
+                '<section data-hero>{content.hero.image && <img src={content.hero.image} alt="Reviewed image" />}',
+              )
+              .replace(
+                "{content.services.map((service) =>",
+                "{[].map((service) =>",
+              )
+              .replace(
+                "export default function Experience",
+                "function UnusedServices({ content }) { return <div>{content.services}</div>; }\nexport default function Experience",
+              ),
+          };
+        }
+        return safe;
+      },
+    });
+
+    const experienceRequests = requests.filter(
+      (request) =>
+        request.route.id === "route-01" && request.stage === "experience",
+    );
+    expect(experienceRequests).toHaveLength(2);
+    expect(experienceRequests[1].validationError).toContain(
+      "Reference fidelity repair cycle 1/2",
+    );
+    expect(result.candidates).toHaveLength(1);
+    expect(result.candidates[0]?.metadata.referenceFidelity).toMatchObject({
+      status: "visual-checks-skipped",
+      hardChecksPassed: true,
+      visualPass: false,
+    });
   });
 
   it("still rejects incomplete inspiration contracts in an SEO-only authoring test", async () => {
@@ -3474,6 +3641,45 @@ export default function ServicePage({ content, runtime, service: { name, slug, d
     expect(() =>
       validateServicePage(claimed, route, { claimEvidence: {} }),
     ).toThrow(/unsupported business claims.*availability.*pricing/iu);
+  });
+
+  it("preserves the exact rejected phrase in an inner-page claim repair prompt", async () => {
+    const repairRequests: AuthorStageRequest[] = [];
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        if (
+          request.route.id === "route-01" &&
+          request.stage === "service" &&
+          !request.validationError
+        ) {
+          const safe = String(safeStage(request).content || "");
+          return {
+            content: safe.replace(
+              "</main>",
+              "<p>Meet Maya, your technician.</p></main>",
+            ),
+          };
+        }
+        if (
+          request.route.id === "route-01" &&
+          request.stage === "service" &&
+          request.validationError
+        )
+          repairRequests.push(request);
+        return safeStage(request);
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(repairRequests).toHaveLength(1);
+    expect(repairRequests[0].validationError).toContain(
+      "Meet Maya, your technician",
+    );
+    expect(repairRequests[0].validationError).toContain(
+      "Remove the listed phrases and any equivalent implication",
+    );
   });
 
   it.each([

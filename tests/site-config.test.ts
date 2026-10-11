@@ -122,6 +122,52 @@ function stubCopyModelResponses(
 }
 
 describe("site configuration", () => {
+  it("gives comma-separated service intake as separate copywriter services", async () => {
+    const candidate = repairOutcomeCandidate("A clearer path to plumbing help");
+    candidate.business = {
+      name: "Harbor Plumbing",
+      tagline: "A clearer path to plumbing help",
+      description:
+        "Harbor Plumbing helps Tacoma homeowners discuss drain and water heater concerns.",
+    };
+    candidate.services = [
+      {
+        ...candidate.services[0],
+        name: "Drain cleaning",
+        description:
+          "Discuss drain symptoms and inspection options before deciding on work.",
+      },
+      {
+        ...candidate.services[1],
+        name: "Water heater repair",
+        description:
+          "Discuss water heater concerns and available inspection options before work.",
+      },
+    ];
+    const fetchMock = stubCopyModelResponses([candidate, candidate]);
+
+    const config = await generateSiteConfigWithModel({
+      businessName: "Harbor Plumbing",
+      industry: "home-services",
+      services: "Drain cleaning, Water heater repair",
+      excludedServices: "Sewer replacement, Emergency towing",
+      serviceAreas: "Tacoma, WA",
+      primaryCity: "Tacoma, WA",
+      phone: "(253) 555-0146",
+    });
+    const request = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body || "{}"));
+    const prompt = request.messages.find((message: { role: string }) =>
+      message.role === "user",
+    )?.content;
+
+    expect(prompt).toContain('"services":["Drain cleaning","Water heater repair"]');
+    expect(prompt).toContain('"excludedServices":["Sewer replacement","Emergency towing"]');
+    expect(config.services.map((service: { name: string }) => service.name)).toEqual([
+      "Drain cleaning",
+      "Water heater repair",
+    ]);
+  });
+
   it("builds evidence-backed service-page content from measured route intent", () => {
     const serviceName = "Brake inspection and repair";
     const pageMap = {
@@ -304,6 +350,86 @@ describe("site configuration", () => {
       item.routeIds.includes("location:tacoma, wa") &&
       item.sourceRefs.some((ref: string) => ref.includes("admission.localFacts")),
     )).toBe(true);
+  });
+
+  it("does not accept local context when an approved location has no admitted local facts", () => {
+    const inventedLocalContext =
+      "Tacoma is known for steep hills and salt-heavy marine air that can corrode exterior plumbing.";
+    const config = normalise(
+      {
+        locations: [
+          {
+            name: "Tacoma, WA",
+            pageIntroduction:
+              "Share the address and service concern so the team can discuss whether the selected service applies to the request.",
+            pageMetaDescription:
+              "Learn what to share when asking about drain cleaning in Tacoma.",
+            pageLocalContext: inventedLocalContext,
+          },
+        ],
+      },
+      {
+        businessName: "Harbor Plumbing",
+        industry: "home-services",
+        services: "Drain cleaning",
+        serviceAreas: "Tacoma, WA\n",
+        primaryCity: "Tacoma, WA",
+        routePolicy: {
+          version: 1,
+          decisions: [
+            {
+              pageType: "location",
+              target: "Tacoma, WA",
+              status: "approved",
+              evidence: ["Operator approved after service-area review"],
+              admission: {
+                services: ["Drain cleaning"],
+                visitorNeed: "Confirm whether drain cleaning applies to this service address.",
+                distinctValue: "The request can be reviewed before deciding on a next step.",
+                localFacts: [],
+              },
+            },
+          ],
+        },
+        seoResearch: {
+          version: 2,
+          mode: "researched",
+          publishReady: true,
+          pageMap: [
+            {
+              id: "service:drain",
+              pageType: "service",
+              title: "Drain cleaning",
+              service: "Drain cleaning",
+              slug: "/services/drain-cleaning/",
+              primaryKeyword: { keyword: "drain cleaning" },
+              supportingKeywords: [],
+              fanOutQuestions: [],
+            },
+            {
+              id: "location:tacoma",
+              pageType: "location",
+              title: "Tacoma plumbing service area",
+              location: "Tacoma, WA",
+              slug: "/locations/tacoma-wa/",
+              primaryKeyword: { keyword: "plumber Tacoma" },
+              supportingKeywords: [],
+              fanOutQuestions: [],
+            },
+          ],
+        },
+      },
+    );
+    const route = config.pageContent["location:tacoma, wa"];
+
+    expect(route.localContext).toEqual([]);
+    expect(
+      config.pageEvidence.some(
+        (item: any) =>
+          item.routeIds.includes("location:tacoma, wa") &&
+          item.value === inventedLocalContext,
+      ),
+    ).toBe(false);
   });
 
   it("marks only explicitly synthetic demo intakes with the fixed public notice", () => {
@@ -2008,7 +2134,12 @@ describe("site configuration", () => {
     expect(config.seoResearch.publishReady).toBe(false);
   });
 
-  it("preserves measured service-page copy through copy-only refinement", async () => {
+  it.each([
+    ["omitted", 0],
+    ["partial", 1],
+  ])(
+    "restores measured service-page sections and fan-out FAQs during %s copy-only refinement",
+    async (_faqShape, initialFaqCount) => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
     const baseCandidate = repairOutcomeCandidate("Mobile auto care, open now");
     const serviceName = "Brake inspection and repair";
@@ -2020,36 +2151,34 @@ describe("site configuration", () => {
       "A brake concern can involve a sound or pedal change. Share what you noticed so the team can discuss the inspection scope.";
     const scope =
       "Describe when the sound happens and which wheels seem affected so the inspection discussion can focus on your concern.";
+    const preparation =
+      "Note when the sound occurs and whether the pedal or dashboard indicators have changed.";
+    const nextStep =
+      "Share the vehicle details and concern, then review the inspection findings before deciding on work.";
+    const answers = questions.map((question, index) => ({
+      question,
+      answer:
+        index === 0
+          ? "Share when the concern began, what you hear or feel, and whether a warning appeared. Those details help the team understand your question."
+          : "Ask what the inspection can assess for your vehicle and concern. Review the findings before deciding whether to request any work.",
+    }));
     const unsafe = {
       ...baseCandidate,
-      copy: { ...baseCandidate.copy, heroBody: "Open now for every driver." },
+      copy: {
+        ...baseCandidate.copy,
+        heroBody: "Open now for every driver.",
+        servicesIntro: undefined,
+      },
       services: baseCandidate.services.map((service) =>
         service.name !== serviceName
           ? service
           : {
               ...service,
-              decisionSupport: {
-                ...service.decisionSupport,
-                scope:
-                  "Ask what the inspection can confirm about wear and the reported concern.",
-              },
+              decisionSupport: {},
               pageIntroduction: introduction,
               pageMetaDescription:
                 "Learn what details to share when requesting a brake inspection in Portland.",
-              pageSections: {
-                scope,
-                preparation:
-                  "Note when the sound occurs and whether the pedal or dashboard indicators have changed.",
-                nextStep:
-                  "Share the vehicle details and concern, then review the inspection findings before deciding on work.",
-              },
-              pageFaqs: questions.map((question, index) => ({
-                question,
-                answer:
-                  index === 0
-                    ? "Share when the concern began, what you hear or feel, and whether a warning appeared. Those details help the team understand your question."
-                    : "Ask what the inspection can assess for your vehicle and concern. Review the findings before deciding whether to request any work.",
-              })),
+              pageFaqs: initialFaqCount ? [answers[0]] : undefined,
             },
       ),
     };
@@ -2095,7 +2224,23 @@ describe("site configuration", () => {
                   heroHeading: "Mobile auto care for Portland drivers",
                   heroBody:
                     "Appointment-based mobile auto care starts with a documented inspection before recommendations.",
+                  servicesIntro:
+                    "Choose the inspection question that best matches what the vehicle is doing.",
                 },
+                services: [
+                  {
+                    name: serviceName,
+                    decisionSupport: { scope, preparation, nextStep },
+                    pageSections: { scope, preparation, nextStep },
+                    pageFaqs: [
+                      ...answers,
+                      {
+                        question: "Does every repair include a lifetime guarantee?",
+                        answer: "Ask the shop about any guarantee before requesting work.",
+                      },
+                    ],
+                  },
+                ],
               }),
             },
             finish_reason: "stop",
@@ -2129,12 +2274,17 @@ describe("site configuration", () => {
     expect(refinementPrompt).toContain(questions[0]);
     expect(route.introduction.text).toBe(introduction);
     expect(route.scope[0].text).toBe(scope);
+    expect(config.copy.servicesIntro).toBe(
+      "Choose the inspection question that best matches what the vehicle is doing.",
+    );
+    expect(config.services[0].decisionSupport.scope).toBe(scope);
     expect(
       route.faqs.map((faq: { question: { text: string } }) => faq.question.text),
     ).toEqual(questions);
     expect(pageBriefReadiness(config)).toEqual({ allowed: true });
     expect(config.qualityReport.refined).toBe(true);
-  });
+    },
+  );
 
   it("repairs service copy that only differs by the service name", async () => {
     const fetchMock = stubCopyModelResponses([

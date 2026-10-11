@@ -53,14 +53,19 @@ become invented numeric scores. Missing numeric competition remains unavailable.
   Difficulty are captured separately with provenance.
 - **Sparse-service recovery:** after the initial metric batch, a service with no
   complete measured query receives a bounded DataForSEO Labs Related Keywords
-  request targeted to the confirmed primary-city metric location. At most five
-  related phrases that remain service-bound are retained per uncovered service.
-  Their returned fields are merged without overwriting existing measurements,
-  and each field keeps its DataForSEO source and metric location. Missing values
-  remain null; if this bounded expansion still cannot complete the service
-  metrics, `publishReady` remains false. Related lookup is skipped for services
-  that already have a complete metric row, preserving the shared provider task
-  and USD caps.
+  request at the supported country-level Labs location. At most five related
+  phrases that remain service-bound are retained per uncovered service, and at
+  most three per service are selected for local remeasurement. Related-result
+  metrics remain country-level discovery evidence; they are never represented
+  as local demand. Selected phrases are remeasured through Google Ads at the
+  confirmed primary-city location. Only those local search-volume, CPC, and
+  competition values can fill the local metric fields; any Labs difficulty or
+  intent retains its separate source and country-level location. Field-level
+  source/location provenance is preserved. Missing local values remain null;
+  if this bounded expansion still cannot complete the service metrics,
+  `publishReady` remains false. Related lookup is skipped for services that
+  already have a complete metric row, preserving the shared provider task and
+  USD caps.
 - **Competitor structure:** local organic SERPs record query, rank, title, URL,
   and domain. Competitor page patterns inform structure only; competitor copy
   is not reused.

@@ -96,7 +96,7 @@ Configure these once:
    generation profile until that smoke passes.
 
 The wildcard Access application protects immutable Pages preview URLs without
-changing access to the project's root `*.pages.dev` hostname. Do not add client
+changing access to the project's apex `<project>.pages.dev` hostname. Do not add client
 content or send a preview link until the workflow's anonymous/authenticated
 checks pass.
 
