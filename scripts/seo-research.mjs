@@ -1826,6 +1826,11 @@ async function researchSingleCity(intake = {}, options = {}) {
             : mayUseScopedRetry
               ? scopedRetryReserveUsd
               : Number.POSITIVE_INFINITY;
+        const canContinueOnScopedBudget =
+          scopedRetryReserveUsd !== null &&
+          scopedRetryMaxFailureCostUsd !== null &&
+          providerFailureCost <= scopedRetryMaxFailureCostUsd &&
+          remainingBudgetUsd >= scopedRetryReserveUsd;
         const canRetry =
           retryable &&
           retries < maxTransientRetries &&
@@ -1844,7 +1849,11 @@ async function researchSingleCity(intake = {}, options = {}) {
           warnings.push(
             `Provider-reported spend is $${cost.usd.toFixed(5)}, above the configured cost cap of $${limits.maxUsd.toFixed(5)}; no further paid tasks were started.`,
           );
-        } else if (!canRetry && limits.maxUsd - cost.usd < limits.reserveUsd) {
+        } else if (
+          !canRetry &&
+          remainingBudgetUsd < limits.reserveUsd &&
+          !canContinueOnScopedBudget
+        ) {
           stoppedForBudget = true;
           warnings.push(
             `${stage} failure consumed the remaining reserved-cost buffer; no further paid tasks were started.`,
