@@ -823,6 +823,9 @@ export function modelBoundRepairFindings(findings = []) {
  *   creativeSession?: Record<string, any> | null,
  *   creativeRepairScope?: Record<string, any> | null,
  *   logger?: (message: string) => void,
+ *   automaticSpanRepair?: boolean,
+ *   fetchImpl?: typeof fetch,
+ *   onUsage?: (record: Record<string, any>) => void | Promise<void> | null,
  * }} [options]
  * @returns {Promise<Record<string, any>>}
  */
@@ -859,6 +862,12 @@ export async function requestRepair({
       "Manual creative repair requires a resolved, non-empty section scope.",
     );
   const scopedHumanRepair = humanReview;
+  const validationOnlyRetry = (findings || []).some(
+    (finding) =>
+      finding &&
+      typeof finding === "object" &&
+      finding.category === "repair-output-rejected",
+  );
   const motionRepair = hasFinding(findings || [], MOTION_FINDING_PATTERN);
   const referenceMismatch = (findings || []).some((finding) => {
     const detail =
@@ -875,7 +884,10 @@ export async function requestRepair({
             .join(" ");
     return REFERENCE_MISMATCH_PATTERN.test(detail);
   });
-  const repairInstruction = scopedHumanRepair
+  const repairInstruction = validationOnlyRetry
+    ? `VALIDATION-ONLY RETRY
+The previous response was rejected by deterministic source validation. Treat the repair-output-rejected finding as the only scope of this request. Fix only that exact validator error; do not redesign or address visual findings in this retry. Preserve every existing color declaration and palette token, layout and mobile topology, Reference DNA marker, sealed content binding, and unrelated source. In bounded-edit mode, change only the smallest source span that fixes the error. In complete-file mode, reproduce all unaffected files and source regions unchanged. For a CSS parse error, correct only the malformed syntax in the affected CSS span; do not regenerate the stylesheet or alter unrelated rules. If the validator error cannot be fixed safely with a narrow correction, return the fail-closed response. The pipeline will rerender and resume visual repair only after this source-validation retry passes.`
+    : scopedHumanRepair
     ? "Make the smallest safe source edit that satisfies the explicit human review request only inside the resolved section scope. Do not change unrelated sections, section order, global CSS, sealed content, factual claims, contact behavior, or the assigned Reference DNA outside that scope. Do not convert this candidate into a legacy renderer."
     : referenceMismatch
       ? "Repair this authored LaunchLoom candidate to address the measured rendered-reference and visual findings. You may change composition, layout, hierarchy, section rhythm, image placement or crop, navigation geometry, and motion where needed to fix those findings. Do not preserve any composition or design mechanic explicitly identified as failing. Preserve verified business facts, sealed content bindings, accessibility, required functionality, and the assigned Reference DNA family and signature intent. Do not convert it into a legacy renderer."

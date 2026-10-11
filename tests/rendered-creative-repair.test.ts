@@ -445,6 +445,68 @@ export default function Experience({ content, runtime }) { return <main><section
     );
   });
 
+  it("makes source-validation retries repair only the rejected syntax without redesigning passing styles", async () => {
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-validation-only-repair-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "reference.png");
+    await fs.writeFile(desktop, "reference-evidence");
+    const files = {
+      experience: "export default function Experience({ content }) { return <main><h1>{content.hero.heading}</h1></main>; }",
+      styles: ':root { --ll-creative-paper: #f8f6f0; } [data-reference-section="hero"] h1 { color: #14201d; }',
+      motion: "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }",
+    };
+    let repairPrompt = "";
+    const fetchMock = vi.fn(async (_input: unknown, init?: { body?: unknown }) => {
+      repairPrompt = String(init?.body || "");
+      return Response.json({
+        choices: [{ finish_reason: "stop", message: { content: JSON.stringify(files) } }],
+        usage: { completion_tokens: 32 },
+      });
+    });
+
+    await requestRepair({
+      referenceDna: {
+        familyId: "test-editorial",
+        referenceName: "Test editorial reference",
+        sectionSequence: ["hero", "services", "faqs", "contact"],
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [
+        {
+          category: "rendered-reference-fidelity",
+          message: "The hero geometry has a visual mismatch with the reference.",
+        },
+        {
+          category: "repair-output-rejected",
+          message: "The previous repair failed deterministic source validation.",
+          evidence: "<css input>:212:1: Unclosed block",
+          recommendation: "Fix only the source-validation error, then rerun all gates.",
+        },
+      ],
+      model: "test/model",
+      files,
+      screenshots: [],
+      contentManifest: { values: {}, tokens: [] },
+      fetchImpl: fetchMock as any,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const request = JSON.parse(repairPrompt);
+    const repairText = request.messages
+      .flatMap((message: any) => Array.isArray(message.content) ? message.content : [])
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(repairText).toContain("VALIDATION-ONLY RETRY");
+    expect(repairText).toContain("<css input>:212:1: Unclosed block");
+    expect(repairText).toMatch(/do not redesign or address visual findings in this retry/iu);
+    expect(repairText).toContain("Preserve every existing color declaration and palette token");
+    expect(repairText).not.toContain("You may change composition, layout, hierarchy");
+  });
+
   it("retries a rejected repair output once within the candidate's cycle budget", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     const repairFindings: any[][] = [];
