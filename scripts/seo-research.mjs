@@ -1727,8 +1727,8 @@ async function researchSingleCity(intake = {}, options = {}) {
         : Math.max(0, requestedReserveUsd);
     const retryableDataForSeoStatuses = new Set([40101, 40103]);
     let retries = 0;
+    let attemptReserveUsd = reserveUsd;
     while (true) {
-      const attemptReserveUsd = retries > 0 ? limits.reserveUsd : reserveUsd;
       if (
         stoppedForBudget ||
         cost.tasks >= limits.maxTasks ||
@@ -1804,11 +1804,33 @@ async function researchSingleCity(intake = {}, options = {}) {
         cost.usd = roundCost(cost.usd + providerFailureCost);
         const retryable = retryableDataForSeoStatuses.has(providerStatusCode);
         const maxTransientRetries = providerStatusCode === 40101 ? 2 : 1;
+        const remainingBudgetUsd = limits.maxUsd - cost.usd;
+        const scopedRetryReserveUsd = finiteMetric(
+          taskOptions.scopedRetryReserveUsd,
+        );
+        const scopedRetryMaxFailureCostUsd = finiteMetric(
+          taskOptions.scopedRetryMaxFailureCostUsd,
+        );
+        const maxScopedRetries = Math.max(
+          0,
+          Number(taskOptions.maxScopedRetries ?? 0),
+        );
+        const mayUseScopedRetry =
+          scopedRetryReserveUsd !== null &&
+          scopedRetryMaxFailureCostUsd !== null &&
+          retries < maxScopedRetries &&
+          providerFailureCost <= scopedRetryMaxFailureCostUsd;
+        const retryReserveUsd =
+          remainingBudgetUsd >= limits.reserveUsd
+            ? limits.reserveUsd
+            : mayUseScopedRetry
+              ? scopedRetryReserveUsd
+              : Number.POSITIVE_INFINITY;
         const canRetry =
           retryable &&
           retries < maxTransientRetries &&
           cost.tasks < limits.maxTasks &&
-          limits.maxUsd - cost.usd >= limits.reserveUsd &&
+          remainingBudgetUsd >= retryReserveUsd &&
           cost.usd <= limits.maxUsd;
         stageCosts.push({
           stage,
@@ -1829,6 +1851,7 @@ async function researchSingleCity(intake = {}, options = {}) {
           );
         }
         if (canRetry) {
+          attemptReserveUsd = retryReserveUsd;
           retries += 1;
           const delay = Math.max(
             0,
@@ -2343,7 +2366,12 @@ async function researchSingleCity(intake = {}, options = {}) {
         ),
         languageCode: seo.languageCode,
       },
-      { reserveUsd: serpReserveUsd },
+      {
+        reserveUsd: serpReserveUsd,
+        scopedRetryReserveUsd: serpReserveUsd,
+        scopedRetryMaxFailureCostUsd: ORGANIC_SERP_ESTIMATED_TASK_USD,
+        maxScopedRetries: 1,
+      },
     );
     if (!stage.ok) continue;
     const value = stage.value || {};

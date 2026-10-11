@@ -123,9 +123,11 @@ The research task limit is hard-bounded to 32 and the USD limit to $2 even if
 an operator sets higher values. A provider-reported final-task overrun prevents additional measured tasks from
 starting and disqualifies the measured-research approval path.
 Required service SERPs reserve an estimate for the remaining snapshots plus a
-small buffer when that amount is below the general reserve. Transient retries
-and other research stages continue to use the general reserve; actual provider
-costs always count against the unchanged USD cap.
+small buffer when that amount is below the general reserve. One transient SERP
+retry may use that scoped reserve only when the failed request's reported cost
+is at or below the task estimate; other retries and research stages continue to
+use the general reserve. Actual provider costs always count against the
+unchanged USD cap.
 If a completed or failed provider task has no reported cost, the task cost is
 recorded as unavailable and further measured tasks stop, rather than presenting
 an invented $0 total. A separately completed bounded cited fallback can inform

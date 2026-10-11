@@ -1849,7 +1849,7 @@ describe("SEO market map", () => {
     expect(dossier.cost.usd).toBeLessThanOrEqual(0.25);
   });
 
-  it("uses the bounded SERP reserve to complete required service snapshots under the unchanged cost cap", async () => {
+  it("retries a cheap transient SERP failure and completes required snapshots under the unchanged cap", async () => {
     const provider = researchProvider();
     let volumeCalls = 0;
     provider.googleSearchVolume.mockImplementation(
@@ -1908,33 +1908,40 @@ describe("SEO market map", () => {
         };
       },
     );
-    provider.organicSerp.mockImplementation(
-      async ({ keyword }: { keyword: string }) => ({
-        cost: 0.002,
-        query: keyword,
-        results: [
-          {
-            position: 1,
-            title: "Local services",
-            url: "https://one.test/services/",
-            domain: "one.test",
-          },
-          {
-            position: 2,
-            title: "Service guide",
-            url: "https://two.test/guide/",
-            domain: "two.test",
-          },
-          {
-            position: 3,
-            title: "Local options",
-            url: "https://three.test/options/",
-            domain: "three.test",
-          },
-        ],
-        questions: [],
-      }),
-    );
+    const serpSnapshot = async ({ keyword }: { keyword: string }) => ({
+      cost: 0.002,
+      query: keyword,
+      results: [
+        {
+          position: 1,
+          title: "Local services",
+          url: "https://one.test/services/",
+          domain: "one.test",
+        },
+        {
+          position: 2,
+          title: "Service guide",
+          url: "https://two.test/guide/",
+          domain: "two.test",
+        },
+        {
+          position: 3,
+          title: "Local options",
+          url: "https://three.test/options/",
+          domain: "three.test",
+        },
+      ],
+      questions: [],
+    });
+    provider.organicSerp
+      .mockImplementationOnce(serpSnapshot)
+      .mockRejectedValueOnce(
+        Object.assign(
+          new Error("DataForSEO task 40101: Internal SE Server Error"),
+          { dataForSeo: { statusCode: 40101, reportedCost: 0.002 } },
+        ),
+      )
+      .mockImplementation(serpSnapshot);
     const intentPlanner = vi.fn(
       async ({ services }: { services: string[] }) => ({
         plan: {
@@ -1978,7 +1985,7 @@ describe("SEO market map", () => {
       { dataForSeo: provider, intentPlanner, maxTasks: 16, maxUsd: 0.25 },
     );
 
-    expect(provider.organicSerp).toHaveBeenCalledTimes(3);
+    expect(provider.organicSerp).toHaveBeenCalledTimes(4);
     expect(dossier.completeness.serviceSerps).toBe(3);
     expect(dossier.completeness.serviceSerpsRequired).toBe(3);
     expect(
@@ -1987,10 +1994,11 @@ describe("SEO market map", () => {
       ),
     ).toEqual([
       expect.objectContaining({ usd: 0.002, status: "complete" }),
+      expect.objectContaining({ usd: 0.002, status: "retryable_failure" }),
       expect.objectContaining({ usd: 0.002, status: "complete" }),
       expect.objectContaining({ usd: 0.002, status: "complete" }),
     ]);
-    expect(dossier.cost.usd).toBeCloseTo(0.24168, 5);
+    expect(dossier.cost.usd).toBeCloseTo(0.24368, 5);
     expect(dossier.cost.overBudget).toBe(false);
     expect(dossier.cost.usd).toBeLessThanOrEqual(0.25);
     expect(dossier.publishReady).toBe(true);
