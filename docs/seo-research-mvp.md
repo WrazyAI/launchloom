@@ -82,6 +82,10 @@ become invented numeric scores. Missing numeric competition remains unavailable.
 
 When DataForSEO credentials are absent, the generation workflow can use the
 already-configured `OPENROUTER_API_KEY` for a bounded live-search fallback.
+The same bounded fallback runs when DataForSEO responds successfully but the
+required measured map is still incomplete, such as a confirmed service with
+sparse metrics or a missing local SERP snapshot. This provides cited context
+for private review; it does not fill a metric field or satisfy a release gate.
 That path runs at most the configured number of queries (default 3, hard maximum
 5), caps each query at four web results, and stops when provider-reported spend
 reaches the fallback budget (default $0.05, hard maximum $0.25). If a completed
@@ -110,6 +114,11 @@ degraded/context-only and is not described as researched.
 
 Missing provider values stay `null` or are listed as unavailable. The report
 shows warnings, the configured task/cost limits, and DataForSEO-reported spend.
+Each validated query records `metricSources` and `metricLocations` per field:
+Google Ads volume/CPC/competition use the confirmed local city, Labs keyword
+difficulty records its country-level scope, and search intent has no location
+unless its provider endpoint explicitly supplies one. Country-level discovery
+values never stand in for local demand.
 The research task limit is hard-bounded to 32 and the USD limit to $2 even if
 an operator sets higher values. A provider-reported final-task overrun prevents additional measured tasks from
 starting and disqualifies the measured-research approval path.

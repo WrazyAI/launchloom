@@ -456,7 +456,8 @@ describe("SEO market map", () => {
     });
     expect(messages).toContain("Rivet and Road Auto Repair");
     expect(messages).toContain("Brake repair");
-    expect(messages).toContain("up to five distinct short customer phrases");
+    expect(messages).toContain("up to five distinct customer search phrases");
+    expect(messages).toContain("compact 2-4 word searches");
     expect(messages).not.toContain("private@example.test");
     expect(messages).not.toContain("555 0100");
     expect(messages).not.toContain("private address");
@@ -757,7 +758,7 @@ describe("SEO market map", () => {
     expect(webSearch.search).not.toHaveBeenCalled();
     expect(dossier.fallbackSearch.status).toBe("not-needed");
     expect(renderSeoMapMarkdown(dossier)).toContain(
-      "Fallback web search: not needed (no provider stage failed).",
+      "Fallback web search: not needed (no measured research gap or provider failure).",
     );
   });
 
@@ -1656,6 +1657,195 @@ describe("SEO market map", () => {
     }>;
     expect(serviceMetrics.every((item) => item.complete)).toBe(true);
     expect(dossier.publishReady).toBe(true);
+    expect(dossier.cost.usd).toBeLessThanOrEqual(0.25);
+    expect(dossier.validatedQueries[0]).toMatchObject({
+      metricSources: {
+        volume: "dataforseo_google_ads_location",
+        cpc: "dataforseo_google_ads_location",
+        competition: "dataforseo_google_ads_location",
+        kd: "dataforseo_labs_bulk_keyword_difficulty",
+        intent: "dataforseo_labs_search_intent",
+      },
+      metricLocations: {
+        volume: "Tacoma,Washington,United States",
+        cpc: "Tacoma,Washington,United States",
+        competition: "Tacoma,Washington,United States",
+        kd: "United States",
+        intent: null,
+      },
+    });
+  });
+
+  it("uses the strongest planned service phrase for related discovery and rejects ambiguous one-token matches", async () => {
+    const provider = researchProvider();
+    const intentPlanner = vi.fn(async ({ services }: { services: string[] }) => ({
+      plan: {
+        services: services.map((service) => ({
+          service,
+          phrases: [
+            "skincare routine review",
+            "skin care routine assessment",
+            "review my skincare products",
+            "is this skincare routine suitable",
+            "skincare routine consultation",
+          ],
+        })),
+      },
+    }));
+    provider.googleSearchVolume.mockImplementation(
+      async ({ keywords }: { keywords: string[]; locationName?: string }) => ({
+        cost: keywords.includes("routine review appointment") ? 0.002 : 0.04,
+        keywords: keywords.map((keyword) => {
+          if (keyword === "routine review appointment")
+            return {
+              keyword,
+              searchVolume: 35,
+              cpc: 1.25,
+              competition: 0.4,
+            };
+          return {
+            keyword,
+            searchVolume: keyword === "skincare routine review" ? 80 : 10,
+            cpc: null,
+            competition: null,
+          };
+        }),
+      }),
+    );
+    provider.searchIntent.mockImplementation(
+      async ({ keywords }: { keywords: string[] }) => ({
+        cost: 0.01,
+        keywords: keywords.map((keyword) => ({
+          keyword,
+          intent: keyword === "Routine review" ? "informational" : "commercial",
+        })),
+      }),
+    );
+    provider.bulkKeywordDifficulty.mockImplementation(
+      async ({ keywords }: { keywords: string[] }) => ({
+        cost: 0.01,
+        keywords: keywords.map((keyword) => ({ keyword, difficulty: 32 })),
+      }),
+    );
+    provider.relatedKeywords.mockResolvedValue({
+      cost: 0.01,
+      keywords: [
+        {
+          keyword: "routine game length",
+          keyword_properties: { keyword_difficulty: 28 },
+          search_intent_info: { main_intent: "informational" },
+        },
+        {
+          keyword: "routine review appointment",
+          keyword_properties: { keyword_difficulty: 21 },
+          search_intent_info: { main_intent: "transactional" },
+        },
+      ],
+    });
+
+    const dossier = await researchSiteContext(
+      {
+        businessName: "Velvet Fern Skin Studio",
+        businessKind: "skin studio",
+        industry: "wellness",
+        confirmedServices: ["Routine review"],
+        primaryCity: "Madison, WI",
+      },
+      { dataForSeo: provider, intentPlanner, maxTasks: 16, maxUsd: 0.25 },
+    );
+
+    expect(provider.relatedKeywords).toHaveBeenCalledWith(
+      expect.objectContaining({
+        keyword: "skincare routine review",
+        locationName: "United States",
+      }),
+    );
+    expect(provider.googleSearchVolume.mock.calls[1]?.[0]).toMatchObject({
+      keywords: ["routine review appointment"],
+      locationName: "Madison,Wisconsin,United States",
+    });
+    expect(dossier.validatedQueries).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ keyword: "routine game length" }),
+      ]),
+    );
+    expect(dossier.completeness.serviceMetrics).toEqual([
+      {
+        service: "Routine review",
+        complete: true,
+        primaryKeyword: "routine review appointment",
+      },
+    ]);
+    expect(dossier.publishReady).toBe(true);
+    expect(dossier.cost.usd).toBeLessThanOrEqual(0.25);
+  });
+
+  it("collects capped qualitative search evidence when measured research is incomplete without treating it as metrics", async () => {
+    const provider = researchProvider();
+    provider.googleSearchVolume.mockImplementation(
+      async ({ keywords }: { keywords: string[]; locationName?: string }) => ({
+        cost: 0.02,
+        keywords: keywords.map((keyword) => ({
+          keyword,
+          searchVolume: 25,
+          cpc: null,
+          competition: null,
+        })),
+      }),
+    );
+    provider.relatedKeywords.mockResolvedValue({ cost: 0.01, keywords: [] });
+    const webSearch = {
+      search: vi.fn(async ({ query }: { query: string }) => ({
+        costUsd: 0.003,
+        results: [
+          {
+            url: "https://example.test/skin-consultation",
+            title: "Skin consultation information",
+            snippet: "A local source describing skin consultation options.",
+          },
+        ],
+        query,
+      })),
+    };
+
+    const dossier = await researchSiteContext(
+      {
+        businessName: "Velvet Fern Skin Studio",
+        industry: "wellness",
+        confirmedServices: ["Skin-care consultation"],
+        primaryCity: "Madison, WI",
+      },
+      {
+        dataForSeo: provider,
+        webSearch,
+        maxTasks: 16,
+        maxUsd: 0.25,
+        maxFallbackUsd: 0.01,
+        maxFallbackSearchQueries: 1,
+      },
+    );
+
+    expect(webSearch.search).toHaveBeenCalledTimes(1);
+    expect(dossier.fallbackSearch).toMatchObject({
+      status: "complete",
+      queriesAttempted: 1,
+      costUsd: 0.003,
+      maxUsd: 0.01,
+    });
+    expect(dossier.externalSearchEvidence).toEqual([
+      expect.objectContaining({
+        sourceUrl: "https://example.test/skin-consultation",
+        provenance: "external_search_observation",
+      }),
+    ]);
+    expect(dossier.publishReady).toBe(false);
+    expect(dossier.mode).toBe("context-only");
+    expect(dossier.validatedQueries.every((item) =>
+      item.metricSources?.volume === "dataforseo_google_ads_location",
+    )).toBe(true);
+    expect(dossier.validatedQueries.every((item) =>
+      item.cpc === null && item.metricSources?.cpc === null,
+    )).toBe(true);
     expect(dossier.cost.usd).toBeLessThanOrEqual(0.25);
   });
 

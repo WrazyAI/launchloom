@@ -511,6 +511,53 @@ function metricBelongsToService(item, service) {
   );
 }
 
+function hasStrongRelatedServiceMatch(keyword, service) {
+  const serviceTerms = [
+    ...new Set(keywordKey(service).split(/\s+/u).filter(Boolean)),
+  ];
+  const keywordTerms = new Set(keywordKey(keyword).split(/\s+/u).filter(Boolean));
+  if (!serviceTerms.length) return false;
+  const requiredMatches = Math.min(2, serviceTerms.length);
+  return serviceTerms.filter((term) => keywordTerms.has(term)).length >= requiredMatches;
+}
+
+function serviceMetricCandidateScore(item) {
+  const intent = String(item?.intent || "").toLocaleLowerCase();
+  const intentScore =
+    intent === "transactional"
+      ? 8
+      : intent === "commercial"
+        ? 6
+        : intent === "informational"
+          ? 2
+          : 0;
+  const volume = finiteMetric(item?.volume);
+  return (
+    intentScore +
+    (volume !== null && volume > 0 ? 4 : 0) +
+    (finiteMetric(item?.kd) !== null ? 2 : 0) +
+    (finiteMetric(item?.cpc) !== null ? 1 : 0) +
+    (finiteMetric(item?.competition) !== null ? 1 : 0)
+  );
+}
+
+function relatedDiscoveryCandidateScore(candidate) {
+  const intent = String(candidate.discoveryMetrics?.intent || "").toLocaleLowerCase();
+  const intentScore =
+    intent === "transactional"
+      ? 8
+      : intent === "commercial"
+        ? 6
+        : intent === "informational"
+          ? 2
+          : 0;
+  return (
+    intentScore +
+    (finiteMetric(candidate.discoveryMetrics?.volume) > 0 ? 4 : 0) +
+    (finiteMetric(candidate.discoveryMetrics?.kd) !== null ? 2 : 0)
+  );
+}
+
 function serviceQuestions(service, industry) {
   const base = [
     `What affects the cost of ${service.toLocaleLowerCase()}?`,
@@ -705,6 +752,8 @@ function relatedKeywordCandidate(item, service, discoveryLocation) {
     item,
     "dataforseo_labs_related_keyword_discovery",
   );
+  if (!mapped.keyword || !hasStrongRelatedServiceMatch(mapped.keyword, service))
+    return null;
   const validation = validateIntentQueryPlan(
     { services: [{ service, phrases: [mapped.keyword] }] },
     [service],
@@ -1513,6 +1562,13 @@ async function researchSingleCity(intake = {}, options = {}) {
         competition: null,
         intent: null,
       },
+      metricLocations: {
+        volume: null,
+        kd: null,
+        cpc: null,
+        competition: null,
+        intent: null,
+      },
     })),
     pageMap,
     competitors: [],
@@ -1788,7 +1844,14 @@ async function researchSingleCity(intake = {}, options = {}) {
       base.fallbackSearch.status = "unavailable";
       return;
     }
-    if (!hasProviderFailure) {
+    const hasResearchGap =
+      stoppedForBudget ||
+      !base.completeness.keywordOverview ||
+      !base.completeness.searchIntent ||
+      !base.completeness.keywordDifficulty ||
+      base.completeness.serviceMetrics.some((item) => !item.complete) ||
+      base.completeness.serviceSerps < base.completeness.serviceSerpsRequired;
+    if (!hasProviderFailure && !hasResearchGap) {
       base.fallbackSearch.status = "not-needed";
       return;
     }
@@ -1895,6 +1958,13 @@ async function researchSingleCity(intake = {}, options = {}) {
         ? "dataforseo_metric_partial"
         : "dataforseo_unavailable",
       metricSources: sources,
+      metricLocations: {
+        volume: sources.volume ? seo.metricLocation : null,
+        kd: null,
+        cpc: sources.cpc ? seo.metricLocation : null,
+        competition: sources.competition ? seo.metricLocation : null,
+        intent: null,
+      },
     };
   });
   base.marketSnapshot.measuredKeywords = base.validatedQueries.filter(
@@ -1946,10 +2016,15 @@ async function researchSingleCity(intake = {}, options = {}) {
         ...(previous?.metricSources || {}),
         intent: intent ? "dataforseo_labs_search_intent" : null,
       };
+      const metricLocations = {
+        ...(previous?.metricLocations || {}),
+        intent: null,
+      };
       return {
         ...previous,
         intent,
         metricSources,
+        metricLocations,
         provenance: Object.values(metricSources).every(Boolean)
           ? "dataforseo"
           : previous?.provenance || "dataforseo_unavailable",
@@ -2012,6 +2087,22 @@ async function researchSingleCity(intake = {}, options = {}) {
       intent: intent ? "dataforseo_labs_search_intent" : null,
       kd: kd !== null ? "dataforseo_labs_bulk_keyword_difficulty" : null,
     };
+    const metricLocations = {
+      volume:
+        local?.volume !== null && local?.volume !== undefined
+          ? seo.metricLocation
+          : null,
+      cpc:
+        local?.cpc !== null && local?.cpc !== undefined
+          ? seo.metricLocation
+          : null,
+      competition:
+        local?.competition !== null && local?.competition !== undefined
+          ? seo.metricLocation
+          : null,
+      intent: null,
+      kd: kd !== null ? seo.labsLocation : null,
+    };
     const provenance = values.some((value) => value !== null)
       ? values.every((value) => value !== null)
         ? "dataforseo"
@@ -2028,6 +2119,7 @@ async function researchSingleCity(intake = {}, options = {}) {
       intent,
       provenance,
       metricSources,
+      metricLocations,
     };
   });
   base.validatedQueries = metrics;
@@ -2052,12 +2144,17 @@ async function researchSingleCity(intake = {}, options = {}) {
         null;
       const researchCandidate =
         completePrimary ||
-        matching.find(
-          (item) =>
-            item.volume !== null ||
-            item.intent === "commercial" ||
-            item.intent === "transactional",
-        ) ||
+        matching
+          .filter(
+            (item) =>
+              item.volume !== null ||
+              item.intent === "commercial" ||
+              item.intent === "transactional",
+          )
+          .sort(
+            (a, b) =>
+              serviceMetricCandidateScore(b) - serviceMetricCandidateScore(a),
+          )[0] ||
         matching[0] ||
         null;
       researchQueryByService.set(
@@ -2084,7 +2181,9 @@ async function researchSingleCity(intake = {}, options = {}) {
       `related_keywords:${slugify(service)}`,
       options.dataForSeo.relatedKeywords,
       {
-        keyword: service,
+        keyword:
+          serviceAssessment.researchQueryByService.get(keywordKey(service)) ||
+          service,
         // DataForSEO Labs currently exposes country-level locations only.
         // Its values are discovery evidence; local Google Ads metrics are
         // requested separately below before a candidate can complete a service.
@@ -2106,13 +2205,23 @@ async function researchSingleCity(intake = {}, options = {}) {
   }
 
   const relatedCandidatesToRemeasure = [];
-  const remeasuredPerService = new Map();
-  for (const candidate of relatedCandidates) {
-    const serviceKey = keywordKey(candidate.confirmedService);
-    const count = remeasuredPerService.get(serviceKey) || 0;
-    if (count >= MAX_REMEASURED_RELATED_KEYWORDS_PER_SERVICE) continue;
-    remeasuredPerService.set(serviceKey, count + 1);
-    relatedCandidatesToRemeasure.push(candidate);
+  for (const service of servicesNeedingRelatedMetrics) {
+    const serviceCandidates = relatedCandidates
+      .filter(
+        (candidate) =>
+          keywordKey(candidate.confirmedService) === keywordKey(service),
+      )
+      .sort(
+        (a, b) =>
+          relatedDiscoveryCandidateScore(b) -
+          relatedDiscoveryCandidateScore(a),
+      );
+    relatedCandidatesToRemeasure.push(
+      ...serviceCandidates.slice(
+        0,
+        MAX_REMEASURED_RELATED_KEYWORDS_PER_SERVICE,
+      ),
+    );
   }
 
   let relatedMetricRows = [];
@@ -2396,10 +2505,7 @@ async function researchSingleCity(intake = {}, options = {}) {
         .map((item) => ({
           keyword: item.keyword,
           source: item.metricSources.volume,
-          metricLocation:
-            item.metricLocations?.volume ||
-            item.metricLocation ||
-            seo.metricLocation,
+          metricLocation: item.metricLocations?.volume || seo.metricLocation,
         })),
       provenance: "DataForSEO location-targeted Google Ads metrics",
     },
@@ -2425,10 +2531,7 @@ async function researchSingleCity(intake = {}, options = {}) {
         .map((item) => ({
           keyword: item.keyword,
           source: item.metricSources.kd,
-          metricLocation:
-            item.metricLocations?.kd ||
-            item.metricLocation ||
-            seo.labsLocation,
+          metricLocation: item.metricLocations?.kd || seo.labsLocation,
         })),
       provenance: "DataForSEO Labs",
     },
@@ -2876,7 +2979,7 @@ export function renderSeoMapMarkdown(dossier) {
     `Keyword metrics measured: ${dossier.marketSnapshot?.measuredKeywords || 0}/${dossier.marketSnapshot?.queriedKeywords || 0}`,
     `DataForSEO provider-reported spend: ${spendSummary} (cap ${Number(dossier.cost?.limitUsd || 0).toFixed(2)}).`,
     dossier.fallbackSearch?.status === "not-needed"
-      ? "Fallback web search: not needed (no provider stage failed)."
+      ? "Fallback web search: not needed (no measured research gap or provider failure)."
       : dossier.fallbackSearch?.status &&
           dossier.fallbackSearch.status !== "unavailable"
         ? `Fallback web search: ${dossier.fallbackSearch.status}; ${dossier.externalSearchEvidence?.length || 0} cited observation(s) from ${dossier.fallbackSearch.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(dossier.fallbackSearch.costUsd || 0).toFixed(5)} / USD ${Number(dossier.fallbackSearch.maxUsd || 0).toFixed(2)} cap${dossier.fallbackSearch.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}. These observations are qualitative research; measured SEO metrics remain unavailable.`

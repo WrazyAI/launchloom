@@ -212,7 +212,8 @@ export function createOpenRouterIntentQueryPlanner({
     const systemPrompt = [
       "You are a local-search language planner for small businesses.",
       'Return only a JSON object with this shape: {"services":[{"service":"exact confirmed service name","phrases":["customer query phrase"]}]}.',
-      "For every supplied service, propose up to five distinct short customer phrases: direct service wording, natural equivalent wording, a customer need/problem wording, and cost/quote or booking wording when relevant to that same confirmed service. Do not force a category when it is not natural.",
+      "For every supplied service, propose up to five distinct customer search phrases: exact service wording, a common everyday equivalent, a customer need/problem phrase, and cost/quote or booking wording when relevant to that same confirmed service. At least two phrases per service must be compact 2-4 word searches rather than full questions, and should use ordinary customer language likely to appear in search results.",
+      "Prefer phrases that name the service or its close, accurate equivalent over abstract, subjective, or low-intent wording. Do not spend the phrase budget on multiple long-tail paraphrases that express the same intent.",
       "Keep a meaningful word from the confirmed service in each phrase. Use a direct everyday synonym only when it clearly means the same offering.",
       "Do not invent or broaden services, products, ingredients, attributes, delivery, urgency, prices, availability, guarantees, outcomes, or business policies.",
       "Do not add a city, business name, or near-me wording; the research system adds location variants separately.",
