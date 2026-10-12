@@ -21,6 +21,7 @@
     "build:experience-packs": "node scripts/build-experience-pack-demos.mjs",
     "compile:inspiration": "node scripts/compile-inspiration-pack.mjs",
     "sync:reference-library": "node scripts/sync-reference-library.mjs",
+    "refine:reference-prompts": "node scripts/refine-reference-design-prompts.mjs",
     "analyze:references": "node scripts/analyze-reference-dna.mjs",
     "author:experiences": "node scripts/author-production-experiences.mjs",
     "bakeoff:experience": "node scripts/run-experience-bakeoff.mjs",
