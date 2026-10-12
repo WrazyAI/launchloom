@@ -913,11 +913,11 @@ jobs:
           CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
           CLIENT_PR: ${{ needs.prepare.outputs.pr }}
           CLIENT_SITE: ${{ needs.prepare.outputs.project }}
-          CLIENT_EMAIL: ${{ needs.prepare.outputs.email }}
           FEEDBACK_ISSUE: ${{ needs.prepare.outputs.feedback_issue }}
           DIAGNOSTIC_PREVIEW_URL: ${{ steps.diagnostic_preview.outputs.preview }}
         run: |
           test -n "$REVISION_COORDINATOR_SECRET" || { echo "Missing recovery coordinator credential" >&2; exit 1; }
+          CLIENT_EMAIL=$(jq -r '.business.email // ""' /tmp/site.config.json)
           CLIENT_DIR="${{ steps.workspace.outputs.dir }}"
           HEAD_SHA=$(git -C "$CLIENT_DIR" rev-parse HEAD)
           CANDIDATE="${{ steps.creative_recovery.outputs.candidate }}"
