@@ -50,6 +50,8 @@ gates. `source-license.txt` retains the applicable license.
 Metadata retains `sourceStrategy`; promotion verifies its baseline binding and root
 marker before writing selection. The site layout renders credit from a trusted
 local allowlist, outside agent markup; revision sync carries that component/helper.
+Rendered bakeoff checks the required source credit on homepage and inner-page
+viewports, rejecting absent, hidden, altered, nofollow or unreadably small credits.
 
 ## Validation limits
 
