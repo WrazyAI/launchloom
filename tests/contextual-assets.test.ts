@@ -3,7 +3,10 @@ import { mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
-import { generateContextualAssets } from "../scripts/generate-contextual-assets.mjs";
+import {
+  DEFAULT_MAX_PROMPT_LENGTH,
+  generateContextualAssets,
+} from "../scripts/generate-contextual-assets.mjs";
 import { CREATIVE_FAMILIES } from "../scripts/creative-compiler.mjs";
 
 const generate = (options: any): Promise<any> =>
@@ -319,6 +322,209 @@ describe("contextual image generation", () => {
     const persisted = JSON.parse(await readFile(manifestPath, "utf8"));
     expect(persisted.placements).toEqual([]);
     expect(JSON.stringify(persisted)).not.toContain("https://fal.example");
+  });
+
+  it("keeps the tightened retry prompt within FAL's prompt limit", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-bounded-image-retry-"),
+    );
+    const site = fixture();
+    site.services = Array.from({ length: 6 }, (_, index) => ({
+      name: `Roof service ${index} ${"s".repeat(120)}`,
+    }));
+    site.business.serviceAreas = Array.from(
+      { length: 3 },
+      (_, index) => `Area ${index} ${"a".repeat(100)}`,
+    );
+    site.seoResearch.copyVocabulary = Array.from(
+      { length: 5 },
+      (_, index) => `Search phrase ${index} ${"v".repeat(120)}`,
+    );
+    site.seoResearch.customerQuestions = Array.from(
+      { length: 3 },
+      (_, index) => `Question ${index} ${"q".repeat(120)}`,
+    );
+    site.style.visualDirection = "Editorial materials " + "d".repeat(170);
+    const prompts: string[] = [];
+
+    const result = await generate({
+      site,
+      inspiration: {
+        routes: [
+          {
+            id: "long-roofing-route",
+            familyId: "utility-diagnostic",
+            referenceDna: {
+              familyId: "utility-diagnostic",
+              heroGeometry: { mode: "Roofing hero " + "h".repeat(170) },
+              imageTreatment: {
+                mode: "Service photography " + "m".repeat(170),
+                crop: "Wide crop " + "c".repeat(120),
+              },
+              palette: { contrastIntent: "Dark green " + "p".repeat(120) },
+            },
+          },
+        ],
+      },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 2,
+      falClient: {
+        config() {},
+        async subscribe(
+          _model: string,
+          options: { input: { prompt: string } },
+        ) {
+          prompts.push(options.input.prompt);
+          return {
+            data: {
+              images: [
+                { url: `https://fal.example/attempt-${prompts.length}.jpg` },
+              ],
+            },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+      imageReviewer: async ({ attempt }: { attempt: number }) => ({
+        approved: attempt === 2,
+        reasonCodes: attempt === 1 ? ["website_or_interface"] : [],
+        model: "test-reviewer",
+      }),
+    });
+
+    expect(prompts[0]).toHaveLength(DEFAULT_MAX_PROMPT_LENGTH);
+    expect(prompts[1].length).toBeLessThanOrEqual(DEFAULT_MAX_PROMPT_LENGTH);
+    expect(prompts[1]).toContain(
+      "Do not create a webpage, interface, or any visible text",
+    );
+    expect(result.manifest.placements).toHaveLength(1);
+  });
+
+  it("records sanitized OpenRouter visual-review failure diagnostics", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-image-review-error-"),
+    );
+    const previousKey = process.env.OPENROUTER_API_KEY;
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    vi.stubGlobal(
+      "fetch",
+      async () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              message: "private provider response must not be retained",
+            },
+            usage: {
+              prompt_tokens: 400,
+              completion_tokens: 0,
+              total_tokens: 400,
+              cost: 0.001,
+            },
+          }),
+          {
+            status: 503,
+            headers: {
+              "content-type": "application/json",
+              "x-request-id": "router-review-request-123",
+            },
+          },
+        ),
+    );
+
+    try {
+      const result = await generateContextualAssets({
+        site: fixture(),
+        inspiration: { routes: [{ id: "review-error-route" }] },
+        outputDir,
+        key: "test-fal-key",
+        maxImages: 1,
+        maxRequests: 1,
+        falClient: {
+          config() {},
+          async subscribe() {
+            return {
+              data: {
+                images: [{ url: "https://fal.example/review-error.jpg" }],
+              },
+            };
+          },
+        },
+        fetchImpl: async () => fakeImageResponse(),
+      });
+
+      const review = result.manifest.skipped[0].imageReviews[0];
+      expect(review).toMatchObject({
+        status: "unavailable",
+        failureCode: "http_error",
+        httpStatus: 503,
+        requestId: "router-review-request-123",
+        usage: { prompt_tokens: 400, cost: 0.001 },
+      });
+      expect(JSON.stringify(result.manifest)).not.toContain(
+        "private provider response must not be retained",
+      );
+    } finally {
+      vi.unstubAllGlobals();
+      if (previousKey === undefined) delete process.env.OPENROUTER_API_KEY;
+      else process.env.OPENROUTER_API_KEY = previousKey;
+    }
+  });
+
+  it("stops on FAL validation errors and records safe request metadata", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-fal-validation-error-"),
+    );
+    let requests = 0;
+    const result = await generate({
+      site: fixture(),
+      inspiration: { routes: [{ id: "fal-validation-route" }] },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 2,
+      falClient: {
+        config() {},
+        async subscribe() {
+          requests += 1;
+          const error = new Error(
+            "raw FAL validation body must not be retained",
+          );
+          error.name = "ValidationError";
+          Object.assign(error, {
+            status: 422,
+            requestId: "fal-validation-request-456",
+            fieldErrors: [
+              {
+                loc: ["body", "prompt"],
+                msg: "raw FAL validation body must not be retained",
+                type: "value_error",
+              },
+            ],
+          });
+          throw error;
+        },
+      },
+      imageReviewer: async () => ({ approved: true, reasonCodes: [] }),
+    });
+
+    expect(requests).toBe(1);
+    expect(result.requests).toBe(1);
+    expect(result.manifest.skipped[0]).toMatchObject({
+      placement: "hero",
+      reason: "fal-validation-error-422",
+      providerFailure: {
+        provider: "fal.ai",
+        category: "validation",
+        status: 422,
+        requestId: "fal-validation-request-456",
+        fields: ["prompt"],
+      },
+    });
+    expect(JSON.stringify(result.manifest)).not.toContain(
+      "raw FAL validation body must not be retained",
+    );
   });
 
   it("does not retain an older unreviewed FAL image as the fallback", async () => {

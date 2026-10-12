@@ -30,6 +30,26 @@ const GENERATED_ASSET_REVIEW_REASONS = new Set([
   "review_unavailable",
   "review_rejected",
 ]);
+const GENERATED_ASSET_REVIEW_FAILURE_CODES = new Set([
+  "not_configured",
+  "timeout",
+  "http_error",
+  "provider_error",
+  "invalid_envelope",
+  "missing_checks",
+  "invalid_checks",
+  "transport_error",
+  "review_callback_error",
+]);
+const FAL_VALIDATION_FIELDS = new Set([
+  "prompt",
+  "aspect_ratio",
+  "num_images",
+  "image_size",
+  "output_format",
+]);
+const IMAGE_RETRY_DIRECTIVE =
+  "Do not create a webpage, interface, or any visible text. Regenerate only a single standalone image asset.";
 const GENERATED_ASSET_REVIEW_SCHEMA = {
   name: "launchloom_generated_asset_review",
   strict: true,
@@ -173,6 +193,76 @@ function reviewUsageSummary(usage) {
   return Object.keys(summary).length ? summary : null;
 }
 
+function safeRequestId(value) {
+  const candidate = String(value || "").trim();
+  return /^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/u.test(candidate)
+    ? candidate
+    : "";
+}
+
+function unavailableAssetReview(failureCode, diagnostics = {}) {
+  return {
+    available: false,
+    approved: false,
+    reasonCodes: ["review_unavailable"],
+    failureCode,
+    model: diagnostics.model || GENERATED_ASSET_REVIEW_MODEL,
+    usage: diagnostics.usage || null,
+    ...(Number.isInteger(diagnostics.httpStatus)
+      ? { httpStatus: diagnostics.httpStatus }
+      : {}),
+    ...(diagnostics.requestId ? { requestId: diagnostics.requestId } : {}),
+    ...(Number.isInteger(diagnostics.imageBytes)
+      ? { imageBytes: diagnostics.imageBytes }
+      : {}),
+  };
+}
+
+function falRequestFailure(error) {
+  const statusCandidate = Number(error?.status ?? error?.statusCode);
+  const status =
+    Number.isInteger(statusCandidate) &&
+    statusCandidate >= 100 &&
+    statusCandidate <= 599
+      ? statusCandidate
+      : undefined;
+  const validation = error?.name === "ValidationError" || status === 422;
+  const fields = Array.isArray(error?.fieldErrors)
+    ? [
+        ...new Set(
+          error.fieldErrors
+            .map((entry) => (Array.isArray(entry?.loc) ? entry.loc.at(-1) : ""))
+            .filter((field) => FAL_VALIDATION_FIELDS.has(field)),
+        ),
+      ]
+    : [];
+  const requestId = safeRequestId(error?.requestId);
+  return {
+    reason: validation ? "fal-validation-error-422" : "fal-request-failed",
+    retryable: !validation,
+    details: {
+      provider: "fal.ai",
+      category: validation ? "validation" : "request",
+      ...(status ? { status } : {}),
+      ...(requestId ? { requestId } : {}),
+      ...(fields.length ? { fields } : {}),
+    },
+  };
+}
+
+function retryPromptFor(prompt) {
+  const availablePrefixLength = Math.max(
+    0,
+    DEFAULT_MAX_PROMPT_LENGTH - IMAGE_RETRY_DIRECTIVE.length - 1,
+  );
+  const prefix = String(prompt || "")
+    .slice(0, availablePrefixLength)
+    .trimEnd();
+  return `${prefix} ${IMAGE_RETRY_DIRECTIVE}`
+    .trim()
+    .slice(0, DEFAULT_MAX_PROMPT_LENGTH);
+}
+
 function normalizeImageReview(
   review,
   fallbackModel = GENERATED_ASSET_REVIEW_MODEL,
@@ -193,6 +283,20 @@ function normalizeImageReview(
         ? [...new Set(reasons)].slice(0, 6)
         : [available ? "review_rejected" : "review_unavailable"],
     usage: reviewUsageSummary(review?.usage),
+    ...(GENERATED_ASSET_REVIEW_FAILURE_CODES.has(review?.failureCode)
+      ? { failureCode: review.failureCode }
+      : {}),
+    ...(Number.isInteger(review?.httpStatus) &&
+    review.httpStatus >= 100 &&
+    review.httpStatus <= 599
+      ? { httpStatus: review.httpStatus }
+      : {}),
+    ...(safeRequestId(review?.requestId)
+      ? { requestId: safeRequestId(review.requestId) }
+      : {}),
+    ...(Number.isInteger(review?.imageBytes) && review.imageBytes >= 0
+      ? { imageBytes: review.imageBytes }
+      : {}),
     ...(review?.cache?.status
       ? { cacheStatus: text(review.cache.status, 20).toLowerCase() }
       : {}),
@@ -230,13 +334,10 @@ export async function reviewGeneratedAsset({
   timeoutMs = 45_000,
 } = {}) {
   if (!apiKey)
-    return {
-      available: false,
-      approved: false,
-      reasonCodes: ["review_unavailable"],
+    return unavailableAssetReview("not_configured", {
       model,
-      usage: null,
-    };
+      imageBytes: imageData?.byteLength,
+    });
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -297,12 +398,29 @@ export async function reviewGeneratedAsset({
     });
     const envelope = await readOpenRouterResponseEnvelope(response);
     const apiError = openRouterApiError(envelope.payload, response.status);
-    if (!response.ok || apiError || envelope.parseError)
-      throw new Error("Generated asset review provider response was invalid.");
+    const diagnostics = {
+      model,
+      httpStatus: Number(response.status),
+      requestId: safeRequestId(
+        response.headers?.get?.("x-request-id") ||
+          response.headers?.get?.("x-openrouter-request-id"),
+      ),
+      usage: reviewUsageSummary(envelope.payload?.usage),
+      imageBytes: imageData?.byteLength,
+    };
+    if (!response.ok) return unavailableAssetReview("http_error", diagnostics);
+    if (apiError) return unavailableAssetReview("provider_error", diagnostics);
+    if (envelope.parseError)
+      return unavailableAssetReview("invalid_envelope", diagnostics);
     const raw = envelope.payload.choices?.[0]?.message?.content;
     if (typeof raw !== "string" || !raw.trim())
-      throw new Error("Generated asset review omitted structured checks.");
-    const checks = JSON.parse(raw);
+      return unavailableAssetReview("missing_checks", diagnostics);
+    let checks;
+    try {
+      checks = JSON.parse(raw);
+    } catch {
+      return unavailableAssetReview("invalid_checks", diagnostics);
+    }
     const requiredChecks = [
       "isStandaloneImage",
       "containsWebsiteOrInterface",
@@ -315,7 +433,7 @@ export async function reviewGeneratedAsset({
       typeof checks !== "object" ||
       requiredChecks.some((key) => typeof checks[key] !== "boolean")
     )
-      throw new Error("Generated asset review returned incomplete checks.");
+      return unavailableAssetReview("invalid_checks", diagnostics);
     const reasonCodes = assetReviewReasonCodes(checks);
     return {
       available: true,
@@ -325,14 +443,17 @@ export async function reviewGeneratedAsset({
       usage: reviewUsageSummary(envelope.payload.usage),
       cache: openRouterResponseCacheMetrics(response),
     };
-  } catch {
-    return {
-      available: false,
-      approved: false,
-      reasonCodes: ["review_unavailable"],
+  } catch (error) {
+    const failureCode =
+      controller.signal.aborted || error?.name === "AbortError"
+        ? "timeout"
+        : /OPENROUTER_API_KEY is required/iu.test(String(error?.message || ""))
+          ? "not_configured"
+          : "transport_error";
+    return unavailableAssetReview(failureCode, {
       model,
-      usage: null,
-    };
+      imageBytes: imageData?.byteLength,
+    });
   } finally {
     clearTimeout(timer);
   }
@@ -851,6 +972,7 @@ async function generateContextualAssetsForRoute({
   };
   let requests = 0;
   let filled = 0;
+  let generationBlockedByFailure = null;
   const hasReviewProvider =
     imageReviewer !== reviewGeneratedAsset ||
     Boolean(process.env.OPENROUTER_API_KEY);
@@ -871,6 +993,17 @@ async function generateContextualAssetsForRoute({
         placement: placement.id,
         reason: "image-budget-exhausted",
         fallback,
+      });
+      continue;
+    }
+
+    if (generationBlockedByFailure) {
+      const fallback = applyFallbackImage(site, placement);
+      manifest.skipped.push({
+        placement: placement.id,
+        reason: generationBlockedByFailure.reason,
+        fallback,
+        providerFailure: generationBlockedByFailure.providerFailure,
       });
       continue;
     }
@@ -913,20 +1046,33 @@ async function generateContextualAssetsForRoute({
     let outcome;
     let failure = "";
     let finalReview;
+    let providerFailure;
     const imageReviews = [];
     for (let attempt = 0; attempt < 2 && requests < maxRequests; attempt += 1) {
       requests += 1;
+      let requested;
       try {
-        const requested = await requestImage({
+        requested = await requestImage({
           client: falClient,
           model,
-          prompt:
-            attempt === 0
-              ? prompt
-              : `${prompt} Do not create a webpage, interface, or any visible text. Regenerate only a single standalone image asset.`,
+          prompt: attempt === 0 ? prompt : retryPromptFor(prompt),
           aspectRatio: placement.aspectRatio,
           timeoutMs,
         });
+      } catch (error) {
+        const classified = falRequestFailure(error);
+        failure = classified.reason;
+        providerFailure = classified.details;
+        if (!classified.retryable) {
+          generationBlockedByFailure = {
+            reason: classified.reason,
+            providerFailure: classified.details,
+          };
+          break;
+        }
+        continue;
+      }
+      try {
         const downloaded = await downloadImage(
           requested.url,
           fetchImpl,
@@ -952,6 +1098,8 @@ async function generateContextualAssetsForRoute({
             available: false,
             approved: false,
             reasonCodes: ["review_unavailable"],
+            failureCode: "review_callback_error",
+            imageBytes: normalized.bytes,
           };
         }
         const reviewSummary = normalizeImageReview(review);
@@ -1004,6 +1152,7 @@ async function generateContextualAssetsForRoute({
         placement: placement.id,
         reason: failure || "FAL image generation failed.",
         fallback,
+        ...(providerFailure ? { providerFailure } : {}),
         ...(finalReview ? { imageReviews } : {}),
       });
     }
