@@ -123,10 +123,20 @@ an exact-source certification. A fresh process on committed `1455bf65` passed
 all **74 protocol/OpenRouter tests**, including the reported provenance failure.
 Six other failures were test timeouts; two were browser assertion failures.
 The stable full Worker rerun passed **161/161 across17files** in87.12s, with
-unchanged timeouts/assertions. Focused reruns of the implicated application suites
-are in progress; their outcomes must not be presumed. The layer is a locally tested preparation branch,
-not a completed production release. Failed/incomplete broad checks remain visible
-and may not be bypassed.
+unchanged timeouts/assertions. The five implicated application suites then passed
+**154/154** in272.76s on the stable tree: browser-route verification, interaction
+evidence, reference dossiers, rendered repair and inspiration registry. The two
+long promotion cases then passed **2/2** in845.99s; the other20cases in that
+targeted invocation were skipped, not counted as passes. Their original300s/900s
+per-test budgets were unchanged. Thus every failed case from the first full run
+has a successful stable-source rerun, not a new single-run whole-suite certificate.
+The renderer rerun passed **45/45 viewport/palette checks**, with
+desktop/mobile cinematic-narrative and stage-index screenshots directly inspected
+at `/tmp/opencode/neutral-inference-rendered-packs-rerun/screenshots/`. No source,
+assertion or individual timeout changed between those runs. The preparation layer
+is locally verified; this is not a completed production release or Go capability
+test. The independent intake-render runner's baseline coverage mismatch remains
+unresolved. No CI gate, failed run or missing live acceptance evidence is bypassed.
 
 ## Follow-up, not included in this slice
 
