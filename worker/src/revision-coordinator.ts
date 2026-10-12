@@ -384,11 +384,12 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           window_started_at INTEGER NOT NULL,
           request_count INTEGER NOT NULL
         );
-        CREATE TABLE IF NOT EXISTS lead_limits (
-          scope TEXT PRIMARY KEY,
-          window_started_at INTEGER NOT NULL,
-          request_count INTEGER NOT NULL
+        CREATE TABLE IF NOT EXISTS lead_events (
+          scope TEXT NOT NULL,
+          at INTEGER NOT NULL
         );
+        CREATE INDEX IF NOT EXISTS lead_events_scope_at ON lead_events (scope, at);
+        CREATE INDEX IF NOT EXISTS lead_events_at ON lead_events (at);
         CREATE TABLE IF NOT EXISTS feedback_image_usage (
           scope TEXT PRIMARY KEY,
           window_started_at INTEGER NOT NULL,
@@ -900,6 +901,11 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     return { allowed: true, retryAfterSeconds: 0 };
   }
 
+  /**
+   * Sliding-window lead limiter backed by an event log. Each accepted lead
+   * records a timestamp; expired events are pruned on every call, so storage
+   * stays bounded without an alarm. Rejected requests record nothing.
+   */
   async allowLead(
     visitorKey: string,
     now = Date.now(),
@@ -909,93 +915,44 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     const projectLimit = 50;
     const vKey = `visitor:${visitorKey.slice(0, 160)}`;
     const pKey = "project";
+    const sql = this.ctx.storage.sql;
+    sql.exec("DELETE FROM lead_events WHERE at <= ?", now - windowMs);
 
-    const rows = this.ctx.storage.sql
-      .exec<{
-        scope: string;
-        window_started_at: number;
-        request_count: number;
-      }>(
-        "SELECT scope, window_started_at, request_count FROM lead_limits WHERE scope IN (?, ?)",
-        vKey,
-        pKey,
-      )
-      .toArray();
-
-    const existingProject = rows.find((r) => r.scope === pKey);
-    const existingVisitor = rows.find((r) => r.scope === vKey);
-
-    if (
-      existingProject &&
-      now - existingProject.window_started_at < windowMs &&
-      existingProject.request_count >= projectLimit
-    ) {
+    const oldestIn = (scope: string, limit: number) => {
+      const rows = sql
+        .exec<{ at: number }>(
+          "SELECT at FROM lead_events WHERE scope = ? ORDER BY at ASC LIMIT ?",
+          scope,
+          limit,
+        )
+        .toArray();
+      return rows.length >= limit ? rows[0].at : undefined;
+    };
+    const blockedUntil = [
+      oldestIn(pKey, projectLimit),
+      oldestIn(vKey, visitorLimit),
+    ].filter((at): at is number => at !== undefined);
+    if (blockedUntil.length)
       return {
         allowed: false,
         retryAfterSeconds: Math.max(
           1,
-          Math.ceil(
-            (windowMs - (now - existingProject.window_started_at)) / 1000,
-          ),
+          Math.ceil((Math.max(...blockedUntil) + windowMs - now) / 1000),
         ),
       };
-    }
 
-    if (
-      existingVisitor &&
-      now - existingVisitor.window_started_at < windowMs &&
-      existingVisitor.request_count >= visitorLimit
-    ) {
-      return {
-        allowed: false,
-        retryAfterSeconds: Math.max(
-          1,
-          Math.ceil(
-            (windowMs - (now - existingVisitor.window_started_at)) / 1000,
-          ),
-        ),
-      };
-    }
-
-    if (!existingProject || now - existingProject.window_started_at >= windowMs) {
-      this.ctx.storage.sql.exec(
-        "INSERT INTO lead_limits (scope, window_started_at, request_count) VALUES (?, ?, 1) ON CONFLICT(scope) DO UPDATE SET window_started_at = excluded.window_started_at, request_count = 1",
-        pKey,
-        now,
-      );
-    } else {
-      this.ctx.storage.sql.exec(
-        "UPDATE lead_limits SET request_count = request_count + 1 WHERE scope = ?",
-        pKey,
-      );
-    }
-
-    if (!existingVisitor || now - existingVisitor.window_started_at >= windowMs) {
-      this.ctx.storage.sql.exec(
-        "INSERT INTO lead_limits (scope, window_started_at, request_count) VALUES (?, ?, 1) ON CONFLICT(scope) DO UPDATE SET window_started_at = excluded.window_started_at, request_count = 1",
-        vKey,
-        now,
-      );
-    } else {
-      this.ctx.storage.sql.exec(
-        "UPDATE lead_limits SET request_count = request_count + 1 WHERE scope = ?",
-        vKey,
-      );
-    }
-
+    sql.exec(
+      "INSERT INTO lead_events (scope, at) VALUES (?, ?), (?, ?)",
+      pKey,
+      now,
+      vKey,
+      now,
+    );
     return { allowed: true, retryAfterSeconds: 0 };
   }
 
-  async resetLeadLimits(scope?: string) {
-    if (scope) {
-      this.ctx.storage.sql.exec(
-        "DELETE FROM lead_limits WHERE scope = ? OR scope = ?",
-        scope,
-        `visitor:${scope}`,
-      );
-    } else {
-      this.ctx.storage.sql.exec("DELETE FROM lead_limits");
-    }
+  async resetLeadLimits() {
+    this.ctx.storage.sql.exec("DELETE FROM lead_events");
   }
 
   async allowFeedbackImage(

@@ -3399,23 +3399,6 @@ async function lead(request: Request, env: Env) {
     );
     if (clean(body["bot-field"]))
       return json({ ok: true }, 200, cors(request, claims.allowedOrigins));
-    const visitor = await digest(
-      `${claims.project}\n${request.headers.get("CF-Connecting-IP") || "unknown"}`,
-    );
-    const rate = await env.REVISION_COORDINATOR.getByName(
-      `lead:${claims.project}`,
-    ).allowLead(visitor);
-    if (!rate.allowed)
-      return json(
-        {
-          error: "Too many requests. Please try again later.",
-        },
-        429,
-        {
-          ...cors(request, claims.allowedOrigins),
-          "Retry-After": String(rate.retryAfterSeconds),
-        },
-      );
     const name = clean(body.name, 160);
     const phone = clean(body.phone, 80);
     const email = clean(body.email, 240);
@@ -3428,6 +3411,39 @@ async function lead(request: Request, env: Env) {
         { error: "Please complete every required field." },
         400,
         cors(request, claims.allowedOrigins),
+      );
+    // Rate limit after validation so honest typos and honeypot hits do not
+    // spend quota. A limiter outage fails open: a lost lead costs the client
+    // more than one extra email, and the visitor key is derived from the
+    // Cloudflare-set connecting IP ("unknown" only outside Cloudflare).
+    const visitor = await digest(
+      `${claims.project}\n${request.headers.get("CF-Connecting-IP") || "unknown"}`,
+    );
+    const rate = await env.REVISION_COORDINATOR.getByName(
+      `lead:${claims.project}`,
+    )
+      .allowLead(visitor)
+      .catch((error: unknown) => {
+        console.error(
+          JSON.stringify({
+            event: "lead.rate_limiter_unavailable",
+            project: clean(claims.project, 100),
+            message: error instanceof Error ? error.message : String(error),
+          }),
+        );
+        return { allowed: true, retryAfterSeconds: 0 };
+      });
+    if (!rate.allowed)
+      return json(
+        {
+          error:
+            "Too many requests from your connection. Please try again later or call the business directly.",
+        },
+        429,
+        {
+          ...cors(request, claims.allowedOrigins),
+          "Retry-After": String(rate.retryAfterSeconds),
+        },
       );
     const leadEmail = renderLeadEmail({
       name,

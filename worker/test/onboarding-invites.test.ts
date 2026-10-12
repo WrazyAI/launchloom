@@ -995,7 +995,29 @@ it("enforces durable rate limits on coverage lookups per invitation and resets a
   expect(blocked.allowed).toBe(false);
   expect(blocked.retryAfterSeconds).toBeGreaterThan(0);
 
-  // After 10 minutes (600,000 ms), the rate limit window resets
-  const afterWindow = await coordinator.allowCoverageLookup(inviteId, start + 600_001);
+  // Sliding window: the oldest lookup (at `start`) expires first, freeing
+  // exactly one slot, and Retry-After points at that expiry.
+  expect(blocked.retryAfterSeconds).toBe(595);
+  const justBefore = await coordinator.allowCoverageLookup(inviteId, start + 599_999);
+  expect(justBefore.allowed).toBe(false);
+  const oneSlot = await coordinator.allowCoverageLookup(inviteId, start + 600_000);
+  expect(oneSlot).toEqual({ allowed: true, retryAfterSeconds: 0 });
+  const stillFull = await coordinator.allowCoverageLookup(inviteId, start + 600_001);
+  expect(stillFull.allowed).toBe(false);
+
+  // Once every earlier lookup has expired the invite has a full quota again.
+  const afterWindow = await coordinator.allowCoverageLookup(inviteId, start + 1_200_001);
   expect(afterWindow).toEqual({ allowed: true, retryAfterSeconds: 0 });
+});
+
+it("prunes expired coverage lookup events so storage stays bounded", async () => {
+  const coordinator = inviteNamespace.getByName("launchloom-onboarding-invites");
+  await coordinator.resetCoverageLookupLimits();
+  for (let i = 0; i < 30; i += 1)
+    await coordinator.allowCoverageLookup(`invite-prune-${i}`, 1_000);
+  await coordinator.allowCoverageLookup("invite-prune-fresh", 1_000 + 600_001);
+  const remaining = await runInDurableObject(coordinator, async (_instance, state) =>
+    state.storage.sql.exec<{ count: number }>("SELECT COUNT(*) AS count FROM coverage_lookup_events").one().count,
+  );
+  expect(remaining).toBe(1);
 });

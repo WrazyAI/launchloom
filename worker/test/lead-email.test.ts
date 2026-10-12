@@ -247,7 +247,7 @@ describe("generated-site lead email delivery", () => {
     expect(blocked.status).toBe(429);
     expect(blocked.headers.get("Retry-After")).toMatch(/^\d+$/);
     expect(await blocked.json()).toEqual({
-      error: "Too many requests. Please try again later.",
+      error: "Too many requests from your connection. Please try again later or call the business directly.",
     });
     expect(providerCalls).toBe(10);
   });
@@ -285,7 +285,7 @@ describe("generated-site lead email delivery", () => {
     expect(blocked.status).toBe(429);
     expect(blocked.headers.get("Retry-After")).toMatch(/^\d+$/);
     expect(await blocked.json()).toEqual({
-      error: "Too many requests. Please try again later.",
+      error: "Too many requests from your connection. Please try again later or call the business directly.",
     });
     expect(providerCalls).toBe(50);
   });
@@ -323,6 +323,63 @@ describe("generated-site lead email delivery", () => {
     );
     expect(legitimate.status).toBe(200);
     expect(await legitimate.json()).toEqual({ ok: true });
+    expect(providerCalls).toBe(1);
+  });
+
+  it("does not spend quota on submissions that fail required-field validation", async () => {
+    let providerCalls = 0;
+    network.use(
+      http.post("https://api.resend.com/emails", () => {
+        providerCalls += 1;
+        return HttpResponse.json({ id: "resend-msg-ok" });
+      }),
+    );
+    const token = await signedLeadToken({ project: "rate-limit-validation-client" });
+    const envWithResend = testEnv({
+      RESEND_API_KEY: "test-resend-key",
+      LAUNCHLOOM_FROM_EMAIL: "LaunchLoom <info@example.com>",
+    });
+    for (let i = 0; i < 15; i += 1) {
+      const invalid = await worker.fetch(
+        leadRequest(token, { message: "" }, "203.0.113.50"),
+        envWithResend,
+        {} as ExecutionContext,
+      );
+      expect(invalid.status).toBe(400);
+    }
+    const valid = await worker.fetch(
+      leadRequest(token, {}, "203.0.113.50"),
+      envWithResend,
+      {} as ExecutionContext,
+    );
+    expect(valid.status).toBe(200);
+    expect(providerCalls).toBe(1);
+  });
+
+  it("fails open when the lead rate limiter is unavailable", async () => {
+    let providerCalls = 0;
+    network.use(
+      http.post("https://api.resend.com/emails", () => {
+        providerCalls += 1;
+        return HttpResponse.json({ id: "resend-msg-ok" });
+      }),
+    );
+    const token = await signedLeadToken({ project: "rate-limit-outage-client" });
+    const brokenCoordinator = {
+      getByName: () => ({
+        allowLead: () => Promise.reject(new Error("durable object unavailable")),
+      }),
+    };
+    const response = await worker.fetch(
+      leadRequest(token, {}, "203.0.113.60"),
+      testEnv({
+        RESEND_API_KEY: "test-resend-key",
+        LAUNCHLOOM_FROM_EMAIL: "LaunchLoom <info@example.com>",
+        REVISION_COORDINATOR: brokenCoordinator as unknown as Env["REVISION_COORDINATOR"],
+      }),
+      {} as ExecutionContext,
+    );
+    expect(response.status).toBe(200);
     expect(providerCalls).toBe(1);
   });
 });

@@ -505,3 +505,36 @@ describe("RevisionCoordinator", () => {
     expect(dispatchCount).toBe(3);
   });
 });
+
+describe("lead rate limiting", () => {
+  it("applies a sliding hourly window per visitor with an accurate Retry-After", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName("lead-limit-visitor");
+    const hour = 60 * 60_000;
+    const start = 5_000_000;
+    for (let i = 0; i < 10; i += 1)
+      expect(await coordinator.allowLead("visitor-a", start + i * 1000)).toEqual({
+        allowed: true,
+        retryAfterSeconds: 0,
+      });
+    const blocked = await coordinator.allowLead("visitor-a", start + 20_000);
+    expect(blocked.allowed).toBe(false);
+    expect(blocked.retryAfterSeconds).toBe(3580);
+    // A different visitor is unaffected.
+    expect((await coordinator.allowLead("visitor-b", start + 20_000)).allowed).toBe(true);
+    // No boundary burst: the window slides one slot at a time.
+    expect((await coordinator.allowLead("visitor-a", start + hour)).allowed).toBe(true);
+    expect((await coordinator.allowLead("visitor-a", start + hour + 500)).allowed).toBe(false);
+    expect((await coordinator.allowLead("visitor-a", start + hour + 1001)).allowed).toBe(true);
+  });
+
+  it("enforces the project ceiling without charging blocked requests", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName("lead-limit-project");
+    const start = 9_000_000;
+    for (let i = 0; i < 50; i += 1)
+      expect((await coordinator.allowLead(`visitor-${i}`, start + i)).allowed).toBe(true);
+    const blocked = await coordinator.allowLead("visitor-new", start + 100);
+    expect(blocked.allowed).toBe(false);
+    // The blocked visitor was not recorded, so it can lead once a slot frees.
+    expect((await coordinator.allowLead("visitor-new", start + 60 * 60_000)).allowed).toBe(true);
+  });
+});
