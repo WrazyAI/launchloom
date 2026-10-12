@@ -29,6 +29,7 @@ export interface RevisionRequestInput {
   siteId: string;
   clientEmail: string;
   reviewedPage: string;
+  reviewedSha?: string;
   category: string;
   feedback: string;
   structure?: string;
@@ -975,7 +976,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
   }
 
   allowsPublicationFeedback(pr: number, headSha: string) {
-    const held=this.publications.held();
+    const held=this.publications.held()||this.publications.feedbackContext(pr,headSha);
     return !!held&&held.pr===pr&&held.head_sha===headSha;
   }
 
@@ -1271,14 +1272,15 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         "SELECT * FROM revision_requests WHERE status = 'queued' ORDER BY created_at LIMIT 1",
       )
       .toArray()[0];
-    if (active && queued)
+    const publication = this.publications.held();
+    const context=publication||this.publications.feedbackContext(input.pr,input.reviewedSha);
+    if (active && queued && !context)
       return {
         ok: false,
         code: "revision_queue_full",
         error: "One request is already waiting. Try again when it starts.",
       };
 
-    const publication = this.publications.held();
     const status: QueueStatus = active || publication ? "queued" : "dispatching";
     const now = Date.now();
     this.ctx.storage.sql.exec(
@@ -1302,7 +1304,8 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       status,
       now,
     );
-    if (publication) this.ctx.storage.sql.exec("UPDATE revision_requests SET publication_id = ?, reviewed_sha = ? WHERE request_id = ?",publication.id,publication.head_sha,input.requestId);
+    if (context)this.ctx.storage.sql.exec("UPDATE revision_requests SET publication_id = ?, reviewed_sha = ?, base_sha = ? WHERE request_id = ?",context.id,input.reviewedSha||(input.stage==='developer'?context.head_sha:null),context.state==='published'?context.approved_sha:null,input.requestId);
+    else if(input.reviewedSha)this.ctx.storage.sql.exec('UPDATE revision_requests SET reviewed_sha = ? WHERE request_id = ?',input.reviewedSha,input.requestId);
     const row = this.row(input.requestId)!;
     try {
       if (status === "dispatching") await this.prepareAndDispatchRow(row);

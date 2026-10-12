@@ -424,7 +424,13 @@ describe("ordered publication", () => {
     network.use(
       http.post(
         "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
-        async () => {
+        async ({ request }) => {
+          expect(request.headers.get("User-Agent")).toBe(
+            "LaunchLoom-Cloudflare-Worker",
+          );
+          expect(request.headers.get("X-GitHub-Api-Version")).toBe(
+            "2022-11-28",
+          );
           dispatches++;
           await new Promise((resolve) => setTimeout(resolve, 30));
           return new HttpResponse(null, { status: 204 });
@@ -485,12 +491,24 @@ describe("ordered publication", () => {
         text: "Ready",
       },
     });
+    expect(
+      await coordinator.allowsPublicationFeedback(
+        publication.pr,
+        publication.headSha,
+      ),
+    ).toBe(true);
     const newer = await coordinator.reservePublication({
       ...publication,
       pr: 8,
       headSha: "new-review-head",
     });
     expect(newer.allowed).toBe(true);
+    expect(
+      await coordinator.allowsPublicationFeedback(
+        publication.pr,
+        publication.headSha,
+      ),
+    ).toBe(false);
     expect(
       await coordinator.reservePublication({ ...publication, retry: true }),
     ).toMatchObject({ allowed: false, code: "stale_publication" });
@@ -551,6 +569,99 @@ describe("ordered publication", () => {
     expect(await repairing.reservePublication(publication)).toMatchObject({
       allowed: false,
       code: "revision_in_progress",
+    });
+  });
+  it("keeps the client reviewed commit distinct and preserves feedback across publication completion", async () => {
+    mocks();
+    const dispatches: Record<string, any>[] = [];
+    network.use(
+      http.post(
+        "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+        async ({ request }) => {
+          dispatches.push((await request.json()) as Record<string, any>);
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
+    );
+    const coordinator = getCoordinator("publication-context-boundary");
+    const p = await coordinator.reservePublication(publication);
+    const feedback = {
+      requestId: "client-during-publication",
+      fingerprint: "client-during-publication",
+      stage: "client" as const,
+      repo: publication.repo,
+      feedbackIssue: 8,
+      siteId: publication.siteId,
+      clientEmail: publication.clientEmail,
+      reviewedPage: "https://example-client.pages.dev/services",
+      reviewedSha: "previous-live-commit",
+      category: "text",
+      feedback: "Clarify the service scope.",
+    };
+    expect(await coordinator.enqueue(feedback)).toMatchObject({
+      ok: true,
+      queueStatus: "queued",
+    });
+    await coordinator.queuePublication(
+      p.publicationId!,
+      "new-live-commit",
+      {},
+      p.approvalToken ?? undefined,
+    );
+    await coordinator.publicationCommand({
+      action: "claim",
+      publicationId: p.publicationId!,
+      runId: "context-run",
+    });
+    await coordinator.publicationCommand({
+      action: "uploaded",
+      publicationId: p.publicationId!,
+      runId: "context-run",
+      deployment: {
+        id: "new-deployment",
+        origin: "https://example-client.pages.dev",
+        commit: "new-live-commit",
+      },
+    });
+    await coordinator.publicationCommand({
+      action: "published",
+      publicationId: p.publicationId!,
+      runId: "context-run",
+      delivery: {
+        to: publication.clientEmail,
+        subject: "Ready",
+        html: "<p>Ready</p>",
+        text: "Ready",
+      },
+    });
+    expect(dispatches[1]).toMatchObject({
+      event_type: "process-client-feedback",
+      client_payload: {
+        baseSha: "new-live-commit",
+        reviewedSha: "previous-live-commit",
+        originalStage: "client",
+      },
+    });
+    expect(
+      await coordinator.enqueue({
+        ...feedback,
+        requestId: "developer-after-publication",
+        fingerprint: "developer-after-publication",
+        stage: "developer",
+        pr: 7,
+        reviewedSha: publication.headSha,
+      }),
+    ).toMatchObject({ ok: true, queueStatus: "queued" });
+    await coordinator.claim(feedback.requestId);
+    await coordinator.complete(feedback.requestId);
+    expect(dispatches[2]).toMatchObject({
+      event_type: "process-client-feedback",
+      client_payload: {
+        baseSha: "new-live-commit",
+        reviewedSha: publication.headSha,
+        originalStage: "developer",
+        publicationId: p.publicationId,
+      },
     });
   });
 });

@@ -141,6 +141,17 @@ export class PublicationStore {
       )
       .toArray()[0];
   }
+  feedbackContext(pr?: number, reviewedSha?: string) {
+    const latest = this.storage.sql
+      .exec<Row>("SELECT * FROM publications ORDER BY seq DESC LIMIT 1")
+      .toArray()[0];
+    if (!latest || latest.dismissed) return undefined;
+    return (latest.pr === pr || latest.approved_sha === reviewedSha) &&
+      latest.state === "published"
+      ? latest
+      : undefined;
+  }
+
   reserve(input: PublicationInput) {
     return this.storage.transactionSync(() => {
       const existing = this.storage.sql
@@ -165,7 +176,7 @@ export class PublicationStore {
           };
         if (["failed", "attention"].includes(existing.state) && input.retry) {
           this.storage.sql.exec(
-            "UPDATE publications SET state = 'reserved', run_id = NULL, dispatch_sent = 0, dispatch_attempts = 0, approval_lease_until = 0, failure = NULL, next_attempt_at = ?, updated_at = ? WHERE id = ?",
+            "UPDATE publications SET state = 'reserved', run_id = NULL, dispatch_sent = 0, dispatch_attempts = 0, dispatch_lease_until = 0, approval_lease_until = 0, failure = NULL, next_attempt_at = ?, updated_at = ? WHERE id = ?",
             Date.now() + 15 * 60_000,
             Date.now(),
             existing.id,
@@ -359,6 +370,8 @@ export class PublicationStore {
             Authorization: "Bearer " + this.env.GITHUB_ORG_TOKEN,
             "Content-Type": "application/json",
             Accept: "application/vnd.github+json",
+            "User-Agent": "LaunchLoom-Cloudflare-Worker",
+            "X-GitHub-Api-Version": "2022-11-28",
           },
           body: JSON.stringify({
             event_type: "publish-site",
@@ -597,6 +610,7 @@ export class PublicationStore {
             Authorization: "Bearer " + this.env.GITHUB_ORG_TOKEN,
             "User-Agent": "LaunchLoom-Cloudflare-Worker",
             Accept: "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
           };
           const response = await fetch(
             `https://api.github.com/repos/${r.repo}/pulls/${r.pr}`,

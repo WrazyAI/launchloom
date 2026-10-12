@@ -2427,6 +2427,7 @@ async function feedback(request: Request, env: Env) {
       siteId: claims.siteId,
       clientEmail: claims.clientEmail,
       reviewedPage: clean(reviewedPage, 1000),
+      reviewedSha: claims.headSha,
       category: safeCategory,
       feedback: replacementAssetUrl
         ? `Replacement asset: ${replacementAssetUrl}\n\n${note}`
@@ -2819,6 +2820,7 @@ async function creativeRepair(request: Request, env: Env) {
         siteId: claims.siteId,
         clientEmail: claims.clientEmail,
         reviewedPage: clean(reviewedPage, 1_000),
+        reviewedSha: feedbackClaims.headSha,
         category,
         feedback: note,
         ...(structureJson ? { structure: structureJson } : {}),

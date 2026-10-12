@@ -99,7 +99,7 @@ jobs:
           fi
           PUBLICATION_ACTION=uploaded node "$GITHUB_WORKSPACE/scripts/publication-client.mjs"
           node "$GITHUB_WORKSPACE/scripts/verify-site-routes.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION" --destination "$PRODUCTION" --site "$RUNNER_TEMP/client" --commit "$APPROVED_SHA" --report "$RUNNER_TEMP/destination-route-handoff.json" --screenshots "$RUNNER_TEMP/destination-route-screenshots"
-          TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage client --repo "$CLIENT_REPO" --site "$PROJECT" --email "$CLIENT_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$PRODUCTION" --token-only true)
+          TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage client --sha "$APPROVED_SHA" --repo "$CLIENT_REPO" --site "$PROJECT" --email "$CLIENT_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$PRODUCTION" --token-only true)
           echo "::add-mask::$TOKEN"
           NAME="$(node -e 'const x=require("./src/site.config.json"); console.log(x.business.name)')"
           REVIEW_URL="$PRODUCTION?review=$TOKEN"

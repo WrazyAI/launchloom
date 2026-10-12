@@ -47,7 +47,10 @@ Feedback received during publication remains queued with its original review
 SHA, stage, page and comment. Multiple requests are retained. Successful
 publication records their base commit atomically before releasing them in
 order. Requests against a merged PR are accepted only while the matching
-publication still owns that client. A failed publication pauses the queue.
+publication is still the current release record. This also handles feedback
+that crosses publication completion while its PR lookup is in flight. New
+client review tokens retain the published commit; legacy tokens retain an
+unknown SHA rather than assigning a future release they did not review. A failed publication pauses the queue.
 A publication retry never discards queued feedback.
 
 ## Operator actions
