@@ -67,6 +67,19 @@ describe("client intake workflow graph", () => {
       expect(jobs.get(job), job).toContain('"$EXPECTED_SHA"');
     }
     expect(restore).toContain(".launchloom/generated-experiences");
+    for (const field of [
+      "email",
+      "business_name",
+      "slug",
+      "asset_summary",
+      "layout",
+      "research_mode",
+      "research_cost",
+      "research_queries",
+    ]) {
+      expect(workflow).not.toContain(`needs.prepare.outputs.${field}`);
+    }
+    expect(workflow).not.toContain("needs.image_assets.outputs.summary");
     expect(jobs.get("prepare")).toContain("for artifact in reasoning-preflight.json");
     expect(jobs.get("rendered_quality")).toContain("find .launchloom/creative-repair -type f -name '*.json' -print0");
     expect(jobs.get("developer_handoff")).toContain("needs.private_preview.outputs.sha");
