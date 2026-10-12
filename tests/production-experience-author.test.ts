@@ -17,6 +17,8 @@ import {
   type AuthorStageRequest,
 } from "../scripts/production-experience-author.mjs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
+import { createInferenceAuthorAdapter } from "../scripts/author-inference-adapter.mjs";
+import { AUTHORING_STAGE_BUDGETS } from "../scripts/creative-authoring-output.mjs";
 
 const site = {
   business: {
@@ -175,6 +177,41 @@ export default function LocationPage({ content, runtime, location }) {
 }
 
 describe("production experience author", () => {
+  it.each(["chat-completions", "responses", "messages"] as const)("runs the actual author engine through the explicit %s adapter offline", async (protocol) => {
+    const seen: string[] = [];
+    const generate = createInferenceAuthorAdapter({
+      profile: {
+        provider: "offline-fixture", model: "fixture-author", protocol,
+        endpoint: `https://fixture.invalid/v1/${protocol === "chat-completions" ? "chat/completions" : protocol}`,
+        auth: protocol === "messages" ? "api-key" : "bearer",
+        capabilities: { maxOutputTokens: 48000, outputFormats: ["text", "json-schema"], ...(protocol === "chat-completions" ? { completionTokenField: "max_completion_tokens" } : {}) },
+      },
+      apiKey: "fixture-only-no-provider-key",
+      prepareRequest: (request: AuthorStageRequest) => ({
+        maxOutputTokens: AUTHORING_STAGE_BUDGETS[request.stage].maxTokens,
+        messages: [{ role: "user", content: JSON.stringify(request) }],
+        outputFormat: { type: "json-schema", name: "author_stage", schema: { type: "object" } },
+      }),
+      fetchImpl: async (_url, options) => {
+        // Fixture data, not real production prompt preparation or model behavior.
+        const body = JSON.parse(String(options?.body));
+        const messages = body.input || body.messages;
+        const request = JSON.parse(messages[0].content[0].text);
+        seen.push(request.stage);
+        const text = JSON.stringify(safeStage(request));
+        return Response.json(protocol === "chat-completions"
+          ? { choices: [{ finish_reason: "stop", message: { role: "assistant", content: text } }] }
+          : protocol === "responses"
+            ? { status: "completed", output: [{ type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", text }] }] }
+            : { type: "message", role: "assistant", stop_reason: "end_turn", content: [{ type: "text", text }] });
+      },
+    });
+    const result = await authorExperienceCandidates({ site, inspirationPack, model: "fixture-author", generate });
+    expect(result.candidates).toHaveLength(3);
+    expect(seen).toEqual(expect.arrayContaining(["contract", "experience", "service", "service-index", "styles", "motion"]));
+    expect(result.candidates[0].files["Experience.jsx"]).toContain('data-model-experience="route-01"');
+  });
+
   it("rejects unsealed or non-navigation URL attributes", () => {
     const route = { id: "route-url-safety" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };

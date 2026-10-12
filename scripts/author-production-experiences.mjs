@@ -3,7 +3,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { safeAuthorFailureText } from "./author-failure-evidence.mjs";
 import { parsePipelineTestArgs, resolvePipelineTestPolicy } from "./pipeline-test-policy.mjs";
-import { parseModelJson } from "./model-json.mjs";
+import { completeGeneration, parseGenerationOutput } from "./generation-inference.mjs";
 import {
   assertModelPromptTextBudget,
   formatModelBoundContentShape,
@@ -19,13 +19,11 @@ import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
   openRouterApiError,
-  openRouterChatCompletion,
   openRouterPromptCacheKey,
   openRouterSessionId,
   promptCachedMessageContent,
   promptCachedText,
   promptCacheRequestFields,
-  readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
 import {
   promptImagePart,
@@ -540,34 +538,37 @@ async function requestStage(request) {
           stagePromptDigest: promptDigest(stagePrompt),
           evidence: evidenceManifest,
         });
-        const response = await openRouterChatCompletion({
-          title: "LaunchLoom Production Experience Author",
-          signal: controller.signal,
-          sessionId,
-          body: {
-            model,
-            ...promptCacheRequestFields(model, promptCacheKey),
-            temperature: request.stage === "contract" ? 0.76 : 0.62,
-            reasoning: { effort, exclude: true },
-            response_format: {
-              type: "json_schema",
-              json_schema: authorStageSchema,
-            },
-            ...completionLimitRequestField(stageBudget.maxTokens),
-            messages: [
-              {
-                role: "system",
-                content: promptCachedMessageContent(model, systemPrompt),
+        const completion = await completeGeneration({
+          openRouter: {
+            title: "LaunchLoom Production Experience Author",
+            signal: controller.signal,
+            sessionId,
+            body: {
+              model,
+              ...promptCacheRequestFields(model, promptCacheKey),
+              temperature: request.stage === "contract" ? 0.76 : 0.62,
+              reasoning: { effort, exclude: true },
+              response_format: {
+                type: "json_schema",
+                json_schema: authorStageSchema,
               },
-              { role: "user", content: userContent },
-            ],
+              ...completionLimitRequestField(stageBudget.maxTokens),
+              messages: [
+                {
+                  role: "system",
+                  content: promptCachedMessageContent(model, systemPrompt),
+                },
+                { role: "user", content: userContent },
+              ],
+            },
           },
         });
         const {
+          response,
           payload,
           rawBody,
           parseError: responseBodyError,
-        } = await readOpenRouterResponseEnvelope(response);
+        } = completion.legacy;
         if (sharedAbortController.signal.aborted)
           throw new Error(
             "Phase 2 authorship cancelled after a sibling failure.",
@@ -587,6 +588,13 @@ async function requestStage(request) {
             ? "response-body-error"
             : "response-received",
           durationMs: Date.now() - startedAt,
+          inference: {
+            provider: completion.result.provider,
+            model: completion.result.model,
+            protocol: completion.result.protocol,
+            status: completion.result.status,
+            usage: completion.result.usage,
+          },
         };
         usage.push(usageRecord);
         const providerError = openRouterApiError(payload, response.status);
@@ -624,7 +632,7 @@ async function requestStage(request) {
         }
         let parsed;
         try {
-          parsed = parseModelJson(content);
+          parsed = parseGenerationOutput(completion);
         } catch (error) {
           usageRecord.parseStatus = "parse-failed";
           throw new Error(

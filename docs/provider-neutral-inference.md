@@ -140,6 +140,48 @@ unresolved. No CI gate, failed run or missing live acceptance evidence is bypass
 
 ## Follow-up, not included in this slice
 
+### Generation caller implementation follow-up
+
+The next implementation slice is in `scripts/generation-inference.mjs` and
+`scripts/author-inference-adapter.mjs`. `completeGeneration` takes exactly one
+explicit transport: `openRouter` retains its raw response/envelope and existing
+wire extensions; `inference` takes a trusted profile, canonical request and
+explicit credential. Both return a normalized result. The neutral path never
+fabricates an OpenRouter payload, cost or cache ledger. `parseGenerationOutput`
+gates completion before the existing JSON parser. A `GenerationInferenceError`
+retains normalized status/provenance/quota/Retry-After for future orchestration,
+without source, annotations or raw private diagnostics.
+
+The production author CLI uses that boundary in its **existing OpenRouter path**.
+Prompts, schema, token budgets, frozen reasoning policy, caching and retries are
+unchanged. It now records normalized inference provenance/usage alongside the
+legacy usage row and rejects parseable partial/refused/tool-dependent output
+before authorship. It does not expose a CLI/environment switch to a new provider.
+
+`createInferenceAuthorAdapter` is an opt-in `generate` adapter for the real
+`authorExperienceCandidates` engine. The host must explicitly supply a reviewed
+profile, credential and `prepareRequest(stageRequest)` returning the approved
+canonical prompts/images/schema. No generic design prompt is substituted here.
+Each stage must request its **existing exact output budget**, schema mode and
+supported capabilities. The adapter snapshots the profile, retains stage
+deadlines/cancellation and performs one request without reasoning fallback.
+Configure the engine's `model` to the same profile model when using this adapter;
+this slice does not replace the frozen session/preflight model allowlists.
+Existing source/factual/repair/reference validators still run in the engine.
+
+Offline tests exercise all three protocols with the real author engine and its
+source validators using deterministic safe sources. These are transport and
+orchestration compatibility tests, not evidence that a real model follows a
+prompt or that production prompts have been fully migrated. CLI prompt
+preparation remains OpenRouter-specific. Rendered judge/repair/search paths,
+provider-aware historical cost aggregation and workflow configuration are still
+pending explicit migration. Go permission and live-capability gates still apply.
+
+TestSprite verification is unavailable locally: `testsprite --version` returned
+command-not-found. No TestSprite installation, external test project or paid run
+was created. Local Vitest/Astro/build evidence must not be labeled TestSprite or
+production/provider acceptance.
+
 1. Resolve Go workload permission and service-specific wire/capability acceptance.
 2. Add reviewed role profiles and explicitly migrate generation/analysis/judge/
    repair callers, reasoning preflight model IDs and frozen session provenance.
