@@ -448,8 +448,13 @@ export function renderAdminDashboardHtml() {
         }
         var meta = document.createElement('small');
         email.textContent = invite.clientEmail || invite.submitterEmail || 'Email not bound';
-        meta.textContent = invite.status + (invite.issueNumber ? ' · issue #' + invite.issueNumber : '') + ' · expires ' + new Date(invite.expiresAt).toLocaleString();
+        meta.textContent = (invite.recoveryRequired ? 'Needs intake recovery · ' : '') + invite.status + (invite.issueNumber ? ' · issue #' + invite.issueNumber : '') + ' · expires ' + new Date(invite.expiresAt).toLocaleString();
         details.append(email, meta);
+        if (invite.recoveryRequired) {
+          var recovery = document.createElement('small');
+          recovery.textContent = 'Verify the original GitHub issue before revoking or issuing another invitation. Recovery attempts: ' + (invite.recoveryAttempts || 0) + '.';
+          details.appendChild(recovery);
+        }
         row.append(details);
         if (invite.status === 'unused') {
           var button = document.createElement('button');

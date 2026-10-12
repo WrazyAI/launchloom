@@ -22,6 +22,15 @@ export type InviteValidation = {
   clientEmail?: string | null;
 };
 
+export type IntakeOperation = {
+  operationId: string;
+  submissionHash: string;
+  phase: "reserved" | "creating_issue";
+  page: number;
+  sweeps: number;
+  recoveryRequired: boolean;
+};
+
 type InviteRow = {
   invite_id: string;
   client_email: string | null;
@@ -37,6 +46,11 @@ type InviteRow = {
   submission_id: string | null;
   submission_hash: string | null;
   issue_number: number | null;
+  operation_id: string | null;
+  recovery_page: number;
+  recovery_sweeps: number;
+  recovery_lease: string | null;
+  recovery_lease_until: number;
   created_at: number;
   updated_at: number;
 };
@@ -50,6 +64,7 @@ type OutboxRow = {
   issue_number: number | null;
   recipient: string | null;
   business_name: string | null;
+  idempotency_key: string | null;
   status: OutboxStatus;
   attempts: number;
   next_attempt_at: number;
@@ -101,6 +116,9 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         CREATE INDEX IF NOT EXISTS intake_outbox_due
           ON intake_outbox(status, next_attempt_at);
       `);
+      const outboxColumns = ctx.storage.sql.exec<{name: string}>("PRAGMA table_info(intake_outbox)").toArray();
+      if (!outboxColumns.some(column => column.name === "idempotency_key"))
+        ctx.storage.sql.exec("ALTER TABLE intake_outbox ADD COLUMN idempotency_key TEXT");
       const columns = ctx.storage.sql
         .exec<{ name: string }>("PRAGMA table_info(onboarding_invites)")
         .toArray();
@@ -108,6 +126,14 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         ctx.storage.sql.exec(
           "ALTER TABLE onboarding_invites ADD COLUMN reservation_phase TEXT NOT NULL DEFAULT 'reserved'",
         );
+      }
+      for (const [name, declaration] of [
+        ["operation_id", "TEXT"], ["recovery_page", "INTEGER NOT NULL DEFAULT 1"],
+        ["recovery_sweeps", "INTEGER NOT NULL DEFAULT 0"], ["recovery_lease", "TEXT"],
+        ["recovery_lease_until", "INTEGER NOT NULL DEFAULT 0"],
+      ]) {
+        if (!columns.some((column) => column.name === name))
+          ctx.storage.sql.exec(`ALTER TABLE onboarding_invites ADD COLUMN ${name} ${declaration}`);
       }
       if (!columns.some((column) => column.name === "submitter_email")) {
         // Link-only invites have no configured client email. The intake email
@@ -137,10 +163,12 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
   }
 
   async queueIntakeReceipt(inviteId: string, submissionId: string, recipient: string, businessName: string, now = Date.now()) {
+    const operationId = this.row(inviteId)?.operation_id;
+    const receiptKey = `client-intake-received-${operationId || submissionId}`;
     this.ctx.storage.sql.exec(
       `INSERT OR IGNORE INTO intake_outbox
-       (invite_id, submission_id, task_type, recipient, business_name, status, attempts, next_attempt_at, created_at, updated_at)
-       VALUES (?, ?, 'receipt', ?, ?, 'pending', 0, ?, ?, ?)`,
+       (invite_id, submission_id, task_type, recipient, business_name, status, attempts, next_attempt_at, created_at, updated_at, idempotency_key)
+       VALUES (?, ?, 'receipt', ?, ?, 'pending', 0, ?, ?, ?, ?)`,
       inviteId,
       submissionId,
       recipient,
@@ -148,6 +176,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       now,
       now,
       now,
+      receiptKey,
     );
     await this.scheduleOutboxAlarm();
     await this.deliverOutboxTask(inviteId, submissionId, "receipt", now);
@@ -197,7 +226,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
           to: claimed.recipient || "",
           ...receipt,
           tag: "client-intake-received",
-          idempotencyKey: `client-intake-received-${claimed.submission_id}`,
+          idempotencyKey: claimed.idempotency_key || `client-intake-received-${claimed.submission_id}`,
           required: true,
         });
       }
@@ -370,6 +399,9 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     if (row.status !== "unused")
       return { accepted: false as const, reason: row.status };
     if (row.reserved_submission_id) {
+      // Never retroactively assign an owner to a pre-migration ambiguous operation.
+      if (!row.operation_id || row.recovery_sweeps >= 3)
+        return { accepted: false as const, reason: "recovery_required" as const };
       if (row.reserved_submission_id !== submissionId)
         return { accepted: false as const, reason: "in_progress" as const };
       const stale = row.reserved_at !== null && now - row.reserved_at >= 2 * 60_000;
@@ -401,11 +433,12 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       return { accepted: false as const, reason: "in_progress" as const };
     }
     this.ctx.storage.sql.exec(
-      `UPDATE onboarding_invites SET reserved_submission_id = ?, reserved_submission_hash = ?, reserved_at = ?, reservation_phase = 'reserved', submitter_email = COALESCE(submitter_email, ?), updated_at = ?
+      `UPDATE onboarding_invites SET reserved_submission_id = ?, reserved_submission_hash = ?, reserved_at = ?, reservation_phase = 'reserved', operation_id = ?, recovery_page = 1, recovery_sweeps = 0, recovery_lease = NULL, recovery_lease_until = 0, submitter_email = COALESCE(submitter_email, ?), updated_at = ?
        WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id IS NULL`,
       submissionId,
       submissionHash,
       now,
+      crypto.randomUUID(),
       clientEmail.trim().toLowerCase() || null,
       now,
       inviteId,
@@ -422,7 +455,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
   ) {
     const updated = this.ctx.storage.sql.exec<{ invite_id: string }>(
       `UPDATE onboarding_invites
-       SET reserved_submission_hash = ?, reserved_at = ?, updated_at = ?
+       SET reserved_submission_hash = ?, reserved_at = ?, updated_at = ?, operation_id = ?, recovery_page = 1, recovery_sweeps = 0, recovery_lease = NULL, recovery_lease_until = 0
        WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id = ?
          AND reserved_submission_hash = ? AND reservation_phase = 'reserved'
          AND issue_number IS NULL AND reserved_at IS NOT NULL AND reserved_at <= ?
@@ -430,12 +463,52 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       nextHash,
       now,
       now,
+      crypto.randomUUID(),
       inviteId,
       submissionId,
       previousHash,
       now - 2 * 60_000,
     );
     return updated.toArray().length === 1;
+  }
+
+  async intakeOperation(inviteId: string, submissionId: string): Promise<IntakeOperation | null> {
+    const row = this.row(inviteId);
+    if (!row || row.status !== "unused" || row.reserved_submission_id !== submissionId) return null;
+    return {
+      operationId: row.operation_id || "", submissionHash: row.reserved_submission_hash || "",
+      phase: row.reservation_phase, page: row.recovery_page, sweeps: row.recovery_sweeps,
+      recoveryRequired: !row.operation_id || row.recovery_sweeps >= 3,
+    };
+  }
+
+  async claimRecovery(inviteId: string, operationId: string, now = Date.now()) {
+    const lease = crypto.randomUUID();
+    const row = this.ctx.storage.sql.exec<InviteRow>(
+      `UPDATE onboarding_invites SET recovery_lease = ?, recovery_lease_until = ?
+       WHERE invite_id = ? AND operation_id = ? AND status = 'unused'
+         AND recovery_sweeps < 3 AND recovery_lease_until <= ? RETURNING *`,
+      lease, now + 120_000, inviteId, operationId, now,
+    ).toArray()[0];
+    return row ? { lease, page: row.recovery_page } : null;
+  }
+
+  async advanceRecovery(inviteId: string, operationId: string, lease: string, page: number) {
+    this.ctx.storage.sql.exec(
+      `UPDATE onboarding_invites SET recovery_page = ?
+       WHERE invite_id = ? AND operation_id = ? AND recovery_lease = ? AND status = 'unused'`,
+      page, inviteId, operationId, lease,
+    );
+  }
+
+  async checkpointRecovery(inviteId: string, operationId: string, lease: string, page: number, sweepComplete: boolean) {
+    const updated = this.ctx.storage.sql.exec<{invite_id: string}>(
+      `UPDATE onboarding_invites SET recovery_page = ?, recovery_sweeps = recovery_sweeps + ?,
+         recovery_lease = NULL, recovery_lease_until = 0
+       WHERE invite_id = ? AND operation_id = ? AND recovery_lease = ? AND status = 'unused' RETURNING invite_id`,
+      page, sweepComplete ? 1 : 0, inviteId, operationId, lease,
+    ).toArray();
+    return updated.length === 1;
   }
 
   async claimIssueCreation(inviteId: string, submissionId: string, submissionHash: string, now = Date.now()) {
@@ -474,7 +547,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     const row = this.row(inviteId);
     if (!row || row.reserved_submission_id !== submissionId || row.reserved_submission_hash !== submissionHash || row.issue_number) return false;
     this.ctx.storage.sql.exec(
-      `UPDATE onboarding_invites SET reserved_submission_id = NULL, reserved_submission_hash = NULL, reserved_at = NULL, reservation_phase = 'reserved', updated_at = ?
+      `UPDATE onboarding_invites SET reserved_submission_id = NULL, reserved_submission_hash = NULL, reserved_at = NULL, reservation_phase = 'reserved', operation_id = NULL, recovery_page = 1, recovery_sweeps = 0, recovery_lease = NULL, recovery_lease_until = 0, updated_at = ?
        WHERE invite_id = ? AND reserved_submission_id = ? AND reserved_submission_hash = ? AND status = 'unused' AND issue_number IS NULL`,
       now,
       inviteId,
@@ -506,8 +579,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       now,
     );
     return this.ctx.storage.sql
-      .exec<Pick<InviteRow, "invite_id" | "client_email" | "submitter_email" | "expires_at" | "status" | "created_at" | "updated_at" | "submission_id" | "issue_number">>(
-        `SELECT invite_id, client_email, submitter_email, expires_at, status, created_at, updated_at, submission_id, issue_number
+      .exec<Pick<InviteRow, "invite_id" | "client_email" | "submitter_email" | "expires_at" | "status" | "created_at" | "updated_at" | "submission_id" | "issue_number" | "operation_id" | "reserved_submission_id" | "recovery_sweeps">>(
+        `SELECT invite_id, client_email, submitter_email, expires_at, status, created_at, updated_at, submission_id, issue_number, operation_id, reserved_submission_id, recovery_sweeps
          FROM onboarding_invites ORDER BY created_at DESC LIMIT 100`,
       )
       .toArray()
@@ -521,6 +594,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         updatedAt: row.updated_at,
         submissionId: row.submission_id,
         issueNumber: row.issue_number,
+        recoveryRequired: Boolean(row.reserved_submission_id) && (!row.operation_id || row.recovery_sweeps >= 3),
+        recoveryAttempts: row.recovery_sweeps,
       }));
   }
 
