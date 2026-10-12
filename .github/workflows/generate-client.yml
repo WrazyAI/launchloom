@@ -628,7 +628,9 @@ jobs:
       - name: Capture private checkpoint SHA
         id: image_checkpoint
         run: |
-          echo "sha=$(git -C \"${{ steps.workspace.outputs.dir }}\" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          CLIENT_DIR="${{ steps.workspace.outputs.dir }}"
+          CHECKPOINT_SHA=$(git -C "$CLIENT_DIR" rev-parse HEAD)
+          echo "sha=$CHECKPOINT_SHA" >> "$GITHUB_OUTPUT"
       - name: Summarize stage
         if: always()
         run: |
