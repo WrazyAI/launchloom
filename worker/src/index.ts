@@ -31,7 +31,7 @@ import {
   seoResearchReadiness,
 } from "./seo-readiness";
 import { OnboardingInvites } from "./onboarding-invites";
-import { IntakeRecoveryError, intakeOperationMarker, recoverIntakeIssue, type IntakeIssue } from "./intake-recovery";
+import { IntakeRecoveryError, intakeOperationMarker, recoverIntakeIssue, readIntakeIssuePayload, verifyIntakeIssueOwnership, type IntakeIssue } from "./intake-recovery";
 import {
   GenerationLedger,
   type GenerationCostKind,
@@ -341,7 +341,8 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
   if (request.method === "POST") {
     if (!origin) return json({ error: "Invalid request origin." }, 403, headers);
   }
-  if (!(await accessAdminEmail(ctx, env)))
+  const administratorEmail = await accessAdminEmail(ctx, env);
+  if (!administratorEmail)
     return json({ error: "Access denied." }, 403, headers);
   if (!env.ONBOARDING_INVITE_SIGNING_SECRET || !env.ONBOARDING_ORIGIN)
     return json({ error: "Invite management is not configured." }, 503, headers);
@@ -356,6 +357,37 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
     const body = (await request.json()) as Record<string, unknown>;
     const action = clean(body.action, 20);
     const inviteId = clean(body.inviteId, 100);
+    if (action === "recover-intake") {
+      if (body.confirmed !== true)
+        return json({ error: "Confirm that you reviewed the original issue and its intake details.", code: "recovery_confirmation_required" }, 400, headers);
+      const issueNumber = body.issueNumber;
+      if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId) || typeof issueNumber !== "number" || !Number.isSafeInteger(issueNumber) || issueNumber <= 0)
+        return json({ error: "Choose a valid invitation and original issue number." }, 400, headers);
+      const coordinator = inviteCoordinator(env);
+      const reservation = await coordinator.recoveryReservation(inviteId);
+      if (!reservation || (reservation.duplicate && reservation.issueNumber !== issueNumber))
+        return json({ error: "This invitation cannot be reconciled with that issue.", code: "recovery_mismatch" }, 409, headers);
+      let recipient = reservation.recipient;
+      let businessName = reservation.businessName;
+      if (!reservation.duplicate) {
+        const issue = await github(env, `/repos/WrazyAI/launchloom/issues/${issueNumber}`).then(response => response.json() as Promise<IntakeIssue>);
+        const content = await readIntakeIssuePayload(issue);
+        if (issue.number !== issueNumber || !content || content.hash !== reservation.submissionHash ||
+            (reservation.operationId && !(await verifyIntakeIssueOwnership(issue, reservation.operationId, reservation.submissionHash))))
+          return json({ error: "The selected issue does not match the original operation and submitted details.", code: "recovery_mismatch" }, 409, headers);
+        recipient = clean(content.payload.email, 240);
+        businessName = clean(content.payload.businessName, 200);
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(recipient) || !businessName)
+          return json({ error: "The original intake is missing valid contact details.", code: "recovery_mismatch" }, 409, headers);
+        const reconciled = await coordinator.reconcileIssue({inviteId, submissionId: reservation.submissionId,
+          submissionHash: reservation.submissionHash, operationId: reservation.operationId, issueNumber,
+          reviewerEmail: administratorEmail, recipient, businessName});
+        if (!reconciled) return json({ error: "The invitation changed during recovery. Refresh and review it again.", code: "recovery_mismatch" }, 409, headers);
+      }
+      await coordinator.queueWorkflowDispatch(inviteId, reservation.submissionId, issueNumber);
+      await coordinator.queueIntakeReceipt(inviteId, reservation.submissionId, recipient!, businessName!);
+      return json({ ok: true, issue: issueNumber, duplicate: reservation.duplicate }, 200, headers);
+    }
     if (action === "revoke") {
       if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId))
         return json({ error: "Invalid invitation." }, 400, headers);

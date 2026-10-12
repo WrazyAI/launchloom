@@ -212,3 +212,17 @@ mapping and normal retry behavior. Verify the original private issue and its
 submitted payload before revoking or issuing another invitation; never guess
 an issue mapping or automatically recreate an ambiguous submission. No client
 invitation tokens or operation IDs appear in the admin listing.
+
+
+The blocked invitation's **Recover verified intake** action asks for the original
+LaunchLoom issue number and explicit confirmation. The existing Access identity
+and same-origin checks protect it. The Worker independently checks the stored
+payload hash and, for new operations, the exact operation marker. Legacy
+reconciliation records the administrator's explicit attribution with the exact
+payload hash. A changed payload or mismatched operation is rejected.
+
+Successful recovery atomically records the issue mapping and a private audit
+receipt, then resumes the existing generation and receipt outbox. It never
+creates a new issue. Retrying the same recovery repairs an interrupted outbox
+handoff without repeating successful dispatches or receipts. A different issue
+cannot replace the recorded mapping.

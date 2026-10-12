@@ -11,15 +11,19 @@ export class IntakeRecoveryError extends Error {
 export function intakeOperationMarker(operationId: string, payloadHash: string) {
   return `<!-- launchloom-intake-operation:${operationId}:${payloadHash} -->`;
 }
-async function ownedIssue(issue: IntakeIssue, operationId: string, payloadHash: string) {
-  if (issue.pull_request || !Number.isSafeInteger(issue.number) || issue.number <= 0 ||
-      !issue.body?.includes(intakeOperationMarker(operationId, payloadHash))) return false;
-  const raw = issue.body.match(/```json\s*([\s\S]*?)```/u)?.[1];
+export async function readIntakeIssuePayload(issue: IntakeIssue) {
+  if (issue.pull_request || !Number.isSafeInteger(issue.number) || issue.number <= 0) return null;
+  const raw = issue.body?.match(/```json\s*([\s\S]*?)```/u)?.[1];
   try {
-    const payload = JSON.parse(raw || "");
-    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(payload))));
-    return [...hash].map(byte => byte.toString(16).padStart(2, "0")).join("") === payloadHash;
-  } catch { return false; }
+    const payload = JSON.parse(raw || "") as Record<string, unknown>;
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+    const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(payload))));
+    return { payload, hash: [...bytes].map(byte => byte.toString(16).padStart(2, "0")).join("") };
+  } catch { return null; }
+}
+export async function verifyIntakeIssueOwnership(issue: IntakeIssue, operationId: string, payloadHash: string) {
+  if (!issue.body?.includes(intakeOperationMarker(operationId, payloadHash))) return false;
+  return (await readIntakeIssuePayload(issue))?.hash === payloadHash;
 }
 
 /** Bound work per request while retaining the page cursor across interruptions. */
@@ -37,7 +41,7 @@ export async function recoverIntakeIssue(
       const issues = await loadPage(page);
       if (!Array.isArray(issues)) throw new Error("Invalid intake recovery response.");
       for (const issue of issues) {
-        if (await ownedIssue(issue, operation.operationId, operation.submissionHash)) {
+        if (await verifyIntakeIssueOwnership(issue, operation.operationId, operation.submissionHash)) {
           await coordinator.checkpointRecovery(inviteId, operation.operationId, scan.lease, 1, false);
           return issue.number;
         }

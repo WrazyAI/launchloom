@@ -115,6 +115,11 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         );
         CREATE INDEX IF NOT EXISTS intake_outbox_due
           ON intake_outbox(status, next_attempt_at);
+        CREATE TABLE IF NOT EXISTS intake_reconciliations (
+          invite_id TEXT PRIMARY KEY, submission_id TEXT NOT NULL, payload_hash TEXT NOT NULL,
+          issue_number INTEGER NOT NULL, reviewer_email TEXT NOT NULL, recovered_at INTEGER NOT NULL,
+          recipient TEXT NOT NULL, business_name TEXT NOT NULL
+        );
       `);
       const outboxColumns = ctx.storage.sql.exec<{name: string}>("PRAGMA table_info(intake_outbox)").toArray();
       if (!outboxColumns.some(column => column.name === "idempotency_key"))
@@ -470,6 +475,50 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       now - 2 * 60_000,
     );
     return updated.toArray().length === 1;
+  }
+
+  async recoveryReservation(inviteId: string) {
+    const audit = this.ctx.storage.sql.exec<{
+      submission_id: string; payload_hash: string; issue_number: number; recipient: string; business_name: string;
+    }>("SELECT * FROM intake_reconciliations WHERE invite_id = ?", inviteId).toArray()[0];
+    const row = this.row(inviteId);
+    if (audit) return { duplicate: true as const, submissionId: audit.submission_id, submissionHash: audit.payload_hash,
+      issueNumber: audit.issue_number, recipient: audit.recipient, businessName: audit.business_name, operationId: row?.operation_id || null };
+    if (!row || !["unused", "expired"].includes(row.status) || !row.reserved_submission_id || !row.reserved_submission_hash ||
+        (row.operation_id && row.recovery_sweeps < 3) || row.recovery_lease_until > Date.now()) return null;
+    return { duplicate: false as const, submissionId: row.reserved_submission_id, submissionHash: row.reserved_submission_hash,
+      operationId: row.operation_id, issueNumber: null, recipient: null, businessName: null };
+  }
+
+  async reconcileIssue(input: {
+    inviteId: string; submissionId: string; submissionHash: string; operationId: string | null;
+    issueNumber: number; reviewerEmail: string; recipient: string; businessName: string;
+  }, now = Date.now()) {
+    return this.ctx.storage.transactionSync(() => {
+      const audit = this.ctx.storage.sql.exec<{issue_number: number; payload_hash: string}>(
+        "SELECT issue_number, payload_hash FROM intake_reconciliations WHERE invite_id = ?", input.inviteId,
+      ).toArray()[0];
+      if (audit) return audit.issue_number === input.issueNumber && audit.payload_hash === input.submissionHash;
+      const updated = this.ctx.storage.sql.exec<{invite_id: string}>(
+        `UPDATE onboarding_invites SET status = 'consumed', submission_id = reserved_submission_id,
+           submission_hash = reserved_submission_hash, issue_number = ?, operation_id = COALESCE(operation_id, ?),
+           reserved_submission_id = NULL, reserved_submission_hash = NULL, reserved_at = NULL,
+           reservation_phase = 'reserved', recovery_lease = NULL, recovery_lease_until = 0, updated_at = ?
+         WHERE invite_id = ? AND status IN ('unused','expired') AND reserved_submission_id = ?
+           AND reserved_submission_hash = ? AND operation_id IS ? AND reserved_at <= ?
+           AND recovery_lease_until <= ? AND (operation_id IS NULL OR recovery_sweeps >= 3) RETURNING invite_id`,
+        input.issueNumber, crypto.randomUUID(), now, input.inviteId, input.submissionId,
+        input.submissionHash, input.operationId, now - 120_000, now,
+      ).toArray()[0];
+      if (!updated) return false;
+      this.ctx.storage.sql.exec(
+        `INSERT INTO intake_reconciliations (invite_id, submission_id, payload_hash, issue_number, reviewer_email, recovered_at, recipient, business_name)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        input.inviteId, input.submissionId, input.submissionHash, input.issueNumber,
+        input.reviewerEmail, now, input.recipient, input.businessName,
+      );
+      return true;
+    });
   }
 
   async intakeOperation(inviteId: string, submissionId: string): Promise<IntakeOperation | null> {
