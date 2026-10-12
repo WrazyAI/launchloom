@@ -745,9 +745,7 @@ jobs:
     if: ${{ always() && needs.prepare.result == 'success' && (needs.creative_authoring.result == 'success' || needs.creative_authoring.result == 'failure') }}
     runs-on: depot-ubuntu-24.04
     outputs:
-      repair_link: ${{ steps.creative_repair_link.outputs.link }}
-      diagnostic_preview: ${{ steps.creative_repair_link.outputs.preview }}
-      send_anyway_url: ${{ steps.creative_repair_link.outputs.send_anyway_url }}
+      recovery_notified: ${{ steps.recovery_notification.outputs.notified }}
       evidence_branch: ${{ steps.creative_recovery.outputs.evidence_branch }}
       sha: ${{ steps.creative_render.outputs.sha }}
     env:
@@ -766,6 +764,8 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ (github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery && secrets.LAUNCHLOOM_INTERNAL_QA_RECIPIENT) || (!(github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery) && vars.LAUNCHLOOM_DEVELOPER_EMAIL) || '' }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -960,6 +960,22 @@ jobs:
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-creative-recovery -->' '## Creative preview needs another pass' 'The authored candidate did not clear all quality checks. Review the rendered findings and request the single final repair here:' "$REVIEW_LINK")"
           echo "link=$REVIEW_LINK" >> "$GITHUB_OUTPUT"
           echo "preview=$DIAGNOSTIC_PREVIEW_URL" >> "$GITHUB_OUTPUT"
+      # Never carry masked signed recovery URLs across public Actions jobs.
+      - name: Send private creative recovery notice
+        id: recovery_notification
+        if: ${{ always() && steps.creative_repair_link.outputs.link != '' }}
+        env:
+          ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
+          REPAIR_LINK: ${{ steps.creative_repair_link.outputs.link }}
+          DIAGNOSTIC_PREVIEW: ${{ steps.creative_repair_link.outputs.preview }}
+          SEND_ANYWAY_URL: ${{ steps.creative_repair_link.outputs.send_anyway_url }}
+        run: |
+          NAME=$(gh issue view "$ISSUE" --repo WrazyAI/launchloom --json title --jq '.title | sub("^Intake: "; "")')
+          printf 'The authored design missed quality checks. Request its one-shot repair here:\n%s\n' "$REPAIR_LINK" > "$RUNNER_TEMP/generation-failure-feedback.txt"
+          if [ -n "$DIAGNOSTIC_PREVIEW" ]; then printf 'Diagnostic-only preview: %s\n' "$DIAGNOSTIC_PREVIEW" >> "$RUNNER_TEMP/generation-failure-feedback.txt"; fi
+          printf 'No production promotion occurred. A final repair requires renewed verification.\n' > "$RUNNER_TEMP/generation-failure-outcome.txt"
+          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "${DIAGNOSTIC_PREVIEW:-https://github.com/WrazyAI/launchloom/issues/$ISSUE}" --review "$REPAIR_LINK" --send-anyway-url "$SEND_ANYWAY_URL" --kind revision --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-repair-ready-$ISSUE-${{ github.run_id }}"
+          echo "notified=true" >> "$GITHUB_OUTPUT"
       - name: Fail job if AI creative gate was blocked
         if: ${{ always() && (needs.creative_authoring.result != 'success' || steps.creative_render.outcome != 'success') }}
         run: |
@@ -1243,11 +1259,12 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Notify developer when generation stops
+        if: ${{ needs.rendered_quality.outputs.recovery_notified != 'true' }}
         env:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
-          REPAIR_LINK: ${{ needs.rendered_quality.outputs.repair_link }}
-          DIAGNOSTIC_PREVIEW: ${{ needs.rendered_quality.outputs.diagnostic_preview }}
-          SEND_ANYWAY_URL: ${{ needs.rendered_quality.outputs.send_anyway_url }}
+          REPAIR_LINK: ''
+          DIAGNOSTIC_PREVIEW: ''
+          SEND_ANYWAY_URL: ''
           CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
           EVIDENCE_BRANCH: ${{ needs.rendered_quality.outputs.evidence_branch }}
         run: |
@@ -1268,7 +1285,7 @@ jobs:
         env:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
           SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
-          REPAIR_AVAILABLE: ${{ needs.rendered_quality.outputs.link != '' }}
+          REPAIR_AVAILABLE: ${{ needs.rendered_quality.outputs.recovery_notified == 'true' }}
           CLIENT_EMAIL: ${{ needs.prepare.outputs.email }}
         run: |
           STATUS=failed
