@@ -65,6 +65,48 @@ outcome and verification are done. Use the VPS-held Bearer token with
 Partial task PUTs can reset completion: include the current `completed` value
 when updating descriptions/blockers, and verify the resulting state.
 
+## Sentry credentials and issue navigation
+
+LaunchLoom's Sentry project uses organization slug `wrazyai` and project slug
+`javascript-astro`. The Sentry display name may differ from the slug; always use
+the slug for API requests and build configuration.
+
+Credentials are stored in these locations:
+
+- Local-only, ignored file: `/home/maigreeks/projects/launchloom/.env`.
+- GitHub repository `WrazyAI/launchloom`: `SENTRY_AUTH_TOKEN` is an Actions
+  secret; `PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are Actions
+  variables.
+- `SENTRY_READ_TOKEN` is a separate local-only read token. Never add it to
+  GitHub, a `PUBLIC_*` variable, a worktree, a commit, a progress log, or a
+  command line that could be recorded.
+
+Token roles:
+
+- `SENTRY_AUTH_TOKEN` is the CI organization token. It is used by the production
+  Astro build for release creation and source-map upload. It is not allowed to
+  read or resolve issues.
+- `SENTRY_READ_TOKEN` is for local Sentry API readback and must have `event:read`
+  and `project:read` (plus `org:read` when organization metadata is needed).
+  Resolving an issue additionally requires `event:write`.
+- `PUBLIC_SENTRY_DSN` is intentionally public and is used by the browser SDK;
+  it is not an API credential.
+
+For issue navigation, use the Sentry API at `https://sentry.io/api/0` with a
+`Bearer` token read from the private `.env` without printing it:
+
+- List project issues: `GET /projects/{org}/{project}/issues/`
+- Read an issue: `GET /issues/{issue_id}/`
+- Read its latest event and stack: `GET /issues/{issue_id}/events/latest/`
+- Resolve an issue: `PUT /issues/{issue_id}/` with JSON body
+  `{ "status": "resolved" }` and a token with `event:write`.
+
+The canonical UI is `https://wrazyai.sentry.io/issues/`. Production workflow
+tags are controlled in `.github/workflows/deploy-platform.yml`: environment is
+forced to `production` and release is the GitHub deployment SHA. Do not replace
+those production values with local `.env` values such as `development` or
+`local`.
+
 ## Repository progress and completion ledger
 
 Before non-trivial work, inspect the branch/worktree and recent commits, read
