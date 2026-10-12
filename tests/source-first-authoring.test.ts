@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import { assertModelPromptTextBudget } from "../scripts/author-prompt-budget.mjs";
 import {
   applySourceEdits,
   adaptStaticDocument,
@@ -11,6 +12,57 @@ import {
 } from "../scripts/source-first-authoring.mjs";
 
 describe("source-first dossier adaptation", () => {
+  it("keeps source-first stage contexts bounded near every 80k file ceiling", () => {
+    const experience = `<main className="source-grid">${"x".repeat(79_800)}</main>`;
+    const styles = `.source-grid{color:black}/*${"x".repeat(79_800)}*/`;
+    const starter = {
+      mode: "source-first",
+      dossierId: "fixture",
+      templateDigest: "a".repeat(64),
+      baseline: { experience, styles, changes: [] },
+    };
+    for (const stage of [
+      "contract",
+      "experience",
+      "service",
+      "location",
+      "service-index",
+      "styles",
+      "motion",
+    ]) {
+      const prompt = sourceAdaptationPrompt({
+        stage,
+        sourceStarter: starter,
+        experienceSource: experience,
+        servicePageSource: experience,
+        locationPageSource: experience,
+        servicesIndexSource: experience,
+      });
+      const conventionalMarkupCount =
+        (
+          { service: 1, location: 2, "service-index": 3, motion: 1 } as Record<
+            string,
+            number
+          >
+        )[stage] || 0;
+      expect(() =>
+        assertModelPromptTextBudget([
+          {
+            type: "text",
+            text:
+              "r".repeat(40_000) +
+              experience.repeat(conventionalMarkupCount) +
+              prompt,
+          },
+        ]),
+      ).not.toThrow();
+      if (["service", "location", "service-index", "motion"].includes(stage)) {
+        expect(prompt).not.toContain(experience);
+        expect(prompt).not.toContain(styles);
+      }
+      if (stage === "styles") expect(prompt.split(experience)).toHaveLength(2);
+    }
+  });
   it("maps compound document roots to the single candidate root", () => {
     const css = isolateSourceStyles(
       "html body .nav{color:red} html > body{margin:0} :root body .hero{display:grid} .other{color:blue} @keyframes rise{from{opacity:0}to{opacity:1}}",

@@ -215,6 +215,7 @@ export async function promoteCreativeCandidate({
     ...(config.design.experience || {}),
     renderer: "creative-candidate",
     sourceAttributionId: manifest.sourceStrategy?.creditId || null,
+    sourceBaselineId: manifest.sourceStrategy?.mode === "source-first" ? manifest.sourceStrategy.dossierId : null,
     candidateId: candidateManifest.candidateId,
     routeId: manifest.routeId || candidateManifest.routeId || undefined,
     familyId: candidateManifest.familyId,

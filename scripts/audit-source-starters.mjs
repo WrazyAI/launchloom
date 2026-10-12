@@ -11,6 +11,8 @@ const report = entries.map(({ id, dossierPath }) => {
     id,
     mode: source.mode,
     reason: source.reason,
+    productionEligible:
+      "productionEligible" in source ? source.productionEligible : null,
     templateDigest: "templateDigest" in source ? source.templateDigest : null,
   };
 });
@@ -20,6 +22,9 @@ console.log(
       dossiers: report.length,
       sourceFirst: report.filter((entry) => entry.mode === "source-first")
         .length,
+      productionSourceFirst: report.filter(
+        (entry) => entry.mode === "source-first" && entry.productionEligible,
+      ).length,
       referenceAuthoring: report.filter(
         (entry) => entry.mode === "reference-authoring",
       ).length,

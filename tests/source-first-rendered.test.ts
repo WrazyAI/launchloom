@@ -154,6 +154,17 @@ describe("source-derived component in the production shell", () => {
       };
       const files = {
         "Experience.jsx": adapted.source,
+        "ServicePage.jsx": `import { LeadForm } from "@launchloom/runtime";
+export default function ServicePage({ content, runtime, service }) {
+return <main data-service-page data-service-slug={service.slug}>
+<nav className="nav"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
+<section className="hero" data-service-hero><div className="hero-main"><h1>{service.name}</h1><p>{service.description}</p></div></section>
+<section className="expertise" data-service-support><p>{service.support.scope}</p><p>{service.support.preparation}</p><p>{service.support.nextStep}</p></section>
+<section data-service-related>{service.related.map(item => <a key={item.slug} href={\`/services/\${item.slug}/\`}>{item.name}</a>)}</section>
+{service.process.length > 0 && <ol>{service.process.map(step => <li key={step}>{step}</li>)}</ol>}
+{service.faqs.length > 0 && <section>{service.faqs.map(faq => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>}
+<section className="contact" id="contact"><LeadForm content={content} runtime={runtime}/></section></main>;
+}`,
         "styles.css": styles.source,
         "motion.js": starter.baseline.motion,
         "metadata.json": JSON.stringify({
@@ -194,7 +205,11 @@ describe("source-derived component in the production shell", () => {
           const file = path.join(
             root,
             "dist",
-            name === "/" ? "index.html" : name,
+            name === "/"
+              ? "index.html"
+              : name.endsWith("/")
+                ? `${name}index.html`
+                : name,
           );
           const bytes = await fs.readFile(file);
           res.setHeader(
@@ -258,6 +273,32 @@ describe("source-derived component in the production shell", () => {
           path: path.join(shotDir, `owned-adaptation-${width}.png`),
           fullPage: true,
         });
+        const serviceSlug =
+          config.services[0].slug ||
+          config.services[0].name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/gu, "-")
+            .replace(/^-|-$/gu, "");
+        await page.goto(`http://127.0.0.1:${port}/services/${serviceSlug}/`, {
+          waitUntil: "networkidle",
+        });
+        expect(
+          await page
+            .locator(
+              '[data-authored-page-host][data-source-baseline="clear-counsel-ledger"]',
+            )
+            .count(),
+        ).toBe(1);
+        expect(
+          await page
+            .locator(".hero-main")
+            .evaluate((e) => getComputedStyle(e).display),
+        ).toBe("grid");
+        expect(
+          await page
+            .locator('[data-runtime="lead-form"] button')
+            .evaluate((e) => getComputedStyle(e).borderRadius),
+        ).toBe("0px");
         await page.close();
       }
       expect(

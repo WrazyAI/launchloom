@@ -19,6 +19,8 @@ describe("rendered source attribution", () => {
         credit.replace("<a ", '<a rel="nofollow" '),
         credit.replace("Spicer Designs</a>", "Other</a>"),
         credit.replace("<a ", '<a style="font-size:1px" '),
+        `<div style="opacity:.1">${credit.replace("<aside", '<aside style="opacity:.1"')}</div>`,
+        credit.replace("<aside", '<aside style="overflow:hidden;height:0"'),
       ]) {
         await page.setContent(html);
         expect(
