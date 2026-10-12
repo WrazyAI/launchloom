@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "direct-change-accountants-york",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.change-accountants.com/",
+    "finalUrl": "https://www.change-accountants.com/",
+    "httpStatus": 200,
+    "pageTitle": "Fixed-Fee Accountants in York - Change Accountants",
+    "retrievedAt": "2026-10-08T20:14:21.473Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 157502,
+      "sha256": "e9fbcd6b75cf0a98e14ee8f5382e92ed5cd117a50f86199f1d1de0ccc8f243e2"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 21893,
+      "sha256": "e4fb0f6358ab16ff3aadf3334df4c94960a58a8580fd0eac974a2545e8e54085"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 53728,
+      "sha256": "12eaf9603c87038b4d87e3a894ffe7604b30e430bddf28cb92e8d04829f53ad8"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://media.change-accountants.com/images/The_Time_is_Now.2e16d0ba.fill-756x496.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media.change-accountants.com/images/Change_ahead_0FXgyhT.2e16d0ba.fill-756x496.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media.change-accountants.com/images/Matthew_Walker_Chartered_Tax_Advis.2e16d0ba.fill-756x496.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media.change-accountants.com/images/Stacey_Mcveighty_Profile_4.2e16d0ba.fill-756x908.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media.change-accountants.com/images/Tynam_McNeill_Profile_1.2e16d0ba.fill-756x908.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media.change-accountants.com/images/acca_1.height-200.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media.change-accountants.com/images/freeagent-logo.height-200.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media.change-accountants.com/images/footer_xero.height-200.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://media.change-accountants.com/images/GBC-logo-footer2x.height-200.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://consentcdn.cookiebot.eu/sdk/bc-v4.min.html",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "4224fdb9f3b328e5da9f1170db9294da3b71184d2aec951dcbf49a81e758731c"
+}

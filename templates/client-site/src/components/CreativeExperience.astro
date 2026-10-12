@@ -9,6 +9,7 @@ const colorOverrides = creativeColorOverrideCss(site.style);
 
 const { experience } = Astro.props;
 const candidateId = site.design?.experience?.candidateId || "selected";
+const offlineEvidence = import.meta.env.PUBLIC_CREATIVE_JUDGE === "true";
 const diagnostic = hasTestOnlySite(site) || site.design?.experience?.selectionMode === "creative-diagnostic" ||
   import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 const runtime = {
@@ -19,8 +20,8 @@ const runtime = {
     token: diagnostic ? "" : site.lead?.token || "",
   },
   reviews: {
-    apiUrl: site.socialProof?.google?.apiUrl || "",
-    token: site.socialProof?.google?.token || "",
+    apiUrl: offlineEvidence ? "" : site.socialProof?.google?.apiUrl || "",
+    token: offlineEvidence ? "" : site.socialProof?.google?.token || "",
   },
 };
 ---

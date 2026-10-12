@@ -82,6 +82,13 @@ const { subject, html, text } = renderLifecycleEmail({
   queuedStage: String(args["queued-stage"] || "developer"),
 });
 
+// Publication queues the rendered envelope in the Worker outbox. Rendering
+// has no email side effect and does not require provider credentials.
+if (args['envelope-file']) {
+  await fs.writeFile(String(args['envelope-file']), JSON.stringify({to:recipient,subject,html,text}));
+  process.exit(0);
+}
+
 if (!resendKey || !from) {
   console.warn(
     "Email not sent: configure RESEND_API_KEY and LAUNCHLOOM_FROM_EMAIL.",

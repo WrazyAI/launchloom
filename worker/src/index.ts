@@ -31,7 +31,9 @@ import {
   pageBriefReadiness,
   seoResearchReadiness,
 } from "./seo-readiness";
+import type { PublicationCommand } from "./publication";
 import { OnboardingInvites } from "./onboarding-invites";
+import { IntakeRecoveryError, intakeOperationMarker, recoverIntakeIssue, readIntakeIssuePayload, verifyIntakeIssueOwnership, type IntakeIssue } from "./intake-recovery";
 import {
   GenerationLedger,
   type GenerationCostKind,
@@ -341,7 +343,8 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
   if (request.method === "POST") {
     if (!origin) return json({ error: "Invalid request origin." }, 403, headers);
   }
-  if (!(await accessAdminEmail(ctx, env)))
+  const administratorEmail = await accessAdminEmail(ctx, env);
+  if (!administratorEmail)
     return json({ error: "Access denied." }, 403, headers);
   if (!env.ONBOARDING_INVITE_SIGNING_SECRET || !env.ONBOARDING_ORIGIN)
     return json({ error: "Invite management is not configured." }, 503, headers);
@@ -356,6 +359,37 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
     const body = (await request.json()) as Record<string, unknown>;
     const action = clean(body.action, 20);
     const inviteId = clean(body.inviteId, 100);
+    if (action === "recover-intake") {
+      if (body.confirmed !== true)
+        return json({ error: "Confirm that you reviewed the original issue and its intake details.", code: "recovery_confirmation_required" }, 400, headers);
+      const issueNumber = body.issueNumber;
+      if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId) || typeof issueNumber !== "number" || !Number.isSafeInteger(issueNumber) || issueNumber <= 0)
+        return json({ error: "Choose a valid invitation and original issue number." }, 400, headers);
+      const coordinator = inviteCoordinator(env);
+      const reservation = await coordinator.recoveryReservation(inviteId);
+      if (!reservation || (reservation.duplicate && reservation.issueNumber !== issueNumber))
+        return json({ error: "This invitation cannot be reconciled with that issue.", code: "recovery_mismatch" }, 409, headers);
+      let recipient = reservation.recipient;
+      let businessName = reservation.businessName;
+      if (!reservation.duplicate) {
+        const issue = await github(env, `/repos/WrazyAI/launchloom/issues/${issueNumber}`).then(response => response.json() as Promise<IntakeIssue>);
+        const content = await readIntakeIssuePayload(issue);
+        if (issue.number !== issueNumber || !content || content.hash !== reservation.submissionHash ||
+            (reservation.operationId && !(await verifyIntakeIssueOwnership(issue, reservation.operationId, reservation.submissionHash))))
+          return json({ error: "The selected issue does not match the original operation and submitted details.", code: "recovery_mismatch" }, 409, headers);
+        recipient = clean(content.payload.email, 240);
+        businessName = clean(content.payload.businessName, 200);
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(recipient) || !businessName)
+          return json({ error: "The original intake is missing valid contact details.", code: "recovery_mismatch" }, 409, headers);
+        const reconciled = await coordinator.reconcileIssue({inviteId, submissionId: reservation.submissionId,
+          submissionHash: reservation.submissionHash, operationId: reservation.operationId, issueNumber,
+          reviewerEmail: administratorEmail, recipient, businessName});
+        if (!reconciled) return json({ error: "The invitation changed during recovery. Refresh and review it again.", code: "recovery_mismatch" }, 409, headers);
+      }
+      await coordinator.queueWorkflowDispatch(inviteId, reservation.submissionId, issueNumber);
+      await coordinator.queueIntakeReceipt(inviteId, reservation.submissionId, recipient!, businessName!);
+      return json({ ok: true, issue: issueNumber, duplicate: reservation.duplicate }, 200, headers);
+    }
     if (action === "revoke") {
       if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId))
         return json({ error: "Invalid invitation." }, 400, headers);
@@ -824,6 +858,10 @@ function assertClaimOrigin(
     throw new Error("Invalid reviewed page.");
 }
 
+class GithubRequestError extends Error {
+  constructor(readonly status: number, message: string) { super(message); }
+}
+
 async function github(env: Env, path: string, init: RequestInit = {}) {
   const response = await fetch(`https://api.github.com${path}`, {
     ...init,
@@ -837,17 +875,17 @@ async function github(env: Env, path: string, init: RequestInit = {}) {
     },
   });
   if (!response.ok)
-    throw new Error(
+    throw new GithubRequestError(response.status,
       `GitHub ${response.status}: ${(await response.text()).slice(0, 300)}`,
     );
   return response;
 }
 
-async function findIntakeIssue(env: Env, marker: string) {
-  const issues = await github(env, "/repos/WrazyAI/launchloom/issues?state=all&per_page=100").then(
-    (response) => response.json() as Promise<Array<{ body?: string; number: number }>>,
-  );
-  return issues.find((issue) => issue.body?.includes(marker))?.number || null;
+async function findIntakeIssue(env: Env, inviteId: string, submissionId: string) {
+  return recoverIntakeIssue(inviteCoordinator(env), inviteId, submissionId, async page => {
+    const response = await github(env, `/repos/WrazyAI/launchloom/issues?state=all&per_page=100&sort=created&direction=desc&page=${page}`, { signal: AbortSignal.timeout(10_000) });
+    return response.json() as Promise<IntakeIssue[]>;
+  });
 }
 
 /**
@@ -947,6 +985,30 @@ async function siteConfigAtReviewHead(env: Env, claims: ReviewClaims) {
   return JSON.parse(jsonText) as Record<string, unknown>;
 }
 
+async function approvedPublication(env: Env, claims: ReviewClaims, current: Awaited<ReturnType<typeof currentReviewPr>>, extra: Record<string, unknown> = {}) {
+  const coordinator = env.REVISION_COORDINATOR.getByName(claims.repo.toLowerCase());
+  const reserved = await coordinator.reservePublication({repo:claims.repo,pr:claims.pr!,headSha:claims.headSha!,
+    siteId:claims.siteId,clientEmail:claims.clientEmail,reviewerEmail:claims.reviewerEmail,feedbackIssue:claims.feedbackIssue!,
+    retry:true,dispatchPayload:extra,...(claims.creativeRepairSessionId?{overrideSessionId:claims.creativeRepairSessionId}:{})});
+  if(!reserved.allowed)return {ok:false,code:reserved.code,publicationId:reserved.publicationId,
+    error:reserved.code==='revision_queue_halted'?'Resolve the failed revision queue before publishing.':reserved.code==='stale_publication'?'This release has been superseded. Use the latest review link.':'A revision or publication still owns this client. Review its status before approving another release.'};
+  const id=reserved.publicationId!;
+  const saved=await coordinator.publicationCommand({action:"status",publicationId:id});
+  if("state" in saved&&["published","running"].includes(saved.state??""))return {ok:true,publicationId:id,status:saved.state};
+  if(reserved.state==='reserved'&&!reserved.mergeAllowed)return {ok:true,publicationId:id,status:'reserved'};
+  try {
+    const approvedSha='approvedSha' in saved&&saved.approvedSha?saved.approvedSha:await mergeReviewedPr(env,claims,reserved.duplicate?await currentReviewPr(env,claims):current);
+    const main=await github(env,`/repos/${claims.repo}/git/ref/heads/main`,{signal:AbortSignal.timeout(10_000)}).then(response=>response.json() as Promise<{object?:{sha?:string}}>);
+    if(main.object?.sha!==approvedSha)throw new Error("A newer client commit exists. Use its latest review link.");
+    const queued=await coordinator.queuePublication(id,approvedSha,extra,reserved.approvalToken??undefined);
+    return {ok:true,publicationId:id,status:queued.state==="queued"?"publication-queued":queued.state,approvedSha};
+  } catch(error) {
+    // Retain an ambiguous merge reservation for exact-PR reconciliation.
+    // A timeout is not evidence that GitHub did not merge the approved commit.
+    throw error;
+  }
+}
+
 async function mergeReviewedPr(
   env: Env,
   claims: ReviewClaims,
@@ -971,6 +1033,7 @@ async function mergeReviewedPr(
     `/repos/${claims.repo}/pulls/${claims.pr!}/merge`,
     {
       method: "PUT",
+      signal: AbortSignal.timeout(20_000),
       body: JSON.stringify({
         sha: claims.headSha!,
         merge_method: "squash",
@@ -1109,9 +1172,8 @@ async function intake(request: Request, env: Env) {
       submissionHash,
       normalized.email,
     );
-    const marker = `<!-- launchloom-intake:${normalized.submissionId} -->`;
     if (!reservation.accepted && reservation.reason === "stale_submission_mismatch") {
-      const existingIssue = await findIntakeIssue(env, marker);
+      const existingIssue = await findIntakeIssue(env, invite.claims.inviteId, normalized.submissionId);
       if (existingIssue) {
         return json({
           error: "This submission changed after acceptance. Request a new invitation to send different details.",
@@ -1136,12 +1198,20 @@ async function intake(request: Request, env: Env) {
           ? "This submission is already being accepted. Retry shortly."
           : reservation.reason === "submission_mismatch"
             ? "This submission changed after acceptance. Request a new invitation to send different details."
-            : "This invitation is no longer available.",
+            : reservation.reason === "recovery_required"
+              ? "Your intake needs operator recovery. Contact the person who invited you."
+              : "This invitation is no longer available.",
         code: reservation.reason,
-      }, ["in_progress", "submission_mismatch"].includes(reservation.reason) ? 409 : 403, headers);
+      }, ["in_progress", "submission_mismatch", "recovery_required"].includes(reservation.reason) ? 409 : 403, headers);
     let issueNumber = reservation.issue || null;
+    let creationAttempted = false;
     try {
-      if (!issueNumber) issueNumber = await findIntakeIssue(env, marker);
+      if (!issueNumber) {
+        const operation = await coordinator.intakeOperation(invite.claims.inviteId, normalized.submissionId);
+        if (!operation || operation.recoveryRequired) throw new IntakeRecoveryError("recovery_required");
+        if (operation.phase === "creating_issue")
+          issueNumber = await findIntakeIssue(env, invite.claims.inviteId, normalized.submissionId);
+      }
       if (!issueNumber) {
         const claimed = await coordinator.claimIssueCreation(
           invite.claims.inviteId,
@@ -1150,6 +1220,10 @@ async function intake(request: Request, env: Env) {
         );
         if (!claimed)
           return json({ error: "This submission is already being accepted. Retry shortly.", code: "in_progress" }, 409, headers);
+        const operation = await coordinator.intakeOperation(invite.claims.inviteId, normalized.submissionId);
+        if (!operation || operation.recoveryRequired) throw new IntakeRecoveryError("recovery_required");
+        const marker = intakeOperationMarker(operation.operationId, submissionHash);
+        creationAttempted = true;
         const issue = await github(env, "/repos/WrazyAI/launchloom/issues", {
           method: "POST",
           body: JSON.stringify({
@@ -1157,6 +1231,8 @@ async function intake(request: Request, env: Env) {
             body: `${marker}\n\n\`\`\`json\n${JSON.stringify(safeData, null, 2)}\n\`\`\``,
           }),
         }).then((response) => response.json() as Promise<{ number: number }>);
+        if (!Number.isSafeInteger(issue.number) || issue.number <= 0)
+          throw new Error("GitHub issue creation returned no valid issue number; reconciliation is required.");
         issueNumber = issue.number;
       }
       if (!reservation.duplicate) {
@@ -1178,11 +1254,13 @@ async function intake(request: Request, env: Env) {
       );
       return json({ ok: true, duplicate: reservation.duplicate, issue: issueNumber }, 200, headers);
     } catch (error) {
-      if (!issueNumber)
+      if (!issueNumber && creationAttempted && error instanceof GithubRequestError && error.status >= 400 && error.status < 500 && error.status !== 408)
         await coordinator.reopenFailedSubmission(invite.claims.inviteId, normalized.submissionId, submissionHash);
       throw error;
     }
   } catch (error) {
+    if (error instanceof IntakeRecoveryError)
+      return json({ error: error.message, code: error.code }, 409, headers);
     console.error("Intake failed", error instanceof Error ? error.message : "Unknown error");
     return json({ error: "We couldn’t start your preview. Please try again." }, 500, headers);
   }
@@ -2188,8 +2266,9 @@ async function feedback(request: Request, env: Env) {
       );
     if (claims.stage === "developer") {
       const current = await currentReviewPr(env, claims);
+      const publishing=current.merged===true&&await env.REVISION_COORDINATOR.getByName(claims.repo.toLowerCase()).allowsPublicationFeedback(claims.pr!,claims.headSha!);
       if (
-        current.state !== "open" ||
+        (current.state !== "open"&&!publishing) ||
         current.draft ||
         current.head.sha !== claims.headSha
       )
@@ -2349,6 +2428,7 @@ async function feedback(request: Request, env: Env) {
       siteId: claims.siteId,
       clientEmail: claims.clientEmail,
       reviewedPage: clean(reviewedPage, 1000),
+      reviewedSha: claims.headSha,
       category: safeCategory,
       feedback: replacementAssetUrl
         ? `Replacement asset: ${replacementAssetUrl}\n\n${note}`
@@ -2697,8 +2777,9 @@ async function creativeRepair(request: Request, env: Env) {
           feedbackStatus = refreshed.status;
         }
       }
+      const publishing=current.merged===true&&await coordinator.allowsPublicationFeedback(feedbackClaims.pr!,feedbackClaims.headSha!);
       if (
-        current.state !== "open" ||
+        (current.state !== "open"&&!publishing) ||
         current.draft ||
         current.head.sha !== feedbackClaims.headSha
       )
@@ -2740,6 +2821,7 @@ async function creativeRepair(request: Request, env: Env) {
         siteId: claims.siteId,
         clientEmail: claims.clientEmail,
         reviewedPage: clean(reviewedPage, 1_000),
+        reviewedSha: feedbackClaims.headSha,
         category,
         feedback: note,
         ...(structureJson ? { structure: structureJson } : {}),
@@ -2806,18 +2888,6 @@ async function creativeRepair(request: Request, env: Env) {
           400,
           cors(request, claims.allowedOrigins),
         );
-      const releaseQueue = await coordinator.approvalState();
-      if (!releaseQueue.allowed)
-        return json(
-          {
-            error:
-              releaseQueue.code === "revision_queue_halted"
-                ? "Resolve the failed revision queue before sending this preview to the client."
-                : "A developer revision is already in progress.",
-          },
-          409,
-          cors(request, claims.allowedOrigins),
-        );
       const current = await currentReviewPr(env, claims);
       const exactHead = current.head.sha === reviewedHeadSha;
       const retryingMerged =
@@ -2862,20 +2932,10 @@ async function creativeRepair(request: Request, env: Env) {
         reviewerEmail: claims.reviewerEmail,
       });
       if (!begun.started) {
-        if (begun.status === "published")
-          return json(
-            {
-              ok: true,
-              status: "publication-queued",
-              alreadyQueued: true,
-              approvedSha: begun.approvedSha,
-            },
-            200,
-            {
-              ...cors(request, claims.allowedOrigins),
-              "Cache-Control": "no-store",
-            },
-          );
+        if (begun.status === "published") {
+          const publication=await approvedPublication(env,claims,current,{developerOverride:{sessionId,reviewedHeadSha,candidateId:status.candidateId,reviewerEmail:claims.reviewerEmail,disposition:'override-publish'}});
+          return json({...publication,alreadyQueued:true},publication.ok?200:409,cors(request,claims.allowedOrigins));
+        }
         return json(
           {
             error:
@@ -2893,28 +2953,20 @@ async function creativeRepair(request: Request, env: Env) {
         );
       }
       try {
-        const approvedSha = await mergeReviewedPr(env, claims, current);
-        await dispatch(env, "publish-site", {
-          repo: claims.repo,
-          pr: reviewedPr,
-          siteId: claims.siteId,
-          clientEmail: claims.clientEmail,
-          feedbackIssue: claims.feedbackIssue,
-          approvedSha,
-          developerOverride: {
-            sessionId,
-            reviewedHeadSha,
-            candidateId: status.candidateId,
-            reviewerEmail: claims.reviewerEmail,
-            disposition: "override-publish",
-          },
+        const publication = await approvedPublication(env, claims, current, {
+          developerOverride: {sessionId,reviewedHeadSha,candidateId:status.candidateId,
+            reviewerEmail:claims.reviewerEmail,disposition:'override-publish'},
         });
+        if(!publication.ok)throw new Error('Publication reservation refused: '+publication.code);
+        const approvedSha=publication.approvedSha;
+        if(!approvedSha)return json({ok:true,publicationId:publication.publicationId,status:publication.status},202,cors(request,claims.allowedOrigins));
         await coordinator.completeCreativeOverride(sessionId, approvedSha);
         return json(
           {
             ok: true,
             status: "publication-queued",
             disposition: "override-publish",
+            publicationId: publication.publicationId,
             approvedSha,
           },
           202,
@@ -3049,6 +3101,24 @@ function safeRevisionFailureRun(value: unknown) {
   } catch {
     return "";
   }
+}
+
+async function publicationCoordinator(request: Request, env: Env) {
+  if(request.method!=="POST")return json({error:"Method not allowed"},405);
+  const supplied=(request.headers.get("Authorization")||"").replace(/^Bearer /u,"");
+  if(!env.REVISION_COORDINATOR_SECRET||!constantTimeEqual(supplied,env.REVISION_COORDINATOR_SECRET))return json({error:"Unauthorized"},401);
+  try {
+    const body=await request.json().catch(()=>null) as PublicationCommand & {repo:string};
+    if(!body||typeof body!=="object"||Array.isArray(body))return json({error:"Invalid publication operation",code:"invalid_publication_operation"},400);
+    if(!/^WrazyAI\/[a-zA-Z0-9._-]+$/u.test(body.repo)||!/^[a-f0-9-]{36}$/u.test(body.publicationId)||
+      !["claim","authorize-upload","uploaded","published","fail","dismiss","status","retry"].includes(body.action))return json({error:"Invalid publication operation",code:"invalid_publication_operation"},400);
+    if(body.runId!==undefined&&(typeof body.runId!=='string'||!/^[a-zA-Z0-9:_-]{1,160}$/u.test(body.runId)))return json({error:'Invalid workflow identity',code:'invalid_publication_operation'},400);
+    if(['claim','authorize-upload','uploaded','published','fail'].includes(body.action)&&!body.runId)return json({error:'Workflow identity required',code:'invalid_publication_operation'},400);
+    if(body.deployment&&(!/^[a-zA-Z0-9-]{1,100}$/u.test(body.deployment.id)||typeof body.deployment.commit!=='string'||typeof body.deployment.origin!=='string'))return json({error:'Invalid deployment',code:'invalid_publication_operation'},400);
+    if(body.delivery&&(typeof body.delivery.to!=='string'||typeof body.delivery.subject!=='string'||typeof body.delivery.html!=='string'||typeof body.delivery.text!=='string'||body.delivery.html.length>200_000||body.delivery.text.length>50_000||body.delivery.subject.length>300))return json({error:'Invalid delivery envelope',code:'invalid_publication_operation'},400);
+    const result=await env.REVISION_COORDINATOR.getByName(body.repo.toLowerCase()).publicationCommand(body);
+    return json(result);
+  }catch{return json({error:"Publication coordination failed.",code:"publication_coordinator_unavailable"},500);}
 }
 
 async function revisionCoordinator(request: Request, env: Env) {
@@ -3274,21 +3344,6 @@ async function approval(request: Request, env: Env) {
         409,
         cors(request, claims.allowedOrigins),
       );
-    const queue = await env.REVISION_COORDINATOR.getByName(
-      claims.repo.toLowerCase(),
-    ).approvalState();
-    if (!queue.allowed)
-      return json(
-        {
-          code: queue.code,
-          error:
-            queue.code === "revision_queue_halted"
-              ? "Revision processing is paused after a failure. Resolve it before publishing."
-              : "A website revision is still in progress. Review the final revision before publishing.",
-        },
-        409,
-        cors(request, claims.allowedOrigins),
-      );
     const reviewedConfig = await siteConfigAtReviewHead(env, claims);
     const research = seoResearchReadiness(reviewedConfig);
     if (!research.allowed)
@@ -3304,16 +3359,8 @@ async function approval(request: Request, env: Env) {
         409,
         cors(request, claims.allowedOrigins),
       );
-    const approvedSha = await mergeReviewedPr(env, claims, current);
-    await dispatch(env, "publish-site", {
-      repo: claims.repo,
-      pr: claims.pr,
-      siteId: claims.siteId,
-      clientEmail: claims.clientEmail,
-      feedbackIssue: claims.feedbackIssue,
-      approvedSha,
-    });
-    return json({ ok: true }, 200, cors(request, claims.allowedOrigins));
+    const publication = await approvedPublication(env, claims, current);
+    return json(publication, publication.ok ? 200 : 409, cors(request, claims.allowedOrigins));
   } catch (error) {
     console.error("Approval failed", error);
     return json(
@@ -3593,6 +3640,7 @@ export default {
     if (path === "/api/feedback") return feedback(request, env);
     if (path === "/api/feedback-image") return feedbackImage(request, env);
     if (path === "/api/creative-repair") return creativeRepair(request, env);
+    if (path === "/api/internal/publications") return publicationCoordinator(request, env);
     if (path === "/api/internal/revisions")
       return revisionCoordinator(request, env);
     if (path === "/api/internal/creative-repairs")

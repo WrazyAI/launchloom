@@ -165,9 +165,9 @@ describe("private onboarding invitations", () => {
     ]);
     expect(dispatches).toBe(1);
     expect(receiptAttempts).toBe(4);
-    expect(receiptKeys).toEqual(
-      Array(4).fill(`client-intake-received-${submissionId}`),
-    );
+    expect(receiptKeys).toHaveLength(4);
+    expect(new Set(receiptKeys).size).toBe(1);
+    expect(receiptKeys[0]).toMatch(/^client-intake-received-[a-f0-9-]{36}$/u);
     await runInDurableObject(
       inviteNamespace.getByName("launchloom-onboarding-invites"),
       async (_instance, state) => {
@@ -401,10 +401,9 @@ describe("private onboarding invitations", () => {
     await expect((await submit()).json()).resolves.toMatchObject({ ok: true, duplicate: true, issue: 987 });
     expect(receiptRequests).toHaveLength(2);
     expect(receiptAttempts).toBe(2);
-    expect(deliveredReceiptKeys).toEqual(new Set([`client-intake-received-${submissionId}`]));
-    expect(new Set(receiptRequests.map(({ key }) => key))).toEqual(
-      new Set([`client-intake-received-${submissionId}`]),
-    );
+    expect(deliveredReceiptKeys.size).toBe(1);
+    expect(new Set(receiptRequests.map(({ key }) => key))).toEqual(deliveredReceiptKeys);
+    expect(receiptRequests[0].key).toMatch(/^client-intake-received-[a-f0-9-]{36}$/u);
     expect(receiptRequests[0].body).toMatchObject({
       to: [invitedEmail],
       subject: expect.stringMatching(/intake.*received/iu),
@@ -427,8 +426,12 @@ describe("private onboarding invitations", () => {
     const tokenDigest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
     const tokenHash = [...tokenDigest].map((part) => part.toString(16).padStart(2, "0")).join("");
     const coordinator = inviteNamespace.getByName("launchloom-onboarding-invites");
-    await coordinator.reserveSubmission(inviteId, tokenHash, claims.expiresAt, onboardingOrigin, submissionId, "prior-payload-hash", "sam@example.test", Date.now() - 121_000);
-    const marker = `<!-- launchloom-intake:${submissionId} -->`;
+    const priorPayload = { email: "sam@example.test", differentiators: "Original positioning" };
+    const priorBytes = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(priorPayload))));
+    const priorHash = [...priorBytes].map(byte => byte.toString(16).padStart(2, "0")).join("");
+    await coordinator.reserveSubmission(inviteId, tokenHash, claims.expiresAt, onboardingOrigin, submissionId, priorHash, "sam@example.test", Date.now() - 121_000);
+    const operation = await coordinator.intakeOperation(inviteId, submissionId);
+    const marker = `<!-- launchloom-intake-operation:${operation!.operationId}:${priorHash} -->\n\n\`\`\`json\n${JSON.stringify(priorPayload)}\n\`\`\``;
     let createdIssues = 0;
     network.use(
       http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json([{ number: 991, body: marker } ])),
@@ -458,7 +461,7 @@ describe("private onboarding invitations", () => {
       const row = state.storage.sql.exec<{ reserved_submission_hash: string; status: string }>(
         "SELECT reserved_submission_hash, status FROM onboarding_invites WHERE invite_id = ?", inviteId,
       ).toArray()[0];
-      expect(row).toEqual({ reserved_submission_hash: "prior-payload-hash", status: "unused" });
+      expect(row).toEqual({ reserved_submission_hash: priorHash, status: "unused" });
     });
   });
 
@@ -752,4 +755,228 @@ describe("private onboarding invitations", () => {
     expect(invite?.clientEmail).toBeNull();
     expect(invite?.submitterEmail).toBe("owner@link-only.test");
   });
+});
+
+
+function recoveryIntake(inviteToken: string, submissionId: string) {
+  return {
+    intakeVersion: "2", inviteToken, submissionId,
+    businessName: "Recovery Plumbing", contactName: "Sam", email: "sam@example.test",
+    phone: "555-0100", address: "1 Main Street", industry: "home-services",
+    services: ["Drain cleaning"], primaryCity: "Tacoma, WA", serviceRadius: "20",
+    confirmAccuracy: "yes",
+  };
+}
+function submitRecoveryIntake(input: ReturnType<typeof recoveryIntake>) {
+  return SELF.fetch("https://api.launchloom.test/api/intake", {
+    method: "POST", headers: { Origin: onboardingOrigin, "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+async function ageCreation(inviteId: string) {
+  await runInDurableObject(inviteNamespace.getByName("launchloom-onboarding-invites"), (_, state) => {
+    state.storage.sql.exec("UPDATE onboarding_invites SET reserved_at = ? WHERE invite_id = ?", Date.now() - 121_000, inviteId);
+  });
+}
+
+describe("owner-bound intake recovery", () => {
+  it("does not adopt a different invitation's issue with the same public submission id", async () => {
+    const token = await registeredInvite("invite-owner-collision-001");
+    const submissionId = "submission-owner-collision-001";
+    let created = 0;
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json([
+        { number: 1001, body: `<!-- launchloom-intake:${submissionId} -->` },
+      ])),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () => { created++; return HttpResponse.json({ number: 1002 }, { status: 201 }); }),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/dispatches", () => new HttpResponse(null, { status: 204 })),
+      http.post("https://api.resend.com/emails", () => HttpResponse.json({ id: "receipt-owner" })),
+    );
+    const response = await submitRecoveryIntake(recoveryIntake(token, submissionId));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ issue: 1002 });
+    expect(created).toBe(1);
+  });
+
+  it("retains the reservation when the issue creation response is ambiguous", async () => {
+    const inviteId = "invite-owner-ambiguous-001";
+    const token = await registeredInvite(inviteId);
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json([])),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json({ message: "response lost after commit" }, { status: 503 })),
+    );
+    expect((await submitRecoveryIntake(recoveryIntake(token, "submission-owner-ambiguous-001"))).status).toBe(500);
+    await runInDurableObject(inviteNamespace.getByName("launchloom-onboarding-invites"), (_, state) => {
+      const row = state.storage.sql.exec<{reservation_phase: string; reserved_submission_id: string}>(
+        "SELECT reservation_phase, reserved_submission_id FROM onboarding_invites WHERE invite_id = ?", inviteId).toArray()[0];
+      expect(row).toMatchObject({ reservation_phase: "creating_issue", reserved_submission_id: "submission-owner-ambiguous-001" });
+    });
+  });
+
+  it("recovers an owned issue from the second page after response loss without creating twice", async () => {
+    const inviteId = "invite-owner-page2-001";
+    const token = await registeredInvite(inviteId);
+    const intake = recoveryIntake(token, "submission-owner-page2-001");
+    let savedBody = "";
+    let creates = 0;
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", ({ request }) => {
+        if (new URL(request.url).searchParams.get("page") === "2") return HttpResponse.json([{ number: 1003, body: savedBody }]);
+        return HttpResponse.json(savedBody ? Array.from({length: 100}, (_, i) => ({ number: 2000 + i, body: "unrelated" })) : []);
+      }),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", async ({ request }) => {
+        creates++; savedBody = String((await request.json() as {body: string}).body);
+        return HttpResponse.json({ message: "lost after commit" }, { status: 503 });
+      }),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/dispatches", () => new HttpResponse(null, { status: 204 })),
+      http.post("https://api.resend.com/emails", () => HttpResponse.json({ id: "receipt-page2" })),
+    );
+    expect((await submitRecoveryIntake(intake)).status).toBe(500);
+    await ageCreation(inviteId);
+    const recovered = await submitRecoveryIntake(intake);
+    expect(recovered.status).toBe(200);
+    expect(await recovered.json()).toMatchObject({ issue: 1003 });
+    expect(creates).toBe(1);
+    expect(savedBody).toMatch(/launchloom-intake-operation:[a-f0-9-]+:[a-f0-9]{64}/u);
+  });
+
+  it("requires operator recovery after three empty sweeps without releasing an ambiguous creation", async () => {
+    const inviteId = "invite-owner-exhausted-001";
+    const token = await registeredInvite(inviteId);
+    const intake = recoveryIntake(token, "submission-owner-exhausted-001");
+    let creates = 0;
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json([])),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () => { creates++; return HttpResponse.json({}, { status: 503 }); }),
+    );
+    await submitRecoveryIntake(intake);
+    await ageCreation(inviteId);
+    await submitRecoveryIntake(intake);
+    await submitRecoveryIntake(intake);
+    const exhausted = await submitRecoveryIntake(intake);
+    expect(exhausted.status).toBe(409);
+    expect(await exhausted.json()).toMatchObject({ code: "recovery_required" });
+    expect(creates).toBe(1);
+  });
+});
+
+
+describe("intake recovery compatibility and interruption", () => {
+  it("requires operator reconciliation for a legacy incomplete reservation without assigning a new owner", async () => {
+    const inviteId = "invite-legacy-recovery-001";
+    const token = await registeredInvite(inviteId);
+    const intake = recoveryIntake(token, "submission-legacy-recovery-001");
+    const coordinator = inviteNamespace.getByName("launchloom-onboarding-invites");
+    await runInDurableObject(coordinator, (_, state) => {
+      state.storage.sql.exec("UPDATE onboarding_invites SET reserved_submission_id = ?, reserved_submission_hash = ?, reserved_at = ?, reservation_phase = 'creating_issue', operation_id = NULL WHERE invite_id = ?", intake.submissionId, "legacy-hash", Date.now() - 121_000, inviteId);
+    });
+    const response = await submitRecoveryIntake(intake);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code: "recovery_required" });
+    const list = await coordinator.list();
+    expect(list.find(item => item.inviteId === inviteId)).toMatchObject({ recoveryRequired: true, status: "unused" });
+  });
+
+  it("does not accept an owned marker whose actual issue payload was changed", async () => {
+    const inviteId = "invite-tampered-payload-001";
+    const token = await registeredInvite(inviteId);
+    const intake = recoveryIntake(token, "submission-tampered-payload-001");
+    let savedBody = ""; let creates = 0;
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json(savedBody ? [{number: 1004, body: savedBody.replace('"Recovery Plumbing"', '"Changed Business"')}] : [])),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", async ({request}) => { creates++; savedBody = String((await request.json() as {body: string}).body); return HttpResponse.json({}, {status: 503}); }),
+    );
+    await submitRecoveryIntake(intake); await ageCreation(inviteId);
+    const response = await submitRecoveryIntake(intake);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({code: "in_progress"});
+    expect(creates).toBe(1);
+  });
+
+  it("resumes the persisted page after a failed page read", async () => {
+    const inviteId = "invite-interrupted-pages-001";
+    const token = await registeredInvite(inviteId);
+    const intake = recoveryIntake(token, "submission-interrupted-pages-001");
+    let savedBody = ""; let page2Fails = true; const pages: number[] = [];
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", ({request}) => {
+        const page = Number(new URL(request.url).searchParams.get("page") || 1); pages.push(page);
+        if (page === 1) return HttpResponse.json(Array.from({length: 100}, (_, i) => ({number: 3000 + i, body: "unrelated"})));
+        if (page2Fails) return HttpResponse.json({}, {status: 503});
+        return HttpResponse.json([{number: 1005, body: savedBody}]);
+      }),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", async ({request}) => { savedBody = String((await request.json() as {body: string}).body); return HttpResponse.json({}, {status: 503}); }),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/dispatches", () => new HttpResponse(null, {status: 204})),
+      http.post("https://api.resend.com/emails", () => HttpResponse.json({id: "receipt-interrupted"})),
+    );
+    await submitRecoveryIntake(intake); await ageCreation(inviteId);
+    const interrupted = await submitRecoveryIntake(intake);
+    expect(interrupted.status).toBe(500);
+    page2Fails = false;
+    const recovered = await submitRecoveryIntake(intake);
+    expect(recovered.status).toBe(200);
+    expect(await recovered.json()).toMatchObject({issue: 1005});
+    expect(pages).toEqual([1, 2, 2]);
+  });
+
+  it("uses distinct receipt idempotency keys for different owners reusing a public submission id", async () => {
+    const first = await registeredInvite("invite-receipt-owner-a");
+    const second = await registeredInvite("invite-receipt-owner-b");
+    const keys: string[] = []; let issue = 4000;
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json([])),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json({number: ++issue}, {status: 201})),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/dispatches", () => new HttpResponse(null, {status: 204})),
+      http.post("https://api.resend.com/emails", ({request}) => { keys.push(request.headers.get("Idempotency-Key") || ""); return HttpResponse.json({id: "receipt-distinct"}); }),
+    );
+    expect((await submitRecoveryIntake(recoveryIntake(first, "submission-shared-receipt-001"))).status).toBe(200);
+    expect((await submitRecoveryIntake(recoveryIntake(second, "submission-shared-receipt-001"))).status).toBe(200);
+    expect(new Set(keys).size).toBe(2);
+  });
+});
+
+
+it("bounds repeated recovery transport failures without ever recreating the issue", async () => {
+  const inviteId = "invite-recovery-transport-001";
+  const token = await registeredInvite(inviteId);
+  const intake = recoveryIntake(token, "submission-recovery-transport-001");
+  let creates = 0;
+  network.use(
+    http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json({}, {status: 503})),
+    http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () => { creates++; return HttpResponse.json({}, {status: 503}); }),
+  );
+  await submitRecoveryIntake(intake); await ageCreation(inviteId);
+  await submitRecoveryIntake(intake); await submitRecoveryIntake(intake);
+  const response = await submitRecoveryIntake(intake);
+  expect(response.status).toBe(409);
+  expect(await response.json()).toMatchObject({code: "recovery_required"});
+  expect(creates).toBe(1);
+});
+
+it("does not consume an invitation when GitHub's successful response has no issue number", async () => {
+  const inviteId = "invite-recovery-malformed-001";
+  const token = await registeredInvite(inviteId);
+  network.use(http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json({}, {status: 201})));
+  const response = await submitRecoveryIntake(recoveryIntake(token, "submission-recovery-malformed-001"));
+  expect(response.status).toBe(500);
+  const list = await inviteNamespace.getByName("launchloom-onboarding-invites").list();
+  expect(list.find(item => item.inviteId === inviteId)).toMatchObject({status: "unused", issueNumber: null});
+});
+
+it("does not release an ambiguous creation when recovery listing is rejected", async () => {
+  const inviteId = "invite-recovery-list-denied-001";
+  const token = await registeredInvite(inviteId);
+  const intake = recoveryIntake(token, "submission-recovery-list-denied-001");
+  let creates = 0;
+  network.use(
+    http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json({}, {status: 403})),
+    http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () => { creates++; return HttpResponse.json({}, {status: 503}); }),
+  );
+  await submitRecoveryIntake(intake); await ageCreation(inviteId);
+  expect((await submitRecoveryIntake(intake)).status).toBe(500);
+  await runInDurableObject(inviteNamespace.getByName("launchloom-onboarding-invites"), (_, state) => {
+    const row = state.storage.sql.exec<{reservation_phase: string; reserved_submission_id: string}>("SELECT reservation_phase, reserved_submission_id FROM onboarding_invites WHERE invite_id = ?", inviteId).toArray()[0];
+    expect(row).toMatchObject({reservation_phase: "creating_issue", reserved_submission_id: intake.submissionId});
+  });
+  expect(creates).toBe(1);
 });

@@ -1,0 +1,199 @@
+				@font-face {
+					font-family: 'gt-super';
+					src: url('/wp-content/uploads/useanyfont/2357GT-Super.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/2357GT-Super.woff') format('woff');
+					font-weight: 300; font-style: normal;  font-display: auto;
+				}
+
+				.gt-super{font-family: 'gt-super' !important;}
+
+						@font-face {
+					font-family: 'gt-super';
+					src: url('/wp-content/uploads/useanyfont/1435GT-Super.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/1435GT-Super.woff') format('woff');
+					font-weight: 300; font-style: italic;  font-display: auto;
+				}
+
+				.gt-super{font-family: 'gt-super' !important;}
+
+						@font-face {
+					font-family: 'gt-super';
+					src: url('/wp-content/uploads/useanyfont/2073GT-Super.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/2073GT-Super.woff') format('woff');
+					font-weight: 400; font-style: normal;  font-display: auto;
+				}
+
+				.gt-super{font-family: 'gt-super' !important;}
+
+						@font-face {
+					font-family: 'gt-super';
+					src: url('/wp-content/uploads/useanyfont/929GT-Super.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/929GT-Super.woff') format('woff');
+					font-weight: 400; font-style: italic;  font-display: auto;
+				}
+
+				.gt-super{font-family: 'gt-super' !important;}
+
+						@font-face {
+					font-family: 'gt-super';
+					src: url('/wp-content/uploads/useanyfont/9885GT-Super.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/9885GT-Super.woff') format('woff');
+					font-weight: 500; font-style: normal;  font-display: auto;
+				}
+
+				.gt-super{font-family: 'gt-super' !important;}
+
+						@font-face {
+					font-family: 'gt-super';
+					src: url('/wp-content/uploads/useanyfont/7607GT-Super.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/7607GT-Super.woff') format('woff');
+					font-weight: 500; font-style: italic;  font-display: auto;
+				}
+
+				.gt-super{font-family: 'gt-super' !important;}
+
+						@font-face {
+					font-family: 'gt-super';
+					src: url('/wp-content/uploads/useanyfont/304GT-Super.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/304GT-Super.woff') format('woff');
+					font-weight: 700; font-style: normal;  font-display: auto;
+				}
+
+				.gt-super{font-family: 'gt-super' !important;}
+
+						@font-face {
+					font-family: 'gt-super';
+					src: url('/wp-content/uploads/useanyfont/7486GT-Super.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/7486GT-Super.woff') format('woff');
+					font-weight: 700; font-style: italic;  font-display: auto;
+				}
+
+				.gt-super{font-family: 'gt-super' !important;}
+
+						@font-face {
+					font-family: 'gt-super';
+					src: url('/wp-content/uploads/useanyfont/4281GT-Super.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/4281GT-Super.woff') format('woff');
+					font-weight: 900; font-style: normal;  font-display: auto;
+				}
+
+				.gt-super{font-family: 'gt-super' !important;}
+
+						@font-face {
+					font-family: 'gt-super';
+					src: url('/wp-content/uploads/useanyfont/1281GT-Super.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/1281GT-Super.woff') format('woff');
+					font-weight: 900; font-style: italic;  font-display: auto;
+				}
+
+				.gt-super{font-family: 'gt-super' !important;}
+
+						@font-face {
+					font-family: 'rand';
+					src: url('/wp-content/uploads/useanyfont/2012Rand.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/2012Rand.woff') format('woff');
+					font-weight: 100; font-style: normal;  font-display: auto;
+				}
+
+				.rand{font-family: 'rand' !important;}
+
+						@font-face {
+					font-family: 'rand';
+					src: url('/wp-content/uploads/useanyfont/590Rand.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/590Rand.woff') format('woff');
+					font-weight: 300; font-style: normal;  font-display: auto;
+				}
+
+				.rand{font-family: 'rand' !important;}
+
+						@font-face {
+					font-family: 'rand';
+					src: url('/wp-content/uploads/useanyfont/1715Rand.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/1715Rand.woff') format('woff');
+					font-weight: 400; font-style: normal;  font-display: auto;
+				}
+
+				.rand{font-family: 'rand' !important;}
+
+						@font-face {
+					font-family: 'rand';
+					src: url('/wp-content/uploads/useanyfont/6799Rand.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/6799Rand.woff') format('woff');
+					font-weight: 500; font-style: normal;  font-display: auto;
+				}
+
+				.rand{font-family: 'rand' !important;}
+
+						@font-face {
+					font-family: 'rand';
+					src: url('/wp-content/uploads/useanyfont/4284Rand.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/4284Rand.woff') format('woff');
+					font-weight: 700; font-style: normal;  font-display: auto;
+				}
+
+				.rand{font-family: 'rand' !important;}
+
+						@font-face {
+					font-family: 'rand';
+					src: url('/wp-content/uploads/useanyfont/2953Rand.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/2953Rand.woff') format('woff');
+					font-weight: 800; font-style: normal;  font-display: auto;
+				}
+
+				.rand{font-family: 'rand' !important;}
+
+						@font-face {
+					font-family: 'rand';
+					src: url('/wp-content/uploads/useanyfont/7760Rand.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/7760Rand.woff') format('woff');
+					font-weight: 900; font-style: normal;  font-display: auto;
+				}
+
+				.rand{font-family: 'rand' !important;}
+
+						@font-face {
+					font-family: 'rand-mono';
+					src: url('/wp-content/uploads/useanyfont/8404Rand-Mono.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/8404Rand-Mono.woff') format('woff');
+					font-weight: 100; font-style: normal;  font-display: auto;
+				}
+
+				.rand-mono{font-family: 'rand-mono' !important;}
+
+						@font-face {
+					font-family: 'rand-mono';
+					src: url('/wp-content/uploads/useanyfont/4464Rand-Mono.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/4464Rand-Mono.woff') format('woff');
+					font-weight: 400; font-style: normal;  font-display: auto;
+				}
+
+				.rand-mono{font-family: 'rand-mono' !important;}
+
+						@font-face {
+					font-family: 'rand-mono';
+					src: url('/wp-content/uploads/useanyfont/3431Rand-Mono.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/3431Rand-Mono.woff') format('woff');
+					font-weight: 500; font-style: normal;  font-display: auto;
+				}
+
+				.rand-mono{font-family: 'rand-mono' !important;}
+
+						@font-face {
+					font-family: 'rand-mono';
+					src: url('/wp-content/uploads/useanyfont/1865Rand-Mono.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/1865Rand-Mono.woff') format('woff');
+					font-weight: 700; font-style: normal;  font-display: auto;
+				}
+
+				.rand-mono{font-family: 'rand-mono' !important;}
+
+						@font-face {
+					font-family: 'rand-mono';
+					src: url('/wp-content/uploads/useanyfont/1263Rand-Mono.woff2') format('woff2'),
+						url('/wp-content/uploads/useanyfont/1263Rand-Mono.woff') format('woff');
+					font-weight: 900; font-style: normal;  font-display: auto;
+				}
+
+				.rand-mono{font-family: 'rand-mono' !important;}
+
+		

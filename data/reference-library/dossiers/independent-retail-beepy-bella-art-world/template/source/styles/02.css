@@ -1,0 +1,162 @@
+/** Shopify CDN: Minification failed
+
+Line 37:1 Unexpected ";"
+Line 53:1 Unexpected ";"
+
+**/
+[data-testid="desktop"]{
+    transform: scale(1) !important;
+}
+
+.klaviyo-form{
+    width: 380px !important;
+}
+
+@media(max-width: 600px){
+    .klaviyo-form {
+        width: 90vw !important;
+    }
+}
+
+@media(max-width: 320px){
+    .klaviyo-form {
+        width: 90vw !important;
+    }
+}
+
+/* Image Field */
+
+@media(max-width: 600px) {
+    .klaviyo-form > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > img{
+       width: 200px !important;
+    };  
+}
+
+.klaviyo-form > div:nth-child(1) > div:nth-child(2){
+  border-top: 1px solid black !important;
+};
+
+/*
+@media(min-width: 600px) {
+  .klaviyo-form > div:nth-child(1) > div:nth-child(2)  {
+      border-top: 1px solid black !important;
+  };
+}
+*/
+
+
+/* Top Field */
+
+.klaviyo-form > div:nth-child(1) > div:nth-child(2) .kl-private-quill-wrapper-Lkqws1 .ql-editor p{
+    width: 90% !important;
+    font-family: 'Sohne Buch' !important;
+};
+
+
+.kl-private-reset-css-Xuajs1[type="email"]:hover{
+    border: 0 !important;
+    border-radius: 0 !important;
+    border-top: 1px solid black !important;
+    border-bottom: 1px solid black !important;
+    border-color: black !important;
+}
+
+.kl-private-reset-css-Xuajs1[type="email"]::placeholder{
+    color: rgba(0,0,0,0.6) !important;
+}
+
+
+/* Email Field */
+
+.kl-private-reset-css-Xuajs1[type="email"]{
+    border: 0 !important;
+    border-radius: 0 !important;
+    border-top: 1px solid black !important;
+    border-bottom: 1px solid black !important;
+}
+
+
+
+
+/* Telephone dropdown */
+
+.kl-private-reset-css-Xuajs1[role="option"] span,
+.kl-private-reset-css-Xuajs1[role="option"] div{
+    font-family: 'Sohne Buch' !important;
+    font-size: 13px !important;
+    align-items: center !important;
+}
+
+
+/* Telephone dropdown list */
+
+.kl-private-reset-css-Xuajs1[role="listbox"]{
+    border: 0 !important;
+}
+
+/* Button */
+
+.kl-private-reset-css-Xuajs1[type="button"] {
+    border: none !important;
+    border-top: 1px solid black !important;
+  	height: 28px !important;
+    border-color: black !important;
+}
+
+.kl-private-reset-css-Xuajs1[type="button"]:hover {
+    border: none !important;
+    border-top: 1px solid black !important; 
+}
+
+/* Close Button */
+
+.klaviyo-close-form {
+    outline: none !important;
+    border-left: 1px solid black !important;
+    border-bottom: 1px solid black !important;
+    padding: 5px !important;
+    background: white !important;
+    border-top: 1px solid black !important;
+    border-right: 1px solid black !important;
+}
+
+/* Telephone dropdown Search Country */
+
+/* .kl-private-reset-css-Xuajs1[type="button"][aria-describedby="klaviyo_ariaid_4"]{
+    border: 0 !important;
+  	height: 49px !important;
+} */
+
+.klaviyo-form > div:nth-child(1) 
+> div:nth-child(4) > div:nth-child(1) 
+> div:nth-child(1) > div:nth-child(1) > 
+ div:nth-child(1) >
+.kl-private-reset-css-Xuajs1[type="button"] {
+    border: 0 !important;
+  	height: 49px !important;
+}
+
+/* Telephone Field */
+
+.klaviyo-form > div:nth-child(1) 
+> div:nth-child(4) > div:nth-child(1) 
+> div:nth-child(1) > div:nth-child(1) > 
+.kl-private-reset-css-Xuajs1[type="button"] {
+  height: 50px !important;
+  padding-left: 20px !important;
+  width: auto !important;
+}
+
+
+.klaviyo-form > div:nth-child(1) 
+> div:nth-child(4) > div:nth-child(1) 
+> div:nth-child(1) > div:nth-child(1):not([role="combobox"]){
+    border: 0 !important;
+    border-radius: 0 !important;
+    border-bottom: 1px solid black !important;
+}
+
+
+.klaviyo-form > div > div:nth-child(4) > div > div > div:nth-child(1) input::placeholder{
+    color: rgba(0,0,0,0.6) !important;
+}

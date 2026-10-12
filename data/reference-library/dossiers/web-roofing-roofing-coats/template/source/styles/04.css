@@ -1,0 +1,33 @@
+@font-face {
+	font-family: 'Text Icons';
+	src: url('../fonts/text-icons.eot');
+	src: url('../fonts/text-icons.eot') format('embedded-opentype'),
+	url('../fonts/text-icons.woff') format('woff2'),
+	url('../fonts/text-icons.woff') format('woff'),
+	url('../fonts/text-icons.ttf') format('truetype');
+	font-weight: normal;
+	font-style: normal;
+}
+
+.text:before,
+.text-set {
+	display: inline-block;
+	font: normal normal normal 24px/1 'Text Icons';
+	font-size: inherit;
+	text-rendering: auto;
+	line-height: inherit;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.text-contact-button::before {
+	content: '\e900';
+}
+
+.text-livechat::before {
+	content: '\e901';
+}
+
+.text-quality-badge::before {
+	content: '\e902';
+}

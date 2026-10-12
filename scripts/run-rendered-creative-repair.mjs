@@ -844,6 +844,7 @@ export async function defaultRepairCandidate({
   candidateDir,
   findings,
   screenshots,
+  interactionEvidence = null,
   comparisonScreenshots = [],
   model,
   creativeSession = null,
@@ -872,6 +873,8 @@ export async function defaultRepairCandidate({
     );
   const repairResponse = await requestRepair({
     model,
+    candidateId: metadata.candidateId,
+    interactionEvidence,
     referenceDna,
     referenceDossier:
       metadata.creativeManifest?.referenceDossier || metadata.referenceDossier,
@@ -1196,7 +1199,10 @@ export async function runRenderedCreativeRepair({
     screenshotsDir,
     candidateDirectory,
     report,
-    { gate = false } = {},
+    {
+      gate = false,
+      interactionEvidence = reportCandidate(report, candidateId)?.interactionEvidence,
+    } = {},
   ) {
     const applied = cycleUse.get(candidateId) || 0;
     const gateApplied = gateUse.get(candidateId) || 0;
@@ -1242,6 +1248,7 @@ export async function runRenderedCreativeRepair({
           candidateId,
           findings: activeFindings,
           screenshots: availableScreenshots,
+          interactionEvidence,
           comparisonScreenshots,
           model: resolvedModel,
           creativeSession: frozenCreativeSession,
@@ -1355,6 +1362,7 @@ export async function runRenderedCreativeRepair({
           "screenshots",
         ),
         findings: candidateFindings(candidate),
+        interactionEvidence: candidate.interactionEvidence,
       });
     }
   }
@@ -1527,6 +1535,11 @@ export async function runRenderedCreativeRepair({
         regressed ? best.screenshotsDir : screenshotsDir,
         target.directory,
         report,
+        {
+          interactionEvidence: regressed
+            ? best.interactionEvidence
+            : target.candidate.interactionEvidence,
+        },
       );
       if (repaired.status === "repaired") {
         record.repairs.push(target.candidateId);

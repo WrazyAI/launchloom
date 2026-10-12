@@ -187,3 +187,42 @@ place, and pending secondary-city research is disclosed in the review banner. Se
 The form prefills at most five nearby municipalities as removable pills, separate from the primary city. Clients can remove suggestions and type replacements using `City, State or Country`, then explicitly reconfirm the edited list. The combined number of fetched and typed additional places is limited to five in both form and intake validation. Existing stored dossiers with larger historical coverage are retained.
 
 Fetched selections still use the invitation-bound signed lookup reference; relabelled or invented provider IDs are rejected. Typed places are explicit client assertions and can override the suggested radius. They are validated as bounded labels, recorded in `coverageConfirmation.manualAreas` with source `client_confirmed_mixed_coverage`, and never claimed as provider-verified municipalities or physical offices. The client-submitted ordered coverage list must exactly match the signed selections followed by those manual assertions. Duplicates, primary-city duplication, control characters and over-limit submissions are rejected. Both kinds flow through the existing confirmed-coverage SEO budget and pending-city policy.
+
+
+## Intake ownership and interrupted creation
+
+New reservations persist a random server operation ID and the canonical payload
+hash before GitHub issue creation. Recovery checks both the operation marker
+and the actual issue JSON hash. A public submission ID never grants ownership
+of another invitation's issue. Newly queued receipt emails use the server
+operation for their provider idempotency key; existing outbox rows retain their
+original retry key.
+
+An ambiguous creation response keeps the invitation reserved. The same payload
+can reconcile after the two-minute creation window. Recovery scans up to ten
+100-issue pages per request and persists its cursor after each page. Interrupted
+reads resume at that cursor. Three unsuccessful sweeps, including failed
+transport sweeps, return HTTP 409 `recovery_required`. The admin invitation row
+shows the blocker and attempt count. A definitive creation rejection can release
+the reservation; a rejected recovery lookup cannot.
+
+Pre-migration incomplete reservations without an operation ID also require
+operator recovery. Already-consumed invitations retain their exact issue
+mapping and normal retry behavior. Verify the original private issue and its
+submitted payload before revoking or issuing another invitation; never guess
+an issue mapping or automatically recreate an ambiguous submission. No client
+invitation tokens or operation IDs appear in the admin listing.
+
+
+The blocked invitation's **Recover verified intake** action asks for the original
+LaunchLoom issue number and explicit confirmation. The existing Access identity
+and same-origin checks protect it. The Worker independently checks the stored
+payload hash and, for new operations, the exact operation marker. Legacy
+reconciliation records the administrator's explicit attribution with the exact
+payload hash. A changed payload or mismatched operation is rejected.
+
+Successful recovery atomically records the issue mapping and a private audit
+receipt, then resumes the existing generation and receipt outbox. It never
+creates a new issue. Retrying the same recovery repairs an interrupted outbox
+handoff without repeating successful dispatches or receipts. A different issue
+cannot replace the recorded mapping.

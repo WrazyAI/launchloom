@@ -1,0 +1,89 @@
+
+/* Full width banner on location pages */
+.location-hero-form {
+    position: relative;
+    text-align: right;
+    margin-right: 34px;
+}
+.banner-gradient {
+    position: absolute;
+    top: 0;
+    z-index: 1;
+    width: 100%;
+    height: 750px;
+    background-image: -webkit-gradient(linear,left top,left bottom,from(rgba(255,255,255,0)),to(rgba(0,0,0,.57)));
+    background-image: linear-gradient(180deg,rgba(255,255,255,0),rgba(0,0,0,.57));
+}
+.location-banner-text {
+    font-size: 2.4rem;
+    margin-top: 0;
+    position: absolute;
+    left: 32px;
+    text-align: left;
+    bottom: 28.5%;
+    color: #fff;
+    z-index: 2;
+}
+.page-template-template-new-locations .brush-separator.blank-to-white.counter-clock {
+    position: absolute;
+    bottom: 0;
+}
+
+@media (min-width: 767px) {
+    .full-width-banner {
+        position: relative;
+        min-height: 750px;
+        margin-top: -4rem;
+    }
+    .location-banner {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 750px;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+    .page-template-template-new-locations .hero-form-container {
+        width: 320px;
+        top: 75px;
+    }
+    
+}
+@media (max-width: 766px) {
+    .full-width-banner {
+        position: relative;
+        min-height: 400px;
+        margin-top: -4rem;
+    }
+    .location-banner {
+        position: inherit;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 475px;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+    .banner-gradient {
+        height: 475px;
+    }
+    .location-banner-text {
+        font-size: 2.4rem;
+        margin-top: 0;
+        position: absolute;
+        bottom: 50%;
+        color: #fff;
+        z-index: 2;
+        width: 90%;
+        text-align: center;
+    }
+}
+
+#location-contact-form-anchor {
+    position: relative;
+    bottom: 165px;
+    pointer-events: none;
+}

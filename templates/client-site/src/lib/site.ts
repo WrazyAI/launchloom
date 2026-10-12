@@ -302,6 +302,7 @@ export type SiteConfig = {
     experience?: {
       packId?: ExperiencePackId | string;
       variantId?: string;
+      internal?: boolean;
       blueprintVersion?: 2;
       renderer?: "reviewed-pack" | "creative-candidate" | "legacy" | string;
       candidateId?: string;

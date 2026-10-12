@@ -46,3 +46,6 @@ artifacts/
 .env.*
 !.env.example
 .netlify/
+
+# Local execution notes for this reliability plan
+.superpowers/reliability/

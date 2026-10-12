@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 
 // Run the actual publication shell with real local Git and real Chromium.
 // Redirect only provider/build boundaries; no deployment or email leaves this test.
-function publication(color: string, override: boolean, routeFailure = "") {
+function publication(color: string, override: boolean, routeFailure = "", recoveredUpload = false) {
   const root = mkdtempSync(path.join(os.tmpdir(), "ll-publish-contrast-"));
   try {
     const fixture = path.join(root, "fixture"),
@@ -67,14 +67,14 @@ function publication(color: string, override: boolean, routeFailure = "") {
       'if [ "$1" = clone ]; then exec /usr/bin/git clone "$FIXTURE_REPO" "$3"; fi\nexec /usr/bin/git "$@"\n',
     );
     executable("npm", "exit 0\n");
-    executable("gh", "exit 0\n");
+    executable("gh", 'case " $* " in *"/git/ref/heads/main "*) printf "%s\\n" "$APPROVED_SHA";; esac\nexit 0\n');
     executable(
       "npx",
-      'test "$1" = wrangler\ntest "$2" = pages\ntest "$3" = deploy\nprintf "%s\\n" "$APPROVED_SHA" > "$RELEASE_MARKER"\n',
+      'test "$1" = wrangler\ntest "$2" = pages\ntest "$3" = deploy\nprintf "%s\\n" "$APPROVED_SHA" > "$RELEASE_MARKER"\nprintf "upload\\n" >> "$UPLOAD_LOG"\n',
     );
     executable(
       "node",
-      'case "$1" in\n */verify-site-routes.mjs) case " $* " in *" --destination "*) test "$ROUTE_FAILURE" != destination;; *) test "$ROUTE_FAILURE" != local;; esac; exit $?;;\n */seo-release-gate.mjs) exit 0;;\n */create-review-link.mjs) printf "fixture-review-token\\n"; exit 0;;\n */send-preview-email.mjs) printf "sent\\n" > "$EMAIL_MARKER"; exit 0;;\n esac\nexec "$REAL_NODE" "$@"\n',
+      'case "$1" in\n */verify-site-routes.mjs) case " $* " in *" --destination "*) test "$ROUTE_FAILURE" != destination;; *) test "$ROUTE_FAILURE" != local;; esac; exit $?;;\n */seo-release-gate.mjs) exit 0;;\n */create-review-link.mjs) printf "fixture-review-token\\n"; exit 0;;\n */publication-client.mjs) if [ "$PUBLICATION_ACTION" = published ]; then printf "sent\\n" > "$EMAIL_MARKER"; fi; exit 0;;\n */publication-deployment.mjs) if [ -f "$RELEASE_MARKER" ]; then printf "{\"id\":\"fixture\"}\\n" > "$PUBLICATION_DEPLOYMENT_FILE"; fi; exit 0;;\n */send-preview-email.mjs) exit 0;;\n esac\nexec "$REAL_NODE" "$@"\n',
     );
     const workflow = readFileSync(".github/workflows/publish-site.yml", "utf8");
     const block = workflow.split("        run: |\n")[1]?.split("\n      - ")[0];
@@ -84,6 +84,7 @@ function publication(color: string, override: boolean, routeFailure = "") {
       .filter((line) => line.startsWith("          "))
       .map((line) => line.slice(10))
       .join("\n");
+    if(recoveredUpload)writeFileSync(path.join(root,"released"),sha+"\n");
     const result = spawnSync("bash", ["-e", "-c", shell], {
       cwd: path.resolve("."),
       encoding: "utf8",
@@ -101,11 +102,15 @@ function publication(color: string, override: boolean, routeFailure = "") {
         CLIENT_PR: "1",
         FEEDBACK_ISSUE: "1",
         APPROVED_SHA: sha,
+        PUBLICATION_ID: '11111111-1111-4111-8111-111111111111',
+        PUBLICATION_DEPLOYMENT_FILE: path.join(runner,'publication-deployment.json'),
+        PUBLICATION_DELIVERY_FILE: path.join(runner,'publication-delivery.json'),
         DEVELOPER_OVERRIDE: String(override),
         OVERRIDE_SESSION_ID: "a".repeat(32),
         OVERRIDE_REVIEWED_SHA: sha,
         OVERRIDE_CANDIDATE_ID: "candidate-a",
         GITHUB_ORG_TOKEN: "fixture",
+        UPLOAD_LOG: path.join(root,"uploads"),
         RELEASE_MARKER: path.join(root, "released"),
         EMAIL_MARKER: path.join(root, "emailed"),
       },
@@ -113,6 +118,7 @@ function publication(color: string, override: boolean, routeFailure = "") {
     return {
       status: result.status,
       output: result.stdout + result.stderr,
+      uploads: existsSync(path.join(root,"uploads"))?readFileSync(path.join(root,"uploads"),"utf8").trim().split("\n").length:0,
       released: existsSync(path.join(root, "released")),
       emailed: existsSync(path.join(root, "emailed")),
       publishedSha: existsSync(path.join(root, "released"))
@@ -156,4 +162,11 @@ describe("publication contrast guard", () => {
     expect(result.publishedSha).toBe(result.sha);
     expect(result.emailed).toBe(true);
   }, 30000);
+  it('reuses an owned deployment after an interrupted upload callback without uploading again',()=>{
+    const result=publication('#14201d',false,'',true);
+    expect(result.status,result.output).toBe(0);
+    expect(result.uploads).toBe(0);
+    expect(result.emailed).toBe(true);
+  },30000);
+
 });

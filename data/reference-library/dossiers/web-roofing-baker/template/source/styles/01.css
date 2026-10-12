@@ -1,0 +1,40 @@
+/*
+ * The Typekit service used to deliver this font or fonts for use on websites
+ * is provided by Adobe and is subject to these Terms of Use
+ * http://www.adobe.com/products/eulas/tou_typekit. For font license
+ * information, see the list below.
+ *
+ * field-gothic-xcondensed:
+ *   - http://typekit.com/eulas/0000000000000000774ec6fe
+ * trade-gothic-next:
+ *   - http://typekit.com/eulas/00000000000000007735ba3f
+ *   - http://typekit.com/eulas/00000000000000007735ba66
+ *
+ * © 2009-2026 Adobe Systems Incorporated. All Rights Reserved.
+ */
+/*{"last_published":"2026-04-14 20:14:34 UTC"}*/
+
+/* inlined import: https://p.typekit.net/p.css?s=1&k=uxb6pqx&ht=tk&f=39680.39687.52218&a=189201538&app=typekit&e=css */
+/**/
+
+
+@font-face {
+font-family:"trade-gothic-next";
+src:url("https://use.typekit.net/af/f82cc1/00000000000000007735ba3f/31/l?subset_id=2&fvd=n7&v=3") format("woff2"),url("https://use.typekit.net/af/f82cc1/00000000000000007735ba3f/31/d?subset_id=2&fvd=n7&v=3") format("woff"),url("https://use.typekit.net/af/f82cc1/00000000000000007735ba3f/31/a?subset_id=2&fvd=n7&v=3") format("opentype");
+font-display:auto;font-style:normal;font-weight:700;font-stretch:normal;
+}
+
+@font-face {
+font-family:"trade-gothic-next";
+src:url("https://use.typekit.net/af/b78836/00000000000000007735ba66/31/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3") format("woff2"),url("https://use.typekit.net/af/b78836/00000000000000007735ba66/31/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3") format("woff"),url("https://use.typekit.net/af/b78836/00000000000000007735ba66/31/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3") format("opentype");
+font-display:auto;font-style:normal;font-weight:400;font-stretch:normal;
+}
+
+@font-face {
+font-family:"field-gothic-xcondensed";
+src:url("https://use.typekit.net/af/7fc84a/0000000000000000774ec6fe/31/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n6&v=3") format("woff2"),url("https://use.typekit.net/af/7fc84a/0000000000000000774ec6fe/31/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n6&v=3") format("woff"),url("https://use.typekit.net/af/7fc84a/0000000000000000774ec6fe/31/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n6&v=3") format("opentype");
+font-display:auto;font-style:normal;font-weight:600;font-stretch:normal;
+}
+
+.tk-trade-gothic-next { font-family: "trade-gothic-next",sans-serif; }
+.tk-field-gothic-xcondensed { font-family: "field-gothic-xcondensed",sans-serif; }

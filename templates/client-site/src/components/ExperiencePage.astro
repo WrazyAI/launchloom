@@ -4,6 +4,9 @@ import "../styles/experience-packs.css";
 import EditorialFolioExperience from "./experiences/EditorialFolioExperience.astro";
 import GuidedConversationExperience from "./experiences/GuidedConversationExperience.astro";
 import ServiceLedExperience from "./experiences/ServiceLedExperience.astro";
+import StageIndexExperience from "./experiences/StageIndexExperience.astro";
+import EditorialLedgerExperience from "./experiences/EditorialLedgerExperience.astro";
+import ResultsLedgerExperience from "./experiences/ResultsLedgerExperience.astro";
 
 interface Props {
   experience: CompiledExperience;
@@ -17,7 +20,13 @@ const { experience } = Astro.props;
     <EditorialFolioExperience program={experience.program} content={experience.content} />
   ) : experience.program.packId === "bold-utility" ? (
     <GuidedConversationExperience program={experience.program} content={experience.content} />
-  ) : (
+  ) : experience.program.packId === "kinetic-poster" ? (
     <ServiceLedExperience program={experience.program} content={experience.content} />
+  ) : experience.program.packId === "stage-index" ? (
+    <StageIndexExperience program={experience.program} content={experience.content} />
+  ) : experience.program.packId === "editorial-ledger" ? (
+    <EditorialLedgerExperience program={experience.program} content={experience.content} />
+  ) : (
+    <ResultsLedgerExperience program={experience.program} content={experience.content} />
   )
 }

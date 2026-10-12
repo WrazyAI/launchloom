@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-10-07T11:25:47.243Z",
+  "updatedAt": "2026-10-09T19:42:11.982Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -542,6 +542,42 @@
         "Oversized firm identity on the left, utility email above and a practice/team/awa|A two-tier white header fronts a deep illustrated hero; a centered all-caps decl|Keep practice-area navigation direct and do not inflate a short homepage into a |Strong uppercase sans display, readable serif supporting statement, and compact |identity and utility navigation -> illustrated centered hero -> firm mission on |A dark justice illustration supplies atmosphere; below it, logo-like recognition",
         "thin-availability-line-with-square-corner-practice-nav|dark-practice-statement-balanced-with-results-ledger|numbered-practice-rows-followed-by-auditable-outcomes-table|measured-legal-serif-with-neutral-sans|utility-to-promise-to-practices-to-results-to-team-to-process-to-consultation|typographic-proof-and-geometric-monogram-plates"
       ]
+    },
+    {
+      "id": "2026-10-09-harbor-glow-plumbing-attempt-158-run-37981560267-attempt-1",
+      "launchedAt": "2026-10-09T19:42:11.981Z",
+      "stage": "attempt",
+      "reservationKey": "158-run-37981560267-attempt-1",
+      "businessName": "Harbor Glow Plumbing",
+      "businessKind": "home-services",
+      "recipe": "local-trades",
+      "packId": "results-ledger",
+      "variantId": "standard",
+      "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "market-collage",
+        "spicer-landscaping-season-wheel",
+        "typographic-poster",
+        "web-homeservices-mister-sparky",
+        "web-homeservices-roto-rooter"
+      ],
+      "heroArchetypes": [
+        "collage-mosaic",
+        "image-led-editorial",
+        "split-form"
+      ],
+      "referenceIds": [
+        "spicer-landscaping-season-wheel",
+        "web-homeservices-mister-sparky",
+        "web-homeservices-roto-rooter"
+      ],
+      "routeSignatures": [
+        "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations",
+        "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce",
+        "thin red availability strip over a white service bar with a yellow booking contr|a garage and electrician photograph is interrupted by a red halftone message cir|dark squared tiles with yellow line icons and short task labels|bold compact sans headings and short neutral supporting copy|service navigation -> photo and halftone opening -> black electrical service gri|uniformed electrician photographs in large circular crops plus household electri"
+      ]
     }
   ],
   "launchesByBusinessKind": {
@@ -972,6 +1008,44 @@
           "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
           "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
           "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels"
+        ]
+      }
+    ],
+    "home-services": [
+      {
+        "id": "2026-10-09-harbor-glow-plumbing-attempt-158-run-37981560267-attempt-1",
+        "launchedAt": "2026-10-09T19:42:11.981Z",
+        "stage": "attempt",
+        "reservationKey": "158-run-37981560267-attempt-1",
+        "businessName": "Harbor Glow Plumbing",
+        "businessKind": "home-services",
+        "recipe": "local-trades",
+        "packId": "results-ledger",
+        "variantId": "standard",
+        "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "market-collage",
+          "spicer-landscaping-season-wheel",
+          "typographic-poster",
+          "web-homeservices-mister-sparky",
+          "web-homeservices-roto-rooter"
+        ],
+        "heroArchetypes": [
+          "collage-mosaic",
+          "image-led-editorial",
+          "split-form"
+        ],
+        "referenceIds": [
+          "spicer-landscaping-season-wheel",
+          "web-homeservices-mister-sparky",
+          "web-homeservices-roto-rooter"
+        ],
+        "routeSignatures": [
+          "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations",
+          "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce",
+          "thin red availability strip over a white service bar with a yellow booking contr|a garage and electrician photograph is interrupted by a red halftone message cir|dark squared tiles with yellow line icons and short task labels|bold compact sans headings and short neutral supporting copy|service navigation -> photo and halftone opening -> black electrical service gri|uniformed electrician photographs in large circular crops plus household electri"
         ]
       }
     ]

@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-hvac-finish-line-denver",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.finishlineheatingandcooling.com/",
+    "finalUrl": "https://www.finishlineheatingandcooling.com/",
+    "httpStatus": 200,
+    "pageTitle": "AC Installation Denver | Furnace Service | Finish Line Heating and Cooling",
+    "retrievedAt": "2026-10-08T20:28:32.833Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 325483,
+      "sha256": "27a09a519a4f7eb3a905b187621cb493aaec9f0d41e732f184289037545ac838"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.finishlineheatingandcooling.com/wp-content/uploads/test-logo-2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.finishlineheatingandcooling.com/wp-content/uploads/test-logo-2-150x52.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.finishlineheatingandcooling.com/wp-content/uploads/test-logo-2-300x103.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.finishlineheatingandcooling.com/wp-content/uploads/slide3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.finishlineheatingandcooling.com/wp-content/uploads/slide5.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.finishlineheatingandcooling.com/wp-content/uploads/slide4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.finishlineheatingandcooling.com/wp-content/uploads/ARMSTRONG-AC-UNITS.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.finishlineheatingandcooling.com/wp-content/uploads/ARMSTRONG-AC-UNITS-112x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.finishlineheatingandcooling.com/wp-content/uploads/ARMSTRONG-AC-UNITS-224x300.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.finishlineheatingandcooling.com/wp-content/uploads/peerless_purefire-removebg-preview.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.finishlineheatingandcooling.com/wp-content/uploads/peerless_purefire-removebg-preview-239x300.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.finishlineheatingandcooling.com/wp-content/uploads/peerless_purefire-removebg-preview-119x150.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.finishlineheatingandcooling.com/wp-content/uploads/icon-boiler.png",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 0 of 0 stylesheets retained.",
+  "digest": "bac38c8cb9eee0dc7a930d0fc38f3e4aca343bae509c5dd56c344acf5d169d70"
+}

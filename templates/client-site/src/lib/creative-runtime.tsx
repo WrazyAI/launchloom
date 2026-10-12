@@ -284,6 +284,7 @@ export function LocationMap({
   variant?: "compact" | "full";
 }) {
   const location = content.locationMap;
+  const offlineEvidence = import.meta.env.PUBLIC_CREATIVE_JUDGE === "true";
   if (!location?.available) return null;
 
   if (variant === "compact")
@@ -308,6 +309,7 @@ export function LocationMap({
       id="location"
       data-runtime="location-map"
       data-location-integration="full"
+      data-runtime-provider-omitted={offlineEvidence && location.embedHref ? "location-map" : undefined}
     >
       <div className="launchloom-location-map-copy">
         <span>Visit us</span>
@@ -321,14 +323,14 @@ export function LocationMap({
         )}
       </div>
       {location.embedHref && (
-        <div className="launchloom-location-map-frame">
-          <iframe
+        <div className="launchloom-location-map-frame" aria-hidden={offlineEvidence || undefined}>
+          {!offlineEvidence && <iframe
             src={location.embedHref}
             title={`Map showing ${content.brand.name}${location.address ? ` at ${location.address}` : ""}`}
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
             allowFullScreen
-          />
+          />}
         </div>
       )}
     </section>
@@ -343,6 +345,7 @@ export function SocialProof({
   runtime?: CreativeRuntime;
 }) {
   const proof = content.socialProof;
+  const offlineEvidence = import.meta.env.PUBLIC_CREATIVE_JUDGE === "true";
   const [reviews, setReviews] = useState<
     Array<{
       author?: string;
@@ -355,7 +358,7 @@ export function SocialProof({
   >([]);
   useEffect(() => {
     if (
-      proof?.source !== "google_reviews" ||
+      offlineEvidence || proof?.source !== "google_reviews" ||
       !runtime?.reviews?.apiUrl ||
       !runtime.reviews.token
     ) {
@@ -383,7 +386,7 @@ export function SocialProof({
         if (error?.name !== "AbortError") setReviews([]);
       });
     return () => controller.abort();
-  }, [proof?.source, runtime?.reviews?.apiUrl, runtime?.reviews?.token]);
+  }, [offlineEvidence, proof?.source, runtime?.reviews?.apiUrl, runtime?.reviews?.token]);
 
   if (!content.hasSocialProof || !proof) return null;
   return (
@@ -391,6 +394,7 @@ export function SocialProof({
       className="launchloom-social-proof"
       data-runtime="social-proof"
       data-source={proof.source}
+      data-runtime-provider-omitted={offlineEvidence && proof.source === "google_reviews" ? "google-reviews" : undefined}
     >
       {proof.heading && <h2>{proof.heading}</h2>}
       {proof.intro && <p>{proof.intro}</p>}

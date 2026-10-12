@@ -1,0 +1,206 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Willow &amp; Hearth helps older adults keep familiar routines with personal care, companionship, and practical support at home. Families begin with a conversation about what is needed now and what may change next."><meta name="theme-color" content="#47685d"><meta property="og:title" content="Willow &amp; Hearth Home Care"><meta property="og:description" content="Willow &amp; Hearth helps older adults keep familiar routines with personal care, companionship, and practical support at home. Families begin with a conversation about what is needed now and what may change next."><meta property="og:type" content="website"><link rel="canonical" href="https://willowhearth.example/"><script type="application/ld+json">{"@context":"https://schema.org","@type":"LocalBusiness","name":"Willow & Hearth Home Care","description":"Willow & Hearth helps older adults keep familiar routines with personal care, companionship, and practical support at home. Families begin with a conversation about what is needed now and what may change next.","telephone":"(215) 555-0148","email":"hello@willowhearth.example","address":"18 Linden Avenue, Ardmore, PA 19003","areaServed":["Ardmore","Bryn Mawr","Haverford"],"url":"https://willowhearth.example/"}</script><title>Willow &amp; Hearth Home Care</title><link rel="stylesheet" href="./_astro/Footer.C67EIklv.css"><link rel="stylesheet" href="./_astro/index.IEDAeAGZ.css"></head><body style="--brand:#47685d;--on-brand:#ffffff;--brand-ink:#47685d;--brand-surface:#47685d;--on-brand-surface:#ffffff;--cream:#f7f3ea;--hero-surface:#e9eee7;--ink:#1b2c27;--muted:#607069;--line:#d7ded7"><aside class="ll-review" id="ll-review" hidden aria-label="LaunchLoom website review" data-astro-cid-sogtnxop><div class="ll-review__bar" data-astro-cid-sogtnxop><p class="ll-review__summary" data-astro-cid-sogtnxop><span aria-hidden="true" data-astro-cid-sogtnxop>▣</span> Review this website</p><div class="ll-review__actions" data-astro-cid-sogtnxop><button class="ll-approve" type="button" hidden data-astro-cid-sogtnxop>✓ Approve &amp; send to client</button><button class="ll-feedback-open" type="button" data-astro-cid-sogtnxop>⌁ Provide feedback</button></div></div><div class="ll-review__modal" hidden role="dialog" aria-modal="true" aria-labelledby="ll-review-title" data-astro-cid-sogtnxop><div class="ll-review__dialog" data-astro-cid-sogtnxop><div class="ll-close-control" data-astro-cid-sogtnxop><button class="ll-close" type="button" aria-label="Close feedback form" data-astro-cid-sogtnxop>×</button><span class="ll-close-tip" id="ll-close-draft-tip" role="tooltip" hidden data-astro-cid-sogtnxop>Draft stays here when closed.</span></div><h2 id="ll-review-title" data-astro-cid-sogtnxop>What would you like changed?</h2><p class="ll-review__intro" data-astro-cid-sogtnxop>Tap what applies, then leave a clear note.</p><div class="ll-categories" aria-label="Feedback category" data-astro-cid-sogtnxop><button type="button" data-category="Logo" aria-pressed="false" data-astro-cid-sogtnxop>Logo</button><button type="button" data-category="Phone number" aria-pressed="false" data-astro-cid-sogtnxop>Phone number</button><button type="button" data-category="Hero image" aria-pressed="false" data-astro-cid-sogtnxop>Hero image</button><button type="button" data-category="Wording" aria-pressed="false" data-astro-cid-sogtnxop>Wording</button><button type="button" data-category="Colors" aria-pressed="false" data-astro-cid-sogtnxop>Colors</button><button type="button" data-category="Services" aria-pressed="false" data-astro-cid-sogtnxop>Services</button><button type="button" data-category="Photos" aria-pressed="false" data-astro-cid-sogtnxop>Photos</button></div><form class="ll-feedback-form" data-astro-cid-sogtnxop><label data-astro-cid-sogtnxop>Your review email<input type="email" name="email" required autocomplete="email" placeholder="The email we sent this link to" data-astro-cid-sogtnxop></label><label data-astro-cid-sogtnxop>What should change?<textarea name="comment" required maxlength="5000" placeholder="For example: Make the main headline more direct and use a warmer hero photo." data-astro-cid-sogtnxop></textarea></label><p class="ll-feedback-status" role="status" data-astro-cid-sogtnxop></p><div class="ll-modal-actions" data-astro-cid-sogtnxop><button class="ll-cancel" type="button" data-astro-cid-sogtnxop>Back</button><button class="ll-send" type="submit" data-astro-cid-sogtnxop>Send feedback</button></div></form></div></div></aside><script>(function(){const launchloomUrl = "";
+
+  const root = document.querySelector("#ll-review");
+  const token = new URLSearchParams(window.location.search).get("review");
+  const claims = (() => {
+    try {
+      const encoded = token?.split(".")[0]?.replace(/-/g, "+").replace(/_/g, "/") || "";
+      return JSON.parse(atob(encoded.padEnd(encoded.length + ((4 - encoded.length % 4) % 4), "=")));
+    } catch { return null; }
+  })();
+  if (!root || !token || !launchloomUrl || !["developer", "client"].includes(claims?.stage)) {
+    root?.setAttribute("hidden", "");
+  } else {
+    root.removeAttribute("hidden");
+    const developer = claims.stage === "developer";
+    const modal = root.querySelector(".ll-review__modal");
+    const open = root.querySelector(".ll-feedback-open");
+    const close = root.querySelector(".ll-close");
+    const closeTip = root.querySelector(".ll-close-tip");
+    const cancel = root.querySelector(".ll-cancel");
+    const approve = root.querySelector(".ll-approve");
+    const form = root.querySelector(".ll-feedback-form");
+    const status = root.querySelector(".ll-feedback-status");
+    const emailInput = form.querySelector('input[name="email"]');
+    const commentInput = form.querySelector('textarea[name="comment"]');
+    const send = form.querySelector(".ll-send");
+    const selectedCategories = new Set();
+    let feedbackSubmissionId = "";
+    const updateDraftHint = () => {
+      const hasDraft = Boolean(
+        selectedCategories.size ||
+        commentInput.value.trim()
+      );
+      closeTip.toggleAttribute("hidden", !hasDraft);
+      if (hasDraft) close.setAttribute("aria-describedby", "ll-close-draft-tip");
+      else close.removeAttribute("aria-describedby");
+    };
+    root.querySelector(".ll-review__summary").innerHTML = developer
+      ? "<span aria-hidden=\"true\">▣</span> Internal developer review. Approve before the client sees this."
+      : "<span aria-hidden=\"true\">▣</span> Your website is live. Tell us what you would like changed.";
+    root.querySelector(".ll-review__intro").textContent = developer
+      ? "Leave clear internal notes, or approve this exact version to publish and invite the client."
+      : "Tap what applies, then leave a clear note. We will review it before publishing an update.";
+    approve.toggleAttribute("hidden", !developer);
+    const setModal = (visible) => {
+      modal.toggleAttribute("hidden", !visible);
+      if (visible) window.dispatchEvent(new CustomEvent("launchloom:overlay-open", { detail: { id: "review" } }));
+    };
+    open.addEventListener("click", () => setModal(true));
+    close.addEventListener("click", () => setModal(false));
+    cancel.addEventListener("click", () => setModal(false));
+    window.addEventListener("launchloom:overlay-open", (event) => {
+      if (event.detail?.id !== "review") setModal(false);
+    });
+    root.querySelectorAll("[data-category]").forEach((button) => button.addEventListener("click", () => {
+      const value = button.dataset.category || "";
+      if (selectedCategories.has(value)) selectedCategories.delete(value); else selectedCategories.add(value);
+      button.classList.toggle("is-active", selectedCategories.has(value));
+      button.setAttribute("aria-pressed", String(selectedCategories.has(value)));
+      updateDraftHint();
+    }));
+    emailInput.addEventListener("input", () => { emailInput.setCustomValidity(""); updateDraftHint(); });
+    commentInput.addEventListener("input", updateDraftHint);
+    const verifyEmail = (submittedEmail) => {
+      if (submittedEmail === String(claims.reviewerEmail || "").toLowerCase()) return true;
+      const message = "Use the same email address that received this review link.";
+      emailInput.setCustomValidity(message); emailInput.reportValidity(); status.textContent = message; return false;
+    };
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const data = new FormData(form); const submittedEmail = String(data.get("email") || "").trim().toLowerCase();
+      if (!verifyEmail(submittedEmail)) return;
+      feedbackSubmissionId ||= crypto.randomUUID();
+      send.disabled = true;
+      status.textContent = "Sending…";
+      try {
+        const response = await fetch(`${launchloomUrl}/api/feedback`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: submittedEmail, comment: data.get("comment"), category: [...selectedCategories].join(", "), pageUrl: window.location.href, submissionId: feedbackSubmissionId }) });
+        const result = await response.json(); if (!response.ok) throw new Error(result.error || "Feedback could not be sent.");
+        status.textContent = result.queueStatus === "queued"
+          ? "Queued. Your request will start after the current revision."
+          : developer ? "Received. A revised developer preview will be sent shortly." : "Received. We will review your request before publishing an update.";
+        feedbackSubmissionId = "";
+        form.reset(); selectedCategories.clear(); root.querySelectorAll("[data-category]").forEach((button) => { button.classList.remove("is-active"); button.setAttribute("aria-pressed", "false"); }); updateDraftHint();
+      } catch (error) { status.textContent = error instanceof Error ? error.message : "Feedback could not be sent."; }
+      finally { send.disabled = false; }
+    });
+    approve.addEventListener("click", async () => {
+      if (!window.confirm("Approve this exact version, publish it, and send the client their review link?")) return;
+      approve.disabled = true; approve.textContent = "Publishing…";
+      try {
+        // The developer identity is already bound to this signed link. Unlike
+        // feedback, approval should not force the developer through the form.
+        const response = await fetch(`${launchloomUrl}/api/approval`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: String(claims.reviewerEmail || ""), pageUrl: window.location.href }) });
+        const result = await response.json(); if (!response.ok) throw new Error(result.error || "Approval could not be recorded.");
+        approve.textContent = "Approved ✓";
+      } catch (error) { approve.disabled = false; approve.textContent = error instanceof Error ? error.message : "Approve & send to client"; }
+    });
+  }
+})();</script><header class="header-shell header-care-editorial header-family-cinematic-premium"><div class="header wrap"><a class="wordmark" href="./index.html"><span class="wordmark__name">Willow &amp; Hearth Home Care</span></a><nav aria-label="Main navigation"><a href="./index.html#services">Services</a><a href="./index.html#about">Approach</a><a href="./index.html#contact">Contact</a></nav><a class="header-call" href="tel:2155550148"><span>Call us</span>(215) 555-0148</a></div></header><main class="site-main recipe-care-editorial layout-editorial-authority density-balanced type-editorial composition-framed design-care-concierge"><div class="design-family family-cinematic-premium"><section id="care-hero" class="family-hero"><div class="family-hero__copy"><span class="family-kicker">Home care in the Main Line</span><h1>More good days, in the place that feels like home.</h1><p>Willow &amp; Hearth helps older adults keep familiar routines with personal care, companionship, and practical support at home. Families begin with a conversation about what is needed now and what may change next.</p><div class="family-offer">A complimentary first care conversation</div><div class="family-actions"><a class="family-button" href="#contact">Request a care conversation</a><a class="family-link" href="tel:2155550148">Call (215) 555-0148</a></div></div><div class="family-hero__media"><figure class="family-media family-media--main"><img src="https://images.unsplash.com/photo-1543333995-a78aea2eee50?auto=format&amp;fit=crop&amp;w=1600&amp;q=85" alt="Willow &amp; Hearth Home Care service context"></figure><figure class="family-media family-media--detail" aria-hidden="true"><img src="https://images.unsplash.com/photo-1543333995-a78aea2eee50?auto=format&amp;fit=crop&amp;w=1600&amp;q=85" alt=""></figure><div class="family-media family-media--message"><span>Start with what matters</span></div></div></section><section id="care-services" class="family-services"><header class="family-heading"><span class="family-kicker">Ways to begin</span><h2>Support for the routines that make home feel like home.</h2><p>Explore the available options and choose a useful next step.</p></header><div class="family-service-list"><a class="family-service" href="./services/personal-care/index.html"><div class="family-service__title"><h3>Personal care</h3><span aria-hidden="true">↗</span></div><p>Respectful help with everyday routines such as dressing, grooming, mobility, and meal preparation, based on the support a family requests.</p><b>Explore this option</b></a><a class="family-service" href="./services/companion-care/index.html"><div class="family-service__title"><h3>Companion care</h3><span aria-hidden="true">↗</span></div><p>Conversation, shared activities, errands, and a steady presence that helps the day feel connected and manageable.</p><b>Explore this option</b></a><a class="family-service" href="./services/respite-care/index.html"><div class="family-service__title"><h3>Respite for families</h3><span aria-hidden="true">↗</span></div><p>Planned support that gives family caregivers time to rest, attend appointments, or handle other responsibilities.</p><b>Explore this option</b></a></div></section><section id="care-about" class="family-about"><figure><img src="https://images.unsplash.com/photo-1762955911431-4c44c7c3f408?auto=format&amp;fit=crop&amp;w=1200&amp;q=85" alt="Willow &amp; Hearth Home Care business setting" loading="lazy"></figure><div><span class="family-kicker">Care starts with listening</span><h2>A plan shaped around the person, the family, and the day ahead.</h2><p>The first conversation covers familiar routines, personal preferences, family concerns, and the support being considered. Those details guide the next discussion without asking a family to choose a care plan alone.</p><a class="family-link" href="#care-contact">Talk with our team</a></div></section><section id="care-trust" class="family-trust" aria-label="Why choose us"><p>Care plans begin with the family&#39;s priorities</p><p>Support is discussed before scheduling</p><p>One clear contact for family questions</p><p>Changes in routine can be reviewed together</p></section><section id="care-process" class="family-process"><header class="family-heading"><span class="family-kicker">Starting care</span><h2>A calm path from first call to a practical plan.</h2></header><ol><li><span>01</span><p>Share what daily life looks like now</p></li><li><span>02</span><p>Talk through priorities and practical needs</p></li><li><span>03</span><p>Review the proposed care plan together</p></li></ol></section><section class="section social-proof" id="care-proof" data-section-type="social-proof" data-source="verified_differentiators"><div class="wrap"><span class="kicker">Why people choose us</span><h2>What families can expect from the first conversation.</h2><p class="social-proof__intro">These are process commitments supplied for this fictional demonstration. They are not customer reviews.</p><div class="proof-points"><p>Care plans begin with the family&#39;s priorities</p><p>Support is discussed before scheduling</p><p>One clear contact for family questions</p></div></div></section><script>
+  for (const root of document.querySelectorAll(".google-reviews")) {
+    const api = root.dataset.api;
+    const token = root.dataset.token;
+    if (!api || !token) continue;
+    fetch(`${api.replace(/\/$/, "")}/api/google-reviews?token=${encodeURIComponent(token)}`, {
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Reviews are unavailable.");
+        return response.json();
+      })
+      .then(({ reviews }) => {
+        if (!Array.isArray(reviews) || !reviews.length) throw new Error("No reviews available.");
+        root.innerHTML = "";
+        const list = document.createElement("div");
+        list.className = "google-reviews__list";
+        for (const review of reviews.slice(0, 3)) {
+          const article = document.createElement("article");
+          article.className = "google-review";
+          const author = document.createElement("a");
+          author.className = "google-review__author";
+          author.href = review.authorUrl || review.mapsUrl || "#social-proof";
+          author.target = "_blank";
+          author.rel = "noreferrer";
+          author.textContent = review.author || "Google Maps reviewer";
+          const rating = document.createElement("p");
+          rating.className = "google-review__rating";
+          rating.textContent = `${"★".repeat(Math.max(0, Math.min(5, Number(review.rating) || 0)))} ${review.relativeTime || ""}`;
+          const text = document.createElement("p");
+          text.textContent = review.text;
+          const source = document.createElement("a");
+          source.className = "google-review__source";
+          source.href = review.mapsUrl || "#social-proof";
+          source.target = "_blank";
+          source.rel = "noreferrer";
+          source.textContent = "Read on Google Maps ↗";
+          article.append(author, rating, text, source);
+          list.append(article);
+        }
+        const attribution = document.createElement("p");
+        attribution.className = "google-reviews__attribution";
+        attribution.textContent = "Google Maps";
+        root.append(list, attribution);
+      })
+      .catch(() => {
+        root.remove();
+      });
+  }
+</script><section id="care-faq" class="family-faq"><header class="family-heading"><span class="family-kicker">For families considering care</span><h2>Questions worth asking before support begins.</h2></header><div><details><summary>How do we know which type of support to request?<span aria-hidden="true">+</span></summary><p>You do not need to decide alone. Describe the routines that are difficult now, and the team can explain which available services may fit.</p></details><details><summary>Can our family&#39;s priorities be part of the care conversation?<span aria-hidden="true">+</span></summary><p>Yes. The first discussion is designed to include the person&#39;s preferences and the family&#39;s practical concerns before a plan is proposed.</p></details><details><summary>What should we prepare before the first call?<span aria-hidden="true">+</span></summary><p>A short list of daily routines, current concerns, preferred timing, and the people involved in decisions is a useful place to start.</p></details></div></section><span id="contact" class="anchor-alias" aria-hidden="true"></span><section id="care-contact" class="family-contact"><div><span class="family-kicker">Tell us what your family needs</span><h2>Start with a care conversation</h2><p>Share only what you are comfortable sharing. The team will follow up to discuss next steps.</p><a class="family-phone" href="tel:2155550148">(215) 555-0148</a></div><form class="lead-form lead-form--guided" id="lead-form" data-guided="true" data-conversion-feature="guided-qualifier" data-step-count="3" data-qualification="[&quot;careNeed&quot;,&quot;timing&quot;]"><input type="hidden" name="lead-token" value><p class="honeypot"><label>Do not fill this out <input name="bot-field" tabindex="-1" autocomplete="off"></label></p><input type="hidden" name="lead-email" value="care@willowhearth.example"><header class="qualifier-heading"><span class="kicker">A better first conversation</span><h3>A few quick questions</h3><p>Choose the closest options so the first conversation can focus on what matters to your family.</p><div class="qualifier-progress" aria-hidden="true"><span></span></div><p class="qualifier-progress-label" aria-live="polite"></p></header><fieldset class="qualifier-step" data-lead-step="0"><legend tabindex="-1">What kind of support are you exploring?</legend><div class="qualifier-options"><label for="lead-form-careNeed-0" class="qualifier-option"><input id="lead-form-careNeed-0" type="radio" name="careNeed" value="Personal care" required><span>Personal care</span></label><label for="lead-form-careNeed-1" class="qualifier-option"><input id="lead-form-careNeed-1" type="radio" name="careNeed" value="Companionship" required><span>Companionship</span></label><label for="lead-form-careNeed-2" class="qualifier-option"><input id="lead-form-careNeed-2" type="radio" name="careNeed" value="Respite for family" required><span>Respite for family</span></label><label for="lead-form-careNeed-3" class="qualifier-option"><input id="lead-form-careNeed-3" type="radio" name="careNeed" value="Not sure yet" required><span>Not sure yet</span></label></div><div class="qualifier-actions"></div></fieldset><fieldset class="qualifier-step" data-lead-step="1" hidden><legend tabindex="-1">When might support be needed?</legend><div class="qualifier-options"><label for="lead-form-timing-0" class="qualifier-option"><input id="lead-form-timing-0" type="radio" name="timing" value="As soon as possible" required><span>As soon as possible</span></label><label for="lead-form-timing-1" class="qualifier-option"><input id="lead-form-timing-1" type="radio" name="timing" value="Within a few weeks" required><span>Within a few weeks</span></label><label for="lead-form-timing-2" class="qualifier-option"><input id="lead-form-timing-2" type="radio" name="timing" value="Planning ahead" required><span>Planning ahead</span></label></div><div class="qualifier-actions"><button class="qualifier-back" type="button" data-back>Back</button></div></fieldset><fieldset class="qualifier-step" data-lead-step="2" hidden><legend tabindex="-1">Where should we send the next step?</legend><div class="lead-contact-fields"><label>Your name<input name="name" required autocomplete="name"></label><label>Phone number<input name="phone" required type="tel" autocomplete="tel"></label><label>Email address<input name="email" required type="email" autocomplete="email"></label><label>How can we help?<textarea name="message" required placeholder="Tell us a little about what you need."></textarea></label></div><div class="qualifier-actions"><button class="qualifier-back" type="button" data-back>Back</button><button class="lead-submit" type="submit">Request a care conversation</button></div></fieldset><small class="lead-status" role="status">Share only what you are comfortable sharing. The team will follow up to discuss next steps.</small></form><script>(function(){const apiUrl = "";
+
+  for (const form of document.querySelectorAll(".lead-form")) {
+    const guided = form.dataset.guided === "true";
+    const steps = [...form.querySelectorAll("[data-lead-step]")];
+    const progress = form.querySelector(".qualifier-progress span");
+    const progressLabel = form.querySelector(".qualifier-progress-label");
+    const status = form.querySelector(".lead-status");
+    let activeStep = 0;
+    let started = false;
+
+    const showStep = (index, focus = true) => {
+      activeStep = Math.max(0, Math.min(index, steps.length - 1));
+      steps.forEach((step, stepIndex) => step.toggleAttribute("hidden", stepIndex !== activeStep));
+      if (progress) progress.style.width = `${((activeStep + 1) / steps.length) * 100}%`;
+      if (progressLabel) progressLabel.textContent = `Step ${activeStep + 1} of ${steps.length}`;
+      if (focus) steps[activeStep]?.querySelector("legend, input, textarea")?.focus();
+    };
+    if (guided) showStep(0, false);
+
+    form.addEventListener("input", () => {
+      if (!started) {
+        started = true;
+        window.dispatchEvent(new CustomEvent("launchloom:lead-started"));
+      }
+    });
+    form.querySelectorAll('.qualifier-option input[type="radio"]').forEach((input) => {
+      input.addEventListener("change", () => window.setTimeout(() => showStep(activeStep + 1), 120));
+    });
+    form.querySelectorAll("[data-back]").forEach((button) => button.addEventListener("click", () => showStep(activeStep - 1)));
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const data = new FormData(form);
+      const qualificationNames = JSON.parse(form.dataset.qualification || "[]");
+      if (!apiUrl || !data.get("lead-token")) {
+        status.textContent = "This form is not configured yet. Please call us instead.";
+        return;
+      }
+      status.textContent = "Sending your request...";
+      try {
+        const qualification = Object.fromEntries(qualificationNames.map((name) => [name, data.get(name)]).filter(([, value]) => value));
+        const response = await fetch(`${apiUrl.replace(/\/$/, "")}/api/lead`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+          token: data.get("lead-token"), name: data.get("name"), phone: data.get("phone"), email: data.get("email"),
+          message: data.get("message"), qualification, "bot-field": data.get("bot-field"), pageUrl: window.location.href,
+        }) });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "We could not send your request.");
+        form.reset();
+        started = false;
+        if (guided) showStep(0, false);
+        status.textContent = "Thank you. We will be in touch shortly.";
+        window.dispatchEvent(new CustomEvent("launchloom:lead-submitted"));
+      } catch (error) {
+        status.textContent = error instanceof Error ? error.message : "We could not send your request. Please try again.";
+      }
+    });
+  }
+})();</script></section></div><a class="mobile-call" href="tel:2155550148">Call us</a></main><footer class="footer"><div class="wrap footer-grid"><div><a class="wordmark" href="./index.html"><span class="wordmark__name">Willow &amp; Hearth Home Care</span></a><p>Willow &amp; Hearth helps older adults keep familiar routines with personal care, companionship, and practical support at home. Families begin with a conversation about what is needed now and what may change next.</p></div><div><strong>Contact</strong><a href="tel:2155550148">(215) 555-0148</a><a href="mailto:hello@willowhearth.example">hello@willowhearth.example</a></div><div><strong>Visit</strong><p>18 Linden Avenue, Ardmore, PA 19003</p><p>Office hours Monday to Friday, 8am to 6pm</p><a href="https://www.google.com/maps/search/?api=1&amp;query=18+Linden+Avenue%2C+Ardmore%2C+PA+19003" target="_blank" rel="noopener noreferrer">Get directions</a></div></div><div class="wrap legal">© 2026 Willow &amp; Hearth Home Care. All rights reserved.</div></footer><aside class="quick-answers" data-conversion-feature="quick-answers"><button class="quick-answers__launcher" type="button" aria-expanded="false" aria-controls="quick-answers-panel"><span aria-hidden="true">?</span>Got questions?</button><section id="quick-answers-panel" class="quick-answers__panel" hidden aria-labelledby="quick-answers-title"><header><div><span class="kicker">Website assistant</span><h2 id="quick-answers-title">Got questions?</h2></div><button class="quick-answers__close" type="button" aria-label="Close website assistant">×</button></header><p class="quick-answers__greeting">Welcome to Willow &amp; Hearth Home Care. How can we help?</p><div class="quick-answers__messages" aria-live="polite" hidden></div><div class="quick-answers__choices" aria-label="Common questions"><button type="button" data-question="How do we know which type of support to request?" data-answer="You do not need to decide alone. Describe the routines that are difficult now, and the team can explain which available services may fit." aria-pressed="false"><span>How do we know which type of support to request?</span><span aria-hidden="true">→</span></button><button type="button" data-question="Can our family's priorities be part of the care conversation?" data-answer="Yes. The first discussion is designed to include the person's preferences and the family's practical concerns before a plan is proposed." aria-pressed="false"><span>Can our family&#39;s priorities be part of the care conversation?</span><span aria-hidden="true">→</span></button><button type="button" data-question="What should we prepare before the first call?" data-answer="A short list of daily routines, current concerns, preferred timing, and the people involved in decisions is a useful place to start." aria-pressed="false"><span>What should we prepare before the first call?</span><span aria-hidden="true">→</span></button></div><div class="quick-answers__answer" hidden aria-live="polite"><p></p><a class="cta" href="#contact">Request a care conversation</a></div></section></aside><script type="module">for(let e of document.querySelectorAll(`.quick-answers`)){let t=e.querySelector(`.quick-answers__launcher`),n=e.querySelector(`.quick-answers__panel`),r=e.querySelector(`.quick-answers__close`),i=e.querySelector(`.quick-answers__answer`),a=i?.querySelector(`p`),o=e.querySelector(`.quick-answers__messages`),s=e.querySelector(`.quick-answers__form`),c=s?.querySelector(`input[name="question"]`),l=s?.querySelector(`button[type="submit"]`),u=e.dataset.aiApi||``,d=e.dataset.aiToken||``;new URLSearchParams(window.location.search).has(`review`)&&!u&&e.setAttribute(`hidden`,``);let f=e=>{let i=!n?.hasAttribute(`hidden`);n?.toggleAttribute(`hidden`,!e),t?.setAttribute(`aria-expanded`,String(e)),e?(window.dispatchEvent(new CustomEvent(`launchloom:overlay-open`,{detail:{id:`quick-answers`}})),r?.focus()):i&&t?.focus()},p=(e,t,n=!1)=>{if(!o)return;o.hidden=!1;let r=document.createElement(`div`);r.className=`quick-answers__message${n?` is-error`:``}`;let i=document.createElement(`strong`);i.textContent=e;let a=document.createElement(`p`);a.textContent=t,r.append(i,a),o.append(r),o.scrollTop=o.scrollHeight},m=async e=>{if(!u||!d||!e.trim())return;l&&(l.disabled=!0),p(e,`Thinking...`);let t=o?.lastElementChild?.querySelector(`p`);try{let n=s?.elements.namedItem(`companyWebsite`),r=await fetch(`${u}/api/chat`,{method:`POST`,headers:{"Content-Type":`application/json`},body:JSON.stringify({token:d,question:e,pageUrl:window.location.href,companyWebsite:n instanceof HTMLInputElement?n.value:``})}),i=await r.json();if(!r.ok)throw Error(i.error||`The AI assistant is unavailable.`);t&&(t.textContent=i.answer)}catch(e){t&&(t.textContent=e instanceof Error?e.message:`The AI assistant is unavailable.`,t.parentElement?.classList.add(`is-error`))}finally{l&&(l.disabled=!1)}};t?.addEventListener(`click`,()=>f(!!n?.hasAttribute(`hidden`))),r?.addEventListener(`click`,()=>f(!1)),e.querySelectorAll(`[data-answer]`).forEach(t=>t.addEventListener(`click`,()=>{e.querySelectorAll(`[data-answer]`).forEach(e=>e.setAttribute(`aria-pressed`,String(e===t)));let n=t.dataset.question||`Question`;u&&d?m(n):(a&&(a.textContent=t.dataset.answer||``),i?.removeAttribute(`hidden`))})),s?.addEventListener(`submit`,e=>{e.preventDefault();let t=c?.value.trim()||``;t&&(c&&(c.value=``),m(t))}),i?.querySelector(`a`)?.addEventListener(`click`,()=>f(!1)),window.addEventListener(`launchloom:overlay-open`,e=>{e.detail?.id!==`quick-answers`&&f(!1)}),document.addEventListener(`keydown`,e=>{e.key===`Escape`&&!n?.hasAttribute(`hidden`)&&f(!1)});let h=document.querySelectorAll(`.contact-section, .footer`);if(h.length&&`IntersectionObserver`in window){let t=new Set,n=new IntersectionObserver(n=>{for(let e of n)e.isIntersecting?t.add(e.target):t.delete(e.target);let r=t.size>0;e.classList.toggle(`is-suppressed`,r),r&&f(!1)},{threshold:.05});h.forEach(e=>n.observe(e))}}</script><dialog class="exit-offer" data-conversion-feature="exit-offer" aria-labelledby="exit-offer-title"><div class="exit-offer__frame"><button class="exit-offer__close" type="button" aria-label="Close offer">×</button><span class="kicker">Before you go</span><h2 id="exit-offer-title">A complimentary first care conversation</h2><p>Share what your family needs and the team will follow up with a useful next step.</p><a class="cta" href="#contact">Request a care conversation</a></div></dialog><script type="module">for(let e of document.querySelectorAll(`.exit-offer`)){let t=`launchloom-exit-offer-shown`,n=!1,r=!1,i=!1;try{i=sessionStorage.getItem(t)===`true`}catch{}let a=new URLSearchParams(window.location.search).has(`review`),o=()=>!a&&!r&&!i&&window.matchMedia(`(min-width: 761px)`).matches&&!document.querySelector(`dialog[open]`),s=()=>{if(!(!n||!o())){i=!0;try{sessionStorage.setItem(t,`true`)}catch{}window.dispatchEvent(new CustomEvent(`launchloom:overlay-open`,{detail:{id:`exit-offer`}})),e.showModal()}},c=window.setTimeout(()=>{n=!0},8e3);window.addEventListener(`scroll`,()=>{window.scrollY>Math.min(500,document.documentElement.scrollHeight*.25)&&(n=!0)},{passive:!0}),document.addEventListener(`mouseout`,e=>{!e.relatedTarget&&e.clientY<=8&&s()}),window.addEventListener(`launchloom:lead-started`,()=>{r=!0}),window.addEventListener(`launchloom:lead-submitted`,()=>{r=!0,e.open&&e.close()}),window.addEventListener(`launchloom:overlay-open`,t=>{t.detail?.id!==`exit-offer`&&e.open&&e.close()}),e.querySelector(`.exit-offer__close`)?.addEventListener(`click`,()=>e.close()),e.querySelector(`a`)?.addEventListener(`click`,()=>e.close()),e.addEventListener(`click`,t=>{t.target===e&&e.close()}),window.addEventListener(`pagehide`,()=>window.clearTimeout(c),{once:!0})}</script></body></html>

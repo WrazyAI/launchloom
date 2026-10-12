@@ -313,3 +313,69 @@ describe("Access-protected invite administration", () => {
     );
   });
 });
+
+async function seedRecoveryReservation(inviteId: string, payload: Record<string, unknown>, operationId: string | null = null) {
+  const coordinator = inviteNamespace.getByName("launchloom-onboarding-invites");
+  const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(payload))));
+  const payloadHash = [...bytes].map(byte => byte.toString(16).padStart(2, "0")).join("");
+  await coordinator.register({inviteId, clientEmail: "owner@example.test", allowedOrigin: "https://onboard.example.test", expiresAt: Date.now()+3600000, tokenHash: `token-${inviteId}`, now: Date.now()});
+  await runInDurableObject(coordinator, (_, state) => {
+    state.storage.sql.exec("UPDATE onboarding_invites SET reserved_submission_id = ?, reserved_submission_hash = ?, reservation_phase = 'creating_issue', reserved_at = ?, operation_id = ?, recovery_sweeps = 3 WHERE invite_id = ?", String(payload.submissionId), payloadHash, Date.now()-121000, operationId, inviteId);
+  });
+  return {coordinator,payloadHash};
+}
+function recoveryAdminRequest(inviteId: string, issueNumber: number, confirmed = true) {
+  return new Request(`${apiOrigin}/api/admin/onboarding-invites`, {method: "POST",headers:{Origin:apiOrigin,"Content-Type":"application/json"},body:JSON.stringify({action:"recover-intake",inviteId,issueNumber,confirmed})});
+}
+
+describe("operator-confirmed intake reconciliation", () => {
+  it("binds a verified legacy issue with an audit receipt and delivers its outbox once", async () => {
+    const inviteId = "invite-admin-recovery-001";
+    const payload = {submissionId:"submission-admin-recovery-001",email:"owner@example.test",businessName:"Synthetic Recovery"};
+    const {coordinator} = await seedRecoveryReservation(inviteId,payload);
+    let dispatches=0,receipts=0;
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues/12001",()=>HttpResponse.json({number:12001,body:"```json\n"+JSON.stringify(payload)+"\n```"})),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/dispatches",()=>{dispatches++;return new HttpResponse(null,{status:204});}),
+      http.post("https://api.resend.com/emails",()=>{receipts++;return HttpResponse.json({id:"synthetic-recovery-receipt"});}),
+    );
+    const response=await worker.fetch(recoveryAdminRequest(inviteId,12001),testEnv,accessContext("admin@example.test"));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ok:true,issue:12001});
+    const repeated=await worker.fetch(recoveryAdminRequest(inviteId,12001),testEnv,accessContext("admin@example.test"));
+    expect(repeated.status).toBe(200);
+    expect(dispatches).toBe(1);expect(receipts).toBe(1);
+    expect((await coordinator.list()).find(row=>row.inviteId===inviteId)).toMatchObject({status:"consumed",issueNumber:12001,recoveryRequired:false});
+    await runInDurableObject(coordinator,(_,state)=>{
+      expect(state.storage.sql.exec<{issue_number:number;reviewer_email:string}>("SELECT issue_number, reviewer_email FROM intake_reconciliations WHERE invite_id = ?",inviteId).toArray()[0]).toEqual({issue_number:12001,reviewer_email:"admin@example.test"});
+    });
+  });
+
+  it("rejects a selected issue with different payload even after operator confirmation", async () => {
+    const inviteId="invite-admin-recovery-mismatch";
+    await seedRecoveryReservation(inviteId,{submissionId:"submission-admin-mismatch",email:"owner@example.test",businessName:"Original"});
+    network.use(http.get("https://api.github.com/repos/WrazyAI/launchloom/issues/12002",()=>HttpResponse.json({number:12002,body:'```json\n{"businessName":"Other"}\n```'})));
+    const response=await worker.fetch(recoveryAdminRequest(inviteId,12002),testEnv,accessContext("admin@example.test"));
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({code:"recovery_mismatch"});
+  });
+
+  it("requires explicit confirmation and a verified Access identity", async () => {
+    const inviteId="invite-admin-recovery-unconfirmed";
+    const denied=await worker.fetch(recoveryAdminRequest(inviteId,12003),testEnv,accessContext("other@example.test"));
+    expect(denied.status).toBe(403);
+    const response=await worker.fetch(recoveryAdminRequest(inviteId,12003,false),testEnv,accessContext("admin@example.test"));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({code:"recovery_confirmation_required"});
+  });
+});
+
+it("does not let operator confirmation adopt another operation with the same payload", async () => {
+  const inviteId="invite-admin-recovery-owner-check";
+  const payload={submissionId:"submission-admin-owner-check",email:"owner@example.test",businessName:"Original"};
+  const {payloadHash}=await seedRecoveryReservation(inviteId,payload,"owner-operation-001");
+  network.use(http.get("https://api.github.com/repos/WrazyAI/launchloom/issues/12004",()=>HttpResponse.json({number:12004,body:'<!-- launchloom-intake-operation:other-operation-001:'+payloadHash+' -->\n```json\n'+JSON.stringify(payload)+'\n```'})));
+  const response=await worker.fetch(recoveryAdminRequest(inviteId,12004),testEnv,accessContext("admin@example.test"));
+  expect(response.status).toBe(409);
+  expect(await response.json()).toMatchObject({code:"recovery_mismatch"});
+});
