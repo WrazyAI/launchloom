@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: creative-repair-${{ github.event.client_payload.sessionId }}
+  group: site-revision-${{ github.event.client_payload.repo }}
   cancel-in-progress: false
 
 jobs:
