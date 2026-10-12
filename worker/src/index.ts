@@ -31,6 +31,7 @@ import {
   seoResearchReadiness,
 } from "./seo-readiness";
 import { OnboardingInvites } from "./onboarding-invites";
+import { IntakeRecoveryError, intakeOperationMarker, recoverIntakeIssue, readIntakeIssuePayload, verifyIntakeIssueOwnership, type IntakeIssue } from "./intake-recovery";
 import {
   GenerationLedger,
   type GenerationCostKind,
@@ -340,7 +341,8 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
   if (request.method === "POST") {
     if (!origin) return json({ error: "Invalid request origin." }, 403, headers);
   }
-  if (!(await accessAdminEmail(ctx, env)))
+  const administratorEmail = await accessAdminEmail(ctx, env);
+  if (!administratorEmail)
     return json({ error: "Access denied." }, 403, headers);
   if (!env.ONBOARDING_INVITE_SIGNING_SECRET || !env.ONBOARDING_ORIGIN)
     return json({ error: "Invite management is not configured." }, 503, headers);
@@ -355,6 +357,37 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
     const body = (await request.json()) as Record<string, unknown>;
     const action = clean(body.action, 20);
     const inviteId = clean(body.inviteId, 100);
+    if (action === "recover-intake") {
+      if (body.confirmed !== true)
+        return json({ error: "Confirm that you reviewed the original issue and its intake details.", code: "recovery_confirmation_required" }, 400, headers);
+      const issueNumber = body.issueNumber;
+      if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId) || typeof issueNumber !== "number" || !Number.isSafeInteger(issueNumber) || issueNumber <= 0)
+        return json({ error: "Choose a valid invitation and original issue number." }, 400, headers);
+      const coordinator = inviteCoordinator(env);
+      const reservation = await coordinator.recoveryReservation(inviteId);
+      if (!reservation || (reservation.duplicate && reservation.issueNumber !== issueNumber))
+        return json({ error: "This invitation cannot be reconciled with that issue.", code: "recovery_mismatch" }, 409, headers);
+      let recipient = reservation.recipient;
+      let businessName = reservation.businessName;
+      if (!reservation.duplicate) {
+        const issue = await github(env, `/repos/WrazyAI/launchloom/issues/${issueNumber}`).then(response => response.json() as Promise<IntakeIssue>);
+        const content = await readIntakeIssuePayload(issue);
+        if (issue.number !== issueNumber || !content || content.hash !== reservation.submissionHash ||
+            (reservation.operationId && !(await verifyIntakeIssueOwnership(issue, reservation.operationId, reservation.submissionHash))))
+          return json({ error: "The selected issue does not match the original operation and submitted details.", code: "recovery_mismatch" }, 409, headers);
+        recipient = clean(content.payload.email, 240);
+        businessName = clean(content.payload.businessName, 200);
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(recipient) || !businessName)
+          return json({ error: "The original intake is missing valid contact details.", code: "recovery_mismatch" }, 409, headers);
+        const reconciled = await coordinator.reconcileIssue({inviteId, submissionId: reservation.submissionId,
+          submissionHash: reservation.submissionHash, operationId: reservation.operationId, issueNumber,
+          reviewerEmail: administratorEmail, recipient, businessName});
+        if (!reconciled) return json({ error: "The invitation changed during recovery. Refresh and review it again.", code: "recovery_mismatch" }, 409, headers);
+      }
+      await coordinator.queueWorkflowDispatch(inviteId, reservation.submissionId, issueNumber);
+      await coordinator.queueIntakeReceipt(inviteId, reservation.submissionId, recipient!, businessName!);
+      return json({ ok: true, issue: issueNumber, duplicate: reservation.duplicate }, 200, headers);
+    }
     if (action === "revoke") {
       if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId))
         return json({ error: "Invalid invitation." }, 400, headers);
@@ -823,6 +856,10 @@ function assertClaimOrigin(
     throw new Error("Invalid reviewed page.");
 }
 
+class GithubRequestError extends Error {
+  constructor(readonly status: number, message: string) { super(message); }
+}
+
 async function github(env: Env, path: string, init: RequestInit = {}) {
   const response = await fetch(`https://api.github.com${path}`, {
     ...init,
@@ -836,17 +873,17 @@ async function github(env: Env, path: string, init: RequestInit = {}) {
     },
   });
   if (!response.ok)
-    throw new Error(
+    throw new GithubRequestError(response.status,
       `GitHub ${response.status}: ${(await response.text()).slice(0, 300)}`,
     );
   return response;
 }
 
-async function findIntakeIssue(env: Env, marker: string) {
-  const issues = await github(env, "/repos/WrazyAI/launchloom/issues?state=all&per_page=100").then(
-    (response) => response.json() as Promise<Array<{ body?: string; number: number }>>,
-  );
-  return issues.find((issue) => issue.body?.includes(marker))?.number || null;
+async function findIntakeIssue(env: Env, inviteId: string, submissionId: string) {
+  return recoverIntakeIssue(inviteCoordinator(env), inviteId, submissionId, async page => {
+    const response = await github(env, `/repos/WrazyAI/launchloom/issues?state=all&per_page=100&sort=created&direction=desc&page=${page}`, { signal: AbortSignal.timeout(10_000) });
+    return response.json() as Promise<IntakeIssue[]>;
+  });
 }
 
 /**
@@ -1108,9 +1145,8 @@ async function intake(request: Request, env: Env) {
       submissionHash,
       normalized.email,
     );
-    const marker = `<!-- launchloom-intake:${normalized.submissionId} -->`;
     if (!reservation.accepted && reservation.reason === "stale_submission_mismatch") {
-      const existingIssue = await findIntakeIssue(env, marker);
+      const existingIssue = await findIntakeIssue(env, invite.claims.inviteId, normalized.submissionId);
       if (existingIssue) {
         return json({
           error: "This submission changed after acceptance. Request a new invitation to send different details.",
@@ -1135,12 +1171,20 @@ async function intake(request: Request, env: Env) {
           ? "This submission is already being accepted. Retry shortly."
           : reservation.reason === "submission_mismatch"
             ? "This submission changed after acceptance. Request a new invitation to send different details."
-            : "This invitation is no longer available.",
+            : reservation.reason === "recovery_required"
+              ? "Your intake needs operator recovery. Contact the person who invited you."
+              : "This invitation is no longer available.",
         code: reservation.reason,
-      }, ["in_progress", "submission_mismatch"].includes(reservation.reason) ? 409 : 403, headers);
+      }, ["in_progress", "submission_mismatch", "recovery_required"].includes(reservation.reason) ? 409 : 403, headers);
     let issueNumber = reservation.issue || null;
+    let creationAttempted = false;
     try {
-      if (!issueNumber) issueNumber = await findIntakeIssue(env, marker);
+      if (!issueNumber) {
+        const operation = await coordinator.intakeOperation(invite.claims.inviteId, normalized.submissionId);
+        if (!operation || operation.recoveryRequired) throw new IntakeRecoveryError("recovery_required");
+        if (operation.phase === "creating_issue")
+          issueNumber = await findIntakeIssue(env, invite.claims.inviteId, normalized.submissionId);
+      }
       if (!issueNumber) {
         const claimed = await coordinator.claimIssueCreation(
           invite.claims.inviteId,
@@ -1149,6 +1193,10 @@ async function intake(request: Request, env: Env) {
         );
         if (!claimed)
           return json({ error: "This submission is already being accepted. Retry shortly.", code: "in_progress" }, 409, headers);
+        const operation = await coordinator.intakeOperation(invite.claims.inviteId, normalized.submissionId);
+        if (!operation || operation.recoveryRequired) throw new IntakeRecoveryError("recovery_required");
+        const marker = intakeOperationMarker(operation.operationId, submissionHash);
+        creationAttempted = true;
         const issue = await github(env, "/repos/WrazyAI/launchloom/issues", {
           method: "POST",
           body: JSON.stringify({
@@ -1156,6 +1204,8 @@ async function intake(request: Request, env: Env) {
             body: `${marker}\n\n\`\`\`json\n${JSON.stringify(safeData, null, 2)}\n\`\`\``,
           }),
         }).then((response) => response.json() as Promise<{ number: number }>);
+        if (!Number.isSafeInteger(issue.number) || issue.number <= 0)
+          throw new Error("GitHub issue creation returned no valid issue number; reconciliation is required.");
         issueNumber = issue.number;
       }
       if (!reservation.duplicate) {
@@ -1177,11 +1227,13 @@ async function intake(request: Request, env: Env) {
       );
       return json({ ok: true, duplicate: reservation.duplicate, issue: issueNumber }, 200, headers);
     } catch (error) {
-      if (!issueNumber)
+      if (!issueNumber && creationAttempted && error instanceof GithubRequestError && error.status >= 400 && error.status < 500 && error.status !== 408)
         await coordinator.reopenFailedSubmission(invite.claims.inviteId, normalized.submissionId, submissionHash);
       throw error;
     }
   } catch (error) {
+    if (error instanceof IntakeRecoveryError)
+      return json({ error: error.message, code: error.code }, 409, headers);
     console.error("Intake failed", error instanceof Error ? error.message : "Unknown error");
     return json({ error: "We couldn’t start your preview. Please try again." }, 500, headers);
   }
