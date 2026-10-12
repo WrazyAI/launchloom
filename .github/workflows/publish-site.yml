@@ -20,8 +20,6 @@ jobs:
       PUBLICATION_ID: ${{ github.event.client_payload.publicationId }}
       REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
-      PUBLICATION_DEPLOYMENT_FILE: ${{ runner.temp }}/publication-deployment.json
-      PUBLICATION_DELIVERY_FILE: ${{ runner.temp }}/publication-delivery.json
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -57,6 +55,8 @@ jobs:
           CLIENT_EMAIL: ${{ github.event.client_payload.clientEmail }}
           FEEDBACK_ISSUE: ${{ github.event.client_payload.feedbackIssue }}
           APPROVED_SHA: ${{ steps.claim.outputs.approved_sha }}
+          PUBLICATION_DEPLOYMENT_FILE: ${{ runner.temp }}/publication-deployment.json
+          PUBLICATION_DELIVERY_FILE: ${{ runner.temp }}/publication-delivery.json
           DEVELOPER_OVERRIDE: ${{ github.event.client_payload.developerOverride.disposition == 'override-publish' }}
           OVERRIDE_SESSION_ID: ${{ github.event.client_payload.developerOverride.sessionId }}
           OVERRIDE_REVIEWED_SHA: ${{ github.event.client_payload.developerOverride.reviewedHeadSha }}
