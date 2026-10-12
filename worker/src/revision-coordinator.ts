@@ -391,6 +391,12 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           window_started_at INTEGER NOT NULL,
           request_count INTEGER NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS lead_events (
+          scope TEXT NOT NULL,
+          at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS lead_events_scope_at ON lead_events (scope, at);
+        CREATE INDEX IF NOT EXISTS lead_events_at ON lead_events (at);
         CREATE TABLE IF NOT EXISTS feedback_image_usage (
           scope TEXT PRIMARY KEY,
           window_started_at INTEGER NOT NULL,
@@ -907,6 +913,60 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       key,
     );
     return { allowed: true, retryAfterSeconds: 0 };
+  }
+
+  /**
+   * Sliding-window lead limiter backed by an event log. Each accepted lead
+   * records a timestamp; expired events are pruned on every call, so storage
+   * stays bounded without an alarm. Rejected requests record nothing.
+   */
+  async allowLead(
+    visitorKey: string,
+    now = Date.now(),
+  ): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+    const windowMs = 60 * 60_000;
+    const visitorLimit = 10;
+    const projectLimit = 50;
+    const vKey = `visitor:${visitorKey.slice(0, 160)}`;
+    const pKey = "project";
+    const sql = this.ctx.storage.sql;
+    sql.exec("DELETE FROM lead_events WHERE at <= ?", now - windowMs);
+
+    const oldestIn = (scope: string, limit: number) => {
+      const rows = sql
+        .exec<{ at: number }>(
+          "SELECT at FROM lead_events WHERE scope = ? ORDER BY at ASC LIMIT ?",
+          scope,
+          limit,
+        )
+        .toArray();
+      return rows.length >= limit ? rows[0].at : undefined;
+    };
+    const blockedUntil = [
+      oldestIn(pKey, projectLimit),
+      oldestIn(vKey, visitorLimit),
+    ].filter((at): at is number => at !== undefined);
+    if (blockedUntil.length)
+      return {
+        allowed: false,
+        retryAfterSeconds: Math.max(
+          1,
+          Math.ceil((Math.max(...blockedUntil) + windowMs - now) / 1000),
+        ),
+      };
+
+    sql.exec(
+      "INSERT INTO lead_events (scope, at) VALUES (?, ?), (?, ?)",
+      pKey,
+      now,
+      vKey,
+      now,
+    );
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
+  async resetLeadLimits() {
+    this.ctx.storage.sql.exec("DELETE FROM lead_events");
   }
 
   async allowFeedbackImage(

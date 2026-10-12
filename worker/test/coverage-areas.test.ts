@@ -3,7 +3,6 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { network } from "./network";
 import type { OnboardingInvites } from "../src/onboarding-invites";
-import { resetCoverageLookupRateLimit } from "../src/coverage-areas";
 import {
   BOUNDED_50_PLUS_WARNING,
   PARTIAL_WARNING,
@@ -16,6 +15,10 @@ const onboardingOrigin = "https://onboard.example.test";
 const inviteNamespace = (env as unknown as {
   ONBOARDING_INVITES: DurableObjectNamespace<OnboardingInvites>;
 }).ONBOARDING_INVITES;
+
+async function resetCoverageLookupRateLimit() {
+  await inviteNamespace.getByName("launchloom-onboarding-invites").resetCoverageLookupLimits();
+}
 const COOKEVILLE = { latitude: 36.1628, longitude: -85.5016 };
 const METERS_PER_MILE = 1609.344;
 
@@ -435,20 +438,28 @@ describe("coverage lookup endpoint", () => {
     await expect(validation.json()).resolves.toMatchObject({ valid: true });
   });
 
-  it("rate limits repeated lookups for one invitation", async () => {
-    resetCoverageLookupRateLimit();
+  it("rate limits repeated lookups for one invitation and includes Retry-After", async () => {
+    await resetCoverageLookupRateLimit();
     const inviteToken = await createInvite("invite-coverage-rate-limit-001");
     network.use(
       mockGeocoding(cookevilleGeocode()),
       mockNearby(() => HttpResponse.json({ places: [] })),
     );
     let lastStatus = 0;
+    let lastResponse: Response | null = null;
     for (let attempt = 0; attempt < 41; attempt += 1) {
       const response = await lookup(inviteToken, "Cookeville, TN", "10");
       lastStatus = response.status;
+      lastResponse = response;
       if (attempt < 40) expect(response.status).toBe(200);
     }
     expect(lastStatus).toBe(429);
+    expect(lastResponse?.headers.get("Retry-After")).toMatch(/^\d+$/);
+
+    // After reset, lookup is permitted again
+    await resetCoverageLookupRateLimit();
+    const afterReset = await lookup(inviteToken, "Cookeville, TN", "10");
+    expect(afterReset.status).toBe(200);
   });
 });
 
