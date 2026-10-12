@@ -208,6 +208,7 @@ jobs:
       project: ${{ steps.client.outputs.project }}
       feedback_issue: ${{ steps.client.outputs.feedback_issue }}
       pr: ${{ steps.branch.outputs.pr }}
+      sha: ${{ steps.branch.outputs.sha }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -555,6 +556,7 @@ jobs:
           fi
           echo "dir=$CLIENT_DIR" >> "$GITHUB_OUTPUT"
           echo "pr=${PR##*/}" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Summarize stage
         if: always()
         run: |
@@ -569,6 +571,7 @@ jobs:
     runs-on: depot-ubuntu-24.04
     outputs:
       summary: ${{ steps.assets.outputs.summary }}
+      sha: ${{ steps.image_checkpoint.outputs.sha }}
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
@@ -594,7 +597,8 @@ jobs:
         env:
           CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
           CLIENT_PROJECT: ${{ needs.prepare.outputs.project }}
-        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT"
+          EXPECTED_SHA: ${{ needs.prepare.outputs.sha }}
+        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT" "$EXPECTED_SHA"
       - name: Generate or reuse contextual imagery
         id: assets
         timeout-minutes: 12
@@ -621,6 +625,10 @@ jobs:
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
           node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
+      - name: Capture private checkpoint SHA
+        id: image_checkpoint
+        run: |
+          echo "sha=$(git -C \"${{ steps.workspace.outputs.dir }}\" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Summarize stage
         if: always()
         run: |
@@ -634,6 +642,8 @@ jobs:
     needs: [prepare, image_assets]
     if: ${{ needs.image_assets.result == 'success' }}
     runs-on: depot-ubuntu-24.04
+    outputs:
+      sha: ${{ steps.authored_evidence.outputs.sha }}
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
@@ -657,7 +667,8 @@ jobs:
         env:
           CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
           CLIENT_PROJECT: ${{ needs.prepare.outputs.project }}
-        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT"
+          EXPECTED_SHA: ${{ needs.image_assets.outputs.sha }}
+        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT" "$EXPECTED_SHA"
       - name: Author independent experience candidates
         id: authoring
         # Luna authors three independent candidates in separate stages, now
@@ -705,6 +716,7 @@ jobs:
             git commit -m "Record authored experience candidates"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Preserve partial candidate evidence in private repo
         if: failure() && steps.workspace.outputs.dir != ''
         continue-on-error: true
@@ -737,6 +749,7 @@ jobs:
       diagnostic_preview: ${{ steps.creative_repair_link.outputs.preview }}
       send_anyway_url: ${{ steps.creative_repair_link.outputs.send_anyway_url }}
       evidence_branch: ${{ steps.creative_recovery.outputs.evidence_branch }}
+      sha: ${{ steps.creative_render.outputs.sha }}
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
@@ -769,7 +782,8 @@ jobs:
         env:
           CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
           CLIENT_PROJECT: ${{ needs.prepare.outputs.project }}
-        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT"
+          EXPECTED_SHA: ${{ needs.creative_authoring.outputs.sha }}
+        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT" "$EXPECTED_SHA"
       - name: Render and repair creative candidates in the production shell
         id: creative_render
         if: ${{ needs.creative_authoring.result == 'success' }}
@@ -807,6 +821,7 @@ jobs:
             git commit -m "Render and repair creative experience candidates"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Prepare private creative-recovery report
         id: creative_recovery
         if: ${{ always() && steps.workspace.outputs.dir != '' && (needs.creative_authoring.result == 'failure' || steps.creative_render.outcome == 'failure') }}
@@ -992,7 +1007,8 @@ jobs:
         env:
           CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
           CLIENT_PROJECT: ${{ needs.prepare.outputs.project }}
-        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT"
+          EXPECTED_SHA: ${{ needs.rendered_quality.outputs.sha }}
+        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT" "$EXPECTED_SHA"
       - name: Build and direct-upload public preview
         id: deploy
         run: |
@@ -1038,6 +1054,13 @@ jobs:
             echo "Review source changed during the final build; refusing to deploy stale preview output from $FINAL_BUILD_SHA." >&2
             exit 1
           fi
+          # Release metadata may be committed after the build. It cannot change
+          # runtime source (checked above); bind deployment and approval to the
+          # *current* exact private review branch head.
+          LOCAL_REVIEW_SHA=$(git rev-parse HEAD)
+          REMOTE_REVIEW_SHA=$(git rev-parse origin/review/initial)
+          test "$LOCAL_REVIEW_SHA" = "$REMOTE_REVIEW_SHA" || { echo "Review branch moved during verified preview build" >&2; exit 1; }
+          FINAL_BUILD_SHA="$LOCAL_REVIEW_SHA"
           # Scan rendered text assets only. Binary generated imagery can contain
           # the UTF-8 byte sequence by coincidence and is not page copy.
           if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
@@ -1143,7 +1166,8 @@ jobs:
         env:
           CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
           CLIENT_PROJECT: ${{ needs.prepare.outputs.project }}
-        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT"
+          EXPECTED_SHA: ${{ needs.private_preview.outputs.sha }}
+        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT" "$EXPECTED_SHA"
       - name: Create secure review link
         id: review
         run: |
