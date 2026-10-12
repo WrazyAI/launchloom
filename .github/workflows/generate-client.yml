@@ -642,6 +642,7 @@ jobs:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL == 'openai/gpt-5.6-luna' && 'openai/gpt-6-luna' || vars.CREATIVE_EXPERIENCE_MODEL || 'openai/gpt-6-luna' }}
       CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'xhigh' }}
+      REUSABLE_CANDIDATE_REPO: ${{ inputs.candidate_repository || '' }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -1217,8 +1218,8 @@ jobs:
       - name: Notify developer when generation stops
         env:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
-          REPAIR_LINK: ${{ needs.rendered_quality.outputs.link }}
-          DIAGNOSTIC_PREVIEW: ${{ needs.rendered_quality.outputs.preview }}
+          REPAIR_LINK: ${{ needs.rendered_quality.outputs.repair_link }}
+          DIAGNOSTIC_PREVIEW: ${{ needs.rendered_quality.outputs.diagnostic_preview }}
           SEND_ANYWAY_URL: ${{ needs.rendered_quality.outputs.send_anyway_url }}
           CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
           EVIDENCE_BRANCH: ${{ needs.rendered_quality.outputs.evidence_branch }}
