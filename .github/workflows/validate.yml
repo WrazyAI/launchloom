@@ -8,7 +8,54 @@ permissions:
   contents: read
 
 jobs:
+  # Keep the required PR workflow visible for documentation-only changes.
+  # Workflow-level paths-ignore would leave required checks pending on GitHub.
+  classify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      runtime: ${{ steps.paths.outputs.runtime }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          # Pull-request checkouts use GitHub's synthetic merge commit.
+          # Depth 2 includes its first parent (the target branch tip).
+          fetch-depth: 2
+      - name: Classify changed paths
+        id: paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Disable rename detection: changes moving files out of runtime
+          # directories must retain the removed source path in the diff.
+          git diff --no-renames --name-only -z HEAD^1 HEAD > "$RUNNER_TEMP/changed-paths"
+          count=0
+          runtime=false
+          while IFS= read -r -d '' path; do
+            count=$((count + 1))
+            case "$path" in
+              README.md|AGENTS.md|docs/*.md|docs/assets/*.svg|.github/agents/progress-update/*.md)
+                printf 'Documentation: %s\n' "$path"
+                ;;
+              *)
+                printf 'Runtime or CI: %s\n' "$path"
+                runtime=true
+                ;;
+            esac
+          done < "$RUNNER_TEMP/changed-paths"
+          # Fail closed if the checkout/diff unexpectedly reports no changes.
+          if [ "$count" -eq 0 ]; then runtime=true; fi
+          echo "runtime=$runtime" >> "$GITHUB_OUTPUT"
+          if [ "$runtime" = "false" ]; then
+            echo "Documentation-only PR: skipping application and rendered-route suites." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Runtime/CI changes detected: running all required validation suites." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   validate:
+    needs: classify
+    if: needs.classify.outputs.runtime == 'true'
     runs-on: depot-ubuntu-24.04-4
     timeout-minutes: 30
     steps:
@@ -33,6 +80,8 @@ jobs:
       - name: Build production bundle
         run: npm run build
   route-fixtures:
+    needs: classify
+    if: needs.classify.outputs.runtime == 'true'
     runs-on: depot-ubuntu-24.04
     timeout-minutes: 30
     steps:
