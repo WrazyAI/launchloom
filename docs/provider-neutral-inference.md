@@ -182,6 +182,15 @@ command-not-found. No TestSprite installation, external test project or paid run
 was created. Local Vitest/Astro/build evidence must not be labeled TestSprite or
 production/provider acceptance.
 
+**Subsequent correction:** that command-not-found was specific to the earlier
+PATH. The user supplied the installed0.11.0 binary path; authenticated TestSprite
+verification and an explicitly authorized bounded live Go coding example were
+then performed. The existing conversion smoke test passed6/6 on the actual
+Go-authored synthetic page, but an independent mobile overflow check failed.
+See `docs/verification/opencode-go-example-2026-10-12.md` for scope, artifacts,
+run ID, source commit, API usage and limitations. This is not full production
+authoring or release acceptance.
+
 1. Resolve Go workload permission and service-specific wire/capability acceptance.
 2. Add reviewed role profiles and explicitly migrate generation/analysis/judge/
    repair callers, reasoning preflight model IDs and frozen session provenance.
