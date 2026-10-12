@@ -1,6 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { validateCandidateManifest } from "./creative-compiler.mjs";
+import { sourceAttribution } from "../templates/client-site/src/lib/source-attribution.mjs";
+import { assertSourceAdaptationEvidence } from "./source-first-authoring.mjs";
 import { validateProductionCandidateFiles } from "./production-experience-author.mjs";
 import {
   assertCreativeInnerPageSource,
@@ -97,6 +99,8 @@ export async function promoteCreativeCandidate({
   const root = path.resolve(siteDir);
   const source = path.resolve(root, candidateDir);
   const manifest = await readJson(path.join(source, "metadata.json"));
+  if (manifest.sourceStrategy?.creditId && !sourceAttribution(manifest.sourceStrategy.creditId))
+    throw new Error("Unknown source adaptation attribution decision");
   const candidateManifest = validateCandidateManifest(manifest.creativeManifest || manifest);
   const required = ["Experience.jsx", "styles.css", "motion.js"];
   for (const file of required) await fs.access(path.join(source, file));
@@ -149,6 +153,9 @@ export async function promoteCreativeCandidate({
     .readFile(path.join(source, "content-manifest.json"), "utf8")
     .then(JSON.parse)
     .catch(() => null);
+  const sourceBaseline = await fs.readFile(path.join(source, "source-baseline.json"), "utf8")
+    .then(JSON.parse).catch((error) => { if (error.code === "ENOENT") return null; throw error; });
+  assertSourceAdaptationEvidence(manifest.sourceStrategy, sourceBaseline, files.experience);
   const validatedFiles = validateAuthoredFiles(
     candidateManifest.candidateId,
     files,
@@ -194,6 +201,7 @@ export async function promoteCreativeCandidate({
   config.design.experience = {
     ...(config.design.experience || {}),
     renderer: "creative-candidate",
+    sourceAttributionId: manifest.sourceStrategy?.creditId || null,
     candidateId: candidateManifest.candidateId,
     familyId: candidateManifest.familyId,
     referenceFamilyId: candidateManifest.referenceDna?.familyId || candidateManifest.familyId,

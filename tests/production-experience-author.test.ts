@@ -175,6 +175,42 @@ export default function LocationPage({ content, runtime, location }) {
 }
 
 describe("production experience author", () => {
+  it("mixes source-first and reference-authored candidates through the real stage orchestrator", async () => {
+    const request = { route: inspirationPack.routes[0], contentTokens: [], contentShape: {}, rules: "" };
+    const originalExperience = String(safeStage({ ...request, stage: "experience" }).content)
+      .replace("{content.hero.heading}", "SOURCE_PLACEHOLDER")
+      .replace('<div data-model-experience=', '<div data-source-baseline="fixture" data-model-experience=');
+    const originalStyles = String(safeStage({ ...request, stage: "styles" }).content);
+    const sourceStarter = {
+      version: 1, mode: "source-first", reason: null, dossierId: "fixture",
+      templateDigest: "a".repeat(64), creditId: null,
+      baseline: { experience: originalExperience, styles: originalStyles, changes: [] },
+      baselineDigests: { experience: createHash("sha256").update(originalExperience).digest("hex"), styles: createHash("sha256").update(originalStyles).digest("hex") },
+    };
+    const seen: any[] = [];
+    let rendered = 0;
+    const result = await authorExperienceCandidates({
+      site, inspirationPack,
+      sourceResolver: (route: any) => route.id === "route-01" ? sourceStarter : { mode: "reference-authoring", reason: "source-unavailable" },
+      baselineRenderer: async () => { rendered++; return { report: { fixture: true }, artifacts: {} }; },
+      generate: async (stage: any) => {
+        seen.push(stage);
+        if (stage.sourceStarter.mode === "source-first" && ["experience", "styles"].includes(stage.stage))
+          return { content: JSON.stringify({ edits: stage.stage === "experience" ? [{ find: "SOURCE_PLACEHOLDER", replace: "{content.hero.heading}" }] : [] }) };
+        return safeStage(stage);
+      },
+    });
+    expect(rendered).toBe(1);
+    expect(result.candidates).toHaveLength(3);
+    expect(result.candidates[0].metadata.sourceStrategy.mode).toBe("source-first");
+    expect(result.candidates[1].metadata.sourceStrategy.reason).toBe("source-unavailable");
+    expect(result.candidates[0].files["Experience.jsx"]).toContain('data-source-baseline="fixture"');
+    const evidence = JSON.parse(result.candidates[0].files["source-baseline.json"]);
+    expect(evidence.baseline.experience).toBe(originalExperience);
+    expect(evidence.edits).toHaveLength(2);
+    expect(seen.find((s) => s.stage === "experience" && s.route.id === "route-01").sourceEditBase).toBe(originalExperience);
+    expect(seen.find((s) => s.stage === "experience" && s.route.id === "route-02").sourceEditBase).toBeUndefined();
+  });
   it("rejects unsealed or non-navigation URL attributes", () => {
     const route = { id: "route-url-safety" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };

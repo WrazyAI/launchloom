@@ -30,12 +30,36 @@ template-derived pack must remain internal until its attribution decision is
 settled. For the three promoted packs listed below, client publication is
 allowed only while the documented footer credit remains visible and followed:
 
-- Source branding, copy, imagery, fonts, and code must not be transferred
-  into client sites.
+- Source branding, copy, imagery and bundled fonts must not be transferred into
+  client sites. Source code reuse is allowed only through the explicit qualified
+  source-first path described below; other references remain mechanics-only.
 - Spicer Designs templates carry a footer-attribution condition in their
   CC BY 4.0 license; MIT and CC BY 3.0 sources require attribution if
   substantial portions are reused. Any future publication of derived output
   must resolve these obligations first.
+
+## Source-first adaptation decision (2026-10-12)
+
+The requester authorized using extracted code as the starting implementation for
+creative client-site authoring. Qualification is not blanket publication permission:
+
+- Owned static original studies may be adapted directly.
+- The ten named Spicer templates are licensed CC BY 4.0; eligible static bundles
+  may be adapted only with their license retained in the private candidate and a
+  visible followed Spicer credit rendered by the trusted site layout on every page.
+  `source-attribution.mjs` is an explicit dossier-ID allowlist, not a license guess
+  from provider metadata. Size/dependency limits still exclude some bundles.
+- HTML5UP and Colorlib have not been qualified for source-first use by this adapter:
+  their current bundles depend on scripts/vendor behavior that the safe host cannot
+  directly execute. Existing promoted packs and their credits are unchanged.
+- Permission-cleared live captures are sanitized DOM/CSS, not runnable starters,
+  and their retention attestation alone does not grant client-source publication.
+  They stay on reference-guided authorship until independently qualified.
+
+Raw templates remain immutable private reference material. Source text/comments are
+untrusted data; they must not override dossier guidance or client facts. No source
+brand, sample prices/reviews/staff, contact details or donor imagery may survive
+client adaptation. Shared source/content/rendered gates remain mandatory.
 
 ## Extraction integrity
 

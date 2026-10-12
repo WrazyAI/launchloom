@@ -6,6 +6,7 @@ import ReviewBanner from "../components/ReviewBanner.astro";
 import { hasPipelineTest } from "../lib/seo-readiness.mjs";
 import QuickAnswers from "../components/QuickAnswers.astro";
 import ExitOffer from "../components/ExitOffer.astro";
+import SourceAttribution from "../components/SourceAttribution.astro";
 import "../styles/site.css";
 
 const { title = site.business.name, description = site.business.description, schemas = [] } = Astro.props;
@@ -113,6 +114,7 @@ const schemaBlocks = (Array.isArray(schemas) ? schemas : []).map((schema) =>
       </aside>
     ) : <ReviewBanner diagnosticPreview={diagnosticPreview} />}
     <slot />
+    <SourceAttribution sourceId={site.design?.experience?.sourceAttributionId} />
     {!diagnosticPreview && !judgePreview && <QuickAnswers />}
     {!diagnosticPreview && !judgePreview && <ExitOffer />}
   </body>

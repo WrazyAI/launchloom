@@ -302,6 +302,7 @@ export type SiteConfig = {
       blueprintVersion?: 2;
       renderer?: "reviewed-pack" | "creative-candidate" | "legacy" | string;
       candidateId?: string;
+      sourceAttributionId?: string | null;
       familyId?: string;
       referenceFamilyId?: string;
       referenceDnaVersion?: number | null;

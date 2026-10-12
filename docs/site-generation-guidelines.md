@@ -17,6 +17,32 @@ point into newly generated private repositories. Revision workflows refresh the
 document while preserving existing client instructions. These Markdown files
 stay outside deployed public assets. Visual review remains mandatory.
 
+### Source-first creative adaptation
+
+For each selected dossier, the author resolves a source starter independently.
+A verified, rights-qualified static bundle is mechanically normalized into the
+safe component host and copied into an immutable private baseline. The provider
+edits that existing DOM and CSS using exact bounded patches instead of generating
+a replacement layout. The full dossier design prompt remains the authority for
+adaptation; a source capture can differ from the dossier's adapted screenshots,
+so its markup is a starting implementation, not proof of target fidelity.
+
+Replace sample branding, copy, unsupported proof and source assets with sealed
+client tokens. Preserve chapter structure and CSS vocabulary except where client
+requirements, the dossier or accessibility require change. Extend missing features
+in that same aesthetic: the shared LeadForm keeps submission/validation ownership,
+while source-scoped CSS styles its controls, spacing, surfaces and action treatment.
+New inner pages and safe motion extend the adapted design, not a separate recipe.
+
+Unavailable source, sanitized live captures, unsupported dependencies or unresolved
+reuse rights take the existing reference-authoring path before provider work.
+Integrity/path/license violations fail closed. Once source adaptation starts,
+failed patches or quality checks never silently restart from scratch. Existing
+content, safety, reference, contrast, visual and bounded repair limits still apply.
+The private evidence includes hashes, original source, normalized baseline,
+script-disabled desktop/mobile baseline renders, licenses and per-edit receipts.
+Final candidate selection retains its source marker and visible host-owned credits.
+
 ## Shared standard
 
 The canonical brief records fact status and provenance. Missing optional facts
