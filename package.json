@@ -46,6 +46,7 @@
   "dependencies": {
     "@astrojs/react": "latest",
     "@fal-ai/client": "1.10.1",
+    "@sentry/astro": "^11.6.0",
     "astro": "latest",
     "openai": "latest",
     "react": "latest",
