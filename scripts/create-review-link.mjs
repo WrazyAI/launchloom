@@ -63,7 +63,7 @@ const payload = {
   allowedOrigins,
   ...(previewUrl ? { previewUrl } : {}),
   ...(creativeRepairSessionId ? { creativeRepairSessionId } : {}),
-  ...(stage === "developer" ? { pr: Number(args.pr), headSha: args.sha } : {}),
+  ...(stage === "developer" ? { pr: Number(args.pr), headSha: args.sha } : args.sha ? {headSha:args.sha} : {}),
   expiresAt: Date.now() + 1000 * 60 * 60 * 24 * 14,
 };
 if (stage === "developer" && (!payload.pr || !payload.headSha))

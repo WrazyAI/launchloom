@@ -1,0 +1,159 @@
+.bv-seasonal-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.bv-seasonal-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.bv-seasonal-error {
+    color: #ef4444;
+}
+
+.bv-seasonal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+}
+
+.bv-seasonal-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.bv-seasonal-subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin: 4px 0 0 0;
+    font-weight: 500;
+}
+
+.bv-seasonal-icon-main {
+    background: #f0fdf4;
+    color: #16a34a;
+    padding: 10px;
+    border-radius: 12px;
+}
+
+.bv-seasonal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.bv-pest-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 16px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.bv-pest-item:hover {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    transform: scale(1.02);
+}
+
+.bv-pest-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bv-pest-name {
+    font-weight: 600;
+    color: #334155;
+    text-transform: capitalize;
+    font-size: 1rem;
+}
+
+.bv-pest-trend-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.bv-pest-trend-value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #16a34a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.bv-pest-trend-label {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.bv-seasonal-footer {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.bv-seasonal-update {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin: 0;
+    text-align: center;
+}
+
+.bv-seasonal-loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    gap: 16px;
+}
+
+.bv-seasonal-loader-container p {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.bv-seasonal-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #f1f5f9;
+    border-top: 3px solid #16a34a;
+    border-radius: 50%;
+    animation: bv-spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes bv-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 480px) {
+    .bv-seasonal-card {
+        padding: 24px;
+    }
+    .bv-seasonal-title {
+        font-size: 1.25rem;
+    }
+}

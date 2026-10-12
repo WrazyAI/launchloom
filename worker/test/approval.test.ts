@@ -1,7 +1,8 @@
 import fallback from "../../fixtures/seo-research/fallback-complete.json";
-import { SELF } from "cloudflare:test";
+import { SELF, env, runInDurableObject } from "cloudflare:test";
+import type { RevisionCoordinator } from "../src/revision-coordinator";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { network } from "./network";
 
 const origin = "https://review-initial.example-client.pages.dev";
@@ -42,6 +43,15 @@ async function reviewToken() {
   );
   return `${encoded}.${base64url(signature)}`;
 }
+
+beforeEach(async () => {
+  const coordinator=(env as unknown as {REVISION_COORDINATOR:DurableObjectNamespace<RevisionCoordinator>}).REVISION_COORDINATOR.getByName('wrazyai/example-client');
+  await runInDurableObject(coordinator,(_,state)=>{
+    state.storage.sql.exec('DELETE FROM publications');
+    state.storage.sql.exec('DELETE FROM revision_requests');
+  });
+  network.use(http.get('https://api.github.com/repos/WrazyAI/example-client/git/ref/heads/main',()=>HttpResponse.json({object:{sha:'approved-merge-sha'}})));
+});
 
 describe("developer approval", () => {
   it.each(["seo-only", "creative-only"])(
@@ -192,8 +202,12 @@ describe("developer approval", () => {
         }),
       });
 
-    expect((await request()).status).toBe(403);
-    expect((await request()).status).toBe(200);
+    const first = await request();
+    expect(first.status).toBe(200);
+    const firstResult = await first.json() as {publicationId:string};
+    const retry = await request();
+    expect(retry.status).toBe(200);
+    expect(await retry.json()).toMatchObject({publicationId:firstResult.publicationId});
     expect(mergeAttempts).toBe(1);
     expect(dispatchAttempts).toBe(2);
     expect(dispatchBodies).toHaveLength(2);
@@ -516,4 +530,46 @@ describe("developer approval", () => {
       });
     },
   );
+});
+
+it("preserves feedback arriving while the approved merge is in flight", async () => {
+  const {env}=await import('cloudflare:workers');
+  let queued: unknown;
+  const dispatched: string[]=[];
+  network.use(
+    http.get('https://api.github.com/repos/WrazyAI/example-client/pulls/7',()=>HttpResponse.json({head:{sha:'review-head-sha'},state:'open',draft:false})),
+    http.get('https://api.github.com/repos/WrazyAI/example-client/contents/src/site.config.json',()=>HttpResponse.json({encoding:'base64',content:btoa(JSON.stringify({seoResearch:{mode:'researched',publishReady:true}}))})),
+    http.put('https://api.github.com/repos/WrazyAI/example-client/pulls/7/merge',async()=>{
+      queued=await env.REVISION_COORDINATOR.getByName('wrazyai/example-client').enqueue({requestId:'approval-race-feedback',fingerprint:'approval-race-feedback',stage:'developer',repo:'WrazyAI/example-client',pr:7,feedbackIssue:8,siteId:'example-client',clientEmail:'client@example.com',reviewedPage:origin,category:'Wording',feedback:'Please clarify the service scope.'});
+      return HttpResponse.json({merged:true,sha:'approved-merge-sha'});
+    }),
+    http.get('https://api.github.com/repos/WrazyAI/example-client/git/ref/heads/main',()=>HttpResponse.json({object:{sha:'approved-merge-sha'}})),
+    http.get('https://api.github.com/repos/WrazyAI/example-client/issues/7/comments',()=>HttpResponse.json([])),
+    http.post('https://api.github.com/repos/WrazyAI/example-client/issues/7/comments',()=>HttpResponse.json({id:321})),
+    http.post('https://api.github.com/repos/WrazyAI/launchloom/dispatches',async({request})=>{dispatched.push(String((await request.json() as {event_type:string}).event_type));return new HttpResponse(null,{status:204})}),
+  );
+  const token=await reviewToken();
+  const response=await SELF.fetch('https://api.launchloom.test/api/approval',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({token,email:'developer@example.com',pageUrl:origin+'/?review='+token})});
+  expect(queued).toMatchObject({ok:true,queueStatus:'queued'});
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({publicationId:expect.any(String)});
+  expect(dispatched).toEqual(['publish-site']);
+});
+
+
+it("merges once when two approval requests overlap", async () => {
+  let merges=0;
+  network.use(
+    http.get('https://api.github.com/repos/WrazyAI/example-client/pulls/7',()=>HttpResponse.json({head:{sha:'review-head-sha'},state:'open',draft:false})),
+    http.get('https://api.github.com/repos/WrazyAI/example-client/contents/src/site.config.json',()=>HttpResponse.json({encoding:'base64',content:btoa(JSON.stringify({seoResearch:{mode:'researched',publishReady:true}}))})),
+    http.put('https://api.github.com/repos/WrazyAI/example-client/pulls/7/merge',async()=>{merges++;await new Promise(resolve=>setTimeout(resolve,30));return HttpResponse.json({merged:true,sha:'approved-merge-sha'})}),
+    http.post('https://api.github.com/repos/WrazyAI/launchloom/dispatches',()=>new HttpResponse(null,{status:204})),
+  );
+  const token=await reviewToken();
+  const submit=()=>SELF.fetch('https://api.launchloom.test/api/approval',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({token,email:'developer@example.com',pageUrl:origin+'/?review='+token})});
+  const responses=await Promise.all([submit(),submit()]);
+  expect(responses.map(r=>r.status)).toEqual([200,200]);
+  const results=await Promise.all(responses.map(r=>r.json() as Promise<{publicationId:string}>));
+  expect(results[0].publicationId).toBe(results[1].publicationId);
+  expect(merges).toBe(1);
 });

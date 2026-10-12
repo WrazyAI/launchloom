@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="en" class="swup-enabled"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+            
+        <link rel="icon" type="image/png" href="https://omp.dentist/media/site/cd8631c95e-1709905366/favicon.png">
+        <title>One Manor Place</title>
+
+    <meta name="description" content="One Manor Place">
+
+<meta name="robots" content="all">
+
+    <link rel="canonical" href="https://omp.dentist">
+<meta content="Neighbourhood dentist located in the heart of Stoneybatter.  We offer comprehensive care focusing on our patients’ individual goals and offer a friendly dental home for all of your oral health needs. We welcome all age groups and are proud to say that we especially like looking after nervous patients, young and old. A positive attitude to dentistry starts with regular visits at a young age, so children are especially welcome to come for short, simple visits to become familiar to the clinic and the team." property="og:site_name">
+<meta content="https://omp.dentist" property="og:url">
+<meta content="website" property="og:type">
+<meta content="One Manor Place" property="og:title">
+<meta content="One Manor Place" property="og:description">
+<meta content="https://omp.dentist/media/pages/home/18277d6683-1708941044/chris-2-1200x630-crop.png" property="og:image">
+<meta content="1200" property="og:image:width">
+<meta content="630" property="og:image:height">
+
+    
+<link href="styles/01.css" rel="stylesheet">
+        </head>
+
+
+<body class="home">
+
+
+
+    <div x-data="{ 
+        current: '', 
+        bodyLock: window.location.pathname == '/' ? true : false,
+        isMob: false 
+    }" x-init="isMob = window.matchMedia('only screen and (max-width: 760px)').matches" @resize.window="isMob = window.matchMedia('only screen and (max-width: 760px)').matches" :class="bodyLock ? 'lock' : ''" class="">
+
+        <main id="swup" class="transition-fade">
+                                        <div class="banner" x-data="{ 
+        firstintro: true,
+        getCookie(cookiename) {
+            let name = cookiename + '=';
+            let decodedCookie = decodeURIComponent(document.cookie);
+            let ca = decodedCookie.split(';');
+            for(let i = 0; i &lt;ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') {
+                c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                return c.substring(name.length, c.length);
+                }
+            }
+            return '';
+        },
+        setCookie(cookiename, cookievalue, expiryindays) {
+            const d = new Date();
+            d.setTime(d.getTime() + (expiryindays*24*60*60*1000));
+            let expires = 'expires='+ d.toUTCString();
+            document.cookie = cookiename + '=' + cookievalue + ';' + expires + ';path=/';
+        }
+}" x-init="
+if(getCookie('intro')) {
+    firstintro = false;
+    bodyLock = false;
+} else {
+    setTimeout(function() {
+        $el.classList.remove('firstintro');
+    }, 500);
+    
+    setTimeout(function() {
+        $el.classList.remove('centered');
+        bodyLock = false;
+        localStorage.setItem('intro', 'done');
+    }, 2500);
+    setCookie('intro', true, 30);
+}">
+
+    <div class="banner_left">
+        <!-- introtext -->
+        <div class="banner_text">
+            <p><strong>Neighbourhood Dental Practice located in the heart of Stoneybatter</strong></p><p>We offer comprehensive care focusing on our patients’ individual goals and offer a friendly dental home for all of your oral healthcare.</p>        </div>
+        <!-- button -->
+                    <div class="banner_button">
+                <a href="https://uk.dentalhub.online/soe/new/%20?pid=UICRI02" target="mytab" class="banner_left-buttonlink">
+                    BOOK TODAY                </a>
+            </div>
+                <div class="banner_logo">
+            <div class="one">
+                <svg width="267" height="109" viewBox="0 0 267 109" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M206.575 67.4655C206.575 87.72 218.788 101.124 235.766 101.124C244.701 101.124 251.254 98.443 257.212 92.9326C257.658 92.4858 257.956 92.1879 258.403 92.1879C259.148 92.1879 259.594 92.9326 259.594 93.6772C259.594 94.2729 259.445 94.8687 258.85 95.9112C255.722 100.677 247.68 108.57 233.681 108.57C210.894 108.57 197.49 92.7836 197.49 69.1037C197.49 48.2535 211.639 30.5308 232.34 30.5308C249.765 30.5308 258.999 42.5941 260.041 56.8914C260.041 57.785 259.594 58.3807 258.552 58.3807H207.32C206.873 61.2104 206.575 64.3379 206.575 67.4655ZM230.851 35.8923C219.532 35.8923 212.086 42.5941 208.809 52.8703H250.063C248.574 42.4452 240.978 35.8923 230.851 35.8923Z" fill="black"></path>
+                    <path d="M182.328 95.4643C182.328 101.422 184.264 103.358 190.221 103.358H190.37C190.668 103.358 190.817 103.507 190.817 103.804V106.336C190.817 106.634 190.668 106.783 190.37 106.783H164.754C164.456 106.783 164.307 106.634 164.307 106.336V103.804C164.307 103.507 164.456 103.358 164.754 103.358H164.903C170.86 103.358 172.796 101.422 172.796 95.4643V57.9339C172.796 45.5726 167.137 37.5304 155.818 37.5304C145.244 37.5304 137.202 47.3598 137.202 58.3806V95.4643C137.202 101.422 139.138 103.358 145.095 103.358H145.244C145.542 103.358 145.691 103.507 145.691 103.804V106.336C145.691 106.634 145.542 106.783 145.244 106.783H119.926C119.628 106.783 119.479 106.634 119.479 106.336V103.804C119.479 103.507 119.628 103.358 119.926 103.358H120.075C126.032 103.358 127.968 101.422 127.968 95.4643V56.5935C127.968 47.3598 126.926 44.6791 123.947 41.4026C122.904 40.3601 122.309 39.7644 122.309 39.0197C122.309 38.424 122.755 37.9772 123.947 37.2325L134.819 30.9775C136.606 29.9349 137.202 30.3817 137.202 32.1689V44.5301C139.287 41.5515 146.882 30.5307 160.286 30.5307C173.541 30.5307 182.328 39.7644 182.328 54.6574V95.4643Z" fill="black"></path>
+                    <path d="M59.8278 0C89.6138 0 111.656 23.9778 111.656 54.3596C111.656 84.7414 89.6138 108.719 59.8278 108.719C29.8928 108.719 8 84.7414 8 54.3596C8 23.9778 29.8928 0 59.8278 0ZM59.8278 103.209C85.2948 103.209 100.635 80.5713 100.635 54.3596C100.635 28.1478 85.2948 5.51042 59.8278 5.51042C34.3607 5.51042 19.0208 28.1478 19.0208 54.3596C19.0208 80.5713 34.3607 103.209 59.8278 103.209Z" fill="black"></path>
+                </svg>
+
+            </div>
+            <div class="manor">
+                <svg width="411" height="109" viewBox="0 0 411 109" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M393.282 107H367.443C367.148 107 367 106.852 367 106.555V104.035C367 103.739 367.148 103.591 367.443 103.591H367.591C373.497 103.591 375.416 101.664 375.416 95.7346V57.0467C375.416 47.8565 374.383 45.1884 371.43 41.9273C370.396 40.8897 369.805 40.2968 369.805 39.5557C369.805 38.9627 370.248 38.5181 371.43 37.7769L382.208 31.5513C383.98 30.5137 384.57 30.9584 384.57 32.7371V46.3742C386.342 42.372 392.987 31.2548 403.174 31.2548C408.49 31.2548 411 34.0712 411 37.4804C411 40.7415 408.785 43.1132 405.389 43.1132C404.06 43.1132 402.879 42.8167 401.403 42.372C399.779 41.9273 398.45 41.4826 396.383 41.4826C389.591 41.4826 384.57 49.3388 384.57 61.9383V95.7346C384.57 101.664 386.49 103.591 392.396 103.591H393.282C393.577 103.591 393.725 103.739 393.725 104.035V106.555C393.725 106.852 393.577 107 393.282 107Z" fill="black"></path>
+                    <path d="M360 70C360 92.2433 344.706 109 325 109C305.441 109 290 92.2433 290 70C290 47.7567 305.441 31 325 31C344.559 31 360 47.7567 360 70ZM349.706 70C349.706 51.019 340.294 36.1901 325 36.1901C309.706 36.1901 300.294 51.019 300.294 70C300.294 88.8327 309.706 103.81 325 103.81C340.441 103.81 349.706 88.8327 349.706 70Z" fill="black"></path>
+                    <path d="M274.551 95.7346C274.551 101.664 276.478 103.591 282.407 103.591H282.555C282.852 103.591 283 103.739 283 104.035V106.555C283 106.852 282.852 107 282.555 107H257.061C256.764 107 256.616 106.852 256.616 106.555V104.035C256.616 103.739 256.764 103.591 257.061 103.591H257.209C263.138 103.591 265.065 101.664 265.065 95.7346V58.3808C265.065 46.0777 259.432 38.0734 248.167 38.0734C237.643 38.0734 229.639 47.8565 229.639 58.8255V95.7346C229.639 101.664 231.566 103.591 237.495 103.591H237.643C237.939 103.591 238.088 103.739 238.088 104.035V106.555C238.088 106.852 237.939 107 237.643 107H212.445C212.148 107 212 106.852 212 106.555V104.035C212 103.739 212.148 103.591 212.445 103.591H212.593C218.522 103.591 220.449 101.664 220.449 95.7346V57.0467C220.449 47.8565 219.411 45.1884 216.447 41.9273C215.409 40.8897 214.816 40.2968 214.816 39.5557C214.816 38.9627 215.261 38.5181 216.447 37.7769L227.267 31.5513C229.046 30.5137 229.639 30.9584 229.639 32.7371V45.0401C231.714 42.0756 239.273 31.1066 252.614 31.1066C265.806 31.1066 274.551 40.2968 274.551 55.1197V95.7346Z" fill="black"></path>
+                    <path d="M199.085 108.405C192.742 108.405 190.235 104.237 190.235 97.9847V97.687C187.728 101.111 181.09 109 170.322 109C159.702 109 153.212 102.45 153.212 93.8168C153.212 86.374 158.227 81.0153 169.438 74.1679L191.12 61.0687L191.268 57.1985C191.71 43.5038 186.105 36.3588 176.96 36.3588C171.503 36.3588 167.372 38.8893 165.16 42.4618C162.505 46.6298 162.062 51.9885 161.177 56.4542C160.587 59.729 158.965 61.6641 156.015 61.6641C152.917 61.6641 151 59.1336 151 55.5611C151 47.2252 161.767 31 180.353 31C194.07 31 200.708 39.4847 200.265 54.8168L199.085 93.8168C198.938 98.5801 199.97 100.962 203.068 100.962C204.69 100.962 206.313 100.515 208.378 99.4733C209.558 98.8779 210 99.1756 210 100.069C210 102.897 205.575 108.405 199.085 108.405ZM163.095 92.4771C163.095 98.2824 167.077 102.45 174.453 102.45C182.565 102.45 190.088 94.8588 190.383 85.7786L190.973 66.7252C184.778 70.2977 179.615 73.4237 175.485 76.2519C166.93 82.0572 163.095 86.8206 163.095 92.4771Z" fill="black"></path>
+                    <path d="M134.145 16.9162V93.3073C134.145 101.598 136.204 103.818 143.265 103.818H143.412C143.853 103.818 144 103.966 144 104.411V106.631C144 107.075 143.853 107.223 143.412 107.223H115.17C114.728 107.223 114.581 107.075 114.581 106.631V104.411C114.581 103.966 114.728 103.818 115.17 103.818H115.317C122.377 103.818 124.437 101.598 124.437 93.3073V15.4358L82.6619 107.52C82.0735 108.704 81.7794 109 80.7497 109C79.72 109 79.2788 108.556 78.8375 107.52L36.0332 14.9916V93.3073C36.0332 101.598 38.0925 103.818 45.153 103.818H45.3001C45.7414 103.818 45.8885 103.966 45.8885 104.411V106.631C45.8885 107.075 45.7414 107.223 45.3001 107.223H20.5884C20.1471 107.223 20 107.075 20 106.631V104.411C20 103.966 20.1471 103.818 20.5884 103.818H20.7355C27.796 103.818 29.8553 101.598 29.8553 93.3073V16.9162C29.8553 8.62571 27.796 6.40503 20.7355 6.40503H20.5884C20.1471 6.40503 20 6.25699 20 5.81285V3.59218C20 3.14805 20.1471 3 20.5884 3H40.1518C41.0344 3 41.1815 3.14805 41.6228 4.03632L82.5148 94.3436L123.26 4.03632C123.701 3.14805 123.995 3 124.878 3H143.412C143.853 3 144 3.14805 144 3.59218V5.81285C144 6.25699 143.853 6.40503 143.412 6.40503H143.265C136.204 6.40503 134.145 8.62571 134.145 16.9162Z" fill="black"></path>
+                </svg>
+
+
+            </div>
+            <div class="place">
+                <svg width="677" height="107" viewBox="0 0 677 107" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M440.062 65.5293C440.062 85.7838 452.274 99.1876 469.252 99.1876C478.188 99.1876 484.741 96.5068 490.698 90.9964C491.145 90.5496 491.443 90.2518 491.89 90.2518C492.634 90.2518 493.081 90.9964 493.081 91.7411C493.081 92.3368 492.932 92.9325 492.336 93.975C489.209 98.7408 481.167 106.634 467.167 106.634C444.381 106.634 430.977 90.8475 430.977 67.1676C430.977 46.3173 445.125 28.5946 465.827 28.5946C483.252 28.5946 492.485 40.658 493.528 54.9553C493.528 55.8489 493.081 56.4446 492.038 56.4446H440.806C440.36 59.2742 440.062 62.4018 440.062 65.5293ZM464.337 33.9561C453.019 33.9561 445.572 40.658 442.296 50.9342H483.549C482.06 40.509 474.465 33.9561 464.337 33.9561Z" fill="black"></path>
+                    <path d="M422.809 93.8261C420.575 97.4004 412.98 106.932 398.087 106.932C374.854 106.932 361.748 90.1028 361.748 67.4654C361.748 44.3812 377.534 28.2968 398.98 28.2968C414.618 28.2968 423.703 35.8922 423.703 42.743C423.703 45.8705 421.916 47.9556 418.937 47.9556C416.554 47.9556 415.065 46.4663 413.129 43.9344C409.257 39.0197 404.044 34.105 395.704 34.105C381.407 34.105 371.13 47.062 371.13 64.3379C371.13 84.7413 382.002 99.4854 400.619 99.4854C411.491 99.4854 417.448 94.1239 421.171 90.6986C421.618 90.2518 421.916 90.1028 422.214 90.1028C423.107 90.1028 423.554 90.9964 423.554 91.7411C423.554 92.1879 423.554 92.6347 422.809 93.8261Z" fill="black"></path>
+                    <path d="M346.16 106.038C339.756 106.038 337.224 101.868 337.224 95.6133V95.3154C334.693 98.7408 327.991 106.634 317.119 106.634C306.396 106.634 299.843 100.081 299.843 91.4432C299.843 83.9967 304.906 78.6352 316.225 71.7844L338.118 58.6785L338.267 54.8063C338.714 41.1047 333.054 33.9561 323.821 33.9561C318.31 33.9561 314.14 36.4879 311.906 40.0622C309.225 44.2323 308.779 49.5938 307.885 54.0617C307.289 57.3382 305.651 59.2743 302.673 59.2743C299.545 59.2743 297.609 56.7424 297.609 53.1681C297.609 44.828 308.481 28.5946 327.246 28.5946C341.097 28.5946 347.798 37.0836 347.352 52.4235L346.16 91.4432C346.011 96.209 347.054 98.5919 350.181 98.5919C351.82 98.5919 353.458 98.1451 355.543 97.1026C356.734 96.5068 357.181 96.8047 357.181 97.6983C357.181 100.528 352.713 106.038 346.16 106.038ZM309.821 90.1028C309.821 95.9111 313.842 100.081 321.289 100.081C329.48 100.081 337.075 92.4857 337.373 83.401L337.969 64.3379C331.714 67.9122 326.501 71.0397 322.331 73.8694C313.693 79.6777 309.821 84.4435 309.821 90.1028Z" fill="black"></path>
+                    <path d="M281.97 1.63824V93.5282C281.97 99.4855 283.906 101.422 289.863 101.422H290.012C290.31 101.422 290.459 101.57 290.459 101.868V104.4C290.459 104.698 290.31 104.847 290.012 104.847H264.694C264.396 104.847 264.247 104.698 264.247 104.4V101.868C264.247 101.57 264.396 101.422 264.694 101.422H264.843C270.8 101.422 272.736 99.4855 272.736 93.5282V14.4462C272.736 6.99973 271.098 4.17005 265.141 3.4254C264.098 3.27647 264.098 3.27647 264.098 2.53182V0.595722C264.098 0.148937 264.247 0 264.694 0H280.332C281.672 0 281.97 0.148937 281.97 1.63824Z" fill="black"></path>
+                    <path d="M185.596 0H218.211C242.934 0 257.976 10.2762 257.976 31.1264C257.976 54.2106 240.551 65.6783 216.275 65.6783H204.808V89.3582C204.808 99.1876 206.893 101.422 217.02 101.422H217.169C217.616 101.422 217.765 101.57 217.765 102.017V104.251C217.765 104.698 217.616 104.847 217.169 104.847H185.596C185.149 104.847 185 104.698 185 104.251V102.017C185 101.57 185.149 101.422 185.596 101.422H185.745C192.893 101.422 194.978 99.1876 194.978 90.8475V13.9995C194.978 5.65936 192.893 3.4254 185.745 3.4254H185.596C185.149 3.4254 185 3.27647 185 2.82967V0.595722C185 0.148937 185.149 0 185.596 0ZM217.02 4.91471H204.808V60.6146H216.275C235.487 60.6146 247.253 50.7852 247.253 32.6157C247.253 14.893 236.381 4.91471 217.02 4.91471Z" fill="black"></path>
+                </svg>
+
+            </div>
+        </div>
+    </div>
+    <div class="banner_right">
+        <div class="banner_cover">
+                            <img src="https://omp.dentist/media/pages/home/7cfc7f84bc-1707221487/omp-banner-1200x-q80.webp" alt="">
+                    </div>
+    </div>
+</div>
+<header class="header" x-data="{open: false}" :class="open ? 'open':'' ">
+
+    <div class="header_title">
+        <a href="https://omp.dentist">
+            One Manor Place        </a>
+    </div>
+
+
+    <nav class="header_nav" :class="open ? 'open':'' " x-data="{ current: window.location.pathname }" @click="open = false; current = '/'">
+        <ul class="header_ul">
+            <li class="header_li">
+                <a href="https://omp.dentist/#about"> About </a>
+            </li>
+            <li class="header_li">
+                <a href="https://omp.dentist/#team"> Team </a>
+            </li>
+            <li class="header_li">
+                <a href="https://omp.dentist/#services"> Services </a>
+            </li>
+            <li class="header_li">
+                <a href="https://omp.dentist/#book"> Book </a>
+            </li>
+            <li class="header_li">
+                <a href="https://omp.dentist/practice"> Practice </a>
+            </li>
+            <li class="header_li">
+                <a href="#contact"> Contact </a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="header_plus" @click="open = !open" :class="{ 'rotate': open }">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+
+</header>
+
+
+                                                            <section id="about">
+    <div class="expandingtext" x-data="{
+moreText: 'MORE +'
+}">
+        <div class="expandingtext_block" x-data="{ expanded: false }" :class="expanded == true ? 'active' : '' ">
+            <div class="expandingtext_intro">
+                <h3><u>About the Practice</u></h3><p>Our practice has been recently refurbished with cutting edge equipment in a refreshed and contemporary space. The practice has been transformed but it retains its friendly, family-focused and professional service. </p>            </div>
+            <div class="expandingtext_content" x-show="expanded" x-collapse.duration.700ms="" style="display: none; height: 0px; overflow: hidden;" hidden="">
+                <div class="expandingtext_padding">
+                    <p>Drop by and say hello. Our reception staff will be happy to assist with any questions you have. We offer a full array of general dental and aesthetic treatments, as well as running regular hygienist clinics.</p>                </div>
+            </div>
+            <div class="expandingtext_more" @click="expanded = ! expanded; if(expanded) { moreText = 'LESS -' } else { moreText = 'MORE +' }">
+                <button x-text="moreText">MORE +</button>
+            </div>
+        </div>
+    </div>
+</section>                                            <div class="grid " id="">
+                                                            <div class="column" style="flex: 6">
+                            <div class="gutter">
+                                <div class="fullimg">
+    <div class="fullimg_cover">
+        <!-- image -->
+                    <img src="https://omp.dentist/media/pages/home/63c70a7f5e-1707299228/dental-practice-stoneybatter-1200x-q80.webp" alt="">
+            </div>
+</div>                            </div>
+                        </div>
+                                                                                <div class="column" style="flex: 6">
+                            <div class="gutter">
+                                
+
+
+<div class="textleft">
+    <div class="textleft_content">
+        <h4><u>Our Dentist</u></h4><p>Dr. Hogg graduated with honours from Trinity College Dublin. Prior to studying dentistry, he obtained a First Class Honours degree in Science from Queen’s University, Belfast. Chris hails from Bangor, Co. Down but has lived in Dublin for over twenty years, having come to Dublin as an apprentice PGA golf professional.</p><p>Before his studies at Queen’s and Trinity, Chris played golf professionally and taught golf in Ireland and Texas. He is married with a young family, and still gets to play a little bit of golf.</p><h4><u>Our Approach</u></h4><p>Good oral health starts with prevention. Regular check-ups and cleaning will save money and stop small problems from becoming bigger issues. Many adults can benefit from the support of the PRSI scheme.This reduces the cost of examination and cleaning visits.</p><p>We welcome all age groups and are proud to say that we especially like looking after nervous patients,young and old. A positive attitude to dentistry starts with regular visits at a young age, so children are especially welcome to come for short, simple visits to become familiar to the clinic and the team.</p>    </div>
+    </div>                            </div>
+                        </div>
+                                                </div>
+                                                <section id="team">
+
+    <!-- mobile -->
+
+    <div x-data="{
+        init() {
+            open: false,
+            new Splide(this.$refs.splide, {
+
+                padding: '1rem',
+                gap: '1rem',
+            }).mount()
+        },
+        open: false,
+        role: 'Principal Dentist',
+        name: 'Dr. Chris Hogg',
+        bio: 'Blurb',
+        image: 'https://via.placeholder.com/500x400',
+
+    }">
+
+        
+
+        <section x-show="isMob" x-ref="splide" class="splide splide--slide splide--ltr splide--draggable is-active is-initialized" aria-label="Splide/Alpine.js Carousel Example" id="splide01" aria-roledescription="carousel" style="display: none;">
+                            <div class="splide__title">
+                    <h2>
+                        Meet the Team                    </h2>
+                </div>
+            
+            <div class="splide__arrows splide__arrows--ltr"><button class="splide__arrow splide__arrow--prev" type="button" disabled="" aria-label="Previous slide" aria-controls="splide01-track"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" focusable="false"><path d="m15.5 0.932-4.3 4.38 14.5 14.6-14.5 14.5 4.3 4.4 14.6-14.6 4.4-4.3-4.4-4.4-14.6-14.6z"></path></svg></button><button class="splide__arrow splide__arrow--next" type="button" aria-label="Next slide" aria-controls="splide01-track"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" focusable="false"><path d="m15.5 0.932-4.3 4.38 14.5 14.6-14.5 14.5 4.3 4.4 14.6-14.6 4.4-4.3-4.4-4.4-14.6-14.6z"></path></svg></button></div><div class="splide__track splide__track--slide splide__track--ltr splide__track--draggable" id="splide01-track" style="padding-left: 1rem; padding-right: 1rem;" aria-live="polite" aria-atomic="true">
+                <ul class="splide__list out" x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'" id="splide01-list" role="presentation" style="transform: translateX(0px);">
+                                            <div class="splide__slide is-active is-visible" id="splide01-slide01" role="tabpanel" aria-roledescription="slide" aria-label="1 of 3" style="margin-right: 1rem; width: calc(100% + 0rem);">
+                                                            <div class="splide__image">
+                                    <img src="https://omp.dentist/media/pages/home/39145ee410-1708941534/chris-hogg-dentist-stoneybatter-one-manor-place-1200x-q80.webp" alt="">
+                                </div>
+                                                        <div class="splide__info">
+                                <!-- heading -->
+                                <h2 class="splide__name">
+                                    Chris                                </h2>
+                                <!-- discription -->
+                                <h3 class="splide__role">
+                                    Principal Dentist                                </h3>
+
+                                <!-- more -->
+                                <div class="splide__more" @click="
+                                        open = !open;
+                                        name = 'Dr. Chris Hogg';
+                                        bio = '&lt;p&gt;Dr. Hogg graduated with honours from Trinity College Dublin. Prior to studying dentistry, he obtained a First Class Honours degree in Science from Queen’s University, Belfast. Chris hails from Bangor, Co. Down but has lived in Dublin for over twenty years, having come to Dublin as an apprentice PGA golf professional.Before his studies at Queen’s and Trinity, Chris played golf professionally and taught golf in Ireland and Texas. He is married with a young family, and still gets to play a little bit of golf.&lt;/p&gt;';
+                                        image = 'https://omp.dentist/media/pages/home/b4bfeee991-1708966499/chris-1.5-1200x-q80.webp';
+                                        role = 'Principal Dentist';
+                                    ">
+                                    <span>MORE</span>
+                                </div>
+                            </div>
+
+                        </div>
+                                            <div class="splide__slide is-next is-visible" id="splide01-slide02" role="tabpanel" aria-roledescription="slide" aria-label="2 of 3" style="margin-right: 1rem; width: calc(100% + 0rem);">
+                                                            <div class="splide__image">
+                                    <img src="https://omp.dentist/media/pages/home/c8a4cbbecc-1710167764/eithne-1200x-q80.webp" alt="">
+                                </div>
+                                                        <div class="splide__info">
+                                <!-- heading -->
+                                <h2 class="splide__name">
+                                    Eithne                                </h2>
+                                <!-- discription -->
+                                <h3 class="splide__role">
+                                    Dental Hygienist                                </h3>
+
+                                <!-- more -->
+                                <div class="splide__more" @click="
+                                        open = !open;
+                                        name = 'Eithne';
+                                        bio = '&lt;p&gt;Eithne graduated as a dental hygienist from University College Cork in 2002. Before studying to become a dental hygienist Eithne worked as a dental nurse for seven years. Eithne has worked in the dental profession in Dublin, London and Melbourne. She has completed numerous CPD courses over her years working as a dental hygienist, including first aid, administering block anesthesia and temporary fillings.&lt;br&gt;&lt;br&gt;She has worked at OMP for 15 years, and has developed many long-standing relationships with long-term clients throughout her tenure. She is a superb dental hygienist, and we are very fortunate to have her as part of our team. Eithne’s favourite part of her role is encouraging her patients to up-keep good oral hygiene at home. She especially loves treating nervous clients and children. In her own words she loves giving teeth their sparkle back! When she’s not working as a dental hygienist, Eithne loves travelling, going out for dinner and roller blading!&lt;/p&gt;';
+                                        image = 'https://omp.dentist/media/pages/home/fcae4ba926-1710173213/staff-03-1200x-q80.webp';
+                                        role = 'Dental Hygienist';
+                                    ">
+                                    <span>MORE</span>
+                                </div>
+                            </div>
+
+                        </div>
+                                            <div class="splide__slide is-visible" id="splide01-slide03" role="tabpanel" aria-roledescription="slide" aria-label="3 of 3" style="margin-right: 1rem; width: calc(100% + 0rem);">
+                                                            <div class="splide__image">
+                                    <img src="https://omp.dentist/media/pages/home/be95a4a209-1708941541/cathy-1-1200x-q80.webp" alt="">
+                                </div>
+                                                        <div class="splide__info">
+                                <!-- heading -->
+                                <h2 class="splide__name">
+                                    Cathy                                </h2>
+                                <!-- discription -->
+                                <h3 class="splide__role">
+                                    Dental Nurse                                </h3>
+
+                                <!-- more -->
+                                <div class="splide__more" @click="
+                                        open = !open;
+                                        name = 'Cathy';
+                                        bio = '&lt;p&gt;Cathy joined our team last year, and she has fast become a firm favorite with patients.Cathy qualified as a dental nurse from the Dublin Dental Hospital (TCD) in 1991. She has worked as a dental nurse for an amazing 39 years- so it’s safe to say you are in expert hands with Cathy by your side.&lt;br&gt;&lt;br&gt;Cathy has worked as a dental nurse in both Dublin and Edinburgh.&lt;br&gt;Cathy’s favorite thing about the role is meeting new patients. In her spare time, Cathy enjoys running, going to the cinema, and getting stuck into a good book!&lt;/p&gt;';
+                                        image = 'https://omp.dentist/media/pages/home/be95a4a209-1708941541/cathy-1-1200x-q80.webp';
+                                        role = 'Dental Nurse';
+                                    ">
+                                    <span>MORE</span>
+                                </div>
+                            </div>
+
+                        </div>
+                                    </ul>
+            </div>
+
+            <div class="splide_overlaycontent lockScroll" :class="open == true ? 'active' : '' ">
+                <div class="left">
+                    <h3 x-text="role">Principal Dentist</h3>
+                    <h2 x-text="name">Dr. Chris Hogg</h2>
+                    <div x-html="bio">Blurb</div>
+                </div>
+                <div class="imageblock">
+                    <figure>
+                        <img :src="image" :alt="name" src="https://via.placeholder.com/500x400" alt="Dr. Chris Hogg">
+                    </figure>
+                </div>
+
+                <div class="splide_overlaycontent-x" @click="open = !open">
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        <ul class="splide__pagination splide__pagination--ltr" role="tablist" aria-label="Select a slide to show"><li role="presentation"><button class="splide__pagination__page is-active" type="button" role="tab" aria-controls="splide01-slide01" aria-label="Go to slide 1" aria-selected="true"></button></li><li role="presentation"><button class="splide__pagination__page" type="button" role="tab" aria-controls="splide01-slide02" aria-label="Go to slide 2" tabindex="-1"></button></li><li role="presentation"><button class="splide__pagination__page" type="button" role="tab" aria-controls="splide01-slide03" aria-label="Go to slide 3" tabindex="-1"></button></li></ul></section>
+
+        <!-- Desktop -->
+
+        <section x-show="!isMob">
+            <div class="tiles">
+
+                <div class="tiles_block">
+                    <!-- Title of tiles  -->
+                                            <h2 class="tiles_header out" x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'">
+                            Meet the Team                        </h2>
+                    
+                    <!-- tiles -->
+                    <div class="tiles_tiles">
+                        
+                            <!-- tile -->
+                            <div class="tile" x-data="{ open: false }" :class="open == true ? 'active' : '' ">
+
+                                <!-- image -->
+                                                                    <div class="tile_img">
+                                        <img src="https://omp.dentist/media/pages/home/39145ee410-1708941534/chris-hogg-dentist-stoneybatter-one-manor-place-1200x-q80.webp" alt="">
+                                    </div>
+                                
+                                <div class="tile_text">
+                                    <!-- heading -->
+                                    <h2 class="tile_text-heading">
+                                        Chris                                    </h2>
+                                    <!-- discription -->
+                                    <h3 class="tile_text-description">
+                                        Principal Dentist                                    </h3>
+
+
+
+                                    <div class="tile_text-more" @click="open = !open">
+                                        <span>MORE</span>
+                                    </div>
+                                </div>
+
+                                <div class="tile_overlaycontent dissolveout" x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'dissolvein' : 'dissolveout'">
+                                    <div class="left">
+                                        <div class="left_content">
+                                            <h3>
+                                                Principal Dentist                                            </h3>
+                                            <h2>
+                                                Dr. Chris Hogg                                            </h2>
+                                            <div>
+                                                <p>Dr. Hogg graduated with honours from Trinity College Dublin. Prior to studying dentistry, he obtained a First Class Honours degree in Science from Queen’s University, Belfast. Chris hails from Bangor, Co. Down but has lived in Dublin for over twenty years, having come to Dublin as an apprentice PGA golf professional.Before his studies at Queen’s and Trinity, Chris played golf professionally and taught golf in Ireland and Texas. He is married with a young family, and still gets to play a little bit of golf.</p>                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="imageblock">
+                                        <figure>
+                                            <img src="https://omp.dentist/media/pages/home/b4bfeee991-1708966499/chris-1.5-1200x-q80.webp" alt="">
+                                        </figure>
+                                    </div>
+
+                                    <div class="tile_overlaycontent-x" @click="open = !open">
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+
+
+
+                            </div>
+
+
+                        
+                            <!-- tile -->
+                            <div class="tile" x-data="{ open: false }" :class="open == true ? 'active' : '' ">
+
+                                <!-- image -->
+                                                                    <div class="tile_img">
+                                        <img src="https://omp.dentist/media/pages/home/c8a4cbbecc-1710167764/eithne-1200x-q80.webp" alt="">
+                                    </div>
+                                
+                                <div class="tile_text">
+                                    <!-- heading -->
+                                    <h2 class="tile_text-heading">
+                                        Eithne                                    </h2>
+                                    <!-- discription -->
+                                    <h3 class="tile_text-description">
+                                        Dental Hygienist                                    </h3>
+
+
+
+                                    <div class="tile_text-more" @click="open = !open">
+                                        <span>MORE</span>
+                                    </div>
+                                </div>
+
+                                <div class="tile_overlaycontent dissolveout" x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'dissolvein' : 'dissolveout'">
+                                    <div class="left">
+                                        <div class="left_content">
+                                            <h3>
+                                                Dental Hygienist                                            </h3>
+                                            <h2>
+                                                Eithne                                            </h2>
+                                            <div>
+                                                <p>Eithne graduated as a dental hygienist from University College Cork in 2002. Before studying to become a dental hygienist Eithne worked as a dental nurse for seven years. Eithne has worked in the dental profession in Dublin, London and Melbourne. She has completed numerous CPD courses over her years working as a dental hygienist, including first aid, administering block anesthesia and temporary fillings.<br><br>She has worked at OMP for 15 years, and has developed many long-standing relationships with long-term clients throughout her tenure. She is a superb dental hygienist, and we are very fortunate to have her as part of our team. Eithne’s favourite part of her role is encouraging her patients to up-keep good oral hygiene at home. She especially loves treating nervous clients and children. In her own words she loves giving teeth their sparkle back! When she’s not working as a dental hygienist, Eithne loves travelling, going out for dinner and roller blading!</p>                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="imageblock">
+                                        <figure>
+                                            <img src="https://omp.dentist/media/pages/home/fcae4ba926-1710173213/staff-03-1200x-q80.webp" alt="">
+                                        </figure>
+                                    </div>
+
+                                    <div class="tile_overlaycontent-x" @click="open = !open">
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+
+
+
+                            </div>
+
+
+                        
+                            <!-- tile -->
+                            <div class="tile" x-data="{ open: false }" :class="open == true ? 'active' : '' ">
+
+                                <!-- image -->
+                                                                    <div class="tile_img">
+                                        <img src="https://omp.dentist/media/pages/home/be95a4a209-1708941541/cathy-1-1200x-q80.webp" alt="">
+                                    </div>
+                                
+                                <div class="tile_text">
+                                    <!-- heading -->
+                                    <h2 class="tile_text-heading">
+                                        Cathy                                    </h2>
+                                    <!-- discription -->
+                                    <h3 class="tile_text-description">
+                                        Dental Nurse                                    </h3>
+
+
+
+                                    <div class="tile_text-more" @click="open = !open">
+                                        <span>MORE</span>
+                                    </div>
+                                </div>
+
+                                <div class="tile_overlaycontent dissolveout" x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'dissolvein' : 'dissolveout'">
+                                    <div class="left">
+                                        <div class="left_content">
+                                            <h3>
+                                                Dental Nurse                                            </h3>
+                                            <h2>
+                                                Cathy                                            </h2>
+                                            <div>
+                                                <p>Cathy joined our team last year, and she has fast become a firm favorite with patients.Cathy qualified as a dental nurse from the Dublin Dental Hospital (TCD) in 1991. She has worked as a dental nurse for an amazing 39 years- so it’s safe to say you are in expert hands with Cathy by your side.<br><br>Cathy has worked as a dental nurse in both Dublin and Edinburgh.<br>Cathy’s favorite thing about the role is meeting new patients. In her spare time, Cathy enjoys running, going to the cinema, and getting stuck into a good book!</p>                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="imageblock">
+                                        <figure>
+                                            <img src="https://omp.dentist/media/pages/home/be95a4a209-1708941541/cathy-1-1200x-q80.webp" alt="">
+                                        </figure>
+                                    </div>
+
+                                    <div class="tile_overlaycontent-x" @click="open = !open">
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+
+
+
+                            </div>
+
+
+                                            </div>
+                </div>
+            </div>
+
+
+        </section>
+</div></section>                                            <div class="grid services" id="services">
+                                                            <div class="column" style="flex: 6">
+                            <div class="gutter">
+                                
+
+
+<div class="textleft">
+    <div class="textleft_content">
+        <h2>Services</h2><p>At One Manor Place, we are dedicated to providing a wide range of dental solutions to meet your individual needs. If you have a specific requirement or need more information about any of our services, please don't hesitate to get in touch with us.         </p>    </div>
+            <div class="textleft_button out" x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'">
+            <a href="https://uk.dentalhub.online/soe/new/%20?pid=UICRI02" target="mytab" class="textleft_buttonlink">
+                BOOK TODAY            </a>
+        </div>
+    </div>                            </div>
+                        </div>
+                                                                                <div class="column" style="flex: 6">
+                            <div class="gutter">
+                                <section>
+    <div class="accordions">
+        <!-- accordion -->
+        <div class="accordions_list">
+                            <!-- ->id() -->
+                <div x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'" class="out">
+                    <!-- accordion -->
+                    <div class="accordion" x-data="{ expanded: false }" :class="expanded == true ? 'active' : '' ">
+
+                        <!-- heading -->
+                        <div class="accordion_heading" @click="expanded = ! expanded">
+                            Assessment Services                              <div class="accordion_plus">
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div class="accordion_content" x-show="expanded" x-collapse="" style="display: none; height: 0px; overflow: hidden;" hidden="">
+                            <div class="accordion_padding">
+                                <p><strong>Your dental check-up will include a full mouth health check, including an oral cancer screening and may involve further diagnostic testing such as X-ray’s where appropriate. <br><br>Children's dental check-ups are important to help children adapt to coming to the dentist regularly. We really emphasize oral health advice during these check-ups, and provide plenty of tooth brushing tips!</strong></p><ul><li><p>Dental examination <u>€60</u></p></li><li><p>PRSI Dental Exam <u>Free</u></p></li><li><p>Prescription <u>€40</u></p></li></ul>                            </div>
+                        </div>
+                    </div>
+                </div>
+                            <!-- ->id() -->
+                <div x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'" class="out">
+                    <!-- accordion -->
+                    <div class="accordion" x-data="{ expanded: false }" :class="expanded == true ? 'active' : '' ">
+
+                        <!-- heading -->
+                        <div class="accordion_heading" @click="expanded = ! expanded">
+                            Oral Hygiene                            <div class="accordion_plus">
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div class="accordion_content" x-show="expanded" x-collapse="" style="display: none; height: 0px; overflow: hidden;" hidden="">
+                            <div class="accordion_padding">
+                                <p><strong>A build up of plaque and calculus around the teeth and under the gums can result in future health problems.</strong></p><p>Something that may start with bleeding gums, could lead to gingivitis, or more serious, periodontitis. Poor oral health can lead to bad breath and even tooth loss.</p><p>Regular cleanings with the hygienist will help to remove plaque, calculus and biofilm which contain harmful microbes. Seeing the hygienist regularly will help you keep on top of your oral health.</p><p></p><ul><li><p>Clean  <u>€80</u></p></li><li><p>PRSI clean with Hygienist <u>€30</u></p></li><li><p>PRSI clean with Dentist <u>€30</u></p></li><li><p>Airpolisher  <u>€80</u></p></li><li><p>Subgingival clean per quadrant  <u>€120</u></p></li><li><p>Composite Bond Polishing <u>€100</u></p></li></ul>                            </div>
+                        </div>
+                    </div>
+                </div>
+                            <!-- ->id() -->
+                <div x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'" class="out">
+                    <!-- accordion -->
+                    <div class="accordion" x-data="{ expanded: false }" :class="expanded == true ? 'active' : '' ">
+
+                        <!-- heading -->
+                        <div class="accordion_heading" @click="expanded = ! expanded">
+                            Children's Services                            <div class="accordion_plus">
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div class="accordion_content" x-show="expanded" x-collapse="" style="display: none; height: 0px; overflow: hidden;" hidden="">
+                            <div class="accordion_padding">
+                                <p><strong>We are passionate about early intervention dentistry. We especially love treating children and providing easy oral health tips that can be incorporated into their daily routines.</strong></p><ul><li><p>Children examination <u>€45</u></p></li><li><p>Children examination (Under 3 years) <u>€30</u></p></li><li><p>Child's clean  <u>€50</u></p></li><li><p>Stainless Steel Crown  <u>€200</u></p></li><li><p>Extraction  <u>€100</u> </p></li><li><p>Filling  <u>€120</u></p></li></ul><p><strong>Preventative Treatments:</strong></p><ul><li><p>Flouride Varnish  <u>€40</u></p></li><li><p>Fissure Sealant <u>€50</u></p></li><li><p>RA Sedation (nitrous/laughing gas), usually recommended for extractions <u>€200</u></p></li></ul>                            </div>
+                        </div>
+                    </div>
+                </div>
+                            <!-- ->id() -->
+                <div x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'" class="out">
+                    <!-- accordion -->
+                    <div class="accordion" x-data="{ expanded: false }" :class="expanded == true ? 'active' : '' ">
+
+                        <!-- heading -->
+                        <div class="accordion_heading" @click="expanded = ! expanded">
+                            Extractions                            <div class="accordion_plus">
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div class="accordion_content" x-show="expanded" x-collapse="" style="display: none; height: 0px; overflow: hidden;" hidden="">
+                            <div class="accordion_padding">
+                                <p><strong>In some cases you may need to have a tooth removed. Whether it’s a problematic wisdom tooth, a decayed or traumatised tooth, we will endeavour to make the procedure as comfortable as possible for you. We will always ensure profound local anaesthesia before proceeding. Sutures may be placed to help secure the gum and encourage healing.</strong></p><ul><li><p>Simple extraction  <u>€100–€150</u></p></li><li><p>Surgical extraction  <u>€160–€350</u> </p></li></ul>                            </div>
+                        </div>
+                    </div>
+                </div>
+                            <!-- ->id() -->
+                <div x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'" class="out">
+                    <!-- accordion -->
+                    <div class="accordion" x-data="{ expanded: false }" :class="expanded == true ? 'active' : '' ">
+
+                        <!-- heading -->
+                        <div class="accordion_heading" @click="expanded = ! expanded">
+                            Composite Fillings                            <div class="accordion_plus">
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div class="accordion_content" x-show="expanded" x-collapse="" style="display: none; height: 0px; overflow: hidden;" hidden="">
+                            <div class="accordion_padding">
+                                <p><strong>Chipped, broken or decayed teeth can be restored with tooth-coloured composite resin-based and glass-ionomer materials which adhere to the tooth being restored. We only use carefully selected white filling materials to restore your teeth</strong></p><ul><li><p>Small  <u>€120</u></p></li><li><p>Medium  <u>€140</u> </p></li><li><p>Large  <u>€160</u></p></li><li><p>Temporary filling  <u>€80</u></p></li></ul>                            </div>
+                        </div>
+                    </div>
+                </div>
+                            <!-- ->id() -->
+                <div x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'" class="out">
+                    <!-- accordion -->
+                    <div class="accordion" x-data="{ expanded: false }" :class="expanded == true ? 'active' : '' ">
+
+                        <!-- heading -->
+                        <div class="accordion_heading" @click="expanded = ! expanded">
+                            Aesthetic Treatments                            <div class="accordion_plus">
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div class="accordion_content" x-show="expanded" x-collapse="" style="display: none; height: 0px; overflow: hidden;" hidden="">
+                            <div class="accordion_padding">
+                                <p><strong>We offer various treatments to help improve your smile. We can correct the shape and colour of your teeth to create an overall more attractive smile.<br><br>All patients have individual wants and needs regarding their smile and will be treated on an individual basis. We will carry out a detailed consultation ahead of any cosmetic treatment.</strong></p><ul><li><p>Composite Bonding  <u>€150-€200</u> </p></li><li><p>Teeth Whitening  <u>€300</u> </p></li><li><p>Whitening Refills x2  <u>€75</u></p></li><li><p>Whitening Refills x4  <u>€120</u> </p></li><li><p>BIOCLEAR Black triangle/Diastema closure  <u>€300</u></p></li></ul>                            </div>
+                        </div>
+                    </div>
+                </div>
+                            <!-- ->id() -->
+                <div x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'" class="out">
+                    <!-- accordion -->
+                    <div class="accordion" x-data="{ expanded: false }" :class="expanded == true ? 'active' : '' ">
+
+                        <!-- heading -->
+                        <div class="accordion_heading" @click="expanded = ! expanded">
+                            Dentures                            <div class="accordion_plus">
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div class="accordion_content" x-show="expanded" x-collapse="" style="display: none; height: 0px; overflow: hidden;" hidden="">
+                            <div class="accordion_padding">
+                                <p><strong>Dentures are prosthetic appliances made to replace missing teeth. They are held in by the surrounding hard and soft tissues of your mouth. Dentures are removable. They are a popular, more affordable option to replace missing teeth. <br><br>Just like in our aesthetic consultation, our dentist will fully consult you, and provide different options in order to achieve the desired result for you.</strong></p><ul><li><p>Acrylic Partial Denture  <u>€450</u></p></li><li><p>Acrylic Full Denture  <u>€650</u></p></li><li><p>Cobalt Chrome Partial Denture  <u>€1,200</u></p></li></ul>                            </div>
+                        </div>
+                    </div>
+                </div>
+                            <!-- ->id() -->
+                <div x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'" class="out">
+                    <!-- accordion -->
+                    <div class="accordion" x-data="{ expanded: false }" :class="expanded == true ? 'active' : '' ">
+
+                        <!-- heading -->
+                        <div class="accordion_heading" @click="expanded = ! expanded">
+                            Root Canal Treatments                            <div class="accordion_plus">
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div class="accordion_content" x-show="expanded" x-collapse="" style="display: none; height: 0px; overflow: hidden;" hidden="">
+                            <div class="accordion_padding">
+                                <p><strong>Endodontic treatment saves teeth that would otherwise have been extracted. It involves the removal of pulp tissues from the tooth in the event of irreversible inflammation or infection.</strong></p><p><strong>Following this treatment, we will always recommend you get a crown to eliminate the risk of breakage associated with root canal treatments.</strong></p><ul><li><p>Incisor  <u>€500</u></p></li><li><p>Premolar  <u>€600</u></p></li><li><p>Molar  <u>€800</u></p></li><li><p>Post &amp; Core Build up <u>€150</u></p></li></ul>                            </div>
+                        </div>
+                    </div>
+                </div>
+                            <!-- ->id() -->
+                <div x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'" class="out">
+                    <!-- accordion -->
+                    <div class="accordion" x-data="{ expanded: false }" :class="expanded == true ? 'active' : '' ">
+
+                        <!-- heading -->
+                        <div class="accordion_heading" @click="expanded = ! expanded">
+                            Crowns &amp; Bridge                            <div class="accordion_plus">
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div class="accordion_content" x-show="expanded" x-collapse="" style="display: none; height: 0px; overflow: hidden;" hidden="">
+                            <div class="accordion_padding">
+                                <p><strong>When fillings become larger than the remaining tooth, an aesthetic, yet functional crown can help cover and protect it. We can advise you on the best options here.</strong></p><p><strong>Missing teeth can be replaced with a bridge that consists of one or multiple crowns spanning the gap between the remaining adjacent teeth.</strong></p><p><strong>A bridge can solve the same problem as an implant, and is an alternative option for patients , depending on their particular needs and circumstances.</strong></p><p><strong>Both of these options offer a highly aesthetic yet functional solution.</strong></p><ul><li><p>Ceramic Crown  <u>€850</u></p></li><li><p>Zirconia Crown  <u>€850</u></p></li><li><p>Crown re-cement  <u>€80</u></p></li></ul>                            </div>
+                        </div>
+                    </div>
+                </div>
+                            <!-- ->id() -->
+                <div x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'" class="out">
+                    <!-- accordion -->
+                    <div class="accordion" x-data="{ expanded: false }" :class="expanded == true ? 'active' : '' ">
+
+                        <!-- heading -->
+                        <div class="accordion_heading" @click="expanded = ! expanded">
+                            Dental Appliances                            <div class="accordion_plus">
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div class="accordion_content" x-show="expanded" x-collapse="" style="display: none; height: 0px; overflow: hidden;" hidden="">
+                            <div class="accordion_padding">
+                                <ul><li><p>Night Guard soft <u>€195</u></p></li><li><p>Essix Retainer <u>€130</u></p></li><li><p>Michigan Splint <u>€475</u></p></li><li><p>Sport Guard <u>€150</u> </p></li></ul>                            </div>
+                        </div>
+                    </div>
+                </div>
+                            <!-- ->id() -->
+                <div x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'" class="out">
+                    <!-- accordion -->
+                    <div class="accordion" x-data="{ expanded: false }" :class="expanded == true ? 'active' : '' ">
+
+                        <!-- heading -->
+                        <div class="accordion_heading" @click="expanded = ! expanded">
+                            Skincare                            <div class="accordion_plus">
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div class="accordion_content" x-show="expanded" x-collapse="" style="display: none; height: 0px; overflow: hidden;" hidden="">
+                            <div class="accordion_padding">
+                                <p><strong>We currently offer two well researched and results driven non-invasive skin treatments at One Manor Place. </strong></p><p><strong>SkinPen microneedling involves puncturing the skin with tiny needles, creating controlled microinjuries that stimulate the body’s natural healing process, leading to skin rejuvenation. Over several months, it boosts cell and collagen production, serving as an anti-aging treatment, reducing pore size, and improving hyperpigmentation and acne scarring. <br><br>BioRepeel, a medium-depth 30% TCA chemical peel, stimulates dermal fibroblasts, increasing cell turnover and promoting collagen and elastin production. It's ideal for addressing dull, inelastic skin, acne, pigmentation issues, and fine lines.<br><br></strong><a href="/skincare" title="READ MORE"><strong>READ MORE</strong></a></p><ul><li><p>SkinPen Microneedling  <u>€250</u> </p></li><li><p>SkinPen Face &amp; Neck  <u>€300</u></p></li><li><p>SkinPen Microneedling  <u>€675</u></p></li><li><p>SkinPen Face &amp; Neck  <u>€795</u></p></li><li><p>SkinPen Hand Rejuvenation Treatment Add-On <u>€60</u></p></li><li><p>SkinPen Body Treatment <br>- consultation required to confirm suitability and confirm price  <u>Price Starts at €290</u> </p></li><li><p>BioRePeel Chemical Peel (35% TCA)  <u>€110</u> </p></li></ul>                            </div>
+                        </div>
+                    </div>
+                </div>
+                    </div>
+    </div>
+</section>                            </div>
+                        </div>
+                                                </div>
+                                <div class="grid book" id="book">
+                                                            <div class="column" style="flex: 6">
+                            <div class="gutter">
+                                
+
+
+<div class="textleft">
+    <div class="textleft_content">
+        <h2>Advanced Childrens Dentistry</h2>    </div>
+            <div class="textleft_button out" x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'">
+            <a href="https://uk.dentalhub.online/soe/new/%20?pid=UICRI02" target="mytab" class="textleft_buttonlink">
+                BOOK TODAY            </a>
+        </div>
+    </div>                            </div>
+                        </div>
+                                                                                <div class="column" style="flex: 6">
+                            <div class="gutter">
+                                <section id="book">
+    <div class="animation">
+        <div class="animation_content">
+            <!-- image -->
+            <svg width="742" height="550" viewBox="0 0 742 692" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Brush Head">
+<g id="Mirror">
+<path id="Vector" d="M270.26 595.96C403.87 595.96 454.61 464.23 454.61 313.75C454.61 163.27 372.07 41.2798 270.26 41.2798C168.45 41.2798 85.9104 163.27 85.9104 313.75C85.9104 464.23 168.45 595.96 270.26 595.96Z" fill="#DBFEEC"></path>
+<path id="Vector_2" d="M465.644 466.506L387.134 526.271L85.9257 130.593L164.436 70.8273L465.644 466.506Z" fill="url(#paint0_linear_2252_259)"></path>
+<g id="Group">
+<path id="Vector_3" d="M270.26 0C395.08 0 496.26 140.47 496.26 313.75C496.26 487.03 395.08 608.15 270.26 608.15C207.01 608.15 149.82 591.42 108.8 533.28C68.8802 476.7 44.2603 399.21 44.2603 313.75C44.2603 140.47 145.44 0 270.26 0ZM270.26 595.96C392.85 595.96 454.61 464.23 454.61 313.75C454.61 163.27 372.07 41.28 270.26 41.28C168.45 41.28 85.9103 163.27 85.9103 313.75C85.9103 464.23 168.45 595.96 270.26 595.96Z" fill="#2E513E"></path>
+</g>
+<path id="Gleam 01" d="M189.5 103.77L349.35 313.75" stroke="#2E513E" stroke-width="3" stroke-miterlimit="10"></path>
+<path id="Gleam 02" d="M129.93 193.56L289.78 403.54" stroke="#2E513E" stroke-width="3" stroke-miterlimit="10"></path>
+</g>
+<g id="Head">
+<path id="Teeth Back" d="M319.99 436.15H563.38V644.82H319.99V436.15Z" fill="white"></path>
+<path id="Hair Front" d="M304.25 276.36V312.31C304.25 390.52 256.74 370.58 256.74 409.12C256.74 431.43 278.98 434.49 300.06 434.72V452.43C300.06 458.86 305.27 464.07 311.7 464.07H407.63C456.23 464.07 446.24 442.06 497.16 442.06C544.11 442.06 558.13 495.89 558.13 525.46C558.13 603.05 497.59 638.01 440.04 638.01H316.75C310.6 638.01 306.33 644.14 308.47 649.91C314.09 665.13 332.52 689.53 392.87 689.53H622.93C626.77 689.53 640.41 531.85 640.41 531.85L620.37 380.08L561.96 247.49L454.72 207.84L368.17 210.4L340.7 210.13L305.98 270.09L304.24 276.34L304.25 276.36Z" fill="#92FFC5" stroke="#2E513E" stroke-width="3" stroke-miterlimit="10"></path>
+<path id="Hair Back and Sides" d="M368.94 194.61H525.25C559.26 194.61 587.22 220.5 590.5 253.65C645.03 276.06 683.44 329.7 683.44 392.31C683.44 402.63 682.38 412.7 680.4 422.43C701.99 437.74 716.1 462.91 716.1 491.39C716.1 507.65 711.5 522.82 703.54 535.71C725.4 550.96 739.73 576.27 739.77 604.94C739.83 651.48 700.71 689.55 654.17 689.55H601.03C581.34 689.55 555.23 678.21 555.23 642.22C555.23 597.27 615.7 575.89 615.7 575.89C571.99 548.3 569.07 493.18 596.03 454.81C525.26 469.48 505.27 377.55 540.95 345.92C545.51 341.88 571.71 325.9 571.71 294.51C571.71 269.09 555.35 248.48 529.92 248.48C501.35 248.48 490.95 267.68 485.2 291.62C479.45 315.55 472.24 319.7 462.28 319.7C457.84 319.7 447.61 317.73 447.61 296.4V222.92C447.61 270.03 411.61 280.7 397.83 280.7C384.05 280.7 344.05 267.81 344.05 222.92C344.05 241.31 333.84 266.01 305.65 275.89C302.89 276.86 300.05 274.72 300.18 271.8C302.47 223.63 329.54 194.61 368.94 194.61Z" fill="#2E513E" stroke="#2E513E" stroke-width="3" stroke-miterlimit="10"></path>
+<path id="Freckle 03" d="M378.34 397.97C375.915 397.97 373.95 396.004 373.95 393.58C373.95 391.155 375.915 389.19 378.34 389.19C380.764 389.19 382.73 391.155 382.73 393.58C382.73 396.004 380.764 397.97 378.34 397.97Z" fill="#2E513E"></path>
+<path id="Freckle 02" d="M399.24 419.17C396.816 419.17 394.85 417.204 394.85 414.78C394.85 412.355 396.816 410.39 399.24 410.39C401.665 410.39 403.63 412.355 403.63 414.78C403.63 417.204 401.665 419.17 399.24 419.17Z" fill="#2E513E"></path>
+<path id="Freckle 01" d="M357.83 419.17C355.405 419.17 353.44 417.204 353.44 414.78C353.44 412.355 355.405 410.39 357.83 410.39C360.255 410.39 362.22 412.355 362.22 414.78C362.22 417.204 360.255 419.17 357.83 419.17Z" fill="#2E513E"></path>
+<g id="eye">
+<path id="Eyeball" d="M331.5 331.759C328.345 312.319 341.546 294.002 360.986 290.846C380.426 287.691 398.743 300.892 401.899 320.332C405.054 339.772 391.853 358.089 372.413 361.245C352.973 364.4 334.656 351.199 331.5 331.759Z" fill="white" stroke="#2E513E" stroke-width="3"></path>
+<path id="Retina" fill-rule="evenodd" clip-rule="evenodd" d="M361.922 361.394C346.767 359.351 334.077 347.636 331.5 331.759C328.345 312.319 341.546 294.002 360.986 290.846C362.97 290.524 364.942 290.373 366.888 290.381C373.665 298.786 377.86 310.431 377.86 323.3C377.86 339.074 371.556 353.01 361.922 361.394Z" fill="#2E513E"></path>
+</g>
+<path id="Ear hole" d="M550.37 282.84C538.61 269.29 517.08 273.07 509.71 286.43C509.71 286.43 527.85 283.44 527.85 295.2C527.85 309.75 509.71 309.35 509.71 323.3" stroke="#2E513E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+<g id="teeth lines">
+<path id="Vector_4" d="M530.04 454.36V602.06" stroke="#2E513E" stroke-width="3" stroke-miterlimit="10"></path>
+<path id="Vector_5" d="M486.92 443.11V629.83" stroke="#2E513E" stroke-width="3" stroke-miterlimit="10"></path>
+<path id="Vector_6" d="M443.8 457.63V638.03" stroke="#2E513E" stroke-width="3" stroke-miterlimit="10"></path>
+<path id="Vector_7" d="M400.68 465.58V638.03" stroke="#2E513E" stroke-width="3" stroke-miterlimit="10"></path>
+<path id="Vector_8" d="M357.56 462.62V639.08" stroke="#2E513E" stroke-width="3" stroke-miterlimit="10"></path>
+<path id="Vector_9" d="M319.98 465.58V639.08" stroke="#2E513E" stroke-width="3" stroke-miterlimit="10"></path>
+<path id="Vector_10" d="M319.98 525.86H556.7" stroke="#2E513E" stroke-width="3" stroke-miterlimit="10"></path>
+</g>
+<path id="Dimple" d="M512.96 377.1C493.22 365.35 470.27 365.49 452.27 381.49" stroke="#2E513E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+</g>
+<g id="hand">
+<path id="paste" d="M350.21 528.09C350.21 518.06 358.34 509.93 368.37 509.93C371.97 509.93 375.31 510.99 378.13 512.79C380.36 506.72 386.18 502.38 393.03 502.38C393.58 502.38 394.12 502.41 394.65 502.46C397.5 496.16 403.83 491.77 411.19 491.77C419.39 491.77 426.32 497.21 428.57 504.68C431.46 501.64 435.52 499.74 440.04 499.74C448.79 499.74 455.88 506.83 455.88 515.58C455.88 518.44 455.11 521.11 453.79 523.43C460.92 523.67 466.63 529.51 466.63 536.7C466.63 543.89 460.68 549.99 453.34 549.99C448.03 549.99 443.46 546.87 441.33 542.37C434.92 547.79 422.97 551.45 409.27 551.45C402.36 551.45 395.89 550.52 390.35 548.9C390.37 549.26 390.41 549.62 390.41 549.99C390.41 560.02 382.28 568.15 372.25 568.15C362.22 568.15 354.09 560.02 354.09 549.99C354.09 546.94 354.85 544.06 356.18 541.54C352.52 538.22 350.21 533.44 350.21 528.1V528.09Z" fill="#DBFEEC" stroke="#2E513E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+<g id="Bristles">
+<g id="Group_2">
+<path id="Vector_11" d="M380.44 576.08V556.09" stroke="#2E513E" stroke-width="15" stroke-miterlimit="10" stroke-linecap="round"></path>
+<path id="Vector_12" d="M380.44 576.08V556.09" stroke="white" stroke-width="10" stroke-miterlimit="10" stroke-linecap="round"></path>
+</g>
+<g id="Group_3">
+<path id="Vector_13" d="M390.68 568.25V548.26" stroke="#2E513E" stroke-width="15" stroke-miterlimit="10" stroke-linecap="round"></path>
+<path id="Vector_14" d="M390.68 568.25V548.26" stroke="white" stroke-width="10" stroke-miterlimit="10" stroke-linecap="round"></path>
+</g>
+<g id="Group_4">
+<path id="Vector_15" d="M402.71 564.35V544.36" stroke="#2E513E" stroke-width="15" stroke-miterlimit="10" stroke-linecap="round"></path>
+<path id="Vector_16" d="M402.71 564.35V544.36" stroke="white" stroke-width="10" stroke-miterlimit="10" stroke-linecap="round"></path>
+</g>
+<g id="Group_5">
+<path id="Vector_17" d="M414.74 563.31V543.32" stroke="#2E513E" stroke-width="15" stroke-miterlimit="10" stroke-linecap="round"></path>
+<path id="Vector_18" d="M414.74 563.31V543.32" stroke="white" stroke-width="10" stroke-miterlimit="10" stroke-linecap="round"></path>
+</g>
+<g id="Group_6">
+<path id="Vector_19" d="M466.64 574.34V554.36" stroke="#2E513E" stroke-width="15" stroke-miterlimit="10" stroke-linecap="round"></path>
+<path id="Vector_20" d="M466.64 574.34V554.36" stroke="white" stroke-width="10" stroke-miterlimit="10" stroke-linecap="round"></path>
+</g>
+<g id="Group_7">
+<path id="Vector_21" d="M460.61 567.29V547.3" stroke="#2E513E" stroke-width="15" stroke-miterlimit="10" stroke-linecap="round"></path>
+<path id="Vector_22" d="M460.61 567.29V547.3" stroke="white" stroke-width="10" stroke-miterlimit="10" stroke-linecap="round"></path>
+</g>
+<g id="Group_8">
+<path id="Vector_23" d="M450.85 564.35V544.36" stroke="#2E513E" stroke-width="15" stroke-miterlimit="10" stroke-linecap="round"></path>
+<path id="Vector_24" d="M450.85 564.35V544.36" stroke="white" stroke-width="10" stroke-miterlimit="10" stroke-linecap="round"></path>
+</g>
+<g id="Group_9">
+<path id="Vector_25" d="M438.81 563.31V543.32" stroke="#2E513E" stroke-width="15" stroke-miterlimit="10" stroke-linecap="round"></path>
+<path id="Vector_26" d="M438.81 563.31V543.32" stroke="white" stroke-width="10" stroke-miterlimit="10" stroke-linecap="round"></path>
+</g>
+<g id="Group_10">
+<path id="Vector_27" d="M426.78 562V542.01" stroke="#2E513E" stroke-width="15" stroke-miterlimit="10" stroke-linecap="round"></path>
+<path id="Vector_28" d="M426.78 562V542.01" stroke="white" stroke-width="10" stroke-miterlimit="10" stroke-linecap="round"></path>
+</g>
+</g>
+<g id="Brush">
+<path id="Vector_29" d="M22.2601 583.26H370.98C371.69 570.15 382.54 559.74 395.83 559.74H454.15C465.88 559.74 475.39 569.25 475.39 580.98V586.91C475.39 598.64 465.88 608.15 454.15 608.15H22.2601C15.3901 608.15 9.82013 602.58 9.82013 595.71C9.82013 588.84 15.3901 583.27 22.2601 583.27V583.26Z" fill="#2E513E"></path>
+</g>
+<g id="Hand 01">
+<g id="Group_11">
+<path id="Vector_30" d="M33.5801 502.37C51.1901 502.37 82.8802 520.76 94.3502 544.7C97.7002 540.89 101.56 537.1 105.97 533.29C123.58 518.03 151.36 519.2 168.28 525.29L168.2 525.34C183.6 518.39 213.99 515.44 255.44 522.73C304.35 531.34 295.74 582.99 264.05 582.99H243.7C210.44 582.99 195.39 595.89 195.39 621.71C195.39 641.68 209.89 651.86 228.04 651.86C246.19 651.86 260.91 640.65 260.91 626.82C260.91 608.67 275.63 593.95 293.78 593.95C311.93 593.95 326.65 608.67 326.65 626.82V629.85C326.65 672.5 291.49 689.58 260.7 689.58H108.32C69.1901 689.58 44.9301 658.12 44.9301 610.39C44.9301 576.74 26.5401 559.13 18.3201 554.44C10.1001 549.74 1.49011 543.09 1.49011 528.62C1.49011 514.15 15.9701 502.4 33.5801 502.4V502.37Z" fill="#92FFC5" stroke="#2E513E" stroke-width="3" stroke-miterlimit="10"></path>
+</g>
+<path id="Vector_31" d="M105.97 533.28C88.3602 548.54 79.3602 563.41 77.4102 580.63" stroke="#2E513E" stroke-width="2.62" stroke-miterlimit="10"></path>
+<path id="Vector_32" d="M168.28 525.28C146.32 537.82 131.4 551.67 124.36 575.93" stroke="#2E513E" stroke-width="3" stroke-miterlimit="10"></path>
+</g>
+</g>
+<g id="sparkle-01">
+<path id="Sparkle 01" d="M172.12 443.11C197.65 443.11 218.36 422.41 218.36 396.87C218.36 422.4 239.06 443.11 264.6 443.11C239.07 443.11 218.36 463.81 218.36 489.35C218.36 463.82 197.66 443.11 172.12 443.11Z" fill="white" stroke="#2E513E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+</g>
+<g id="sparkle-02">
+<path id="Vector_33" d="M560.7 143.02C600.19 143.02 632.2 111.01 632.2 71.52C632.2 111.01 664.21 143.02 703.7 143.02C664.21 143.02 632.2 175.03 632.2 214.52C632.2 175.03 600.19 143.02 560.7 143.02Z" stroke="#2E513E" stroke-width="3" stroke-linejoin="round"></path>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_2252_259" x1="136.278" y1="111.809" x2="642.198" y2="789.019" gradientUnits="userSpaceOnUse">
+<stop stop-color="white"></stop>
+<stop offset="0.39" stop-color="#DBFEEC"></stop>
+</linearGradient>
+</defs>
+</svg>        </div>
+    </div>
+</section>                            </div>
+                        </div>
+                                                </div>
+                                <div class="grid reorder" id="reorder">
+                                                            <div class="column" style="flex: 6">
+                            <div class="gutter">
+                                <section id="">
+    
+
+    <div class="textcenter">
+        <div class="textcenter_block">
+            <div class="textcenter_content out" x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'">
+                <h2>“The best dentist around! From the moment you enter there is an extremely calming and welcoming atmosphere.”</h2>            </div>
+        </div>
+    </div>
+</section>                            </div>
+                        </div>
+                                                                                <div class="column" style="flex: 6">
+                            <div class="gutter">
+                                <div class="fullimg">
+    <div class="fullimg_cover">
+        <!-- image -->
+                    <img src="https://omp.dentist/media/pages/home/38915a6439-1707298858/testimonial-1-1200x-q80.webp" alt="">
+            </div>
+</div>                            </div>
+                        </div>
+                                                </div>
+                                <div class="grid " id="">
+                                                            <div class="column" style="flex: 6">
+                            <div class="gutter">
+                                <div class="fullimg">
+    <div class="fullimg_cover">
+        <!-- image -->
+                    <img src="https://omp.dentist/media/pages/home/4b2e6dbac0-1707298932/testimonial-2-1200x-q80.webp" alt="">
+            </div>
+</div>                            </div>
+                        </div>
+                                                                                <div class="column" style="flex: 6">
+                            <div class="gutter">
+                                <section id="">
+    
+
+    <div class="textcenter">
+        <div class="textcenter_block">
+            <div class="textcenter_content out" x-data="{ inview: false }" x-intersect="inview = true" :class="inview ? 'in' : 'out'">
+                <h2>“Dropped in today at lunchtime to get my teeth cleaned, lovely place, staff really friendly and teeth and gums feel like new”</h2>            </div>
+        </div>
+    </div>
+</section>                            </div>
+                        </div>
+                                                </div>
+            </main>
+
+<section id="contact">
+    
+  <footer class="footer">
+    <ul class="footer_contact">
+      <li class="footer_contact-1">
+        <a href="" class="footer_email">
+          </a><p><a href="" class="footer_email"></a><a href="mailto:info@omp.dentist" title="info@omp.dentist">info@omp.dentist</a></p>        
+        <a href="" class="footer_phone">
+          <p>(01) 677 7335</p>        </a>
+        <div class="footer_social">
+          <p><a href="https://www.instagram.com/onemanorplacedental/?hl=en" title="Instagram">Instagram</a></p>        </div>
+      </li>
+
+      <li class="footer_contact-2">
+        <div class="footer_address">
+          <p>One Manor Place<br>Stoneybatter,<br>Arbour Hill, D07 EV22</p>        </div>
+      </li>
+
+      <li class="footer_contact-3">
+        <div class="footer_hours">
+          <p>Mon <u>9–6</u> <br>Tue <u>9:30–7</u> <br>Wed <u>9–6</u> <br>Thu <u>9–6</u> <br>Fri  <u>8–5</u><br>Sat <u>By Appointment</u><br>Sun  <u>Closed</u></p>        </div>
+      </li>
+
+      <li class="footer_contact-4">
+        <div class="footer_copyright">
+          <p>© One Manor Place 2023</p>        </div>
+      </li>
+    </ul>
+
+    <!-- logo type -->
+          <div class="footer_logotype">
+        <img src="https://omp.dentist/media/site/496ba7d15b-1709121272/logotype-white.svg" alt="">
+      </div>
+      </footer>
+
+  
+  
+
+  
+</section></div></body></html>

@@ -155,7 +155,84 @@ const EXPERIENCE_CONTRACTS = {
       },
     },
   },
+  // Promoted reference packs, derived from extracted templates with visible
+  // license attribution. See docs/reference-template-rights.md.
+  "stage-index": {
+    navigation: "minimal-inline",
+    conversion: "discovery-ribbon",
+    proof: "principle-line",
+    closing: "cinematic-inquiry",
+    variants: {
+      standard: {
+        hero: "centered-stage",
+        services: "panel-list",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "about",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+    },
+  },
+  "editorial-ledger": {
+    navigation: "minimal-inline",
+    conversion: "fee-note",
+    proof: "quiet-ledger",
+    closing: "conversation-handoff",
+    variants: {
+      standard: {
+        hero: "editorial-ledger",
+        services: "ruled-ledger",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "about",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+    },
+  },
+  "results-ledger": {
+    navigation: "minimal-inline",
+    conversion: "confidential-request",
+    proof: "results-table",
+    closing: "conversation-handoff",
+    variants: {
+      standard: {
+        hero: "results-ledger",
+        services: "oversized-rows",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "process",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+    },
+  },
 };
+
+// Internal-only reference packs derived from extracted source templates. New
+// reference packs are added here until their attribution decision; promoted
+// packs move into EXPERIENCE_CONTRACTS above.
+const INTERNAL_EXPERIENCE_CONTRACTS = {};
+
+function experienceContract(packId) {
+  return EXPERIENCE_CONTRACTS[packId] || INTERNAL_EXPERIENCE_CONTRACTS[packId];
+}
 
 function publicText(value, limit = 500) {
   return String(value || "")
@@ -190,7 +267,7 @@ function safeDesignManifest(config) {
   const packId = publicText(config.design?.experience?.packId, 50);
   const contract =
     config.design?.experience?.blueprintVersion === 2
-      ? EXPERIENCE_CONTRACTS[packId]
+      ? experienceContract(packId)
       : undefined;
   const requestedVariantId = publicText(
     config.design?.experience?.variantId,
@@ -377,7 +454,9 @@ export function validateVisualAudit(value) {
       severity: ["critical", "major", "minor"].includes(finding.severity)
         ? finding.severity
         : "minor",
-      viewport: ["desktop", "compact", "mobile", "both"].includes(finding.viewport)
+      viewport: ["desktop", "compact", "mobile", "both"].includes(
+        finding.viewport,
+      )
         ? finding.viewport
         : "both",
       evidence: publicText(finding.evidence, 320),
@@ -390,7 +469,7 @@ export function validateVisualAudit(value) {
 export function applySafeVisualOperations(config, operations) {
   if (
     config.design?.experience?.blueprintVersion === 2 &&
-    EXPERIENCE_CONTRACTS[config.design.experience.packId]
+    experienceContract(config.design.experience.packId)
   )
     return [];
   const applied = [];
@@ -405,7 +484,8 @@ export function applySafeVisualOperations(config, operations) {
 export function blockingFindings(audit, { includeMajor = false } = {}) {
   return audit.findings.filter(
     (finding) =>
-      finding.severity === "critical" || (includeMajor && finding.severity === "major"),
+      finding.severity === "critical" ||
+      (includeMajor && finding.severity === "major"),
   );
 }
 
@@ -423,6 +503,7 @@ export function shouldFailVisualPlan({
   blockers = [],
   verdict = "pass",
 } = {}) {
-  if (appliedOperations.length || (!blockers.length && verdict !== "block")) return false;
+  if (appliedOperations.length || (!blockers.length && verdict !== "block"))
+    return false;
   return rendererType !== "creative-candidate";
 }

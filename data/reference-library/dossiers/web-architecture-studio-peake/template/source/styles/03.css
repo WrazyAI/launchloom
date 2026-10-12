@@ -1,0 +1,7 @@
+@font-face {
+  font-family: 'Mynaruse Flare';
+  src: url('mynaruse_flare_regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: fallback;
+}

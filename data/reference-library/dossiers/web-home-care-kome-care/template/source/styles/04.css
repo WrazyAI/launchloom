@@ -1,0 +1,145 @@
+@font-face {
+    font-family: "flaticon_mycollection";
+    font-display: swap;
+    src: url("../fonts/flaticon_mycollection.ttf") format("truetype"),
+    url("../fonts/flaticon_mycollection.woff") format("woff"),
+    url("../fonts/flaticon_mycollection.woff2") format("woff2"),
+    url("../fonts/flaticon_mycollection.ttf") format("ttf"),
+    url("../fonts/flaticon_mycollection.eot") format("embedded-opentype"),
+    url("../fonts/flaticon_mycollection.svg") format("svg");
+}
+
+i[class^="flaticon-"]:before, i[class*=" flaticon-"]:before {
+    font-family: flaticon_mycollection !important;
+    font-style: normal;
+    font-weight: normal !important;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.flaticon-disabled:before {
+    content: "\f101";
+}
+.flaticon-disabled-1:before {
+    content: "\f102";
+}
+.flaticon-pulse:before {
+    content: "\f103";
+}
+.flaticon-intelligence:before {
+    content: "\f104";
+}
+.flaticon-star:before {
+    content: "\f105";
+}
+.flaticon-planning:before {
+    content: "\f106";
+}
+.flaticon-uncertainty:before {
+    content: "\f107";
+}
+.flaticon-community:before {
+    content: "\f108";
+}
+.flaticon-phone-call:before {
+    content: "\f109";
+}
+.flaticon-chatting:before {
+    content: "\f10a";
+}
+.flaticon-checklist:before {
+    content: "\f10b";
+}
+.flaticon-phone-call-1:before {
+    content: "\f10c";
+}
+.flaticon-messages:before {
+    content: "\f10d";
+}
+.flaticon-pin:before {
+    content: "\f10e";
+}
+.flaticon-question:before {
+    content: "\f10f";
+}
+.flaticon-teamwork:before {
+    content: "\f110";
+}
+.flaticon-love:before {
+    content: "\f111";
+}
+.flaticon-ambulance:before {
+    content: "\f112";
+}
+.flaticon-hospital:before {
+    content: "\f113";
+}
+.flaticon-list:before {
+    content: "\f114";
+}
+.flaticon-wheel-chair:before {
+    content: "\f115";
+}
+.flaticon-physiotherapy:before {
+    content: "\f116";
+}
+.flaticon-physiotherapy-1:before {
+    content: "\f117";
+}
+.flaticon-health:before {
+    content: "\f118";
+}
+.flaticon-smart-home:before {
+    content: "\f119";
+}
+.flaticon-hospice:before {
+    content: "\f11a";
+}
+.flaticon-location:before {
+    content: "\f11b";
+}
+.flaticon-open-envelope:before {
+    content: "\f11c";
+}
+.flaticon-contact:before {
+    content: "\f11d";
+}
+.flaticon-time-left:before {
+    content: "\f11e";
+}
+.flaticon-user:before {
+    content: "\f11f";
+}
+.flaticon-list-1:before {
+    content: "\f120";
+}
+.flaticon-book:before {
+    content: "\f121";
+}
+.flaticon-heart:before {
+    content: "\f122";
+}
+.flaticon-dumbbell:before {
+    content: "\f123";
+}
+.flaticon-announcer:before {
+    content: "\f124";
+}
+.flaticon-charity:before {
+    content: "\f125";
+}
+.flaticon-home:before {
+    content: "\f126";
+}
+.flaticon-medical-insurance:before {
+    content: "\f127";
+}
+.flaticon-nurse:before {
+    content: "\f128";
+}
+.flaticon-nursing-home:before {
+    content: "\f129";
+}

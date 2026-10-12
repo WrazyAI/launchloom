@@ -35,6 +35,8 @@ jobs:
       FEEDBACK_COMMENT_ID: ${{ github.event.client_payload.feedbackComment }}
       CLIENT_REPO: ${{ github.event.client_payload.repo }}
       FEEDBACK_ISSUE: ${{ github.event.client_payload.feedbackIssue }}
+      PUBLICATION_BASE_SHA: ${{ github.event.client_payload.baseSha }}
+      ORIGINAL_FEEDBACK_STAGE: ${{ github.event.client_payload.originalStage || 'client' }}
       REVIEWED_PAGE: ${{ github.event.client_payload.reviewedPage }}
     steps:
       - uses: actions/checkout@v5
@@ -66,7 +68,13 @@ jobs:
             gh label create launchloom-client-revision --repo "$CLIENT_REPO" --color 1D76DB --description "LaunchLoom client revision awaiting developer approval" --force
             git clone "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"
             cd "$RUNNER_TEMP/client"
-            git switch -c "$BRANCH" origin/main
+            if [ -n "$PUBLICATION_BASE_SHA" ]; then
+              git fetch origin "$PUBLICATION_BASE_SHA"
+              test "$(git rev-parse origin/main)" = "$PUBLICATION_BASE_SHA" || { echo "Published revision base is superseded; operator review required"; exit 1; }
+              git switch -c "$BRANCH" "$PUBLICATION_BASE_SHA"
+            else
+              git switch -c "$BRANCH" origin/main
+            fi
             git config user.name "LaunchLoom"
             git config user.email "automation@launchloom.app"
             node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" create-empty --client "$RUNNER_TEMP/client" --base "$(git rev-parse HEAD)" --out "$RUNNER_TEMP/marker-scope.json"
@@ -82,6 +90,9 @@ jobs:
             gh pr edit "$PR" --repo "$CLIENT_REPO" --add-label launchloom-client-revision
           fi
           if [ ! -d "$RUNNER_TEMP/client/.git" ]; then git clone --branch "$BRANCH" "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"; fi
+          if [ -n "$PUBLICATION_BASE_SHA" ]; then
+            git -C "$RUNNER_TEMP/client" merge-base --is-ancestor "$PUBLICATION_BASE_SHA" HEAD || { echo "Revision branch does not contain the published base"; exit 1; }
+          fi
           node scripts/revision-checkpoint.mjs \
             --action prepare \
             --repo "$RUNNER_TEMP/client" \
@@ -115,7 +126,7 @@ jobs:
         id: apply_feedback
         env:
           CLIENT_PR: ${{ steps.revision.outputs.pr }}
-        run: CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" FEEDBACK_ISSUE="$FEEDBACK_ISSUE" FEEDBACK_STAGE=client FEEDBACK_SUMMARY_PATH="$RUNNER_TEMP/client-feedback.txt" FEEDBACK_OUTCOME_PATH="$RUNNER_TEMP/revision-outcome.txt" node scripts/apply-feedback.mjs
+        run: CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" FEEDBACK_ISSUE="$FEEDBACK_ISSUE" FEEDBACK_STAGE="$ORIGINAL_FEEDBACK_STAGE" FEEDBACK_SUMMARY_PATH="$RUNNER_TEMP/client-feedback.txt" FEEDBACK_OUTCOME_PATH="$RUNNER_TEMP/revision-outcome.txt" node scripts/apply-feedback.mjs
       - name: Flag feedback that needs manual attention
         if: steps.claim.outputs.run == 'true' && failure() && (steps.preflight.outcome == 'failure' || steps.apply_feedback.outcome == 'failure')
         env:

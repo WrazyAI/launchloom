@@ -1,3 +1,4 @@
+import {execFileSync} from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { signReviewToken, verifyReviewToken } from "../src/lib/review-token";
 
@@ -38,4 +39,13 @@ describe("review tokens", () => {
       "Expired or incomplete review token",
     );
   });
+  it.each([undefined,'a'.repeat(40)])('retains an optional published commit in new client review links (%s)',(sha)=>{
+    const args=['scripts/create-review-link.mjs','--stage','client','--repo','WrazyAI/fixture','--site','fixture','--email','client@example.test','--client-email','client@example.test','--feedback-issue','8','--origins','https://fixture.pages.dev','--token-only','true'];
+    if(sha)args.push('--sha',sha);
+    const token=execFileSync(process.execPath,args,{encoding:'utf8',env:{...process.env,REVIEW_SIGNING_SECRET:secret}}).trim();
+    const claims=verifyReviewToken(token,secret);
+    expect(claims.stage).toBe('client');
+    expect(claims.headSha).toBe(sha);
+  });
+
 });

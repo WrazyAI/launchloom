@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-dental-dentologie",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://dentologie.com/",
+    "finalUrl": "https://dentologie.com/",
+    "httpStatus": 200,
+    "pageTitle": "Dentist in Chicago & Seattle | Dentologie",
+    "retrievedAt": "2026-10-08T20:23:39.026Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 89151,
+      "sha256": "d1d59af0752722277e671e40ae2e85763904499e621fa0c1cf7bd119468a3368"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 18911,
+      "sha256": "e517f214d99ea9fa4e2d51b5340b798aa4849e522404565070158212801eed2d"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 67022,
+      "sha256": "0638700c8df945ed17942c3852432262c332647cafe58fe925a92524e626a655"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/dentologie-logo.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/hero-main.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/about-hero.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/service-first-visit.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/service-invisalign.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/service-emergency.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/insurance-bcbs.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/insurance-aetna.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/insurance-cigna.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/insurance-delta.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/insurance-guardian.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/insurance-humana.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/insurance-metlife.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/insurance-principal.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/insurance-united-concordia.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/insurance-uhc.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/locations-grid-1.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/locations-grid-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/locations-grid-3.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/locations-grid-4.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/fresh-approach.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/service-whitening.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/service-fillings.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/service-extractions.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/service-implants.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://d17exwsfn34axd.cloudfront.net/sanity/service-scaling.webp",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 2 of 2 stylesheets retained.",
+  "digest": "e508df945406aa881e1df6ca62e18b12cb6f4d19816493f84cbb402a8a35ad6d"
+}

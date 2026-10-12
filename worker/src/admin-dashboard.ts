@@ -448,8 +448,27 @@ export function renderAdminDashboardHtml() {
         }
         var meta = document.createElement('small');
         email.textContent = invite.clientEmail || invite.submitterEmail || 'Email not bound';
-        meta.textContent = invite.status + (invite.issueNumber ? ' · issue #' + invite.issueNumber : '') + ' · expires ' + new Date(invite.expiresAt).toLocaleString();
+        meta.textContent = (invite.recoveryRequired ? 'Needs intake recovery · ' : '') + invite.status + (invite.issueNumber ? ' · issue #' + invite.issueNumber : '') + ' · expires ' + new Date(invite.expiresAt).toLocaleString();
         details.append(email, meta);
+        if (invite.recoveryRequired) {
+          var recovery = document.createElement('small');
+          recovery.textContent = 'Verify the original GitHub issue before revoking or issuing another invitation. Recovery attempts: ' + (invite.recoveryAttempts || 0) + '.';
+          details.appendChild(recovery);
+          var recover = document.createElement('button');
+          recover.className = 'text-button'; recover.type = 'button'; recover.textContent = 'Recover verified intake';
+          recover.addEventListener('click', function () {
+            var value = window.prompt('Original LaunchLoom issue number. Review its intake details before continuing.');
+            if (value === null) return;
+            var issue = Number(value);
+            if (!Number.isSafeInteger(issue) || issue <= 0) { status.textContent = 'Enter the original issue number.'; return; }
+            if (!window.confirm('I reviewed the original issue and confirm it belongs to this invitation. Recover it without creating another issue?')) return;
+            recover.disabled = true;
+            request('POST', {action: 'recover-intake', inviteId: invite.inviteId, issueNumber: issue, confirmed: true})
+              .then(function () { status.textContent = 'Recovery saved. Generation is queued.'; return refresh(); })
+              .catch(function (error) { status.textContent = error.message; recover.disabled = false; });
+          });
+          details.appendChild(recover);
+        }
         row.append(details);
         if (invite.status === 'unused') {
           var button = document.createElement('button');

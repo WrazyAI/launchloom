@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "direct-robins-kaplan-law",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://www.robinskaplan.com/",
+    "finalUrl": "https://www.robinskaplan.com/",
+    "httpStatus": 200,
+    "pageTitle": "Robins Kaplan LLP Law Firm",
+    "retrievedAt": "2026-10-08T20:18:15.635Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 40787,
+      "sha256": "92223e4d0525304421c48d3196f95d0e6d4078801862599ddf60aa0a8b074d87"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 108854,
+      "sha256": "374eb7ec15834a002135f2699459f4fe02fe33cd0e6d70797cf6c8325716cb4e"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://www.robinskaplan.com/assets/images-t1791488983/4589.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.robinskaplan.com/i-t1791488983/icon-search.svgz",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.robinskaplan.com/assets/images-t1791488983/2768.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.robinskaplan.com/assets/images-t1791488983/3718.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.robinskaplan.com/assets/images-t1791488983/1502.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.robinskaplan.com/sp_class/assets-t1791488983/images/firmseek.svgz",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://ftp.firmseek.com/robinskaplan-media/3_10_25%20Homepage%20Video%20Update.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/images-t1791488983/4589.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/images-t1791488983/4589_1000w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/images-t1791488983/4589_850w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/images-t1791488983/4589_700w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/images-t1791488983/4589_550w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/images-t1791488983/4589_400w.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/images-t1791488983/2768.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/images-t1791488983/3718.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "/assets/images-t1791488983/1502.webp",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "5b899ff6bebd0eec43e4ed6371bb434bc743de4dc3bf78f5964fd36982d38b80"
+}

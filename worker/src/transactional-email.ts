@@ -12,6 +12,7 @@ export type TransactionalEmail = {
   tag: string;
   idempotencyKey?: string;
   required?: boolean;
+  timeoutMs?: number;
 };
 
 export async function sendEmail(
@@ -47,7 +48,7 @@ export async function sendEmail(
   const maxAttempts = input.idempotencyKey ? 3 : 1;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      response = await fetch("https://api.resend.com/emails", request);
+      response = await fetch("https://api.resend.com/emails", {...request,...(input.timeoutMs?{signal:AbortSignal.timeout(input.timeoutMs)}:{})});
       if (response.ok || ![429, 500, 502, 503, 504].includes(response.status))
         break;
     } catch (error) {

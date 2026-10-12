@@ -652,12 +652,19 @@ export default function Experience({ content, runtime }) { return <main><section
     let bakeoffCalls = 0;
     const seenAtRepair: string[] = [];
     const repairFindings: string[] = [];
+    const seenInteractionDigests: string[] = [];
 
     const failing = (score: number) =>
       report({
         selectedCandidateId: null,
         candidates: [
           candidate("candidate-a", {
+            interactionEvidence: {
+              version: 1,
+              candidateId: "candidate-a",
+              sourceDigest: (score === 60 ? "b" : "a").repeat(64),
+              observations: [], pairs: [], failures: [],
+            },
             valid: false,
             eligible: false,
             failures: ["Rendered candidate needs repair."],
@@ -697,7 +704,8 @@ export default function Experience({ content, runtime }) { return <main><section
         );
       },
       runVisualGateImpl: (options: any) => visualGate(options, "pass"),
-      repairCandidateImpl: async ({ findings }: any) => {
+      repairCandidateImpl: async ({ findings, interactionEvidence }: any) => {
+        seenInteractionDigests.push(interactionEvidence?.sourceDigest);
         seenAtRepair.push(await fs.readFile(experiencePath, "utf8"));
         repairFindings.push(findings.join("\n"));
         await fs.writeFile(
@@ -711,6 +719,7 @@ export default function Experience({ content, runtime }) { return <main><section
     expect(result.status).toBe("passed");
     expect(seenAtRepair).toHaveLength(2);
     expect(seenAtRepair[1]).toBe(originalSource);
+    expect(seenInteractionDigests).toEqual(["a".repeat(64), "a".repeat(64)]);
     expect(repairFindings[1]).toContain("must not regress");
     expect(repairFindings[1]).toContain(`overall ${RENDERED_REFERENCE_THRESHOLDS.overall}`);
     expect(repairFindings[1]).not.toContain("scored 60");
@@ -2208,6 +2217,7 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
           options,
           report({ candidates: [candidate("candidate-a")] }),
         );
+        result.candidates[0].interactionEvidence = { version: 1, candidateId: "candidate-a", sourceDigest: "a".repeat(64), observations: [{ viewport: "compact", status: "unproven" }], pairs: [], failures: [] };
         if (bakeoffCalls === 1) {
           for (const viewport of ["desktop", "mobile"])
             await fs.writeFile(
@@ -2267,6 +2277,7 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
       ]),
     );
     expect(humanGateCalls).toBe(1);
+    expect(repairs[0].interactionEvidence?.observations).toEqual([{ viewport: "compact", status: "unproven" }]);
     expect(result.humanRevisionPass).toBe(true);
   });
 

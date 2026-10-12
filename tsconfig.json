@@ -6,6 +6,7 @@
     "templates/client-site/dist",
     "worker",
     "worker-configuration.d.ts",
-    "artifacts"
+    "artifacts",
+    "data/reference-library/dossiers/*/template"
   ]
 }

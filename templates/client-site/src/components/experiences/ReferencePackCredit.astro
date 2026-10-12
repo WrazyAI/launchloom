@@ -1,0 +1,12 @@
+---
+interface Props {
+  label: string;
+  href: string;
+  license: string;
+}
+const { label, href, license } = Astro.props;
+---
+
+<p class="xp-credit">
+  <a href={href}>{label}</a> <span>({license})</span>
+</p>

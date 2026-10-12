@@ -12,7 +12,7 @@ type ReviewTokenBase = {
 
 export type ReviewTokenPayload =
   | (ReviewTokenBase & { stage: "developer"; pr: number; headSha: string })
-  | (ReviewTokenBase & { stage: "client" });
+  | (ReviewTokenBase & { stage: "client"; headSha?: string });
 
 export function signReviewToken(payload: ReviewTokenPayload, secret: string) {
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "clear-counsel-ledger",
+  "status": "extracted",
+  "method": "owned-artifact",
+  "source": {
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/clear-counsel-ledger",
+    "artifactPath": "a1-design-showcase/clear-counsel.html",
+    "generator": "scripts/build-a1-design-showcase.mjs",
+    "retrievedAt": "2026-10-08T20:06:09.896Z",
+    "license": "owned",
+    "attestationPath": null,
+    "rightsEvidencePath": "rights/provenance.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 7646,
+      "sha256": "49b5e0fc6a659df027f27210b76c591ed072230eef4cf1cd1e1d7b91e5a43c08"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Copied 1 files from the local build artifact at a1-design-showcase/clear-counsel.html. The artifact directory is gitignored; regenerate it with scripts/build-a1-design-showcase.mjs when the owned prototype source changes.",
+  "digest": "05c91dda16b90cf346a2d789f27fa4953b68857bcf93550116d4ab477318fe7f"
+}

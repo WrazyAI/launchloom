@@ -1,0 +1,1442 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evolve Athletic — Independent gym in Hackney Downs</title>
+
+  <!-- ============ SEO / Open Graph / Schema ============ -->
+  <meta name="description" content="Independent gym in Hackney Downs, East London. Coached Strength, Conditioning, Movement, and Calisthenics in small classes. 1:1 Coaching and PT Plus available. Two free trial sessions for anyone curious.">
+  <link rel="canonical" href="https://evolveathletic.com/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Evolve Athletic">
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:url" content="https://evolveathletic.com/">
+  <meta property="og:title" content="Evolve Athletic — Independent gym in Hackney Downs">
+  <meta property="og:description" content="Independent gym in Hackney Downs, East London. Coached Strength, Conditioning, Movement, and Calisthenics in small classes. 1:1 Coaching and PT Plus available. Two free trial sessions for anyone curious.">
+  <meta property="og:image" content="https://evolveathletic.com/hero%20photo-surf-idris.jpg">
+  <meta property="og:image:width" content="1600">
+  <meta property="og:image:height" content="2000">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Evolve Athletic — Independent gym in Hackney Downs">
+  <meta name="twitter:description" content="Independent gym in Hackney Downs, East London. Coached Strength, Conditioning, Movement, and Calisthenics in small classes. 1:1 Coaching and PT Plus available. Two free trial sessions for anyone curious.">
+  <meta name="twitter:image" content="https://evolveathletic.com/hero%20photo-surf-idris.jpg">
+  
+
+
+
+<link href="styles/01.css" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFFFFF;          /* pure white */
+    --bg-deep: #F4F4F4;     /* very light grey for banded sections */
+    --ink: #111111;         /* near-black */
+    --ink-soft: #333333;
+    --muted: #6B6B6B;
+    --accent: #D62828;      /* brand red */
+    --accent-deep: #A01B1B;
+    --line: #E5E5E5;
+    --max: 1200px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Fraunces', Georgia, serif;
+    color: var(--ink);
+    background: var(--bg);
+    font-size: 17px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, .display {
+    font-family: 'Fraunces', 'Times New Roman', serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  h1 { font-size: clamp(2.6rem, 6vw, 5.2rem); font-weight: 500; }
+  h2 { font-size: clamp(2rem, 4vw, 3.4rem); }
+  h3 { font-size: clamp(1.25rem, 2vw, 1.55rem); font-weight: 500; }
+
+  p { margin: 0 0 1em; color: var(--ink-soft); }
+
+  a { color: inherit; text-decoration: none; }
+
+  .container { max-width: var(--max); margin: 0 auto; padding: 0 28px; }
+
+  /* ----------------- Campaign banner (turn on/off via data-campaign-id) ----------------- */
+  .promo-banner {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 12px 0;
+    font-size: 0.9rem;
+    position: relative;
+    z-index: 60;
+  }
+  .promo-banner.hidden { display: none; }
+  .promo-inner {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: center;
+  }
+  .promo-label {
+    font-family: 'Fraunces', serif;
+    color: var(--accent);
+    font-style: italic;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .promo-text { text-align: center; line-height: 1.4; }
+  /* Fraunces only loads 400 and 500 — 500 is the real weight, avoids faux-bold. */
+  .promo-text strong { font-weight: 500; }
+  .promo-text a {
+    color: var(--bg);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  .promo-text a:hover { color: var(--accent); }
+  .promo-close {
+    background: transparent;
+    border: 0;
+    color: rgba(255,255,255,0.55);
+    cursor: pointer;
+    font-size: 1.4rem;
+    line-height: 1;
+    padding: 0 4px;
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .promo-close:hover { color: var(--bg); }
+  @media (max-width: 720px) {
+    .promo-inner { padding: 0 16px; gap: 10px; }
+    .promo-label { display: none; }
+    .promo-text { font-size: 0.85rem; text-align: left; }
+  }
+
+  /* ----------------- Nav ----------------- */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 0;
+  }
+  .brand { flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    color: var(--ink);
+    transition: color 0.15s;
+    line-height: 0;
+  }
+  .brand svg {
+    height: 36px;
+    width: auto;
+    display: block;
+   aspect-ratio: 2109 / 430;}
+  .brand:hover { color: var(--accent); }
+  .brand--lg svg { height: 44px; }
+  .nav ul { list-style: none; display: flex; gap: 28px; margin: 0; padding: 0; }
+  .nav ul a { font-size: 0.95rem; color: var(--ink-soft); }
+  .nav ul a:hover { color: var(--ink); }
+  .btn {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 13px 22px;
+    border-radius: 999px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+  .btn:hover { background: var(--accent); }
+  .btn-light {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+  }
+  .btn-light:hover { background: var(--ink); color: var(--bg); }
+  .btn-on-dark {
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .btn-on-dark:hover { background: var(--accent); color: var(--bg); }
+
+
+  /* ----------------- Mobile nav toggle ----------------- */
+  .nav-toggle {
+    display: none;
+    background: transparent;
+    border: 0;
+    padding: 8px;
+    margin-left: 16px;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+  }
+  .nav-toggle span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--ink);
+    margin: 5px auto;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+  .nav-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+  .nav-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  @media (max-width: 860px) {
+    .nav .btn { padding: 10px 16px; font-size: 0.85rem; }
+  }
+  @media (max-width: 760px) {
+    .nav ul { display: none; }
+    .nav-toggle { display: block; }
+    .nav.is-open nav {
+      display: block !important;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: rgba(255,255,255,0.98);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 8px 24px 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    .nav.is-open nav ul {
+      display: flex !important;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+    }
+    .nav.is-open nav ul li {
+      border-bottom: 1px solid var(--line);
+    }
+    .nav.is-open nav ul li:last-child { border-bottom: none; }
+    .nav.is-open nav ul a {
+      display: block;
+      padding: 16px 0;
+      font-size: 1.05rem;
+      color: var(--ink);
+    }
+
+  }
+
+  /* ----------------- Hero ----------------- */
+  .hero {
+    padding: 80px 0 90px;
+    position: relative;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 56px;
+    align-items: end;
+  }
+  .hero h1 .accent { color: var(--accent); font-style: italic; }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 22px;
+    display: inline-block;
+  }
+  .hero p.lead {
+    font-size: 1.15rem;
+    max-width: 38ch;
+    margin: 28px 0 32px;
+    color: var(--ink-soft);
+  }
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .hero-photo {
+    aspect-ratio: 4/5;
+    background: var(--bg-deep);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .hero-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: grayscale(100%) contrast(1.18) brightness(1.02);
+    transition: filter 0.55s ease;
+  }
+  .hero-photo:hover img {
+    filter: grayscale(0%) contrast(1) brightness(1);
+  }
+
+  @media (max-width: 860px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+    .hero { padding: 50px 0 60px; }
+    .hero-photo { aspect-ratio: 4/3; }
+  }
+
+  /* ----------------- Intro ----------------- */
+  .intro {
+    padding: 110px 0;
+  }
+  .intro-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 80px;
+  }
+  .intro h2 { max-width: 12ch; }
+  .intro p { font-size: 1.1rem; max-width: 56ch; }
+  .intro p.first {
+    font-size: 1.45rem;
+    color: var(--ink);
+    line-height: 1.4;
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+  }
+  @media (max-width: 860px) {
+    .intro { padding: 70px 0; }
+    .intro-grid { grid-template-columns: 1fr; gap: 28px; }
+  }
+
+  /* ----------------- Pillars ----------------- */
+  .pillars {
+    background: var(--bg-deep);
+    padding: 110px 0;
+  }
+  .pillars-head {
+    display: flex; justify-content: space-between; align-items: end;
+    gap: 40px; margin-bottom: 60px;
+  }
+  .pillars-head p { max-width: 40ch; margin: 0; }
+  .pillar-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+  }
+  .pillar {
+    background: var(--bg);
+    padding: 32px 28px 36px;
+    border-radius: 4px;
+    display: flex; flex-direction: column;
+    min-height: 280px;
+  }
+  .pillar .num {
+    font-family: 'Fraunces', serif;
+    color: var(--accent);
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    margin-bottom: 28px;
+  }
+  .pillar h3 { margin-bottom: 14px; }
+  .pillar p { font-size: 0.96rem; flex: 1; }
+  .pillar a {
+    margin-top: 14px;
+    font-size: 0.9rem;
+    color: var(--accent-deep);
+    border-bottom: 1px solid var(--accent-deep);
+    padding-bottom: 1px;
+    align-self: flex-start;
+  }
+  @media (max-width: 860px) {
+    .pillars { padding: 70px 0; }
+    .pillars-head { flex-direction: column; align-items: flex-start; margin-bottom: 36px; }
+    .pillar-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ----------------- Full-bleed photo band ----------------- */
+  .photo-band {
+    width: 100%;
+    background: var(--ink);
+    overflow: hidden;
+  }
+  .photo-band img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 720px;
+    object-fit: cover;
+    object-position: center;
+    filter: grayscale(100%) contrast(1.05) brightness(1.0);
+  }
+
+  /* ----------------- Classes preview ----------------- */
+  .classes { padding: 110px 0; }
+  .classes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+  .schedule {
+    background: var(--ink);
+    color: var(--bg);
+    border-radius: 4px;
+    padding: 36px 32px;
+  }
+  .schedule h3 {
+    color: var(--bg);
+    font-size: 1.2rem;
+    margin-bottom: 22px;
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .schedule ul { list-style: none; padding: 0; margin: 0; }
+  .schedule li {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    font-size: 0.98rem;
+  }
+  .schedule li:last-child { border-bottom: 0; }
+  .schedule li .time { color: var(--bg); font-variant-numeric: tabular-nums; }
+  .schedule li .name { color: rgba(255,255,255,0.9); font-family: 'Fraunces', serif; font-size: 1.1rem; }
+  .schedule li .coach { color: rgba(255,255,255,0.55); font-size: 0.85rem; }
+  .schedule .footer-note { margin-top: 22px; font-size: 0.85rem; color: rgba(255,255,255,0.55); }
+  .classes-copy h2 { margin-bottom: 24px; }
+  .classes-copy ul.tags { list-style: none; padding: 0; margin: 28px 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .classes-copy ul.tags li {
+    background: var(--bg-deep);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+  .classes-intro { max-width: 720px; margin: 0 0 48px; }
+  .classes-intro h2 { margin-bottom: 24px; }
+  .classes-intro .eyebrow { margin-bottom: 16px; display: inline-block; text-transform: uppercase; letter-spacing: 0.18em; font-size: 0.78rem; color: var(--muted); }
+  .classes-intro ul.tags {
+    list-style: none; padding: 0; margin: 28px 0 0;
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .classes-intro ul.tags li {
+    background: var(--bg-deep);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+  .schedule-embed {
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--bg);
+    border: 1px solid var(--line);
+  }
+  .schedule-embed iframe {
+    display: block;
+    width: 100%;
+    border: 0;
+  }
+  .powered-by {
+    padding: 10px 16px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-align: right;
+    border-top: 1px solid var(--line);
+  }
+  .powered-by a { color: var(--muted); }
+  .powered-by a:hover { color: var(--accent); }
+
+  /* ----------------- Weekly timetable ----------------- */
+  .timetable-block { margin: 0 0 64px; }
+  .timetable-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .timetable-head .eyebrow { margin-bottom: 0; }
+  .timetable-head .tt-note {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .timetable {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .tt-day {
+    background: var(--bg);
+    padding: 18px 16px 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .tt-day h3 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-variation-settings: 'opsz' 9;
+    font-weight: 500;
+    font-size: 0.73rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin: 0 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--ink);
+  }
+  .tt-day ul { list-style: none; margin: 0; padding: 0; }
+  .tt-day li {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .tt-day li:last-child { border-bottom: 0; padding-bottom: 0; }
+  .tt-time {
+    display: block;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    margin-bottom: 2px;
+  }
+  .tt-class {
+    display: block;
+    font-size: 0.92rem;
+    line-height: 1.3;
+    color: var(--ink-soft);
+  }
+  .tt-day li.tt-open .tt-time { color: var(--muted); }
+  .tt-day li.tt-open .tt-class { color: var(--muted); }
+  @media (max-width: 1080px) {
+    .timetable { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    /* seven days into an even grid leaves one empty cell — fill it so the
+       grey gap colour doesn't read as a block */
+    .timetable::after { content: ""; background: var(--bg); grid-column: auto / -1; }
+  }
+  @media (max-width: 760px) {
+    .timetable { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 480px) {
+    .timetable { grid-template-columns: minmax(0, 1fr); }
+    .timetable::after { content: none; }
+    .timetable-block { margin-bottom: 44px; }
+  }
+  @media (max-width: 860px) {
+    .classes { padding: 70px 0; }
+    .classes-grid { grid-template-columns: 1fr; gap: 32px; }
+  }
+
+  /* ----------------- Support (Physio + Nutrition) ----------------- */
+  .support {
+    padding: 100px 0;
+    border-top: 1px solid var(--line);
+  }
+  .support-head {
+    display: flex; justify-content: space-between; align-items: end;
+    gap: 40px; margin-bottom: 56px;
+  }
+  .support-head h2 { margin: 0; }
+  .support-head p { max-width: 44ch; margin: 0; color: var(--ink-soft); }
+  .support-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+  .support-card {
+    padding: 36px 0 0;
+    border-top: 2px solid var(--ink);
+    display: flex; flex-direction: column;
+  }
+  .support-card .portrait {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 28px;
+    background: var(--bg-deep);
+  }
+  .support-card .portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+    filter: grayscale(100%) contrast(1.05);
+  }
+  .support-card .label {
+    font-family: 'Fraunces', serif;
+    color: var(--accent);
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .support-card h3 {
+    margin: 0 0 6px;
+    font-size: 1.5rem;
+  }
+  .support-card .role {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 18px;
+  }
+  .support-card p { font-size: 0.98rem; margin: 0 0 22px; flex: 1; }
+  .support-card a {
+    font-size: 0.9rem;
+    color: var(--accent-deep);
+    border-bottom: 1px solid var(--accent-deep);
+    padding-bottom: 1px;
+    align-self: flex-start;
+  }
+  .support-footnote {
+    margin-top: 44px;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  @media (max-width: 860px) {
+    .support { padding: 70px 0; }
+    .support-head { flex-direction: column; align-items: flex-start; margin-bottom: 36px; }
+    .support-grid { grid-template-columns: 1fr; gap: 36px; }
+  }
+
+  /* ----------------- Quote ----------------- */
+  .quote {
+    padding: 90px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .quote-inner { max-width: 880px; margin: 0 auto; text-align: center; }
+  .quote blockquote {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    line-height: 1.25;
+    margin: 0 0 28px;
+    color: var(--ink);
+    font-weight: 400;
+  }
+  .quote blockquote::before { content: "“"; color: var(--accent); }
+  .quote blockquote::after { content: "”"; color: var(--accent); }
+  .quote cite {
+    font-style: normal;
+    font-size: 0.85rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ----------------- Coaches ----------------- */
+  .coaches { padding: 110px 0; }
+  .coaches-head {
+    display: flex; justify-content: space-between; align-items: end;
+    gap: 40px; margin-bottom: 50px;
+  }
+  .coach-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px;
+  }
+  .coach .photo {
+    aspect-ratio: 3/4;
+    background: var(--bg-deep);
+    border-radius: 4px;
+    margin-bottom: 16px;
+    background-image: linear-gradient(160deg, #4A4A4A 0%, #161616 100%);
+  }
+  .coach h3 { font-size: 1.15rem; margin-bottom: 4px; }
+  .coach .role { font-size: 0.85rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  a.coach { display: block; text-decoration: none; color: inherit; transition: transform 0.25s ease; }
+  a.coach:hover { transform: translateY(-4px); }
+  a.coach .photo { overflow: hidden; }
+  a.coach .photo img { transition: filter 0.35s ease, transform 0.35s ease; }
+  a.coach:hover .photo img { filter: grayscale(0%) contrast(1) !important; transform: scale(1.02); }
+  a.coach:hover h3 { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+  @media (max-width: 860px) {
+    .coaches { padding: 70px 0; }
+    .coaches-head { flex-direction: column; align-items: flex-start; }
+    .coach-grid { grid-template-columns: 1fr 1fr; gap: 20px; }
+  }
+
+  /* ----------------- Enquire (1:1 form) ----------------- */
+  .enquire {
+    padding: 110px 0;
+    background: var(--bg-deep);
+    border-top: 1px solid var(--line);
+  }
+  .enquire-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: 80px;
+    align-items: start;
+  }
+  .enquire-intro .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.78rem;
+    color: var(--muted);
+    display: inline-block;
+    margin-bottom: 18px;
+  }
+  .enquire-intro h2 { margin: 0 0 22px; }
+  .enquire-intro p {
+    font-size: 1.02rem;
+    color: var(--ink-soft);
+    margin: 0 0 16px;
+    max-width: 42ch;
+  }
+  .enquire-intro p.muted {
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+  .enquire-form {
+    background: var(--bg);
+    padding: 36px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+  .enquire-form .row { margin-bottom: 22px; }
+  .enquire-form .row.two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+  .enquire-form label {
+    display: block;
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+  .enquire-form label .optional {
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 400;
+    margin-left: 6px;
+  }
+  .enquire-form input[type="text"],
+  .enquire-form input[type="email"],
+  .enquire-form input[type="tel"],
+  .enquire-form textarea {
+    width: 100%;
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 1rem;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 12px 14px;
+    line-height: 1.4;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color 120ms ease;
+  }
+  .enquire-form textarea {
+    min-height: 130px;
+    resize: vertical;
+  }
+  .enquire-form input:focus,
+  .enquire-form textarea:focus {
+    outline: none;
+    border-color: var(--ink);
+  }
+  .enquire-form .submit-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .enquire-form button[type="submit"] {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    background: var(--accent);
+    color: var(--bg);
+    border: 0;
+    padding: 14px 24px;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+    transition: background 120ms ease;
+  }
+  .enquire-form button[type="submit"]:hover { background: var(--accent-deep); }
+  .enquire-form .privacy {
+    font-size: 0.8rem;
+    color: var(--muted);
+    max-width: 30ch;
+  }
+  .enquire-form .status {
+    margin-top: 18px;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+  }
+  .enquire-form .status.success { color: var(--accent-deep); }
+  @media (max-width: 860px) {
+    .enquire { padding: 70px 0; }
+    .enquire-grid { grid-template-columns: 1fr; gap: 36px; }
+    .enquire-form { padding: 28px; }
+    .enquire-form .row.two { grid-template-columns: 1fr; gap: 22px; }
+  }
+
+  /* ----------------- Specialist enquiries ----------------- */
+  .specialist-enquire {
+    padding: 100px 0;
+    background: var(--bg-deep);
+    border-top: 1px solid var(--line);
+  }
+  .specialist-enquire-head {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 56px;
+  }
+  .specialist-enquire-head .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.78rem;
+    color: var(--muted);
+    display: inline-block;
+    margin-bottom: 18px;
+  }
+  .specialist-enquire-head h2 { margin: 0 0 18px; }
+  .specialist-enquire-head p {
+    font-size: 1rem;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .specialist-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+  .specialist-card {
+    background: var(--bg);
+    padding: 36px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    display: flex; flex-direction: column;
+  }
+  .specialist-card .label {
+    font-family: 'Fraunces', serif;
+    color: var(--accent);
+    font-size: 0.88rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .specialist-card h3 {
+    margin: 0 0 12px;
+    font-size: 1.35rem;
+    line-height: 1.2;
+  }
+  .specialist-card .intro {
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    margin: 0 0 26px;
+  }
+  .specialist-card .row { margin-bottom: 18px; }
+  .specialist-card .row.two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .specialist-card label {
+    display: block;
+    font-size: 0.76rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .specialist-card label .optional {
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 400;
+    margin-left: 6px;
+  }
+  .specialist-card input[type="text"],
+  .specialist-card input[type="email"],
+  .specialist-card input[type="tel"],
+  .specialist-card textarea {
+    width: 100%;
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 0.96rem;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 11px 13px;
+    line-height: 1.4;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color 120ms ease;
+  }
+  .specialist-card textarea {
+    min-height: 110px;
+    resize: vertical;
+  }
+  .specialist-card input:focus,
+  .specialist-card textarea:focus {
+    outline: none;
+    border-color: var(--ink);
+  }
+  .specialist-card .submit-row {
+    display: flex; align-items: center;
+    margin-top: 8px;
+  }
+  .specialist-card button[type="submit"] {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    background: var(--accent);
+    color: var(--bg);
+    border: 0;
+    padding: 13px 22px;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+    transition: background 120ms ease;
+  }
+  .specialist-card button[type="submit"]:hover { background: var(--accent-deep); }
+  .specialist-card .status {
+    margin-top: 16px;
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+  }
+  .specialist-card .status.success { color: var(--accent-deep); }
+  @media (max-width: 860px) {
+    .specialist-enquire { padding: 70px 0; }
+    .specialist-grid { grid-template-columns: 1fr; gap: 22px; }
+    .specialist-card { padding: 28px; }
+    .specialist-card .row.two { grid-template-columns: 1fr; gap: 18px; }
+  }
+
+  /* ----------------- CTA / Visit ----------------- */
+  .visit {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 110px 0;
+  }
+  .visit h2, .visit h3 { color: var(--bg); }
+  .visit-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+  .visit p { color: rgba(255,255,255,0.72); font-size: 1.1rem; max-width: 48ch; }
+  .visit .accent-italic { color: var(--accent); font-style: italic; font-family: 'Fraunces', serif; }
+  .visit-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 32px;
+    border-radius: 4px;
+  }
+  .visit-card h3 { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 0.85rem; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 16px; color: rgba(255,255,255,0.6); }
+  .visit-card .map {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 11;
+    margin-bottom: 22px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: #1a1a1a;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .visit-card .map iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    filter: grayscale(0.4) contrast(1.02);
+  }
+  .visit-card .addr { font-family: 'Fraunces', serif; font-size: 1.4rem; line-height: 1.35; margin-bottom: 22px; }
+  .visit-card .hours { font-size: 0.95rem; color: rgba(255,255,255,0.7); margin-bottom: 28px; }
+  .visit-card .hours div { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .visit .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
+  @media (max-width: 860px) {
+    .visit { padding: 70px 0; }
+    .visit-grid { grid-template-columns: 1fr; gap: 40px; }
+  }
+
+  /* ----------------- Footer ----------------- */
+  footer {
+    padding: 60px 0 40px;
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1.6fr repeat(4, 1fr);
+    gap: 40px;
+    margin-bottom: 50px;
+  }
+  footer h4 {
+    font-size: 0.78rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 16px;
+    font-family: 'Fraunces', Georgia, serif; font-weight: 500;
+  }
+  footer ul { list-style: none; padding: 0; margin: 0; }
+  footer li { margin-bottom: 8px; font-size: 0.95rem; color: var(--ink-soft); }
+  footer li a:hover { color: var(--accent); }
+  footer .brand-block p { max-width: 32ch; font-size: 0.95rem; }
+  footer .meta {
+    display: flex; justify-content: space-between;
+    padding-top: 28px; border-top: 1px solid var(--line);
+    font-size: 0.85rem; color: var(--muted);
+  }
+  @media (max-width: 860px) {
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+    footer .meta { flex-direction: column; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ DUOTONE FILTER (for hero photo) ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="duotone-red" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" values=".299 .587 .114 0 0
+              .299 .587 .114 0 0
+              .299 .587 .114 0 0
+              0 0 0 1 0"></feColorMatrix>
+    <feComponentTransfer>
+      <feFuncR type="table" tableValues="0 0.84 1"></feFuncR>
+      <feFuncG type="table" tableValues="0 0.16 1"></feFuncG>
+      <feFuncB type="table" tableValues="0 0.16 1"></feFuncB>
+    </feComponentTransfer>
+  </filter>
+</svg>
+
+<!-- ============ LOGO SYMBOL (defined once, used wherever) ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="ea-logo" viewBox="137 461 2109 430" fill="currentColor">
+    <polygon points="743.11 612.12 743.11 644.33 741.97 645.46 677.12 645.46 677.12 660.62 737.04 660.62 737.04 690.93 677.12 690.93 677.12 706.09 743.49 706.09 744.63 707.23 744.63 739.43 637.68 739.43 637.68 612.12 743.11 612.12"></polygon>
+    <polygon points="1352.19 644.71 1286.2 644.71 1286.2 660.62 1346.12 660.62 1346.12 690.93 1286.2 690.93 1286.2 706.09 1352.57 706.09 1353.7 707.23 1353.7 739.43 1246.76 739.43 1246.76 612.12 1351.05 612.12 1352.19 613.26 1352.19 644.71"></polygon>
+    <path d="M931.07,609.32c52.55-4.69,83.37,41.28,68.62,89.77-17.92,58.91-106.2,57.89-122.86-1.93-11.26-40.42,9.91-83.89,54.24-87.84ZM934.83,641.11c-28.7,3.86-29.76,65.38.76,69.32,37.73,4.88,38.61-74.62-.76-69.32Z"></path>
+    <polygon points="789.38 612.12 810.61 687.9 830.34 612.12 870.54 612.12 831.49 738.69 788.21 739.48 749.94 612.12 789.38 612.12"></polygon>
+    <polygon points="1158.01 612.12 1179.24 687.9 1198.97 612.12 1239.17 612.12 1200.12 738.69 1156.2 739.48 1118.57 612.12 1158.01 612.12"></polygon>
+    <polygon points="1663.17 660.62 1720.06 660.62 1720.06 610.98 1721.2 609.85 1742.81 609.85 1742.81 736.78 1741.68 737.92 1721.2 737.92 1720.06 736.78 1720.06 680.32 1663.17 680.32 1663.17 736.78 1662.03 737.92 1641.55 737.92 1640.42 736.78 1640.42 609.85 1662.03 609.85 1663.17 610.98 1663.17 660.62"></polygon>
+    <polygon points="1058.65 612.12 1058.65 706.09 1114.78 706.09 1114.78 739.43 1019.21 739.43 1019.21 612.12 1058.65 612.12"></polygon>
+    <polygon points="1962.78 629.55 1893.76 629.55 1893.76 662.89 1957.47 662.89 1957.47 681.08 1893.76 681.08 1893.76 718.21 1964.3 718.21 1964.3 736.78 1963.16 737.92 1872.14 737.92 1871 736.78 1871 610.98 1872.14 609.85 1961.64 609.85 1962.78 610.98 1962.78 629.55"></polygon>
+    <path d="M2246.46,650.77h-22.38c-3.71-10.5-8.67-19.59-19.93-23.28-61.32-20.14-69.49,99.96-8.15,94.51,17.16-1.53,27.31-17.25,28.46-33.33h22c-.68,23.79-15.91,44.83-39.43,50.4-62.3,14.75-95.6-58.5-64.34-105.96,26.46-40.18,97.59-33.94,103.77,17.66Z"></path>
+    <path d="M1500.47,737.92l-12.59-34.02-49.65-.13-13.61,34.15h-21.24l-1.03-1.76,49.18-125.94c3.81-.12,21.15-1.38,23.15.38.85.75,2.57,5.84,3.22,7.4,16.18,38.94,29.3,79.25,45.59,118.17l-1.03,1.76h-22ZM1481.89,687.14l-19.71-54.56-18.97,54.56h38.68Z"></path>
+    <polygon points="2074.28 629.55 2034.08 629.55 2034.08 736.78 2032.94 737.92 2012.46 737.92 2011.32 736.78 2011.32 630.69 2010.18 629.55 1971.12 629.55 1971.12 609.85 2073.14 609.85 2074.28 610.98 2074.28 629.55"></polygon>
+    <polygon points="1585.8 629.55 1585.8 737.16 1563.81 737.16 1563.81 629.55 1523.61 629.55 1523.61 610.61 1625.63 610.61 1626.76 611.74 1626.76 628.41 1625.63 629.55 1585.8 629.55"></polygon>
+    <polygon points="1791.36 610.61 1791.36 717.08 1792.5 718.21 1855.83 718.21 1855.83 737.16 1769.36 737.16 1769.36 610.61 1791.36 610.61"></polygon>
+    <rect x="2088.69" y="609.85" width="22.75" height="128.07"></rect>
+    <path d="M137,676a215,215 0 1,0 430,0a215,215 0 1,0 -430,0ZM291.05,496.56c40.42-12.63,85.54-11.6,125.59,1.61,1.07.41,1.02,2.38,1.16,3.32.14.94.21,1.62.37,2.55l.3,2c1.05,6.02,1.95,12.14,3.03,18.19l3.07,14.77c2.95,16.63,5.13,24.22,6.79,40.55.37,3.58-.84,3.03-1.34,5.86-1.6,9.06,4.83,19.68,2.53,29.05-4.71.99-9.44.88-14.24,1.69-9.52,1.61-14.04,3.61-24.53,3.6-3.33,0-12.73.28-15.09-.07-2.67-.4-6.22-3.16-9.35-3.59-5.96-.82-9.38,2.63-16.06-2.11-7.16-5.08.34-11.53,1.27-18.33.59-4.31.34-10.88-2.82-14.22-4.85-5.13-26.92-3.96-32.26.38-3.23,2.62-.92,3.82-1.09,7.19-.1,1.95-1.3,3.58-1.5,5.39-.56,5.13.35,11.68,2.38,16.44,1.16,2.71,3.61,4.51,3.62,7.36-3.45,1.79-7.16.08-10.24.16-6.08.16-13.3,5.65-19.92,6.47-6.17.76-11.77-2.27-17.63-3.61,1.81-5.11-.11-11.04-3.39-15.16-1.91-2.4-7.61-5.6-8.35-6.83-.68-1.12-.23-2.04-.39-3,3.07-2.67.68-3.87-2.17-4.65l17.34-85.53c.08-.53.14-1,.19-1.42,1.21-5.76,7.46-6.41,12.7-8.05ZM265.98,607.24c2.59,2.37,4.6,12.09,2.14,14.55-3.49,3.5-6.91-2.08-9.12-3.04-5.35-2.32-13.65,6.83-19.82,5.55-3.79-8.07-2.7-15.53,6.39-18.6,5.01-1.69,16.31-2.23,20.42,1.53ZM434.38,848.15c-141.91,61.89-311.43-52.01-277.97-210.27,12.5-59.13,61-115.05,117.95-135.64l.46-.17c.87-.3,2.21-.66,2.04.5,0,0,0,0,0,0-.52,1.68-.84,3.78-1.02,4.55-6.17,27.15-11.77,54.45-17.62,81.67-.44,3.47-2.95,2.22-5.11,3.61-1.34.42-.73,4.57-2.28,5.68-1.1.79-5.34,1.14-7.23,1.87-19.52,7.59-12.08,19.6-8.88,35.45,2.77,4.31,8.76,6.93,13.65,4.92,1.83-.75,2.83-3.1,5.07-4.03.84-.35,13.12-3.5,13.84-3.56,1.39-.12,7.78,3.75,10.67,4.19,5.37.83,11.24,1.71,16.57,2.39,4.89.63,9.84-.34,14.67-.64.86,5.28,3.69,9.95,4.99,15.09,1.12,4.44,1.25,9.03,2.44,13.48,2.04,7.62,7.35,14.8,8.36,22.72,1.14,8.94-1.26,18.1-.59,27.12,1.32,17.96,13.06,36.04,19.01,53,4.23,12.06,11.91,36.38,11.39,48.55-.34,7.95-5.1,20.36-2.9,27.85,1.31,4.47,5.61,2.64,7.78,2.82,2.09.17,3.12,2.83,7.63,2.31,3.6-.42,11.04-7.07,12.15-10.62.83-2.65.45-6.23,1.47-9.14.63-1.78,2.26-2.73,2.62-4.96.73-4.47-1.77-9.1-1.5-14.39.31-6.1,2.67-12.68,3.09-18.88,1.26-18.39-.47-40.55-1.56-59.14-.69-11.77-.5-34.44-5.93-44.09-4.36-7.75-10.95-8.36-9.05-19.4.46-2.68,2.47-5.93,3.23-8.9,1.11-4.31,4.87-23.9,7.97-25.39,1.9-.91,5.97-.21,8.53-.57,3.62-.52,7.04-3.08,10.11-3.54,5.16-.78,10.55.01,16.42-1.03,4.6-.82,13.73-4.86,17.06-4.94,3.04-.07,2.82,5.96,5.31,6.57,3.61-1.85,8.77-.68,11.83-1.57,2.66-.77,5.43-7.03,3.99-9.74-2.92-2.89-5.68-7.54-8.26-10.32-1.13-1.22-3.59-1.49-4.5-3.46-1.18-2.56-.96-10.24-1.52-13.63-.49-2.96-1.83-9.78-3.59-11.95-1.8-3.36-2.32-11.08-3.04-16.28-2.3-16.48-6.28-33.39-9.85-49.65l-1.66-8.08s-.24-1.84-.34-2.3l-.17-1.17c-.22-2.23-.17-2.17-.39-4.38-.1-.99.79-1.24,1.8-.74,21.11,9.69,36.85,15.61,55.72,30.34,115.03,89.82,89.01,260.33-42.85,317.84Z"></path>
+    <circle cx="352" cy="676" r="202.5" fill="none" stroke="currentColor" stroke-width="25"></circle>
+  </symbol>
+</svg>
+
+<!-- ============ CAMPAIGN BANNER ============
+     HOW TO USE:
+     - To ACTIVATE the banner for a campaign:
+         1. Set data-campaign-id to a unique string (e.g. "movember-2026", "toby-welcome-2026", "new-year-2026")
+         2. Update the .promo-label and .promo-text content below
+         3. Update the href on the link to point to the relevant page/anchor
+         4. Deploy — the banner appears at the top of the homepage.
+     - To DEACTIVATE:
+         Either set data-campaign-id="" (empty string) OR comment out the entire section below.
+     - Each campaign ID uses its own localStorage key, so if someone dismissed
+       the last campaign, a new one still shows to them.
+     - Repeat this same banner block on other pages if you want the campaign
+       visible sitewide (just copy this whole comment + div).
+============================================================== -->
+<div class="promo-banner" id="promo-banner" data-campaign-id="september-reset-2026">
+  <div class="promo-inner">
+    <span class="promo-text">Twelve weeks of coaching and nutrition, finished this year. Start any day up to 21 September. <a href="/september-reset">Take a look →</a></span>
+    <button class="promo-close" aria-label="Dismiss campaign banner">×</button>
+  </div>
+</div>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="container nav-row">
+    <a href="#" class="brand" aria-label="Evolve Athletic"><svg width="138" height="28" aria-hidden="true"><use href="#ea-logo"></use></svg></a>
+    <nav>
+      <ul>
+        <li><a href="/membership">Membership</a></li>
+        <li><a href="/coaches">Coaches</a></li>
+        <li><a href="/one-to-one">1:1 Coaching</a></li>
+        <li><a href="/workshops">Workshops</a></li>
+        <li><a href="#visit">Visit</a></li>
+      </ul>
+    </nav>
+    <a href="https://app.glofox.com/portal/#/branch/66a21f8034d47934ce0025f4/memberships/66d0a27671c5f2edb90ffa32/plan/1724949041651/buy" target="_blank" rel="noopener" class="btn">Claim 2 free trials</a>
+    <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow">Independent gym · Hackney Downs · E8</span>
+      <h1>A gym for people who want to train properly <span class="accent">for something bigger</span>.</h1>
+      <p class="lead">Strength Training, Conditioning Work, Movement Practice, and Calisthenics, coached by lifelong practitioners who actually care and practice themselves, all within a unique gym space that doesn't feel like a chain.</p>
+      <div class="hero-actions">
+        <a href="https://app.glofox.com/portal/#/branch/66a21f8034d47934ce0025f4/memberships/66d0a27671c5f2edb90ffa32/plan/1724949041651/buy" target="_blank" rel="noopener" class="btn">Claim 2 free trials</a>
+        <a href="#classes" class="btn btn-light">See this week's classes</a>
+      </div>
+    </div>
+    <div class="hero-photo">
+      <img src="hero%20photo-surf-idris.jpg" alt="Idris surfing in Indonesia">
+    </div>
+  </div>
+</section>
+
+<!-- ============ INTRO ============ -->
+<section class="intro">
+  <div class="container intro-grid">
+    <h2>Built for what you do outside the gym.</h2>
+    <div>
+      <p class="first">Evolve Athletic is a gym designed around General Physical Preparation. We build the Strength, Conditioning, and freedom of Movement, that gives you confidence in your baseline fitness, so you can step into whatever physical endeavour you choose to pursue — a weekend hike, a ski tour, a bouldering project, a surf trip, your first race…</p>
+      <p>We deliver attentive coaching, programmed sessions, and capped class sizes, as well as the freedom to follow your own path in our Open Gym sessions, with a Coach on hand if you want one.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PILLARS ============ -->
+<section class="pillars" id="train">
+  <div class="container">
+    <div class="pillars-head">
+      <h2>Three ways to train.</h2>
+      <p>Most members mix them…a few classes a week, open gym sessions in between and PT when you want a focused push.</p>
+    </div>
+    <div class="pillar-grid">
+      <div class="pillar">
+        <div class="num">01 — Classes</div>
+        <h3>Coached Small Group Sessions</h3>
+        <p>Programmed Strength Training, Conditioning Circuits, Movement &amp; Mobility, and Calisthenics, all geared to build General Physical Preparedness and well rounded fitness.<br><br>Classes are capped to 8 people so the Coach can actually Coach, and you get the most out of each training session.</p>
+        <a href="#classes">See the schedule →</a>
+      </div>
+      <div class="pillar">
+        <div class="num">02 — PT Plus</div>
+        <h3>Bundle PT with classes</h3>
+        <p>One PT session a week plus four classes (or unlimited classes on the upgrade tier). Open Gym included.<br><br>The structure and variety of group training, plus dedicated 1:1 time with a Coach to work on the things specific to you. Two tiers — pick the one that fits how often you want to take classes.</p>
+        <a href="/membership#pt-plus">See PT Plus →</a>
+      </div>
+      <div class="pillar">
+        <div class="num">03 — 1:1 Coaching</div>
+        <h3>Personal Training that goes somewhere</h3>
+        <p>Programmes built around what you're actually trying to do.<br><br>Your first pull-up, competition prep, an active holiday, getting strong again after a break, whatever your goal we've got your back.</p>
+        <a href="#coaches">Meet the coaches →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PHOTO BAND ============ -->
+<section class="photo-band" aria-label="Calisthenics training at Evolve Athletic">
+  <img src="Calisthenics%20Team%20Evolve%20Athletic.JPG" alt="Idris and the coaching team demonstrating front lever, planche and lever holds at Evolve Athletic">
+</section>
+
+<!-- ============ CLASSES ============ -->
+<section class="classes" id="classes">
+  <div class="container">
+    <div class="classes-intro">
+      <h2>Classes that actually progress you.</h2>
+      <p>Programmed Strength Training with individual scaling, Conditioning Circuits to tune up your Cardio, and Movement &amp; Mobility sessions designed to free up how you move… Plus Calisthenics classes which are a special interest of some of our Coaches. Learn some tricks whilst building real Bodyweight Strength.<br><br>Structured sessions with Coaches who know what they're doing and love what they do. No egos, no shouting, just a warm vibe with an emphasis on self improvement and learning.</p>
+      <ul class="tags">
+        <li>Strength &amp; Conditioning</li>
+        <li>Conditioning Circuits</li>
+        <li>Calisthenics</li>
+        <li>Mobility</li>
+        <li>Open Gym</li>
+      </ul>
+    </div>
+    <div class="timetable-block">
+      <div class="timetable-head">
+        <span class="eyebrow">The weekly timetable</span>
+        <p class="tt-note">Classes cap at 8. Book through the app.</p>
+      </div>
+      <div class="timetable">
+        <div class="tt-day">
+          <h3>Monday</h3>
+          <ul>
+            <li><span class="tt-time">7am</span><span class="tt-class">Lower Body Strength &amp; Conditioning</span></li>
+            <li class="tt-open"><span class="tt-time">12 noon</span><span class="tt-class">Open Gym</span></li>
+            <li><span class="tt-time">5.45pm</span><span class="tt-class">Calisthenics</span></li>
+            <li><span class="tt-time">7pm</span><span class="tt-class">Upper Body Strength &amp; Conditioning</span></li>
+          </ul>
+        </div>
+        <div class="tt-day">
+          <h3>Tuesday</h3>
+          <ul>
+            <li><span class="tt-time">6am</span><span class="tt-class">Upper Body Strength &amp; Conditioning</span></li>
+            <li><span class="tt-time">7am</span><span class="tt-class">Calisthenics</span></li>
+            <li class="tt-open"><span class="tt-time">12 noon</span><span class="tt-class">Open Gym</span></li>
+            <li><span class="tt-time">5.45pm</span><span class="tt-class">Lower Body Strength &amp; Conditioning</span></li>
+            <li><span class="tt-time">7pm</span><span class="tt-class">Movement &amp; Mobility</span></li>
+          </ul>
+        </div>
+        <div class="tt-day">
+          <h3>Wednesday</h3>
+          <ul>
+            <li><span class="tt-time">7am</span><span class="tt-class">Conditioning Circuits</span></li>
+            <li><span class="tt-time">12 noon</span><span class="tt-class">Calisthenics</span></li>
+            <li><span class="tt-time">5.30pm</span><span class="tt-class">Movement &amp; Mobility</span></li>
+            <li><span class="tt-time">7pm</span><span class="tt-class">Conditioning Circuits</span></li>
+          </ul>
+        </div>
+        <div class="tt-day">
+          <h3>Thursday</h3>
+          <ul>
+            <li><span class="tt-time">7am</span><span class="tt-class">Upper Body Strength &amp; Conditioning</span></li>
+            <li class="tt-open"><span class="tt-time">12 noon</span><span class="tt-class">Open Gym</span></li>
+            <li><span class="tt-time">7pm</span><span class="tt-class">Lower Body Strength &amp; Conditioning</span></li>
+          </ul>
+        </div>
+        <div class="tt-day">
+          <h3>Friday</h3>
+          <ul>
+            <li><span class="tt-time">6am</span><span class="tt-class">Lower Body Strength &amp; Conditioning</span></li>
+            <li><span class="tt-time">7am</span><span class="tt-class">Movement &amp; Mobility</span></li>
+            <li class="tt-open"><span class="tt-time">12 noon</span><span class="tt-class">Open Gym</span></li>
+            <li><span class="tt-time">5.45pm</span><span class="tt-class">Upper Body Strength &amp; Conditioning</span></li>
+            <li><span class="tt-time">7pm</span><span class="tt-class">Calisthenics</span></li>
+          </ul>
+        </div>
+        <div class="tt-day">
+          <h3>Saturday</h3>
+          <ul>
+            <li><span class="tt-time">8.15am</span><span class="tt-class">Conditioning Circuits</span></li>
+            <li><span class="tt-time">9.30am</span><span class="tt-class">Conditioning Circuits</span></li>
+            <li><span class="tt-time">11am</span><span class="tt-class">Calisthenics</span></li>
+            <li><span class="tt-time">12.15pm</span><span class="tt-class">Total Body Strength &amp; Conditioning</span></li>
+          </ul>
+        </div>
+        <div class="tt-day">
+          <h3>Sunday</h3>
+          <ul>
+            <li><span class="tt-time">9am</span><span class="tt-class">Movement &amp; Mobility</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <span class="eyebrow" style="display:block; margin-bottom:16px;">This week</span>
+    <div class="schedule-embed">
+      <iframe src="https://app.glofox.com/portal/#/branch/66a21f8034d47934ce0025f4/classes-day-view" frameborder="0" width="100%" height="1200"></iframe>
+      <div class="powered-by"><a href="https://www.glofox.com">powered by <b>Glofox</b></a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COACHES ============ -->
+<section class="coaches" id="coaches">
+  <div class="container">
+    <div class="coaches-head">
+      <h2>The people you'll train with.</h2>
+      <a class="btn btn-light" href="/coaches">Meet the full team</a>
+    </div>
+    <div class="coach-grid">
+      <a class="coach" href="/coach-idris">
+        <div class="photo"><img src="Idris%20Owen%20portrait.jpg" alt="Idris Owen portrait" style="width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(100%) contrast(1.05);"></div>
+        <h3>Idris</h3>
+        <div class="role">Founder · S&amp;C</div>
+      </a>
+      <a class="coach" href="/coach-mahmut">
+        <div class="photo"><img src="Coach%20Mahmut%20Portrait.JPG" alt="Mahmut Polat portrait" style="width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(100%) contrast(1.05);"></div>
+        <h3>Mahmut</h3>
+        <div class="role">S&amp;C · Rehab &amp; Movement</div>
+      </a>
+      <a class="coach" href="/coach-anna">
+        <div class="photo"><img src="Anna%20Bluman%20portrait.jpg" alt="Anna Bluman portrait" style="width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(100%) contrast(1.05);"></div>
+        <h3>Anna</h3>
+        <div class="role">Movement Coach · PT</div>
+      </a>
+      <a class="coach" href="/coach-toby">
+        <div class="photo"><img src="Toby%20Harris%20portrait.jpg" alt="Toby Harris portrait" style="width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(100%) contrast(1.05);"></div>
+        <h3>Toby</h3>
+        <div class="role">Sport Scientist · S&amp;C</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ENQUIRE (1:1) ============ -->
+<section class="enquire" id="enquire">
+  <div class="container enquire-grid">
+    <div class="enquire-intro">
+      <span class="eyebrow">1:1 Coaching enquiry</span>
+      <h2>Tell us what you're working on.</h2>
+      <p>1:1 Coaching is for people with a specific goal — your first pull-up, race or event prep, an active trip, coming back from injury, or just wanting bespoke programming. Tell us a bit about what you're trying to do and we'll come back to you with the right coach and a plan to get you there.</p>
+      <p class="muted">Replies usually come back within 24 hours, often from Idris directly.</p>
+    </div>
+    <form action="/thank-you" class="enquire-form" id="enquire-form" method="POST" name="enquiry-1to1">
+      <input type="hidden" name="form-name" value="enquiry-1to1">
+      <input type="hidden" name="enquiry-type" value="1:1 Coaching enquiry">
+      <p style="display:none;"><label>Don't fill this out if you're human: <input name="bot-field"></label></p>
+      <div class="row two">
+        <div>
+          <label for="ef-name">Your name</label>
+          <input type="text" id="ef-name" name="name" required="" autocomplete="name">
+        </div>
+        <div>
+          <label for="ef-email">Email</label>
+          <input type="email" id="ef-email" name="email" required="" autocomplete="email">
+        </div>
+      </div>
+      <div class="row">
+        <label for="ef-phone">Phone <span class="optional">(optional)</span></label>
+        <input type="tel" id="ef-phone" name="phone" autocomplete="tel">
+      </div>
+      <div class="row">
+        <label for="ef-goal">What are you looking to work on?</label>
+        <textarea id="ef-goal" name="goal" required="" placeholder="E.g. I'd like to build strength and confidence before a hiking trip in October. I haven't done structured training before."></textarea>
+      </div>
+      <div class="row">
+        <label for="ef-coach">Any specific coach in mind? <span class="optional">(optional)</span></label>
+        <input type="text" id="ef-coach" name="coach" placeholder="If you've met or heard of one of the team, name them here.">
+      </div>
+      <div class="submit-row">
+        <button type="submit">Send enquiry →</button>
+        <p class="privacy">Your details come straight to Idris by email. We don't share them with anyone.</p>
+      </div>
+      <div class="status" id="enquire-status" hidden=""></div>
+    </form>
+  </div>
+</section>
+
+<!-- ============ QUOTE ============ -->
+<section class="quote">
+  <div class="container quote-inner">
+    <blockquote>Total gem of a gym! Idris has made this space so welcoming, personal and friendly. It has an incredible community, grassroots feel to it, but without compromising on the quality of the training or the equipment. Highly recommended for beginners and experienced gym goers who are looking for something with a bit more soul than chain gyms.</blockquote>
+    <cite>— Maya W., Google review</cite>
+  </div>
+</section>
+
+<!-- ============ SUPPORT ============ -->
+<section class="support" id="support">
+  <div class="container">
+    <div class="support-head">
+      <h2>Specialists in our orbit.</h2>
+      <p>Training doesn't happen in isolation. We work alongside a Physiotherapist and a Sports Naturopath who can help when there's something specific you need to work on.</p>
+    </div>
+    <div class="support-grid">
+      <div class="support-card">
+        <div class="portrait"><img src="Sangita%20Headshot.jpg" alt="Sangita, Physiotherapist at Evolve Athletic"></div>
+        <span class="label">Physiotherapy</span>
+        <h3>Sangita</h3>
+        <span class="role">In-house Physiotherapist · works from the gym</span>
+        <p>Hands-on sports physiotherapy for injuries, niggles, and movement restrictions. Sangita works directly from the gym, so we can join the dots between your rehab and your training instead of treating them as separate things.</p>
+        <p style="margin-top: 12px;"><a href="/physiotherapy" style="margin-right: 18px;">Read more →</a> <a href="/physiotherapy#book-appointment">Book an appointment →</a></p>
+      </div>
+      <div class="support-card">
+        <div class="portrait"><img src="Cleo%20Headshot.jpeg" alt="Cleo, Sports Naturopath"></div>
+        <span class="label">Sports Naturopathy</span>
+        <h3>Cleo</h3>
+        <span class="role">Sports Naturopath &amp; Health Coach · external practice</span>
+        <p>Evidence-informed sports naturopathy and health coaching for athletes and active people. Cleo combines wholefood nutrition, functional testing, herbal medicine, and practical lifestyle strategies into simple, sustainable plans tailored to you — aimed at root causes rather than symptoms, and built around your performance, recovery, and long-term health.</p>
+        <p style="margin-top: 12px;"><a href="/sports-naturopathy" style="margin-right: 18px;">Read more →</a> <a href="https://humble-healing.splose.com/online-booking/52943d4a-f725-4f6a-a172-fb145d102368" target="_blank" rel="noopener">Free 15-min discovery call →</a></p>
+      </div>
+    </div>
+    <p class="support-footnote">Open to everyone, not just members. Get in touch and we'll point you to the right person.</p>
+  </div>
+</section>
+
+
+<!-- ============ VISIT / CTA ============ -->
+<section class="visit" id="visit">
+  <div class="container visit-grid">
+    <div>
+      <span class="eyebrow" style="color:rgba(255,255,255,0.55);">Get started</span>
+      <h2>Try us with <span class="accent-italic">two free sessions</span>.</h2>
+      <p>Pick two classes from the timetable and come train with us, on the house. See the space, meet the coaches, get a feel for how we work. No sales pitch, no obligation.</p>
+      <div class="actions">
+        <a href="https://app.glofox.com/portal/#/branch/66a21f8034d47934ce0025f4/memberships/66d0a27671c5f2edb90ffa32/plan/1724949041651/buy" target="_blank" rel="noopener" class="btn btn-on-dark">Claim 2 free trials</a>
+        <a href="#" class="btn" style="border:1px solid rgba(255,255,255,0.3); background:transparent; color:var(--bg);">See membership</a>
+      </div>
+    </div>
+    <div class="visit-card">
+      <h3>Find us</h3>
+      <div class="map">
+        <iframe src="https://maps.google.com/maps?q=loc:51.5550580,-0.0665046(Evolve+Athletic)&amp;t=m&amp;z=17&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map showing Evolve Athletic, Hackney Downs Studios" allowfullscreen=""></iframe>
+      </div>
+      <div class="addr">Evolve Athletic<br>Arch 2<br>Hackney Downs Studios<br>Amhurst Terrace<br>London E8 2BT</div>
+      <a href="https://www.google.com/maps/dir/?api=1&amp;destination=51.5550580%2C-0.0665046&amp;destination_place_id=Evolve+Athletic" target="_blank" rel="noopener" class="btn btn-on-dark">Get directions</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="brand-block">
+        <div class="brand brand--lg" style="margin-bottom:18px;" aria-label="Evolve Athletic"><svg width="138" height="28" aria-hidden="true"><use href="#ea-logo"></use></svg></div>
+        <p>An Independent Gym by Hackney Downs Park, London.</p>
+      </div>
+      <div>
+        <h4>Train</h4>
+        <ul>
+          <li><a href="#classes">Classes</a></li>
+          <li><a href="/one-to-one">1:1 Coaching</a></li>
+          <li><a href="/membership">PT Plus</a></li>
+          <li><a href="/membership">Membership</a></li>
+          <li><a href="/workshops">Workshops</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Recover</h4>
+        <ul>
+          <li><a href="/physiotherapy">Physiotherapy</a></li>
+          <li><a href="/sports-naturopathy">Sports Naturopathy</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Team</h4>
+        <ul>
+          <li><a href="/coaches">Coaches</a></li>
+          <li><a href="/coach-idris">Idris</a></li>
+          <li><a href="/coach-mahmut">Mahmut</a></li>
+          <li><a href="/coach-anna">Anna</a></li>
+          <li><a href="/coach-toby">Toby</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Visit</h4>
+        <ul>
+          <li>Hackney Downs, E8</li>
+          <li><a href="#enquire">Contact</a></li>
+          <li><a href="https://www.instagram.com/evolveathletic/" target="_blank" rel="noopener">Instagram</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="meta">
+      <div>© Evolve Athletic. All rights reserved.</div>
+      <div><a href="#">Privacy</a> · <a href="#">Terms</a></div>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<!-- Campaign banner dismiss logic -->
+
+
+
+</body></html>

@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import { SELF, runInDurableObject } from "cloudflare:test";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { network } from "./network";
 import type { RevisionCoordinator } from "../src/revision-coordinator";
 
@@ -112,6 +112,12 @@ function userRequest(
     }),
   });
 }
+
+beforeEach(async()=>{
+  const coordinator=env.REVISION_COORDINATOR.getByName(repo.toLowerCase());
+  await runInDurableObject(coordinator,(_,state)=>{state.storage.sql.exec('DELETE FROM publications');});
+  network.use(http.get(`https://api.github.com/repos/${repo}/git/ref/heads/main`,()=>HttpResponse.json({object:{sha:'f'.repeat(40)}})));
+});
 
 describe("developer-triggered creative repair", () => {
   it.each(["seo-only", "creative-only"])(

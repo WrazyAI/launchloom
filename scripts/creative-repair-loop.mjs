@@ -6,6 +6,7 @@ import {
   buildSpanRequestBudget,
 } from "./creative-repair-contract.mjs";
 import { createHash } from "node:crypto";
+import { interactionPromptParts, interactionSourceDigest } from "./rendered-interaction-evidence.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -811,6 +812,8 @@ export function modelBoundRepairFindings(findings = []) {
 /**
  * @param {{
  *   model?: string,
+ *   candidateId?: string,
+ *   interactionEvidence?: Record<string, any> | null,
  *   referenceDna?: Record<string, any>,
  *   referenceDossier?: Record<string, any>,
  *   findings?: any[],
@@ -826,6 +829,8 @@ export function modelBoundRepairFindings(findings = []) {
  */
 export async function requestRepair({
   model,
+  candidateId,
+  interactionEvidence = null,
   referenceDna,
   referenceDossier,
   findings,
@@ -963,6 +968,11 @@ Use these helpers instead of inventing network calls or duplicating platform beh
     ),
   );
   const candidateEvidence = [];
+  const interactionParts = await interactionPromptParts(
+    interactionEvidence,
+    { candidateId, sourceDigest: interactionSourceDigest(files) },
+    imagePart,
+  );
   for (const screenshot of screenshots.slice(0, 3)) {
     const dimensions = await imageSizeLabel(screenshot);
     const viewportCapture = /-viewport\.png$/u.test(screenshot);
@@ -1098,6 +1108,9 @@ ${
     const requestContent = [
       ...referenceContext,
       ...candidateEvidence,
+      ...(interactionSourceDigest(currentFiles) === interactionSourceDigest(files)
+        ? interactionParts
+        : []),
       {
         type: "text",
         text: sourcePrompt(currentFiles, { targetFile, editsOnly }),
