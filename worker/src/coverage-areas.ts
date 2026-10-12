@@ -18,8 +18,6 @@ const GEOCODING_URL = "https://maps.googleapis.com/maps/api/geocode/json";
 const NEARBY_SEARCH_URL = "https://places.googleapis.com/v1/places:searchNearby";
 const PROVIDER_TIMEOUT_MS = 12_000;
 const MAX_RESULTS_PER_SEARCH = 20;
-const COVERAGE_LOOKUP_WINDOW_MS = 10 * 60_000;
-const COVERAGE_LOOKUP_LIMIT = 40;
 
 export type CoverageLookupEnv = {
   GOOGLE_PLACES_API_KEY?: string;
@@ -83,28 +81,6 @@ type GeocodeResult = {
   address_components?: GeocodeComponent[];
   geometry?: { location?: { lat?: number; lng?: number } };
 };
-
-/** Best-effort per-invite limiter. Worker isolates are ephemeral, so this
- * bounds accidental lookup storms inside one isolate without claiming a
- * distributed guarantee. */
-const coverageLookupWindows = new Map<string, number[]>();
-
-export function coverageLookupRateLimited(inviteId: string, now = Date.now()) {
-  const recent = (coverageLookupWindows.get(inviteId) || []).filter(
-    (timestamp) => now - timestamp < COVERAGE_LOOKUP_WINDOW_MS,
-  );
-  if (recent.length >= COVERAGE_LOOKUP_LIMIT) {
-    coverageLookupWindows.set(inviteId, recent);
-    return true;
-  }
-  recent.push(now);
-  coverageLookupWindows.set(inviteId, recent);
-  return false;
-}
-
-export function resetCoverageLookupRateLimit() {
-  coverageLookupWindows.clear();
-}
 
 function text(value: unknown, limit = 160) {
   return String(value ?? "")

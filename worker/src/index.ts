@@ -49,7 +49,6 @@ import {
   verifyCoverageReference,
 } from "../../src/lib/coverage-contract.mjs";
 import {
-  coverageLookupRateLimited,
   lookupCoverageAreas,
 } from "./coverage-areas";
 
@@ -1716,7 +1715,10 @@ async function coverageAreas(request: Request, env: Env) {
         headers,
       );
     }
-    if (coverageLookupRateLimited(invite.claims.inviteId))
+    const coverageLimit = await inviteCoordinator(env).allowCoverageLookup(
+      invite.claims.inviteId,
+    );
+    if (!coverageLimit.allowed)
       return json(
         {
           ok: false,
@@ -1725,7 +1727,11 @@ async function coverageAreas(request: Request, env: Env) {
           retryable: true,
         },
         429,
-        { ...headers, "Cache-Control": "no-store" },
+        {
+          ...headers,
+          "Cache-Control": "no-store",
+          "Retry-After": String(coverageLimit.retryAfterSeconds),
+        },
       );
     const result = await lookupCoverageAreas({
       env,
@@ -3400,6 +3406,39 @@ async function lead(request: Request, env: Env) {
         { error: "Please complete every required field." },
         400,
         cors(request, claims.allowedOrigins),
+      );
+    // Rate limit after validation so honest typos and honeypot hits do not
+    // spend quota. A limiter outage fails open: a lost lead costs the client
+    // more than one extra email, and the visitor key is derived from the
+    // Cloudflare-set connecting IP ("unknown" only outside Cloudflare).
+    const visitor = await digest(
+      `${claims.project}\n${request.headers.get("CF-Connecting-IP") || "unknown"}`,
+    );
+    const rate = await env.REVISION_COORDINATOR.getByName(
+      `lead:${claims.project}`,
+    )
+      .allowLead(visitor)
+      .catch((error: unknown) => {
+        console.error(
+          JSON.stringify({
+            event: "lead.rate_limiter_unavailable",
+            project: clean(claims.project, 100),
+            message: error instanceof Error ? error.message : String(error),
+          }),
+        );
+        return { allowed: true, retryAfterSeconds: 0 };
+      });
+    if (!rate.allowed)
+      return json(
+        {
+          error:
+            "Too many requests from your connection. Please try again later or call the business directly.",
+        },
+        429,
+        {
+          ...cors(request, claims.allowedOrigins),
+          "Retry-After": String(rate.retryAfterSeconds),
+        },
       );
     const leadEmail = renderLeadEmail({
       name,
