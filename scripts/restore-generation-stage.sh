@@ -28,7 +28,7 @@ if [ -e "$CLIENT_DIR" ]; then
   echo "A workspace for this client already exists." >&2
   exit 1
 fi
-gh repo clone "$CLIENT_REPO" "$CLIENT_DIR" -- --branch review/initial --depth 1
+gh repo clone "$CLIENT_REPO" "$CLIENT_DIR" -- --branch review/initial
 ACTUAL_SHA=$(git -C "$CLIENT_DIR" rev-parse HEAD)
 if [ -n "$EXPECTED_SHA" ] && [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
   echo "::error title=Private stage checkpoint moved::Expected $EXPECTED_SHA, found $ACTUAL_SHA; refusing to run on changed client source." >&2
