@@ -1,6 +1,6 @@
 ---
 import site, { pageBriefs } from "../lib/site";
-import { seoResearchReadiness } from "../lib/seo-readiness.mjs";
+import { hasCompletedFallbackResearch, seoResearchReadiness } from "../lib/seo-readiness.mjs";
 
 const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.env.PUBLIC_LAUNCHLOOM_URL || "").replace(/\/$/, "");
 const research = seoResearchReadiness(site);
@@ -18,7 +18,7 @@ const factNotice = factReport ? [
   ...factReport.facts.filter((fact) => ["contradictory", "launch-blocking"].includes(fact.state)).map((fact) => fact.reason),
   ...(deferredFactCount > 0 ? [`${deferredFactCount} optional business facts are deferred.`] : []),
 ].join(" ") : "";
-const webResearchComplete = research.allowed && research.mode === "context-only";
+const webResearchComplete = hasCompletedFallbackResearch(site.seoResearch);
 const cityResearch = site.seoResearch?.coverageResearch;
 const pendingCoverage = cityResearch && cityResearch.complete !== true;
 const completedCityCount = cityResearch?.cities?.filter((city) => city.status === "complete").length || 0;
@@ -1639,7 +1639,7 @@ const { diagnosticPreview = false } = Astro.props;
     if (developer && webResearchComplete) {
       const researchNotice = root.querySelector(".ll-review__research-notice");
       researchNotice.hidden = false;
-      researchNotice.textContent = "Web research complete. Measured SEO data unavailable. Developer approval is available.";
+      researchNotice.textContent = "Cited web observations are available for review. They do not replace measured SEO, so production approval remains blocked.";
       root.dataset.researchMode = "web-researched";
     }
     if (developer && pendingCoverage) {

@@ -100,6 +100,20 @@ ${validExperience
     expect(report.findings).toEqual([]);
   });
 
+  it("handles a referenced zero-parameter local JSX helper", () => {
+    const source = `function DecorativeMark() { return <span aria-hidden="true">✳</span>; }
+${validExperience.replace("<h1>", "<DecorativeMark /><h1>")}`;
+
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: source,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    });
+
+    expect(report.findings).toEqual([]);
+  });
+
   it("follows sealed content through rendered local component helpers", () => {
     const source = `function Hero({ content }) { return <section data-hero data-hero-geometry="typographic-monument"><img src={content.hero.image} /></section>; }
 function Services({ content }) { return <section id="services" data-reference-section="magazine-archive" data-service-presentation="magazine-archive-ledger">{content.services}</section>; }

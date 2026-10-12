@@ -1,11 +1,24 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
-import { generateContextualAssets } from "../scripts/generate-contextual-assets.mjs";
+import {
+  DEFAULT_MAX_PROMPT_LENGTH,
+  generateContextualAssets,
+} from "../scripts/generate-contextual-assets.mjs";
+import { CREATIVE_FAMILIES } from "../scripts/creative-compiler.mjs";
 
-const generate = generateContextualAssets as any;
+const generate = (options: any): Promise<any> =>
+  generateContextualAssets({
+    imageReviewer: async () => ({
+      approved: true,
+      reasonCodes: [],
+      model: "test-reviewer",
+      usage: null,
+    }),
+    ...options,
+  } as any) as Promise<any>;
 
 function fixture(): any {
   return {
@@ -53,7 +66,625 @@ async function fakeImageResponse() {
   });
 }
 
+async function fakeGibberishWebsiteScreenshotResponse() {
+  const screenshot = Buffer.from(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720">
+      <rect width="1280" height="720" fill="#f4f0e6"/>
+      <rect width="1280" height="94" fill="#ffffff"/>
+      <text x="48" y="58" font-size="30" fill="#16241e">TUREDATO</text>
+      <text x="690" y="58" font-size="17" fill="#16241e">HOME   ABOT   SRVICES   CONTAC</text>
+      <rect x="56" y="148" width="510" height="470" rx="20" fill="#e2e9dc"/>
+      <text x="98" y="270" font-size="70" fill="#16241e">Greeb frsh</text>
+      <text x="98" y="328" font-size="28" fill="#16241e">clnig whn u ned us</text>
+      <rect x="98" y="382" width="188" height="54" rx="10" fill="#41695a"/>
+      <text x="120" y="416" font-size="19" fill="#fff">Larn mor</text>
+      <rect x="632" y="148" width="590" height="470" rx="20" fill="#c5c4b2"/>
+      <rect x="682" y="205" width="490" height="175" rx="14" fill="#9ea68c"/>
+      <rect x="682" y="404" width="230" height="152" rx="14" fill="#fff"/>
+      <rect x="930" y="404" width="242" height="152" rx="14" fill="#fff"/>
+      <text x="703" y="450" font-size="22" fill="#16241e">Prmium srvce</text>
+      <text x="950" y="450" font-size="22" fill="#16241e">Bst in twn</text>
+    </svg>
+  `);
+  const buffer = await sharp(screenshot).jpeg().toBuffer();
+  return new Response(buffer, {
+    status: 200,
+    headers: { "content-type": "image/jpeg" },
+  });
+}
+
 describe("contextual image generation", () => {
+  it("reviews the exact normalized bitmap through the multimodal structured-output transport", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-default-image-review-"),
+    );
+    const previousKey = process.env.OPENROUTER_API_KEY;
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    const requests: Array<Record<string, any>> = [];
+    vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
+      requests.push(JSON.parse(String(init.body)));
+      return new Response(
+        JSON.stringify({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: {
+                content: JSON.stringify({
+                  isStandaloneImage: true,
+                  containsWebsiteOrInterface: false,
+                  containsVisibleTextOrTextLikeMarks: false,
+                  containsLogoOrWatermark: false,
+                  isRelevantToBusiness: true,
+                }),
+              },
+            },
+          ],
+          usage: {
+            prompt_tokens: 500,
+            completion_tokens: 30,
+            total_tokens: 530,
+            cost: 0.0004,
+          },
+        }),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json",
+            "x-openrouter-cache-status": "MISS",
+          },
+        },
+      );
+    });
+
+    try {
+      const result = await generateContextualAssets({
+        site: fixture(),
+        inspiration: {
+          routes: [{ id: "review-route", familyId: "utility-diagnostic" }],
+        },
+        outputDir,
+        key: "test-fal-key",
+        maxImages: 1,
+        maxRequests: 1,
+        falClient: {
+          config() {},
+          async subscribe() {
+            return {
+              data: { images: [{ url: "https://fal.example/approved.jpg" }] },
+            };
+          },
+        },
+        fetchImpl: async () => fakeImageResponse(),
+      });
+
+      expect(requests).toHaveLength(1);
+      expect(requests[0].response_format.json_schema.strict).toBe(true);
+      const messages = requests[0].messages;
+      const reviewContent = messages[1].content;
+      expect(
+        reviewContent.some(
+          (part: any) =>
+            part.type === "image_url" &&
+            part.image_url.url.startsWith("data:image/webp;base64,"),
+        ),
+      ).toBe(true);
+      expect(
+        reviewContent
+          .filter((part: any) => part.type === "text")
+          .map((part: any) => part.text)
+          .join(" "),
+      ).not.toContain("data:image/");
+      expect(result.manifest.placements[0].imageReview).toMatchObject({
+        status: "approved",
+        usage: { prompt_tokens: 500, completion_tokens: 30, cost: 0.0004 },
+        cacheStatus: "miss",
+      });
+      expect(result.site.images.hero).toMatch(/^\/images\/generated\/hero-/);
+    } finally {
+      vi.unstubAllGlobals();
+      if (previousKey === undefined) delete process.env.OPENROUTER_API_KEY;
+      else process.env.OPENROUTER_API_KEY = previousKey;
+    }
+  });
+
+  it("does not spend a FAL request when the required visual reviewer is unavailable", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-no-image-reviewer-"),
+    );
+    const previousKey = process.env.OPENROUTER_API_KEY;
+    delete process.env.OPENROUTER_API_KEY;
+    const site = fixture();
+    site.images = { hero: "/images/reviewed-fallback.webp" };
+    let requests = 0;
+
+    try {
+      const result = await generateContextualAssets({
+        site,
+        inspiration: { routes: [{ id: "no-reviewer-route" }] },
+        outputDir,
+        key: "test-fal-key",
+        maxImages: 1,
+        maxRequests: 1,
+        falClient: {
+          config() {},
+          async subscribe() {
+            requests += 1;
+            throw new Error("FAL must not run without a reviewer.");
+          },
+        },
+      });
+
+      expect(requests).toBe(0);
+      expect(result.requests).toBe(0);
+      expect(result.site.images.hero).toBe("/images/reviewed-fallback.webp");
+      expect(result.manifest.skipped[0]).toMatchObject({
+        placement: "hero",
+        reason: "OPENROUTER_API_KEY-not-configured",
+        fallback: "/images/reviewed-fallback.webp",
+      });
+    } finally {
+      if (previousKey === undefined) delete process.env.OPENROUTER_API_KEY;
+      else process.env.OPENROUTER_API_KEY = previousKey;
+    }
+  });
+
+  it("rejects webpage-like generated imagery, retries once, then uses the reviewed fallback", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-image-review-"));
+    const manifestPath = join(outputDir, "generated-assets.json");
+    const site = fixture();
+    site.images = { hero: "/images/reviewed-roofing-hero.webp" };
+    site.assetReport = {
+      used: [
+        {
+          asset: site.images.hero,
+          placement: "hero",
+          source: "licensed-stock",
+        },
+      ],
+      skipped: [],
+    };
+    const prompts: string[] = [];
+    const reviewAttempts: number[] = [];
+    let falRequests = 0;
+
+    const result = await generate({
+      site,
+      inspiration: {
+        routes: [{ id: "roofing-route", familyId: "utility-diagnostic" }],
+      },
+      outputDir,
+      manifestPath,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 2,
+      falClient: {
+        config() {},
+        async subscribe(
+          _model: string,
+          options: { input: { prompt: string } },
+        ) {
+          falRequests += 1;
+          prompts.push(options.input.prompt);
+          return {
+            data: {
+              images: [
+                { url: `https://fal.example/website-${falRequests}.jpg` },
+              ],
+            },
+          };
+        },
+      },
+      fetchImpl: async () => fakeGibberishWebsiteScreenshotResponse(),
+      imageReviewer: async ({ attempt }: { attempt: number }) => {
+        reviewAttempts.push(attempt);
+        return {
+          approved: false,
+          reasonCodes: ["website_or_interface", "visible_text"],
+          model: "test-reviewer",
+          usage: { total_tokens: 20 },
+        };
+      },
+    });
+
+    expect(falRequests).toBe(2);
+    expect(result.requests).toBe(2);
+    expect(reviewAttempts).toEqual([1, 2]);
+    expect(prompts[1]).toContain(
+      "Do not create a webpage, interface, or any visible text",
+    );
+    expect(result.site.images.hero).toBe("/images/reviewed-roofing-hero.webp");
+    expect(result.manifest.placements).toEqual([]);
+    expect(result.manifest.generationRequests).toBe(2);
+    expect(result.manifest.skipped[0]).toEqual(
+      expect.objectContaining({
+        placement: "hero",
+        reason: "image-review-rejected",
+        fallback: "/images/reviewed-roofing-hero.webp",
+        imageReviews: [
+          expect.objectContaining({
+            reasonCodes: ["website_or_interface", "visible_text"],
+          }),
+          expect.objectContaining({
+            reasonCodes: ["website_or_interface", "visible_text"],
+          }),
+        ],
+      }),
+    );
+    expect(result.site.assetReport.used).toEqual([
+      expect.objectContaining({ source: "licensed-stock" }),
+    ]);
+    expect(JSON.stringify(result.site)).not.toContain("fal.example");
+    await expect(
+      (await import("node:fs/promises"))
+        .readdir(outputDir)
+        .then((files) => files.filter((file) => file.endsWith(".webp"))),
+    ).resolves.toEqual([]);
+    const persisted = JSON.parse(await readFile(manifestPath, "utf8"));
+    expect(persisted.placements).toEqual([]);
+    expect(JSON.stringify(persisted)).not.toContain("https://fal.example");
+  });
+
+  it("keeps the tightened retry prompt within FAL's prompt limit", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-bounded-image-retry-"),
+    );
+    const site = fixture();
+    site.services = Array.from({ length: 6 }, (_, index) => ({
+      name: `Roof service ${index} ${"s".repeat(120)}`,
+    }));
+    site.business.serviceAreas = Array.from(
+      { length: 3 },
+      (_, index) => `Area ${index} ${"a".repeat(100)}`,
+    );
+    site.seoResearch.copyVocabulary = Array.from(
+      { length: 5 },
+      (_, index) => `Search phrase ${index} ${"v".repeat(120)}`,
+    );
+    site.seoResearch.customerQuestions = Array.from(
+      { length: 3 },
+      (_, index) => `Question ${index} ${"q".repeat(120)}`,
+    );
+    site.style.visualDirection = "Editorial materials " + "d".repeat(170);
+    const prompts: string[] = [];
+
+    const result = await generate({
+      site,
+      inspiration: {
+        routes: [
+          {
+            id: "long-roofing-route",
+            familyId: "utility-diagnostic",
+            referenceDna: {
+              familyId: "utility-diagnostic",
+              heroGeometry: { mode: "Roofing hero " + "h".repeat(170) },
+              imageTreatment: {
+                mode: "Service photography " + "m".repeat(170),
+                crop: "Wide crop " + "c".repeat(120),
+              },
+              palette: { contrastIntent: "Dark green " + "p".repeat(120) },
+            },
+          },
+        ],
+      },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 2,
+      falClient: {
+        config() {},
+        async subscribe(
+          _model: string,
+          options: { input: { prompt: string } },
+        ) {
+          prompts.push(options.input.prompt);
+          return {
+            data: {
+              images: [
+                { url: `https://fal.example/attempt-${prompts.length}.jpg` },
+              ],
+            },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+      imageReviewer: async ({ attempt }: { attempt: number }) => ({
+        approved: attempt === 2,
+        reasonCodes: attempt === 1 ? ["website_or_interface"] : [],
+        model: "test-reviewer",
+      }),
+    });
+
+    expect(prompts[0]).toHaveLength(DEFAULT_MAX_PROMPT_LENGTH);
+    expect(prompts[1].length).toBeLessThanOrEqual(DEFAULT_MAX_PROMPT_LENGTH);
+    expect(prompts[1]).toContain(
+      "Do not create a webpage, interface, or any visible text",
+    );
+    expect(result.manifest.placements).toHaveLength(1);
+  });
+
+  it("records sanitized OpenRouter visual-review failure diagnostics", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-image-review-error-"),
+    );
+    const previousKey = process.env.OPENROUTER_API_KEY;
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    vi.stubGlobal(
+      "fetch",
+      async () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              message: "private provider response must not be retained",
+            },
+            usage: {
+              prompt_tokens: 400,
+              completion_tokens: 0,
+              total_tokens: 400,
+              cost: 0.001,
+            },
+          }),
+          {
+            status: 503,
+            headers: {
+              "content-type": "application/json",
+              "x-request-id": "router-review-request-123",
+            },
+          },
+        ),
+    );
+
+    try {
+      const result = await generateContextualAssets({
+        site: fixture(),
+        inspiration: { routes: [{ id: "review-error-route" }] },
+        outputDir,
+        key: "test-fal-key",
+        maxImages: 1,
+        maxRequests: 1,
+        falClient: {
+          config() {},
+          async subscribe() {
+            return {
+              data: {
+                images: [{ url: "https://fal.example/review-error.jpg" }],
+              },
+            };
+          },
+        },
+        fetchImpl: async () => fakeImageResponse(),
+      });
+
+      const review = result.manifest.skipped[0].imageReviews[0];
+      expect(review).toMatchObject({
+        status: "unavailable",
+        failureCode: "http_error",
+        httpStatus: 503,
+        requestId: "router-review-request-123",
+        usage: { prompt_tokens: 400, cost: 0.001 },
+      });
+      expect(JSON.stringify(result.manifest)).not.toContain(
+        "private provider response must not be retained",
+      );
+    } finally {
+      vi.unstubAllGlobals();
+      if (previousKey === undefined) delete process.env.OPENROUTER_API_KEY;
+      else process.env.OPENROUTER_API_KEY = previousKey;
+    }
+  });
+
+  it("stops on FAL validation errors and records safe request metadata", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-fal-validation-error-"),
+    );
+    let requests = 0;
+    const result = await generate({
+      site: fixture(),
+      inspiration: { routes: [{ id: "fal-validation-route" }] },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 2,
+      falClient: {
+        config() {},
+        async subscribe() {
+          requests += 1;
+          const error = new Error(
+            "raw FAL validation body must not be retained",
+          );
+          error.name = "ValidationError";
+          Object.assign(error, {
+            status: 422,
+            requestId: "fal-validation-request-456",
+            fieldErrors: [
+              {
+                loc: ["body", "prompt"],
+                msg: "raw FAL validation body must not be retained",
+                type: "value_error",
+              },
+            ],
+          });
+          throw error;
+        },
+      },
+      imageReviewer: async () => ({ approved: true, reasonCodes: [] }),
+    });
+
+    expect(requests).toBe(1);
+    expect(result.requests).toBe(1);
+    expect(result.manifest.skipped[0]).toMatchObject({
+      placement: "hero",
+      reason: "fal-validation-error-422",
+      providerFailure: {
+        provider: "fal.ai",
+        category: "validation",
+        status: 422,
+        requestId: "fal-validation-request-456",
+        fields: ["prompt"],
+      },
+    });
+    expect(JSON.stringify(result.manifest)).not.toContain(
+      "raw FAL validation body must not be retained",
+    );
+  });
+
+  it("does not retain an older unreviewed FAL image as the fallback", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-reject-stale-fal-"),
+    );
+    const site = fixture();
+    site.images = { hero: "/images/generated/legacy-hero.webp" };
+    site.assetReport = {
+      used: [
+        {
+          asset: site.images.hero,
+          placement: "hero",
+          source: "fal-generated",
+        },
+      ],
+      skipped: [],
+    };
+
+    const result = await generate({
+      site,
+      inspiration: { routes: [{ id: "reject-stale-route" }] },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 2,
+      falClient: {
+        config() {},
+        async subscribe() {
+          return {
+            data: { images: [{ url: "https://fal.example/rejected.jpg" }] },
+          };
+        },
+      },
+      fetchImpl: async () => fakeGibberishWebsiteScreenshotResponse(),
+      imageReviewer: async () => ({
+        approved: false,
+        reasonCodes: ["website_or_interface", "visible_text"],
+        model: "test-reviewer",
+      }),
+    });
+
+    expect(result.site.images.hero).toBeUndefined();
+    expect(result.site.assetReport.used).toEqual([]);
+    expect(result.manifest.skipped[0]).toMatchObject({
+      placement: "hero",
+      reason: "image-review-rejected",
+      fallback: "",
+    });
+  });
+
+  it("does not restore a rejected legacy FAL image while merging multiple routes", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-reject-stale-routes-"),
+    );
+    const routes = [
+      { id: "route-one", familyId: "utility-diagnostic" },
+      { id: "route-two", familyId: "editorial-monument" },
+    ];
+    const site = fixture();
+    site.images = { hero: "/images/generated/legacy-hero.webp" };
+    site.assetReport = {
+      used: [
+        {
+          asset: site.images.hero,
+          placement: "hero",
+          source: "fal-generated",
+        },
+      ],
+      skipped: [],
+    };
+
+    const result = await generate({
+      site,
+      inspiration: { routes },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 2,
+      maxRequests: 4,
+      falClient: {
+        config() {},
+        async subscribe() {
+          return {
+            data: { images: [{ url: "https://fal.example/rejected.jpg" }] },
+          };
+        },
+      },
+      fetchImpl: async () => fakeGibberishWebsiteScreenshotResponse(),
+      imageReviewer: async () => ({
+        approved: false,
+        reasonCodes: ["website_or_interface", "visible_text"],
+        model: "test-reviewer",
+      }),
+    });
+
+    expect(result.site.images.hero).toBeUndefined();
+    expect(result.site.creativeAssets["route-one"].hero).toBe("");
+    expect(result.site.creativeAssets["route-two"].hero).toBe("");
+    expect(result.site.assetReport.used).toEqual([]);
+  });
+
+  it("uses distinct image art direction for every production creative family", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-family-assets-"),
+    );
+    const families = Object.keys(CREATIVE_FAMILIES);
+    const heroBriefs = new Map<string, string>();
+
+    for (const familyId of families) {
+      let prompt = "";
+      await generate({
+        site: fixture(),
+        inspiration: {
+          routes: [
+            {
+              id: `route-${familyId}`,
+              familyId,
+              referenceDna: { familyId },
+            },
+          ],
+        },
+        outputDir,
+        key: "test-fal-key",
+        maxImages: 1,
+        maxRequests: 1,
+        falClient: {
+          config() {},
+          async subscribe(
+            _model: string,
+            options: { input: { prompt: string } },
+          ) {
+            prompt = options.input.prompt;
+            return {
+              data: {
+                images: [{ url: `https://fal.example/${familyId}.jpg` }],
+              },
+            };
+          },
+        },
+        fetchImpl: async () => fakeImageResponse(),
+      });
+
+      heroBriefs.set(
+        familyId,
+        prompt.split("Primary request: ")[1]?.split(" Business context: ")[0] ||
+          "",
+      );
+    }
+
+    expect([...heroBriefs.values()]).not.toContain("");
+    expect(
+      [...heroBriefs.values()].some((brief) =>
+        brief.includes(
+          "Create a distinctive, service-relevant scene using the assigned reference's physical subject cues",
+        ),
+      ),
+    ).toBe(false);
+    expect(new Set(heroBriefs.values()).size).toBe(families.length);
+  });
+
   it("passes its per-request limit to the FAL queue so timed-out work is cancelled", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const timeouts: number[] = [];
@@ -373,7 +1004,8 @@ describe("contextual image generation", () => {
     site.style = {
       tone: "calm and craft-focused",
       preference: "warm residential",
-      visualDirection: "documentary photos of completed residential painting work",
+      visualDirection:
+        "documentary photos of completed residential painting work",
     };
     site.seoResearch = {
       copyVocabulary: ["residential painting Minneapolis"],
@@ -438,7 +1070,9 @@ describe("contextual image generation", () => {
           prompts.push(options.input.prompt);
           return {
             data: {
-              images: [{ url: `https://fal.example/painting-${prompts.length}.jpg` }],
+              images: [
+                { url: `https://fal.example/painting-${prompts.length}.jpg` },
+              ],
             },
           };
         },
@@ -551,7 +1185,7 @@ describe("contextual image generation", () => {
             options: { input: { prompt: string } },
           ) {
             calls += 1;
-            if (!options.input.prompt.includes("Make the subject simpler"))
+            if (!options.input.prompt.includes("Do not create a webpage"))
               throw new Error("Retry this placement.");
             return {
               data: { images: [{ url: "https://fal.example/retry.jpg" }] },

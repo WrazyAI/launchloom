@@ -193,6 +193,16 @@ describe("developer-triggered creative repair workflow", () => {
     );
     expect(repairWorkflow).toContain("creative-diagnostic");
     expect(repairWorkflow).toContain("verify-creative-diagnostic.mjs");
+    expect(repairWorkflow).toContain("deploy-private-diagnostic-preview.mjs");
+    expect(repairWorkflow).not.toContain(
+      'npx wrangler pages deploy dist --project-name "$SITE_ID" --branch creative-diagnostic',
+    );
+    expect(repairWorkflow).toContain(
+      "CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}",
+    );
+    expect(repairWorkflow).toContain(
+      "CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}",
+    );
     expect(repairWorkflow).toContain(
       "CLIENT_EMAIL: ${{ github.event.client_payload.clientEmail }}",
     );

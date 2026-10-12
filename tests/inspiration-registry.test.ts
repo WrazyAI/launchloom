@@ -29,6 +29,28 @@ const baseRequest = {
 const temporaryRoots: string[] = [];
 
 describe("inspiration registry", () => {
+  it("uses verified service-focus tags instead of unrelated broad trade references", () => {
+    const pack = buildInspirationPack(
+      {
+        ...baseRequest,
+        seed: "harbor-glow-plumbing-canary",
+        industry: "home-services",
+        businessFocusTerms: ["plumbing"],
+        recentReferenceIds: [],
+        recentRouteSignatures: [],
+      },
+      registry,
+      { repositoryRoot: path.resolve("."), requireDossiers: true },
+    );
+
+    expect(pack.routes).toHaveLength(3);
+    for (const route of pack.routes) {
+      if (!route.referenceDossier)
+        throw new Error(`Route ${route.id} has no selected dossier.`);
+      expect(route.referenceDossier.tags.business).toContain("plumbing");
+    }
+  });
+
   it("normalizes semantically similar hero prose into the same composition archetype", () => {
     const technicianOverlay = {
       heroGeometry:

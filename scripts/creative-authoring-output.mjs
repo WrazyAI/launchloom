@@ -25,6 +25,192 @@ export const REFERENCE_PROVENANCE_OUTPUT_CONTRACT = [
   "Never render them in visitor-facing copy, page titles or descriptions, Open Graph metadata, structured data, image alt text, link labels, or credits; they are not client business facts.",
 ].join("\n");
 
+export const VERIFIED_CLIENT_PERSONNEL_CONTRACT = [
+  "CLIENT PERSONNEL FACT BOUNDARY",
+  "Reference screenshots, Reference DNA, and dossiers describe the source brand only; they do not verify this client's employees, technicians, staff count, names, roles, credentials, uniforms, or team.",
+  "Only claim or depict client staff when the corresponding verified staff/person detail appears in content.claimEvidence.staff, content.claimEvidence.teamMembers, or content.claimEvidence.team.",
+  "When none of those fields contains matching verified detail, do not invent named people, headcount, technician attendance, uniforms, or a client team. Translate person-led reference mechanics into a non-personnel process or decision chapter using only verified facts and available content tokens. Never use generated or stock people as this client's employees or customers.",
+].join("\n");
+
+function hasVerifiedPersonnel(contentShape) {
+  const evidence = contentShape?.claimEvidence || {};
+  return [evidence.staff, evidence.teamMembers, evidence.team].some((value) => {
+    if (Array.isArray(value))
+      return value.some((item) =>
+        typeof item === "string"
+          ? Boolean(item.trim())
+          : Boolean(
+              item &&
+              typeof item === "object" &&
+              Object.values(item).some((entry) =>
+                typeof entry === "string"
+                  ? Boolean(entry.trim())
+                  : entry != null,
+              ),
+            ),
+      );
+    if (typeof value === "string") return Boolean(value.trim());
+    return Boolean(
+      value && typeof value === "object" && Object.keys(value).length,
+    );
+  });
+}
+
+/**
+ * Translate people-centered reference mechanics when the sealed client facts
+ * contain no verified personnel. The source-person imagery is not client
+ * evidence, so preserve its composition while replacing the person-specific
+ * role with a factual, object-led treatment.
+ */
+export function referencePersonnelCueTranslation({
+  route = {},
+  contentShape = {},
+} = {}) {
+  if (hasVerifiedPersonnel(contentShape)) return "";
+
+  const dna = route.referenceDna || {};
+  const signatures = Array.isArray(dna.requiredSignatureElements)
+    ? dna.requiredSignatureElements
+        .map((item) => `${item?.id || ""} ${item?.description || ""}`)
+        .join(" ")
+    : "";
+  const dossierPrompt =
+    typeof route.referenceDossier === "string"
+      ? route.referenceDossier
+      : route.referenceDossier?.designPrompt || "";
+  const cues = [
+    route.label,
+    route.signature,
+    dna.referenceName,
+    signatures,
+    dna.imageTreatment?.mode,
+    dna.imageTreatment?.crop,
+    dna.imageTreatment?.focalPoint,
+    dna.servicePresentation?.pattern,
+    ...(Array.isArray(dna.sectionSequence) ? dna.sectionSequence : []),
+    dossierPrompt,
+  ]
+    .filter((value) => typeof value === "string")
+    .join(" ");
+  if (
+    !/\b(?:person[- ]led|people[- ]led|people|person|portrait|technician|employee|staff|uniform|crew|mechanic|nurse|therapist|inspector|contractor|founder|owner[- ]led)\b/iu.test(
+      cues,
+    )
+  )
+    return "";
+
+  return [
+    "REFERENCE PERSONNEL-CUE TRANSLATION — FINAL FACT OVERRIDE",
+    "This assigned reference contains people-centered or personnel cues, but the sealed client content has no verified personnel. Its people, names, faces, roles, uniforms, quotes, and employee depictions belong only to the source reference; they are not facts about this client.",
+    "Preserve the poster composition and its non-personnel mechanics: scale, asymmetry, framing, typography hierarchy, palette, service-tile rhythm, and benefit-band placement. Replace the source-person role with a non-human, object-led visual using only an existing sealed client asset or a restrained abstract service-system graphic. Realize person-led reassurance through verified client content about the service process or customer decision, not an invented employee or implied technician attendance.",
+    "Do not copy or describe a source person as this client's employee or customer. Do not add names, roles, headcount, uniforms, first-person team claims, employee testimonials, or claims about who will visit. Use verified client content only, and keep every business-specific sentence bound to sealed content tokens.",
+  ].join("\n");
+}
+
+const sourceMetadataKeys = new Set([
+  "id",
+  "familyId",
+  "referenceName",
+  "source",
+  "rights",
+  "url",
+  "provenance",
+  "path",
+  "absolutePath",
+  "sha256",
+  "selector",
+]);
+
+function translatePersonnelDescription(value) {
+  return value
+    .replace(
+      /friendly uniformed technician photography/giu,
+      "object-led household-service photography without people",
+    )
+    .replace(/uniformed technicians?/giu, "household-service detail")
+    .replace(/technician campaign (poster|hero)/giu, "object-led campaign $1")
+    .replace(
+      /technician and promise together/giu,
+      "object-led service detail and promise together",
+    )
+    .replace(
+      /technician and trust explanation/giu,
+      "service-process trust explanation",
+    )
+    .replace(/technician reassurance/giu, "service-process reassurance")
+    .replace(/person-led reassurance/giu, "process-led reassurance")
+    .replace(/people-led explanation/giu, "process-led explanation")
+    .replace(/people-led/giu, "process-led")
+    .replace(/person-led/giu, "process-led")
+    .replace(/technicians?/giu, "service detail")
+    .replace(/portraits?/giu, "object-led focal imagery");
+}
+
+function adaptReferenceValue(value, key = "") {
+  if (typeof value === "string")
+    return sourceMetadataKeys.has(key)
+      ? value
+      : translatePersonnelDescription(value);
+  if (Array.isArray(value))
+    return value.map((item) => adaptReferenceValue(item, key));
+  if (value && typeof value === "object")
+    return Object.fromEntries(
+      Object.entries(value).map(([childKey, childValue]) => [
+        childKey,
+        adaptReferenceValue(childValue, childKey),
+      ]),
+    );
+  return value;
+}
+
+/**
+ * Remove conflicting source-person wording from model-bound route context
+ * when the client has no verified personnel. Stable IDs and provenance stay
+ * intact; only descriptive design language is translated.
+ */
+export function adaptReferencePersonnelCuesForClient(route, contentShape = {}) {
+  if (!referencePersonnelCueTranslation({ route, contentShape })) return route;
+  const adapted = adaptReferenceValue(route);
+  const originalDna = route.referenceDna;
+  const adaptedDna = adapted.referenceDna;
+  if (originalDna && adaptedDna) {
+    // These values are machine-readable identifiers checked against the
+    // assigned route, not prose for the authoring model to rewrite.
+    if (Array.isArray(originalDna.sectionSequence))
+      adaptedDna.sectionSequence = [...originalDna.sectionSequence];
+    for (const [group, field] of [
+      ["heroGeometry", "mode"],
+      ["navigationGeometry", "mode"],
+      ["servicePresentation", "pattern"],
+      ["ctaPlacement", "early"],
+      ["mobileRecomposition", "strategy"],
+      ["motion", "primitive"],
+    ]) {
+      if (
+        originalDna[group]?.[field] !== undefined &&
+        adaptedDna[group] &&
+        typeof adaptedDna[group] === "object"
+      )
+        adaptedDna[group][field] = originalDna[group][field];
+    }
+  }
+  return adapted;
+}
+
+export function appendReferencePersonnelCue(prompt, request) {
+  const instruction =
+    request?.finalSafetyInstruction ??
+    referencePersonnelCueTranslation(request);
+  return instruction ? `${String(prompt).trimEnd()}\n\n${instruction}` : prompt;
+}
+
+export const HERO_MEDIA_FOCUS_CONTRACT = [
+  "HERO MEDIA FOCUS CONTRACT",
+  "At every viewport, hero text and CTA focus indicators that overlap image or variable media need a provable opaque local surface covering the entire control and focus ring, or the media must move to a non-overlapping field.",
+  "Do not set the hero copy/action surface to transparent or translucent at mobile while media remains behind it. Keep a data-ll-surface role plate with an opaque host-provided surface token; an opaque button fill does not protect a focus outline outside the button bounds.",
+  "Do not rely on text shadow, photo averages, or a translucent wash to prove contrast. Preserve the assigned composition around this local plate; do not delete or flatten the hero image chapter.",
+].join("\n");
+
 export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "CLIENT PALETTE ROLE CONTRACT",
   "Map the client visual brief palette to page surfaces by role:",
@@ -32,7 +218,9 @@ export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "Runtime colour roles are read-only. Never declare, assign, override, or register --ll-surface, --ll-text, --ll-muted-text, --ll-link, --ll-action, --ll-on-action, --ll-border, or --ll-focus, including CSS declarations, @property, inline styles, or motion setProperty calls. Read them only through var(...). Use --ll-creative-* for candidate-owned variables.",
   "Use these local role variables for foreground/background CSS; never inherit a light text token across a transition onto a light surface. Mark muted copy data-ll-muted and actions data-ll-action. Preserve the chosen primary as brand identity; use derived readable variants for links and text.",
   "Ordinary copy, navigation and button text require 4.5:1; large text requires 3:1; required control boundaries and focus indicators require 3:1. Hover, focus, open menus and mobile must retain readable pairings. Decorative rules need not be forced to 3:1.",
-  "Image text needs a local contrasting plate or independently verified scrim. Do not rely on a dark average photo or text shadow. Unknown image, pseudo-element, blend and filter backdrops are unresolved until proved or repaired. The same deterministic rendered contrast gate applies to all pages.",
+  "Treat each hover, active, and focus style as a separate foreground/background pair. When an action fill changes, also choose a readable foreground for that changed fill. Never pair --ll-text as an action fill with --ll-on-action text unless that exact pair is verified to meet contrast.",
+  "Image text needs a local contrasting plate or independently verified scrim. Do not rely on a dark average photo or text shadow. Unknown image, pseudo-element, blend and filter backdrops are unresolved until proved or repaired. Do not paint text-bearing elements with pseudo-element backdrops; use native list markers or an explicit aria-hidden child marker instead. The same deterministic rendered contrast gate applies to all pages.",
+  HERO_MEDIA_FOCUS_CONTRACT,
   "- surfaceColor is the dominant page surface. The page body and the large content fields use it.",
   "- heroColor is the opening hero surface. It stays distinct from the page surface.",
   "- brandSurfaceColor and brandSurfaceTextColor are limited brand bands, such as one conversion band or the footer, and never the dominant page surface.",
@@ -67,7 +255,10 @@ export function completionLimitRequestField(tokens) {
 export function referenceImplementationChecklist(referenceDna) {
   const navigationRequirement =
     'REQUIRED NAVIGATION LINKS (EVERY ROUTE, INCLUDING WHEN REFERENCE DNA IS NULL): include visible native lowercase <nav> containing literal JSX anchors <a href="#services">Services</a>, <a href="#faqs">FAQs</a>, and <a href="#contact">Contact</a>. Do not remove, replace, or convert these anchors to components or click handlers.';
-  if (referenceDna == null) return navigationRequirement;
+  const semanticHeadingRequirement =
+    "Render exactly one meaningful H1 inside the page's single <main> landmark. The main landmark must contain the hero heading and unique page content; do not place the H1 before or after main.";
+  if (referenceDna == null)
+    return `${navigationRequirement}\n${semanticHeadingRequirement}`;
 
   const sections = Array.isArray(referenceDna?.sectionSequence)
     ? referenceDna.sectionSequence
@@ -194,6 +385,7 @@ export function referenceImplementationChecklist(referenceDna) {
   return [
     'REQUIRED LITERAL SECTION IDS: put id="services", id="faqs", and id="contact" on the actual matching content sections. These must be literal JSX string attributes, not variables, expressions, aliases, or empty anchor elements.',
     navigationRequirement,
+    semanticHeadingRequirement,
     ...(viewportTopology
       ? [
           "VIEWPORT-SPECIFIC HERO TOPOLOGY (HARD REQUIREMENT):",

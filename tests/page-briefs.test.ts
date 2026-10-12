@@ -93,6 +93,46 @@ function rich() {
     },
   };
 }
+function completeResearchedServiceBrief() {
+  const config: any = { ...rich(), pageContentContractVersion: 1 };
+  config.services = config.services.slice(0, 1);
+  config.locations = [];
+  const content = config.pageContent[id];
+  delete content.relatedServices;
+  const add = (recordId: string, value: string) => {
+    config.pageEvidence.push({
+      id: recordId,
+      value,
+      source: "synthetic measured route fixture",
+      kind: "client_supplied",
+      confirmed: true,
+      public: true,
+      routeIds: [id],
+    });
+    return { text: value, evidenceIds: [recordId] };
+  };
+  content.metadata = {
+    description: add(
+      "metadata",
+      "Prepare details about affected fixtures and timing before discussing drain cleaning with Fixture Plumbing.",
+    ),
+  };
+  content.preparation = [
+    add("preparation", "Note which fixtures are affected and when the change began."),
+  ];
+  content.nextStep = [
+    add("next-step", "Share the details and ask which inspection or service request fits before agreeing to work."),
+  ];
+  const questionOne = add("question-one", "What drain details should I share?");
+  const answerTwo = add("answer-two", "Ask what the visit can check and which findings the team can explain before discussing any follow-up work.");
+  const questionTwo = add("question-two", "What can a drain cleaning visit assess?");
+  const answerOne = content.faqs[0].answer;
+  content.faqs = [
+    { question: questionOne, answer: answerOne },
+    { question: questionTwo, answer: answerTwo },
+  ];
+  return config;
+}
 it("separates supported introduction, metadata and short card copy", () => {
   const brief = pageBriefFor(rich(), id)!;
   expect(brief.ready).toBe(true);
@@ -101,6 +141,43 @@ it("separates supported introduction, metadata and short card copy", () => {
   expect(brief.metadata.description).not.toBe(brief.introduction);
   expect(brief.faqs[0].answer).toContain("fixtures");
   expect(brief.related[0].name).toBe("Leak repair");
+});
+it("requires evidence-backed route content for indexable services in the v1 content contract", () => {
+  const config = { ...base, pageContentContractVersion: 1, pageContent: {} };
+  const readiness = pageBriefReadiness(config);
+  expect(readiness.allowed).toBe(false);
+  if (readiness.allowed) throw new Error("Missing service content must block readiness.");
+  expect(readiness.code).toBe("page_content_required");
+  expect(readiness.error).toContain("service:drain cleaning");
+});
+it("requires service scope, preparation, next step, and two supported FAQs", () => {
+  const config = { ...rich(), pageContentContractVersion: 1 };
+  const readiness = pageBriefReadiness(config);
+  expect(readiness.allowed).toBe(false);
+  if (readiness.allowed) throw new Error("Incomplete service content must block readiness.");
+  expect(readiness.error).toMatch(/preparation|nextStep|two supported FAQs/iu);
+});
+it("accepts a complete measured route brief only when its FAQ questions are evidence-backed", () => {
+  const config = completeResearchedServiceBrief();
+  expect(pageBriefReadiness(config)).toEqual({ allowed: true });
+  config.pageContent[id].faqs[0].question = "What should I ask?";
+  const readiness = pageBriefReadiness(config);
+  expect(readiness.allowed).toBe(false);
+  if (readiness.allowed) throw new Error("An unsupported FAQ question must block readiness.");
+  expect(readiness.error).toMatch(/FAQ questions need route-scoped evidence/iu);
+});
+it("requires generated page copy to name the source fields it was grounded in", () => {
+  const config = completeResearchedServiceBrief();
+  config.seoPageMap = [{
+    pageType: "service",
+    service: "Drain cleaning",
+    fanOutQuestions: ["What should I ask?"],
+  }];
+  const record = config.pageEvidence.find((item: any) => item.id === "intro");
+  record.kind = "generated_copy";
+  expect(pageBriefReadiness(config).allowed).toBe(false);
+  record.sourceRefs = ["services.0.description", "seoPageMap.0.fanOutQuestions.0"];
+  expect(pageBriefReadiness(config).allowed).toBe(true);
 });
 it("does not invent missing proof, options, timing or answers to research questions", () => {
   const config = {

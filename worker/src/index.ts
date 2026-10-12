@@ -28,6 +28,7 @@ import {
 } from "./feedback-structure";
 import {
   isAffirmativeConfirmation,
+  pageBriefReadiness,
   seoResearchReadiness,
 } from "./seo-readiness";
 import type { PublicationCommand } from "./publication";
@@ -2913,12 +2914,18 @@ async function creativeRepair(request: Request, env: Env) {
           409,
           cors(request, claims.allowedOrigins),
         );
-      const research = seoResearchReadiness(
-        await siteConfigAtReviewHead(env, claims),
-      );
+      const reviewedConfig = await siteConfigAtReviewHead(env, claims);
+      const research = seoResearchReadiness(reviewedConfig);
       if (!research.allowed)
         return json(
           { error: research.error, code: research.code },
+          409,
+          cors(request, claims.allowedOrigins),
+        );
+      const pages = pageBriefReadiness(reviewedConfig);
+      if (!pages.allowed)
+        return json(
+          { error: pages.error, code: pages.code },
           409,
           cors(request, claims.allowedOrigins),
         );
@@ -3343,12 +3350,18 @@ async function approval(request: Request, env: Env) {
         409,
         cors(request, claims.allowedOrigins),
       );
-    const research = seoResearchReadiness(
-      await siteConfigAtReviewHead(env, claims),
-    );
+    const reviewedConfig = await siteConfigAtReviewHead(env, claims);
+    const research = seoResearchReadiness(reviewedConfig);
     if (!research.allowed)
       return json(
         { code: research.code, error: research.error },
+        409,
+        cors(request, claims.allowedOrigins),
+      );
+    const pages = pageBriefReadiness(reviewedConfig);
+    if (!pages.allowed)
+      return json(
+        { code: pages.code, error: pages.error },
         409,
         cors(request, claims.allowedOrigins),
       );

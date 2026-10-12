@@ -6,14 +6,14 @@ on:
   workflow_dispatch:
     inputs:
       issue:
-        description: LaunchLoom intake issue number
-        required: true
+        description: Intake issue number (not needed for access-only)
+        required: false
         type: string
       test_profile:
-        description: Full generation or an isolated developer-only test preview
+        description: Full generation, isolated test preview, or no-intake Access smoke
         required: false
         type: choice
-        options: [full, seo-only, creative-only]
+        options: [full, full-preview, seo-only, creative-only, access-only]
         default: full
       reuse_authored_candidates:
         description: Reuse a validated candidate set from an existing private client repository
@@ -46,7 +46,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: launchloom-intake-${{ github.event.client_payload.issue || inputs.issue || github.run_id }}${{ github.event_name == 'workflow_dispatch' && (inputs.test_profile == 'seo-only' || inputs.test_profile == 'creative-only') && format('-test-{0}-{1}', inputs.test_profile, github.run_id) || '' }}
+  group: launchloom-intake-${{ github.event.client_payload.issue || inputs.issue || github.run_id }}${{ github.event_name == 'workflow_dispatch' && (inputs.test_profile == 'full-preview' || inputs.test_profile == 'seo-only' || inputs.test_profile == 'creative-only') && format('-test-{0}-{1}', inputs.test_profile, github.run_id) || '' }}
   cancel-in-progress: false
 
 jobs:
@@ -62,23 +62,60 @@ jobs:
         id: policy
         env:
           REQUESTED_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.test_profile || 'full' }}
+          REQUESTED_ISSUE: ${{ github.event.client_payload.issue || inputs.issue || '' }}
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          import { resolvePipelineTestPolicy } from './scripts/pipeline-test-policy.mjs';
-          const policy = resolvePipelineTestPolicy({profile: process.env.REQUESTED_PROFILE, eventName: process.env.GITHUB_EVENT_NAME});
+          import { resolveWorkflowTestDispatch } from './scripts/pipeline-test-policy.mjs';
+          const policy = resolveWorkflowTestDispatch({
+            profile: process.env.REQUESTED_PROFILE,
+            eventName: process.env.GITHUB_EVENT_NAME,
+            issue: process.env.REQUESTED_ISSUE,
+          });
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `profile=${policy.profile}\n`);
           NODE
 
   focused_test:
     needs: profile_policy
-    if: ${{ needs.profile_policy.outputs.profile != 'full' }}
+    if: ${{ needs.profile_policy.outputs.profile == 'full-preview' || needs.profile_policy.outputs.profile == 'seo-only' || needs.profile_policy.outputs.profile == 'creative-only' }}
     uses: ./.github/workflows/test-generation.yml
     with:
       issue: ${{ inputs.issue }}
       test_profile: ${{ needs.profile_policy.outputs.profile }}
       candidate_repository: ${{ inputs.candidate_repository || '' }}
     secrets: inherit
+
+  private_preview_access_smoke:
+    needs: profile_policy
+    if: ${{ needs.profile_policy.outputs.profile == 'access-only' }}
+    runs-on: depot-ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+      CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
+      LAUNCHLOOM_TEST_PAGES_PROJECT: ${{ vars.LAUNCHLOOM_TEST_PAGES_PROJECT || 'launchloom-pipeline-preview' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Create a content-free probe
+        run: node scripts/create-private-preview-probe.mjs "$RUNNER_TEMP/launchloom-access-smoke"
+      - name: Verify anonymous denial and service-token access
+        run: |
+          BRANCH="access-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          node scripts/deploy-private-diagnostic-preview.mjs \
+            --directory "$RUNNER_TEMP/launchloom-access-smoke" \
+            --source-sha "$GITHUB_SHA" \
+            --branch "$BRANCH"
 
   intake_handoff_check:
     needs: profile_policy
@@ -111,6 +148,7 @@ jobs:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      SEO_QUERY_PLANNER_MODEL: ${{ vars.SEO_QUERY_PLANNER_MODEL || 'z-ai/glm-5.3-flash' }}
       GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
       TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY || secrets.JEV_API_KEY }}
       REASONING_PREFLIGHT_MODE: ${{ vars.REASONING_PREFLIGHT_MODE || 'shadow' }}
@@ -189,6 +227,7 @@ jobs:
           gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
           if [ "$REUSE_AUTHORED_CANDIDATES" != "true" ]; then
             node scripts/internal-qa-intake.mjs /tmp/intake.md
+            node scripts/assert-client-generation-mode.mjs --intake /tmp/intake.md --profile full
           fi
           if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then
             case "$REUSABLE_CANDIDATE_REPO" in
@@ -246,7 +285,7 @@ jobs:
           echo "research_mode=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(x.mode)')" >> "$GITHUB_OUTPUT"
           echo "research_cost=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')" >> "$GITHUB_OUTPUT"
           echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "No measured queries")')" >> "$GITHUB_OUTPUT"
-          node -e 'const x=require("/tmp/seo-research.json"); const web=x.fallbackSearch || {}; const observed=(x.externalSearchEvidence || []).length; const state=x.publishReady ? (x.mode === "researched" ? "Measured SEO research is complete. Production approval is available." : "Web research complete. Measured SEO data unavailable. Developer approval is available.") : "SEO research is incomplete. This preview can be reviewed; production approval remains blocked until research completes."; const fallback=web.status && web.status !== "unavailable" ? `\nFallback web search: ${web.status}; ${observed} cited observation(s) from ${web.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(web.costUsd || 0).toFixed(5)} / USD ${Number(web.maxUsd || 0).toFixed(2)} cap${web.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}.` : "\nFallback web search: unavailable."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}${fallback}\nMeasured queries: ${(x.validatedQueries || []).filter(item => item.volume !== null || item.kd !== null || item.intent !== null).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "None"}\nRecorded DataForSEO cost: ${Number(x.cost?.usd || 0).toFixed(5)}`)'
+          node -e 'const x=require("/tmp/seo-research.json"); const web=x.fallbackSearch || {}; const observed=(x.externalSearchEvidence || []).length; const state=x.publishReady ? "Measured SEO research is complete. Production approval is available." : observed ? "Cited web observations are available for review, but measured SEO is incomplete. Production approval remains blocked." : "SEO research is incomplete. This preview can be reviewed; production approval remains blocked until measured research completes."; const fallback=web.status && web.status !== "unavailable" ? `\nFallback web search: ${web.status}; ${observed} cited observation(s) from ${web.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(web.costUsd || 0).toFixed(5)} / USD ${Number(web.maxUsd || 0).toFixed(2)} cap${web.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}.` : "\nFallback web search: unavailable."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}${fallback}\nMeasured queries: ${(x.validatedQueries || []).filter(item => item.volume !== null || item.kd !== null || item.intent !== null).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "None"}\nRecorded DataForSEO cost: ${Number(x.cost?.usd || 0).toFixed(5)}`)'
       - name: Record SEO research result
         continue-on-error: true
         env:
@@ -265,6 +304,8 @@ jobs:
             --slug "${{ steps.intake.outputs.slug }}" \
             --status generating \
             --cost-summary /tmp/seo-cost.json
+      - name: Reject synthetic demos from the production intake path
+        run: node scripts/assert-client-generation-mode.mjs --config /tmp/site.config.json --profile full
       # Reserve visual routes against the latest main history before expensive
       # reference analysis or authoring. Branch preview-only canaries read the
       # same history without writing hypothetical attempts into production.
@@ -651,6 +692,10 @@ jobs:
         id: diagnostic_preview
         if: always() && steps.creative_recovery.outputs.repair_available == 'true' && steps.creative_recovery.outputs.diagnostic_eligible == 'true'
         continue-on-error: true
+        env:
+          LAUNCHLOOM_TEST_PAGES_PROJECT: ${{ vars.LAUNCHLOOM_TEST_PAGES_PROJECT || 'launchloom-pipeline-preview' }}
+          CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+          CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           PUBLIC_REVIEW_MODE=true PUBLIC_CREATIVE_DIAGNOSTIC=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
@@ -658,15 +703,22 @@ jobs:
             --dist dist \
             --candidate "${{ steps.creative_recovery.outputs.candidate }}" \
             --screenshots .launchloom/creative-repair/diagnostic/screenshots
+          printf '/*\n  X-Robots-Tag: noindex, nofollow, noarchive\n' > dist/_headers
+          printf 'User-agent: *\nAllow: /\n' > dist/robots.txt
+          rm -f dist/sitemap.xml
           git add .launchloom/creative-repair/diagnostic
           if ! git diff --cached --quiet; then
             git commit -m "Record noindex diagnostic preview checks"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
-          PROJECT="${{ steps.client.outputs.project }}"
-          npx wrangler pages deploy dist --project-name "$PROJECT" --branch creative-diagnostic --commit-hash "$(git rev-parse HEAD)" --commit-message "Private diagnostic design preview"
-          PREVIEW="https://creative-diagnostic.$PROJECT.pages.dev"
-          node "$GITHUB_WORKSPACE/scripts/wait-for-pages-preview.mjs" --url "$PREVIEW"
+          RUN_SUFFIX=$(printf '%s' "$GITHUB_RUN_ID" | tail -c 9)
+          BRANCH="diag-${RUN_SUFFIX}-${GITHUB_RUN_ATTEMPT}"
+          PREVIEW_RESULT=$(node "$GITHUB_WORKSPACE/scripts/deploy-private-diagnostic-preview.mjs" \
+            --directory "$PWD/dist" \
+            --project "$LAUNCHLOOM_TEST_PAGES_PROJECT" \
+            --branch "$BRANCH" \
+            --source-sha "$(git rev-parse HEAD)")
+          PREVIEW=$(printf '%s' "$PREVIEW_RESULT" | jq -er '.url')
           echo "preview=$PREVIEW" >> "$GITHUB_OUTPUT"
       - name: Register one-time repair session and create signed review link
         id: creative_repair_link

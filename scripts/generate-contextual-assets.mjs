@@ -4,11 +4,74 @@ import path from "node:path";
 import { fal as defaultFal } from "@fal-ai/client";
 import sharp from "sharp";
 import { buildRouteContract } from "./creative-compiler.mjs";
+import {
+  openRouterApiError,
+  openRouterChatCompletion,
+  openRouterResponseCacheMetrics,
+  openRouterSessionId,
+  readOpenRouterResponseEnvelope,
+} from "./openrouter-client.mjs";
+import { VISUAL_GATE_MODEL } from "./visual-quality-gate-lib.mjs";
 
 export const DEFAULT_FAL_MODEL = "fal-ai/minimax/image-01";
 export const DEFAULT_MAX_IMAGES = 3;
 export const DEFAULT_MAX_REQUESTS = 6;
 export const DEFAULT_MAX_PROMPT_LENGTH = 1500;
+export const GENERATED_ASSET_REVIEW_POLICY_VERSION = "visual-review-v1";
+
+const GENERATED_ASSET_REVIEW_MODEL =
+  process.env.FAL_IMAGE_REVIEW_MODEL || VISUAL_GATE_MODEL;
+const GENERATED_ASSET_REVIEW_REASONS = new Set([
+  "not_standalone_image",
+  "website_or_interface",
+  "visible_text",
+  "logo_or_watermark",
+  "irrelevant_subject",
+  "review_unavailable",
+  "review_rejected",
+]);
+const GENERATED_ASSET_REVIEW_FAILURE_CODES = new Set([
+  "not_configured",
+  "timeout",
+  "http_error",
+  "provider_error",
+  "invalid_envelope",
+  "missing_checks",
+  "invalid_checks",
+  "transport_error",
+  "review_callback_error",
+]);
+const FAL_VALIDATION_FIELDS = new Set([
+  "prompt",
+  "aspect_ratio",
+  "num_images",
+  "image_size",
+  "output_format",
+]);
+const IMAGE_RETRY_DIRECTIVE =
+  "Do not create a webpage, interface, or any visible text. Regenerate only a single standalone image asset.";
+const GENERATED_ASSET_REVIEW_SCHEMA = {
+  name: "launchloom_generated_asset_review",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "isStandaloneImage",
+      "containsWebsiteOrInterface",
+      "containsVisibleTextOrTextLikeMarks",
+      "containsLogoOrWatermark",
+      "isRelevantToBusiness",
+    ],
+    properties: {
+      isStandaloneImage: { type: "boolean" },
+      containsWebsiteOrInterface: { type: "boolean" },
+      containsVisibleTextOrTextLikeMarks: { type: "boolean" },
+      containsLogoOrWatermark: { type: "boolean" },
+      isRelevantToBusiness: { type: "boolean" },
+    },
+  },
+};
 
 function configuredNumber(value, fallback) {
   if (value === undefined || value === null || value === "") return fallback;
@@ -93,13 +156,307 @@ function sceneOnlyDirection(value, limit = 280) {
     " ",
   );
   return imageOnlyDirection(safeReferenceText, limit)
-    .replace(/\b(?:full[- ]width|wide[- ]screen|desktop|mobile|viewport)\b/giu, " ")
+    .replace(
+      /\b(?:full[- ]width|wide[- ]screen|desktop|mobile|viewport)\b/giu,
+      " ",
+    )
     .replace(/[,:;\s]+/gu, " ")
     .trim();
 }
 
 function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function reviewUsageSummary(usage) {
+  if (!usage || typeof usage !== "object") return null;
+  const summary = {};
+  for (const key of [
+    "prompt_tokens",
+    "completion_tokens",
+    "total_tokens",
+    "cost",
+    "cache_discount",
+  ]) {
+    const number = Number(usage[key]);
+    if (usage[key] !== undefined && Number.isFinite(number))
+      summary[key] = number;
+  }
+  const details = usage.prompt_tokens_details;
+  if (details && typeof details === "object") {
+    for (const key of ["cached_tokens", "cache_write_tokens"]) {
+      const number = Number(details[key]);
+      if (details[key] !== undefined && Number.isFinite(number))
+        summary[key] = number;
+    }
+  }
+  return Object.keys(summary).length ? summary : null;
+}
+
+function safeRequestId(value) {
+  const candidate = String(value || "").trim();
+  return /^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/u.test(candidate)
+    ? candidate
+    : "";
+}
+
+function unavailableAssetReview(failureCode, diagnostics = {}) {
+  return {
+    available: false,
+    approved: false,
+    reasonCodes: ["review_unavailable"],
+    failureCode,
+    model: diagnostics.model || GENERATED_ASSET_REVIEW_MODEL,
+    usage: diagnostics.usage || null,
+    ...(Number.isInteger(diagnostics.httpStatus)
+      ? { httpStatus: diagnostics.httpStatus }
+      : {}),
+    ...(diagnostics.requestId ? { requestId: diagnostics.requestId } : {}),
+    ...(Number.isInteger(diagnostics.imageBytes)
+      ? { imageBytes: diagnostics.imageBytes }
+      : {}),
+  };
+}
+
+function falRequestFailure(error) {
+  const statusCandidate = Number(error?.status ?? error?.statusCode);
+  const status =
+    Number.isInteger(statusCandidate) &&
+    statusCandidate >= 100 &&
+    statusCandidate <= 599
+      ? statusCandidate
+      : undefined;
+  const validation = error?.name === "ValidationError" || status === 422;
+  const fields = Array.isArray(error?.fieldErrors)
+    ? [
+        ...new Set(
+          error.fieldErrors
+            .map((entry) => (Array.isArray(entry?.loc) ? entry.loc.at(-1) : ""))
+            .filter((field) => FAL_VALIDATION_FIELDS.has(field)),
+        ),
+      ]
+    : [];
+  const requestId = safeRequestId(error?.requestId);
+  return {
+    reason: validation ? "fal-validation-error-422" : "fal-request-failed",
+    retryable: !validation,
+    details: {
+      provider: "fal.ai",
+      category: validation ? "validation" : "request",
+      ...(status ? { status } : {}),
+      ...(requestId ? { requestId } : {}),
+      ...(fields.length ? { fields } : {}),
+    },
+  };
+}
+
+function retryPromptFor(prompt) {
+  const availablePrefixLength = Math.max(
+    0,
+    DEFAULT_MAX_PROMPT_LENGTH - IMAGE_RETRY_DIRECTIVE.length - 1,
+  );
+  const prefix = String(prompt || "")
+    .slice(0, availablePrefixLength)
+    .trimEnd();
+  return `${prefix} ${IMAGE_RETRY_DIRECTIVE}`
+    .trim()
+    .slice(0, DEFAULT_MAX_PROMPT_LENGTH);
+}
+
+function normalizeImageReview(
+  review,
+  fallbackModel = GENERATED_ASSET_REVIEW_MODEL,
+) {
+  const available = review?.available !== false;
+  const approved = available && review?.approved === true;
+  const reasons = Array.isArray(review?.reasonCodes)
+    ? review.reasonCodes.filter((reason) =>
+        GENERATED_ASSET_REVIEW_REASONS.has(reason),
+      )
+    : [];
+  return {
+    status: !available ? "unavailable" : approved ? "approved" : "rejected",
+    model: text(review?.model || fallbackModel, 100),
+    reasonCodes: approved
+      ? []
+      : reasons.length
+        ? [...new Set(reasons)].slice(0, 6)
+        : [available ? "review_rejected" : "review_unavailable"],
+    usage: reviewUsageSummary(review?.usage),
+    ...(GENERATED_ASSET_REVIEW_FAILURE_CODES.has(review?.failureCode)
+      ? { failureCode: review.failureCode }
+      : {}),
+    ...(Number.isInteger(review?.httpStatus) &&
+    review.httpStatus >= 100 &&
+    review.httpStatus <= 599
+      ? { httpStatus: review.httpStatus }
+      : {}),
+    ...(safeRequestId(review?.requestId)
+      ? { requestId: safeRequestId(review.requestId) }
+      : {}),
+    ...(Number.isInteger(review?.imageBytes) && review.imageBytes >= 0
+      ? { imageBytes: review.imageBytes }
+      : {}),
+    ...(review?.cache?.status
+      ? { cacheStatus: text(review.cache.status, 20).toLowerCase() }
+      : {}),
+  };
+}
+
+function assetReviewReasonCodes(checks) {
+  const reasons = [];
+  if (checks.isStandaloneImage !== true) reasons.push("not_standalone_image");
+  if (checks.containsWebsiteOrInterface === true)
+    reasons.push("website_or_interface");
+  if (checks.containsVisibleTextOrTextLikeMarks === true)
+    reasons.push("visible_text");
+  if (checks.containsLogoOrWatermark === true)
+    reasons.push("logo_or_watermark");
+  if (checks.isRelevantToBusiness !== true) reasons.push("irrelevant_subject");
+  return reasons;
+}
+
+/**
+ * Inspect a newly generated image as pixels before it is persisted or bound to
+ * the client config. Provider/model errors are represented as an unavailable
+ * review so callers can fall back without leaking unsafe assets.
+ *
+ * @param {{ imageData: Buffer, placement: string, businessKind?: string, services?: string[], familyId?: string, model?: string, apiKey?: string, timeoutMs?: number }} input
+ */
+export async function reviewGeneratedAsset({
+  imageData,
+  placement,
+  businessKind = "local business",
+  services = [],
+  familyId = "",
+  model = GENERATED_ASSET_REVIEW_MODEL,
+  apiKey = process.env.OPENROUTER_API_KEY,
+  timeoutMs = 45_000,
+} = {}) {
+  if (!apiKey)
+    return unavailableAssetReview("not_configured", {
+      model,
+      imageBytes: imageData?.byteLength,
+    });
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const content = [
+      {
+        type: "text",
+        text: [
+          `Review this generated ${text(placement, 30)} image asset for a ${safePromptPart(businessKind, 90) || "local business"}.`,
+          `Relevant service context: ${
+            services
+              .map((service) => safePromptPart(service, 80))
+              .filter(Boolean)
+              .slice(0, 4)
+              .join(", ") || "general business context"
+          }.`,
+          `Reference family: ${safePromptPart(familyId || "unspecified", 80) || "unspecified"}.`,
+          "Judge visible pixels, not the prompt or filename. Reject a fake website/page screenshot, browser or UI layout, collage of interface panels, gibberish or readable text, text-like marks, logos, watermarks, or an unrelated subject.",
+          "Approve only one standalone image asset with a relevant subject, no visible text-like marks, and no interface or branding.",
+        ].join(" "),
+      },
+      {
+        type: "image_url",
+        image_url: {
+          url: `data:image/webp;base64,${imageData.toString("base64")}`,
+          detail: "high",
+        },
+      },
+    ];
+    const response = await openRouterChatCompletion({
+      title: "LaunchLoom generated asset review",
+      signal: controller.signal,
+      sessionId: openRouterSessionId(
+        "generated-asset-review",
+        model,
+        sha256(imageData),
+      ),
+      responseCache: true,
+      responseCacheTtlSeconds: 86_400,
+      body: {
+        model,
+        temperature: 0,
+        max_completion_tokens: 180,
+        provider: { require_parameters: true },
+        response_format: {
+          type: "json_schema",
+          json_schema: GENERATED_ASSET_REVIEW_SCHEMA,
+        },
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a strict visual asset integrity reviewer. Evaluate only what is visible in the supplied pixels. A fake website screenshot with nonsense text is still a website screenshot and must be rejected. Do not infer that a design mockup is acceptable because its text is unreadable. Return only the required structured fields.",
+          },
+          { role: "user", content },
+        ],
+      },
+    });
+    const envelope = await readOpenRouterResponseEnvelope(response);
+    const apiError = openRouterApiError(envelope.payload, response.status);
+    const diagnostics = {
+      model,
+      httpStatus: Number(response.status),
+      requestId: safeRequestId(
+        response.headers?.get?.("x-request-id") ||
+          response.headers?.get?.("x-openrouter-request-id"),
+      ),
+      usage: reviewUsageSummary(envelope.payload?.usage),
+      imageBytes: imageData?.byteLength,
+    };
+    if (!response.ok) return unavailableAssetReview("http_error", diagnostics);
+    if (apiError) return unavailableAssetReview("provider_error", diagnostics);
+    if (envelope.parseError)
+      return unavailableAssetReview("invalid_envelope", diagnostics);
+    const raw = envelope.payload.choices?.[0]?.message?.content;
+    if (typeof raw !== "string" || !raw.trim())
+      return unavailableAssetReview("missing_checks", diagnostics);
+    let checks;
+    try {
+      checks = JSON.parse(raw);
+    } catch {
+      return unavailableAssetReview("invalid_checks", diagnostics);
+    }
+    const requiredChecks = [
+      "isStandaloneImage",
+      "containsWebsiteOrInterface",
+      "containsVisibleTextOrTextLikeMarks",
+      "containsLogoOrWatermark",
+      "isRelevantToBusiness",
+    ];
+    if (
+      !checks ||
+      typeof checks !== "object" ||
+      requiredChecks.some((key) => typeof checks[key] !== "boolean")
+    )
+      return unavailableAssetReview("invalid_checks", diagnostics);
+    const reasonCodes = assetReviewReasonCodes(checks);
+    return {
+      available: true,
+      approved: reasonCodes.length === 0,
+      reasonCodes,
+      model,
+      usage: reviewUsageSummary(envelope.payload.usage),
+      cache: openRouterResponseCacheMetrics(response),
+    };
+  } catch (error) {
+    const failureCode =
+      controller.signal.aborted || error?.name === "AbortError"
+        ? "timeout"
+        : /OPENROUTER_API_KEY is required/iu.test(String(error?.message || ""))
+          ? "not_configured"
+          : "transport_error";
+    return unavailableAssetReview(failureCode, {
+      model,
+      imageBytes: imageData?.byteLength,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function list(value, limit = 6) {
@@ -139,6 +496,32 @@ function promptFor(site, route, placement) {
   const direction = visualDirection(site);
   const dna = route?.referenceDna || {};
   const familyImageDirection = {
+    "editorial-monument":
+      "restrained editorial environments, oversized negative space, tactile paper and stone materials, and quiet ink-blue shadows",
+    "cinematic-stage":
+      "wide cinematic environments, one legible horizon or service anchor, directional light, and premium restraint",
+    "utility-diagnostic":
+      "clear documentary service details, precise tools and materials, uncluttered work surfaces, and practical light",
+    "typographic-poster":
+      "one bold physical subject, high-contrast shape, a limited palette, and broad clean negative space for typography",
+    "archive-rail":
+      "archive-like service specimens, varied tactile materials, isolated objects, and editorial catalog lighting without text",
+    "guided-conversation":
+      "calm confidential consultation atmosphere, welcoming rooms or desk details, soft daylight, and warm neutral restraint",
+    "spatial-object":
+      "one sculptural service-relevant object, credible material physics, controlled studio lighting, and visible spatial depth",
+    "market-collage":
+      "warm neighborhood product still life, tactile ingredients or tools, asymmetrical groupings, and playful color blocks",
+    "a1-collage-composition":
+      "layered editorial still life, separated physical objects, tactile surfaces, deliberate overlaps, and off-center balance",
+    "a1-kinetic-command":
+      "directional action-documentary framing, motion cues from tools or equipment, a clear silhouette, and open copy space",
+    "a1-object-stage":
+      "monumental studio object staging, sculptural form, grounded materials, deep controlled shadows, and clear negative space",
+    "a1-kinetic-founder":
+      "authored workspace still life, process tools and personal studio artifacts, directional light, and no identifiable people",
+    "a1-cinematic-3d":
+      "cinematic spatial 3D environment, believable scale and material depth, controlled perspective, and restrained atmosphere",
     "kokoro-editorial-architecture":
       "warm architectural interiors, editorial still life, restrained dark palette, tactile natural materials",
     "skyelite-cinematic-luxury":
@@ -157,6 +540,110 @@ function promptFor(site, route, placement) {
       "warm neighborhood food market still life, playful flat color blocks, tactile ingredients, local table energy, and crop-safe product compositions",
   };
   const familyAssetBriefs = {
+    "editorial-monument": {
+      medium: "restrained editorial service photography",
+      hero: "Create a quiet editorial environment or material tableau for the service, with tactile paper or stone detail and broad negative space for oversized type.",
+      secondary:
+        "Create a vertical architectural or material chapter with one distinct focal detail, warm natural light, and calm editorial framing.",
+      tertiary:
+        "Create an isolated service-relevant archive object or material close-up, suitable for a magazine-like section and free of readable text.",
+    },
+    "cinematic-stage": {
+      medium: "wide cinematic environmental photography",
+      hero: "Create a panoramic service environment with one strong horizon or physical anchor, directional natural light, motion in the setting, and copy-safe negative space.",
+      secondary:
+        "Create a different wide service environment with a clear diagonal light path and a distinct crop, without people or faces.",
+      tertiary:
+        "Create a close material or equipment detail that reads as a cinematic cutaway rather than a catalog product card.",
+    },
+    "utility-diagnostic": {
+      medium: "clear documentary service photography",
+      hero: "Create a practical, uncluttered view of one service-relevant tool or work surface, with accurate materials and room for a diagnostic headline.",
+      secondary:
+        "Create a separate preparation or process detail using objects and materials only, with a clear focal point and ordinary work light.",
+      tertiary:
+        "Create a precise close-up of a service material, tool, or mechanism with an unbranded surface and legible shape.",
+    },
+    "typographic-poster": {
+      medium: "high-contrast editorial object photography",
+      hero: "Create one bold service-relevant physical subject or silhouette against a limited-color field, leaving a large clean area for oversized type.",
+      secondary:
+        "Create an asymmetric graphic detail with one clear material subject, a restrained palette, and a crop different from the hero.",
+      tertiary:
+        "Create a tightly cropped service object or tactile material texture that works as a visual punctuation mark.",
+    },
+    "archive-rail": {
+      medium: "editorial archive still-life photography",
+      hero: "Create a horizontal archive specimen of service-relevant objects or materials, arranged as one tactile collection with catalog-like light and no readable text.",
+      secondary:
+        "Create a distinct second specimen grouping with another crop and clearly separated object silhouettes.",
+      tertiary:
+        "Create a close archival texture or service-material detail that adds variety without repeating the hero arrangement.",
+    },
+    "guided-conversation": {
+      medium: "calm consultation-environment photography",
+      hero: "Create a private, welcoming consultation setting through an empty room, arranged chairs, soft daylight, or thoughtful desk objects. Do not depict people, faces, or readable documents.",
+      secondary:
+        "Create a separate calm environmental detail that suggests a thoughtful first conversation through light, materials, and space, without staged customers.",
+      tertiary:
+        "Create a tactile close detail from the consultation setting, such as a natural material or neutral object arrangement, without text or people.",
+    },
+    "spatial-object": {
+      medium: "spatial service-object photography or render",
+      hero: "Create one service-relevant sculptural object on a grounded spatial stage, with believable materials, controlled depth, and generous negative space. Avoid unrelated decoration.",
+      secondary:
+        "Create a different camera angle or spatial arrangement for a service-relevant object class, with crop-safe focus and realistic materials.",
+      tertiary:
+        "Create a close material and form study with credible reflections, clear scale, and restrained studio light.",
+    },
+    "market-collage": {
+      medium: "warm editorial neighborhood product still life",
+      hero: "Create a tactile asymmetrical grouping of business-relevant products, ingredients, tools, or materials on a warm local surface, with clear layers and crop-safe focus.",
+      secondary:
+        "Create a separate counter, shelf, or product grouping with repeated tactile rhythm and a clearly different crop.",
+      tertiary:
+        "Create a close still life of a service material or product detail with natural texture and intentional mobile cropping.",
+    },
+    "a1-collage-composition": {
+      medium: "layered editorial still-life photography",
+      hero: "Create one layered still life of business-relevant service objects with visibly separated planes, tactile surfaces, deliberate overlap, and off-center balance.",
+      secondary:
+        "Create a distinct second object grouping with readable silhouettes, a different crop, and depth between foreground and background.",
+      tertiary:
+        "Create a close crop of one service material or process detail, not another hero-scale tableau.",
+    },
+    "a1-kinetic-command": {
+      medium: "directional action-documentary photography",
+      hero: "Create a motion-led service scene using tools, equipment, or materials to imply action without identifiable people, with a strong silhouette and one large open copy area.",
+      secondary:
+        "Create a separate directional service detail with diagonal movement cues, one strong focal object, and practical lighting.",
+      tertiary:
+        "Create a crisp close action detail of equipment or material that stays legible at a small crop and contains no text.",
+    },
+    "a1-object-stage": {
+      medium: "grounded sculptural service-object render",
+      hero: "Create one monumental service-relevant object on a grounded spatial stage, with physically credible material, controlled light, and deep negative space.",
+      secondary:
+        "Create a secondary object study from a new camera angle, preserving scale and realistic contact with its environment.",
+      tertiary:
+        "Create a close study of an object material or mechanism with believable reflections and no decorative unrelated forms.",
+    },
+    "a1-kinetic-founder": {
+      medium: "authored workspace and process still-life photography",
+      hero: "Create an authored workspace still life of tools, materials, and process artifacts arranged with directional energy. Do not depict a founder, employee, customer, face, or readable text.",
+      secondary:
+        "Create a different process arrangement of business-relevant tools and materials with a new light direction and tactile surfaces.",
+      tertiary:
+        "Create a macro study of one process material or tool detail, cropped for clarity on mobile.",
+    },
+    "a1-cinematic-3d": {
+      medium: "cinematic spatial 3D environment",
+      hero: "Create a cinematic spatial environment for one business-relevant object or material, with credible scale, dramatic but restrained light, and controlled camera perspective.",
+      secondary:
+        "Create a separate spatial render with layered depth and a clearly different camera angle, using physically believable materials.",
+      tertiary:
+        "Create a close material study with realistic surface response, controlled reflections, and restrained cinematic light.",
+    },
     "kokoro-editorial-architecture": {
       medium: "photorealistic architectural editorial photography",
       hero: "Create an architectural tableau with strong negative space, warm material depth, and a crop that can support monumental type without becoming a split hero.",
@@ -225,8 +712,10 @@ function promptFor(site, route, placement) {
   const familyBrief = familyAssetBriefs[dna.familyId] || {
     medium: "commercial editorial photography",
     hero: "Create a distinctive, service-relevant scene using the assigned reference's physical subject cues.",
-    secondary: "Create a distinct supporting service scene using the assigned reference's physical subject cues.",
-    tertiary: "Create a tactile material or service detail using the assigned reference's physical subject cues.",
+    secondary:
+      "Create a distinct supporting service scene using the assigned reference's physical subject cues.",
+    tertiary:
+      "Create a tactile material or service detail using the assigned reference's physical subject cues.",
   };
   const subject = services.length
     ? services.join(", ")
@@ -250,7 +739,7 @@ function promptFor(site, route, placement) {
     ? `Reference-specific physical scene cues: ${referenceScene}. Use only subject and material cues; do not reproduce its layout, interface, or exact source image.`
     : "";
   const dnaContext = dna.familyId
-    ? `Image art direction: ${familyImageDirection[dna.familyId] || "Follow the assigned reference's visual mood and materials without copying a brand."} Image treatment: ${sceneOnlyDirection(dna.imageTreatment?.mode, 120)}. Crop strategy: ${imageOnlyDirection(dna.imageTreatment?.crop, 140)}. Palette intent: ${imageOnlyDirection(dna.palette?.contrastIntent, 140)}.`
+    ? `Reference family: ${dna.familyId}. Image art direction: ${familyImageDirection[dna.familyId] || "Follow the assigned reference's visual mood and materials without copying a brand."} Image treatment: ${sceneOnlyDirection(dna.imageTreatment?.mode, 120)}. Crop strategy: ${imageOnlyDirection(dna.imageTreatment?.crop, 140)}. Palette intent: ${imageOnlyDirection(dna.palette?.contrastIntent, 140)}.`
     : "";
   const directionContext = direction ? `Visual direction: ${direction}.` : "";
   const placementBrief =
@@ -281,9 +770,45 @@ function promptFor(site, route, placement) {
 }
 
 function fallbackImage(site, placement) {
-  if (placement.id === "hero") return site.images?.hero || "";
-  if (placement.id === "secondary") return site.images?.secondary || "";
-  return site.images?.tertiary || "";
+  const candidate =
+    placement.id === "hero"
+      ? site.images?.hero || ""
+      : placement.id === "secondary"
+        ? site.images?.secondary || ""
+        : site.images?.tertiary || "";
+  const wasGenerated = (site.assetReport?.used || []).some(
+    (entry) =>
+      entry?.source === "fal-generated" &&
+      entry?.placement === placement.id &&
+      entry?.asset === candidate,
+  );
+  return wasGenerated ? "" : candidate;
+}
+
+function applyFallbackImage(site, placement) {
+  const fallback = fallbackImage(site, placement);
+  if (fallback) {
+    setImage(site, placement, fallback);
+    return fallback;
+  }
+  const current =
+    placement.id === "hero"
+      ? site.images?.hero
+      : placement.id === "secondary"
+        ? site.images?.secondary
+        : site.images?.tertiary;
+  const wasGenerated = (site.assetReport?.used || []).some(
+    (entry) =>
+      entry?.source === "fal-generated" &&
+      entry?.placement === placement.id &&
+      entry?.asset === current,
+  );
+  if (wasGenerated) {
+    const images = { ...(site.images || {}) };
+    delete images[placement.id];
+    site.images = images;
+  }
+  return "";
 }
 
 function pathFor(placement, promptHash) {
@@ -379,7 +904,9 @@ function existingEntry(manifest, placement, promptHash, outputDir) {
   const entry = manifest?.placements?.find(
     (candidate) =>
       candidate.placement === placement.id &&
-      candidate.promptHash === promptHash,
+      candidate.promptHash === promptHash &&
+      candidate.reviewPolicyVersion === GENERATED_ASSET_REVIEW_POLICY_VERSION &&
+      candidate.imageReview?.status === "approved",
   );
   if (!entry?.path || !entry.path.startsWith("/images/generated/")) return null;
   const filename = path.basename(entry.path);
@@ -406,6 +933,7 @@ async function generateContextualAssetsForRoute({
   timeoutMs = Number(process.env.FAL_IMAGE_TIMEOUT_MS) || 120_000,
   falClient = /** @type {any} */ (defaultFal),
   fetchImpl = fetch,
+  imageReviewer = reviewGeneratedAsset,
   force = false,
 } = {}) {
   if (!site || typeof site !== "object")
@@ -430,9 +958,10 @@ async function generateContextualAssetsForRoute({
     (placement) => !clientAssetFor(site, placement),
   );
   const manifest = {
-    version: 2,
+    version: 3,
     provider: "fal.ai",
     model,
+    reviewPolicyVersion: GENERATED_ASSET_REVIEW_POLICY_VERSION,
     strategy: "client-first-fill-missing-route-directed",
     routeId: routeContract.id,
     familyId: routeContract.familyId,
@@ -443,20 +972,38 @@ async function generateContextualAssetsForRoute({
   };
   let requests = 0;
   let filled = 0;
-  const canGenerate = Boolean(key && !force);
+  let generationBlockedByFailure = null;
+  const hasReviewProvider =
+    imageReviewer !== reviewGeneratedAsset ||
+    Boolean(process.env.OPENROUTER_API_KEY);
+  const canGenerate = Boolean(key && !force && hasReviewProvider);
   if (canGenerate) falClient.config({ credentials: key });
 
   for (const placement of placements) {
     const prompt = promptFor(site, route, placement);
-    const promptHash = sha256(prompt);
+    // Bump this contract whenever image acceptance policy changes so a stale
+    // unreviewed (or rejected) bitmap cannot be reused by its old prompt hash.
+    const promptHash = sha256(
+      `${GENERATED_ASSET_REVIEW_POLICY_VERSION}\n${prompt}`,
+    );
 
     if (filled >= imageBudget) {
-      const fallback = fallbackImage(site, placement);
-      if (fallback) setImage(site, placement, fallback);
+      const fallback = applyFallbackImage(site, placement);
       manifest.skipped.push({
         placement: placement.id,
         reason: "image-budget-exhausted",
         fallback,
+      });
+      continue;
+    }
+
+    if (generationBlockedByFailure) {
+      const fallback = applyFallbackImage(site, placement);
+      manifest.skipped.push({
+        placement: placement.id,
+        reason: generationBlockedByFailure.reason,
+        fallback,
+        providerFailure: generationBlockedByFailure.providerFailure,
       });
       continue;
     }
@@ -481,12 +1028,15 @@ async function generateContextualAssetsForRoute({
     }
 
     if (!canGenerate || requests >= maxRequests) {
-      const fallback = fallbackImage(site, placement);
-      if (fallback) setImage(site, placement, fallback);
+      const fallback = applyFallbackImage(site, placement);
       manifest.skipped.push({
         placement: placement.id,
         reason: !canGenerate
-          ? "FAL_KEY-not-configured"
+          ? !key
+            ? "FAL_KEY-not-configured"
+            : !hasReviewProvider
+              ? "OPENROUTER_API_KEY-not-configured"
+              : "image-generation-disabled"
           : "request-budget-exhausted",
         fallback,
       });
@@ -495,25 +1045,75 @@ async function generateContextualAssetsForRoute({
 
     let outcome;
     let failure = "";
+    let finalReview;
+    let providerFailure;
+    const imageReviews = [];
     for (let attempt = 0; attempt < 2 && requests < maxRequests; attempt += 1) {
       requests += 1;
+      let requested;
       try {
-        const requested = await requestImage({
+        requested = await requestImage({
           client: falClient,
           model,
-          prompt:
-            attempt === 0
-              ? prompt
-              : `${prompt} Make the subject simpler, remove all incidental text-like marks, and keep the composition clear at a small mobile crop.`,
+          prompt: attempt === 0 ? prompt : retryPromptFor(prompt),
           aspectRatio: placement.aspectRatio,
           timeoutMs,
         });
+      } catch (error) {
+        const classified = falRequestFailure(error);
+        failure = classified.reason;
+        providerFailure = classified.details;
+        if (!classified.retryable) {
+          generationBlockedByFailure = {
+            reason: classified.reason,
+            providerFailure: classified.details,
+          };
+          break;
+        }
+        continue;
+      }
+      try {
         const downloaded = await downloadImage(
           requested.url,
           fetchImpl,
           timeoutMs,
         );
         const normalized = await normalizeImage(downloaded.data, placement);
+        let review;
+        try {
+          review = await imageReviewer({
+            imageData: normalized.data,
+            placement: placement.id,
+            businessKind:
+              site.businessKind || site.industry || "local business",
+            services: (site.services || [])
+              .map((service) => service?.name)
+              .filter(Boolean)
+              .slice(0, 4),
+            familyId: routeContract.familyId,
+            attempt: attempt + 1,
+          });
+        } catch {
+          review = {
+            available: false,
+            approved: false,
+            reasonCodes: ["review_unavailable"],
+            failureCode: "review_callback_error",
+            imageBytes: normalized.bytes,
+          };
+        }
+        const reviewSummary = normalizeImageReview(review);
+        imageReviews.push(reviewSummary);
+        finalReview = reviewSummary;
+        if (reviewSummary.status === "unavailable") {
+          failure = "image-review-unavailable";
+          break;
+        }
+        if (reviewSummary.status !== "approved") {
+          failure = "image-review-rejected";
+          if (attempt === 0 && requests < maxRequests) continue;
+          break;
+        }
         const fileName = `${placement.id}-${promptHash.slice(0, 12)}.webp`;
         const filePath = path.join(outputDir, fileName);
         await fs.writeFile(filePath, normalized.data);
@@ -521,6 +1121,8 @@ async function generateContextualAssetsForRoute({
           placement: placement.id,
           path: pathFor(placement, promptHash),
           promptHash,
+          reviewPolicyVersion: GENERATED_ASSET_REVIEW_POLICY_VERSION,
+          imageReview: reviewSummary,
           requestId: requested.requestId,
           providerSourceUrl: requested.url,
           sha256: sha256(normalized.data),
@@ -545,12 +1147,13 @@ async function generateContextualAssetsForRoute({
       setImage(site, placement, outcome.path);
       manifest.placements.push(outcome);
     } else {
-      const fallback = fallbackImage(site, placement);
-      if (fallback) setImage(site, placement, fallback);
+      const fallback = applyFallbackImage(site, placement);
       manifest.skipped.push({
         placement: placement.id,
         reason: failure || "FAL image generation failed.",
         fallback,
+        ...(providerFailure ? { providerFailure } : {}),
+        ...(finalReview ? { imageReviews } : {}),
       });
     }
   }
@@ -561,8 +1164,18 @@ async function generateContextualAssetsForRoute({
   const generatedPlacements = new Set(
     manifest.placements.map((entry) => entry.placement),
   );
+  const resolvedPlacements = new Set([
+    ...generatedPlacements,
+    ...manifest.skipped.map((entry) => entry.placement),
+  ]);
   site.assetReport = {
-    used: used.filter((entry) => !generatedPlacements.has(entry.placement)),
+    used: used.filter(
+      (entry) =>
+        !(
+          entry.source === "fal-generated" &&
+          resolvedPlacements.has(entry.placement)
+        ),
+    ),
     skipped: Array.isArray(site.assetReport?.skipped)
       ? [...site.assetReport.skipped]
       : [],
@@ -592,6 +1205,7 @@ async function generateContextualAssetsForRoute({
         : skipped.reason,
     });
   }
+  manifest.generationRequests = requests;
   if (manifestPath) {
     await fs.mkdir(path.dirname(manifestPath), { recursive: true });
     await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
@@ -666,27 +1280,21 @@ export async function generateContextualAssets(options = {}) {
     if (!firstRouteSite) firstRouteSite = result.site;
     creativeAssets[route.id] = {
       hero:
-        clientAssetPath(site, PLACEMENTS[0]) ||
-        result.site.images?.hero ||
-        site.images?.hero ||
-        "",
+        clientAssetPath(site, PLACEMENTS[0]) || result.site.images?.hero || "",
       secondary:
         clientAssetPath(site, PLACEMENTS[1]) ||
         result.site.images?.secondary ||
-        site.images?.secondary ||
         "",
       tertiary:
         clientAssetPath(site, PLACEMENTS[2]) ||
         result.site.images?.tertiary ||
-        site.images?.tertiary ||
         "",
       familyId: result.manifest.familyId,
       routeFingerprint: result.manifest.routeFingerprint,
     };
   }
 
-  if (firstRouteSite?.images)
-    site.images = { ...(site.images || {}), ...firstRouteSite.images };
+  site.images = { ...(firstRouteSite?.images || {}) };
   site.creativeAssets = creativeAssets;
 
   const existingUsed = Array.isArray(site.assetReport?.used)
@@ -734,11 +1342,13 @@ export async function generateContextualAssets(options = {}) {
   }
 
   const manifest = {
-    version: 3,
+    version: 4,
     provider: "fal.ai",
     model: options.model || process.env.FAL_IMAGE_MODEL || DEFAULT_FAL_MODEL,
+    reviewPolicyVersion: GENERATED_ASSET_REVIEW_POLICY_VERSION,
     strategy: "client-first-per-route-reference-directed",
     generatedAt: new Date().toISOString(),
+    generationRequests: totalRequests,
     routes: routeManifests,
     placements,
     skipped,

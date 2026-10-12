@@ -39,10 +39,9 @@ for (const scenario of scenarios) {
   const config = pageBriefFixture(
     scenario === "care-static" ? "care-editorial" : "local-trades",
   );
-  config.lead = {
-    apiUrl: "https://stage4-provider.invalid",
-    token: "synthetic-stage4-token",
-  };
+  // These are test-only sites. Verify their disabled diagnostic forms in
+  // review mode, never as a production form with placeholder credentials.
+  config.lead = { apiUrl: "", token: "" };
   await fs.mkdir(path.join(dir, "public/images"), { recursive: true });
   for (const name of ["page-0.svg", "page-1.svg", "page-city.svg"])
     await fs.writeFile(path.join(dir, "public/images", name), fixtureImage);
@@ -118,7 +117,7 @@ for (const scenario of scenarios) {
     config,
     dist: path.join(dir, "dist"),
     origin: "https://fixture.pages.dev",
-    mode: "production",
+    mode: "review",
     site: root,
     reportPath: path.join(dir, "route-handoff.json"),
     screenshotsDir: path.join(dir, "screenshots"),

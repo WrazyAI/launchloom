@@ -16,6 +16,8 @@ import {
   CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
+  VERIFIED_CLIENT_PERSONNEL_CONTRACT,
+  appendReferencePersonnelCue,
   authoringCompletionDiagnostics,
   completionLimitRequestField,
   formatAuthoringCompletionDiagnostics,
@@ -824,6 +826,9 @@ export function modelBoundRepairFindings(findings = []) {
  *   creativeSession?: Record<string, any> | null,
  *   creativeRepairScope?: Record<string, any> | null,
  *   logger?: (message: string) => void,
+ *   automaticSpanRepair?: boolean,
+ *   fetchImpl?: typeof fetch,
+ *   onUsage?: (record: Record<string, any>) => void | Promise<void> | null,
  * }} [options]
  * @returns {Promise<Record<string, any>>}
  */
@@ -862,6 +867,12 @@ export async function requestRepair({
       "Manual creative repair requires a resolved, non-empty section scope.",
     );
   const scopedHumanRepair = humanReview;
+  const validationOnlyRetry = (findings || []).some(
+    (finding) =>
+      finding &&
+      typeof finding === "object" &&
+      finding.category === "repair-output-rejected",
+  );
   const motionRepair = hasFinding(findings || [], MOTION_FINDING_PATTERN);
   const referenceMismatch = (findings || []).some((finding) => {
     const detail =
@@ -878,7 +889,10 @@ export async function requestRepair({
             .join(" ");
     return REFERENCE_MISMATCH_PATTERN.test(detail);
   });
-  const repairInstruction = scopedHumanRepair
+  const repairInstruction = validationOnlyRetry
+    ? `VALIDATION-ONLY RETRY
+The previous response was rejected by deterministic source validation. Treat the repair-output-rejected finding as the only scope of this request. Fix only that exact validator error; do not redesign or address visual findings in this retry. Preserve every existing color declaration and palette token, layout and mobile topology, Reference DNA marker, sealed content binding, and unrelated source. In bounded-edit mode, change only the smallest source span that fixes the error. In complete-file mode, reproduce all unaffected files and source regions unchanged. For a CSS parse error, correct only the malformed syntax in the affected CSS span; do not regenerate the stylesheet or alter unrelated rules. If the validator error cannot be fixed safely with a narrow correction, return the fail-closed response. The pipeline will rerender and resume visual repair only after this source-validation retry passes.`
+    : scopedHumanRepair
     ? "Make the smallest safe source edit that satisfies the explicit human review request only inside the resolved section scope. Do not change unrelated sections, section order, global CSS, sealed content, factual claims, contact behavior, or the assigned Reference DNA outside that scope. Do not convert this candidate into a legacy renderer."
     : referenceMismatch
       ? "Repair this authored LaunchLoom candidate to address the measured rendered-reference and visual findings. You may change composition, layout, hierarchy, section rhythm, image placement or crop, navigation geometry, and motion where needed to fix those findings. Do not preserve any composition or design mechanic explicitly identified as failing. Preserve verified business facts, sealed content bindings, accessibility, required functionality, and the assigned Reference DNA family and signature intent. Do not convert it into a legacy renderer."
@@ -924,6 +938,8 @@ ${CLIENT_PALETTE_ROLE_CONTRACT}
 ${CLIENT_TYPOGRAPHY_CONTRACT}
 
 ${REFERENCE_PROVENANCE_OUTPUT_CONTRACT}
+
+${VERIFIED_CLIENT_PERSONNEL_CONTRACT}
 
 ${EARLY_CONVERSION_OUTPUT_CONTRACT}
 
@@ -1024,7 +1040,7 @@ Use these helpers instead of inventing network calls or duplicating platform beh
               typeof currentFiles[key] === "string" && currentFiles[key].trim(),
           )),
     ];
-    return `${repairInstruction}
+    const prompt = `${repairInstruction}
 
 
 ${scopedHumanRepair ? `RESOLVED SECTION SCOPE\n${JSON.stringify(creativeRepairScope, null, 2)}\nOnly these section IDs may change.` : ""}
@@ -1099,6 +1115,10 @@ ${
       : "Return complete files required by the response schema and no unrelated explanation. Return the complete corrected source for any authored page named in the findings in its matching response field, and return an empty string for authored pages that should stay unchanged."
 
 } Keep required reference signatures and safety/content contracts unless the explicit repair requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`;
+    return appendReferencePersonnelCue(prompt, {
+      route: { referenceDna, referenceDossier },
+      contentShape,
+    });
   };
 
   const buildRepairContent = (

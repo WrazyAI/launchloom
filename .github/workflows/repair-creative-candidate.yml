@@ -260,18 +260,28 @@ jobs:
         continue-on-error: true
         env:
           CLIENT_DIR: ${{ steps.client.outputs.dir }}
-          SITE_ID: ${{ steps.input.outputs.site_id }}
           CANDIDATE: ${{ steps.input.outputs.candidate }}
           LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+          LAUNCHLOOM_TEST_PAGES_PROJECT: ${{ vars.LAUNCHLOOM_TEST_PAGES_PROJECT || 'launchloom-pipeline-preview' }}
+          CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+          CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
         run: |
           cd "$CLIENT_DIR"
           PUBLIC_REVIEW_MODE=true PUBLIC_CREATIVE_DIAGNOSTIC=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
           node "$GITHUB_WORKSPACE/scripts/verify-creative-diagnostic.mjs" --dist dist --candidate "$CANDIDATE" --screenshots .launchloom/creative-repair/final-attempt/diagnostic-screenshots
+          printf '/*\n  X-Robots-Tag: noindex, nofollow, noarchive\n' > dist/_headers
+          printf 'User-agent: *\nAllow: /\n' > dist/robots.txt
+          rm -f dist/sitemap.xml
           git add .launchloom/creative-recovery.json .launchloom/creative-repair/final-attempt/diagnostic-screenshots
           if ! git diff --cached --quiet; then git commit -m "Record final diagnostic preview checks"; git push origin HEAD:review/initial; fi
-          npx wrangler pages deploy dist --project-name "$SITE_ID" --branch creative-diagnostic --commit-hash "$(git rev-parse HEAD)" --commit-message "Final noindex diagnostic creative preview"
-          PREVIEW="https://creative-diagnostic.$SITE_ID.pages.dev"
-          node "$GITHUB_WORKSPACE/scripts/wait-for-pages-preview.mjs" --url "$PREVIEW"
+          RUN_SUFFIX=$(printf '%s' "$GITHUB_RUN_ID" | tail -c 9)
+          BRANCH="diag-${RUN_SUFFIX}-${GITHUB_RUN_ATTEMPT}"
+          PREVIEW_RESULT=$(node "$GITHUB_WORKSPACE/scripts/deploy-private-diagnostic-preview.mjs" \
+            --directory "$PWD/dist" \
+            --project "$LAUNCHLOOM_TEST_PAGES_PROJECT" \
+            --branch "$BRANCH" \
+            --source-sha "$(git rev-parse HEAD)")
+          PREVIEW=$(printf '%s' "$PREVIEW_RESULT" | jq -er '.url')
           echo "url=$PREVIEW" >> "$GITHUB_OUTPUT"
 
       - name: Register the final diagnostic preview for human review

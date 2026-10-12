@@ -4,6 +4,9 @@ import type { DesignFamily } from "../lib/site";
 import { resolvePageRecipe } from "../lib/page-recipe";
 const page = resolvePageRecipe(site);
 const recipe = page.recipe;
+const servicesHref = homeSectionHref("services");
+const faqHref = homeSectionHref("faq");
+const contactHref = homeSectionHref("contact");
 const { family = page.family } = Astro.props as { family?: DesignFamily };
 ---
 
@@ -13,6 +16,6 @@ const { family = page.family } = Astro.props as { family?: DesignFamily };
       ? <img src={site.assets.logo} alt={site.business.name} />
       : <span class="wordmark__name">{site.business.name}</span>}
   </a>
-  <nav aria-label="Main navigation"><a href={homeSectionHref("services")}>Services</a><a href={homeSectionHref("faq")}>FAQs</a><a href={homeSectionHref("contact")}>Contact</a>{headerRoutes.map(route => <a href={route.path}>{route.title}</a>)}</nav>
+  <nav aria-label="Main navigation"><a href={servicesHref}>Services</a><a href={faqHref}>FAQs</a><a href={contactHref}>Contact</a>{headerRoutes.map(route => <a href={route.path}>{route.title}</a>)}</nav>
   {site.business.phone && <a class="header-call" href={phoneHref(site.business.phone)}><span>{recipe === "local-trades" ? "Call for service" : "Call us"}</span>{site.business.phone}</a>}
 </div></header>

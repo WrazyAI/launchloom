@@ -188,6 +188,12 @@ describe("OpenRouter cache integration", () => {
     expect(author).toContain(
       "Treat the included permission-cleared Reference Dossier",
     );
+    expect(author).toContain(
+      "Never let min-content width, a nowrap row, or fixed padding create horizontal overflow",
+    );
+    expect(author).toContain(
+      "do not clip headings, summaries or actions with fixed-height overflow-hidden boxes",
+    );
     expect(analyzer).toContain(
       "referenceDossierPromptBlock(route.referenceDossier)",
     );

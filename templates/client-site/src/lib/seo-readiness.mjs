@@ -1,4 +1,3 @@
-import { pageBriefReadiness } from "./page-briefs.mjs";
 import { routeReadiness } from "./route-inventory.mjs";
 import { businessFactReadiness } from "./business-facts.mjs";
 export function isAffirmativeConfirmation(value) {
@@ -17,8 +16,6 @@ export function seoResearchReadiness(config) {
   if (!facts.allowed) return { ...facts, mode: "baseline" };
   const routes = routeReadiness(config);
   if (!routes.allowed) return { ...routes, mode: "baseline" };
-  const pages = pageBriefReadiness(config);
-  if (!pages.allowed) return { ...pages, mode: "baseline" };
   const research = config.seoResearch;
   if (!research || typeof research !== "object")
     return { allowed: true, mode: "legacy" };
@@ -35,7 +32,7 @@ export function seoResearchReadiness(config) {
     const requireAll = coverage?.approvalPolicy === "all-confirmed-cities";
     const valid =
       research.version === 2 &&
-      ["researched", "context-only"].includes(research.mode) &&
+      research.mode === "researched" &&
       research.publishReady === true &&
       coverage?.version === 1 &&
       ["primary-city", "all-confirmed-cities"].includes(
@@ -90,10 +87,11 @@ export function seoResearchReadiness(config) {
         );
     // Retain the original top-level release checks as well as city provenance.
     // Nested proof must not bypass the actual site's page map or spend checks.
+    // Cited fallback observations can inform a private diagnostic review, but
+    // they do not meet the measured evidence required for production approval.
     const primaryPolicyReady =
-      research.mode === "researched"
-        ? hasCompleteVersionTwoMap(config, research)
-        : hasCompletedFallbackResearch(research);
+      research.mode === "researched" &&
+      hasCompleteVersionTwoMap(config, research);
     return valid && primaryPolicyReady
       ? { allowed: true, mode: research.mode }
       : {
@@ -115,12 +113,6 @@ export function seoResearchReadiness(config) {
       error:
         "SEO research is incomplete. The preview remains available, but production publishing is blocked until research succeeds.",
     };
-  if (
-    schemaVersion === 2 &&
-    mode === "context-only" &&
-    hasCompletedFallbackResearch(research)
-  )
-    return { allowed: true, mode };
   if (schemaVersion === 1 && mode === "researched" && publishReady === true)
     return { allowed: true, mode };
   if (
@@ -141,6 +133,12 @@ export function seoResearchReadiness(config) {
 export function hasPipelineTest(config) {
   // A malformed or edited marker cannot opt a diagnostic artifact into release.
   return Boolean(config && Object.hasOwn(config, "pipelineTest"));
+}
+export function hasTestOnlySite(config) {
+  return Boolean(
+    hasPipelineTest(config) ||
+      (typeof config?.demoNotice === "string" && config.demoNotice.trim()),
+  );
 }
 function hasCompleteVersionTwoMap(config, research) {
   const completeness = research.completeness;
