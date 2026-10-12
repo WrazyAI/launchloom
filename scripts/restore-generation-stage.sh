@@ -6,6 +6,11 @@ set -euo pipefail
 
 CLIENT_REPO="${1:?Usage: restore-generation-stage.sh <private-client-repo> <pages-project>}"
 CLIENT_PROJECT="${2:?Missing Pages project}"
+EXPECTED_SHA="${3:-}"
+if [ -n "$EXPECTED_SHA" ] && ! [[ "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ ]]; then
+  echo "Invalid expected private checkpoint commit." >&2
+  exit 1
+fi
 case "$CLIENT_REPO" in
   WrazyAI/launchloom-*) ;;
   *) echo "Refusing to restore from a non-client repository." >&2; exit 1 ;;
@@ -24,6 +29,12 @@ if [ -e "$CLIENT_DIR" ]; then
   exit 1
 fi
 gh repo clone "$CLIENT_REPO" "$CLIENT_DIR" -- --branch review/initial --depth 1
+ACTUAL_SHA=$(git -C "$CLIENT_DIR" rev-parse HEAD)
+if [ -n "$EXPECTED_SHA" ] && [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+  echo "::error title=Private stage checkpoint moved::Expected $EXPECTED_SHA, found $ACTUAL_SHA; refusing to run on changed client source." >&2
+  exit 1
+fi
+
 git -C "$CLIENT_DIR" config user.name "LaunchLoom"
 git -C "$CLIENT_DIR" config user.email "automation@launchloom.app"
 git -C "$CLIENT_DIR" remote set-url origin \
