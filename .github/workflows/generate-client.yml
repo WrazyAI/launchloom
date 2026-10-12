@@ -795,7 +795,10 @@ jobs:
           cp .launchloom/creative-repair/final/creative-bakeoff.json .launchloom/creative-bakeoff.json
           rm -rf .launchloom/generated-experiences
           cp -R /tmp/generated-experiences .launchloom/generated-experiences
-          git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json .launchloom/creative-repair src/generated-experiences/selected src/site.config.json
+          git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
+          # Private JSON receipts are enough for the downstream gates and cost
+          # ledger. Do not bloat client git history with bulky render screenshots.
+          while IFS= read -r -d '' report; do git add "$report"; done < <(find .launchloom/creative-repair -type f -name '*.json' -print0)
           if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
             test -f .launchloom/creative-repair/qa-provider-calls.json || { echo "Private QA call receipt missing"; exit 1; }
             git add .launchloom/creative-repair/qa-provider-calls.json
