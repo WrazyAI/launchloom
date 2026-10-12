@@ -356,6 +356,88 @@ export default function Experience`,
         },
       }),
     ).not.toThrow();
+
+    const selectedServiceHref = experience
+      .replace(
+        "export default function Experience({ content, runtime }) {",
+        "export default function Experience({ content, runtime }) {\n  const selectedService = content.services.find((item) => item.slug === content.services[0].slug);",
+      )
+      .replace(
+        "<section data-hero>",
+        '<section data-hero><a href={`/services/${selectedService.slug}/`}>Selected service</a>',
+      );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: selectedServiceHref, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).not.toThrow();
+
+    const shadowedContentHref = experience.replace(
+      "export default function Experience({ content, runtime }) {",
+      `export default function Experience({ content, runtime }) {
+  function UntrustedLinks(content) {
+    const selectedService = content.services.find((item) => item.slug === "invented-route");
+    return <a href={\`/services/\${selectedService.slug}/\`}>Untrusted service</a>;
+  }`,
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: shadowedContentHref, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).toThrow(/unsafe URL attribute/iu);
+  });
+
+  it("rejects candidate files that exceed the rendered-repair source bound", () => {
+    const route = { id: "route-repairable-source-size" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(safeStage({ ...request, stage: "experience" }).content || "");
+    const styles = String(safeStage({ ...request, stage: "styles" }).content || "");
+    const motion = String(safeStage({ ...request, stage: "motion" }).content || "");
+    const oversizedStyles = `${styles}\n/*${"x".repeat(80_001)}*/`;
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles: oversizedStyles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).toThrow(/styles\.css exceeds the 80000-character repairable source limit/iu);
+  });
+
+  it("rejects CSS that only exceeds the repair bound after variable isolation", () => {
+    const route = { id: "route-namespaced-source-size" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(safeStage({ ...request, stage: "experience" }).content || "");
+    const motion = String(safeStage({ ...request, stage: "motion" }).content || "");
+    const styles = `.root{--x:1;}\n${"a{color:var(--x)}\n".repeat(3_000)}`;
+    expect(styles.length).toBeLessThan(80_000);
+    expect(namespaceCreativeCss(styles).length).toBeGreaterThan(80_000);
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).toThrow(/styles\.css exceeds the 80000-character repairable source limit/iu);
   });
 
   it("allows only a const phone href normalized from the sealed phone token", () => {
@@ -533,6 +615,23 @@ export default function Experience`,
     expect(() => validate(unrelatedGuard)).toThrow(/conditionally render/iu);
   });
 
+  it("authors only the first complete route for SEO-only without changing full defaults", async () => {
+    const routeIds = new Set<string>();
+    const result = await authorExperienceCandidates({
+      site, inspirationPack, testProfile: "seo-only",
+      generate: async (request) => { routeIds.add(request.route.id); return safeStage(request); },
+    });
+    expect(result.candidates).toHaveLength(1);
+    expect([...routeIds]).toEqual(["route-01"]);
+  });
+
+  it("still rejects incomplete inspiration contracts in an SEO-only authoring test", async () => {
+    await expect(authorExperienceCandidates({
+      site, inspirationPack: { ...inspirationPack, routes: inspirationPack.routes.slice(0, 1) }, testProfile: "seo-only",
+      generate: async (request) => safeStage(request),
+    })).rejects.toThrow(/exactly three/i);
+  });
+
   it("retries an empty optional image with the exact safe rendering rule", async () => {
     const requests: AuthorStageRequest[] = [];
     let retryRequest: AuthorStageRequest | undefined;
@@ -661,6 +760,86 @@ export default function Experience`,
         },
       }),
     ).not.toThrow();
+  });
+
+  it.each([
+    `content = { services: [{ slug: "invented-route" }] }; const selectedService = content.services[0];`,
+    `const selectedService = content.services[0]; selectedService.slug = "invented-route";`,
+    `const selectedService = content.services[0]; const aliasService = selectedService; aliasService.slug = "invented-route";`,
+    `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); const assign = Object.assign; assign(selectedService, { slug: "invented-route" });`,
+    `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); const assign = Object["assign"]; assign(selectedService, { slug: "invented-route" });`,
+    `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); const { assign } = Object; assign(selectedService, { slug: "invented-route" });`,
+    `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); const { ["assign"]: assign } = Object; assign(selectedService, { slug: "invented-route" });`,
+    `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); Object.defineProperties(selectedService, { slug: { value: "invented-route", configurable: true } });`,
+    `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); const { defineProperties } = Object; defineProperties(selectedService, { slug: { value: "invented-route", configurable: true } });`,
+    `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); Reflect.defineProperty(selectedService, "slug", { value: "invented-route", configurable: true });`,
+    `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); Reflect.deleteProperty(selectedService, "slug");`,
+    `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); Reflect.setPrototypeOf(selectedService, { slug: "invented-route" });`,
+    `const selectedService = content.services.find((item) => item.slug === content.services[0].slug); const { defineProperty } = Reflect; defineProperty(selectedService, "slug", { value: "invented-route", configurable: true });`,
+    `const selectedService = content.services.find((item) => { item.slug = "invented-route"; return true; });`,
+  ])("rejects service links after sealed provenance is mutated: %s", (setup) => {
+    const route = { id: "route-mutated-service-provenance" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(safeStage({ ...request, stage: "experience" }).content)
+      .replace(
+        "export default function Experience({ content, runtime }) {",
+        `export default function Experience({ content, runtime }) {\n ${setup}`,
+      )
+      .replace(
+        '<section id="services">',
+        '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>',
+      );
+    expect(() => validateProductionCandidateFiles({
+      files: {
+        experience,
+        styles: String(safeStage({ ...request, stage: "styles" }).content),
+        motion: String(safeStage({ ...request, stage: "motion" }).content),
+      },
+      route,
+      content: {
+        hero: { image: "/images/hero.webp" },
+        brand: { phone: "+12125550186" },
+        services: [{ slug: "repair", name: "repair" }],
+      },
+    })).toThrow(/unsafe URL attribute/iu);
+  });
+
+  it("rejects service links when nested content.services is mutated after destructuring", () => {
+    const route = { id: "route-mutated-destructured-services" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const original = String(safeStage({ ...request, stage: "experience" }).content);
+    const experienceFor = (mutation = "") => original
+      .replace(
+        "export default function Experience({ content, runtime }) {",
+        `export default function Experience({ content, content: { hero, services, faqs, brand }, runtime }) {\n ${mutation}`,
+      )
+      .replaceAll("content.hero.", "hero.")
+      .replaceAll("content.services", "services")
+      .replaceAll("content.faqs", "faqs")
+      .replaceAll("content.brand.", "brand.")
+      .replace(
+        "<article key={service.name}>",
+        "<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>",
+      );
+
+    const validate = (experience: string) =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles: String(safeStage({ ...request, stage: "styles" }).content),
+          motion: String(safeStage({ ...request, stage: "motion" }).content),
+        },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "repair" }],
+        },
+      });
+
+    expect(() => validate(experienceFor())).not.toThrow();
+    expect(() => validate(experienceFor('services[0].slug = "invented-route";')))
+      .toThrow(/unsafe URL attribute/iu);
   });
 
   it.each([
@@ -2351,6 +2530,27 @@ export default function Experience`,
         ),
       ),
     ).toBe(true);
+  });
+
+  it("retries an oversized authored stylesheet within the existing validation budget", async () => {
+    const retryErrors: string[] = [];
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        if (request.stage === "styles" && !request.validationError) {
+          return { content: `/*${"x".repeat(80_001)}*/\n${safeStage(request).content}` };
+        }
+        if (request.stage === "styles" && request.validationError)
+          retryErrors.push(request.validationError);
+        return safeStage(request);
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(retryErrors).toHaveLength(3);
+    expect(retryErrors.every((error) => /styles\.css exceeds the 80000-character repairable source limit/iu.test(error))).toBe(true);
+    expect(result.candidates.every((candidate) => candidate.files["styles.css"].length <= 80_000)).toBe(true);
   });
 
   it("repairs missing LeadForm content and anchor navigation bindings", async () => {

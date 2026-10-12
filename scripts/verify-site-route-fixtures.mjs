@@ -54,8 +54,8 @@ for (const scenario of scenarios) {
       servicePage: true,
       locationPage: true,
     };
-    // The checked-in fallback homepage is diagnostic. Match this synthetic
-    // fixture's existing recipe anchors without claiming a promoted candidate.
+    // Keep the authored homepage's canonical services/faqs/contact contract.
+    // This fixture tests renderer plumbing, not creative promotion quality.
     const homepagePath = path.join(
       dir,
       "src/generated-experiences/selected/Experience.jsx",
@@ -63,12 +63,7 @@ for (const scenario of scenarios) {
     const homepage = await fs.readFile(homepagePath, "utf8");
     await fs.writeFile(
       homepagePath,
-      homepage
-        .replaceAll('id="services"', 'id="repair-options"')
-        .replaceAll('id="faqs"', 'id="service-questions"')
-        .replaceAll('id="contact"', 'id="request-service"')
-        .replaceAll('href="#contact"', 'href="#request-service"')
-        .replace(
+      homepage.replace(
           "<h3>{service.name}</h3>",
           "<h3><a href={`/services/${service.slug}/`}>{service.name}</a></h3>",
         ),

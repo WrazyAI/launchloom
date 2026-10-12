@@ -15,6 +15,50 @@ const message = (error) =>
   String(error?.message || error)
     .split("\n")[0]
     .replace(/(https?:\/\/[^?\s]+)\?[^\s]+/gu, "$1?[redacted]");
+
+export function diagnosticFormMode(config, mode = "review") {
+  if (mode === "production" || !Object.hasOwn(config, "pipelineTest")) return "mocked";
+  const provenance = config.pipelineTest;
+  if (!provenance || provenance.version !== 1 || provenance.testOnly !== true || !["seo-only", "creative-only"].includes(provenance.profile) || !/^[a-f0-9]{40}$/iu.test(provenance.sourceSha || "") || typeof provenance.runId !== "string" || !provenance.runId.trim() || config.lead?.apiUrl || config.lead?.token)
+    throw new Error("Diagnostic test-preview form checks require valid persisted test provenance and empty API URL/token.");
+  return "test-preview";
+}
+
+async function verifyDiagnosticForm(page, form, phase, requests, network, timeout) {
+  const result = { renderer: "preview", rendering: "pass", initialization: "not_verified", previewDisabled: "not_verified", delivery: { success: "not_verified", failure: "not_verified", networkFailure: "not_verified" }, externalDelivery: "not_verified", syntheticRequests: 0, failures: [] };
+  try {
+    if (!(await form.isVisible()) || await form.getAttribute("data-lead-preview") !== "true")
+      throw new Error("Diagnostic form must be visible and preview-marked.");
+    if (await form.locator('[name="lead-token"]').evaluateAll(nodes => nodes.some(node => node.value)))
+      throw new Error("Diagnostic form exposes a live token.");
+    for (let count = 0; count < 8; count++) {
+      const radio = form.locator('[data-lead-step]:not([hidden]) input[type=radio]').first();
+      if (!(await radio.count())) break;
+      await radio.check();
+      await page.waitForTimeout(180);
+    }
+    for (const [name, value] of Object.entries({ name: "Stage 4 Synthetic", phone: "555-0101", email: "stage4@example.test", message: "Synthetic disabled-preview verification." })) await form.locator(`[name="${name}"]`).fill(value);
+    for (const select of await form.locator('select[required]').all()) {
+      const value = await select.locator("option").evaluateAll(nodes => nodes.find(node => node.value && !node.disabled)?.value);
+      if (value) await select.selectOption(value);
+    }
+    await page.evaluate(() => { window.__llQaPreviewSubmitted = 0; window.addEventListener("launchloom:lead-submitted", () => window.__llQaPreviewSubmitted++); });
+    const before = requests.length + network.length;
+    const status = form.locator('[role=status]').last();
+    await status.evaluate(node => { node.textContent = ""; });
+    phase.value = "preview-submit";
+    await form.locator('button[type=submit]').click();
+    await status.filter({ hasText: /(?:test-only preview|developer preview only).*(?:disabled|nothing was sent|not connected)/iu }).waitFor({ timeout });
+    // Keep the submission guard active during the bounded post-response observation.
+    await page.waitForTimeout(500);
+    result.syntheticRequests = requests.length + network.length - before;
+    if (result.syntheticRequests || await page.evaluate(() => window.__llQaPreviewSubmitted)) throw new Error("Diagnostic submission attempted network delivery or reported success.");
+    result.previewDisabled = "pass";
+    result.initialization = "pass";
+  } catch (error) { result.failures.push("Diagnostic preview lifecycle: " + message(error)); }
+  finally { phase.value = "observe"; }
+  return result;
+}
 const profiles = [
   { name: "desktop", width: 1440, height: 900 },
   { name: "mobile", width: 390, height: 844 },
@@ -235,6 +279,8 @@ export async function verifyApprovedRoutes({
   timeout = 5000,
   browser: existingBrowser,
 }) {
+  if (formMode === "test-preview" && diagnosticFormMode(config, mode) !== "test-preview")
+    throw new Error("Diagnostic test-preview checks cannot replace ordinary or production delivery checks.");
   const target = new URL(origin);
   if (
     !["http:", "https:"].includes(target.protocol) ||
@@ -286,11 +332,20 @@ export async function verifyApprovedRoutes({
         const consoleErrors = [];
         const network = [];
         const checks = [];
+        const forms = [];
         let snapshot = null;
         const add = (name, ok, detail) =>
           checks.push({ name, status: ok ? "pass" : "fail", detail });
         await context.route("**/*", async (intercepted) => {
           const req = intercepted.request();
+          // The disabled form must not initiate any network activity. The page
+          // is already network-idle before submit; guard every resource type,
+          // including image/ping GET beacons, throughout this bounded phase.
+          if (formMode === "test-preview" && phase.value === "preview-submit") {
+            network.push("Diagnostic submission attempted a network request.");
+            await intercepted.abort();
+            return;
+          }
           if (req.method() === "GET" || req.method() === "HEAD") {
             await intercepted.continue();
             return;
@@ -432,10 +487,13 @@ export async function verifyApprovedRoutes({
             )),
             "No horizontal overflow.",
           );
-          const forms = [];
           for (const form of await page
             .locator("main form.lead-form,main form.launchloom-lead-form")
             .all()) {
+            if (formMode === "test-preview") {
+              forms.push(await verifyDiagnosticForm(page, form, phase, requests, network, timeout));
+              continue;
+            }
             if ((await form.getAttribute("data-lead-preview")) === "true") {
               // Developer previews render the authored form for inspection
               // without a live submission path; it has no lifecycle to verify.
@@ -443,7 +501,7 @@ export async function verifyApprovedRoutes({
                 renderer: "preview",
                 rendering: "pass",
                 delivery: { success: "not_verified", failure: "not_verified" },
-                failures: [],
+                failures: mode === "production" ? ["Production forms require terminal synthetic lifecycle evidence."] : [],
               });
               continue;
             }
@@ -480,6 +538,8 @@ export async function verifyApprovedRoutes({
               forms.every((form) => form.failures.length === 0),
             "Required service/location/contact forms must render and have terminal synthetic lifecycle evidence.",
           );
+          if (formMode === "test-preview" && forms.some(form => form.failures.length))
+            throw new Error(forms.flatMap(form => form.failures).join(" ") + " Close the page before navigation can replay a submission target.");
           const reload = await page.reload({ waitUntil: "networkidle" });
           add(
             "refresh",
@@ -589,7 +649,7 @@ export async function verifyApprovedRoutes({
           route.profiles.push({
             viewport,
             checks,
-            forms: [],
+            forms,
             screenshot: snapshot,
             runtimeErrors: runtime,
             consoleErrors,

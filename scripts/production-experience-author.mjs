@@ -5,6 +5,7 @@ import { fontFamilyById, resolveFontPairing } from "./font-catalog.mjs";
 import crypto from "node:crypto";
 import { redactPromptValue } from "./author-prompt-budget.mjs";
 import { safeAuthorFailureText } from "./author-failure-evidence.mjs";
+import { resolvePipelineTestPolicy } from "./pipeline-test-policy.mjs";
 import postcss from "postcss";
 import ts from "typescript";
 import {
@@ -22,6 +23,7 @@ import {
 } from "./creative-source-safety.mjs";
 import { validateReferenceDna } from "./reference-dna.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
+import { MAX_REPAIR_FILE_SOURCE_CHARS } from "./creative-repair-contract.mjs";
 
 /**
  * @typedef {"contract" | "experience" | "service" | "location" | "service-index" | "styles" | "motion"} AuthorStage
@@ -1152,6 +1154,252 @@ function expressionPath(expression, file) {
   return "";
 }
 
+function isRootExperienceFunction(fn, file) {
+  if (!fn) return false;
+  if (
+    ts.isFunctionDeclaration(fn) &&
+    fn.name?.text === "Experience" &&
+    fn.parent === file
+  )
+    return true;
+  if (!ts.isArrowFunction(fn) && !ts.isFunctionExpression(fn)) return false;
+  if (ts.isExportAssignment(fn.parent) && fn.parent.parent === file)
+    return true;
+  const declaration = fn.parent;
+  return (
+    ts.isVariableDeclaration(declaration) &&
+    ts.isIdentifier(declaration.name) &&
+    declaration.name.text === "Experience" &&
+    lexicalScope(declaration) === file
+  );
+}
+
+function isRootExperienceContentIdentifier(identifier, file) {
+  if (!ts.isIdentifier(identifier) || identifier.text !== "content")
+    return false;
+  const binding = visibleBinding("content", identifier);
+  return (
+    binding?.kind === "parameter" &&
+    isRootExperienceFunction(binding.node.parent, file) &&
+    bindingPathForName(binding.node.name, "content")?.join(".") === "content" &&
+    !isBindingMutated(binding.node, file)
+  );
+}
+
+function assignmentTargetRoots(node) {
+  const target = unwrapUrlExpression(node);
+  if (!target) return [];
+  if (ts.isIdentifier(target)) return [target];
+  if (ts.isPropertyAccessExpression(target))
+    return assignmentTargetRoots(target.expression);
+  if (ts.isElementAccessExpression(target))
+    return assignmentTargetRoots(target.expression);
+  if (ts.isArrayLiteralExpression(target))
+    return target.elements.flatMap((element) =>
+      ts.isSpreadElement(element)
+        ? assignmentTargetRoots(element.expression)
+        : assignmentTargetRoots(element),
+    );
+  if (ts.isObjectLiteralExpression(target))
+    return target.properties.flatMap((property) => {
+      if (ts.isShorthandPropertyAssignment(property)) return [property.name];
+      if (ts.isPropertyAssignment(property))
+        return assignmentTargetRoots(property.initializer);
+      if (ts.isSpreadAssignment(property))
+        return assignmentTargetRoots(property.expression);
+      return [];
+    });
+  if (
+    ts.isBinaryExpression(target) &&
+    target.operatorToken.kind === ts.SyntaxKind.EqualsToken
+  )
+    return assignmentTargetRoots(target.left);
+  return [];
+}
+
+const bindingMutationCache = new WeakMap();
+
+function staticMemberAccess(expression) {
+  const node = unwrapUrlExpression(expression);
+  if (!node) return null;
+  if (ts.isPropertyAccessExpression(node))
+    return { receiver: node.expression, name: node.name.text };
+  if (
+    ts.isElementAccessExpression(node) &&
+    node.argumentExpression &&
+    ts.isStringLiteral(node.argumentExpression)
+  )
+    return {
+      receiver: node.expression,
+      name: node.argumentExpression.text,
+    };
+  return null;
+}
+
+function isBindingMutated(bindingNode, file) {
+  if (bindingMutationCache.has(bindingNode))
+    return bindingMutationCache.get(bindingNode);
+  let mutated = false;
+  const trackedBindings = new Set([bindingNode]);
+  let discoveredAlias = true;
+  while (discoveredAlias) {
+    discoveredAlias = false;
+    const collectAliases = (node) => {
+      if (
+        ts.isVariableDeclaration(node) &&
+        ts.isIdentifier(node.name) &&
+        ts.isIdentifier(node.initializer) &&
+        !trackedBindings.has(node)
+      ) {
+        const initializerBinding = visibleBinding(
+          node.initializer.text,
+          node.initializer,
+        );
+        if (initializerBinding && trackedBindings.has(initializerBinding.node)) {
+          trackedBindings.add(node);
+          discoveredAlias = true;
+        }
+      }
+      ts.forEachChild(node, collectAliases);
+    };
+    collectAliases(file);
+  }
+  const targetWritesBinding = (target) =>
+    assignmentTargetRoots(target).some(
+      (identifier) =>
+        trackedBindings.has(visibleBinding(identifier.text, identifier)?.node),
+    );
+  const isAssignmentOperator = (kind) =>
+    kind >= ts.SyntaxKind.FirstAssignment &&
+    kind <= ts.SyntaxKind.LastAssignment;
+  const mutatingMethods = new Set([
+    "copyWithin",
+    "fill",
+    "pop",
+    "push",
+    "reverse",
+    "shift",
+    "sort",
+    "splice",
+    "unshift",
+  ]);
+  const objectMutators = new Set([
+    "assign",
+    "defineProperty",
+    "defineProperties",
+    "setPrototypeOf",
+  ]);
+  const reflectMutators = new Set([
+    "set",
+    "defineProperty",
+    "deleteProperty",
+    "setPrototypeOf",
+  ]);
+  const isKnownMutatorCallee = (expression, seen = new Set()) => {
+    const callee = unwrapUrlExpression(expression);
+    if (!callee) return false;
+    const member = staticMemberAccess(callee);
+    if (
+      member &&
+      ((member.receiver.getText(file) === "Object" &&
+        objectMutators.has(member.name)) ||
+        (member.receiver.getText(file) === "Reflect" &&
+          reflectMutators.has(member.name)))
+    )
+      return true;
+    if (!ts.isIdentifier(callee) || seen.has(callee.text)) return false;
+    seen.add(callee.text);
+    const binding = visibleBinding(callee.text, callee);
+    if (
+      !binding ||
+      binding.kind !== "variable" ||
+      !(binding.node.parent.flags & ts.NodeFlags.Const)
+    )
+      return false;
+    const bindingPath = bindingPathForName(
+      binding.node.name,
+      callee.text,
+    )?.join(".");
+    const initializer = unwrapUrlExpression(binding.node.initializer);
+    if (
+      bindingPath &&
+      initializer &&
+      ts.isIdentifier(initializer) &&
+      ((initializer.text === "Object" &&
+        objectMutators.has(bindingPath)) ||
+        (initializer.text === "Reflect" && reflectMutators.has(bindingPath)))
+    )
+      return true;
+    return isKnownMutatorCallee(binding.node.initializer, seen);
+  };
+  const visit = (node) => {
+    if (mutated) return;
+    if (
+      ts.isBinaryExpression(node) &&
+      isAssignmentOperator(node.operatorToken.kind) &&
+      targetWritesBinding(node.left)
+    ) {
+      mutated = true;
+      return;
+    }
+    if (
+      ts.isPrefixUnaryExpression(node) &&
+      [
+        ts.SyntaxKind.PlusPlusToken,
+        ts.SyntaxKind.MinusMinusToken,
+        ts.SyntaxKind.DeleteKeyword,
+      ].includes(node.operator) &&
+      targetWritesBinding(node.operand)
+    ) {
+      mutated = true;
+      return;
+    }
+    if (
+      ts.isPostfixUnaryExpression(node) &&
+      [ts.SyntaxKind.PlusPlusToken, ts.SyntaxKind.MinusMinusToken].includes(
+        node.operator,
+      ) &&
+      targetWritesBinding(node.operand)
+    ) {
+      mutated = true;
+      return;
+    }
+    const method = ts.isCallExpression(node)
+      ? staticMemberAccess(node.expression)
+      : null;
+    if (
+      method &&
+      mutatingMethods.has(method.name) &&
+      targetWritesBinding(method.receiver)
+    ) {
+      mutated = true;
+      return;
+    }
+    if (
+      ts.isCallExpression(node) &&
+      staticMemberAccess(node.expression) &&
+      isKnownMutatorCallee(node.expression) &&
+      node.arguments.some((argument) => targetWritesBinding(argument))
+    ) {
+      mutated = true;
+      return;
+    }
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      isKnownMutatorCallee(node.expression) &&
+      node.arguments.some((argument) => targetWritesBinding(argument))
+    ) {
+      mutated = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  bindingMutationCache.set(bindingNode, mutated);
+  return mutated;
+}
+
 function isSealedImageExpression(expression, file) {
   if (!expression) return false;
   if (ts.isParenthesizedExpression(expression))
@@ -1361,7 +1609,10 @@ function bindingPathForName(bindingName, name, prefix = []) {
     if (element.dotDotDotToken || ts.isOmittedExpression(element)) continue;
     const property = element.propertyName || element.name;
     const propertyName =
-      ts.isIdentifier(property) || ts.isStringLiteral(property)
+      ts.isComputedPropertyName(property) &&
+      ts.isStringLiteral(property.expression)
+        ? property.expression.text
+        : ts.isIdentifier(property) || ts.isStringLiteral(property)
         ? property.text
         : null;
     if (!propertyName) continue;
@@ -1491,7 +1742,12 @@ function isSealedServiceCollectionExpression(
   if (!expression) return false;
   const node = unwrapUrlExpression(expression);
   const directPath = expressionPath(node, file);
-  if (directPath === "content.services") return true;
+  if (
+    directPath === "content.services" &&
+    ts.isPropertyAccessExpression(node) &&
+    isRootExperienceContentIdentifier(node.expression, file)
+  )
+    return true;
   if (
     ts.isCallExpression(node) &&
     ts.isPropertyAccessExpression(node.expression) &&
@@ -1508,12 +1764,17 @@ function isSealedServiceCollectionExpression(
   seen.add(node.text);
   const bindingPath = bindingPathForName(binding.node.name, node.text);
   if (binding.kind === "parameter")
-    return bindingPath?.join(".") === "content.services";
+    return (
+      bindingPath?.join(".") === "content.services" &&
+      isRootExperienceFunction(binding.node.parent, file) &&
+      !isBindingMutated(binding.node, file)
+    );
   if (!(binding.node.parent.flags & ts.NodeFlags.Const)) return false;
+  if (isBindingMutated(binding.node, file)) return false;
   if (bindingPath?.join(".") === "services")
     return (
       ts.isIdentifier(binding.node.initializer) &&
-      binding.node.initializer.text === "content"
+      isRootExperienceContentIdentifier(binding.node.initializer, file)
     );
   if (bindingPath?.length) return false;
   return isSealedServiceCollectionExpression(
@@ -1531,12 +1792,12 @@ function isSealedServiceSlug(expression, file) {
   let current = expression;
   while (current && current !== file) {
     if (ts.isArrowFunction(current) || ts.isFunctionExpression(current)) {
-      const hasServiceParameter = current.parameters.some(
+      const serviceParameter = current.parameters.find(
         (parameter) =>
           ts.isIdentifier(parameter.name) &&
           parameter.name.text === serviceName,
       );
-      if (hasServiceParameter) {
+      if (serviceParameter && !isBindingMutated(serviceParameter, file)) {
         const call = unwrapUrlExpression(current.parent);
         if (
           ts.isCallExpression(call) &&
@@ -1571,9 +1832,31 @@ function isSealedServiceSlugBinding(expression, file) {
   if (!binding || binding.kind !== "variable" ||
       !ts.isIdentifier(binding.node.name) ||
       !(binding.node.parent.flags & ts.NodeFlags.Const) ||
-      !binding.node.initializer)
+      !binding.node.initializer ||
+      isBindingMutated(binding.node, file))
     return false;
   return isSealedServiceRecordExpression(binding.node.initializer, file);
+}
+
+function isSealedServiceLookupCall(node, file) {
+  if (
+    !ts.isCallExpression(node) ||
+    !ts.isPropertyAccessExpression(node.expression) ||
+    node.expression.name.text !== "find" ||
+    node.arguments.length < 1
+  )
+    return false;
+  const callback = node.arguments[0];
+  if (!ts.isArrowFunction(callback) && !ts.isFunctionExpression(callback))
+    return false;
+  const recordParameter = callback.parameters[0];
+  if (
+    recordParameter &&
+    (!ts.isIdentifier(recordParameter.name) ||
+      isBindingMutated(recordParameter, file))
+  )
+    return false;
+  return isSealedServiceCollectionExpression(node.expression.expression, file);
 }
 
 function isSealedServiceRecordExpression(expression, file, seen = new Set()) {
@@ -1581,6 +1864,7 @@ function isSealedServiceRecordExpression(expression, file, seen = new Set()) {
   if (!node) return false;
   if (ts.isElementAccessExpression(node))
     return isSealedServiceCollectionExpression(node.expression, file);
+  if (isSealedServiceLookupCall(node, file)) return true;
   if (ts.isConditionalExpression(node))
     return (
       isSealedServiceRecordExpression(node.whenTrue, file, new Set(seen)) &&
@@ -1591,7 +1875,8 @@ function isSealedServiceRecordExpression(expression, file, seen = new Set()) {
   const binding = visibleBinding(node.text, node);
   if (!binding || binding.kind !== "variable" ||
       !ts.isIdentifier(binding.node.name) ||
-      !(binding.node.parent.flags & ts.NodeFlags.Const)) return false;
+      !(binding.node.parent.flags & ts.NodeFlags.Const) ||
+      isBindingMutated(binding.node, file)) return false;
   return isSealedServiceRecordExpression(binding.node.initializer, file, seen);
 }
 
@@ -2595,6 +2880,13 @@ function referencesObjectPath(source, root, path) {
   return false;
 }
 
+function assertRepairableSourceSize(source, route, file) {
+  if (source.length > MAX_REPAIR_FILE_SOURCE_CHARS)
+    throw new Error(
+      `Candidate ${route.id} ${file} exceeds the ${MAX_REPAIR_FILE_SOURCE_CHARS}-character repairable source limit. Simplify the authored file without changing its assigned composition.`,
+    );
+}
+
 function validateInnerPageSource({
   source,
   route,
@@ -2607,6 +2899,7 @@ function validateInnerPageSource({
   requiredPaths = [],
   requiredContentPaths = [],
 }) {
+  assertRepairableSourceSize(source, route, file);
   syntaxErrorFor(source, route, file, true);
   const scopeError = scopeErrorFor(source, route, {
     fileName: file,
@@ -2816,6 +3109,7 @@ export function validateServicesIndexPage(source, route, content) {
 }
 
 function validateExperience(source, route, content, visualBrief = {}) {
+  assertRepairableSourceSize(source, route, "Experience.jsx");
   syntaxErrorFor(source, route, "Experience.jsx", true);
   const scopeError = scopeErrorFor(source, route);
   if (scopeError) throw new Error(scopeError);
@@ -2940,6 +3234,7 @@ function validateExperience(source, route, content, visualBrief = {}) {
 }
 
 function validateStyles(source, route, visualBrief = {}) {
+  assertRepairableSourceSize(source, route, "styles.css");
   if (
     /<!doctype\s+html|<html\b|<head\b|<body\b|<script\b|<style\b/iu.test(source)
   )
@@ -3002,6 +3297,7 @@ export function namespaceCreativeCss(source) {
 }
 
 function validateMotion(source, route) {
+  assertRepairableSourceSize(source, route, "motion.js");
   syntaxErrorFor(source, route, "motion.js", false);
   for (const specifier of importSpecifiers(source))
     if (!allowedImports.has(specifier))
@@ -3095,6 +3391,7 @@ export function validateProductionCandidateFiles({
   if (servicesIndexPage)
     validateServicesIndexPage(servicesIndexPage, route, content);
   const isolatedStyles = namespaceCreativeCss(styles);
+  assertRepairableSourceSize(isolatedStyles, route, "styles.css");
   let referenceFidelity = null;
   if (referenceDna) {
     referenceFidelity = validateReferenceCandidate({
@@ -3132,6 +3429,7 @@ function authorRules() {
     REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
+    `Keep every individual authored source file at or below ${MAX_REPAIR_FILE_SOURCE_CHARS} characters so the safe bounded repair path can represent it. Prefer concise markup and avoid repeated CSS rules; simplify an oversized file without changing the assigned composition.`,
     'Phone and email links must use their sealed tokens. Telephone links may prefix content.brand.phone with tel: and may normalize it only with replace(/[^\\d+]/g, "") or replace(/[^0-9+]/g, ""); a local const href is allowed only when its initializer is that exact safe expression. Do not compute URLs from any other data.',
     "The sealed hero image tokens may be empty. Render each optional image only inside a direct truthiness guard for that same token, such as {content.hero.secondaryImage && <img src={content.hero.secondaryImage} ... />}; do not emit an img with a blank src, remote URL, or a fallback that reuses the hero for a missing supporting image.",
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
@@ -3208,8 +3506,19 @@ async function generateValidatedSource({ generate, request, stage, validate }) {
     repaired ||= result.repaired || cycle > 0;
     try {
       validate(source, request.route, request.visualBrief);
+      const candidateSource =
+        stage === "styles" ? namespaceCreativeCss(source) : source;
+      const fileName = {
+        experience: "Experience.jsx",
+        service: "ServicePage.jsx",
+        location: "LocationPage.jsx",
+        "service-index": "ServicesIndexPage.jsx",
+        styles: "styles.css",
+        motion: "motion.js",
+      }[stage];
+      assertRepairableSourceSize(candidateSource, request.route, fileName);
       return {
-        source: stage === "styles" ? namespaceCreativeCss(source) : source,
+        source: candidateSource,
         repaired,
       };
     } catch (error) {
@@ -3287,6 +3596,7 @@ function safeAuthorFailureStack(error) {
  *   generate: (request: AuthorStageRequest) => Promise<Record<string, any>>;
  *   model?: string;
  *   creativeSession?: Record<string, any> | null;
+ *   testProfile?: "full" | "seo-only" | "creative-only";
  * }} input
  */
 export async function authorExperienceCandidates({
@@ -3295,13 +3605,17 @@ export async function authorExperienceCandidates({
   generate,
   model = "openai/gpt-6-luna",
   creativeSession = null,
+  testProfile = "full",
 }) {
   if (typeof generate !== "function")
     throw new Error("A generation adapter is required.");
   const contentManifest = buildCreativeContentManifest(site);
   const rules = authorRules();
 
-  const routes = assertInspirationPack(inspirationPack);
+  const policy = resolvePipelineTestPolicy({ profile: testProfile });
+  // Validate the complete reference contract first; a focused test limits
+  // provider work, not reference/source safety or normal intake diversity.
+  const routes = assertInspirationPack(inspirationPack).slice(0, policy.candidateCount);
   // OpenRouter's in-flight budget is shared across the account. Keep the
   // independent candidates, but never put more than two model stages in
   // flight at once. This protects the creative lane without falling back to a

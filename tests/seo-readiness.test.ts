@@ -6,6 +6,26 @@ import {
 } from "../worker/src/seo-readiness";
 
 describe("SEO publication readiness", () => {
+  it.each(["seo-only", "creative-only", null, false, 42, [], { testOnly: false }])(
+    "blocks focused test provenance despite completed research: %s",
+    (profile) => {
+      expect(
+        seoResearchReadiness({
+          pipelineTest:
+            typeof profile === "string"
+              ? {
+                  version: 1,
+                  profile,
+                  testOnly: true,
+                  sourceSha: "a".repeat(40),
+                  runId: "synthetic",
+                }
+              : profile,
+          seoResearch: { mode: "researched", publishReady: true },
+        }),
+      ).toMatchObject({ allowed: false, code: "pipeline_test_only" });
+    },
+  );
   it("allows researched and legacy sites but blocks degraded new previews", () => {
     expect(seoResearchReadiness({}).allowed).toBe(true);
     expect(

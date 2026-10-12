@@ -5,12 +5,15 @@ export type SeoResearchReadiness =
       mode: "context-only" | "baseline";
       code:
         | "seo_research_required"
+        | "pipeline_test_only"
         | "business_facts_required"
-        | "route_approval_required" | "page_content_required";
+        | "route_approval_required"
+        | "page_content_required";
       error: string;
     };
 export function isAffirmativeConfirmation(value: unknown): boolean;
 export function seoResearchReadiness(config: {
+  pipelineTest?: unknown;
   business?: Record<string, unknown>;
   factReadiness?: unknown;
   pageContent?: unknown;
@@ -23,3 +26,4 @@ export function seoResearchReadiness(config: {
   locations?: unknown;
 }): SeoResearchReadiness;
 export function hasCompletedFallbackResearch(research: unknown): boolean;
+export function hasPipelineTest(config: unknown): boolean;
