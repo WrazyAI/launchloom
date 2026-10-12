@@ -34,7 +34,7 @@ it("supports a preview-only workflow-dispatch canary without a production-branch
   );
   expect(workflow).toContain("CREATIVE_EXPERIENCE_MODE");
   expect(workflow).toContain("id: authoring");
-  expect(workflow).toContain("steps.authoring.outcome == 'failure'");
+  expect(workflow).toContain("needs.creative_authoring.result == 'failure'");
   expect(workflow).toContain('EVIDENCE_SOURCE="$RUNNER_TEMP/reusable-authored-candidates"');
   expect(workflow).toContain('echo "evidence_branch=review/initial" >> "$GITHUB_OUTPUT"');
 });
@@ -92,7 +92,7 @@ it("initializes private QA receipts before authoring can fail and commit old evi
 it("blocks synthetic demo configs before client provisioning and lead-token creation", async () => {
  const source=await fs.readFile(".github/workflows/generate-client.yml","utf8");
  const workflow=parse(source);
- const steps=workflow.jobs.generate.steps;
+ const steps=workflow.jobs.prepare.steps;
  const guardIndex=steps.findIndex((step:any)=>step.name==="Reject synthetic demos from the production intake path");
  const provisionIndex=steps.findIndex((step:any)=>step.name==="Create private repository and Cloudflare Pages project");
  const tokenIndex=steps.findIndex((step:any)=>step.name==="Build private review branch");
@@ -105,7 +105,7 @@ it("blocks synthetic demo configs before client provisioning and lead-token crea
 it("deploys failed diagnostic content only to the private preview after the Access probe passes", async () => {
  const source=await fs.readFile(".github/workflows/generate-client.yml","utf8");
  const workflow=parse(source);
- const steps=workflow.jobs.generate.steps;
+ const steps=workflow.jobs.rendered_quality.steps;
  const diagnostic=steps.find((step:any)=>step.name==="Build and deploy noindex diagnostic preview");
  expect(diagnostic).toBeTruthy();
  const script=String(diagnostic.run);
