@@ -384,6 +384,11 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           window_started_at INTEGER NOT NULL,
           request_count INTEGER NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS lead_limits (
+          scope TEXT PRIMARY KEY,
+          window_started_at INTEGER NOT NULL,
+          request_count INTEGER NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS feedback_image_usage (
           scope TEXT PRIMARY KEY,
           window_started_at INTEGER NOT NULL,
@@ -893,6 +898,104 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       key,
     );
     return { allowed: true, retryAfterSeconds: 0 };
+  }
+
+  async allowLead(
+    visitorKey: string,
+    now = Date.now(),
+  ): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+    const windowMs = 60 * 60_000;
+    const visitorLimit = 10;
+    const projectLimit = 50;
+    const vKey = `visitor:${visitorKey.slice(0, 160)}`;
+    const pKey = "project";
+
+    const rows = this.ctx.storage.sql
+      .exec<{
+        scope: string;
+        window_started_at: number;
+        request_count: number;
+      }>(
+        "SELECT scope, window_started_at, request_count FROM lead_limits WHERE scope IN (?, ?)",
+        vKey,
+        pKey,
+      )
+      .toArray();
+
+    const existingProject = rows.find((r) => r.scope === pKey);
+    const existingVisitor = rows.find((r) => r.scope === vKey);
+
+    if (
+      existingProject &&
+      now - existingProject.window_started_at < windowMs &&
+      existingProject.request_count >= projectLimit
+    ) {
+      return {
+        allowed: false,
+        retryAfterSeconds: Math.max(
+          1,
+          Math.ceil(
+            (windowMs - (now - existingProject.window_started_at)) / 1000,
+          ),
+        ),
+      };
+    }
+
+    if (
+      existingVisitor &&
+      now - existingVisitor.window_started_at < windowMs &&
+      existingVisitor.request_count >= visitorLimit
+    ) {
+      return {
+        allowed: false,
+        retryAfterSeconds: Math.max(
+          1,
+          Math.ceil(
+            (windowMs - (now - existingVisitor.window_started_at)) / 1000,
+          ),
+        ),
+      };
+    }
+
+    if (!existingProject || now - existingProject.window_started_at >= windowMs) {
+      this.ctx.storage.sql.exec(
+        "INSERT INTO lead_limits (scope, window_started_at, request_count) VALUES (?, ?, 1) ON CONFLICT(scope) DO UPDATE SET window_started_at = excluded.window_started_at, request_count = 1",
+        pKey,
+        now,
+      );
+    } else {
+      this.ctx.storage.sql.exec(
+        "UPDATE lead_limits SET request_count = request_count + 1 WHERE scope = ?",
+        pKey,
+      );
+    }
+
+    if (!existingVisitor || now - existingVisitor.window_started_at >= windowMs) {
+      this.ctx.storage.sql.exec(
+        "INSERT INTO lead_limits (scope, window_started_at, request_count) VALUES (?, ?, 1) ON CONFLICT(scope) DO UPDATE SET window_started_at = excluded.window_started_at, request_count = 1",
+        vKey,
+        now,
+      );
+    } else {
+      this.ctx.storage.sql.exec(
+        "UPDATE lead_limits SET request_count = request_count + 1 WHERE scope = ?",
+        vKey,
+      );
+    }
+
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
+  async resetLeadLimits(scope?: string) {
+    if (scope) {
+      this.ctx.storage.sql.exec(
+        "DELETE FROM lead_limits WHERE scope = ? OR scope = ?",
+        scope,
+        `visitor:${scope}`,
+      );
+    } else {
+      this.ctx.storage.sql.exec("DELETE FROM lead_limits");
+    }
   }
 
   async allowFeedbackImage(

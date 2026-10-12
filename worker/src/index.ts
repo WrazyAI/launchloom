@@ -48,7 +48,6 @@ import {
   verifyCoverageReference,
 } from "../../src/lib/coverage-contract.mjs";
 import {
-  coverageLookupRateLimited,
   lookupCoverageAreas,
 } from "./coverage-areas";
 
@@ -1690,7 +1689,10 @@ async function coverageAreas(request: Request, env: Env) {
         headers,
       );
     }
-    if (coverageLookupRateLimited(invite.claims.inviteId))
+    const coverageLimit = await inviteCoordinator(env).allowCoverageLookup(
+      invite.claims.inviteId,
+    );
+    if (!coverageLimit.allowed)
       return json(
         {
           ok: false,
@@ -1699,7 +1701,11 @@ async function coverageAreas(request: Request, env: Env) {
           retryable: true,
         },
         429,
-        { ...headers, "Cache-Control": "no-store" },
+        {
+          ...headers,
+          "Cache-Control": "no-store",
+          "Retry-After": String(coverageLimit.retryAfterSeconds),
+        },
       );
     const result = await lookupCoverageAreas({
       env,
@@ -3393,6 +3399,23 @@ async function lead(request: Request, env: Env) {
     );
     if (clean(body["bot-field"]))
       return json({ ok: true }, 200, cors(request, claims.allowedOrigins));
+    const visitor = await digest(
+      `${claims.project}\n${request.headers.get("CF-Connecting-IP") || "unknown"}`,
+    );
+    const rate = await env.REVISION_COORDINATOR.getByName(
+      `lead:${claims.project}`,
+    ).allowLead(visitor);
+    if (!rate.allowed)
+      return json(
+        {
+          error: "Too many requests. Please try again later.",
+        },
+        429,
+        {
+          ...cors(request, claims.allowedOrigins),
+          "Retry-After": String(rate.retryAfterSeconds),
+        },
+      );
     const name = clean(body.name, 160);
     const phone = clean(body.phone, 80);
     const email = clean(body.email, 240);

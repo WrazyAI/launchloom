@@ -120,6 +120,11 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
           issue_number INTEGER NOT NULL, reviewer_email TEXT NOT NULL, recovered_at INTEGER NOT NULL,
           recipient TEXT NOT NULL, business_name TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS coverage_lookup_limits (
+          invite_id TEXT PRIMARY KEY,
+          window_started_at INTEGER NOT NULL,
+          request_count INTEGER NOT NULL
+        );
       `);
       const outboxColumns = ctx.storage.sql.exec<{name: string}>("PRAGMA table_info(intake_outbox)").toArray();
       if (!outboxColumns.some(column => column.name === "idempotency_key"))
@@ -673,5 +678,59 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       inviteId,
     );
     return this.row(inviteId)?.submitter_email === normalized;
+  }
+
+  async allowCoverageLookup(
+    inviteId: string,
+    now = Date.now(),
+  ): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+    const windowMs = 10 * 60_000;
+    const limit = 40;
+    const id = inviteId.slice(0, 160);
+    const existing = this.ctx.storage.sql
+      .exec<{
+        window_started_at: number;
+        request_count: number;
+      }>(
+        "SELECT window_started_at, request_count FROM coverage_lookup_limits WHERE invite_id = ?",
+        id,
+      )
+      .toArray()[0];
+
+    if (!existing || now - existing.window_started_at >= windowMs) {
+      this.ctx.storage.sql.exec(
+        "INSERT INTO coverage_lookup_limits (invite_id, window_started_at, request_count) VALUES (?, ?, 1) ON CONFLICT(invite_id) DO UPDATE SET window_started_at = excluded.window_started_at, request_count = 1",
+        id,
+        now,
+      );
+      return { allowed: true, retryAfterSeconds: 0 };
+    }
+
+    if (existing.request_count >= limit) {
+      return {
+        allowed: false,
+        retryAfterSeconds: Math.max(
+          1,
+          Math.ceil((windowMs - (now - existing.window_started_at)) / 1000),
+        ),
+      };
+    }
+
+    this.ctx.storage.sql.exec(
+      "UPDATE coverage_lookup_limits SET request_count = request_count + 1 WHERE invite_id = ?",
+      id,
+    );
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
+  async resetCoverageLookupLimits(inviteId?: string) {
+    if (inviteId) {
+      this.ctx.storage.sql.exec(
+        "DELETE FROM coverage_lookup_limits WHERE invite_id = ?",
+        inviteId,
+      );
+    } else {
+      this.ctx.storage.sql.exec("DELETE FROM coverage_lookup_limits");
+    }
   }
 }

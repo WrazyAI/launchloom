@@ -980,3 +980,22 @@ it("does not release an ambiguous creation when recovery listing is rejected", a
   });
   expect(creates).toBe(1);
 });
+
+it("enforces durable rate limits on coverage lookups per invitation and resets after window expiry", async () => {
+  const coordinator = inviteNamespace.getByName("launchloom-onboarding-invites");
+  const inviteId = "invite-coverage-limit-unit-001";
+  const start = 1_000_000;
+
+  for (let i = 0; i < 40; i += 1) {
+    const res = await coordinator.allowCoverageLookup(inviteId, start + i * 100);
+    expect(res).toEqual({ allowed: true, retryAfterSeconds: 0 });
+  }
+
+  const blocked = await coordinator.allowCoverageLookup(inviteId, start + 5000);
+  expect(blocked.allowed).toBe(false);
+  expect(blocked.retryAfterSeconds).toBeGreaterThan(0);
+
+  // After 10 minutes (600,000 ms), the rate limit window resets
+  const afterWindow = await coordinator.allowCoverageLookup(inviteId, start + 600_001);
+  expect(afterWindow).toEqual({ allowed: true, retryAfterSeconds: 0 });
+});
