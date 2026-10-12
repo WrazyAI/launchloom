@@ -191,6 +191,16 @@ See `docs/verification/opencode-go-example-2026-10-12.md` for scope, artifacts,
 run ID, source commit, API usage and limitations. This is not full production
 authoring or release acceptance.
 
+**Dossier-backed follow-up:** the actual seven-stage author engine then completed
+one candidate on Go using the refined Fixwell dossier, screenshots and production
+prompt functions. Existing bounded source repairs succeeded; all authored files
+passed diagnostic preview installation, client check and an11-page build. Direct
+browser evidence covers20route/viewport observations. This is complete single-
+candidate author/build evidence, not SEO/search, reference analysis, three-
+candidate selection or production publication migration. TestSprite reported a
+render-smoke pass, with visual coverage limits recorded separately. See
+`docs/verification/opencode-go-full-author-2026-10-12.md`.
+
 1. Resolve Go workload permission and service-specific wire/capability acceptance.
 2. Add reviewed role profiles and explicitly migrate generation/analysis/judge/
    repair callers, reasoning preflight model IDs and frozen session provenance.
