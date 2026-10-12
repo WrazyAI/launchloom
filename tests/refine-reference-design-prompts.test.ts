@@ -11,6 +11,9 @@ import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
 import { buildArchiveDesignPrompt } from "../scripts/materialize-a1-archive-dossiers.mjs";
 
 const library = "data/reference-library/dossiers";
+const dossierIds = fs
+  .readdirSync(library)
+  .filter((id) => fs.statSync(path.join(library, id)).isDirectory());
 const manifestFor = (id: string) =>
   JSON.parse(fs.readFileSync(path.join(library, id, "manifest.json"), "utf8"));
 
@@ -96,15 +99,19 @@ describe("reference design prompt refinements", () => {
     expect(archive).not.toContain("desktop: split-media");
   });
 
-  it("loads every refined dossier, retains original required headings and propagates the exact block", () => {
-    const entries = fs
-      .readdirSync(library)
-      .filter((id) => fs.statSync(path.join(library, id)).isDirectory());
-    expect(entries).toHaveLength(131);
-    let production = 0;
-    for (const id of entries) {
+  it("keeps the 131-dossier inventory and 96 production eligibility decisions", () => {
+    expect(dossierIds).toHaveLength(131);
+    expect(
+      dossierIds.filter((id) => manifestFor(id).productionEligible),
+    ).toHaveLength(96);
+  });
+  it.each(dossierIds)(
+    "loads %s, retains required headings and propagates its exact brief",
+    (id) => {
       const dossier = loadReferenceDossier(`${library}/${id}`);
-      if (dossier.productionEligible) production += 1;
+      expect(dossier.productionEligible).toBe(
+        manifestFor(id).productionEligible,
+      );
       expect(dossier.designPrompt, id).toContain(
         "## Agent implementation brief",
       );
@@ -120,9 +127,8 @@ describe("reference design prompt refinements", () => {
         refineDesignPrompt(`${dossier.designPrompt}\n`, manifestFor(id)),
         id,
       ).toBe(`${dossier.designPrompt}\n`);
-    }
-    expect(production).toBe(96);
-  });
+    },
+  );
 
   it("binds refinements in a freshly selected pack and rejects old prompt bindings", () => {
     const registry = JSON.parse(
@@ -147,10 +153,9 @@ describe("reference design prompt refinements", () => {
     const old = structuredClone(pack);
     const oldDossier = old.routes[0].referenceDossier;
     if (!oldDossier) throw new Error("Missing bound dossier");
-    oldDossier.designPrompt =
-      oldDossier.designPrompt
-        .split("<!-- launchloom:design-guidance:start -->")[0]
-        .trim();
+    oldDossier.designPrompt = oldDossier.designPrompt
+      .split("<!-- launchloom:design-guidance:start -->")[0]
+      .trim();
     expect(() => assertReferenceDossierPack(old)).toThrow(
       /design prompt differs/,
     );
