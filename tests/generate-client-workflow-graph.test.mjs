@@ -62,7 +62,7 @@ describe("client intake workflow graph", () => {
     expect(restore).toContain("--branch review/initial");
     expect(restore).toContain(".launchloom/generated-experiences");
     expect(jobs.get("prepare")).toContain("for artifact in reasoning-preflight.json");
-    expect(jobs.get("rendered_quality")).toContain("git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json .launchloom/creative-repair");
+    expect(jobs.get("rendered_quality")).toContain("find .launchloom/creative-repair -type f -name '*.json' -print0");
     expect(jobs.get("developer_handoff")).toContain("needs.private_preview.outputs.sha");
   });
 
