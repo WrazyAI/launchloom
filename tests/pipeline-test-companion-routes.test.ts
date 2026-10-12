@@ -21,6 +21,10 @@ it.each(["seo-only", "creative-only", "full"])(
       });
       await fs.symlink(path.join(repository, "node_modules"), path.join(root, "node_modules"), "dir");
       const config: any = pageBriefFixture("local-trades");
+      // This browser fixture exercises the normal full-profile form path.
+      // The helper's demoNotice intentionally marks it test-only, so remove
+      // that marker while retaining its otherwise synthetic business facts.
+      delete config.demoNotice;
       config.design.recipe = "general-editorial";
       config.design.treatment = {
         density: "spacious",

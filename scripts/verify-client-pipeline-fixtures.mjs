@@ -174,14 +174,155 @@ function onlineFormSubmission(fixture) {
 }
 
 function candidateFor(fixture, brief) {
+  const serviceCopy = (name) => {
+    const service = name.toLowerCase();
+    if (/emergency plumbing/u.test(service))
+      return {
+        description: "Describe the plumbing concern and where it is happening before asking about a suitable next step.",
+        decisionSupport: {
+          scope: "Explain what information helps the team understand the urgent concern.",
+          nextStep: "Share the service location and the change you have noticed.",
+          preparation: "Note when the issue began and any visible changes.",
+        },
+      };
+    if (/drain cleaning/u.test(service))
+      return {
+        description: "Identify which drain is affected and when the change occurs before discussing options.",
+        decisionSupport: {
+          scope: "Describe whether one fixture or several drains are affected.",
+          nextStep: "Ask what details help assess the affected drain.",
+          preparation: "Note whether the drain is slow, backed up, or changing over time.",
+        },
+      };
+    if (/water heater/u.test(service))
+      return {
+        description: "Share what changed with the water heater and which household needs are affected.",
+        decisionSupport: {
+          scope: "Describe the hot-water change you want the team to understand.",
+          nextStep: "Ask which unit details are useful when discussing the request.",
+          preparation: "If known, note the unit type and when the change began.",
+        },
+      };
+    if (/exterior painting/u.test(service))
+      return {
+        description: "List the exterior surfaces you want to discuss and what you would like to change.",
+        decisionSupport: {
+          scope: "Identify which outside surfaces are part of the project conversation.",
+          nextStep: "Share the surface types and any questions about preparation.",
+          preparation: "Note the areas involved and any access constraints.",
+        },
+      };
+    if (/interior painting/u.test(service))
+      return {
+        description: "Name the rooms or interior surfaces you want to discuss before comparing project options.",
+        decisionSupport: {
+          scope: "Describe the rooms and finish changes you are considering.",
+          nextStep: "Ask what room details are useful for discussing the scope.",
+          preparation: "Note the rooms, current finishes, and any scheduling constraints.",
+        },
+      };
+    if (/cabinet refinishing/u.test(service))
+      return {
+        description: "Share which cabinets you are considering and the finish or condition questions you have.",
+        decisionSupport: {
+          scope: "Discuss the cabinet surfaces and finish goals you have in mind.",
+          nextStep: "Ask which material or condition details are useful to share.",
+          preparation: "Note the cabinet locations and any known material details.",
+        },
+      };
+    if (/water damage restoration/u.test(service))
+      return {
+        description: "Describe the affected areas and what you know about the water-related change.",
+        decisionSupport: {
+          scope: "Identify the areas involved and what needs attention first.",
+          nextStep: "Ask what information helps the team discuss an assessment.",
+          preparation: "Note when the change was noticed and which rooms are affected.",
+        },
+      };
+    if (/structural drying/u.test(service))
+      return {
+        description: "Share which parts of the structure you want to ask about and what you have observed.",
+        decisionSupport: {
+          scope: "Explain which areas or materials are part of the concern.",
+          nextStep: "Ask what details help determine whether drying should be discussed.",
+          preparation: "List the affected rooms and any visible moisture changes.",
+        },
+      };
+    if (/contents cleaning/u.test(service))
+      return {
+        description: "List the belongings or materials you want to discuss and any care questions you have.",
+        decisionSupport: {
+          scope: "Identify which contents or materials are part of the request.",
+          nextStep: "Ask what information helps the team discuss cleaning options.",
+          preparation: "Note the item types and any handling concerns.",
+        },
+      };
+    if (/tax preparation/u.test(service))
+      return {
+        description: "Share which tax questions you want to address and what records you already have.",
+        decisionSupport: {
+          scope: "Describe the filing or tax questions you want to discuss.",
+          nextStep: "Ask which records are relevant to your situation.",
+          preparation: "Gather the documents and questions you already know apply.",
+        },
+      };
+    if (/bookkeeping/u.test(service))
+      return {
+        description: "Explain how you currently track business activity and what bookkeeping support you are considering.",
+        decisionSupport: {
+          scope: "Describe the records and bookkeeping tasks you want to discuss.",
+          nextStep: "Ask what information helps define the bookkeeping scope.",
+          preparation: "Note your current record format and the questions you want answered.",
+        },
+      };
+    if (/payroll processing/u.test(service))
+      return {
+        description: "Share what payroll tasks you want to discuss and which questions need clarification.",
+        decisionSupport: {
+          scope: "Identify the payroll tasks and timing questions you want to raise.",
+          nextStep: "Ask what business details are useful before discussing payroll support.",
+          preparation: "List your payroll questions and any relevant records you can share.",
+        },
+      };
+    if (/skin consultation/u.test(service))
+      return {
+        description: "Bring your skin-care goals and questions to a conversation about suitable options.",
+        decisionSupport: {
+          scope: "Discuss your goals and what you would like to understand before choosing.",
+          nextStep: "Ask which options may be appropriate for your situation.",
+          preparation: "Note your questions, preferences, and any relevant considerations.",
+        },
+      };
+    if (/skin renewal/u.test(service))
+      return {
+        description: "Describe the skin-care concern you want to explore and what outcome you have in mind.",
+        decisionSupport: {
+          scope: "Explain what you would like to change or understand about your skin.",
+          nextStep: "Ask what options and considerations should be discussed first.",
+          preparation: "Note the concerns and questions you want to bring to a consultation.",
+        },
+      };
+    if (/wrinkle smoothing/u.test(service))
+      return {
+        description: "Share your preferences and questions before discussing wrinkle-smoothing options.",
+        decisionSupport: {
+          scope: "Discuss what result you are considering without assuming a treatment is suitable.",
+          nextStep: "Ask about the choices and considerations relevant to your goals.",
+          preparation: "Write down your goals and any questions about available options.",
+        },
+      };
+    return {
+      description: `Describe what you want to discuss about ${service} and which questions matter to your decision.`,
+      decisionSupport: {
+        scope: `Explain the need or question connected to ${service}.`,
+        nextStep: `Ask what details help the team discuss ${service}.`,
+        preparation: `Note your goals and constraints related to ${service}.`,
+      },
+    };
+  };
   const services = brief.services.map((name) => ({
     name,
-    description: `Discuss the scope, options, and preparation for ${name.toLowerCase()} with the team before choosing a next step.`,
-    decisionSupport: {
-      scope: `Ask what a request for ${name.toLowerCase()} usually covers.`,
-      nextStep: "Describe your needs and ask which next step fits.",
-      preparation: "Note the questions and timing you want to discuss.",
-    },
+    ...serviceCopy(name),
   }));
   return {
     preset: fixture.industry === "home-services" ? "home-services" : "wellness",
@@ -267,9 +408,18 @@ async function verifyRenderedSite({ fixture, config, dist, outputDir, origin, br
       reviewUrl.searchParams.set("review", "local-fixture");
       await page.goto(reviewUrl.href, { waitUntil: "domcontentloaded" });
       await page.evaluate(async () => {
-        await Promise.all([...document.images].map(async (image) => {
+        const images = [...document.images].filter((image) =>
+          Boolean(image.getAttribute("src")?.trim() || image.getAttribute("srcset")?.trim()),
+        );
+        await Promise.all(images.map(async (image) => {
           image.loading = "eager";
-          try { await image.decode(); } catch { /* a missing optional image is checked below */ }
+          await new Promise((resolve) => {
+            const timeout = window.setTimeout(resolve, 5_000);
+            image.decode().catch(() => {}).finally(() => {
+              window.clearTimeout(timeout);
+              resolve();
+            });
+          });
         }));
       });
       const state = await page.evaluate(() => {
@@ -319,8 +469,8 @@ async function verifyRenderedSite({ fixture, config, dist, outputDir, origin, br
         throw new Error(`${fixture.key} ${route} displays offer-like copy when the intake has no offer.`);
       if (/lorem ipsum|sample business|your business name|guaranteed results|award-winning|24\/7 service/iu.test(state.text))
         throw new Error(`${fixture.key} ${route} contains placeholder copy or an unsupported proof claim.`);
-      if (route === "/" && (!state.text.includes(fixture.primaryCity) || (fixture.coverage[1] && !state.text.includes(fixture.coverage[1]))))
-        throw new Error(`${fixture.key} homepage coverage section is missing the primary or nearby community.`);
+      if (route === "/" && (!state.text.includes(fixture.primaryCity) || config.business.serviceAreas.some((area) => !state.text.includes(area))))
+        throw new Error(`${fixture.key} homepage coverage section is missing the primary or a confirmed service area.`);
       if (errors.length) throw new Error(`${fixture.key} browser error: ${errors.join("; ")}`);
       if (["desktop", "mobile"].includes(viewport.name)) {
         const file = path.join(outputDir, "screenshots", fixture.key, `${route === "/" ? "home" : "service"}-${viewport.name}.png`);
@@ -451,7 +601,6 @@ async function main() {
       };
       const research = await researchSiteContext({
         ...intake,
-        coverageAreas: fixture.coverage,
         coverageEvidence: enrichment.coverageEvidence,
       }, {
         dataForSeo: localFormRun ? unavailableResearchProvider() : researchProvider(),
@@ -467,6 +616,8 @@ async function main() {
       const config = await generateSiteConfigWithModel(brief);
       if (!config.services.every((service, index) => service.name === fixture.services[index]))
         throw new Error(`${fixture.key} generation changed a client-confirmed service.`);
+      if (!intake.coverageSelection && JSON.stringify(config.business.serviceAreas) !== JSON.stringify([fixture.primaryCity]))
+        throw new Error(`${fixture.key} added geocoder-suggested areas without a client-confirmed selection.`);
       if (config.locations.length) throw new Error(`${fixture.key} generation created location pages without separate evidence.`);
       if (!config.design?.experience?.packId || !config.design?.experience?.variantId)
         throw new Error(`${fixture.key} generation did not select a reviewed experience pack and variant.`);

@@ -44,6 +44,18 @@ testimonials, review ratings, credentials, results, guarantees, prices,
 response times, staff, or office locations. Describe an area as served unless
 the intake confirms a physical office there.
 
+Generated copy, including FAQ questions, is checked against the structured
+intake for high-risk claims about credentials, scoped pricing, guarantees,
+ratings, business experience, availability, medical or quantified outcomes,
+named or counted staff, and physical offices. A city or service area alone is
+not evidence of a visitable office, and a price for one service does not
+support pricing claims about another. If a claim has no matching supplied
+evidence, the copy gets one bounded repair; a remaining unsupported claim
+blocks generation rather than being published as fact. This deterministic
+check is deliberately narrower
+than a complete semantic fact-check, so prompts and source-bound page evidence
+remain required for ordinary descriptive copy as well.
+
 Use client logos and photographs first. A fallback image must come from a
 curated commercial-use pack whose recorded subject matches the business kind
 and its placement. If no suitable asset exists, use deliberate brand art or a
@@ -101,6 +113,10 @@ Composited alpha is measured; unsupported effects and ambiguous image backdrops
 are unresolved, not presumed readable. Image overlays may use a local opaque
 plate or a scrim whose worst-case backdrop passes. Text shadows alone do not
 prove contrast. Existing visual, source and reference-fidelity gates still run.
+When hero copy or a CTA sits over media, its keyboard-focus outline must also be
+inside a provable opaque role-surface plate at every viewport. Do not remove or
+translucently fade that plate on mobile while the media remains behind it; move
+the image to a non-overlapping field when the reference needs unplated copy.
 Interaction audits include summary controls and links revealed by disclosures
 and menus. Inset focus indicators use their local paint and block unmeasured
 border overlap. Unrelated paint remains unresolved unless bounded geometry
@@ -259,6 +275,26 @@ Keep visible business details consistent with structured data. Review sites
 must remain out of search indexing. Public sites need descriptive titles,
 canonical URLs, internal links, a sitemap, and accurate LocalBusiness data
 where the required facts exist.
+
+Measured route research is only a content plan, not finished page copy. For
+each indexable service route, generation must create a distinct introduction,
+metadata description, scope, preparation, next step, and at least two FAQs
+whose questions match that route's measured fan-out questions. Answers may use
+confirmed business facts or cautious guidance about what to ask or prepare;
+research questions and search snippets are never treated as proof of how the
+business operates. Generated-copy evidence records the exact source fields
+from the service facts and route research that were used. A missing answer,
+missing source reference, unsupported claim, or one-word variation of a
+near-duplicate page blocks the route instead of inheriting generic card copy.
+
+An indexable location page additionally requires an approved route admission,
+confirmed coverage, applicable services, and route-specific local facts. Its
+copy must cite those local facts and must not turn service-area coverage into
+an office claim. The rendered route audit checks that supported page copy is
+actually present in initial HTML and that long service/location pages are not
+near-duplicates after shared shell content is excluded. SEO metric readiness
+and route-copy readiness are reported separately, and both remain required at
+the production release gate.
 
 When the submitted primary action is `Get directions`, add a dedicated map
 section only if the verified intake contains a retained Place ID or a

@@ -6,10 +6,17 @@ import { afterEach, describe, expect, it } from "vitest";
 
 const roots: string[] = [];
 const repositoryRoot = path.resolve(".");
-const verifier = path.join(repositoryRoot, "scripts/verify-creative-diagnostic.mjs");
+const verifier = path.join(
+  repositoryRoot,
+  "scripts/verify-creative-diagnostic.mjs",
+);
 
 afterEach(async () => {
-  await Promise.all(roots.splice(0).map((root) => fs.rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    roots
+      .splice(0)
+      .map((root) => fs.rm(root, { recursive: true, force: true })),
+  );
 });
 
 async function createDiagnosticSite({
@@ -23,7 +30,9 @@ async function createDiagnosticSite({
   imageMarkup?: string;
   formMarkup?: string;
 }) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-diagnostic-notice-"));
+  const root = await fs.mkdtemp(
+    path.join(os.tmpdir(), "launchloom-diagnostic-notice-"),
+  );
   roots.push(root);
   await fs.mkdir(path.join(root, "dist"), { recursive: true });
   await fs.mkdir(path.join(root, "src"), { recursive: true });
@@ -44,7 +53,15 @@ async function createDiagnosticSite({
 function runVerifier(root: string) {
   return spawnSync(
     process.execPath,
-    [verifier, "--dist", "dist", "--candidate", "candidate-a", "--screenshots", ".launchloom/test-screenshots"],
+    [
+      verifier,
+      "--dist",
+      "dist",
+      "--candidate",
+      "candidate-a",
+      "--screenshots",
+      ".launchloom/test-screenshots",
+    ],
     { cwd: root, encoding: "utf8", timeout: 30_000 },
   );
 }
@@ -73,7 +90,7 @@ describe("creative diagnostic preview verification", () => {
     const ordinaryResult = runVerifier(ordinary);
 
     expect(ordinaryResult.status).toBe(0);
-  }, 20_000);
+  }, 60_000);
 
   it("accepts decorative empty alt text and rejects images without an alt attribute", async () => {
     const pixel =

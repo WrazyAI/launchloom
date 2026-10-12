@@ -495,14 +495,20 @@ export async function auditRouteContent({
       const score = union.size
         ? [...left].filter((word) => right.has(word)).length / union.size
         : 0;
+      const leftWordCount = a.text.split(/\s+/u).filter(Boolean).length;
+      const rightWordCount = b.text.split(/\s+/u).filter(Boolean).length;
+      const nearDuplicate =
+        leftWordCount >= 40 && rightWordCount >= 40 && score >= 0.92;
       diagnostics.push({
         kind: "content-similarity",
         routes: [a.path, b.path],
         score,
-        blocking: false,
-        note: "Shared facts/shell excluded. Similarity is diagnostic, never the sole promotion authority.",
+        blocking: nearDuplicate,
+        note: nearDuplicate
+          ? "Near-duplicate page-specific content suggests city/service substitution instead of distinct page substance."
+          : "Shared facts/shell excluded. Similarity is not the sole promotion authority.",
       });
-      if (a.text === b.text && a.text.split(" ").length >= 40) {
+      if (nearDuplicate) {
         for (const entry of routes.filter((route) =>
           [a.path, b.path].includes(route.path),
         )) {
@@ -510,7 +516,7 @@ export async function auditRouteContent({
             name: "distinct-page-substance",
             status: "fail",
             detail:
-              "Exact city/service substitution duplicates page-specific substance.",
+              "Near-duplicate city/service substitution must add route-specific substance beyond target-name substitution.",
           });
           entry.status = "fail";
         }

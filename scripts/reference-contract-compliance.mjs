@@ -243,6 +243,7 @@ function outputContentPaths(source) {
       const value = props.get(key);
       if (value?.length) bindings.set(name.text, value);
     };
+    if (!parameter) return bindings;
     if (ts.isIdentifier(parameter)) {
       if (props.has(parameter.text)) bindProp(parameter, parameter.text);
       else if (props.has("content")) bindProp(parameter, "content");

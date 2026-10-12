@@ -75,7 +75,6 @@ function cleanList(value, limit = 12) {
   ].slice(0, limit);
 }
 
-
 function digest(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
@@ -564,8 +563,9 @@ export function referenceStructuralDistance(left, right) {
 
 function structurallyIndependent(record, selected) {
   return selected.every((item) => {
-    const sharedFields = STRUCTURAL_FIELDS.filter((field) =>
-      normalizedPhrase(item[field]) === normalizedPhrase(record[field]),
+    const sharedFields = STRUCTURAL_FIELDS.filter(
+      (field) =>
+        normalizedPhrase(item[field]) === normalizedPhrase(record[field]),
     ).length;
     return (
       sharedFields === 0 &&
@@ -1022,6 +1022,9 @@ export function buildInspirationPack(
   let registry = normalizeRegistry(rawRegistry);
   const seed = cleanText(request?.seed, 180);
   const industry = cleanText(request?.industry, 80).toLowerCase();
+  const businessFocusTerms = cleanList(request.businessFocusTerms, 12).map(
+    (term) => normalizedPhrase(term),
+  );
   if (!seed || !industry)
     throw new Error("Inspiration selection requires a seed and industry.");
   const canonicalReferenceIds = referenceIdsForBusinessKind(
@@ -1079,7 +1082,20 @@ export function buildInspirationPack(
       throw new Error(
         `The production library has ${businessMatchedRecords.length} eligible dossier(s) matched to '${industry}' out of ${eligibleRecords.length} eligible references; six distinct production-eligible business-matched dossiers are required. Unrelated industries are not used as filler.`,
       );
-    registry = { ...registry, records: businessMatchedRecords };
+    if (businessFocusTerms.length) {
+      const focusedRecords = businessMatchedRecords.filter((record) =>
+        (record.referenceTags?.business || []).some((tag) =>
+          businessFocusTerms.includes(normalizedPhrase(tag)),
+        ),
+      );
+      if (focusedRecords.length < 3)
+        throw new Error(
+          `The production library has ${focusedRecords.length} eligible '${industry}' dossier(s) matching business focus '${businessFocusTerms.join(", ")}'. Three business-focused references are required; unrelated trade references are not used as filler.`,
+        );
+      registry = { ...registry, records: focusedRecords };
+    } else {
+      registry = { ...registry, records: businessMatchedRecords };
+    }
   } else {
     registry = {
       ...registry,
@@ -1281,6 +1297,7 @@ export function buildInspirationPack(
   const requestSummary = {
     seed,
     industry,
+    businessFocusTerms,
     styleTerms: cleanList(request.styleTerms, 48),
     styleText: cleanText(request.styleText, 1200),
     explicitReferenceIds: registry.records

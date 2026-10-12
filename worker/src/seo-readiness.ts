@@ -3,3 +3,4 @@ export {
   seoResearchReadiness,
 } from "../../templates/client-site/src/lib/seo-readiness.mjs";
 export type { SeoResearchReadiness } from "../../templates/client-site/src/lib/seo-readiness.mjs";
+export { pageBriefReadiness } from "../../templates/client-site/src/lib/page-briefs.mjs";

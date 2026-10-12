@@ -25,13 +25,15 @@ const SERVICES_INDEX_FALLBACK = `export default function ServicesIndexPage(_prop
 
 function argsFrom(argv) {
   return Object.fromEntries(
-    argv.slice(2).reduce(
-      (pairs, value, index, all) =>
-        index % 2 === 0
-          ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]]
-          : pairs,
-      [],
-    ),
+    argv
+      .slice(2)
+      .reduce(
+        (pairs, value, index, all) =>
+          index % 2 === 0
+            ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]]
+            : pairs,
+        [],
+      ),
   );
 }
 
@@ -97,7 +99,9 @@ export async function promoteCreativeCandidate({
   const root = path.resolve(siteDir);
   const source = path.resolve(root, candidateDir);
   const manifest = await readJson(path.join(source, "metadata.json"));
-  const candidateManifest = validateCandidateManifest(manifest.creativeManifest || manifest);
+  const candidateManifest = validateCandidateManifest(
+    manifest.creativeManifest || manifest,
+  );
   const required = ["Experience.jsx", "styles.css", "motion.js"];
   for (const file of required) await fs.access(path.join(source, file));
   const files = {
@@ -134,9 +138,8 @@ export async function promoteCreativeCandidate({
     .readFile(path.join(source, "ServicesIndexPage.jsx"), "utf8")
     .catch(() => "");
   if (servicesIndexSource.trim()) {
-    const servicesIndexPage = normalizeCreativeExperienceLinks(
-      servicesIndexSource,
-    );
+    const servicesIndexPage =
+      normalizeCreativeExperienceLinks(servicesIndexSource);
     assertCreativeInnerPageSource(servicesIndexPage, {
       candidateId: candidateManifest.candidateId,
       pageLabel: "ServicesIndexPage.jsx",
@@ -145,10 +148,12 @@ export async function promoteCreativeCandidate({
     });
     files.servicesIndexPage = servicesIndexPage;
   }
-  const contentManifest = providedContentManifest || await fs
-    .readFile(path.join(source, "content-manifest.json"), "utf8")
-    .then(JSON.parse)
-    .catch(() => null);
+  const contentManifest =
+    providedContentManifest ||
+    (await fs
+      .readFile(path.join(source, "content-manifest.json"), "utf8")
+      .then(JSON.parse)
+      .catch(() => null));
   const validatedFiles = validateAuthoredFiles(
     candidateManifest.candidateId,
     files,
@@ -157,23 +162,31 @@ export async function promoteCreativeCandidate({
     { preview },
   );
 
-
-
   const selected = path.resolve(root, "src/generated-experiences/selected");
   await fs.mkdir(selected, { recursive: true });
   if (preserveSelectedManifest)
     await fs.access(path.join(selected, "manifest.json"));
   await Promise.all([
-    fs.writeFile(path.join(selected, "Experience.jsx"), validatedFiles.experience),
+    fs.writeFile(
+      path.join(selected, "Experience.jsx"),
+      validatedFiles.experience,
+    ),
     fs.writeFile(path.join(selected, "styles.css"), validatedFiles.styles),
-    fs.copyFile(path.join(source, "motion.js"), path.join(selected, "motion.js")),
+    fs.copyFile(
+      path.join(source, "motion.js"),
+      path.join(selected, "motion.js"),
+    ),
     fs.writeFile(
       path.join(selected, "ServicePage.jsx"),
-      validatedFiles.servicePage ? `${validatedFiles.servicePage.trim()}\n` : SERVICE_PAGE_FALLBACK,
+      validatedFiles.servicePage
+        ? `${validatedFiles.servicePage.trim()}\n`
+        : SERVICE_PAGE_FALLBACK,
     ),
     fs.writeFile(
       path.join(selected, "LocationPage.jsx"),
-      validatedFiles.locationPage ? `${validatedFiles.locationPage.trim()}\n` : LOCATION_PAGE_FALLBACK,
+      validatedFiles.locationPage
+        ? `${validatedFiles.locationPage.trim()}\n`
+        : LOCATION_PAGE_FALLBACK,
     ),
     fs.writeFile(
       path.join(selected, "ServicesIndexPage.jsx"),
@@ -195,8 +208,10 @@ export async function promoteCreativeCandidate({
     ...(config.design.experience || {}),
     renderer: "creative-candidate",
     candidateId: candidateManifest.candidateId,
+    routeId: manifest.routeId || candidateManifest.routeId || undefined,
     familyId: candidateManifest.familyId,
-    referenceFamilyId: candidateManifest.referenceDna?.familyId || candidateManifest.familyId,
+    referenceFamilyId:
+      candidateManifest.referenceDna?.familyId || candidateManifest.familyId,
     referenceDnaVersion: candidateManifest.referenceDna?.version || null,
     contractHash: candidateManifest.routeFingerprint,
     fingerprint: candidateManifest.fingerprint,

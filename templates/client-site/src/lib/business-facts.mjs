@@ -24,10 +24,38 @@ export function normalizeResearchLanguageCode(value) {
   return /^[a-z]{2,3}$/u.test(code) ? code : "en";
 }
 
-const list = (value) =>
-  (Array.isArray(value) ? value : String(value || "").split(/\r?\n/u))
+const list = (value, { splitLegacyCommas = false } = {}) => {
+  const isArray = Array.isArray(value);
+  return (isArray ? value : [value])
+    .flatMap((item) => {
+      const input = String(item || "");
+      const splitCommas =
+        splitLegacyCommas && !isArray && !/[\r\n]/u.test(input);
+      const parts = [];
+      let current = "";
+      let parenthesisDepth = 0;
+      for (const character of input) {
+        if (character === "(") parenthesisDepth += 1;
+        const separator =
+          character === "\r" ||
+          character === "\n" ||
+          (character === ";" && parenthesisDepth === 0) ||
+          (splitCommas && character === "," && parenthesisDepth === 0);
+        if (separator) {
+          if (current.trim()) parts.push(current.trim());
+          current = "";
+          continue;
+        }
+        current += character;
+        if (character === ")")
+          parenthesisDepth = Math.max(0, parenthesisDepth - 1);
+      }
+      if (current.trim()) parts.push(current.trim());
+      return parts;
+    })
     .map((item) => factText(item, 240))
     .filter(Boolean);
+};
 const definitions = [
   ["businessName", true, true, ["all-pages", "schema"]],
   ["phone", true, true, ["contact", "schema"]],
@@ -70,7 +98,12 @@ export function compileFactBrief(intake = {}) {
           : `${key} can be omitted until supplied.`,
     };
   });
-  const services = list(intake.confirmedServices || intake.services);
+  const serviceInput = intake.confirmedServices || intake.services;
+  const services = list(serviceInput, {
+    splitLegacyCommas:
+      factText(intake.intakeVersion, 10) !== "2" &&
+      typeof serviceInput === "string",
+  });
   const excluded = new Set(
     list(intake.excludedServices).map((value) => value.toLowerCase()),
   );
@@ -262,6 +295,11 @@ export function publicGenerationIntake(intake = {}) {
     factReadiness: factReadinessSummary(full),
     addressVisibility: full.addressVisibility,
   };
+  const normalizedServices =
+    full.facts.find((fact) => fact.key === "services")?.value || [];
+  if ("services" in result) result.services = normalizedServices;
+  if ("confirmedServices" in result)
+    result.confirmedServices = normalizedServices;
   for (const key of [
     "businessName",
     "phone",
