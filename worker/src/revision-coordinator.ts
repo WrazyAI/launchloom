@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import {PublicationStore, type PublicationInput, type PublicationCommand} from "./publication";
 import { renderLifecycleEmail } from "../../emails/render-email.mjs";
 import {
   encodeFeedbackStructureMarker,
@@ -58,6 +59,9 @@ type RevisionRow = {
   dispatch_attempts: number;
   promoted_request_id: string | null;
   failure: string | null;
+  publication_id: string | null;
+  base_sha: string | null;
+  reviewed_sha: string | null;
 };
 
 type FailureNotice = {
@@ -188,7 +192,7 @@ type CreativeOverrideStart =
 
 export type CreativeRepairClaim = {
   run: boolean;
-  status: CreativeRepairStatus | "missing" | "stale";
+  status: CreativeRepairStatus | "missing" | "stale" | "publication_in_progress";
   session?: CreativeRepairSessionInput;
 };
 
@@ -351,8 +355,10 @@ async function notifyFailure(
 }
 
 export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
+  private publications: PublicationStore;
   constructor(ctx: DurableObjectState, env: RevisionCoordinatorEnv) {
     super(ctx, env);
+    this.publications = new PublicationStore(ctx.storage, env);
     ctx.blockConcurrencyWhile(async () => {
       this.ctx.storage.sql.exec(`
         CREATE TABLE IF NOT EXISTS revision_requests (
@@ -444,6 +450,11 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         );
       } catch {
         // Existing Durable Objects already have the structure column.
+      }
+      this.publications.initialize();
+      for (const name of ["publication_id", "base_sha", "reviewed_sha"]) {
+        const columns = this.ctx.storage.sql.exec<{name:string}>("PRAGMA table_info(revision_requests)").toArray();
+        if (!columns.some(column=>column.name===name))this.ctx.storage.sql.exec(`ALTER TABLE revision_requests ADD COLUMN ${name} TEXT`);
       }
       await this.migrateLegacyFailureNotice();
     });
@@ -561,23 +572,6 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     )
       return { started: false, status: "ineligible" };
 
-    if (
-      this.ctx.storage.sql
-        .exec(
-          "SELECT request_id FROM revision_requests WHERE status = 'failed' LIMIT 1",
-        )
-        .toArray().length
-    )
-      return { started: false, status: "revision_queue_halted" };
-    if (
-      this.ctx.storage.sql
-        .exec(
-          `SELECT request_id FROM revision_requests WHERE status IN ${ACTIVE} OR status = 'queued' LIMIT 1`,
-        )
-        .toArray().length
-    )
-      return { started: false, status: "revision_in_progress" };
-
     const existing = this.ctx.storage.sql
       .exec<{
         status: string;
@@ -599,6 +593,23 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       Date.now() - existing.updated_at < CREATIVE_OVERRIDE_STALE_MS
     )
       return { started: false, status: "dispatching" };
+
+    if (
+      this.ctx.storage.sql
+        .exec(
+          "SELECT request_id FROM revision_requests WHERE status = 'failed' LIMIT 1",
+        )
+        .toArray().length
+    )
+      return { started: false, status: "revision_queue_halted" };
+    if (
+      this.ctx.storage.sql
+        .exec(
+          `SELECT request_id FROM revision_requests WHERE status IN ${ACTIVE} OR status = 'queued' LIMIT 1`,
+        )
+        .toArray().length
+    )
+      return { started: false, status: "revision_in_progress" };
 
     const now = Date.now();
     this.ctx.storage.sql.exec(
@@ -763,7 +774,8 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     repo: string,
     pr: number,
     headSha: string,
-  ): { started: boolean; status: CreativeRepairStatus | "missing" } {
+  ): { started: boolean; status: CreativeRepairStatus | "missing" | "publication_in_progress" } {
+    if(this.publications.held())return {started:false,status:"publication_in_progress"};
     const row = this.creativeRepairRow(sessionId);
     if (!row) return { started: false, status: "missing" };
     if (
@@ -792,6 +804,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
   }
 
   async claimCreativeRepair(sessionId: string): Promise<CreativeRepairClaim> {
+    if(this.publications.held())return {run:false,status:"publication_in_progress"};
     const row = this.creativeRepairRow(sessionId);
     if (!row) return { run: false, status: "missing" };
     if (row.status !== "queued" && row.status !== "dispatching")
@@ -961,10 +974,37 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       .toArray()[0];
   }
 
+  allowsPublicationFeedback(pr: number, headSha: string) {
+    const held=this.publications.held();
+    return !!held&&held.pr===pr&&held.head_sha===headSha;
+  }
+
+  async reservePublication(input: PublicationInput) {
+    const result = this.publications.reserve(input);
+    await this.scheduleCoordinatorAlarm();
+    return result;
+  }
+  async queuePublication(id: string, approvedSha: string, payload: Record<string, unknown>, approvalToken?: string) {
+    const result = await this.publications.queue(id, approvedSha, payload, approvalToken);
+    await this.scheduleCoordinatorAlarm();return result;
+  }
+  async publicationCommand(input: PublicationCommand) {
+    const result = this.publications.command(input);
+    if ("allowed" in result && result.allowed && (input.action === "published" || input.action === "dismiss")) {
+      const status = this.publications.status(input.publicationId);
+      if ("approvedSha" in status && status.approvedSha)
+        this.ctx.storage.sql.exec("UPDATE revision_requests SET base_sha = ? WHERE publication_id = ? AND status = 'queued'", status.approvedSha, input.publicationId);
+      await this.promoteQueued();
+    }
+    await this.scheduleCoordinatorAlarm();return result;
+  }
+
   private async scheduleCoordinatorAlarm() {
     await this.migrateLegacyFailureNotice();
     const now = Date.now();
     const due: number[] = [];
+    const publicationDue = this.publications.nextAlarm();
+    if (publicationDue !== null) due.push(publicationDue);
     const notices = await this.ctx.storage.list<FailureNotice>({
       prefix: FAILURE_NOTICE_PREFIX,
     });
@@ -995,6 +1035,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
   }
 
   private async promoteQueued(): Promise<RevisionRow | undefined> {
+    if (this.publications.held()) return undefined;
     const promoted = this.ctx.storage.sql
       .exec<RevisionRow>(
         "SELECT * FROM revision_requests WHERE status = 'queued' ORDER BY created_at LIMIT 1",
@@ -1080,7 +1121,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       method: "POST",
       body: JSON.stringify({
         event_type:
-          row.stage === "developer"
+          row.stage === "developer" && !row.base_sha
             ? "process-developer-feedback"
             : "process-client-feedback",
         client_payload: {
@@ -1092,6 +1133,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           siteId: row.site_id,
           clientEmail: row.client_email,
           reviewedPage: row.reviewed_page,
+          ...(row.base_sha ? {baseSha:row.base_sha,originalStage:row.stage,reviewedSha:row.reviewed_sha,publicationId:row.publication_id} : {}),
         },
       }),
     });
@@ -1166,7 +1208,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         Date.now() - CREATIVE_OVERRIDE_STALE_MS,
       )
       .toArray()[0];
-    if (releasing)
+    if (releasing && !this.publications.held())
       return {
         ok: false,
         code: "creative_override_started",
@@ -1180,7 +1222,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           input.creativeRepairSessionId,
         )
         .toArray()[0];
-      if (override && ["dispatching", "published"].includes(override.status))
+      if (override && ["dispatching", "published"].includes(override.status) && !this.publications.held())
         return {
           ok: false,
           code: "creative_override_started",
@@ -1236,7 +1278,8 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         error: "One request is already waiting. Try again when it starts.",
       };
 
-    const status: QueueStatus = active ? "queued" : "dispatching";
+    const publication = this.publications.held();
+    const status: QueueStatus = active || publication ? "queued" : "dispatching";
     const now = Date.now();
     this.ctx.storage.sql.exec(
       `INSERT INTO revision_requests (
@@ -1259,6 +1302,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       status,
       now,
     );
+    if (publication) this.ctx.storage.sql.exec("UPDATE revision_requests SET publication_id = ?, reviewed_sha = ? WHERE request_id = ?",publication.id,publication.head_sha,input.requestId);
     const row = this.row(input.requestId)!;
     try {
       if (status === "dispatching") await this.prepareAndDispatchRow(row);
@@ -1484,6 +1528,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     allowed: boolean;
     code?: "revision_in_progress" | "revision_queue_halted";
   }> {
+    if (this.publications.held()) return {allowed:false,code:"revision_in_progress"};
     const failed = this.ctx.storage.sql
       .exec(
         "SELECT request_id FROM revision_requests WHERE status = 'failed' LIMIT 1",
@@ -1502,6 +1547,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
 
   async alarm() {
     await this.migrateLegacyFailureNotice();
+    await this.publications.alarm();
     const now = Date.now();
     const notices = await this.ctx.storage.list<FailureNotice>({
       prefix: FAILURE_NOTICE_PREFIX,
@@ -1533,6 +1579,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
 
     const active = this.activeRevisionRow();
     if (!active) {
+      await this.promoteQueued();
       await this.scheduleCoordinatorAlarm();
       return;
     }

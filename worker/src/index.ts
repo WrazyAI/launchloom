@@ -30,6 +30,7 @@ import {
   isAffirmativeConfirmation,
   seoResearchReadiness,
 } from "./seo-readiness";
+import type { PublicationCommand } from "./publication";
 import { OnboardingInvites } from "./onboarding-invites";
 import { IntakeRecoveryError, intakeOperationMarker, recoverIntakeIssue, readIntakeIssuePayload, verifyIntakeIssueOwnership, type IntakeIssue } from "./intake-recovery";
 import {
@@ -983,6 +984,30 @@ async function siteConfigAtReviewHead(env: Env, claims: ReviewClaims) {
   return JSON.parse(jsonText) as Record<string, unknown>;
 }
 
+async function approvedPublication(env: Env, claims: ReviewClaims, current: Awaited<ReturnType<typeof currentReviewPr>>, extra: Record<string, unknown> = {}) {
+  const coordinator = env.REVISION_COORDINATOR.getByName(claims.repo.toLowerCase());
+  const reserved = await coordinator.reservePublication({repo:claims.repo,pr:claims.pr!,headSha:claims.headSha!,
+    siteId:claims.siteId,clientEmail:claims.clientEmail,reviewerEmail:claims.reviewerEmail,feedbackIssue:claims.feedbackIssue!,
+    retry:true,dispatchPayload:extra,...(claims.creativeRepairSessionId?{overrideSessionId:claims.creativeRepairSessionId}:{})});
+  if(!reserved.allowed)return {ok:false,code:reserved.code,publicationId:reserved.publicationId,
+    error:reserved.code==='revision_queue_halted'?'Resolve the failed revision queue before publishing.':reserved.code==='stale_publication'?'This release has been superseded. Use the latest review link.':'A revision or publication still owns this client. Review its status before approving another release.'};
+  const id=reserved.publicationId!;
+  const saved=await coordinator.publicationCommand({action:"status",publicationId:id});
+  if("state" in saved&&["published","running"].includes(saved.state??""))return {ok:true,publicationId:id,status:saved.state};
+  if(reserved.state==='reserved'&&!reserved.mergeAllowed)return {ok:true,publicationId:id,status:'reserved'};
+  try {
+    const approvedSha='approvedSha' in saved&&saved.approvedSha?saved.approvedSha:await mergeReviewedPr(env,claims,reserved.duplicate?await currentReviewPr(env,claims):current);
+    const main=await github(env,`/repos/${claims.repo}/git/ref/heads/main`,{signal:AbortSignal.timeout(10_000)}).then(response=>response.json() as Promise<{object?:{sha?:string}}>);
+    if(main.object?.sha!==approvedSha)throw new Error("A newer client commit exists. Use its latest review link.");
+    const queued=await coordinator.queuePublication(id,approvedSha,extra,reserved.approvalToken??undefined);
+    return {ok:true,publicationId:id,status:queued.state==="queued"?"publication-queued":queued.state,approvedSha};
+  } catch(error) {
+    // Retain an ambiguous merge reservation for exact-PR reconciliation.
+    // A timeout is not evidence that GitHub did not merge the approved commit.
+    throw error;
+  }
+}
+
 async function mergeReviewedPr(
   env: Env,
   claims: ReviewClaims,
@@ -1007,6 +1032,7 @@ async function mergeReviewedPr(
     `/repos/${claims.repo}/pulls/${claims.pr!}/merge`,
     {
       method: "PUT",
+      signal: AbortSignal.timeout(20_000),
       body: JSON.stringify({
         sha: claims.headSha!,
         merge_method: "squash",
@@ -2239,8 +2265,9 @@ async function feedback(request: Request, env: Env) {
       );
     if (claims.stage === "developer") {
       const current = await currentReviewPr(env, claims);
+      const publishing=current.merged===true&&await env.REVISION_COORDINATOR.getByName(claims.repo.toLowerCase()).allowsPublicationFeedback(claims.pr!,claims.headSha!);
       if (
-        current.state !== "open" ||
+        (current.state !== "open"&&!publishing) ||
         current.draft ||
         current.head.sha !== claims.headSha
       )
@@ -2748,8 +2775,9 @@ async function creativeRepair(request: Request, env: Env) {
           feedbackStatus = refreshed.status;
         }
       }
+      const publishing=current.merged===true&&await coordinator.allowsPublicationFeedback(feedbackClaims.pr!,feedbackClaims.headSha!);
       if (
-        current.state !== "open" ||
+        (current.state !== "open"&&!publishing) ||
         current.draft ||
         current.head.sha !== feedbackClaims.headSha
       )
@@ -2857,18 +2885,6 @@ async function creativeRepair(request: Request, env: Env) {
           400,
           cors(request, claims.allowedOrigins),
         );
-      const releaseQueue = await coordinator.approvalState();
-      if (!releaseQueue.allowed)
-        return json(
-          {
-            error:
-              releaseQueue.code === "revision_queue_halted"
-                ? "Resolve the failed revision queue before sending this preview to the client."
-                : "A developer revision is already in progress.",
-          },
-          409,
-          cors(request, claims.allowedOrigins),
-        );
       const current = await currentReviewPr(env, claims);
       const exactHead = current.head.sha === reviewedHeadSha;
       const retryingMerged =
@@ -2907,20 +2923,10 @@ async function creativeRepair(request: Request, env: Env) {
         reviewerEmail: claims.reviewerEmail,
       });
       if (!begun.started) {
-        if (begun.status === "published")
-          return json(
-            {
-              ok: true,
-              status: "publication-queued",
-              alreadyQueued: true,
-              approvedSha: begun.approvedSha,
-            },
-            200,
-            {
-              ...cors(request, claims.allowedOrigins),
-              "Cache-Control": "no-store",
-            },
-          );
+        if (begun.status === "published") {
+          const publication=await approvedPublication(env,claims,current,{developerOverride:{sessionId,reviewedHeadSha,candidateId:status.candidateId,reviewerEmail:claims.reviewerEmail,disposition:'override-publish'}});
+          return json({...publication,alreadyQueued:true},publication.ok?200:409,cors(request,claims.allowedOrigins));
+        }
         return json(
           {
             error:
@@ -2938,28 +2944,20 @@ async function creativeRepair(request: Request, env: Env) {
         );
       }
       try {
-        const approvedSha = await mergeReviewedPr(env, claims, current);
-        await dispatch(env, "publish-site", {
-          repo: claims.repo,
-          pr: reviewedPr,
-          siteId: claims.siteId,
-          clientEmail: claims.clientEmail,
-          feedbackIssue: claims.feedbackIssue,
-          approvedSha,
-          developerOverride: {
-            sessionId,
-            reviewedHeadSha,
-            candidateId: status.candidateId,
-            reviewerEmail: claims.reviewerEmail,
-            disposition: "override-publish",
-          },
+        const publication = await approvedPublication(env, claims, current, {
+          developerOverride: {sessionId,reviewedHeadSha,candidateId:status.candidateId,
+            reviewerEmail:claims.reviewerEmail,disposition:'override-publish'},
         });
+        if(!publication.ok)throw new Error('Publication reservation refused: '+publication.code);
+        const approvedSha=publication.approvedSha;
+        if(!approvedSha)return json({ok:true,publicationId:publication.publicationId,status:publication.status},202,cors(request,claims.allowedOrigins));
         await coordinator.completeCreativeOverride(sessionId, approvedSha);
         return json(
           {
             ok: true,
             status: "publication-queued",
             disposition: "override-publish",
+            publicationId: publication.publicationId,
             approvedSha,
           },
           202,
@@ -3094,6 +3092,24 @@ function safeRevisionFailureRun(value: unknown) {
   } catch {
     return "";
   }
+}
+
+async function publicationCoordinator(request: Request, env: Env) {
+  if(request.method!=="POST")return json({error:"Method not allowed"},405);
+  const supplied=(request.headers.get("Authorization")||"").replace(/^Bearer /u,"");
+  if(!env.REVISION_COORDINATOR_SECRET||!constantTimeEqual(supplied,env.REVISION_COORDINATOR_SECRET))return json({error:"Unauthorized"},401);
+  try {
+    const body=await request.json().catch(()=>null) as PublicationCommand & {repo:string};
+    if(!body||typeof body!=="object"||Array.isArray(body))return json({error:"Invalid publication operation",code:"invalid_publication_operation"},400);
+    if(!/^WrazyAI\/[a-zA-Z0-9._-]+$/u.test(body.repo)||!/^[a-f0-9-]{36}$/u.test(body.publicationId)||
+      !["claim","authorize-upload","uploaded","published","fail","dismiss","status","retry"].includes(body.action))return json({error:"Invalid publication operation",code:"invalid_publication_operation"},400);
+    if(body.runId!==undefined&&(typeof body.runId!=='string'||!/^[a-zA-Z0-9:_-]{1,160}$/u.test(body.runId)))return json({error:'Invalid workflow identity',code:'invalid_publication_operation'},400);
+    if(['claim','authorize-upload','uploaded','published','fail'].includes(body.action)&&!body.runId)return json({error:'Workflow identity required',code:'invalid_publication_operation'},400);
+    if(body.deployment&&(!/^[a-zA-Z0-9-]{1,100}$/u.test(body.deployment.id)||typeof body.deployment.commit!=='string'||typeof body.deployment.origin!=='string'))return json({error:'Invalid deployment',code:'invalid_publication_operation'},400);
+    if(body.delivery&&(typeof body.delivery.to!=='string'||typeof body.delivery.subject!=='string'||typeof body.delivery.html!=='string'||typeof body.delivery.text!=='string'||body.delivery.html.length>200_000||body.delivery.text.length>50_000||body.delivery.subject.length>300))return json({error:'Invalid delivery envelope',code:'invalid_publication_operation'},400);
+    const result=await env.REVISION_COORDINATOR.getByName(body.repo.toLowerCase()).publicationCommand(body);
+    return json(result);
+  }catch{return json({error:"Publication coordination failed.",code:"publication_coordinator_unavailable"},500);}
 }
 
 async function revisionCoordinator(request: Request, env: Env) {
@@ -3319,21 +3335,6 @@ async function approval(request: Request, env: Env) {
         409,
         cors(request, claims.allowedOrigins),
       );
-    const queue = await env.REVISION_COORDINATOR.getByName(
-      claims.repo.toLowerCase(),
-    ).approvalState();
-    if (!queue.allowed)
-      return json(
-        {
-          code: queue.code,
-          error:
-            queue.code === "revision_queue_halted"
-              ? "Revision processing is paused after a failure. Resolve it before publishing."
-              : "A website revision is still in progress. Review the final revision before publishing.",
-        },
-        409,
-        cors(request, claims.allowedOrigins),
-      );
     const research = seoResearchReadiness(
       await siteConfigAtReviewHead(env, claims),
     );
@@ -3343,16 +3344,8 @@ async function approval(request: Request, env: Env) {
         409,
         cors(request, claims.allowedOrigins),
       );
-    const approvedSha = await mergeReviewedPr(env, claims, current);
-    await dispatch(env, "publish-site", {
-      repo: claims.repo,
-      pr: claims.pr,
-      siteId: claims.siteId,
-      clientEmail: claims.clientEmail,
-      feedbackIssue: claims.feedbackIssue,
-      approvedSha,
-    });
-    return json({ ok: true }, 200, cors(request, claims.allowedOrigins));
+    const publication = await approvedPublication(env, claims, current);
+    return json(publication, publication.ok ? 200 : 409, cors(request, claims.allowedOrigins));
   } catch (error) {
     console.error("Approval failed", error);
     return json(
@@ -3632,6 +3625,7 @@ export default {
     if (path === "/api/feedback") return feedback(request, env);
     if (path === "/api/feedback-image") return feedbackImage(request, env);
     if (path === "/api/creative-repair") return creativeRepair(request, env);
+    if (path === "/api/internal/publications") return publicationCoordinator(request, env);
     if (path === "/api/internal/revisions")
       return revisionCoordinator(request, env);
     if (path === "/api/internal/creative-repairs")
