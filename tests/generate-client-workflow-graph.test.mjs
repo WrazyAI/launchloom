@@ -60,6 +60,12 @@ describe("client intake workflow graph", () => {
   it("never places confidential artifacts in a public Actions artifact", () => {
     expect(workflow).not.toContain("actions/upload-artifact");
     expect(restore).toContain("--branch review/initial");
+    expect(restore).toContain('EXPECTED_SHA');
+    expect(restore).toContain('ACTUAL_SHA');
+    for (const job of ["image_assets", "creative_authoring", "rendered_quality", "private_preview", "developer_handoff"]) {
+      expect(jobs.get(job), job).toContain('EXPECTED_SHA:');
+      expect(jobs.get(job), job).toContain('"$EXPECTED_SHA"');
+    }
     expect(restore).toContain(".launchloom/generated-experiences");
     expect(jobs.get("prepare")).toContain("for artifact in reasoning-preflight.json");
     expect(jobs.get("rendered_quality")).toContain("find .launchloom/creative-repair -type f -name '*.json' -print0");
