@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateReferenceDossier } from "./reference-dossier.mjs";
+import { refineDesignPrompt } from "./refine-reference-design-prompts.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 const evidenceDate = "2026-09-26";
@@ -301,6 +302,10 @@ function normalizedPageUrl(value) {
   }
 }
 
+export function buildArchiveDesignPrompt(entry, manifest) {
+  return refineDesignPrompt(buildDesignPrompt(entry), manifest);
+}
+
 export function captureEvidence(entry, captureRecord, kind) {
   const capture = captureRecord.captures[kind];
   if (
@@ -577,9 +582,6 @@ export async function materializeArchiveDossiers({ write = false } = {}) {
     const dossierDirectory = path.join(root, "data/reference-library/dossiers", entry.id);
     const captureDirectory = path.join("/tmp", `launchloom-${entry.captureSlug}-capture`);
     const captureRecord = JSON.parse(await fs.readFile(path.join(captureDirectory, "capture-record.json"), "utf8"));
-    const designPrompt = buildDesignPrompt(entry);
-    if (designPrompt.trim().length < 900)
-      throw new Error(`Archive design prompt for ${entry.id} is too short.`);
     for (const screenshot of ["desktop.png", "mobile.png"])
       await fs.access(path.join(captureDirectory, screenshot));
     const screenshotHashes = {};
@@ -589,6 +591,9 @@ export async function materializeArchiveDossiers({ write = false } = {}) {
         .update(await fs.readFile(path.join(captureDirectory, `${kind}.png`)))
         .digest("hex");
     const manifest = buildManifest(entry, captureRecord, screenshotHashes);
+    const designPrompt = buildArchiveDesignPrompt(entry, manifest);
+    if (designPrompt.trim().length < 900)
+      throw new Error(`Archive design prompt for ${entry.id} is too short.`);
     plannedArchiveEntries.set(entry.id, {
       id: manifest.id,
       dossierPath: `data/reference-library/dossiers/${manifest.id}`,
