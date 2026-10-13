@@ -180,7 +180,6 @@ export default function LocationPage({ content, runtime, location }) {
 }
 
 describe("production experience author", () => {
-<<<<<<< HEAD
   it("uses the authored native main landmark without adding a nested host main role", () => {
     const source = readFileSync(
       "templates/client-site/src/components/CreativeExperience.astro",
@@ -189,7 +188,7 @@ describe("production experience author", () => {
 
     expect(source).toContain('data-creative-host="true"');
     expect(source).not.toContain('role="main"');
-=======
+  });
   it.each(["chat-completions", "responses", "messages"] as const)("runs the actual author engine through the explicit %s adapter offline", async (protocol) => {
     const seen: string[] = [];
     const generate = createInferenceAuthorAdapter({
@@ -223,7 +222,6 @@ describe("production experience author", () => {
     expect(result.candidates).toHaveLength(3);
     expect(seen).toEqual(expect.arrayContaining(["contract", "experience", "service", "service-index", "styles", "motion"]));
     expect(result.candidates[0].files["Experience.jsx"]).toContain('data-model-experience="route-01"');
->>>>>>> codex/launchloom-neutral-callers
   });
 
   it("rejects unsealed or non-navigation URL attributes", () => {
