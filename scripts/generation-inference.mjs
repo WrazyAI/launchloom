@@ -6,6 +6,7 @@ import {
 } from "./inference-client.mjs";
 import { parseModelJson } from "./model-json.mjs";
 import {
+  OPENROUTER_CHAT_COMPLETIONS_URL,
   openRouterChatCompletion,
   readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
@@ -45,7 +46,7 @@ export async function completeGeneration({ openRouter, inference }) {
     provider: "openrouter",
     model: openRouter.body?.model,
     protocol: "chat-completions",
-    endpoint: "https://openrouter.ai/api/v1/chat/completions",
+    endpoint: OPENROUTER_CHAT_COMPLETIONS_URL,
     auth: "bearer",
     capabilities: {
       maxOutputTokens: 1,
