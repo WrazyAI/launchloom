@@ -89,7 +89,7 @@ not be accepted under LaunchLoom's canonical service-copy/layout direction.
 ## TestSprite
 
 The previous command-not-found conclusion was a PATH issue. Explicit
-`/home/zahemen/.nvm/versions/node/v24.20.0/bin/testsprite --version` reports0.11.0;
+`$HOME/.nvm/versions/node/v24.20.0/bin/testsprite --version` reports0.11.0;
 authentication works and includes run:tunnel. Existing project:
 `5499ee40-5117-4ba8-ac00-684bce48fe81` (LaunchLoom).
 

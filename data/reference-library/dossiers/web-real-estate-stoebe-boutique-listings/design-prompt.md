@@ -44,22 +44,22 @@ This refinement translates the existing dossier and manifest into an implementat
 **desktop: editorial-stack / vertical-copy-media-stack**
 
 ```text
-[ navigation ]
-[ copy + action ]
-[ distinct media chapter ]
+[ framed navigation ]
+[ asymmetric cover: overlapping copy + media ]
+[ distinct search or verified enquiry surface ]
 ```
 
-Keep the vertical copy/media relationship and chapter boundaries. Do not collapse the stacked narrative into a conventional split hero.
+Preserve the off-center copy/media overlap within the cover and the separate action surface that immediately follows it. At mobile widths reduce the cover and stack controls after it. The coarse editorial-stack label is not a direction to detach copy from its cover or erase the recorded hybrid overlap.
 
 **mobile: editorial-stack / vertical-copy-media-stack**
 
 ```text
-[ navigation ]
-[ copy + action ]
-[ distinct media chapter ]
+[ framed navigation ]
+[ asymmetric cover: overlapping copy + media ]
+[ distinct search or verified enquiry surface ]
 ```
 
-Keep the vertical copy/media relationship and chapter boundaries. Do not collapse the stacked narrative into a conventional split hero.
+Preserve the off-center copy/media overlap within the cover and the separate action surface that immediately follows it. At mobile widths reduce the cover and stack controls after it. The coarse editorial-stack label is not a direction to detach copy from its cover or erase the recorded hybrid overlap.
 
 These are relationship diagrams, not pixel specifications. Resolve alignment, proportions, whitespace and focal crop from the paired captures and original Visual hierarchy. Desktop header plus complete hero must fit 1536 x 864 at normal zoom, even if the source was captured at a taller viewport. Mobile may be content-height driven. The existing topology is medium-confidence: Screenshot shows overlapping layout mechanics; preserve the hybrid treatment rather than flattening it to this primary topology.
 

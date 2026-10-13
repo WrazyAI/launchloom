@@ -18,6 +18,58 @@ const manifestFor = (id: string) =>
   JSON.parse(fs.readFileSync(path.join(library, id, "manifest.json"), "utf8"));
 
 describe("reference design prompt refinements", () => {
+  it.each([
+    ["html5up-home-care-story", "[ hero photograph ]\n[ copy + action ]"],
+    [
+      "web-accounting-goodman-jones",
+      "[ dominant skyline media: promise + specialist action inside ]",
+    ],
+    [
+      "lapa-mesh-architects-editorial",
+      "[ graphic/media introduction ]\n[ editorial statement + action ]",
+    ],
+    [
+      "web-architecture-simpson-studio",
+      "[ uncaptioned photograph ]\n[ promise + work action in a separate band ]",
+    ],
+    [
+      "web-real-estate-stoebe-boutique-listings",
+      "[ asymmetric cover: overlapping copy + media ]",
+    ],
+    [
+      "web-homeservices-roto-rooter",
+      "[ trade media + promise ]\n[ full-width contact finder + action ]",
+    ],
+  ])(
+    "retains source-specific opening order for %s without altering curated DNA",
+    (id, expected) => {
+      const manifest = manifestFor(id);
+      const before = structuredClone(manifest);
+      const original = fs
+        .readFileSync(path.join(library, id, "design-prompt.md"), "utf8")
+        .split("<!-- launchloom:design-guidance:start -->")[0];
+      const refined = refineDesignPrompt(original, manifest);
+      expect(refined).toContain(expected);
+      expect(refined.startsWith(original.trimEnd())).toBe(true);
+      expect(manifest).toEqual(before);
+      expect(refineDesignPrompt(refined, manifest)).toBe(refined);
+    },
+  );
+  it("makes reference-only membership and app offerings conditional on verified client facts", () => {
+    const refined = refineDesignPrompt(
+      "Original observation",
+      manifestFor("web-veterinary-modern-animal"),
+    );
+    expect(refined).toContain(
+      "membership plan** (only if verified for the client",
+    );
+    expect(refined).toContain(
+      "care team and app** (only if verified for the client",
+    );
+    expect(refined).toContain(
+      "otherwise use verified care or process information",
+    );
+  });
   it("preserves observations and is idempotent without copying the upstream skill", () => {
     const original =
       "# Visual hierarchy\n\nA deliberately hand-authored observation.\n";

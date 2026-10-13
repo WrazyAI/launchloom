@@ -45,11 +45,12 @@ Keep copy and the focal media region as distinct adjacent fields on desktop. Mat
 **mobile: split-media / side-by-side-fields**
 
 ```text
-[ navigation ]
-[ copy + action | separate media field ]
+[ utility navigation ]
+[ trade media + promise ]
+[ full-width contact finder + action ]
 ```
 
-Keep copy and the focal media region as distinct adjacent fields on desktop. Match their hierarchy and relative occupancy to the capture; do not default to equal-width columns, a boxed copy card or centered copy over the focal subject. The original observations clarify any background image extending beyond its focal region.
+At 390px stack the trade-media opening above the contact finder and preserve the visible call route. Keep any recorded copy/media overlap within that opening, but do not keep the desktop image/finder fields in side-by-side columns. The coarse split-media label does not override the documented mobile stack.
 
 These are relationship diagrams, not pixel specifications. Resolve alignment, proportions, whitespace and focal crop from the paired captures and original Visual hierarchy. Desktop header plus complete hero must fit 1536 x 864 at normal zoom, even if the source was captured at a taller viewport. Mobile may be content-height driven.
 

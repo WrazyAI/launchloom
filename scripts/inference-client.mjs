@@ -245,7 +245,11 @@ function contentParts(content, role, profile) {
   });
 }
 
-function serializeParts(parts, protocol) {
+function serializeParts(parts, protocol, role) {
+  // EasyInputMessage explicitly supports plain text for assistant history.
+  // Avoid treating prior model output as request-only input_text blocks.
+  if (protocol === "responses" && role === "assistant")
+    return parts.map((part) => part.text).join("");
   return parts.map((part) => {
     if (part.type === "text")
       return {
@@ -305,6 +309,7 @@ export function buildInferenceRequest(profile, request) {
       content: serializeParts(
         contentParts(message.content, message.role, profile),
         profile.protocol,
+        message.role,
       ),
     };
   });

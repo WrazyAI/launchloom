@@ -63,11 +63,11 @@ This refinement translates the existing dossier and manifest into an implementat
 
 ```text
 [ navigation ]
-[ dominant typographic statement ]
-[ supporting detail + action ]
+[ graphic/media introduction ]
+[ editorial statement + action ]
 ```
 
-Typography carries the opening. Preserve scale contrast and deliberate line breaks; do not add a stock-photo hero merely because image tokens exist.
+The introductory graphic/media scene precedes the type-led editorial statement. Preserve that recorded order rather than making the statement the first scene. Adapt the introductory scene's height so the complete opening promise and action still meet the host viewport-fit contract; do not copy a full-page capture's height as CSS vh.
 
 **mobile: image-led-stage / media-leads-copy**
 

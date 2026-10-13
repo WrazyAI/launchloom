@@ -43,11 +43,11 @@ This refinement translates the existing dossier and manifest into an implementat
 
 ```text
 [ navigation ]
-[ dominant media stage ]
-[ supporting promise + action ]
+[ dominant skyline media: promise + specialist action inside ]
+[ separate firm-introduction chapter ]
 ```
 
-Let the media lead the opening. Keep supporting copy subordinate and maintain the source's visual pause before the next chapter; do not substitute equal-weight text/image columns.
+Keep the promise and specialist action inside the opening media panel, subordinate to its dominant image. Preserve the pause before the separate firm introduction; do not move the opening action into a later detached text block.
 
 **mobile: media-overlay / copy-over-media**
 

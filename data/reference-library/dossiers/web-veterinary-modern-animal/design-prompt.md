@@ -70,8 +70,8 @@ Keep these assigned chapters in order; the numbers below describe actual page se
 3. **member stories**
 4. **location index**
 5. **service index**
-6. **membership plan**
-7. **care team and app**
+6. **membership plan** (only if verified for the client; these offerings are optional, otherwise use verified care or process information in this chapter role)
+7. **care team and app** (only if verified for the client; these offerings are optional, otherwise use verified care or process information in this chapter role)
 8. **newsletter footer**
 
 For each chapter, put in the design contract its content purpose, actual copy/media arrangement, surface transition, alignment, spacing relative to neighboring chapters, and required client token. Use the capture to distinguish full-bleed stages, inset editorial rows, ruled lists, image gateways and real cards. Do not apply one card wrapper or one identical padding/shadow/radius to every chapter. Map services to `#services`, questions to `#faqs`, and the next step to `#contact` when authoring a production candidate; keep real service-detail links. Source reviews, people, portfolios and metrics are not client facts: use verified content in their assigned role, or flag a required chapter lacking truthful content for review. Never fabricate proof just to fill the sequence.

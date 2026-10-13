@@ -50,11 +50,11 @@ Keep copy and the focal media region as distinct adjacent fields on desktop. Mat
 
 ```text
 [ navigation ]
+[ hero photograph ]
 [ copy + action ]
-[ distinct media chapter ]
 ```
 
-Keep the vertical copy/media relationship and chapter boundaries. Do not collapse the stacked narrative into a conventional split hero.
+On mobile the hero photograph comes before the copy and action, then spotlight chapters stack image before text. Preserve the distinct media chapter and story-led reading order rather than reversing them.
 
 These are relationship diagrams, not pixel specifications. Resolve alignment, proportions, whitespace and focal crop from the paired captures and original Visual hierarchy. Desktop header plus complete hero must fit 1536 x 864 at normal zoom, even if the source was captured at a taller viewport. Mobile may be content-height driven.
 

@@ -115,6 +115,25 @@ beforeEach(() =>
 afterEach(() => vi.unstubAllGlobals());
 
 describe("provider-neutral request contracts", () => {
+  it("serializes Responses assistant replay as plain text without input-only blocks", () => {
+    const request = requestFor();
+    request.messages.push({
+      role: "assistant",
+      content: [
+        { type: "text", text: "First part. " },
+        { type: "text", text: "Second part." },
+      ],
+    });
+    request.messages.push({ role: "user", content: "Continue safely." });
+    const wire = buildInferenceRequest(profileFor("responses"), request);
+    expect(wire.body.input.at(-2)).toEqual({
+      role: "assistant",
+      content: "First part. Second part.",
+    });
+    expect(wire.body.input.at(-1).content).toEqual([
+      { type: "input_text", text: "Continue safely." },
+    ]);
+  });
   it.each(protocols)(
     "serializes text, two images, schema, reasoning and full output allowance for %s",
     (protocol) => {

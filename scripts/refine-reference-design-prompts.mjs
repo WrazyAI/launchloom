@@ -37,6 +37,51 @@ const LAYOUTS = {
   ],
 };
 
+// Source-specific ordering from retained observations/captures. These clarify
+// coarse topology labels without changing the curated manifest or measurements.
+const PHOTO_FIRST = [
+  "[ navigation ]\n[ uncaptioned photograph ]\n[ promise + work action in a separate band ]",
+  "The photograph precedes the promise and work action in their separate band. Preserve those chapter boundaries and fit the adapted opening within the host viewport contract; do not reverse the recorded order.",
+];
+const HYBRID_COVER = [
+  "[ framed navigation ]\n[ asymmetric cover: overlapping copy + media ]\n[ distinct search or verified enquiry surface ]",
+  "Preserve the off-center copy/media overlap within the cover and the separate action surface that immediately follows it. At mobile widths reduce the cover and stack controls after it. The coarse editorial-stack label is not a direction to detach copy from its cover or erase the recorded hybrid overlap.",
+];
+const SOURCE_LAYOUTS = {
+  "html5up-home-care-story": {
+    mobile: [
+      "[ navigation ]\n[ hero photograph ]\n[ copy + action ]",
+      "On mobile the hero photograph comes before the copy and action, then spotlight chapters stack image before text. Preserve the distinct media chapter and story-led reading order rather than reversing them.",
+    ],
+  },
+  "web-accounting-goodman-jones": {
+    desktop: [
+      "[ navigation ]\n[ dominant skyline media: promise + specialist action inside ]\n[ separate firm-introduction chapter ]",
+      "Keep the promise and specialist action inside the opening media panel, subordinate to its dominant image. Preserve the pause before the separate firm introduction; do not move the opening action into a later detached text block.",
+    ],
+  },
+  "lapa-mesh-architects-editorial": {
+    desktop: [
+      "[ navigation ]\n[ graphic/media introduction ]\n[ editorial statement + action ]",
+      "The introductory graphic/media scene precedes the type-led editorial statement. Preserve that recorded order rather than making the statement the first scene. Adapt the introductory scene's height so the complete opening promise and action still meet the host viewport-fit contract; do not copy a full-page capture's height as CSS vh.",
+    ],
+  },
+  "web-architecture-simpson-studio": {
+    desktop: PHOTO_FIRST,
+    mobile: PHOTO_FIRST,
+  },
+  "web-real-estate-stoebe-boutique-listings": {
+    desktop: HYBRID_COVER,
+    mobile: HYBRID_COVER,
+  },
+  "web-homeservices-roto-rooter": {
+    mobile: [
+      "[ utility navigation ]\n[ trade media + promise ]\n[ full-width contact finder + action ]",
+      "At 390px stack the trade-media opening above the contact finder and preserve the visible call route. Keep any recorded copy/media overlap within that opening, but do not keep the desktop image/finder fields in side-by-side columns. The coarse split-media label does not override the documented mobile stack.",
+    ],
+  },
+};
+
 const clean = (value) =>
   String(value || "")
     .replaceAll("—", ", ")
@@ -45,11 +90,11 @@ const clean = (value) =>
 const list = (value) =>
   (Array.isArray(value) ? value : []).map(clean).filter(Boolean);
 
-function schematic(topology, kind) {
+function schematic(topology, kind, dossierId) {
   const mode = kind === "mobile" ? topology.mobileHero : topology.hero;
   const relation =
     kind === "mobile" ? topology.mobileMediaRelation : topology.mediaRelation;
-  const layout = LAYOUTS[mode];
+  const layout = SOURCE_LAYOUTS[dossierId]?.[kind] || LAYOUTS[mode];
   if (!layout)
     return `**${kind}:** no normalized opening topology is recorded. Read the paired capture and the original hierarchy/mobile notes before drawing this viewport's wireframe. Do not infer a split hero from the absence of a label.`;
   return `**${kind}: ${mode} / ${relation || "consult recorded geometry"}**\n\n\`\`\`text\n${layout[0]}\n\`\`\`\n\n${layout[1]}`;
@@ -85,9 +130,9 @@ This refinement translates the existing dossier and manifest into an implementat
 
 ### Opening layout contract
 
-${schematic(topology, "desktop")}
+${schematic(topology, "desktop", manifest.id)}
 
-${schematic(topology, "mobile")}
+${schematic(topology, "mobile", manifest.id)}
 
 These are relationship diagrams, not pixel specifications. Resolve alignment, proportions, whitespace and focal crop from the paired captures and original Visual hierarchy. Desktop header plus complete hero must fit 1536 x 864 at normal zoom, even if the source was captured at a taller viewport. Mobile may be content-height driven.${topology.confidence === "medium" ? ` The existing topology is medium-confidence: ${clean(topology.note || "inspect the documented hybrid composition before applying the label rigidly")}.` : ""}
 
@@ -95,7 +140,7 @@ These are relationship diagrams, not pixel specifications. Resolve alignment, pr
 
 Keep these assigned chapters in order; the numbers below describe actual page sequence, not decorative labels to add to the site:
 
-${sequence.map((section, index) => `${index + 1}. **${section}**`).join("\n")}
+${sequence.map((section, index) => `${index + 1}. **${section}**${manifest.id === "web-veterinary-modern-animal" && ["membership plan", "care team and app"].includes(section) ? " (only if verified for the client; these offerings are optional, otherwise use verified care or process information in this chapter role)" : ""}`).join("\n")}
 
 For each chapter, put in the design contract its content purpose, actual copy/media arrangement, surface transition, alignment, spacing relative to neighboring chapters, and required client token. Use the capture to distinguish full-bleed stages, inset editorial rows, ruled lists, image gateways and real cards. Do not apply one card wrapper or one identical padding/shadow/radius to every chapter. Map services to \`#services\`, questions to \`#faqs\`, and the next step to \`#contact\` when authoring a production candidate; keep real service-detail links. Source reviews, people, portfolios and metrics are not client facts: use verified content in their assigned role, or flag a required chapter lacking truthful content for review. Never fabricate proof just to fill the sequence.
 

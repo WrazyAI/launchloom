@@ -43,21 +43,21 @@ This refinement translates the existing dossier and manifest into an implementat
 
 ```text
 [ navigation ]
-[ copy + action ]
-[ distinct media chapter ]
+[ uncaptioned photograph ]
+[ promise + work action in a separate band ]
 ```
 
-Keep the vertical copy/media relationship and chapter boundaries. Do not collapse the stacked narrative into a conventional split hero.
+The photograph precedes the promise and work action in their separate band. Preserve those chapter boundaries and fit the adapted opening within the host viewport contract; do not reverse the recorded order.
 
 **mobile: editorial-stack / vertical-copy-media-stack**
 
 ```text
 [ navigation ]
-[ copy + action ]
-[ distinct media chapter ]
+[ uncaptioned photograph ]
+[ promise + work action in a separate band ]
 ```
 
-Keep the vertical copy/media relationship and chapter boundaries. Do not collapse the stacked narrative into a conventional split hero.
+The photograph precedes the promise and work action in their separate band. Preserve those chapter boundaries and fit the adapted opening within the host viewport contract; do not reverse the recorded order.
 
 These are relationship diagrams, not pixel specifications. Resolve alignment, proportions, whitespace and focal crop from the paired captures and original Visual hierarchy. Desktop header plus complete hero must fit 1536 x 864 at normal zoom, even if the source was captured at a taller viewport. Mobile may be content-height driven.
 
