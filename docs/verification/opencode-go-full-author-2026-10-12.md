@@ -2,6 +2,14 @@
 
 ## Outcome
 
+**Preview availability update, October13:** the original temporary server was
+no longer listening and its build/PNG files were absent. Recovered the original
+TestSprite recording and an inspected video frame into the durable repository
+directory `docs/verification/previews/go-northline-2026-10-12/`. The recording
+shows the actual generated sample; it does not restore the interactive site.
+The original successful generation/build evidence below is historical, not a
+claim that its temporary preview is still available.
+
 One real dossier-backed candidate completed the **actual seven-stage author
 engine** through OpenCode Go. All expected authored files were emitted, installed
 into an isolated diagnostic client-site preview, checked and built successfully.
