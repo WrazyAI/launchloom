@@ -9,6 +9,15 @@ reusing the existing `OPENCODE_GO_API_KEY` as a CI secret, and requires one
 bounded unattended acceptance run on a synthetic client before the default
 flips.
 
+**Status 2026-10-14:** active in production. The acceptance run
+(`38620904674`, intake #158, creative-only, Go forced) authored 3/3 candidates
+on Go with 23/23 parsed responses, zero retries and a computed cash cost of
+about $0.16 per three-route set; the pipeline verdict failed only at the
+unchanged creative/technical promotion gates, which the same intake also fails
+on OpenRouter-era runs (pre-existing, see the 2026-10-14 progress ledger for
+the baseline). The `CREATIVE_EXPERIENCE_PROVIDER` and `SITE_COPY_PROVIDER`
+repository variables were then set to `opencode-go` at 21:06Z.
+
 ## Scope
 
 - In scope: `scripts/author-production-experiences.mjs` (all seven author
@@ -20,10 +29,10 @@ flips.
 
 ## Provider switch
 
-| Environment variable | Default | Values |
-| --- | --- | --- |
+| Environment variable           | Default      | Values                      |
+| ------------------------------ | ------------ | --------------------------- |
 | `CREATIVE_EXPERIENCE_PROVIDER` | `openrouter` | `openrouter`, `opencode-go` |
-| `SITE_COPY_PROVIDER` | `openrouter` | `openrouter`, `opencode-go` |
+| `SITE_COPY_PROVIDER`           | `openrouter` | `openrouter`, `opencode-go` |
 
 - Production (`generate-client.yml`) reads `vars.CREATIVE_EXPERIENCE_PROVIDER`
   and `vars.SITE_COPY_PROVIDER`, falling back to `openrouter`. Flipping those
