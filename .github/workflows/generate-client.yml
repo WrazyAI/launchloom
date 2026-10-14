@@ -52,7 +52,7 @@ concurrency:
 jobs:
   profile_policy:
     name: '00 · Route execution profile'
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     outputs:
       profile: ${{ steps.policy.outputs.profile }}
     steps:
@@ -91,7 +91,7 @@ jobs:
     name: 'Canary · Access protection'
     needs: profile_policy
     if: ${{ needs.profile_policy.outputs.profile == 'access-only' }}
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -124,7 +124,7 @@ jobs:
     name: '00 · Intake handoff check'
     needs: profile_policy
     if: ${{ needs.profile_policy.outputs.profile == 'full' }}
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     outputs:
       completed: ${{ steps.marker.outputs.completed }}
     steps:
@@ -148,7 +148,7 @@ jobs:
     name: '01 · Intake, SEO & setup'
     needs: [profile_policy, intake_handoff_check]
     if: ${{ needs.profile_policy.outputs.profile == 'full' && (needs.intake_handoff_check.outputs.completed != 'true' || (github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates)) }}
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
@@ -535,6 +535,23 @@ jobs:
           for artifact in reasoning-preflight.json site-config-usage.json reference-dna-usage.json seo-research-email.txt; do
             if [ -f "/tmp/$artifact" ]; then cp "/tmp/$artifact" ".launchloom/$artifact"; fi
           done
+          # Candidate reuse must checkpoint its frozen private inputs before
+          # moving to fresh Actions runners.
+          if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then
+            test -d "$RUNNER_TEMP/reusable-authored-candidates" || {
+              echo "Reusable authored candidates are missing." >&2; exit 1;
+            }
+            rm -rf .launchloom/generated-experiences
+            mkdir -p .launchloom/generated-experiences
+            cp -R "$RUNNER_TEMP/reusable-authored-candidates/." .launchloom/generated-experiences/
+            if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
+              test -f "$RUNNER_TEMP/frozen-qa-assets/manifest.json"
+              test -d "$RUNNER_TEMP/frozen-qa-assets/images"
+              mkdir -p public/images/generated
+              cp "$RUNNER_TEMP/frozen-qa-assets/manifest.json" .launchloom/generated-assets.json
+              cp -R "$RUNNER_TEMP/frozen-qa-assets/images/." public/images/generated/
+            fi
+          fi
           git add .
           if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi
           if [ "$BOOTSTRAP" = "review" ]; then
@@ -560,7 +577,7 @@ jobs:
     name: '02 · Generate imagery'
     needs: [prepare]
     if: ${{ needs.prepare.result == 'success' }}
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     outputs:
       sha: ${{ steps.image_checkpoint.outputs.sha }}
     env:
@@ -634,9 +651,9 @@ jobs:
     name: '03 · AI creative candidates'
     needs: [prepare, image_assets]
     if: ${{ needs.image_assets.result == 'success' }}
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     outputs:
-      sha: ${{ steps.authored_evidence.outputs.sha }}
+      sha: ${{ steps.authored_evidence.outputs.sha || steps.partial_authored_evidence.outputs.sha }}
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
@@ -724,6 +741,17 @@ jobs:
               node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
             fi
           fi
+      - name: Export failed authoring checkpoint
+        id: partial_authored_evidence
+        if: ${{ always() && steps.workspace.outcome == 'success' && steps.authored_evidence.outcome != 'success' }}
+        run: |
+          CLIENT_DIR="${{ steps.workspace.outputs.dir }}"
+          LOCAL_SHA=$(git -C "$CLIENT_DIR" rev-parse HEAD)
+          REMOTE_SHA=$(git -C "$CLIENT_DIR" ls-remote origin refs/heads/review/initial | cut -f1)
+          test "$LOCAL_SHA" = "$REMOTE_SHA" || {
+            echo "Partial authoring checkpoint was not published privately." >&2; exit 1;
+          }
+          echo "sha=$LOCAL_SHA" >> "$GITHUB_OUTPUT"
       - name: Summarize stage
         if: always()
         run: |
@@ -736,7 +764,7 @@ jobs:
     name: '04 · Render, repair & QA'
     needs: [prepare, creative_authoring]
     if: ${{ always() && needs.prepare.result == 'success' && (needs.creative_authoring.result == 'success' || needs.creative_authoring.result == 'failure') }}
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     outputs:
       recovery_notified: ${{ steps.recovery_notification.outputs.notified }}
       evidence_branch: ${{ steps.creative_recovery.outputs.evidence_branch }}
@@ -986,7 +1014,7 @@ jobs:
     name: '05 · Deploy verified preview'
     needs: [prepare, rendered_quality]
     if: ${{ needs.rendered_quality.result == 'success' }}
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     outputs:
       preview: ${{ steps.deploy.outputs.preview }}
       sha: ${{ steps.deploy.outputs.sha }}
@@ -1152,7 +1180,7 @@ jobs:
     name: '06 · Developer review handoff'
     needs: [prepare, image_assets, private_preview]
     if: ${{ needs.private_preview.result == 'success' }}
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
@@ -1234,7 +1262,7 @@ jobs:
     name: 'Recovery · Notify on failure'
     needs: [prepare, image_assets, creative_authoring, rendered_quality, private_preview, developer_handoff]
     if: ${{ always() && (needs.prepare.result == 'failure' || needs.image_assets.result == 'failure' || needs.creative_authoring.result == 'failure' || needs.rendered_quality.result == 'failure' || needs.private_preview.result == 'failure' || needs.developer_handoff.result == 'failure') }}
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
