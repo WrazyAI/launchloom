@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { postInferenceJson } from "./inference-client.mjs";
 
 export const OPENROUTER_CHAT_COMPLETIONS_URL =
   "https://openrouter.ai/api/v1/chat/completions";
@@ -340,10 +341,11 @@ export async function openRouterChatCompletion({
     ...(sessionId ? { session_id: String(sessionId).slice(0, 256) } : {}),
   };
 
-  return fetchImpl(OPENROUTER_CHAT_COMPLETIONS_URL, {
-    method: "POST",
-    ...(signal ? { signal } : {}),
+  return postInferenceJson({
+    url: OPENROUTER_CHAT_COMPLETIONS_URL,
+    signal,
     headers,
-    body: JSON.stringify(requestBody),
+    body: requestBody,
+    fetchImpl,
   });
 }

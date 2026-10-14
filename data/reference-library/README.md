@@ -194,6 +194,26 @@ selection, screenshot, and asset paths must point inside this library.
 
 ## Add a dossier
 
+### Design brief guidance
+
+Read the locally retained [Anthropic frontend-design skill](../../docs/design-guidance/anthropic/frontend-design/SKILL.md)
+and its [source/adaptation notes](../../docs/design-guidance/anthropic/frontend-design/README.md)
+when writing or refining a dossier. Ground art direction in the subject,
+explicit composition and paired screenshots, not a generic aesthetic.
+Preserve the five required headings and original source observations. Add
+chapter anatomy, desktop/mobile differences, image roles, signature acceptance
+and a plan/build/rendered-critique workflow. Label inferred implementation
+choices separately from observed measurements.
+
+`node scripts/refine-reference-design-prompts.mjs` previews the contract-derived
+refinements; `--write` refreshes only each prompt's marked implementation-brief
+block, preserving hand-authored observations. Archive materialization applies
+the same refinement. All prompts must stay within 900-18000 characters.
+Refinements do not promote archives or change rights/topology. Prompt edits
+change dossier digests: compile fresh packs for new generations; do not silently
+rebind frozen candidates. Existing template-derived renderer packs are not
+rewritten by a Markdown change, and their conversion briefs remain independent.
+
 1. Confirm the exact screenshot and prompt rights before storing them.
 2. Capture the entire desktop page and entire mobile page. Keep capture
    viewport dimensions in `manifest.json` and use the matching local files.

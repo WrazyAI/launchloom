@@ -44,3 +44,86 @@ No copied firm identity, attorney names, practice claims, case facts, awards, te
 ## Local SEO and conversion
 
 Use only client-verified city, state, service-area, and jurisdiction language. Build natural practice-area/location page paths from researched demand and actual firm coverage; do not claim offices or bar admissions the firm does not have. Add accurate LegalService/Attorney structured data only where all fields are verified. Primary CTA goes to the real consultation route. Keep the form short, avoid requesting detailed confidential facts before the firm’s approved intake notice, and route submissions to the client’s authorized system.
+
+<!-- launchloom:design-guidance:start -->
+
+## Agent implementation brief
+
+This refinement translates the existing dossier and manifest into an implementation checklist, guided by Anthropic's frontend-design skill retained at `docs/design-guidance/anthropic/frontend-design/SKILL.md`. It is not a new screenshot measurement or a change to curation. Original observations above remain evidence; the guidance below describes how to use them.
+
+### Reference reading and priority
+
+- Assigned reference: **Spicer law-firm results ledger**; family: `spicer-law-firm-results-ledger`; subject fit: legal-services, law-firm, attorney, lawyer, professional-services. Production eligibility is unchanged.
+- Open the paired full-page captures: desktop: `screenshots/desktop.png`, captured viewport 1440 x 900; mobile: `screenshots/mobile.png`, captured viewport 390 x 844. Read the opening at its captured viewport and then inspect the whole page. A full-page image's total height is not CSS vh.
+- Use this dossier alone for its route, not an average of the other candidates. Verified client facts, sealed content, accessibility, client font/palette choices and host runtime rules constrain the adaptation. Preserve the assigned composition, section order and signatures; if evidence and prose disagree, identify the conflict rather than silently rewriting the curated contract.
+- Separate observed design from proposed client treatment. Do not claim an exact font, hex value, spacing measurement, interaction or animation was observed unless retained evidence supports it. Static captures do not prove scroll, hover or click behavior.
+
+### Opening layout contract
+
+**desktop: type-led-statement / copy-leads-opening**
+
+```text
+[ navigation ]
+[ dominant typographic statement ]
+[ supporting detail + action ]
+```
+
+Typography carries the opening. Preserve scale contrast and deliberate line breaks; do not add a stock-photo hero merely because image tokens exist.
+
+**mobile: type-led-statement / copy-leads-opening**
+
+```text
+[ navigation ]
+[ dominant typographic statement ]
+[ supporting detail + action ]
+```
+
+Typography carries the opening. Preserve scale contrast and deliberate line breaks; do not add a stock-photo hero merely because image tokens exist.
+
+These are relationship diagrams, not pixel specifications. Resolve alignment, proportions, whitespace and focal crop from the paired captures and original Visual hierarchy. Desktop header plus complete hero must fit 1536 x 864 at normal zoom, even if the source was captured at a taller viewport. Mobile may be content-height driven.
+
+### Page rhythm and content mapping
+
+Keep these assigned chapters in order; the numbers below describe actual page sequence, not decorative labels to add to the site:
+
+1. **utility-contact-line**
+2. **navigation**
+3. **practice-promise-and-proof-ledger**
+4. **practice-area-index**
+5. **documented-results-ledger**
+6. **attorney-profiles**
+7. **case-process**
+8. **client-proof**
+9. **consultation-form**
+10. **faq**
+11. **footer**
+
+For each chapter, put in the design contract its content purpose, actual copy/media arrangement, surface transition, alignment, spacing relative to neighboring chapters, and required client token. Use the capture to distinguish full-bleed stages, inset editorial rows, ruled lists, image gateways and real cards. Do not apply one card wrapper or one identical padding/shadow/radius to every chapter. Map services to `#services`, questions to `#faqs`, and the next step to `#contact` when authoring a production candidate; keep real service-detail links. Source reviews, people, portfolios and metrics are not client facts: use verified content in their assigned role, or flag a required chapter lacking truthful content for review. Never fabricate proof just to fill the sequence.
+
+### Type, surfaces and image roles
+
+- Display character: editorial serif or high-authority restrained grotesk, with large practice rows. Body character: neutral legal-service sans. Hierarchy: measured headline, spacious area titles, small uppercase matter labels, tabular figures with legible notes. Translate these roles to the host's local font catalog and honor client-selected heading/body families. Specify a responsive scale, line-height and intentional wrapping; keep body lines under about 80 characters. Do not copy source font files or fetch remote fonts.
+- Source surface cues: deep navy; ink blue; lifted blue-gray. Contrast intent: gold is reserved for rules and factual figures; small body copy remains comfortably legible against dark surfaces. Propose 4-6 named client-compatible color tokens with hex values in the contract, labeled as implementation choices, not measured source colors. Bind them to the host's accessible per-surface palette roles rather than overriding client brand variables.
+- Media role: proof-led page that can function without photography. Crop guidance: use geometric monogram/attorney plates only when approved headshots are unavailable and label no person as a real lawyer unless verified. Focal role: the contrast between the opening matter ledger and large practice index carries hierarchy; avoid generic law-library imagery. Map opening/secondary/detail placements to the available client image tokens. Preserve role, focal point and mobile crop without using reference screenshots as site assets. If the right media is absent, use an allowed contextual asset or deliberate graphic treatment, and flag any signature that cannot be met; never imply stock people or spaces belong to the client.
+- Service presentation: large numbered practice-area rows with concise matter-fit scope, followed by a tabular case-outcome ledger only when the firm supplies documented, publishable outcomes. Early action: show practice areas and the type of matters accepted before firm history or long bios. Primary placement: short consultation action alongside the opening practice statement. Name the actual client next step; repeat it at decision points, not mechanically after every chapter.
+
+### Mobile and interaction translation
+
+Recorded mobile strategy: **single-column proof-to-practice legal flow**. put practice proposition and consultation action before the case ledger; convert results to labeled rows with outcome and context kept together; stack practice entries and attorney plates in reading order; turn horizontal process steps into a vertical sequence; keep disclaimers beside the claim they qualify; no horizontal overflow.
+
+Record separately what stacks, reorders, changes crop, wraps, becomes a menu or becomes a touch control. Do not just shrink desktop. Keep the primary action, visible focus, labels and form controls usable without hover or motion; no horizontal overflow or competing sticky overlays. Recorded interaction opportunity: restrained anchor navigation and native FAQ disclosure; proof remains static and auditable. Reduced-motion contract: all matter, practice and intake information remains fully visible without animation. Implement only the justified documented interaction, with equivalent static content. Do not add repeated fade-up entrances, autoplay or section pinning to compensate for an unclear layout.
+
+### Visible signature acceptance
+
+- **law-opening-ledger** ([data-reference-signature=law-opening-ledger]): legal positioning statement balanced by a compact, factual matter or proof ledger. Render this relationship using client content; annotate its section in the contract and verify it in desktop and mobile screenshots. A marker on an empty, hidden, or unrelated element does not satisfy it.
+- **practice-area-index** ([data-reference-signature=practice-area-index]): large, scan-friendly practice-area index with short verified scope. Render this relationship using client content; annotate its section in the contract and verify it in desktop and mobile screenshots. A marker on an empty, hidden, or unrelated element does not satisfy it.
+- **documented-results-surface** ([data-reference-signature=documented-results-surface]): auditable client-supplied outcomes, or an explicitly non-results proof/process substitute when none are approved. Render this relationship using client content; annotate its section in the contract and verify it in desktop and mobile screenshots. A marker on an empty, hidden, or unrelated element does not satisfy it.
+- **short-consultation-form** ([data-reference-signature=short-consultation-form]): brief consultation request that avoids implying representation or guaranteed confidentiality. Render this relationship using client content; annotate its section in the contract and verify it in desktop and mobile screenshots. A marker on an empty, hidden, or unrelated element does not satisfy it.
+
+### Plan, build and critique
+
+Before code, use the existing contract stage to state the client's audience and primary task, choose the token system, draw desktop/mobile wireframes, map chapters to content, and name one memorable reference-led element. Check against this family's composition and prohibited patterns; revise any choice that could belong to an unrelated generic page. Source-required cream/serif, dark accents, uppercase navigation, cards or rules are legitimate when they serve this specific reference, not automatic reasons to redesign it.
+
+Build from the revised contract. Then inspect rendered desktop, compact desktop and mobile, including menu/form/disclosure states. Compare actual geometry, section rhythm, image roles and every signature with the paired references, not just DOM markers. Verify contrast, working calls/links/forms, keyboard focus, reduced motion, truthful content and no em dashes in rendered copy. Remove decoration that does not serve the brief. Report any unmet signature or unavailable evidence; do not claim rendered fidelity from a successful build alone.
+
+<!-- launchloom:design-guidance:end -->

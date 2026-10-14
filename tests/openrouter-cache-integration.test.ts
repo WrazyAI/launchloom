@@ -36,7 +36,21 @@ describe("OpenRouter cache integration", () => {
 
     for (const [file, scope] of expected) {
       const source = fs.readFileSync(file, "utf8");
-      expect(source, file).toContain("openRouterChatCompletion");
+      if (file === "scripts/author-production-experiences.mjs") {
+        expect(source, file).toContain('from "./generation-inference.mjs"');
+        expect(source, file).toContain("await completeGeneration({");
+        expect(source, file).toContain("openRouter: {");
+        expect(source, file).toContain("sessionId,");
+        const boundary = fs.readFileSync(
+          "scripts/generation-inference.mjs",
+          "utf8",
+        );
+        expect(boundary).toContain(
+          "await openRouterChatCompletion(openRouter)",
+        );
+      } else {
+        expect(source, file).toContain("openRouterChatCompletion");
+      }
       expect(source, file).toContain("openRouterSessionId");
       expect(source, file).toContain(scope);
     }
@@ -98,7 +112,13 @@ describe("OpenRouter cache integration", () => {
     expect(pushIndex).toBeGreaterThan(-1);
     expect(httpIndex).toBeGreaterThan(pushIndex);
     expect(throwIndex).toBeGreaterThan(httpIndex);
-    expect(source).toContain("readOpenRouterResponseEnvelope(response)");
+    expect(source).toContain("} = completion.legacy;");
+    const boundary = fs.readFileSync(
+      "scripts/generation-inference.mjs",
+      "utf8",
+    );
+    expect(boundary).toContain("readOpenRouterResponseEnvelope(response)");
+    expect(boundary).toContain("legacy: { response, ...envelope }");
     expect(source).not.toContain("screenshotPath: item.screenshotPath");
   });
 
