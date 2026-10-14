@@ -18,6 +18,15 @@ import {
   promptCachedMessageContent,
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
+import {
+  completeGeneration,
+  parseGenerationOutput,
+} from "./generation-inference.mjs";
+import {
+  buildSiteCopyResponsesRequest,
+  opencodeGoResponsesProfile,
+  opencodeGoUsageMetrics,
+} from "./opencode-go.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import { fontFamilyById } from "./font-catalog.mjs";
 import { fictionalPipelineDemoNotice } from "./synthetic-demo-notice.mjs";
@@ -47,6 +56,66 @@ function recordModelUsage(label, model, usage) {
 
 export function getSiteConfigUsageRecords() {
   return modelUsageRecords.slice();
+}
+
+function siteCopyProvider() {
+  const provider = String(
+    process.env.SITE_COPY_PROVIDER || "openrouter",
+  ).trim();
+  if (!["openrouter", "opencode-go"].includes(provider))
+    throw new Error(`Unsupported SITE_COPY_PROVIDER: ${provider}`);
+  return provider;
+}
+
+// OpenCode Go transport for the site-copy lane. The provider does not return a
+// per-request cash cost, so the ledger records tokens/provenance plus cost
+// computed from the published Go price table.
+async function siteCopyOpencodeGoCompletion({
+  label,
+  effort,
+  systemPrompt,
+  userPrompt,
+  sessionId,
+  maxOutputTokens,
+}) {
+  const completion = await completeGeneration({
+    inference: {
+      profile: opencodeGoResponsesProfile(),
+      apiKey: process.env.OPENCODE_GO_API_KEY,
+      request: buildSiteCopyResponsesRequest({
+        systemPrompt,
+        userPrompt,
+        maxOutputTokens,
+        effort,
+        sessionId,
+      }),
+    },
+  });
+  const usage = completion?.result?.usage || null;
+  const metrics = opencodeGoUsageMetrics(usage, { label, logger: console.log });
+  // Persist the computed cash cost with the normalized usage so the shared
+  // cost summary prices Go calls (the provider reports no per-request cost).
+  recordModelUsage(
+    label,
+    "openai/gpt-6-luna",
+    usage
+      ? {
+          ...usage,
+          provider: "opencode-go",
+          cost: metrics.cost,
+          costSource: metrics.costSource,
+        }
+      : null,
+  );
+  if (completion?.result?.status !== "completed") {
+    const error = new Error(
+      `OpenCode Go ${label} ${completion?.result?.status || "error"}: ${completion?.result?.error?.code || "request failed"}.`,
+    );
+    if (completion?.result?.status === "incomplete")
+      error.code = "SITE_COPY_OUTPUT_TRUNCATED";
+    throw error;
+  }
+  return parseGenerationOutput(completion);
 }
 
 const referenceCoverage = JSON.parse(
@@ -247,9 +316,10 @@ function copywriterContext(intake = {}) {
       ),
     }))
     .filter((decision) => decision.pageType && decision.target);
-  const serviceNames = lines(
-    intake.confirmedServices || intake.services,
-  ).slice(0, MAX_CORE_SERVICES);
+  const serviceNames = lines(intake.confirmedServices || intake.services).slice(
+    0,
+    MAX_CORE_SERVICES,
+  );
   const customerQuestions = [
     ...compactStringList(seo.customerQuestions, 12),
     ...(Array.isArray(seo.questionEvidence) ? seo.questionEvidence : [])
@@ -266,7 +336,10 @@ function copywriterContext(intake = {}) {
       16,
     ),
     services: serviceNames,
-    excludedServices: lines(intake.excludedServices).slice(0, MAX_CORE_SERVICES),
+    excludedServices: lines(intake.excludedServices).slice(
+      0,
+      MAX_CORE_SERVICES,
+    ),
     primaryCity: text(intake.primaryCity, 120),
     serviceAreas: compactStringList(
       intake.serviceAreas || intake.coverageAreas,
@@ -1740,7 +1813,9 @@ function hasRepeatedModelServiceContent(modelOutput) {
           : "",
       )
       .filter(Boolean);
-    return normalized.length > 1 && new Set(normalized).size < normalized.length;
+    return (
+      normalized.length > 1 && new Set(normalized).size < normalized.length
+    );
   };
   if (
     repeatsAfterNameRemoval(
@@ -1809,8 +1884,13 @@ export function evaluateDraft(config, { modelOutput, intake } = {}) {
     issues.push(DUPLICATE_SERVICE_CONTENT_ISSUE);
   const pageReadiness = pageBriefReadiness(config);
   if (!pageReadiness.allowed)
-    issues.push(pageReadiness.error || "Route-specific page content is incomplete.");
-  const unsupportedClaims = findUnsupportedBusinessClaimLocations(config, intake);
+    issues.push(
+      pageReadiness.error || "Route-specific page content is incomplete.",
+    );
+  const unsupportedClaims = findUnsupportedBusinessClaimLocations(
+    config,
+    intake,
+  );
   if (unsupportedClaims.length)
     issues.push(
       `Generated copy includes unsupported business claims: ${unsupportedClaims
@@ -1894,9 +1974,8 @@ export function leadFormFor(config = {}, intake = {}) {
   const primaryCta = text(business.primaryCta, 120) || "Send request";
   const submitLabel =
     primaryCta.toLowerCase() === "get directions" ? "Send request" : primaryCta;
-  const qualification = (Array.isArray(conversion.qualification)
-    ? conversion.qualification
-    : []
+  const qualification = (
+    Array.isArray(conversion.qualification) ? conversion.qualification : []
   )
     .filter((question) => question && typeof question === "object")
     .map((question) => ({
@@ -2438,7 +2517,9 @@ export function normalise(candidate, intake) {
     pageContent: intake.pageContent || {},
     pageEvidence: intake.pageEvidence || [],
     ...(intake.pageContentContractVersion !== undefined
-      ? { pageContentContractVersion: Number(intake.pageContentContractVersion) }
+      ? {
+          pageContentContractVersion: Number(intake.pageContentContractVersion),
+        }
       : seoResearch?.version >= 2 && seoResearch.mode === "researched"
         ? { pageContentContractVersion: 1 }
         : {}),
@@ -2541,7 +2622,11 @@ export function normalise(candidate, intake) {
         return null;
       const baseId = `generated-${slugify(routeId)}-${suffix}`;
       let id = baseId;
-      for (let duplicate = 2; evidence.some((item) => item?.id === id); duplicate++)
+      for (
+        let duplicate = 2;
+        evidence.some((item) => item?.id === id);
+        duplicate++
+      )
         id = `${baseId}-${duplicate}`;
       evidence.push({
         id,
@@ -2557,7 +2642,10 @@ export function normalise(candidate, intake) {
       return { text: cleaned, evidenceIds: [id] };
     };
     const routeName = (value) =>
-      String(value || "").toLowerCase().replace(/\s+/gu, " ").trim();
+      String(value || "")
+        .toLowerCase()
+        .replace(/\s+/gu, " ")
+        .trim();
     for (const [serviceIndex, service] of normalized.services.entries()) {
       const routeId = `service:${routeName(service.name)}`;
       if (normalized.pageContent[routeId]) continue;
@@ -2619,7 +2707,8 @@ export function normalise(candidate, intake) {
         : [];
       for (const [faqIndex, faq] of (Array.isArray(rawService?.pageFaqs)
         ? rawService.pageFaqs
-        : []).entries()) {
+        : []
+      ).entries()) {
         const question = text(faq?.question, 180);
         const questionIndex = searchQuestions.findIndex(
           (item) => routeName(item) === routeName(question),
@@ -2660,9 +2749,9 @@ export function normalise(candidate, intake) {
     for (const [locationIndex, location] of normalized.locations.entries()) {
       const routeId = `location:${routeName(location.name)}`;
       if (normalized.pageContent[routeId]) continue;
-      const rawLocation = (Array.isArray(value.locations) ? value.locations : []).find(
-        (item) => routeName(item?.name) === routeName(location.name),
-      );
+      const rawLocation = (
+        Array.isArray(value.locations) ? value.locations : []
+      ).find((item) => routeName(item?.name) === routeName(location.name));
       const decisionIndex = normalized.routePolicy.decisions.findIndex(
         (decision) =>
           decision.pageType === "location" &&
@@ -2674,10 +2763,11 @@ export function normalise(candidate, intake) {
           routeName(page.location || page.title) === routeName(location.name),
       );
       if (!rawLocation || decisionIndex < 0 || mapIndex < 0) continue;
-      const admission = normalized.routePolicy.decisions[decisionIndex].admission || {};
-      const localFactRefs = (Array.isArray(admission.localFacts)
-        ? admission.localFacts
-        : [])
+      const admission =
+        normalized.routePolicy.decisions[decisionIndex].admission || {};
+      const localFactRefs = (
+        Array.isArray(admission.localFacts) ? admission.localFacts : []
+      )
         .map((fact, factIndex) =>
           text(fact?.value)
             ? `routePolicy.decisions.${decisionIndex}.admission.localFacts.${factIndex}.value`
@@ -2759,6 +2849,16 @@ async function askModel(intake, effort, model = MODEL) {
     model,
     systemPrompt,
   );
+  const siteCopyUserPrompt = `Transform this verified client brief into JSON with keys preset, business, style, services, differentiators, locations, copy, conversion. business must include name, tagline, description, phone, email, address, serviceAreas, hours, primaryCta, offer, domain, leadEmail. Each service object must include {name, description, slug, decisionSupport:{scope,nextStep,preparation}, pageIntroduction, pageMetaDescription, pageSections:{scope,preparation,nextStep}, pageFaqs:[{question,answer}]}. Keep every submitted service name exactly as provided. Each service description is one concrete sentence under 22 words. Each decisionSupport field must answer a different practical buying question using only supported facts and cautious next-step language. For each measured service route, the page introduction is 2-3 specific sentences; the three page sections each add distinct, useful route guidance; the metadata description is concise; pageFaqs has at least two answers to that route's exact fan-out questions. Do not answer questions with invented policy, prices, timelines, guarantees, or outcomes. A location object may include {name,description,localNote,pageIntroduction,pageMetaDescription,pageLocalContext}; include only selected service areas and use local facts from its explicit routePolicy admission, never infer an office. If local facts are absent, omit the route copy instead of manufacturing city-specific detail. copy must include heroKicker, heroHeading, heroBody, servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. heroHeading is a catchy 4-10 word customer promise, not a service inventory. heroBody is one sentence under 28 words. servicesHeading is a short, memorable section promise and servicesIntro is one sentence. aboutBody adds useful context instead of repeating the hero description or proof points. conversion must include process (2-4 concise steps) and faqs (2-5 {question, answer} objects). The tagline is a concise, differentiated promise; description is a 2-3 sentence customer-facing introduction. Treat submitted business facts as authoritative.\n\n${JSON.stringify(intake)}`;
+  if (siteCopyProvider() === "opencode-go")
+    return siteCopyOpencodeGoCompletion({
+      label: "site-copy",
+      effort,
+      systemPrompt,
+      userPrompt: siteCopyUserPrompt,
+      sessionId,
+      maxOutputTokens: SITE_COPY_MAX_COMPLETION_TOKENS,
+    });
   const response = await openRouterChatCompletion({
     title: "LaunchLoom",
     sessionId,
@@ -2776,7 +2876,7 @@ async function askModel(intake, effort, model = MODEL) {
         },
         {
           role: "user",
-          content: `Transform this verified client brief into JSON with keys preset, business, style, services, differentiators, locations, copy, conversion. business must include name, tagline, description, phone, email, address, serviceAreas, hours, primaryCta, offer, domain, leadEmail. Each service object must include {name, description, slug, decisionSupport:{scope,nextStep,preparation}, pageIntroduction, pageMetaDescription, pageSections:{scope,preparation,nextStep}, pageFaqs:[{question,answer}]}. Keep every submitted service name exactly as provided. Each service description is one concrete sentence under 22 words. Each decisionSupport field must answer a different practical buying question using only supported facts and cautious next-step language. For each measured service route, the page introduction is 2-3 specific sentences; the three page sections each add distinct, useful route guidance; the metadata description is concise; pageFaqs has at least two answers to that route's exact fan-out questions. Do not answer questions with invented policy, prices, timelines, guarantees, or outcomes. A location object may include {name,description,localNote,pageIntroduction,pageMetaDescription,pageLocalContext}; include only selected service areas and use local facts from its explicit routePolicy admission, never infer an office. If local facts are absent, omit the route copy instead of manufacturing city-specific detail. copy must include heroKicker, heroHeading, heroBody, servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. heroHeading is a catchy 4-10 word customer promise, not a service inventory. heroBody is one sentence under 28 words. servicesHeading is a short, memorable section promise and servicesIntro is one sentence. aboutBody adds useful context instead of repeating the hero description or proof points. conversion must include process (2-4 concise steps) and faqs (2-5 {question, answer} objects). The tagline is a concise, differentiated promise; description is a 2-3 sentence customer-facing introduction. Treat submitted business facts as authoritative.\n\n${JSON.stringify(intake)}`,
+          content: siteCopyUserPrompt,
         },
       ],
     },
@@ -2821,6 +2921,16 @@ async function refineDraft(
     model,
     systemPrompt,
   );
+  const siteCopyRefinementUserPrompt = `Verified facts and measured search context:\n${JSON.stringify(context)}\n\nCurrent editable copy:\n${JSON.stringify(currentCopy)}\n\nQuality issues to fix:\n${report.issues.map((issue, index) => `${index + 1}. ${issue}`).join("\n")}`;
+  if (siteCopyProvider() === "opencode-go")
+    return siteCopyOpencodeGoCompletion({
+      label: "site-refinement",
+      effort: "medium",
+      systemPrompt,
+      userPrompt: siteCopyRefinementUserPrompt,
+      sessionId,
+      maxOutputTokens: maxCompletionTokens,
+    });
   const response = await openRouterChatCompletion({
     title: "LaunchLoom quality refinement",
     sessionId,
@@ -2838,7 +2948,7 @@ async function refineDraft(
         },
         {
           role: "user",
-          content: `Verified facts and measured search context:\n${JSON.stringify(context)}\n\nCurrent editable copy:\n${JSON.stringify(currentCopy)}\n\nQuality issues to fix:\n${report.issues.map((issue, index) => `${index + 1}. ${issue}`).join("\n")}`,
+          content: siteCopyRefinementUserPrompt,
         },
       ],
     },
@@ -2869,8 +2979,15 @@ async function refineDraft(
 }
 
 export async function generateSiteConfigWithModel(intake, model = MODEL) {
-  if (!process.env.OPENROUTER_API_KEY)
+  const provider = siteCopyProvider();
+  if (provider === "opencode-go") {
+    if (!process.env.OPENCODE_GO_API_KEY)
+      throw new Error(
+        "OPENCODE_GO_API_KEY is required to generate client copy with OpenCode Go.",
+      );
+  } else if (!process.env.OPENROUTER_API_KEY) {
     throw new Error("OPENROUTER_API_KEY is required to generate client copy.");
+  }
   const groundedIntake = prepareGenerationIntake(intake);
   let draft;
   let modelOutput;
@@ -2913,7 +3030,12 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
         model,
       );
     } catch (error) {
-      if (error?.code !== "OPENROUTER_OUTPUT_TRUNCATED") throw error;
+      if (
+        !["OPENROUTER_OUTPUT_TRUNCATED", "SITE_COPY_OUTPUT_TRUNCATED"].includes(
+          error?.code,
+        )
+      )
+        throw error;
       refinementAttempts = 2;
       refinedPatch = await refineDraft(
         groundedIntake,

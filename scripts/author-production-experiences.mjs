@@ -39,6 +39,12 @@ import {
   promptImagePart,
   selectAuthorReferenceScreenshots,
 } from "./prompt-evidence.mjs";
+import {
+  buildAuthorResponsesRequest,
+  opencodeGoResponsesProfile,
+  opencodeGoUsageMetrics,
+  responsesImagePart,
+} from "./opencode-go.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 import {
   AUTHORING_STAGE_BUDGETS,
@@ -80,6 +86,15 @@ const reasoningEffort =
   process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT ||
   (model === "openai/gpt-6-luna" ? "xhigh" : "low");
 const failureMode = args["failure-mode"] || "throw";
+const provider = String(
+  process.env.CREATIVE_EXPERIENCE_PROVIDER || "openrouter",
+).trim();
+if (!["openrouter", "opencode-go"].includes(provider))
+  throw new Error(`Unsupported CREATIVE_EXPERIENCE_PROVIDER: ${provider}`);
+const opencodeGoProfile =
+  provider === "opencode-go"
+    ? opencodeGoResponsesProfile({ logicalModel: model })
+    : null;
 const usage = [];
 const promptEvidence = [];
 
@@ -95,8 +110,14 @@ const authorDeadline =
   );
 const sharedAbortController = new AbortController();
 
-if (!process.env.OPENROUTER_API_KEY)
+if (provider === "opencode-go") {
+  if (!process.env.OPENCODE_GO_API_KEY)
+    throw new Error(
+      "OPENCODE_GO_API_KEY is required for Phase 2 authorship with OpenCode Go.",
+    );
+} else if (!process.env.OPENROUTER_API_KEY) {
   throw new Error("OPENROUTER_API_KEY is required for Phase 2 authorship.");
+}
 
 const authorStageSchema = {
   name: "launchloom_production_author_stage",
@@ -563,6 +584,72 @@ async function requestStage(request) {
           stagePromptDigest: promptDigest(stagePrompt),
           evidence: evidenceManifest,
         });
+        if (provider === "opencode-go") {
+          const goImages = [];
+          for (const part of userContent)
+            if (part.type === "image_url")
+              goImages.push(responsesImagePart(part, "high"));
+          const goCompletion = await completeGeneration({
+            inference: {
+              profile: opencodeGoProfile,
+              apiKey: process.env.OPENCODE_GO_API_KEY,
+              signal: controller.signal,
+              request: buildAuthorResponsesRequest({
+                systemPrompt,
+                routePrompt,
+                stagePrompt,
+                imageParts: goImages,
+                stageMaxTokens: stageBudget.maxTokens,
+                effort,
+                schema: authorStageSchema.schema,
+                sessionId,
+              }),
+            },
+          });
+          const goUsage = goCompletion?.result?.usage || null;
+          const goUsageRecord = {
+            routeId: request.route.id,
+            stage: request.stage,
+            provider: goCompletion?.result?.provider || "opencode-go",
+            reasoningEffort: effort,
+            usage: goUsage,
+            cache: opencodeGoUsageMetrics(goUsage, {
+              label: `creative-author-${request.stage}`,
+            }),
+            sessionId,
+            parseStatus: "response-received",
+            durationMs: Date.now() - startedAt,
+            inference: {
+              provider: goCompletion?.result?.provider,
+              model: goCompletion?.result?.model,
+              protocol: goCompletion?.result?.protocol,
+              status: goCompletion?.result?.status,
+              usage: goUsage,
+            },
+          };
+          usage.push(goUsageRecord);
+          if (goCompletion?.result?.status !== "completed") {
+            goUsageRecord.parseStatus = "inference-error";
+            throw new Error(
+              `OpenCode Go ${goCompletion?.result?.status || "error"} for route ${request.route.id} stage ${request.stage}: ${goCompletion?.result?.error?.code || "request failed"}.`,
+            );
+          }
+          let goParsed;
+          try {
+            goParsed = parseGenerationOutput(goCompletion);
+          } catch (error) {
+            goUsageRecord.parseStatus = "parse-failed";
+            throw new Error(
+              `Invalid ${request.stage} JSON returned for ${request.route.id} from OpenCode Go.`,
+              { cause: error },
+            );
+          }
+          goUsageRecord.parseStatus = "parsed";
+          console.log(
+            `production_experience_stage=completed route=${request.route.id} stage=${request.stage} effort=${effort} provider=opencode-go duration_ms=${Date.now() - startedAt}`,
+          );
+          return goParsed;
+        }
         const completion = await completeGeneration({
           openRouter: {
             title: "LaunchLoom Production Experience Author",

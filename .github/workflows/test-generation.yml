@@ -13,6 +13,10 @@ on:
         required: false
         default: ""
         type: string
+      inference_provider:
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -29,6 +33,11 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+      # Focused profiles honor the per-dispatch acceptance override first, then
+      # the repository variable, then OpenRouter.
+      CREATIVE_EXPERIENCE_PROVIDER: ${{ inputs.inference_provider || vars.CREATIVE_EXPERIENCE_PROVIDER || 'openrouter' }}
+      SITE_COPY_PROVIDER: ${{ inputs.inference_provider || vars.SITE_COPY_PROVIDER || 'openrouter' }}
       SEO_QUERY_PLANNER_MODEL: ${{ vars.SEO_QUERY_PLANNER_MODEL || 'z-ai/glm-5.3-flash' }}
       FAL_KEY: ${{ secrets.FAL_KEY }}
       FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}

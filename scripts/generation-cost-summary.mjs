@@ -138,7 +138,11 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
       const summed = sumUsage(records);
       stages.push({
         stage,
-        provider: "openrouter",
+        provider: records.some(
+          (record) => record?.usage?.provider === "opencode-go",
+        )
+          ? "opencode-go"
+          : "openrouter",
         model: records.find((record) => record.model)?.model || null,
         costUsd: summed.priced ? summed.cost : null,
         costKind: summed.priced ? "actual" : "unreported",
@@ -149,12 +153,18 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
           unpricedCalls: summed.unpriced,
           promptTokens: records.reduce(
             (total, record) =>
-              total + (finiteNumber(record?.usage?.prompt_tokens) || 0),
+              total +
+              (finiteNumber(
+                record?.usage?.prompt_tokens ?? record?.usage?.inputTokens,
+              ) || 0),
             0,
           ),
           completionTokens: records.reduce(
             (total, record) =>
-              total + (finiteNumber(record?.usage?.completion_tokens) || 0),
+              total +
+              (finiteNumber(
+                record?.usage?.completion_tokens ?? record?.usage?.outputTokens,
+              ) || 0),
             0,
           ),
         },
@@ -278,7 +288,11 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
           : null;
     stages.push({
       stage: "authoring",
-      provider: "openrouter",
+      provider: usageRecords.some(
+        (record) => record?.provider === "opencode-go",
+      )
+        ? "opencode-go"
+        : "openrouter",
       model: creative.model || null,
       costUsd: cost === null ? null : round(cost),
       costKind: cost === null ? "unreported" : "actual",
