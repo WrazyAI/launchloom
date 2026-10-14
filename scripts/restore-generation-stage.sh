@@ -6,8 +6,8 @@ set -euo pipefail
 
 CLIENT_REPO="${1:?Usage: restore-generation-stage.sh <private-client-repo> <pages-project>}"
 CLIENT_PROJECT="${2:?Missing Pages project}"
-EXPECTED_SHA="${3:-}"
-if [ -n "$EXPECTED_SHA" ] && ! [[ "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ ]]; then
+EXPECTED_SHA="${3:?Missing exact private checkpoint SHA}"
+if ! [[ "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ ]]; then
   echo "Invalid expected private checkpoint commit." >&2
   exit 1
 fi
@@ -30,10 +30,20 @@ if [ -e "$CLIENT_DIR" ]; then
 fi
 gh repo clone "$CLIENT_REPO" "$CLIENT_DIR" -- --branch review/initial
 ACTUAL_SHA=$(git -C "$CLIENT_DIR" rev-parse HEAD)
-if [ -n "$EXPECTED_SHA" ] && [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
-  echo "::error title=Private stage checkpoint moved::Expected $EXPECTED_SHA, found $ACTUAL_SHA; refusing to run on changed client source." >&2
+# A failed prior attempt can leave later diagnostic commits on the remote.
+# Require the expected input to be in the private review branch history,
+# then pin the local named branch to that exact snapshot for safe retries.
+if ! git -C "$CLIENT_DIR" merge-base --is-ancestor "$EXPECTED_SHA" "$ACTUAL_SHA"; then
+  echo "::error title=Private checkpoint diverged::Expected $EXPECTED_SHA is not an ancestor of $ACTUAL_SHA." >&2
   exit 1
 fi
+if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+  git -C "$CLIENT_DIR" reset --hard "$EXPECTED_SHA" >/dev/null
+fi
+test "$(git -C "$CLIENT_DIR" rev-parse HEAD)" = "$EXPECTED_SHA" || {
+  echo "Could not restore exact private checkpoint SHA." >&2
+  exit 1
+}
 
 git -C "$CLIENT_DIR" config user.name "LaunchLoom"
 git -C "$CLIENT_DIR" config user.email "automation@launchloom.app"
