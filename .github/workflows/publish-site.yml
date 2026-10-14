@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   publish:
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     concurrency:
       group: site-revision-${{ github.event.client_payload.repo }}
