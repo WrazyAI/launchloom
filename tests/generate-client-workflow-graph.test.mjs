@@ -26,7 +26,7 @@ describe("client intake workflow graph", () => {
     for (const job of ordered) {
       expect(jobs.has(job), job).toBe(true);
       expect(jobs.get(job), job).toMatch(/- name: /);
-      expect(jobs.get(job), job).toContain("runs-on: depot-ubuntu-24.04");
+      expect(jobs.get(job), job).toContain("runs-on: ubuntu-24.04");
       expect(jobs.get(job), job).toContain("Summarize stage");
     }
   });
@@ -62,6 +62,8 @@ describe("client intake workflow graph", () => {
     expect(restore).toContain("--branch review/initial");
     expect(restore).toContain('EXPECTED_SHA');
     expect(restore).toContain('ACTUAL_SHA');
+    expect(restore).toContain("merge-base --is-ancestor");
+    expect(restore).toContain("reset --hard");
     for (const job of ["image_assets", "creative_authoring", "rendered_quality", "private_preview", "developer_handoff"]) {
       expect(jobs.get(job), job).toContain('EXPECTED_SHA:');
       expect(jobs.get(job), job).toContain('"$EXPECTED_SHA"');
@@ -81,6 +83,10 @@ describe("client intake workflow graph", () => {
     }
     expect(workflow).not.toContain("needs.image_assets.outputs.summary");
     expect(jobs.get("prepare")).toContain("for artifact in reasoning-preflight.json");
+    expect(jobs.get("prepare")).toContain('cp -R "$RUNNER_TEMP/reusable-authored-candidates/."');
+    expect(jobs.get("prepare")).toContain('cp "$RUNNER_TEMP/frozen-qa-assets/manifest.json"');
+    expect(jobs.get("creative_authoring")).toContain("steps.partial_authored_evidence.outputs.sha");
+    expect(jobs.get("creative_authoring")).toContain("Export failed authoring checkpoint");
     expect(jobs.get("rendered_quality")).toContain("find .launchloom/creative-repair -type f -name '*.json' -print0");
     expect(jobs.get("developer_handoff")).toContain("needs.private_preview.outputs.sha");
   });
