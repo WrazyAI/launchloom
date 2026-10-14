@@ -8,6 +8,14 @@ no secret or subscription is changed, and there is no environment switch that
 can redirect existing calls. Go permission/capability and search/non-coding
 workload questions from the assessment remain unresolved.
 
+**Update 2026-10-14:** the user confirmed Go hosted terms permit unattended CI
+generation for client deliverables and approved a production slice for the
+author engine and site copy. That slice now exists as an explicit opt-in
+(`CREATIVE_EXPERIENCE_PROVIDER` / `SITE_COPY_PROVIDER`, default `openrouter`;
+see `docs/opencode-go-production.md`). The repository default stays OpenRouter
+until the bounded Go acceptance run passes and operators flip the repository
+variables; flipping them back is the manual rollback.
+
 ## Interfaces
 
 `scripts/inference-client.mjs` is SDK-independent and uses Web APIs (fetch,
