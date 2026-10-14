@@ -17,6 +17,7 @@ import {
   generateSiteConfigWithModel,
   getSiteConfigUsageRecords,
 } from "../scripts/generate-site-config.mjs";
+import { summarizeGenerationCosts } from "../scripts/generation-cost-summary.mjs";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -301,8 +302,43 @@ describe("opencode go profile and request contracts", () => {
       (record: any) => record.label === "site-copy",
     );
     expect(usage.length).toBeGreaterThan(0);
-    expect(usage.at(-1).model).toBe("openai/gpt-6-luna");
-    expect(usage.at(-1).usage.inputTokens).toBe(1000);
+    const last = usage.at(-1) as any;
+    expect(last.model).toBe("openai/gpt-6-luna");
+    expect(last.usage.inputTokens).toBe(1000);
+    expect(last.usage.provider).toBe("opencode-go");
+    expect(last.usage.costSource).toBe("computed-from-published-prices");
+    expect(last.usage.cost).toBeCloseTo(0.0002085, 9);
+  });
+
+  it("prices Go site-copy records in the shared cost summary", () => {
+    const summary: any = summarizeGenerationCosts({
+      siteConfigUsage: {
+        records: [
+          {
+            label: "site-copy",
+            model: "openai/gpt-6-luna",
+            usage: {
+              inputTokens: 1000,
+              outputTokens: 200,
+              cachedInputTokens: 100,
+              cacheWriteTokens: 700,
+              provider: "opencode-go",
+              cost: 0.0002085,
+              costSource: "computed-from-published-prices",
+            },
+          },
+        ],
+      },
+    });
+    const stage = summary.stages.find(
+      (entry: any) => entry.stage === "site_config",
+    );
+    expect(stage.provider).toBe("opencode-go");
+    expect(stage.costUsd).toBeCloseTo(0.000209, 9);
+    expect(stage.costKind).toBe("actual");
+    expect(stage.complete).toBe(true);
+    expect(stage.detail.promptTokens).toBe(1000);
+    expect(stage.detail.completionTokens).toBe(200);
   });
 });
 

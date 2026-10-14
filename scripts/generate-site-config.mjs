@@ -92,8 +92,21 @@ async function siteCopyOpencodeGoCompletion({
     },
   });
   const usage = completion?.result?.usage || null;
-  opencodeGoUsageMetrics(usage, { label, logger: console.log });
-  recordModelUsage(label, "openai/gpt-6-luna", usage);
+  const metrics = opencodeGoUsageMetrics(usage, { label, logger: console.log });
+  // Persist the computed cash cost with the normalized usage so the shared
+  // cost summary prices Go calls (the provider reports no per-request cost).
+  recordModelUsage(
+    label,
+    "openai/gpt-6-luna",
+    usage
+      ? {
+          ...usage,
+          provider: "opencode-go",
+          cost: metrics.cost,
+          costSource: metrics.costSource,
+        }
+      : null,
+  );
   if (completion?.result?.status !== "completed") {
     const error = new Error(
       `OpenCode Go ${label} ${completion?.result?.status || "error"}: ${completion?.result?.error?.code || "request failed"}.`,
