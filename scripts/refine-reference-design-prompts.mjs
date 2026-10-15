@@ -9,7 +9,7 @@ const END = "<!-- launchloom:design-guidance:end -->";
 const LAYOUTS = {
   "media-overlay": [
     "[ navigation ]\n[ media field: copy + action over image ]",
-    "Keep copy inside the media field, not in a separate adjacent card. Choose a quiet crop or a local contrast plate/scrim; do not move copy outside the image to fix contrast.",
+    "Keep copy inside the media field, not in a separate adjacent card. Choose a quiet crop, a proving foreground color, or a soft scrim; never box text lines to fix contrast, and do not move copy outside the image.",
   ],
   "split-media": [
     "[ navigation ]\n[ copy + action | separate media field ]",

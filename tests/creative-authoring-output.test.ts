@@ -92,7 +92,8 @@ describe("creative authoring output budgets", () => {
         requiredSignatureElements: [
           {
             id: "technician-campaign-poster",
-            description: "technician campaign poster with a uniformed technician",
+            description:
+              "technician campaign poster with a uniformed technician",
           },
         ],
         sectionSequence: ["technician-campaign-hero", "person-led-reassurance"],
@@ -120,10 +121,12 @@ describe("creative authoring output budgets", () => {
     expect(adapted.referenceDna.requiredSignatureElements[0].id).toBe(
       "technician-campaign-poster",
     );
-    expect(adapted.referenceDna.requiredSignatureElements[0].description).toContain(
-      "object-led campaign poster",
+    expect(
+      adapted.referenceDna.requiredSignatureElements[0].description,
+    ).toContain("object-led campaign poster");
+    expect(route.referenceDossier.designPrompt).toContain(
+      "uniformed technician",
     );
-    expect(route.referenceDossier.designPrompt).toContain("uniformed technician");
   });
 
   it("preserves machine-readable Reference DNA markers while adapting prose", () => {
@@ -240,16 +243,14 @@ describe("creative authoring output budgets", () => {
     );
   });
 
-  it("keeps hero focus indicators on an opaque surface when media remains behind them", () => {
+  it("keeps hero focus indicators provable through foreground-first techniques", () => {
     expect(HERO_MEDIA_FOCUS_CONTRACT).toContain(
-      "provable opaque local surface covering the entire control and focus ring",
+      "prove contrast through foreground-first techniques",
     );
     expect(HERO_MEDIA_FOCUS_CONTRACT).toContain(
-      "Do not set the hero copy/action surface to transparent or translucent at mobile while media remains behind it.",
+      "Never solve contrast with opaque per-line background boxes behind text",
     );
-    expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain(
-      "HERO MEDIA FOCUS CONTRACT",
-    );
+    expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain("HERO MEDIA FOCUS CONTRACT");
   });
 
   it("states distinct desktop and mobile hero topologies as separate layout contracts", () => {

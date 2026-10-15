@@ -9,3 +9,14 @@ Approved conversation plan: preserve brand intent, prevent unsafe pairings befor
 5. Tests: failing numeric and palette cases; real-browser screenshot cases, alpha/dark/image/control/state/route cases, persisted repair/rebuild regression. Run full tests, checks, production builds, review; integrate verified work per repository rules.
 
 Dependencies: step 2 consumes math in step 1; step 3 consumes stable selectors and evidence in step 2; gates in step 4 consume final audit, never pre-repair report. Budget: no paid authoring/research campaign. Ruling: automatic image/surface repairs are permitted only with deterministic local ownership; ambiguous image overlays remain blocked for bounded author repair to preserve composition and truthful evidence.
+
+## Ruling update 2026-10-15
+
+Opaque plate repairs are retired. Automatic corrections are foreground-only
+(text, text-fill and outline colors), interactive controls are never painted,
+and the managed corrections block is rewritten in place instead of appended.
+Text over media is solved foreground-first: a proving text color, a soft scrim
+whose darkest text region passes, or a single deliberate surface field sized to
+its content; per-line background boxes, highlight chips and control paint are
+prohibited as rendering defects. Unresolved image cases continue to defer to
+bounded author repair.

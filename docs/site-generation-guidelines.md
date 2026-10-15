@@ -110,27 +110,36 @@ at desktop, compact desktop and mobile, including hover, keyboard focus,
 native disclosures and explicitly controlled navigation menus. Ordinary text
 requires 4.5:1, large text 3:1, and necessary control/focus indicators 3:1.
 Composited alpha is measured; unsupported effects and ambiguous image backdrops
-are unresolved, not presumed readable. Image overlays may use a local opaque
-plate or a scrim whose worst-case backdrop passes. Text shadows alone do not
-prove contrast. Existing visual, source and reference-fidelity gates still run.
-When hero copy or a CTA sits over media, its keyboard-focus outline must also be
-inside a provable opaque role-surface plate at every viewport. Do not remove or
-translucently fade that plate on mobile while the media remains behind it; move
-the image to a non-overlapping field when the reference needs unplated copy.
+are unresolved, not presumed readable.
+
+Contrast is solved foreground-first. Choose a text color (and, where useful,
+weight) that proves against the worst-case region behind it, and move copy to a
+non-overlapping field when the composition allows. When copy must sit over
+media, use a soft scrim whose darkest region under the text proves the ratio,
+or one deliberate surface field sized to its content and designed as part of
+the composition. Never solve contrast with opaque per-line background boxes
+behind text, highlight chips behind navigation or metadata, or paint applied to
+buttons and other controls; those read as rendering defects. Text shadows alone
+do not prove contrast. When hero copy or a CTA sits over media, its
+keyboard-focus outline must also be provably visible at every viewport; move
+the image to a non-overlapping field when the composition needs unplated copy.
 Interaction audits include summary controls and links revealed by disclosures
 and menus. Inset focus indicators use their local paint and block unmeasured
 border overlap. Unrelated paint remains unresolved unless bounded geometry
-and stacking prove an opaque plate or opaque occlusion. Obstruction remains
-subject to the visual gate.
+and stacking prove opaque occlusion. Obstruction remains subject to the
+visual gate.
 
 Initial candidates may receive one bounded local text-color sweep. Corrections
-are scoped to a verified route, actual stylesheet media conditions and exact rendered element;
-only deterministic solid-surface pairs with consistent measured interaction
-states are eligible. Persist CSS, rebuild, audit again, then rerun visual and
-reference gates. More than 32 unique correction groups, over 16 KiB of local correction CSS, or ambiguous backdrops go to
-the existing bounded author repair path. Human revisions run the complete
-audit without automatic unrelated recoloring. Preserve before/after ratios,
-selectors, viewports and correction reports with private workflow evidence.
+are foreground-only (text, text-fill and outline colors), scoped to a verified
+route, actual stylesheet media conditions and exact rendered element; only
+deterministic solid-surface pairs with consistent measured interaction states
+are eligible, and corrections never paint backgrounds, padding or controls.
+Persist CSS, rebuild, audit again, then rerun visual and reference gates. More
+than 32 unique correction groups, over 16 KiB of local correction CSS, or
+ambiguous backdrops go to the existing bounded author repair path. Human
+revisions run the complete audit without automatic unrelated recoloring.
+Preserve before/after ratios, selectors, viewports and correction reports with
+private workflow evidence.
 
 Publication runs the same read-only audit before upload, including developer visual overrides; approved source is never silently rewritten during publication.
 
