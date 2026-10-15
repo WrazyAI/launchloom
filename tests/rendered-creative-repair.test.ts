@@ -368,6 +368,18 @@ describe("rendered creative repair orchestration", () => {
     ).toEqual(["#fff", "rgb(1,2,3)"]);
   });
 
+  it("permits color repair for deterministic contrast failures forwarded by the bakeoff", () => {
+    expect(findingsRequirePaletteChange([
+      'contrast fail: / mobile default body > a:nth-of-type(1) text "Service" (2.774; required 4.5); foreground #bd7358, background #25483e;',
+    ])).toBe(true);
+    expect(findingsRequirePaletteChange([
+      'contrast unresolved: / desktop focus body > a:nth-of-type(1) focus "Logo" (1.000; required 3); foreground #25483e, background variable;',
+    ])).toBe(true);
+    expect(findingsRequirePaletteChange([
+      { category: "imagery", message: "contrast fail: this is descriptive image feedback, not an audit finding" },
+    ])).toBe(false);
+  });
+
   it("rejects an automated repair that repaints a passing palette", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-palette-guard-"),

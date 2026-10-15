@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import {
   CLIENT_PALETTE_ROLE_CONTRACT,
   CLIENT_TYPOGRAPHY_CONTRACT,
+  RENDERED_DESIGN_CORRECTION_CONTRACT,
   CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
@@ -1092,6 +1093,9 @@ Do not silently reuse the primary hero image to fill missing secondary or tertia
 
 CLIENT-REQUESTED INTERACTION CONTRACT
 If the CLIENT VISUAL BRIEF explicitly asks for a purposeful interaction, guide, selector, chooser, or navigator, preserve or add a clearly labeled stateful native interaction marked with data-purposeful-interaction. Its useful default state and controls must be visible in static render evidence. FAQ disclosure, LeadForm, ChatLauncher, ordinary navigation, or an image carousel alone do not satisfy that request. Use only sealed service and decision-support content and never invent advice.
+
+RENDERED DESIGN CORRECTION CONTRACT
+${validationOnlyRetry ? "Preserve the current composition; only the stated deterministic validation error is in scope." : RENDERED_DESIGN_CORRECTION_CONTRACT}
 
 SEALED CONTENT BINDING CONTRACT
 Treat every business-specific string and fact shown in CURRENT SEALED CONTENT SHAPE as sealed data, not source copy. Do not copy, paraphrase, or hardcode those values into JSX/HTML, CSS generated content, accessibility attributes, or motion code. Preserve existing content-token expressions and render business content through the existing content bindings or the supplied content-bound runtime helpers. Never replace a content binding with a literal value from the sealed shape. If a requested repair cannot be made while preserving those bindings, leave the binding intact and report the repair as unresolved rather than inventing or embedding copy.

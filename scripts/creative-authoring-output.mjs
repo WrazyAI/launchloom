@@ -13,6 +13,13 @@ export const AUTHORING_STAGE_BUDGETS = Object.freeze({
 
 export const CREATIVE_REPAIR_MAX_COMPLETION_TOKENS = 48_000;
 
+export const RENDERED_DESIGN_CORRECTION_CONTRACT = [
+  "A selector must reveal useful step-specific information, not merely echo its selected label or change button styling. Bind controls to a stable visible output panel with aria-controls, expose the selected state, and support restoring the original choice. Use available sealed decision-support content; if it contains labels only, do not pretend an echoed label is a useful guide or invent provider promises to fill the gap.",
+  "data-ll-action applies the filled action foreground/background pair; it is not a generic clickable-element marker. Use it only for deliberately filled actions, not ordinary navigation, wordmarks, service rows or secondary text/phone links. Pair the control's own text, background and focus colors with its local surface instead of relying on later positional contrast patches.",
+  "Preserve the reference transition's visual weight without inventing proof. If the source uses awards or reviews that the client has not supplied, preserve its chapter spacing and segmented editorial rhythm using verified scope, service-area or process facts, rather than an empty or one-line divider or fabricated credentials.",
+  "Do not turn a reference media-overlay hero into an oversized opaque copy card that hides the focal artwork. Keep the smallest opaque local text/focus plate that covers the copy and complete focus ring, and expose the reference-led media field around it. Preserve compact reference mobile navigation with an accessible disclosure/menu when wrapping all links would consume the hero; never remove links or hide the only contact route.",
+].join("\n");
+
 export const EARLY_CONVERSION_OUTPUT_CONTRACT = [
   "EARLY CONVERSION INVARIANT",
   "The element marked data-early-conversion must be a compact native anchor to #contact whose visible label is supplied by content.hero.primaryLabel. Keep the marker on that same contact-bound anchor and preserve the assigned Reference DNA CTA placement.",

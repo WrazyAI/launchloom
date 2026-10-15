@@ -29,6 +29,58 @@ async function scan(html: string, width = 1440, options = {}) {
 }
 
 describe("rendered contrast independent of authored classes", () => {
+  it("measures an outward square logo focus ring on the surrounding surface, not the image interior", async () => {
+    const report = await scan(
+      '<style>body{background:white;padding:30px}a{display:inline-flex;border-radius:0}a:focus-visible{outline:3px solid black;outline-offset:3px}img{width:100px;height:40px}</style><a href="#"><img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="></a>',
+    );
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+  });
+  it("proves a logo ring crossing a wrapper with the same opaque paint as its containing surface", async () => {
+    const report = await scan(
+      '<style>body{background:white;padding:30px}.wrap{background:white;width:150px;padding:12px 0}a{display:inline-flex}a:focus-visible{outline:3px solid black;outline-offset:3px}img{width:100px;height:40px}</style><div class="wrap"><a href="#"><img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="></a></div>',
+    );
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+  });
+  it("keeps a logo ring crossing a shadowed same-color wrapper edge unresolved", async () => {
+    const report = await scan(
+      '<style>body{background:white;padding:30px}.wrap{background:white;width:150px;padding:12px 0;box-shadow:0 0 0 12px black}a{display:inline-flex}a:focus-visible{outline:3px solid black;outline-offset:3px}img{width:100px;height:40px}</style><div class="wrap"><a href="#"><img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="></a></div>',
+    );
+    expect(
+      report.findings.some(
+        (f) => f.kind === "focus" && f.status === "unresolved",
+      ),
+    ).toBe(true);
+  });
+  it("does not presume that a partial wrapper with different paint protects a logo ring", async () => {
+    const report = await scan(
+      '<style>body{background:white;padding:30px}.wrap{background:black;width:150px;padding:12px 0}a{display:inline-flex}a:focus-visible{outline:3px solid black;outline-offset:3px}img{width:100px;height:40px}</style><div class="wrap"><a href="#"><img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="></a></div>',
+    );
+    expect(
+      report.findings.some(
+        (f) => f.kind === "focus" && f.status === "unresolved",
+      ),
+    ).toBe(true);
+  });
+  it("still rejects a logo focus ring inset over an image", async () => {
+    const report = await scan(
+      '<style>body{background:white;padding:30px}a{display:inline-flex;border-radius:0}a:focus-visible{outline:3px solid black;outline-offset:-3px}img{width:100px;height:40px}</style><a href="#"><img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="></a>',
+    );
+    expect(
+      report.findings.some(
+        (f) => f.kind === "focus" && f.status === "unresolved",
+      ),
+    ).toBe(true);
+  });
+  it("rejects outward focus when sibling image paint reaches the ring", async () => {
+    const report = await scan(
+      '<style>body{background:white;padding:30px}a{display:inline-flex;position:relative;z-index:1}a:focus-visible{outline:3px solid black;outline-offset:3px}.media{position:absolute;top:0;left:0;width:300px;height:300px}</style><img class="media" alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="><a href="#">Logo</a>',
+    );
+    expect(
+      report.findings.some(
+        (f) => f.kind === "focus" && f.status === "unresolved",
+      ),
+    ).toBe(true);
+  });
   it("proves fully inset focus on a rounded opaque floating action", async () => {
     const report = await scan(
       '<style>body{background:white}.under{position:absolute;inset:0;background:black}a{position:fixed;top:50px;left:50px;z-index:2;background:black;color:white;padding:14px 18px;border-radius:999px}a:focus-visible{outline:2px solid white;outline-offset:-4px}</style><div class="under"></div><a href="#">Call us</a>',
@@ -369,7 +421,7 @@ describe("rendered contrast independent of authored classes", () => {
       surfaces: { nav: { surface: "#e8d590" } },
     });
     const report = await scan(
-      `<style>${css}</style><nav data-ll-surface="nav"><a href="/">Services</a></nav><section data-ll-surface="light"><h1>Visits</h1><p data-ll-muted>Prepare</p></section><section data-ll-surface="dark"><p>Care</p><a data-ll-action href="/contact/">Book</a></section>`,
+      `<style>${css}nav,section{padding:12px}</style><nav data-ll-surface="nav"><a href="/">Services</a></nav><section data-ll-surface="light"><h1>Visits</h1><p data-ll-muted>Prepare</p></section><section data-ll-surface="dark"><p>Care</p><a data-ll-action href="/contact/">Book</a></section>`,
     );
     expect(report.pass).toBe(true);
   });
@@ -481,7 +533,7 @@ it("pairs shared contact, form boundaries and footer focus with their own surfac
   });
   const roles = semanticColorCss(palette);
   const report = await scan(
-    `<style>${shared}\n${roles}</style><div style="--ink:${palette.inkColor};--muted:${palette.mutedColor};--cream:${palette.surfaceColor};--brand:${palette.primaryColor}"><section data-ll-surface="contact" class="contact-section"><div class="contact-copy"><p>Prepare for a visit</p></div><form class="lead-form"><label>Name<input aria-label="Name"></label></form></section><footer data-ll-surface="footer" class="footer"><a href="/">Contact</a></footer></div>`,
+    `<style>${shared}\n${roles}</style><div style="--ink:${palette.inkColor};--muted:${palette.mutedColor};--cream:${palette.surfaceColor};--brand:${palette.primaryColor}"><section data-ll-surface="contact" class="contact-section"><div class="contact-copy"><p>Prepare for a visit</p></div><form class="lead-form"><label>Name<input aria-label="Name"></label></form></section><footer data-ll-surface="footer" class="footer"><div class="wrap footer-grid"><a href="/">Contact</a></div></footer></div>`,
     1440,
     { states: true },
   );

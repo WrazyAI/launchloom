@@ -107,12 +107,12 @@ const schemaBlocks = (Array.isArray(schemas) ? schemas : []).map((schema) =>
         <span>This is not a real business or service offering.</span>
       </aside>
     )}
-    {testPreview ? (
+    {testPreview ? (!judgePreview && (
       <aside class="ll-demo-notice" data-pipeline-test-preview role="note" aria-label="Test-only pipeline preview">
         <strong>Test-only preview: {testProfile || "invalid profile"}</strong>
         <span>{skippedLane}. Approval, client release and form submissions are disabled.</span>
       </aside>
-    ) : <ReviewBanner diagnosticPreview={diagnosticPreview} />}
+    )) : (!judgePreview && <ReviewBanner diagnosticPreview={diagnosticPreview} />)}
     <slot />
     {!diagnosticPreview && !judgePreview && <QuickAnswers />}
     {!diagnosticPreview && !judgePreview && <ExitOffer />}

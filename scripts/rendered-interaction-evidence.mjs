@@ -2,6 +2,24 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
 
+export function isClientImageSnapshotUrl(value) {
+  try {
+    const url = new URL(value);
+    return (
+      url.origin === "https://assets.launchloom.wrazyos.com" &&
+      !url.username &&
+      !url.password &&
+      !url.search &&
+      !url.hash &&
+      /^\/intakes\/[A-Za-z0-9_-]+\/[A-Za-z0-9_.-]+\.(?:png|webp|jpg|jpeg|avif)$/iu.test(
+        url.pathname,
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function interactionSourceDigest(files) {
   return createHash("sha256")
     .update(
@@ -174,12 +192,13 @@ export async function captureRenderedInteractionEvidence({
   capturePair = false,
   timeoutMs = 1500,
   settleMs = 250,
+  imageSnapshots = new Map(),
 }) {
   const unsafe = [],
     errors = [],
     pairs = [],
     failures = [];
-  /** @type {{viewport: string, candidateId: string, sourceDigest: string, kind: string, status: string, required: boolean, restored: boolean, before?: {state: string, content: string, scrollY: number}, after?: {state: string, content: string, scrollY: number}, reason?: string, unsafeEffects?: string[], browserErrors?: string[], omittedRuntime?: string[]}} */
+  /** @type {{viewport: string, candidateId: string, sourceDigest: string, kind: string, status: string, required: boolean, restored: boolean, before?: {state: string, content: string, scrollY: number}, after?: {state: string, content: string, scrollY: number}, reason?: string, unsafeEffects?: string[], browserErrors?: string[], omittedRuntime?: string[], retainedImages?: {urlDigest: string, contentDigest: string}[]}} */
   const observation = {
     viewport: viewport.name,
     candidateId,
@@ -196,6 +215,19 @@ export async function captureRenderedInteractionEvidence({
   });
   try {
     const staticRoot = await fs.realpath(dist);
+    for (const [url, image] of imageSnapshots) {
+      if (
+        !isClientImageSnapshotUrl(url) ||
+        !Buffer.isBuffer(image.body) ||
+        image.body.length > 5 * 1024 * 1024 ||
+        !/^image\/(?:png|webp|jpeg|avif)$/u.test(image.contentType)
+      )
+        throw new Error("Invalid retained client-image snapshot");
+    }
+    observation.retainedImages = [...imageSnapshots].map(([url, image]) => ({
+      urlDigest: createHash("sha256").update(url).digest("hex"),
+      contentDigest: createHash("sha256").update(image.body).digest("hex"),
+    }));
     let documentAllowed = true;
     await context.exposeBinding("__llInteractionBlocked", (_source, kind) => {
       unsafe.push(String(kind).slice(0, 120));
@@ -271,6 +303,20 @@ export async function captureRenderedInteractionEvidence({
     await context.route("**/*", async (route) => {
       const request = route.request();
       const url = new URL(request.url());
+      // These are exact sealed URLs fulfilled from retained bytes, never an
+      // allowlist for browser network access to the asset host.
+      const snapshot = imageSnapshots.get(request.url());
+      if (
+        snapshot &&
+        request.resourceType() === "image" &&
+        request.method() === "GET"
+      ) {
+        await route.fulfill({
+          body: snapshot.body,
+          contentType: snapshot.contentType,
+        });
+        return;
+      }
       const initialDocument =
         request.isNavigationRequest() &&
         request.resourceType() === "document" &&
@@ -316,8 +362,7 @@ export async function captureRenderedInteractionEvidence({
           contentType: type,
           headers: initialDocument
             ? {
-                "content-security-policy":
-                  "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'none'; worker-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'",
+                "content-security-policy": `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:${imageSnapshots.size ? " https://assets.launchloom.wrazyos.com" : ""}; font-src 'self' data:; connect-src 'none'; worker-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'`,
               }
             : {},
         });
@@ -377,6 +422,29 @@ export async function captureRenderedInteractionEvidence({
           el.getAttribute("aria-selected") === "true"
         )
           return false;
+        // An exclusive pressed-button group is a selector, not an on/off
+        // toggle. Exercise an unselected peer, preserving its original choice.
+        if (
+          el.getAttribute("aria-pressed") === "true"
+        ) {
+          const group =
+            el.closest("[data-purposeful-interaction]") || el.parentElement;
+          const peers = [
+            ...(group?.querySelectorAll("button[aria-pressed]") || []),
+          ];
+          const declaredSelector = /(?:^|-)selector$/u.test(group?.getAttribute("data-purposeful-interaction") || "") &&
+            peers.filter(peer => peer.getAttribute("aria-pressed") === "true").length === 1;
+          if (
+            peers.some(
+              (peer) =>
+                peer !== el &&
+                (declaredSelector || (el.getAttribute("aria-controls") &&
+                  peer.getAttribute("aria-controls") === el.getAttribute("aria-controls"))) &&
+                peer.getAttribute("aria-pressed") === "false",
+            )
+          )
+            return false;
+        }
         if (el.tagName === "SELECT" && el.options.length < 2) return false;
         const id = el.getAttribute("aria-controls");
         return !id || Boolean(document.getElementById(id));
@@ -402,6 +470,24 @@ export async function captureRenderedInteractionEvidence({
       observation.before = before;
       let restoreControl = control;
       let option;
+      if (kind === "toggle") {
+        const original = await control.evaluateHandle((el) => {
+          if (!el.hasAttribute("aria-pressed")) return el;
+          const group =
+            el.closest("[data-purposeful-interaction]") || el.parentElement;
+          const selected = [...(group?.querySelectorAll('button[aria-pressed="true"]') || [])];
+          const declaredSelector = /(?:^|-)selector$/u.test(group?.getAttribute("data-purposeful-interaction") || "") && selected.length === 1;
+          return (
+            selected.find(
+              (peer) =>
+                peer !== el &&
+                (declaredSelector || (el.getAttribute("aria-controls") &&
+                  peer.getAttribute("aria-controls") === el.getAttribute("aria-controls"))),
+            ) || el
+          );
+        });
+        restoreControl = original.asElement();
+      }
       if (kind === "tab") {
         const original = await control.evaluateHandle((el) =>
           (

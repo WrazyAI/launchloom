@@ -357,6 +357,9 @@ describe("creative repair loop", () => {
     expect(findings).toEqual(original);
     expect(prompt).toContain("SOURCE SAFETY CONTRACT");
     expect(prompt).toContain("SEALED CONTENT BINDING CONTRACT");
+    expect(prompt).toContain("A selector must reveal useful step-specific information, not merely echo its selected label");
+    expect(prompt).toContain("data-ll-action applies the filled action foreground/background pair");
+    expect(prompt).toContain("Do not turn a reference media-overlay hero into an oversized opaque copy card");
   });
 
   it("fails closed when a human repair has no resolved section scope", async () => {

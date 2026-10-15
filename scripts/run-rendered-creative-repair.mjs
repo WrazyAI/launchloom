@@ -811,6 +811,12 @@ export function findingsRequirePaletteChange(findings) {
     if (finding?.category === "human-review-feedback") return true;
     // A rejected response's diagnostic wording is not a new design request.
     if (finding?.category === "repair-output-rejected") return false;
+    // Bakeoff forwards deterministic audit failures as strings, not category
+    // objects. Without this exact prefix the palette guard rejects the color
+    // correction it was asked to make. Incidental visual feedback stays locked.
+    if (typeof finding === "string" &&
+        /^contrast (?:fail|unresolved): \/\S* (?:desktop|compact|mobile) (?:default|hover|focus|[^ ]+) body(?: >| )/u.test(finding))
+      return true;
     const category =
       finding && typeof finding === "object"
         ? String(finding.category || "")

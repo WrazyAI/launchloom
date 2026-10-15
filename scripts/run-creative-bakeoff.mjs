@@ -10,6 +10,7 @@ import http from "node:http";
 import path from "node:path";
 import { builtRoutes, enforceBuiltContrast } from "./contrast-sweep.mjs";
 import { captureRenderedInteractionEvidence, interactionSourceDigest, requiresPurposefulInteraction } from "./rendered-interaction-evidence.mjs";
+import { snapshotClientImages } from "./client-image-snapshots.mjs";
 import { chromium } from "playwright";
 import {
   CREATIVE_PROMOTION_THRESHOLDS,
@@ -686,6 +687,7 @@ export async function runCreativeBakeoff({
         )
       : "";
   const results = [];
+  const clientImageSnapshotCache = new Map();
   await fs.mkdir(evidenceDir, { recursive: true });
 
   try {
@@ -821,6 +823,9 @@ export async function runCreativeBakeoff({
               ),
             );
         }
+        const imageSnapshots = await snapshotClientImages(candidate.contentManifest?.values || {}, {
+          cache: clientImageSnapshotCache,
+        });
         const { server, origin } = await startServer(path.join(root, "dist"));
         const sourceDigest = interactionSourceDigest({ experience: experienceSource, styles: stylesSource, motion: motionSource });
         const interactionEvidence = { version: 1, candidateId: candidate.manifest.candidateId, sourceDigest, observations: [], pairs: [], failures: [] };
@@ -942,7 +947,7 @@ export async function runCreativeBakeoff({
             await page.close();
             if (candidate.manifest.version >= 2) {
               const capture = await captureRenderedInteractionEvidence({
-                browser, origin, dist: path.join(root, "dist"),
+                browser, origin, dist: path.join(root, "dist"), imageSnapshots,
                 candidateId: candidate.manifest.candidateId, sourceDigest,
                 viewport, evidenceDir,
                 requiredPurposeful: requiresPurposefulInteraction(candidate.contentManifest?.visualBrief),

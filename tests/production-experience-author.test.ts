@@ -2372,6 +2372,23 @@ export default function Experience`,
     ).toBe(true);
   });
 
+  it("carries the rendered design failure corrections into every authoring stage", async () => {
+    const requests: AuthorStageRequest[] = [];
+    await authorExperienceCandidates({
+      site, inspirationPack,
+      generate: async request => { requests.push(request); return safeStage(request); },
+      model: "test/model", testProfile: "creative-only",
+    });
+    expect(requests.length).toBeGreaterThan(0);
+    for (const request of requests) {
+      const rules = request.rules;
+      expect(rules).toContain("A selector must reveal useful step-specific information, not merely echo its selected label");
+      expect(rules).toContain("data-ll-action applies the filled action foreground/background pair");
+      expect(rules).toContain("Preserve the reference transition's visual weight without inventing proof");
+      expect(rules).toContain("Do not turn a reference media-overlay hero into an oversized opaque copy card");
+    }
+  });
+
   it("omits equal cloned route design templates without dropping explicit null", () => {
     const routeDesignTemplate = {
       opening: { layout: "graphic-field", imageRole: "architecture" },

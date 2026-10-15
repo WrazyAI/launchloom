@@ -627,6 +627,31 @@ export function collectContrastTargets({
           box.right >= rect.right - 1 &&
           box.bottom >= rect.bottom - 1;
         if (!covers && (bg?.[3] > 0 || s.backgroundImage !== "none")) {
+          // A wrapper painted identically to an already proven opaque parent
+          // cannot introduce a new ring backdrop at its edge. Permit this only
+          // for the bounded outward-ring audit, never for ambiguous media.
+          const identicalPlate =
+            options.allowIdenticalPartialPlate &&
+            bg?.[3] === 1 &&
+            !variable &&
+            !issues.length &&
+            s.backgroundImage === "none" &&
+            s.boxShadow === "none" &&
+            !hasPaintPseudo(p) &&
+            !images.some(
+              (image) => p.contains(image.el) && intersects(image.rect, rect),
+            ) &&
+            backgrounds.every(
+              (background) =>
+                background[3] === 1 &&
+                bg
+                  .slice(0, 3)
+                  .every(
+                    (channel, index) =>
+                      Math.abs(channel - background[index]) < 0.01,
+                  ),
+            );
+          if (identicalPlate) continue;
           issues.push("background plate only partially covers text");
           continue;
         }
@@ -941,6 +966,59 @@ export function collectContrastTargets({
         width > 0 && offset <= -width && -offset - width >= borderWidth;
       const localBg =
         offset < 0 ? backdrop(el, rect, { ownRoundedContour }) : null;
+      // Square outward outlines paint outside the control's border box. Using
+      // the full control rect incorrectly treats a child logo as ring paint.
+      // Audit all four complete strips, including corners. Rounded outlines
+      // retain the conservative old bounds until their contour is provable.
+      let outsideBg = parentBg;
+      const square = ["TopLeft", "TopRight", "BottomLeft", "BottomRight"].every(
+        (corner) => parseFloat(s[`border${corner}Radius`]) === 0,
+      );
+      if (
+        offset >= 0 &&
+        width > 0 &&
+        square &&
+        images.some((image) => el.contains(image.el))
+      ) {
+        const left = rect.left - offset - width;
+        const right = rect.right + offset + width;
+        const top = rect.top - offset - width;
+        const bottom = rect.bottom + offset + width;
+        const strips = [
+          { left, right, top, bottom: top + width },
+          { left, right, top: bottom - width, bottom },
+          {
+            left,
+            right: left + width,
+            top: top + width,
+            bottom: bottom - width,
+          },
+          {
+            left: right - width,
+            right,
+            top: top + width,
+            bottom: bottom - width,
+          },
+        ];
+        const paints = strips.map((bounds) =>
+          backdrop(
+            el.parentElement || el,
+            {
+              ...bounds,
+              x: bounds.left,
+              y: bounds.top,
+              width: bounds.right - bounds.left,
+              height: bounds.bottom - bounds.top,
+            },
+            { allowIdenticalPartialPlate: true },
+          ),
+        );
+        outsideBg = {
+          backgrounds: paints.flatMap((paint) => paint.backgrounds),
+          issues: paints.flatMap((paint) => paint.issues),
+          variable: paints.some((paint) => paint.variable),
+        };
+      }
       // An inset outline paints over the control, while a partially inset
       // outline touches both surfaces. Prove contrast against both in that case.
       const bg =
@@ -952,7 +1030,7 @@ export function collectContrastTargets({
                 issues: [...parentBg.issues, ...localBg.issues],
                 variable: parentBg.variable || localBg.variable,
               }
-            : parentBg;
+            : outsideBg;
       if (offset < 0 && -offset - width < borderWidth)
         bg.issues.push("inset focus outline overlaps unmeasured border paint");
       if (s.outlineStyle === "none" || parseFloat(s.outlineWidth) === 0)

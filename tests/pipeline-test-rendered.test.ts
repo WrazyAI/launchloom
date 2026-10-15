@@ -6,9 +6,10 @@ import path from "node:path";
 import { chromium } from "playwright";
 import { it, expect } from "vitest";
 
-it.each(["seo-only", "creative-only", "full-preview", "fictional-demo", "creative-diagnostic", "full"])(
+it.each(["seo-only", "creative-only", "full-preview", "judge-full-preview", "fictional-demo", "creative-diagnostic", "full", "judge-full"])(
   "renders %s provenance and enforces form delivery behavior at desktop and mobile",
   async (profile) => {
+    const liveProfile = profile === "full" || profile === "judge-full";
     const repository = path.resolve(".");
     const template = path.join(repository, "templates/client-site");
     const root = await fs.mkdtemp(
@@ -63,10 +64,10 @@ it.each(["seo-only", "creative-only", "full-preview", "fictional-demo", "creativ
       };
       if (profile === "fictional-demo") {
         config.demoNotice = "Fictional pipeline demo";
-      } else if (profile !== "full" && profile !== "creative-diagnostic")
+      } else if (!liveProfile && profile !== "creative-diagnostic")
         config.pipelineTest = {
           version: 1,
-          profile,
+          profile: profile === "judge-full-preview" ? "full-preview" : profile,
           testOnly: true,
           sourceSha: "a".repeat(40),
           runId: "synthetic",
@@ -87,6 +88,7 @@ it.each(["seo-only", "creative-only", "full-preview", "fictional-demo", "creativ
           env: {
             ...process.env,
             PUBLIC_REVIEW_MODE: "false",
+            PUBLIC_CREATIVE_JUDGE: profile.startsWith("judge-") ? "true" : "false",
             PUBLIC_CREATIVE_DIAGNOSTIC: profile === "creative-diagnostic" ? "true" : "false",
           },
           stdio: "pipe",
@@ -139,11 +141,13 @@ it.each(["seo-only", "creative-only", "full-preview", "fictional-demo", "creativ
         });
         await page.goto(`http://127.0.0.1:${(server.address() as any).port}`);
         const banner = page.locator("[data-pipeline-test-preview]");
-        if (profile !== "full") {
+        if (!liveProfile) {
           if (profile === "fictional-demo") {
             const demoBanner = page.locator("[data-demo-notice]");
             expect(await demoBanner.isVisible()).toBe(true);
             expect(await demoBanner.textContent()).toContain("Fictional pipeline demo");
+          } else if (profile === "judge-full-preview") {
+            expect(await banner.count()).toBe(0);
           } else if (profile === "creative-diagnostic") {
             expect(await page.locator('meta[name="robots"]').getAttribute("content")).toBe("noindex, nofollow");
             expect(await page.locator('link[rel="canonical"]').count()).toBe(0);
@@ -174,6 +178,7 @@ it.each(["seo-only", "creative-only", "full-preview", "fictional-demo", "creativ
           expect(html).not.toContain("synthetic-lead.invalid");
           expect(await page.locator("form.lead-form").getAttribute("data-lead-preview")).toBe("true");
         } else {
+          if (profile === "judge-full") expect(await page.locator("#ll-review").count()).toBe(0);
           expect(await banner.count()).toBe(0);
           expect(await page.locator('link[rel="canonical"]').count()).toBe(1);
           expect(html).toContain("synthetic-active-token");
@@ -189,13 +194,13 @@ it.each(["seo-only", "creative-only", "full-preview", "fictional-demo", "creativ
         await page.locator(".lead-submit").click();
         await page
           .getByText(
-            profile === "full"
+            liveProfile
               ? "Thank you. We will be in touch shortly."
               : "Test-only preview: submissions are disabled.",
             { exact: true },
           )
           .waitFor();
-        expect(requests).toBe(profile === "full" ? 1 : 0);
+        expect(requests).toBe(liveProfile ? 1 : 0);
         expect(
           await page.evaluate(
             () => document.documentElement.scrollWidth <= window.innerWidth,

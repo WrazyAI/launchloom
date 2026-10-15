@@ -53,7 +53,9 @@ async function capture(body: string, extra: Record<string, any> = {}) {
     evidenceDir: root,
     requiredPurposeful: true,
     capturePair: true,
-    timeoutMs: 350,
+    // Screenshot capture on the shared runner needs the production timeout;
+    // 350ms was timing out after a proven transition while encoding pixels.
+    timeoutMs: 1500,
     settleMs: 30,
     ...extra,
   });
@@ -61,13 +63,27 @@ async function capture(body: string, extra: Record<string, any> = {}) {
 
 describe("bounded rendered interaction evidence", () => {
   it("recognizes an explicit purposeful interaction without confusing a brand guide with a control", () => {
-    expect(requiresPurposefulInteraction({ artDirection: "Add a purposeful interaction." })).toBe(true);
-    expect(requiresPurposefulInteraction({ preference: "Use an interactive care guide." })).toBe(true);
-    expect(requiresPurposefulInteraction({ artDirection: "Follow the brand guide for this calm page." })).toBe(false);
+    expect(
+      requiresPurposefulInteraction({
+        artDirection: "Add a purposeful interaction.",
+      }),
+    ).toBe(true);
+    expect(
+      requiresPurposefulInteraction({
+        preference: "Use an interactive care guide.",
+      }),
+    ).toBe(true);
+    expect(
+      requiresPurposefulInteraction({
+        artDirection: "Follow the brand guide for this calm page.",
+      }),
+    ).toBe(false);
   });
   it("activates and restores a real native disclosure and preserves paired pixels", async () => {
     const result = await capture(disclosure);
-    expect(result.observation.status).toBe("passed");
+    expect(result.observation.status, JSON.stringify(result.observation)).toBe(
+      "passed",
+    );
     expect(result.observation.after?.content).toContain(
       "Bring your service history.",
     );
@@ -85,6 +101,81 @@ describe("bounded rendered interaction evidence", () => {
       "Second service information",
     );
     expect(result.observation.restored).toBe(true);
+  });
+  it("restores an exclusive pressed-button selector via the originally selected button", async () => {
+    const result = await capture(
+      `<section data-purposeful-interaction><button type="button" aria-pressed="true" aria-controls="guide">One</button><button type="button" aria-pressed="false" aria-controls="guide">Two</button><div id="guide">First service information</div></section><script>document.querySelectorAll('button').forEach(b=>b.onclick=()=>{document.querySelectorAll('button').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));document.querySelector('#guide').textContent=b.textContent==='One'?'First service information':'Second service information';});</script>`,
+    );
+    expect(result.observation.status, JSON.stringify(result.observation)).toBe(
+      "passed",
+    );
+    expect(result.observation.before?.content).toContain(
+      "First service information",
+    );
+    expect(result.observation.after?.content).toContain(
+      "Second service information",
+    );
+    expect(result.observation.restored).toBe(true);
+  });
+  it("restores an explicitly declared process selector without aria-controls", async () => {
+    const result = await capture(`<section data-purposeful-interaction="process-step-selector"><button type="button" aria-pressed="false">One</button><button type="button" aria-pressed="true">Two</button><p aria-live="polite">Second service information</p></section><script>document.querySelectorAll('button').forEach(b=>b.onclick=()=>{document.querySelectorAll('button').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));document.querySelector('p').textContent=b.textContent==='One'?'First service information':'Second service information';});</script>`);
+    expect(result.observation.status, JSON.stringify(result.observation)).toBe("passed");
+    expect(result.observation.restored).toBe(true);
+  });
+  it("still restores a standalone pressed toggle by clicking it again", async () => {
+    const result = await capture(
+      `<section data-purposeful-interaction><button type="button" aria-pressed="false" aria-controls="guide">Details</button><div id="guide">Summary</div></section><script>document.querySelector('button').onclick=e=>{const b=e.target;const pressed=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(pressed));document.querySelector('#guide').textContent=pressed?'Detailed service information':'Summary';};</script>`,
+    );
+    expect(result.observation.status).toBe("passed");
+    expect(result.observation.restored).toBe(true);
+  });
+  it("does not mistake independent pressed buttons without a shared panel for an exclusive selector", async () => {
+    const result = await capture(`<section data-purposeful-interaction><button type="button" aria-pressed="true">First</button><button type="button" aria-pressed="false">Second</button><p>First enabled</p></section><script>document.querySelectorAll('button').forEach(b=>b.onclick=()=>{const enabled=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(enabled));document.querySelector('p').textContent=b.textContent+(enabled?' enabled':' disabled');});</script>`);
+    expect(result.observation.before?.state).toBe("true");
+    expect(result.observation.status, JSON.stringify(result.observation)).toBe("passed");
+    expect(result.observation.restored).toBe(true);
+  });
+  it("renders a sealed client image from retained bytes without making a remote request", async () => {
+    const url =
+      "https://assets.launchloom.wrazyos.com/intakes/synthetic/photo.webp";
+    const result = await capture(
+      disclosure + `<img src="${url}" alt="Client illustration">`,
+      {
+        imageSnapshots: new Map([
+          [
+            url,
+            {
+              body: Buffer.from(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=",
+                "base64",
+              ),
+              contentType: "image/png",
+            },
+          ],
+        ]),
+      },
+    );
+    expect(result.observation.status, JSON.stringify(result.observation)).toBe(
+      "passed",
+    );
+    expect(result.observation.unsafeEffects).toEqual([]);
+    expect(contacted).toEqual([]);
+  });
+  it("rejects an image beacon even on the snapshotted client asset host", async () => {
+    const url =
+      "https://assets.launchloom.wrazyos.com/intakes/synthetic/photo.webp";
+    const result = await capture(
+      disclosure +
+        `<script>document.querySelector('summary').onclick=()=>{new Image().src='${url}?visitor=private';};</script>`,
+      {
+        imageSnapshots: new Map([
+          [url, { body: Buffer.from("retained"), contentType: "image/png" }],
+        ]),
+      },
+    );
+    expect(result.observation.status).toBe("failed");
+    expect(result.observation.unsafeEffects?.length).toBeGreaterThan(0);
+    expect(contacted).toEqual([]);
   });
   it.each([
     ["inert", tabs],

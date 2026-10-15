@@ -83,6 +83,28 @@ compact mobile actions, and accessible forms. Avoid stacked popups, overlapping
 sticky controls, placeholder links, horizontal overflow, and text embedded in
 images. Never use em dashes in generated or rendered content.
 
+Reference-led transitions retain their editorial weight when source proof is
+unavailable. Replace an unsupported awards or reviews strip with verified scope,
+service-area or process facts at a comparable rhythm, not fabricated proof or an
+empty one-line divider. Keep this transition distinct from the service index.
+
+An interactive selector must reveal useful choice-specific information, not
+only repeat the selected label or repaint a button. Bind the controls to a
+visible output panel, expose selected state and support restoring the original
+choice. Use sealed decision-support content; labels alone are not a complete
+guide and do not authorize invented service promises.
+
+The `data-ll-action` marker applies filled action colors. Do not add it merely
+because a navigation link, wordmark, service row or secondary phone link is
+clickable. Those elements normally retain their local surface and link roles.
+
+For media-overlay references, keep an opaque text/focus plate only as large as
+needed for readable copy and complete focus rings, leaving the focal artwork
+visible. Do not substitute an oversized landing-page card for the reference's
+open media composition. On mobile, use an accessible compact disclosure menu
+when wrapping every navigation link would consume the opening; preserve all
+destinations and a usable contact route.
+
 At desktop widths, size opening typography and vertical spacing against both
 viewport width and height. The header and complete hero must fit within a
 1536 by 864 viewport at 100% browser zoom. Do not rely on browser zoom to reveal

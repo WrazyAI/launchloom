@@ -17,6 +17,7 @@ import {
 import {
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   HERO_MEDIA_FOCUS_CONTRACT,
+  RENDERED_DESIGN_CORRECTION_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
   VERIFIED_CLIENT_PERSONNEL_CONTRACT,
   adaptReferencePersonnelCuesForClient,
@@ -3710,6 +3711,7 @@ function authorRules() {
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
     "Do not silently reuse the primary hero image to fill missing secondary or tertiary image roles. When supporting image tokens are unavailable, keep the hero unique and adapt that chapter to a non-duplicative text-led or graphic treatment that still preserves the assigned reference mechanics.",
     "When the client visual brief explicitly requests a purposeful interaction, guide, selector, chooser, or navigator, implement a clearly labeled stateful native interaction marked with data-purposeful-interaction. Keep a useful visible default/static state. FAQ disclosure, LeadForm, ChatLauncher, ordinary navigation, or an image carousel alone do not satisfy that request; use only sealed service and decision-support content and never invent advice.",
+    RENDERED_DESIGN_CORRECTION_CONTRACT,
     "Never hide required sections or their content with opacity, visibility, or display before a scroll trigger. The full page must remain readable without JavaScript and in a no-scroll screenshot; animate visible content into place instead.",
     "The complete header and hero must fit at 1536x864 and 1366x768 at 100 percent zoom. Keep the hero compact and preserve the assigned composition; a reference-required utility-panel form may appear in the first fold but must remain concise and usable.",
     "Do not use em dashes, numbered service cards, bento grids, generic card walls, glassmorphism, or decorative motion without narrative purpose.",
