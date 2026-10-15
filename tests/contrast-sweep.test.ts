@@ -14,14 +14,26 @@ const modulePromise = import("../scripts/contrast-sweep.mjs");
 describe("persisted bounded contrast sweep", () => {
   it("preserves the route allowlist during screenshot audits without a repair stylesheet", async () => {
     const module = await modulePromise;
-    const root = await mkdtemp(path.join(os.tmpdir(), "ll-contrast-allowlist-"));
+    const root = await mkdtemp(
+      path.join(os.tmpdir(), "ll-contrast-allowlist-"),
+    );
     try {
       const dist = path.join(root, "dist");
       await mkdir(path.join(dist, "excluded"), { recursive: true });
-      await writeFile(path.join(dist, "index.html"), '<body data-ll-route="/" style="background:white;color:black"><p>Readable</p></body>');
-      await writeFile(path.join(dist, "excluded/index.html"), '<body data-ll-route="/excluded/" style="background:white;color:white"><p>Excluded failure</p></body>');
-      const report = await module.enforceBuiltContrast({ dist, routes: ["/"],
-        repair: true, screenshotsDir: path.join(root, "screenshots") });
+      await writeFile(
+        path.join(dist, "index.html"),
+        '<body data-ll-route="/" style="background:white;color:black"><p>Readable</p></body>',
+      );
+      await writeFile(
+        path.join(dist, "excluded/index.html"),
+        '<body data-ll-route="/excluded/" style="background:white;color:white"><p>Excluded failure</p></body>',
+      );
+      const report = await module.enforceBuiltContrast({
+        dist,
+        routes: ["/"],
+        repair: true,
+        screenshotsDir: path.join(root, "screenshots"),
+      });
       expect(report.before.routes).toEqual(["/"]);
       expect(report.after.routes).toEqual(["/"]);
       expect(report.pass).toBe(true);
@@ -178,7 +190,7 @@ describe("persisted bounded contrast sweep", () => {
       await rm(root, { recursive: true, force: true });
     }
   }, 60000);
-  it("plans a bounded plate repair for unresolved text with local role colors", async () => {
+  it("never paints plates for unresolved or legacy plate metadata", async () => {
     const module = await modulePromise;
     const target = {
       selector:
@@ -209,86 +221,87 @@ describe("persisted bounded contrast sweep", () => {
         findings: [target],
       },
     ];
-    // Without plate repairs the unresolved target stays untouched.
+    // Unresolved image text is not repairable by the automated sweep, whether
+    // or not the retired plate option is passed: it defers to author repair.
     expect(module.planContrastRepairs({ pages })).toEqual([]);
-    const plates = module.planContrastRepairs({ pages }, { plates: true });
-    expect(plates).toHaveLength(1);
-    expect(plates[0]).toMatchObject({
-      kind: "plate",
-      surface: "#1d3143",
-      minimum: 4.5,
-      selector: target.selector,
-    });
-    expect(plates[0].color).toMatch(/^#[0-9a-f]{6}$/u);
-    const css = module.contrastRepairCss(plates);
-    expect(css).toContain("background-color:#1d3143!important");
-    expect(css).toContain("background-image:none!important");
-    expect(css).toContain("z-index:3!important");
-    expect(css).toContain("content:none!important");
-    expect(css).toContain('body[data-ll-route="/"] > main:nth-of-type(1)');
-    // A plate without an own paint pseudo trims the neutralization rules.
-    const trimmed = module.planContrastRepairs(
-      {
-        pages: [
-          { ...pages[0], targets: [{ ...target, platePseudo: false }], findings: [{ ...target, platePseudo: false }] },
-        ],
-      },
-      { plates: true },
-    );
-    expect(module.contrastRepairCss(trimmed)).not.toContain("content:none");
-  });
-  it("bounds large plate plans into convergent subsets", async () => {
-    const module = await modulePromise;
-    const makeTarget = (depth: number) => ({
-      selector: `body${" > main:nth-of-type(1)".repeat(depth)} > p:nth-of-type(1)`,
+    expect(
+      module.planContrastRepairs({ pages }, { plates: true } as any),
+    ).toEqual([]);
+    // Legacy plate metadata never converts a repairable sibling into paint.
+    const colorTarget = {
+      selector: "body > nav:nth-of-type(1) > a:nth-of-type(1)",
       kind: "text",
       state: "default",
-      status: "unresolved",
-      repairEligible: false,
-      color: "#71652f",
-      background: null,
-      foreground: [113, 101, 47, 1],
-      backgrounds: [[29, 49, 67, 1]],
+      status: "fail",
+      repairEligible: true,
+      color: "#f8f6f0",
+      background: "#ffffff",
+      foreground: [248, 246, 240, 1],
+      backgrounds: [[255, 255, 255, 1]],
       minimum: 4.5,
-      issues: ["overlapping non-ancestor paint requires rendered review"],
+      ratio: 1.1,
       plateSafe: true,
       plateSurface: "#1d3143",
       plateText: "#f4f1ea",
-      platePseudo: false,
-      text: `Target ${depth}`,
+      text: "Services",
+    };
+    const mixed = module.planContrastRepairs({
+      pages: [
+        {
+          ...pages[0],
+          targets: [target, colorTarget],
+          findings: [target, colorTarget],
+        },
+      ],
     });
-    const targets = Array.from({ length: 44 }, (_, i) => makeTarget(14 + i));
-    const page = {
-      route: "/",
+    expect(mixed).toHaveLength(1);
+    const css = module.contrastRepairCss(mixed);
+    expect(css).toContain("color:var(--ll-creative-auto-text)!important");
+    for (const forbidden of [
+      "background-color:",
+      "background-image:",
+      "box-decoration-break",
+      "z-index:",
+      "padding:",
+    ])
+      expect(css).not.toContain(forbidden);
+  });
+  it("refuses an over-budget repair plan instead of falling back to paint", async () => {
+    const module = await modulePromise;
+    const makeTarget = (index: number) => ({
+      selector: `body > main:nth-of-type(1) > p:nth-of-type(${index + 1})`,
+      kind: "text",
+      state: "default",
+      status: "fail",
+      repairEligible: true,
+      color: `#${(0x101010 + index).toString(16).padStart(6, "0")}`,
+      background: "#ffffff",
+      foreground: [248, 246, 240, 1],
+      backgrounds: [[255, 255, 255, 1]],
+      minimum: 4.5,
+      ratio: 1.1,
+      plateSafe: true,
+      plateSurface: "#1d3143",
+      plateText: "#f4f1ea",
+      text: `Target ${index}`,
+    });
+    const targets = [makeTarget(0)];
+    const pages = Array.from({ length: 40 }, (_, index) => ({
+      route: `/page-${index}/`,
       viewport: module.CONTRAST_VIEWPORTS[0],
       repairScopeVerified: true,
-      mediaConditions: null,
+      mediaConditions: [`(min-width: ${1000 + index}px)`],
       targets,
       findings: targets,
-    };
-    const first = module.planContrastRepairs({ pages: [page] }, { plates: true });
-    expect(first.length).toBeGreaterThan(0);
-    expect(first.length).toBeLessThan(targets.length);
-    expect(first.every((r: any) => r.kind === "plate")).toBe(true);
-    expect(module.contrastRepairCss(first).length).toBeLessThanOrEqual(16384);
-    const firstKeys = new Set(first.map((r: any) => r.selector));
-    const second = module.planContrastRepairs(
-      {
-        pages: [
-          {
-            ...page,
-            targets: targets.filter((t) => !firstKeys.has(t.selector)),
-            findings: targets.filter((t) => !firstKeys.has(t.selector)),
-          },
-        ],
-      },
-      { plates: true },
-    );
-    expect(second.length).toBeGreaterThan(0);
-    expect(second.every((r: any) => r.kind === "plate")).toBe(true);
-    expect(second.every((r: any) => !firstKeys.has(r.selector))).toBe(true);
+    }));
+    // Every page carries its own media condition, so the plan exceeds the
+    // group budget and must refuse entirely rather than paint anything.
+    expect(
+      module.planContrastRepairs({ pages }, { plates: true } as any),
+    ).toEqual([]);
+    expect(module.planContrastRepairs({ pages })).toEqual([]);
   });
-  it("repairs consistent interaction-state failures", async () => {
+  it("leaves state-conflicting failures to author repair once plates are retired", async () => {
     const module = await modulePromise;
     const base = {
       selector: "body > p:nth-of-type(1)",
@@ -318,29 +331,23 @@ describe("persisted bounded contrast sweep", () => {
     ];
     const focusOnly = module.planContrastRepairs(
       { pages: page([{ ...base, state: "focus" }]) },
-      { plates: true },
+      { plates: true } as any,
     );
-    expect(focusOnly.some((r: any) => r.kind === "plate")).toBe(true);
-    const unsafePeer = module.planContrastRepairs(
-      {
-        pages: page([
-          { ...base, state: "focus" },
-          { ...base, state: "default", plateSafe: false },
-        ]),
-      },
-      { plates: true },
+    expect(focusOnly.length).toBeGreaterThan(0);
+    expect(focusOnly.every((r: any) => r.kind !== "plate")).toBe(true);
+    expect(module.contrastRepairCss(focusOnly)).not.toContain(
+      "background-color:",
     );
-    // An unsafe state blocks only the plate; consistent failing states remain
-    // eligible for the color sweep.
-    expect(unsafePeer.every((r: any) => r.kind !== "plate")).toBe(true);
-    const color = module.planContrastRepairs({
+    const consistent = module.planContrastRepairs({
       pages: page([
         { ...base, state: "focus" },
         { ...base, state: "default" },
       ]),
     });
-    expect(color.length).toBeGreaterThan(0);
-    expect(color.every((r: any) => r.kind !== "plate")).toBe(true);
+    expect(consistent.length).toBeGreaterThan(0);
+    expect(consistent.every((r: any) => r.kind !== "plate")).toBe(true);
+    // A passing default with a different backdrop conflicts with the focus
+    // failure; without plates the sweep refuses and defers to author repair.
     const mixed = module.planContrastRepairs(
       {
         pages: page([
@@ -356,12 +363,9 @@ describe("persisted bounded contrast sweep", () => {
           },
         ]),
       },
-      { plates: true },
+      { plates: true } as any,
     );
-    // A passing default with another backdrop blocks the color sweep, but a
-    // plate is self-sufficient and still repairs the focus-only fail.
-    expect(mixed.length).toBeGreaterThan(0);
-    expect(mixed.every((r: any) => r.kind === "plate")).toBe(true);
+    expect(mixed).toEqual([]);
   });
   it("repairs a failing focus indicator with an outline-color correction", async () => {
     const module = await modulePromise;
@@ -428,7 +432,7 @@ describe("persisted bounded contrast sweep", () => {
       await rm(root, { recursive: true, force: true });
     }
   }, 60000);
-  it("adds plate repairs beside unrelated color sweeps and refuses unsafe plates", async () => {
+  it("plans only foreground corrections when the retired plate option is passed", async () => {
     const module = await modulePromise;
     const colorTarget = {
       selector: "body > nav:nth-of-type(1) > a:nth-of-type(1)",
@@ -471,36 +475,104 @@ describe("persisted bounded contrast sweep", () => {
         findings: [colorTarget, plateTarget],
       },
     ];
-    const repairs = module.planContrastRepairs({ pages }, { plates: true });
-    expect(repairs.map((r: any) => r.kind || "color").sort()).toEqual([
-      "color",
-      "plate",
-    ]);
-    const unsafe = module.planContrastRepairs(
-      {
-        pages: [
-          {
-            ...pages[0],
-            targets: [{ ...plateTarget, plateSafe: false }],
-            findings: [{ ...plateTarget, plateSafe: false }],
-          },
-        ],
-      },
-      { plates: true },
+    const repairs = module.planContrastRepairs({ pages }, {
+      plates: true,
+    } as any);
+    expect(repairs.map((r: any) => r.kind || "color")).toEqual(["color"]);
+    const css = module.contrastRepairCss(repairs);
+    expect(css).not.toMatch(
+      /background-color:|background-image:|box-decoration-break|z-index:|padding:/u,
     );
-    expect(unsafe).toEqual([]);
-    const noRoles = module.planContrastRepairs(
-      {
-        pages: [
-          {
-            ...pages[0],
-            targets: [{ ...plateTarget, plateSurface: null, plateText: null }],
-            findings: [{ ...plateTarget, plateSurface: null, plateText: null }],
-          },
-        ],
-      },
-      { plates: true },
-    );
-    expect(noRoles).toEqual([]);
   });
+  it("replaces a legacy corrections block instead of appending duplicates", async () => {
+    const module = await modulePromise;
+    const root = await mkdtemp(path.join(os.tmpdir(), "ll-contrast-replace-"));
+    try {
+      const dist = path.join(root, "dist"),
+        source = path.join(root, "styles.css");
+      await mkdir(dist);
+      const markers = "/* launchloom: bounded rendered contrast corrections */";
+      const generatedLegacy =
+        `${markers}\n` +
+        'body[data-ll-route="/"] > main:nth-of-type(1) > p:nth-of-type(1){position:relative!important;z-index:3!important;background-color:#f8f6f0!important;background-image:none!important;color:#14201d!important;padding:.1em .35em!important;box-sizing:border-box;box-decoration-break:clone;isolation:isolate;}\n' +
+        `@media (min-width: 761px){body[data-ll-route="/"] > p:nth-of-type(2){--ll-creative-auto-text:#14201d;color:var(--ll-creative-auto-text)!important;}}\n` +
+        `${markers}\n` +
+        'body[data-ll-route="/services/"] > section:nth-of-type(1) > summary:nth-of-type(1) > span:nth-of-type(1){position:relative!important;z-index:3!important;background-color:#f8f6f0!important;background-image:none!important;color:#14201d!important;padding:.1em .35em!important;box-sizing:border-box;box-decoration-break:clone;isolation:isolate;}\n';
+      const authoredAfter = ".after-authored{color:#aabbcc}\n";
+      const legacy = `body{background:white;color:#f8f6f0}\n${generatedLegacy}${authoredAfter}`;
+      await writeFile(source, legacy);
+      await copyFile(source, path.join(dist, "styles.css"));
+      await writeFile(
+        path.join(dist, "index.html"),
+        '<link rel="stylesheet" href="/styles.css"><body data-ll-route="/"><p>Cedar copy</p></body>',
+      );
+      const report = await module.enforceBuiltContrast({
+        dist,
+        stylesPath: source,
+        build: () => copyFile(source, path.join(dist, "styles.css")),
+      });
+      expect(report.pass).toBe(true);
+      const css = await readFile(source, "utf8");
+      expect(
+        css.split("/* launchloom: bounded rendered contrast corrections */")
+          .length - 1,
+      ).toBe(1);
+      expect(
+        css.split("/* launchloom: end bounded rendered contrast corrections */")
+          .length - 1,
+      ).toBe(1);
+      expect(css).not.toContain("box-decoration-break");
+      expect(css).not.toContain("background-color:");
+      expect(css).not.toContain("z-index:");
+      expect(css).not.toContain("position:relative!important");
+      expect(css).not.toContain('body[data-ll-route="/services/"]');
+      // Authored CSS that follows a legacy block must survive untouched.
+      expect(css).toContain(".after-authored{color:#aabbcc}");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 60000);
+
+  it("preserves authored CSS after a delimited corrections block", async () => {
+    const module = await modulePromise;
+    const root = await mkdtemp(
+      path.join(os.tmpdir(), "ll-contrast-delimited-"),
+    );
+    try {
+      const dist = path.join(root, "dist"),
+        source = path.join(root, "styles.css");
+      await mkdir(dist);
+      const styles =
+        "body{background:white;color:#f8f6f0}\n" +
+        "/* launchloom: bounded rendered contrast corrections */\n" +
+        'body[data-ll-route="/"] > p:nth-of-type(9){--ll-creative-auto-text:#123456;color:var(--ll-creative-auto-text)!important;}\n' +
+        "/* launchloom: end bounded rendered contrast corrections */\n" +
+        ".after-authored{color:#aabbcc}\n";
+      await writeFile(source, styles);
+      await copyFile(source, path.join(dist, "styles.css"));
+      await writeFile(
+        path.join(dist, "index.html"),
+        '<link rel="stylesheet" href="/styles.css"><body data-ll-route="/"><p>Cedar copy</p></body>',
+      );
+      const report = await module.enforceBuiltContrast({
+        dist,
+        stylesPath: source,
+        build: () => copyFile(source, path.join(dist, "styles.css")),
+      });
+      expect(report.pass).toBe(true);
+      const css = await readFile(source, "utf8");
+      expect(
+        css.split("/* launchloom: bounded rendered contrast corrections */")
+          .length - 1,
+      ).toBe(1);
+      expect(
+        css.split("/* launchloom: end bounded rendered contrast corrections */")
+          .length - 1,
+      ).toBe(1);
+      expect(css).not.toContain("nth-of-type(9)");
+      expect(css).toContain(".after-authored{color:#aabbcc}");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 60000);
 });

@@ -206,9 +206,9 @@ export function appendReferencePersonnelCue(prompt, request) {
 
 export const HERO_MEDIA_FOCUS_CONTRACT = [
   "HERO MEDIA FOCUS CONTRACT",
-  "At every viewport, hero text and CTA focus indicators that overlap image or variable media need a provable opaque local surface covering the entire control and focus ring, or the media must move to a non-overlapping field.",
-  "Do not set the hero copy/action surface to transparent or translucent at mobile while media remains behind it. Keep a data-ll-surface role plate with an opaque host-provided surface token; an opaque button fill does not protect a focus outline outside the button bounds.",
-  "Do not rely on text shadow, photo averages, or a translucent wash to prove contrast. Preserve the assigned composition around this local plate; do not delete or flatten the hero image chapter.",
+  "At every viewport, hero text and CTA focus indicators that overlap image or variable media must prove contrast through foreground-first techniques: a text or control color that proves against the worst-case region behind it, a soft scrim whose darkest region under the text proves the ratio, or one deliberate surface field sized to its content and designed as part of the composition.",
+  "Never solve contrast with opaque per-line background boxes behind text, highlight chips behind navigation or metadata, or background paint applied to buttons and other controls; those read as rendering defects. Do not rely on text shadow, photo averages, or a translucent wash to prove contrast.",
+  "When the composition needs unplated copy, move the media to a non-overlapping field instead of boxing the text. Do not delete or flatten the hero image chapter.",
 ].join("\n");
 
 export const CLIENT_PALETTE_ROLE_CONTRACT = [
@@ -219,7 +219,7 @@ export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "Use these local role variables for foreground/background CSS; never inherit a light text token across a transition onto a light surface. Mark muted copy data-ll-muted and actions data-ll-action. Preserve the chosen primary as brand identity; use derived readable variants for links and text.",
   "Ordinary copy, navigation and button text require 4.5:1; large text requires 3:1; required control boundaries and focus indicators require 3:1. Hover, focus, open menus and mobile must retain readable pairings. Decorative rules need not be forced to 3:1.",
   "Treat each hover, active, and focus style as a separate foreground/background pair. When an action fill changes, also choose a readable foreground for that changed fill. Never pair --ll-text as an action fill with --ll-on-action text unless that exact pair is verified to meet contrast.",
-  "Image text needs a local contrasting plate or independently verified scrim. Do not rely on a dark average photo or text shadow. Unknown image, pseudo-element, blend and filter backdrops are unresolved until proved or repaired. Do not paint text-bearing elements with pseudo-element backdrops; use native list markers or an explicit aria-hidden child marker instead. The same deterministic rendered contrast gate applies to all pages.",
+  "Image text is solved foreground-first: choose a text color that proves against the worst-case region of the backdrop, or a soft scrim whose darkest text region proves the ratio; when neither is possible, move the copy to a solid field. Never add opaque per-line background boxes, chips or highlights behind text. Do not rely on a dark average photo or text shadow. Unknown image, pseudo-element, blend and filter backdrops are unresolved until proved or repaired. Do not paint text-bearing elements with pseudo-element backdrops; use native list markers or an explicit aria-hidden child marker instead. The same deterministic rendered contrast gate applies to all pages.",
   HERO_MEDIA_FOCUS_CONTRACT,
   "- surfaceColor is the dominant page surface. The page body and the large content fields use it.",
   "- heroColor is the opening hero surface. It stays distinct from the page surface.",
@@ -228,8 +228,8 @@ export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "- inkColor, mutedColor, and lineColor carry body type, secondary type, and rules.",
   "When the assigned reference's own surface direction conflicts with the client brief, the brief wins on surfaces while the reference keeps its composition, geometry, and hierarchy.",
   "A brand color used as the dominant page surface, or an inverted light/dark direction, fails the palette-adherence gate.",
-  "A bounded generated block marked `launchloom: bounded rendered contrast corrections` may be appended to the candidate stylesheet. It repairs only text backdrops that the deterministic audit cannot prove, using the local role variables, and it is part of the delivered design.",
-  "Preserve that block exactly in later edits: never rewrite it by hand, never duplicate it, and never delete it to resolve a finding. When authoring or repairing flagged text, prefer a real local surface or a clean wrapper over paint the audit cannot prove.",
+  "A bounded generated block marked `launchloom: bounded rendered contrast corrections` may be appended to the candidate stylesheet. It contains foreground-only corrections (text, text-fill and outline colors) for deterministic solid-surface pairs and never paints backgrounds, padding, borders or controls. It is part of the delivered design.",
+  "Preserve that block exactly in later edits: never rewrite it by hand, never duplicate it, and never delete it to resolve a finding. When authoring or repairing flagged text over media, choose a proving foreground color, a soft scrim, or a moved copy field instead of paint the audit cannot prove.",
 ].join("\n");
 
 export const CLIENT_TYPOGRAPHY_CONTRACT = [

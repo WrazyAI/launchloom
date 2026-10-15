@@ -1256,6 +1256,6 @@ export async function inspectContrastPage(
 export function contrastFailureMessages(report) {
   return report.findings.map(
     (f) =>
-      `contrast ${f.status}: ${f.route} ${f.viewport || ""} ${f.state} ${f.selector} ${f.kind} ${JSON.stringify(f.text)} (${f.ratio == null ? "unresolved" : f.ratio.toFixed(3)}; required ${f.minimum}); foreground ${f.color || "unknown"}, background ${f.background || "variable"}; ${(f.issues || []).join(", ")}${f.status === "unresolved" ? "; use a provable local opaque plate or sufficiently strong scrim and rerun" : ""}`,
+      `contrast ${f.status}: ${f.route} ${f.viewport || ""} ${f.state} ${f.selector} ${f.kind} ${JSON.stringify(f.text)} (${f.ratio == null ? "unresolved" : f.ratio.toFixed(3)}; required ${f.minimum}); foreground ${f.color || "unknown"}, background ${f.background || "variable"}; ${(f.issues || []).join(", ")}${f.status === "unresolved" ? "; use a proving foreground color, a sufficiently strong scrim, or a moved copy field and rerun" : ""}`,
   );
 }

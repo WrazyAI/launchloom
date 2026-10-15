@@ -202,15 +202,12 @@ export async function auditBuiltContrast({
 }
 
 /** Restrict changes to known solid local text, consistent across measured states.
- * Ambiguous selectors/routes/effects are not repairable. All repairs must pass
- * the rebuilt audit and the caller's existing source/fidelity/visual gates.
- * Plate repairs paint a provable local opaque surface from the client palette
- * contract for text that no color sweep can prove, such as text over authored
- * pseudo-element or overlapping paint. */
-export function planContrastRepairs(
-  report,
-  { maxRepairs = 32, plates = false } = {},
-) {
+ * Repairs are foreground-only (color, text-fill, outline). Opaque plate paint
+ * was retired because it boxed text and force-painted controls; unresolved
+ * image/overlap cases defer to bounded author repair instead. Ambiguous
+ * selectors/routes/effects are not repairable. All repairs must pass the
+ * rebuilt audit and the caller's existing source/fidelity/visual gates. */
+export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
   const groups = new Map();
   for (const page of report.pages) {
     if (!page.repairScopeVerified) continue;
@@ -261,95 +258,10 @@ export function planContrastRepairs(
       });
     }
   }
-  const repairs = [...groups.values()];
-  const plateRepairs = [];
-  if (plates) {
-    const grouped = new Map();
-    for (const page of report.pages || []) {
-      if (!page.repairScopeVerified) continue;
-      for (const target of page.targets || []) {
-        if (target.kind !== "text") continue;
-        if (target.status !== "unresolved" && target.status !== "fail") continue;
-        if (!target.plateSafe) continue;
-        if (
-          !/^body(?: > [a-z][a-z0-9-]*:nth-of-type\(\d+\))*$/.test(
-            target.selector,
-          )
-        )
-          continue;
-        const surface = /^#[0-9a-f]{6}$/u.test(String(target.plateSurface || ""))
-          ? String(target.plateSurface)
-          : null;
-        const base = /^#[0-9a-f]{6}$/u.test(String(target.plateText || ""))
-          ? String(target.plateText)
-          : /^#[0-9a-f]{6}$/u.test(String(target.color || ""))
-            ? String(target.color)
-            : null;
-        if (!surface || !base) continue;
-        const peers = page.targets.filter(
-          (t) => t.selector === target.selector && t.kind === "text",
-        );
-        if (
-          peers.some(
-            (t) =>
-              t.plateSafe === false ||
-              (t.plateSurface && t.plateSurface !== surface),
-          )
-        )
-          continue;
-        const key = JSON.stringify([
-          page.route,
-          page.viewport.name,
-          target.selector,
-        ]);
-        const previous = grouped.get(key);
-        const minimum = Math.max(
-          target.minimum,
-          ...peers.map((t) => t.minimum),
-          previous?.minimum || 0,
-        );
-        grouped.set(key, {
-          kind: "plate",
-          route: page.route,
-          viewport: page.viewport,
-          mediaConditions: page.mediaConditions,
-          selector: target.selector,
-          minimum,
-          surface,
-          original: target.color || null,
-          color: ensureContrast(base, surface, minimum),
-          pseudo: previous?.pseudo === true || target.platePseudo === true,
-          text: target.text,
-        });
-      }
-    }
-    const plateKeys = new Set(
-      [...grouped.values()].map((r) =>
-        JSON.stringify([r.route, r.viewport.name, r.selector]),
-      ),
-    );
-    for (const repair of repairs) {
-      // A plate already paints and re-colors the same element; drop the color
-      // sweep for that selector so the bounded overlay stays minimal.
-      if (
-        plateKeys.has(
-          JSON.stringify([repair.route, repair.viewport.name, repair.selector]),
-        )
-      )
-        continue;
-      plateRepairs.push(repair);
-    }
-    plateRepairs.push(...grouped.values());
-  }
+  const colorRepairs = [...groups.values()];
   // A bounded color sweep never fixes an arbitrary prefix and hides the rest,
   // so an over-budget color plan is refused entirely and defers to the
   // bounded author repair path.
-  const colorRepairs = plates
-    ? plateRepairs.filter((r) => r.kind !== "plate")
-    : repairs;
-  const platesOnly = plates
-    ? plateRepairs.filter((r) => r.kind === "plate")
-    : [];
   const colorGroups = new Set(
     colorRepairs.map((r) =>
       JSON.stringify([
@@ -359,44 +271,15 @@ export function planContrastRepairs(
       ]),
     ),
   );
-  const boundedColor =
-    colorGroups.size > maxRepairs ||
+  return colorGroups.size > maxRepairs ||
     contrastRepairCss(colorRepairs).length > 16384
-      ? []
-      : colorRepairs;
-  // Plates are repair aids, not a success claim: every application is bounded
-  // and the caller's rebuilt audit decides. A large candidate converges over
-  // repeated passes, so an over-budget plate plan selects a deterministic
-  // subset instead of bailing out.
-  const boundedPlates = [];
-  if (platesOnly.length) {
-    const key = (r) =>
-      JSON.stringify([r.route, r.viewport?.name, r.selector]);
-    const sorted = [...platesOnly].sort((a, b) => key(a).localeCompare(key(b)));
-    const groups = new Set();
-    for (const plate of sorted) {
-      const group = JSON.stringify([
-        plate.mediaConditions ?? plate.viewport,
-        "plate",
-        plate.surface,
-        plate.color,
-      ]);
-      const nextGroups = new Set(groups).add(group);
-      if (
-        nextGroups.size > maxRepairs ||
-        contrastRepairCss([...boundedPlates, plate]).length > 16384
-      )
-        break;
-      groups.add(group);
-      boundedPlates.push(plate);
-    }
-  }
-  return [...boundedColor, ...boundedPlates];
+    ? []
+    : colorRepairs;
 }
 export function contrastRepairCss(repairs) {
   const groups = new Map();
-  const plateGroups = new Map();
   for (const r of repairs) {
+    if (r.kind === "plate") continue;
     const conditions = r.mediaConditions ?? [
       [
         `(min-width: ${r.viewport.min}px)`,
@@ -409,21 +292,6 @@ export function contrastRepairCss(repairs) {
       /^body/,
       `body[data-ll-route=${JSON.stringify(r.route)}]`,
     );
-    if (r.kind === "plate") {
-      const key = JSON.stringify([conditions, r.surface, r.color]);
-      if (!plateGroups.has(key))
-        plateGroups.set(key, {
-          conditions,
-          surface: r.surface,
-          color: r.color,
-          selectors: new Set(),
-          pseudoSelectors: new Set(),
-        });
-      const group = plateGroups.get(key);
-      group.selectors.add(scopedSelector);
-      if (r.pseudo) group.pseudoSelectors.add(scopedSelector);
-      continue;
-    }
     const property = r.paintProperty || "color";
     const key = JSON.stringify([conditions, property, r.color]);
     if (!groups.has(key))
@@ -437,42 +305,81 @@ export function contrastRepairCss(repairs) {
   }
   const colorRules = [...groups.values()].map((g) => {
     let rule = `${[...g.selectors].join(",")}{--ll-creative-auto-text:${g.color};${g.property}:var(--ll-creative-auto-text)!important;}`;
-    for (const condition of g.conditions)
-      rule = `@media ${condition}{${rule}}`;
-    return rule;
-  });
-  // A plate is an opaque local surface from the client palette contract. Its
-  // background paints inside the element's own box and its neutralized
-  // pseudo-elements keep the glyph backdrop provable; the bounded repair is
-  // only emitted for elements without own transforms, filters or clipping.
-  const plateRules = [...plateGroups.values()].map((g) => {
-    const scoped = [...g.selectors];
-    const fill = scoped
-      .map(
-        (selector) =>
-          `${selector}{position:relative!important;z-index:3!important;background-color:${g.surface}!important;background-image:none!important;color:${g.color}!important;padding:.1em .35em!important;box-sizing:border-box;box-decoration-break:clone;isolation:isolate;}`,
-      )
-      .join("");
-    const pseudos = [...g.pseudoSelectors]
-      .flatMap((selector) => [`${selector}::before`, `${selector}::after`])
-      .map((selector) => `${selector}{content:none!important;}`)
-      .join("");
-    let rule = fill + pseudos;
-    for (const condition of g.conditions)
-      rule = `@media ${condition}{${rule}}`;
+    for (const condition of g.conditions) rule = `@media ${condition}{${rule}}`;
     return rule;
   });
   return (
     "\n/* launchloom: bounded rendered contrast corrections */\n" +
-    [...colorRules, ...plateRules].join("\n") +
-    "\n"
+    colorRules.join("\n") +
+    "\n/* launchloom: end bounded rendered contrast corrections */\n"
   );
+}
+
+export const BOUNDED_CORRECTIONS_START =
+  "/* launchloom: bounded rendered contrast corrections */";
+export const BOUNDED_CORRECTIONS_END =
+  "/* launchloom: end bounded rendered contrast corrections */";
+
+// Generated corrections are single-line rules with these exact signatures;
+// anything else that follows a legacy marker is authored CSS and is preserved.
+const GENERATED_RULE_SIGNATURES = [
+  "{--ll-creative-auto-text:#",
+  "position:relative!important;z-index:3!important;background-color:#",
+  "content:none!important;}",
+];
+
+/** Remove every managed corrections block (delimited or legacy undelimited)
+ * while preserving authored CSS anywhere in the file. */
+export function stripBoundedCorrections(existing) {
+  let text = String(existing ?? "");
+  let guard = 0;
+  while (guard++ < 200) {
+    const start = text.indexOf(BOUNDED_CORRECTIONS_START);
+    if (start === -1) break;
+    const end = text.indexOf(BOUNDED_CORRECTIONS_END, start);
+    if (end !== -1) {
+      text =
+        text.slice(0, start) + text.slice(end + BOUNDED_CORRECTIONS_END.length);
+      continue;
+    }
+    // Legacy undelimited block: the marker line plus the contiguous generated
+    // rule lines that follow it are managed content; authored CSS stops the
+    // scan and is preserved.
+    const lines = text
+      .slice(start + BOUNDED_CORRECTIONS_START.length)
+      .split("\n");
+    let consumed = 0;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed === "") {
+        consumed += 1;
+        continue;
+      }
+      const generated =
+        trimmed.endsWith("}") &&
+        GENERATED_RULE_SIGNATURES.some((signature) =>
+          trimmed.includes(signature),
+        );
+      if (!generated) break;
+      consumed += 1;
+    }
+    text = text.slice(0, start) + lines.slice(consumed).join("\n");
+  }
+  return text.replace(/\n{3,}/g, "\n\n").trimEnd();
+}
+
+/** Rewrite the managed corrections block in place so repeated passes and
+ * repeated runs never append duplicate or obsolete rules, and authored CSS
+ * before or after the block is always preserved. */
+export function withBoundedCorrections(existing, css) {
+  const base = stripBoundedCorrections(existing);
+  return base ? `${base}\n${css}` : String(css).trimStart();
 }
 /** Discovered built HTML routes, for callers that scope audits. */
 export async function builtRoutes(dist) {
   return htmlRoutes(dist);
 }
-/** @param {{dist: string, stylesPath?: string, deployedStylesPath?: string, build?: () => unknown, reportPath?: string, browser?: import("playwright").Browser, screenshotsDir?: string, repair?: boolean, plates?: boolean, routes?: string[] | null, maxPasses?: number, maxTotalCssChars?: number}} options */
+/** @param {{dist: string, stylesPath?: string, deployedStylesPath?: string, build?: () => unknown, reportPath?: string, browser?: import("playwright").Browser, screenshotsDir?: string, repair?: boolean, routes?: string[] | null, maxPasses?: number, maxTotalCssChars?: number}} options */
 export async function enforceBuiltContrast({
   dist,
   stylesPath,
@@ -482,22 +389,25 @@ export async function enforceBuiltContrast({
   browser,
   screenshotsDir,
   repair = true,
-  plates = false,
   routes = null,
   maxPasses = 8,
   maxTotalCssChars = 98_304,
 }) {
-  const before = await auditBuiltContrast({ dist, browser, routes, screenshotsDir: repair ? undefined : screenshotsDir });
+  const before = await auditBuiltContrast({
+    dist,
+    browser,
+    routes,
+    screenshotsDir: repair ? undefined : screenshotsDir,
+  });
   let after = before;
   const repairs = [];
   if (repair && stylesPath) {
     const applied = new Set();
-    let appliedCssChars = 0;
-    // Each application stays inside the existing bounded sweep contract
-    // (group and size caps), and a large candidate converges over a few
-    // passes because every plated element passes the next audit.
+    // Each pass rewrites the managed corrections block with the accumulated
+    // foreground-only repairs; a large candidate converges over a few passes
+    // because every corrected element passes the next audit.
     for (let pass = 0; pass < maxPasses && !after.pass; pass += 1) {
-      const planned = planContrastRepairs(after, { plates });
+      const planned = planContrastRepairs(after);
       const fresh = planned.filter((repair) => {
         const signature = JSON.stringify([
           repair.kind || "color",
@@ -514,24 +424,25 @@ export async function enforceBuiltContrast({
       if (!fresh.length) break;
       if (typeof build !== "function")
         throw new Error("Contrast repair requires a real rebuild callback");
-      const css = contrastRepairCss(fresh);
-      if (appliedCssChars + css.length > maxTotalCssChars) break;
+      const cumulative = [...repairs, ...fresh];
+      const css = contrastRepairCss(cumulative);
+      if (css.length > maxTotalCssChars) break;
       const original = await fs.readFile(stylesPath, "utf8");
-      await fs.writeFile(stylesPath, original + css);
+      await fs.writeFile(stylesPath, withBoundedCorrections(original, css));
       if (
         deployedStylesPath &&
         path.resolve(deployedStylesPath) !== path.resolve(stylesPath)
       ) {
         const deployed = await fs.readFile(deployedStylesPath, "utf8");
-        await fs.writeFile(deployedStylesPath, deployed + css);
+        await fs.writeFile(
+          deployedStylesPath,
+          withBoundedCorrections(deployed, css),
+        );
       }
-      appliedCssChars += css.length;
       repairs.push(...fresh);
       await build();
       after = await auditBuiltContrast({ dist, browser, routes });
     }
-    if (screenshotsDir)
-      after = await auditBuiltContrast({ dist, browser, routes, screenshotsDir });
   } else if (screenshotsDir && repair)
     after = await auditBuiltContrast({ dist, browser, routes, screenshotsDir });
   const report = { version: 1, pass: after.pass, before, repairs, after };
