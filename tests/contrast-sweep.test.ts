@@ -491,10 +491,15 @@ describe("persisted bounded contrast sweep", () => {
       const dist = path.join(root, "dist"),
         source = path.join(root, "styles.css");
       await mkdir(dist);
-      const legacy =
-        "body{background:white;color:#f8f6f0}\n" +
-        "/* launchloom: bounded rendered contrast corrections */\n.legacy-a{background-color:#f8f6f0!important}\n" +
-        "/* launchloom: bounded rendered contrast corrections */\n.legacy-b{padding:.1em .35em!important;box-decoration-break:clone}\n";
+      const markers = "/* launchloom: bounded rendered contrast corrections */";
+      const generatedLegacy =
+        `${markers}\n` +
+        'body[data-ll-route="/"] > main:nth-of-type(1) > p:nth-of-type(1){position:relative!important;z-index:3!important;background-color:#f8f6f0!important;background-image:none!important;color:#14201d!important;padding:.1em .35em!important;box-sizing:border-box;box-decoration-break:clone;isolation:isolate;}\n' +
+        `@media (min-width: 761px){body[data-ll-route="/"] > p:nth-of-type(2){--ll-creative-auto-text:#14201d;color:var(--ll-creative-auto-text)!important;}}\n` +
+        `${markers}\n` +
+        'body[data-ll-route="/services/"] > section:nth-of-type(1) > summary:nth-of-type(1) > span:nth-of-type(1){position:relative!important;z-index:3!important;background-color:#f8f6f0!important;background-image:none!important;color:#14201d!important;padding:.1em .35em!important;box-sizing:border-box;box-decoration-break:clone;isolation:isolate;}\n';
+      const authoredAfter = ".after-authored{color:#aabbcc}\n";
+      const legacy = `body{background:white;color:#f8f6f0}\n${generatedLegacy}${authoredAfter}`;
       await writeFile(source, legacy);
       await copyFile(source, path.join(dist, "styles.css"));
       await writeFile(
@@ -512,10 +517,60 @@ describe("persisted bounded contrast sweep", () => {
         css.split("/* launchloom: bounded rendered contrast corrections */")
           .length - 1,
       ).toBe(1);
-      expect(css).not.toContain(".legacy-a");
-      expect(css).not.toContain(".legacy-b");
+      expect(
+        css.split("/* launchloom: end bounded rendered contrast corrections */")
+          .length - 1,
+      ).toBe(1);
       expect(css).not.toContain("box-decoration-break");
       expect(css).not.toContain("background-color:");
+      expect(css).not.toContain("z-index:");
+      expect(css).not.toContain("position:relative!important");
+      expect(css).not.toContain('body[data-ll-route="/services/"]');
+      // Authored CSS that follows a legacy block must survive untouched.
+      expect(css).toContain(".after-authored{color:#aabbcc}");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 60000);
+
+  it("preserves authored CSS after a delimited corrections block", async () => {
+    const module = await modulePromise;
+    const root = await mkdtemp(
+      path.join(os.tmpdir(), "ll-contrast-delimited-"),
+    );
+    try {
+      const dist = path.join(root, "dist"),
+        source = path.join(root, "styles.css");
+      await mkdir(dist);
+      const styles =
+        "body{background:white;color:#f8f6f0}\n" +
+        "/* launchloom: bounded rendered contrast corrections */\n" +
+        'body[data-ll-route="/"] > p:nth-of-type(9){--ll-creative-auto-text:#123456;color:var(--ll-creative-auto-text)!important;}\n' +
+        "/* launchloom: end bounded rendered contrast corrections */\n" +
+        ".after-authored{color:#aabbcc}\n";
+      await writeFile(source, styles);
+      await copyFile(source, path.join(dist, "styles.css"));
+      await writeFile(
+        path.join(dist, "index.html"),
+        '<link rel="stylesheet" href="/styles.css"><body data-ll-route="/"><p>Cedar copy</p></body>',
+      );
+      const report = await module.enforceBuiltContrast({
+        dist,
+        stylesPath: source,
+        build: () => copyFile(source, path.join(dist, "styles.css")),
+      });
+      expect(report.pass).toBe(true);
+      const css = await readFile(source, "utf8");
+      expect(
+        css.split("/* launchloom: bounded rendered contrast corrections */")
+          .length - 1,
+      ).toBe(1);
+      expect(
+        css.split("/* launchloom: end bounded rendered contrast corrections */")
+          .length - 1,
+      ).toBe(1);
+      expect(css).not.toContain("nth-of-type(9)");
+      expect(css).toContain(".after-authored{color:#aabbcc}");
     } finally {
       await rm(root, { recursive: true, force: true });
     }
