@@ -43,6 +43,7 @@ const creativeRuntime = {
   {creativeServicesIndex && experience ? (
     <div
       data-authored-page-host="true"
+      data-source-baseline={site.design?.experience?.sourceBaselineId || undefined}
       data-authored-page-kind="services-index"
       data-creative-renderer="creative-candidate"
       data-creative-candidate={creativeRuntime.candidateId}

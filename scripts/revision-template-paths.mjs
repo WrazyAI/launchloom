@@ -176,6 +176,8 @@ export function revisionTemplatePaths(config) {
       files.add(relative);
   }
   if (files.has("layouts/SiteLayout.astro")) {
+    files.add("components/SourceAttribution.astro");
+    files.add("lib/source-attribution.mjs");
     files.add("lib/color-policy.mjs");
     files.add("lib/color-contrast.mjs");
   }

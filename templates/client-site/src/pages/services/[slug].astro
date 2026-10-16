@@ -99,6 +99,7 @@ const serviceStructuredData = {
   {creativeService && experience ? (
     <div
       data-authored-page-host="true"
+      data-source-baseline={site.design?.experience?.sourceBaselineId || undefined}
       data-authored-page-kind="service"
       data-creative-renderer="creative-candidate"
       data-creative-candidate={creativeRuntime.candidateId}

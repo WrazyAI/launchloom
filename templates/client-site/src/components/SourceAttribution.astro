@@ -1,0 +1,15 @@
+---
+import { sourceAttribution } from "../lib/source-attribution.mjs";
+const credit = sourceAttribution(Astro.props.sourceId);
+---
+{credit && (
+  <aside data-source-attribution={Astro.props.sourceId} aria-label="Template attribution">
+    <a href={credit.href}>{credit.label}</a>
+    <span> · {credit.license}</span>
+  </aside>
+)}
+<style>
+  [data-source-attribution] { background:#ffffff; color:#17212b; padding:1rem 1.5rem; font:0.875rem/1.5 var(--font-body,system-ui,sans-serif); text-align:center; }
+  [data-source-attribution] a { color:#164f83; text-decoration:underline; }
+  [data-source-attribution] a:focus-visible { outline:2px solid #164f83; outline-offset:4px; }
+</style>

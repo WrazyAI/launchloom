@@ -29,6 +29,8 @@ import {
 import { validateReferenceDna } from "./reference-dna.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 import { MAX_REPAIR_FILE_SOURCE_CHARS } from "./creative-repair-contract.mjs";
+import { resolveSourceStarter, sourceFirstGenerator } from "./source-first-authoring.mjs";
+import { renderSourceBaseline } from "./source-starter-baseline.mjs";
 
 /**
  * @typedef {"contract" | "experience" | "service" | "location" | "service-index" | "styles" | "motion"} AuthorStage
@@ -47,6 +49,8 @@ import { MAX_REPAIR_FILE_SOURCE_CHARS } from "./creative-repair-contract.mjs";
  *   servicesIndexSource?: string;
  *   validationError?: string;
  *   previousSource?: string;
+ *   sourceStarter?: Record<string, any>;
+ *   sourceEditBase?: string;
  * }} AuthorStageRequest
  */
 
@@ -3879,6 +3883,9 @@ function safeAuthorFailureStack(error) {
  *   model?: string;
  *   creativeSession?: Record<string, any> | null;
  *   testProfile?: "full" | "full-preview" | "seo-only" | "creative-only";
+ *   repositoryRoot?: string;
+ *   sourceResolver?: (route: Record<string, any>, options: {repositoryRoot: string}) => Record<string, any>;
+ *   baselineRenderer?: (starter: Record<string, any>, options: {repositoryRoot: string}) => Promise<Record<string, any>>;
  * }} input
  */
 export async function authorExperienceCandidates({
@@ -3888,6 +3895,9 @@ export async function authorExperienceCandidates({
   model = "openai/gpt-6-luna",
   creativeSession = null,
   testProfile = "full",
+  repositoryRoot = process.cwd(),
+  sourceResolver = resolveSourceStarter,
+  baselineRenderer = renderSourceBaseline,
 }) {
   if (typeof generate !== "function")
     throw new Error("A generation adapter is required.");
@@ -3914,6 +3924,12 @@ export async function authorExperienceCandidates({
   const limitedGenerate = createGenerationLimiter(generate, maxConcurrency);
   const authoredResults = await Promise.allSettled(
     routes.map(async (route, index) => {
+      const sourceStarter = sourceResolver(route, { repositoryRoot });
+      const sourceRender = sourceStarter.mode === "source-first"
+        ? await baselineRenderer(sourceStarter, { repositoryRoot })
+        : null;
+      const sourceEdits = [];
+      const candidateGenerate = sourceFirstGenerator(limitedGenerate, sourceStarter, sourceEdits);
       const routeContentManifest = buildCreativeContentManifest(site, route);
       const content = routeContentManifest.values;
       const modelRoute = adaptReferencePersonnelCuesForClient(route, content);
@@ -3928,14 +3944,14 @@ export async function authorExperienceCandidates({
         visualBrief: routeContentManifest.visualBrief,
         rules,
       };
-      const contractResult = await generateContract(limitedGenerate, {
+      const contractResult = await generateContract(candidateGenerate, {
         ...base,
         stage: "contract",
       });
       const designContract = contractResult.designContract;
       const designRationale = contractResult.designRationale;
       const experienceResult = await generateStageValue(
-        limitedGenerate,
+        candidateGenerate,
         { ...base, stage: "experience", designContract },
         "content",
         "experience",
@@ -3955,7 +3971,7 @@ export async function authorExperienceCandidates({
         let repairedExperience;
         try {
           repairedExperience = await generateStageValue(
-            limitedGenerate,
+            candidateGenerate,
             {
               ...base,
               stage: "experience",
@@ -3976,7 +3992,7 @@ export async function authorExperienceCandidates({
         } catch (repairError) {
           const repairMessage = validationRepairMessage(repairError);
           const finalRepair = await generateStageValue(
-            limitedGenerate,
+            candidateGenerate,
             {
               ...base,
               stage: "experience",
@@ -4039,7 +4055,7 @@ export async function authorExperienceCandidates({
         ) {
           referenceRepairCycles += 1;
           const repaired = await generateStageValue(
-            limitedGenerate,
+            candidateGenerate,
             {
               ...base,
               stage: "experience",
@@ -4072,7 +4088,7 @@ export async function authorExperienceCandidates({
         referenceFidelity = fidelity;
       }
       const servicePageOutput = await generateValidatedSource({
-        generate: limitedGenerate,
+        generate: candidateGenerate,
         request: {
           ...base,
           stage: "service",
@@ -4091,7 +4107,7 @@ export async function authorExperienceCandidates({
       let locationPage = "";
       if (authorLocationPage) {
         const locationPageOutput = await generateValidatedSource({
-          generate: limitedGenerate,
+          generate: candidateGenerate,
           request: {
             ...base,
             stage: "location",
@@ -4107,7 +4123,7 @@ export async function authorExperienceCandidates({
         complianceRepaired ||= locationPageOutput.repaired;
       }
       const servicesIndexOutput = await generateValidatedSource({
-        generate: limitedGenerate,
+        generate: candidateGenerate,
         request: {
           ...base,
           stage: "service-index",
@@ -4124,7 +4140,7 @@ export async function authorExperienceCandidates({
       complianceRepaired ||= servicesIndexOutput.repaired;
       const [stylesOutput, motionOutput] = await Promise.all([
         generateValidatedSource({
-          generate: limitedGenerate,
+          generate: candidateGenerate,
           request: {
             ...base,
             stage: "styles",
@@ -4138,7 +4154,7 @@ export async function authorExperienceCandidates({
           validate: validateStyles,
         }),
         generateMotionSource({
-          generate: limitedGenerate,
+          generate: candidateGenerate,
           request: {
             ...base,
             stage: "motion",
@@ -4180,6 +4196,15 @@ export async function authorExperienceCandidates({
       const metadata = {
         version: 2,
         candidateId: `candidate-${String.fromCharCode(97 + index)}`,
+        sourceStrategy: {
+          version: 1,
+          mode: sourceStarter.mode,
+          reason: sourceStarter.reason,
+          dossierId: sourceStarter.dossierId || ("referenceDossier" in route ? route.referenceDossier?.id : null) || null,
+          templateDigest: sourceStarter.templateDigest || null,
+          creditId: sourceStarter.creditId || null,
+          baselineDigests: sourceStarter.baselineDigests || null,
+        },
         routeId: route.id,
         routeLabel: route.label,
         model,
@@ -4273,6 +4298,11 @@ export async function authorExperienceCandidates({
           "styles.css": `${styles}\n`,
           "motion.js": `${motion}\n`,
           "metadata.json": `${JSON.stringify(metadata, null, 2)}\n`,
+          ...(sourceStarter.mode === "source-first" ? {
+            "source-baseline.json": `${JSON.stringify({ ...sourceStarter, render: sourceRender?.report, edits: sourceEdits }, null, 2)}\n`,
+            ...(sourceStarter.licenseText ? { "source-license.txt": sourceStarter.licenseText } : {}),
+            ...(sourceRender?.artifacts || {}),
+          } : {}),
         },
       };
     }),

@@ -4,6 +4,7 @@ import {
 } from "../templates/client-site/src/lib/page-briefs.mjs";
 import { routeLinkedContent } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { contrastFailureMessages } from "./rendered-contrast.mjs";
+import { sourceAttributionFailures } from "./source-attribution-evidence.mjs";
 import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import http from "node:http";
@@ -855,6 +856,7 @@ export async function runCreativeBakeoff({
             const evidence = await inspect(page);
             const failures = [
               ...hardFailures(evidence, viewport),
+              ...await sourceAttributionFailures(page, candidate.metadata.sourceStrategy?.creditId),
               browserErrors.length > 0 && "browser error",
             ].filter(Boolean);
             const compositionTopology =
@@ -1070,6 +1072,7 @@ export async function runCreativeBakeoff({
                 );
                 const failures = [
                   ...authoredPageFailures(evidence, authoredPage.kind),
+                  ...await sourceAttributionFailures(page, candidate.metadata.sourceStrategy?.creditId),
                   ...identityFindings,
                   browserErrors.length > 0 && "browser error",
                 ].filter(Boolean);
