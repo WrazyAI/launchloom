@@ -430,10 +430,11 @@ describe("persisted bounded contrast sweep", () => {
     ];
     const repairs = module.planContrastRepairs({ pages });
     expect(repairs).toHaveLength(1);
-    expect(repairs[0].paintProperty).toBe("outline-color");
-    expect(module.contrastRepairCss(repairs)).toContain(
-      "outline-color:var(--ll-creative-auto-text)!important",
-    );
+    expect(repairs[0].kind).toBe("indicator");
+    expect(repairs[0].paintProperty).toBe("outline");
+    const css = module.contrastRepairCss(repairs);
+    expect(css).toContain(":focus-visible{outline:2px solid #");
+    expect(css).toContain("outline-offset:2px!important");
   });
   it("scopes an audit to an explicit route allowlist", async () => {
     const module = await modulePromise;
@@ -511,12 +512,108 @@ describe("persisted bounded contrast sweep", () => {
     const repairs = module.planContrastRepairs({ pages }, {
       plates: true,
     } as any);
-    expect(repairs.map((r: any) => r.kind || "color")).toEqual(["color"]);
+    expect(repairs.map((r: any) => r.kind || "color")).toEqual(["foreground"]);
     const css = module.contrastRepairCss(repairs);
     expect(css).not.toMatch(
       /background-color:|background-image:|box-decoration-break|z-index:|padding:/u,
     );
   });
+  it("repairs provable contrast on pixel-resolved backdrops against both extremes", async () => {
+    const module = await modulePromise;
+    const { contrast } = await import("../scripts/color-contrast.mjs");
+    const target = {
+      selector: "body > main:nth-of-type(1) > p:nth-of-type(1)",
+      kind: "text",
+      state: "default",
+      status: "fail",
+      repairEligible: false,
+      pixelResolved: true,
+      color: "#6b716d",
+      background: null,
+      foreground: [107, 113, 109, 1],
+      backgrounds: [[29, 49, 67, 1]],
+      pixelBackdrop: { dark: "#3a3f3b", light: "#57605a" },
+      minimum: 4.5,
+      ratio: 1.193,
+      issues: ["overlapping non-ancestor paint requires rendered review", "resolved from rendered pixels"],
+      text: "Begin a practical conversation",
+    };
+    const pages = [
+      {
+        route: "/",
+        viewport: module.CONTRAST_VIEWPORTS[0],
+        repairScopeVerified: true,
+        mediaConditions: null,
+        targets: [target],
+        findings: [target],
+      },
+    ];
+    const repairs = module.planContrastRepairs({ pages });
+    expect(repairs).toHaveLength(1);
+    expect(repairs[0].kind).toBe("foreground");
+    expect(contrast(repairs[0].color, "#3a3f3b")).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(repairs[0].color, "#57605a")).toBeGreaterThanOrEqual(4.5);
+    // A full black-to-white photo range has no single color at 5:1 (the
+    // crossing point of both extremes is below 4.6), so the sweep refuses.
+    const wide = {
+      ...target,
+      minimum: 5,
+      pixelBackdrop: { dark: "#000000", light: "#ffffff" },
+    };
+    expect(
+      module.planContrastRepairs({
+        pages: [{ ...pages[0], targets: [wide], findings: [wide] }],
+      }),
+    ).toEqual([]);
+  });
+
+  it("scopes pixel-resolved hover repairs to the hover state", async () => {
+    const module = await modulePromise;
+    const { contrast } = await import("../scripts/color-contrast.mjs");
+    const target = {
+      selector: "body > nav:nth-of-type(1) > a:nth-of-type(1)",
+      kind: "text",
+      state: "hover",
+      status: "fail",
+      repairEligible: false,
+      pixelResolved: true,
+      color: "#ffffff",
+      background: null,
+      foreground: [255, 255, 255, 1],
+      backgrounds: [[200, 236, 88, 1]],
+      pixelBackdrop: { dark: "#c8ec58", light: "#d6f37a" },
+      minimum: 4.5,
+      ratio: 1.18,
+      issues: ["resolved from rendered pixels"],
+      text: "Book a consultation",
+    };
+    const pages = [
+      {
+        route: "/",
+        viewport: module.CONTRAST_VIEWPORTS[0],
+        repairScopeVerified: true,
+        mediaConditions: null,
+        targets: [target],
+        findings: [target],
+      },
+    ];
+    const repairs = module.planContrastRepairs({ pages });
+    expect(repairs).toHaveLength(1);
+    expect(repairs[0].stateScope).toBe(":hover");
+    expect(module.contrastRepairCss(repairs)).toContain(":hover{--ll-creative-auto-text:");
+    expect(contrast(repairs[0].color, "#c8ec58")).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(repairs[0].color, "#d6f37a")).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("strips synthesized outline indicator rules from legacy blocks", async () => {
+    const module = await modulePromise;
+    const legacy =
+      "/* launchloom: bounded rendered contrast corrections */\nbody > a{outline:2px solid #0a0a0a!important;outline-offset:2px!important}\np{color:red}";
+    const stripped = module.stripBoundedCorrections(legacy);
+    expect(stripped).not.toContain("outline:2px solid");
+    expect(stripped).toContain("p{color:red}");
+  });
+
   it("replaces a legacy corrections block instead of appending duplicates", async () => {
     const module = await modulePromise;
     const root = await mkdtemp(path.join(os.tmpdir(), "ll-contrast-replace-"));

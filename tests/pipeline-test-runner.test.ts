@@ -16,6 +16,7 @@ import {
   assertCompatibleTestAssets,
   pagesDeploymentUrl,
   pushPipelineTestEvidence,
+  nearMissCandidateId,
 } from "../scripts/run-pipeline-test.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { summarizeGenerationCosts } from "../scripts/generation-cost-summary.mjs";
@@ -73,6 +74,23 @@ function adapter(fail = "", authoredCandidateCount = 3) {
   );
   return { calls, dependencies };
 }
+describe("diagnostic selection after creative runs", () => {
+  it("prefers the near-miss candidate when the summary delivered open findings", () => {
+    expect(
+      nearMissCandidateId({
+        status: "previewed-with-open-findings",
+        nearMiss: { candidateId: "candidate-b" },
+      }),
+    ).toBe("candidate-b");
+  });
+
+  it("prefers nothing for strict, malformed, or missing summaries", () => {
+    expect(nearMissCandidateId({ status: "passed", promotionReady: true })).toBeNull();
+    expect(nearMissCandidateId({ status: "previewed-with-open-findings" })).toBeNull();
+    expect(nearMissCandidateId(null)).toBeNull();
+  });
+});
+
 describe("focused pipeline orchestration", () => {
   it("uses the configured private Pages project when no explicit name is passed", () => {
     vi.stubEnv("LAUNCHLOOM_TEST_PAGES_PROJECT", "launchloom-custom-preview");

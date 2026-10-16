@@ -28,14 +28,20 @@ export async function decodeRgbaPixels(buffer, { maximumSamples = 250_000 } = {}
 }
 
 /**
- * Worst-case contrast between a foreground color and a set of decoded pixels.
- * The foreground is alpha-composited over every sampled pixel, so translucent
- * text colors are measured as they actually render.
+ * Analyze the worst-case contrast between a foreground color and decoded
+ * pixels, also returning the darkest and lightest sampled backdrop colors.
+ * A foreground proven against both extremes is proven against every sampled
+ * pixel whose luminance lies between them, which is what the bounded repair
+ * planner relies on.
  * @param {number[]} foreground [r, g, b, alpha] with alpha in 0..1
  * @param {Uint8Array | number[]} pixels RGBA bytes
  */
-export function worstCasePixelRatio(foreground, pixels) {
+export function analyzePixelBackdrop(foreground, pixels) {
   let worst = Number.POSITIVE_INFINITY;
+  let darkPixel = null;
+  let lightPixel = null;
+  let darkLuminance = Number.POSITIVE_INFINITY;
+  let lightLuminance = Number.NEGATIVE_INFINITY;
   for (let index = 0; index < pixels.length; index += 4) {
     const backdrop = [
       Number(pixels[index]),
@@ -49,8 +55,31 @@ export function worstCasePixelRatio(foreground, pixels) {
     const ratio =
       (Math.max(text, plate) + 0.05) / (Math.min(text, plate) + 0.05);
     if (ratio < worst) worst = ratio;
+    if (plate < darkLuminance) {
+      darkLuminance = plate;
+      darkPixel = backdrop;
+    }
+    if (plate > lightLuminance) {
+      lightLuminance = plate;
+      lightPixel = backdrop;
+    }
   }
-  return Number.isFinite(worst) ? worst : 0;
+  return {
+    ratio: Number.isFinite(worst) ? worst : 0,
+    darkPixel,
+    lightPixel,
+  };
+}
+
+/**
+ * Worst-case contrast between a foreground color and a set of decoded pixels.
+ * The foreground is alpha-composited over every sampled pixel, so translucent
+ * text colors are measured as they actually render.
+ * @param {number[]} foreground [r, g, b, alpha] with alpha in 0..1
+ * @param {Uint8Array | number[]} pixels RGBA bytes
+ */
+export function worstCasePixelRatio(foreground, pixels) {
+  return analyzePixelBackdrop(foreground, pixels).ratio;
 }
 
 /**
@@ -224,6 +253,12 @@ export async function resolveRenderedBackdrop(
       } catch {
         visiblePixels = null;
       }
+      const analysis = analyzePixelBackdrop(effectiveForeground, pixels);
+      if (analysis.darkPixel && analysis.lightPixel)
+        target.pixelBackdrop = {
+          dark: rgbHex(analysis.darkPixel),
+          light: rgbHex(analysis.lightPixel),
+        };
       if (visiblePixels) {
         const delta = maxChannelDelta(visiblePixels, pixels);
         if (delta <= 8) {
@@ -242,7 +277,7 @@ export async function resolveRenderedBackdrop(
           continue;
         }
       }
-      ratio = worstCasePixelRatio(effectiveForeground, pixels);
+      ratio = analysis.ratio;
     } catch {
       continue; // decode failure: stays unresolved
     }

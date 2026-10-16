@@ -2,7 +2,12 @@ import fs from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { chromium } from "playwright";
-import { ensureContrast, rgbHex, composite } from "./color-contrast.mjs";
+import {
+  ensureContrast,
+  rgbHex,
+  composite,
+  contrast,
+} from "./color-contrast.mjs";
 import { inspectContrastPage } from "./rendered-contrast.mjs";
 
 export const CONTRAST_VIEWPORTS = [
@@ -207,6 +212,64 @@ export async function auditBuiltContrast({
  * image/overlap cases defer to bounded author repair instead. Ambiguous
  * selectors/routes/effects are not repairable. All repairs must pass the
  * rebuilt audit and the caller's existing source/fidelity/visual gates. */
+/** Every measured backdrop a correction for these targets must satisfy. */
+function backdropCandidates(targets) {
+  const candidates = new Set();
+  for (const target of targets) {
+    if (target.background) candidates.add(target.background);
+    if (target.pixelBackdrop?.dark) candidates.add(target.pixelBackdrop.dark);
+    if (target.pixelBackdrop?.light) candidates.add(target.pixelBackdrop.light);
+  }
+  return [...candidates];
+}
+
+/** Nearest readable color at the requested minimum against every backdrop.
+ * Returns null when no single foreground satisfies all of them (for example a
+ * full black-to-white photo range); the repair is then refused instead of
+ * guessing. A color proven against the darkest and lightest measured pixels is
+ * proven against everything between them.
+ * @param {string} original
+ * @param {string[]} backdrops
+ * @param {number} minimum
+ */
+export function proveForegroundAgainst(original, backdrops, minimum) {
+  const candidates = [];
+  for (const backdrop of backdrops) {
+    try {
+      candidates.push(ensureContrast(original, backdrop, minimum));
+    } catch {
+      // No readable foreground exists for this backdrop alone; another
+      // backdrop's candidate may still satisfy the whole set.
+    }
+  }
+  // The pure ends are the strongest single-sided proofs: a range that is
+  // entirely dark is satisfied by white and vice versa, where a minimal
+  // per-backdrop candidate would fail the other side.
+  candidates.push("#000000", "#ffffff");
+  for (const candidate of candidates) {
+    let pass = true;
+    for (const backdrop of backdrops) {
+      const ratio = contrast(candidate, backdrop);
+      if (!Number.isFinite(ratio) || ratio + 1e-9 < minimum) {
+        pass = false;
+        break;
+      }
+    }
+    if (pass) return candidate;
+  }
+  return null;
+}
+
+/** Restrict changes to known local text and focus indicators, consistent
+ * within the correction's state scope. Corrections are foreground-only (color,
+ * text-fill, outline: outline synthesis for missing or unreadable focus
+ * indicators) and must be proven against every measured backdrop of every
+ * state of the same selector, including pixel-resolved backdrops. Opaque plate
+ * paint was retired because it boxed text and force-painted controls.
+ * Unresolved peers, differing state foreground colors, unprovable backdrop
+ * ranges, ambiguous selectors, and over-budget plans defer to bounded author
+ * repair. All repairs must pass the rebuilt audit and the caller's existing
+ * source/fidelity/visual gates. */
 export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
   const groups = new Map();
   for (const page of report.pages) {
@@ -217,11 +280,11 @@ export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
         !/^body(?: > [a-z][a-z0-9-]*:nth-of-type\(\d+\))*$/.test(f.selector)
       )
         continue;
-      // Corrections are state-scoped. Hover and outline failures are repaired
-      // with :hover and :focus-visible rules, so an element whose paint
-      // differs between states no longer blocks its own repair. Default-state
-      // repairs keep the strict cross-state guard: a static color rule would
-      // clobber a passing authored hover or focus paint.
+      // Corrections are state-scoped: hover findings repair with :hover rules
+      // and focus/outline findings with :focus-visible rules, so an element
+      // whose paint differs between states no longer blocks its own repair.
+      // Default-state repairs keep the cross-state foreground guard: a static
+      // rule may not override a state that paints a different color.
       const focusScoped =
         f.paintProperty === "outline-color" ||
         f.kind === "focus" ||
@@ -245,16 +308,16 @@ export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
                 t.state === f.state &&
                 t.kind === f.kind,
             );
-      if (
-        peers.some(
-          (t) =>
-            t.status === "unresolved" ||
-            !t.background ||
-            t.background !== f.background ||
-            t.color !== f.color,
-        )
-      )
+      if (peers.some((t) => t.status === "unresolved" || t.color !== f.color))
         continue;
+      const backdrops = backdropCandidates(peers);
+      if (!backdrops.length) continue;
+      const minimum = Math.max(f.minimum, ...peers.map((t) => t.minimum));
+      const effective = f.pixelResolved
+        ? f.color
+        : rgbHex(composite(f.foreground, f.backgrounds[0]));
+      const color = proveForegroundAgainst(effective, backdrops, minimum);
+      if (!color) continue;
       const key = JSON.stringify([
         page.route,
         page.viewport.name,
@@ -262,28 +325,23 @@ export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
         stateScope,
       ]);
       const previous = groups.get(key);
-      const minimum = Math.max(
-        f.minimum,
-        ...peers.map((t) => t.minimum),
-        previous?.minimum || 0,
-      );
-      const effective = rgbHex(composite(f.foreground, f.backgrounds[0]));
       groups.set(key, {
+        kind: focusScoped ? "indicator" : "foreground",
         route: page.route,
         viewport: page.viewport,
         mediaConditions: page.mediaConditions,
         selector: f.selector,
         stateScope,
-        minimum,
+        minimum: Math.max(minimum, previous?.minimum || 0),
         paintProperty: focusScoped
-          ? "outline-color"
+          ? "outline"
           : f.paintProperty === "-webkit-text-fill-color"
             ? "-webkit-text-fill-color"
             : "color",
         original: f.color,
-        background: f.background,
+        background: backdrops.join(","),
         ratio: f.ratio,
-        color: ensureContrast(effective, f.background, minimum),
+        color,
         text: f.text,
       });
     }
@@ -323,19 +381,28 @@ export function contrastRepairCss(repairs) {
         /^body/,
         `body[data-ll-route=${JSON.stringify(r.route)}]`,
       ) + (r.stateScope || "");
+    const indicator = r.kind === "indicator";
     const property = r.paintProperty || "color";
-    const key = JSON.stringify([conditions, property, r.color]);
+    const key = JSON.stringify([
+      conditions,
+      indicator ? "indicator" : property,
+      r.color,
+    ]);
     if (!groups.has(key))
       groups.set(key, {
         conditions,
         property,
+        indicator,
         color: r.color,
         selectors: new Set(),
       });
     groups.get(key).selectors.add(scopedSelector);
   }
   const colorRules = [...groups.values()].map((g) => {
-    let rule = `${[...g.selectors].join(",")}{--ll-creative-auto-text:${g.color};${g.property}:var(--ll-creative-auto-text)!important;}`;
+    const selectorList = [...g.selectors].join(",");
+    let rule = g.indicator
+      ? `${selectorList}{outline:2px solid ${g.color}!important;outline-offset:2px!important}`
+      : `${selectorList}{--ll-creative-auto-text:${g.color};${g.property}:var(--ll-creative-auto-text)!important}`;
     for (const condition of g.conditions) rule = `@media ${condition}{${rule}}`;
     return rule;
   });
@@ -355,6 +422,7 @@ export const BOUNDED_CORRECTIONS_END =
 // anything else that follows a legacy marker is authored CSS and is preserved.
 const GENERATED_RULE_SIGNATURES = [
   "{--ll-creative-auto-text:#",
+  "{outline:2px solid #",
   "position:relative!important;z-index:3!important;background-color:#",
   "content:none!important;}",
 ];

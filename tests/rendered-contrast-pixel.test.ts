@@ -110,6 +110,12 @@ describe("rendered pixel contrast resolution", () => {
     expect(targets[1].status).toBe("fail");
     expect(targets[1].ratio).toBeLessThan(4.5);
     expect(targets[2].status).toBe("pass");
+    // The measured backdrop extremes travel with the resolution so bounded
+    // repairs can prove a corrected foreground against real pixels.
+    expect(targets[0].pixelBackdrop).toMatchObject({
+      dark: expect.stringMatching(/^#[0-9a-f]{6}$/),
+      light: expect.stringMatching(/^#[0-9a-f]{6}$/),
+    });
     // Fail closed: an unlocatable element stays unresolved.
     expect(targets[3].status).toBe("unresolved");
     expect(targets[3].pixelResolved).toBeUndefined();

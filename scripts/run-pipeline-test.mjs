@@ -179,6 +179,14 @@ export async function verifyTestPreviewAccess({
   };
 }
 
+/** Candidate a preview delivery must prefer after a near-miss creative run.
+ * Strict summaries carry selection through the bakeoff report instead. */
+export function nearMissCandidateId(summary) {
+  return summary?.status === "previewed-with-open-findings"
+    ? summary.nearMiss?.candidateId || null
+    : null;
+}
+
 export function resolveTestPreviewProject(
   value = process.env.LAUNCHLOOM_TEST_PAGES_PROJECT ||
     "launchloom-pipeline-preview",
@@ -1108,6 +1116,12 @@ export function createCloudDependencies(
       };
     },
     async select() {
+      // Near-miss delivery marker: a previewed-with-open-findings summary
+      // names the candidate every downstream stage must prefer.
+      const creativeSummary = await readJson(
+        path.join(evidence, "creative-repair/summary.json"),
+      ).catch(() => null);
+      const nearMissName = nearMissCandidateId(creativeSummary);
       // A failed creative evaluation may still expose a source-safe diagnostic.
       if (!selected) {
         const pack = await readJson(inspiration);
@@ -1119,15 +1133,7 @@ export function createCloudDependencies(
         const bakeoff = await readJson(
           path.join(evidence, "creative-repair/final/creative-bakeoff.json"),
         ).catch(() => null);
-        const creativeSummary = await readJson(
-          path.join(evidence, "creative-repair/summary.json"),
-        ).catch(() => null);
-        const nearMissCandidateId =
-          creativeSummary?.status === "previewed-with-open-findings"
-            ? creativeSummary.nearMiss?.candidateId
-            : null;
-        const preferred =
-          nearMissCandidateId || bakeoff?.selectedCandidateId;
+        const preferred = nearMissName || bakeoff?.selectedCandidateId;
         const names = [
           ...new Set(
             [preferred, "candidate-a", "candidate-b", "candidate-c"].filter(
@@ -1168,7 +1174,7 @@ export function createCloudDependencies(
         siteDir: site,
         candidateDir: selected.directory,
         preview: true,
-        selectionMode: nearMissCandidateId
+        selectionMode: nearMissName
           ? "creative-near-miss"
           : "pipeline-test-diagnostic",
         contentManifest: selected.manifest,
