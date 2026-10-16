@@ -20,6 +20,7 @@ import {
   referenceDossierPromptBlock,
 } from "./reference-dossier.mjs";
 import { typographyPalettePrompt } from "./creative-typography.mjs";
+import { designAdherencePromptBlock } from "./design-adherence-guidance.mjs";
 import {
   authorExperienceCandidates,
   creativeLocationPageShape,
@@ -157,6 +158,8 @@ function authorSystemPrompt(request) {
   return `Return valid JSON only. Create an ambitious, production-grade frontend while obeying the sealed content and safety contract exactly.
 
 You are authoring one candidate for the LaunchLoom production creative compiler.
+
+${designAdherencePromptBlock()}
 
 TYPOGRAPHY PALETTE
 ${typographyPalettePrompt()}

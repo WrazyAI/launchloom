@@ -22,16 +22,30 @@ import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
 
 const roots: string[] = [];
 const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
+// Repair-switch isolation: tests that exercise the kill-switches must restore
+// the caller's ambient configuration instead of deleting it.
+const originalCreativeSwitches = {
+  CREATIVE_EVIDENCE_REUSE: process.env.CREATIVE_EVIDENCE_REUSE,
+  CREATIVE_REPAIR_STAGNATION: process.env.CREATIVE_REPAIR_STAGNATION,
+};
 
 afterEach(async () => {
   if (originalOpenRouterKey === undefined)
     delete process.env.OPENROUTER_API_KEY;
   else process.env.OPENROUTER_API_KEY = originalOpenRouterKey;
+  for (const [key, value] of Object.entries(originalCreativeSwitches)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
   vi.unstubAllGlobals();
   await Promise.all(
     roots
       .splice(0)
-      .map((root) => fs.rm(root, { recursive: true, force: true })),
+      // A run may still be flushing its atomic timing write when the test
+      // resolves; retry briefly on ENOTEMPTY instead of failing teardown.
+      .map((root) =>
+        fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }),
+      ),
   );
 });
 
@@ -587,11 +601,13 @@ export default function Experience({ content, runtime }) { return <main><section
       runBakeoffImpl: async (options: any) => {
         bakeoffCalls += 1;
         expect(options.allowContrastRepair).toBe(true);
+        // Vary the blocker text per call so the budget cap is exercised
+        // independently of the no-progress stagnation guard.
         return writeBakeoffEvidence(options, report({
           selectedCandidateId: null,
           candidates: [candidate("candidate-a", {
             valid: false, eligible: false,
-            failures: ["Rendered candidate needs repair."],
+            failures: [`Rendered candidate needs repair (round ${bakeoffCalls}).`],
           })],
         }));
       },
@@ -1517,6 +1533,34 @@ export default function Experience({ content, runtime }) {
     );
   });
 
+  it("threads the evidence cache into bakeoffs and honors the reuse kill-switch", async () => {
+    const { root, candidates } = await fixture();
+    process.env.CREATIVE_EVIDENCE_REUSE = "true";
+    const seenCacheDirs: Array<string | null> = [];
+    const runOnce = () =>
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        runBakeoffImpl: async (options: any) => {
+          seenCacheDirs.push(options.evidenceCacheDir ?? null);
+          return writeBakeoffEvidence(options, report());
+        },
+        runVisualGateImpl: async (options: any) =>
+          visualGate(options, "pass"),
+        repairCandidateImpl: async () => {},
+        promoteImpl: async () => ({ candidateId: "candidate-a" }),
+      });
+    await runOnce();
+    expect(seenCacheDirs[0]).toBe(
+      path.join(root, "evidence", "evidence-cache"),
+    );
+    // The afterEach hook restores the caller's ambient switch values.
+    process.env.CREATIVE_EVIDENCE_REUSE = "false";
+    await runOnce();
+    expect(seenCacheDirs[1]).toBeNull();
+  });
+
   it("repairs the selected source only after a rendered visual failure and rerenders before passing", async () => {
     const { root, candidates } = await fixture();
     let bakeoffCalls = 0;
@@ -1588,6 +1632,24 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
         await fs.readFile(path.join(root, "evidence", "summary.json"), "utf8"),
       ).status,
     ).toBe("passed");
+    // Timing evidence is flushed with the run so failing runs stay explainable.
+    const timing = JSON.parse(
+      await fs.readFile(path.join(root, "evidence", "timing.json"), "utf8"),
+    );
+    const categories = new Set(
+      timing.entries.map((entry: { category: string }) => entry.category),
+    );
+    expect(categories.has("bakeoff")).toBe(true);
+    expect(categories.has("gate")).toBe(true);
+    expect(categories.has("repair")).toBe(true);
+    const repairEntry = timing.entries.find(
+      (entry: { category: string }) => entry.category === "repair",
+    );
+    expect(repairEntry).toMatchObject({
+      name: "candidate-a",
+      status: "ok",
+      details: { gate: true, reason: "selected-visual-gate" },
+    });
   });
 
   it("threads one frozen creative session through repairs and summary evidence", async () => {
@@ -2623,10 +2685,105 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
           repairCalls += 1;
         },
       }),
-    ).rejects.toThrow(/still fails rendered visual QA after 2 gate repairs/iu);
+    ).rejects.toThrow(/still fails rendered visual QA/iu);
 
     expect(repairCalls).toBe(2);
     expect(bakeoffCalls).toBe(3);
+  });
+
+  it("stops repeating equivalent repairs when a candidate's blockers do not change", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    process.env.CREATIVE_REPAIR_STAGNATION = "true";
+    let repairCalls = 0;
+    let bakeoffCalls = 0;
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "preview",
+        maxCycles: 3,
+        runBakeoffImpl: async (options: any) => {
+          bakeoffCalls += 1;
+          return writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [
+                candidate("candidate-a", {
+                  valid: false,
+                  eligible: false,
+                  failures: ["Rendered candidate needs repair."],
+                }),
+              ],
+            }),
+          );
+        },
+        repairCandidateImpl: async () => {
+          repairCalls += 1;
+        },
+        promoteImpl: async () => {
+          throw new Error("Must not promote a stagnated candidate");
+        },
+      }),
+    ).rejects.toThrow(/Stagnation guard/iu);
+
+    // Two repairs ran against an unchanged blocker set; the third equivalent
+    // attempt is refused and the loop fails explicitly instead of consuming
+    // the rest of the budget.
+    expect(repairCalls).toBe(2);
+    expect(bakeoffCalls).toBe(3);
+    const timing = JSON.parse(
+      await fs.readFile(path.join(root, "evidence", "timing.json"), "utf8"),
+    );
+    expect(
+      timing.entries.filter((entry: any) => entry.category === "repair"),
+    ).toHaveLength(2);
+    expect(
+      timing.entries.filter((entry: any) => entry.category === "bakeoff"),
+    ).toHaveLength(3);
+  });
+
+  it("honors CREATIVE_REPAIR_STAGNATION=false and spends the full budget", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let repairCalls = 0;
+    let bakeoffCalls = 0;
+    // The afterEach hook restores the caller's ambient switch value.
+    process.env.CREATIVE_REPAIR_STAGNATION = "false";
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "preview",
+        maxCycles: 3,
+        runBakeoffImpl: async (options: any) => {
+          bakeoffCalls += 1;
+          return writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [
+                candidate("candidate-a", {
+                  valid: false,
+                  eligible: false,
+                  failures: ["Rendered candidate needs repair."],
+                }),
+              ],
+            }),
+          );
+        },
+        repairCandidateImpl: async () => {
+          repairCalls += 1;
+        },
+        promoteImpl: async () => {
+          throw new Error("Must not promote an exhausted candidate");
+        },
+      }),
+    ).rejects.toThrow("3-cycle repair budget is exhausted");
+    expect(repairCalls).toBe(3);
+    expect(bakeoffCalls).toBe(4);
   });
 
   it("allows the final render after independent reference and visual-gate repair budgets are used", async () => {

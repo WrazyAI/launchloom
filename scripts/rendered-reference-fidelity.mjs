@@ -252,6 +252,9 @@ async function requestJson({
     throw new Error(
       "OPENROUTER_API_KEY is required for rendered reference evaluation.",
     );
+  // Wall-clock timing for the whole logical call, including any retry. Retries
+  // are rare; when one happens the elapsed time is the honest per-call figure.
+  const callStartedAt = Date.now();
   const maxAttempts = 3;
   const maxTransientCreditRetries = 2;
   const maxTotalAttempts = maxAttempts + maxTransientCreditRetries;
@@ -313,6 +316,8 @@ async function requestJson({
           cache,
           responseCache,
           provider: payload.provider || null,
+          durationMs: Date.now() - callStartedAt,
+          attempts: attempt + 1,
         };
       }
       if (response.status === 402 && !affordabilityRetryUsed) {

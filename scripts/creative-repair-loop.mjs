@@ -29,6 +29,7 @@ import {
   formatModelBoundContentShape,
 } from "./author-prompt-budget.mjs";
 import { referenceDossierPromptBlock } from "./reference-dossier.mjs";
+import { designAdherencePromptBlock } from "./design-adherence-guidance.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 import {
   cacheableReferenceDna,
@@ -923,6 +924,8 @@ ${JSON.stringify(stableReferenceDna, null, 2)}
 ASSIGNED REFERENCE DOSSIER
 ${referenceDossierPromptBlock(referenceDossier) || "No dossier prompt was attached; use the measured Reference DNA and screenshots without inferring missing evidence."}
 
+${designAdherencePromptBlock()}
+
 SEALED CONTENT TOKENS
 ${contentTokens.join("\n") || "(not supplied)"}
 
@@ -1233,6 +1236,10 @@ Return a complete replacement for only this requested file. Keep source non-empt
       });
 
     let maxCompletionTokens = CREATIVE_REPAIR_MAX_COMPLETION_TOKENS;
+    // Wall-clock timing for the repair call, including a provider-affordability
+    // retry when one happens.
+    const callStartedAt = Date.now();
+    let repairAttempts = 1;
     let response = await sendRepairRequest(maxCompletionTokens);
     let payload = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -1246,6 +1253,7 @@ Return a complete replacement for only this requested file. Keep source non-empt
           `creative_repair_retry reason=provider-affordability requested_max_completion_tokens=${maxCompletionTokens} retry_max_completion_tokens=${retryLimit}`,
         );
         maxCompletionTokens = retryLimit;
+        repairAttempts += 1;
         response = await sendRepairRequest(maxCompletionTokens);
         payload = await response.json().catch(() => ({}));
       }
@@ -1263,6 +1271,8 @@ Return a complete replacement for only this requested file. Keep source non-empt
         provider: payload.provider || null,
         usage: payload.usage || null,
         at: Date.now(),
+        durationMs: Date.now() - callStartedAt,
+        attempts: repairAttempts,
       });
     const responseContent = payload.choices?.[0]?.message?.content || "";
     const diagnostics = authoringCompletionDiagnostics({

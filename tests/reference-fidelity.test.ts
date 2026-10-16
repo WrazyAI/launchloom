@@ -24,6 +24,55 @@ describe("reference fidelity validator", () => {
     expect(report.hardFindings).toContainEqual(expect.objectContaining({ code: "css-token-collision" }));
   });
 
+  it("flags a reference section that appears out of the assigned order", () => {
+    const outOfOrder = validExperience
+      .replace(
+        '<section data-reference-section="image-chapter"></section><section data-reference-section="editorial-intro"></section>',
+        '<section data-reference-section="editorial-intro"></section><section data-reference-section="image-chapter"></section>',
+      );
+    expect(outOfOrder).not.toBe(validExperience);
+    const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: outOfOrder, stylesSource: validStyles, motionSource: validMotion });
+    expect(report.pass).toBe(false);
+    expect(report.hardFindings).toContainEqual(
+      expect.objectContaining({ code: "section-order" }),
+    );
+  });
+
+  it("allows extra local sections between reference sections", () => {
+    const withLocalSection = validExperience.replace(
+      '<section data-reference-section="image-chapter"></section>',
+      '<section data-reference-section="image-chapter"></section><section data-local-addon><p>{content.hero.heading}</p></section>',
+    );
+    expect(withLocalSection).not.toBe(validExperience);
+    const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: withLocalSection, stylesSource: validStyles, motionSource: validMotion });
+    expect(report.pass).toBe(true);
+    expect(report.hardFindings).not.toContainEqual(
+      expect.objectContaining({ code: "section-order" }),
+    );
+  });
+
+  it("ignores id-only sections when checking reference order", () => {
+    // #services, #faqs, and #contact are required rendered anchors, but the
+    // contract fixes only the data-reference-section order. A conversion-first
+    // design may legitimately place the id-only contact section early; that is
+    // local structure and must not trip the hard order gate.
+    const contactSection =
+      '<section id="contact"><a data-early-conversion data-cta-placement="after-hero-image"></a></section>';
+    expect(validExperience).toContain(contactSection);
+    const moved = validExperience
+      .replace(contactSection, "")
+      .replace(
+        '<section data-reference-section="image-chapter"></section>',
+        `${contactSection}<section data-reference-section="image-chapter"></section>`,
+      );
+    expect(moved).not.toBe(validExperience);
+    const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: moved, stylesSource: validStyles, motionSource: validMotion });
+    expect(report.pass).toBe(true);
+    expect(report.hardFindings).not.toContainEqual(
+      expect.objectContaining({ code: "section-order" }),
+    );
+  });
+
   it("does not mistake CSS feature queries for unisolated custom-property declarations", () => {
     const report = validateReferenceCandidate({
       referenceDna: dna,

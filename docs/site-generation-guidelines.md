@@ -95,6 +95,22 @@ descriptions to one distinct sentence. Put supporting detail on the service
 page. Do not add decorative ordinal numbers to service or proof cards. Reserve
 numbering for a sequence where the order communicates a real process.
 
+### Template adherence
+
+The assigned Reference DNA, Reference Dossier, and any structured route
+designTemplate define the page recipe for a route. Adapt within that recipe;
+never replace it with a familiar generic layout. Copy, brand colors, type
+families, imagery, and responsive recomposition may adapt, but the reference's
+structure, section order, layout hierarchy, navigation model, image roles, and
+interaction primitive are preserved unless an explicit client request or an
+accessibility finding requires a bounded change. Authoring and repair prompts
+carry this boundary via `scripts/design-adherence-guidance.mjs`, together with
+the retained Apache-2.0 frontend-design review copy in
+`docs/design-guidance/anthropic/frontend-design/`. Structural drift is caught
+before rendered judging by the deterministic section-order check in
+`reference-contract-compliance.mjs`. See `creative-generation-performance.md`
+for the prompt wiring and the independent rollback switches.
+
 ## Programmatic color and contrast contract
 
 Keep the chosen brand color as identity and derive readable variants by local

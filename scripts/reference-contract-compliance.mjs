@@ -369,6 +369,36 @@ export function validateReferenceContractCompliance({
   ) || source.toLowerCase().includes(item));
   if (matched.length < Math.min(3, expected.length))
     findings.push(finding("section-rhythm", "critical", "The authored section sequence does not represent the assigned reference rhythm."));
+  // Structural drift check before any rendered judging: the authoring contract
+  // requires each data-reference-section value on its section in the assigned
+  // DOM order. Only explicit data-reference-section values participate, and
+  // they must normalize exactly to an assigned sequence slug: sections that
+  // merely carry a required id (#services, #faqs, #contact) are local
+  // structure, not reference identity, and must never trip this hard gate.
+  // Extra local sections are allowed; matched reference sections appearing out
+  // of order are a repairable structural finding.
+  const referenceSections = [
+    ...experienceSource.matchAll(
+      /<section\b[^>]*\bdata-reference-section\s*=\s*["']([^"']+)["']/giu,
+    ),
+  ].map((match) => slug(match[1]));
+  const expectedIndexFor = (actual) => expected.indexOf(actual);
+  let highestIndex = -1;
+  for (const actual of referenceSections) {
+    const index = expectedIndexFor(actual);
+    if (index === -1) continue;
+    if (index < highestIndex) {
+      findings.push(
+        finding(
+          "section-order",
+          "critical",
+          `Reference section "${actual}" appears out of its assigned order. Keep the data-reference-section values in the exact DOM order supplied by the route checklist.`,
+        ),
+      );
+      break;
+    }
+    highestIndex = Math.max(highestIndex, index);
+  }
   if (!/data-hero(?:\s|=)/iu.test(experienceSource) || !/data-hero-geometry=/iu.test(experienceSource))
     findings.push(finding("hero-geometry", "critical", "The authored hero is missing its explicit reference geometry marker."));
   else if (!markerMatches(experienceSource, "data-hero-geometry", referenceDna.heroGeometry.mode))

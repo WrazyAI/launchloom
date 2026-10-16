@@ -31,12 +31,40 @@ import {
 import {
   evaluateRenderedDiversity,
   evaluateRenderedReferenceFidelity,
+  RENDERED_REFERENCE_MODEL,
 } from "./rendered-reference-fidelity.mjs";
 import {
   countRecentCreativeFamilyUses,
   launchesForSiteConfig,
   readLaunchHistory,
 } from "./launch-history.mjs";
+import { createTimingRecorder, logTimingSummary } from "./creative-timing.mjs";
+import { createTaskLimiter } from "./task-limiter.mjs";
+import {
+  collectCandidateEvidenceFileNames,
+  computeCandidateEvidenceDigest,
+  computeSharedEvidenceDigest,
+  evidenceCacheKeys,
+  readEvidenceBundle,
+  restoreEvidenceFiles,
+  writeEvidenceBundle,
+} from "./creative-evidence-cache.mjs";
+
+/**
+ * Bump when capture or render behavior changes so evidence cached under an
+ * earlier behavior version can never be reused.
+ */
+export const BAKEOFF_RENDER_EVIDENCE_VERSION = 1;
+const HOMEPAGE_VIEWPORTS = [
+  { name: "desktop", width: 1536, height: 864 },
+  { name: "compact", width: 1366, height: 768 },
+  { name: "mobile", width: 390, height: 844 },
+];
+const AUTHORED_PAGE_VIEWPORTS = [
+  { name: "desktop", width: 1536, height: 864 },
+  { name: "mobile", width: 390, height: 844 },
+];
+const VIEWPORT_SETTLE_MS = 900;
 
 function argsFrom(argv) {
   return Object.fromEntries(
@@ -558,7 +586,7 @@ function renderedPairMetrics(visualDiversity, candidateIds) {
 }
 
 /**
- * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, deferPromotion?: boolean, excludedCandidateIds?: string[], renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, contrastEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean}} options
+ * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, deferPromotion?: boolean, excludedCandidateIds?: string[], renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, contrastEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean, evidenceCacheDir?: string | null, judgeConcurrency?: number | null}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function runCreativeBakeoff({
@@ -575,6 +603,8 @@ export async function runCreativeBakeoff({
   contrastEvaluator = enforceBuiltContrast,
   requireDiversity = true,
   allowContrastRepair = true,
+  evidenceCacheDir = null,
+  judgeConcurrency = null,
 } = {}) {
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
@@ -691,6 +721,53 @@ export async function runCreativeBakeoff({
       : "";
   const results = [];
   await fs.mkdir(evidenceDir, { recursive: true });
+  // Per-phase wall-clock instrumentation. Additive evidence only; entries are
+  // persisted with the bakeoff report for run-to-run comparison.
+  const bakeoffTiming = createTimingRecorder();
+  const bakeoffStartedAt = Date.now();
+  // Candidates are independent: their judges may overlap with the next
+  // candidate's render, bounded to keep provider pressure and CI CPU
+  // contention low.
+  const requestedJudgeConcurrency = Number(
+    judgeConcurrency ?? process.env.CREATIVE_JUDGE_CONCURRENCY ?? 2,
+  );
+  const judgeWorkerLimit = Math.max(
+    1,
+    Math.min(
+      3,
+      Number.isFinite(requestedJudgeConcurrency)
+        ? Math.trunc(requestedJudgeConcurrency)
+        : 2,
+    ),
+  );
+  const scheduleJudgeTask = createTaskLimiter(judgeWorkerLimit);
+  // Exact-input rendered-evidence reuse, opt-in via evidenceCacheDir.
+  const cacheRoot = evidenceCacheDir
+    ? path.resolve(root, evidenceCacheDir)
+    : null;
+  const sharedEvidenceDigest = cacheRoot
+    ? await computeSharedEvidenceDigest(root, {
+        excludePaths: [
+          candidateRoot,
+          evidenceDir,
+          cacheRoot,
+          // The selected candidate directory is rewritten for whichever
+          // candidate is being rendered; it is candidate-derived input, not
+          // shared input.
+          path.join(root, "src/generated-experiences/selected"),
+        ],
+      })
+    : null;
+  const renderConfig = {
+    version: BAKEOFF_RENDER_EVIDENCE_VERSION,
+    homepageViewports: HOMEPAGE_VIEWPORTS,
+    authoredPageViewports: AUTHORED_PAGE_VIEWPORTS,
+    settleMs: VIEWPORT_SETTLE_MS,
+    captureInteraction: true,
+    allowContrastRepair: allowContrastRepair === true,
+  };
+  const judgeModel = RENDERED_REFERENCE_MODEL;
+  const pendingCandidateEvidence = [];
 
   try {
     for (const candidate of candidates) {
@@ -715,475 +792,653 @@ export async function runCreativeBakeoff({
         failures: [],
         viewports: [],
       };
+      const candidateStartedAt = Date.now();
+      candidateResult.timings = {};
+      /** Record one render phase; used per candidate and per run. */
+      const recordPhase = (name, startedAt, category = "render") => {
+        const durationMs = Date.now() - startedAt;
+        candidateResult.timings[name] = durationMs;
+        bakeoffTiming.record({
+          category,
+          name: `${candidate.manifest.candidateId}:${name}`,
+          startedAt,
+          durationMs,
+        });
+        return Date.now();
+      };
+      /** Time one render phase; recorded per candidate and per run. */
+      const phase = async (name, fn) => {
+        const startedAt = Date.now();
+        try {
+          return await fn();
+        } finally {
+          recordPhase(name, startedAt);
+        }
+      };
+      // Judge scheduling for this candidate. The judge starts as soon as the
+      // candidate's evidence exists, overlapping the next candidate's render;
+      // results are merged after every render completes.
+      let judgeTask = null;
+      let cachedJudgeEvidence = null;
+      let cacheKeys = null;
+      let renderComplete = false;
+      const scheduleCandidateJudge = () =>
+        scheduleJudgeTask(async () => {
+          const judgeStartedAt = Date.now();
+          try {
+            return await renderedReferenceEvaluator({
+              candidateId: candidate.manifest.candidateId,
+              sourceDigest: candidateResult.interactionEvidence?.sourceDigest,
+              interactionEvidence: candidateResult.interactionEvidence,
+              referenceDna: candidate.manifest.referenceDna,
+              visualBrief: candidate.contentManifest?.visualBrief || {},
+              candidateScreenshots: {
+                desktop: path.join(
+                  evidenceDir,
+                  `${candidate.manifest.candidateId}-desktop-viewport.png`,
+                ),
+                compact: path.join(
+                  evidenceDir,
+                  `${candidate.manifest.candidateId}-compact-viewport.png`,
+                ),
+                mobile: path.join(
+                  evidenceDir,
+                  `${candidate.manifest.candidateId}-mobile-viewport.png`,
+                ),
+                fullDesktop: path.join(
+                  evidenceDir,
+                  `${candidate.manifest.candidateId}-desktop.png`,
+                ),
+              },
+              renderedGeometry: Object.fromEntries(
+                (candidateResult.viewports || []).map((viewport) => [
+                  viewport.name,
+                  {
+                    viewportWidth: viewport.width,
+                    viewportHeight: viewport.viewportHeight,
+                    heroBottom: viewport.heroBottom,
+                  },
+                ]),
+              ),
+            });
+          } finally {
+            recordPhase("judge", judgeStartedAt, "judge");
+          }
+        }).then(
+          (value) => ({ ok: true, value }),
+          (error) => ({ ok: false, error }),
+        );
       try {
         if (candidate.contentManifestError)
           throw new Error(candidate.contentManifestError);
-        const experienceSource = await fs.readFile(
-          path.join(candidateRoot, candidate.directory, "Experience.jsx"),
-          "utf8",
-        );
-        let stylesSource = await fs.readFile(
-          path.join(candidateRoot, candidate.directory, "styles.css"),
-          "utf8",
-        );
-        const motionSource = await fs.readFile(
-          path.join(candidateRoot, candidate.directory, "motion.js"),
-          "utf8",
-        );
-        const sourceFidelity =
-          candidate.manifest.version >= 2
-            ? validateReferenceCandidate({
-                referenceDna: candidate.manifest.referenceDna,
-                experienceSource,
-                stylesSource,
-                motionSource,
-              })
-            : {
-                version: 1,
-                pass: true,
-                visualPass: true,
-                score: 100,
-                findings: [],
-                hardFindings: [],
-                visualFindings: [],
-                requiredSignatures: [],
-              };
-        candidateResult.referenceFidelity = sourceFidelity;
-        if (!sourceFidelity.pass)
-          candidateResult.failures.push(
-            ...sourceFidelity.hardFindings.map(
-              (item) => `source: ${item.message}`,
-            ),
-          );
-        await promoteCreativeCandidate({
-          siteDir: root,
-          candidateDir: path.relative(
-            root,
+        // Exact-input evidence reuse: when every render input is unchanged,
+        // restore the previous round's screenshots and skip the build, the
+        // contrast audit, and the browser captures entirely.
+        let reusedEvidence = null;
+        if (cacheRoot) {
+          const candidateDigest = await computeCandidateEvidenceDigest(
             path.join(candidateRoot, candidate.directory),
-          ),
-          contentManifest: candidate.contentManifest,
-          // Rendering a candidate for the bakeoff must remain available even
-          // when source-level visual findings are present. Production
-          // publication is enforced by the final promotion call below.
-          preview: true,
-        });
-        await run("npm", ["run", "build"], root);
-        // Only the pages a creative candidate actually styles can carry its
-        // corrections: the homepage and the authored service, service-index,
-        // and location pages. Deterministic routes (contact, about, blog)
-        // never load the candidate stylesheet, so auditing them would block
-        // every candidate on findings no repair can reach.
-        const authored = (await builtRoutes(path.join(root, "dist"))).filter(
-          (route) =>
-            route === "/" ||
-            route.startsWith("/services/") ||
-            route.startsWith("/locations/"),
-        );
-        candidateResult.contrast = await contrastEvaluator({
-          dist: path.join(root, "dist"),
-          browser,
-          routes: authored.length ? authored : null,
-          stylesPath: path.join(
-            candidateRoot,
-            candidate.directory,
-            "styles.css",
-          ),
-          deployedStylesPath: path.join(
-            root,
-            "src/generated-experiences/selected/styles.css",
-          ),
-          reportPath: path.join(
+          );
+          cacheKeys = evidenceCacheKeys({
+            version: BAKEOFF_RENDER_EVIDENCE_VERSION,
+            candidateId: candidate.manifest.candidateId,
+            sharedDigest: sharedEvidenceDigest,
+            candidateDigest,
+            renderConfig,
+            judgeModel,
+          });
+          reusedEvidence = await readEvidenceBundle(cacheRoot, cacheKeys, {
             evidenceDir,
-            `${candidate.manifest.candidateId}-contrast.json`,
-          ),
-          repair: allowContrastRepair,
-          build: () => run("npm", ["run", "build"], root),
-        });
-        if (!candidateResult.contrast.pass)
-          candidateResult.failures.push(
-            ...contrastFailureMessages(candidateResult.contrast.after),
-          );
-        if (candidateResult.contrast.repairs.length) {
-          stylesSource = await fs.readFile(
-            path.join(candidateRoot, candidate.directory, "styles.css"),
-            "utf8",
-          );
-          candidateResult.referenceFidelity =
-            candidate.manifest.version >= 2
-              ? validateReferenceCandidate({
-                  referenceDna: candidate.manifest.referenceDna,
-                  experienceSource,
-                  stylesSource,
-                  motionSource,
-                })
-              : sourceFidelity;
-          if (!candidateResult.referenceFidelity.pass)
+          });
+          if (reusedEvidence) {
+            const restored = await restoreEvidenceFiles(
+              cacheRoot,
+              cacheKeys,
+              evidenceDir,
+            );
+            if (restored.length !== reusedEvidence.render.files.length)
+              reusedEvidence = null;
+          }
+        }
+        if (reusedEvidence) {
+          const cached = reusedEvidence.render.candidateResult;
+          Object.assign(candidateResult, cached, {
+            candidateId: candidate.manifest.candidateId,
+            directory: candidate.directory,
+            reused: true,
+          });
+          const {
+            judge: _cachedJudgeMs,
+            judgeCallMs: _cachedJudgeCallMs,
+            judgeAttempts: _cachedJudgeAttempts,
+            ...cachedRenderTimings
+          } = cached.timings || {};
+          candidateResult.timings = { ...cachedRenderTimings, reused: true };
+          cachedJudgeEvidence =
+            reusedEvidence.judge?.renderedReferenceFidelity || null;
+          if (!cachedJudgeEvidence && candidate.manifest.version >= 2)
+            judgeTask = scheduleCandidateJudge();
+        }
+        if (!reusedEvidence) {
+          let stylesSource;
+          const { experienceSource, motionSource, sourceFidelity } =
+            await phase("source", async () => {
+              const experience = await fs.readFile(
+                path.join(candidateRoot, candidate.directory, "Experience.jsx"),
+                "utf8",
+              );
+              stylesSource = await fs.readFile(
+                path.join(candidateRoot, candidate.directory, "styles.css"),
+                "utf8",
+              );
+              const motion = await fs.readFile(
+                path.join(candidateRoot, candidate.directory, "motion.js"),
+                "utf8",
+              );
+              const fidelity =
+                candidate.manifest.version >= 2
+                  ? validateReferenceCandidate({
+                      referenceDna: candidate.manifest.referenceDna,
+                      experienceSource: experience,
+                      stylesSource,
+                      motionSource: motion,
+                    })
+                  : {
+                      version: 1,
+                      pass: true,
+                      visualPass: true,
+                      score: 100,
+                      findings: [],
+                      hardFindings: [],
+                      visualFindings: [],
+                      requiredSignatures: [],
+                    };
+              return {
+                experienceSource: experience,
+                motionSource: motion,
+                sourceFidelity: fidelity,
+              };
+            });
+          candidateResult.referenceFidelity = sourceFidelity;
+          if (!sourceFidelity.pass)
             candidateResult.failures.push(
-              ...candidateResult.referenceFidelity.hardFindings.map(
-                (item) => `repaired source: ${item.message}`,
+              ...sourceFidelity.hardFindings.map(
+                (item) => `source: ${item.message}`,
               ),
             );
-        }
-        const { server, origin } = await startServer(path.join(root, "dist"));
-        const sourceDigest = interactionSourceDigest({
-          experience: experienceSource,
-          styles: stylesSource,
-          motion: motionSource,
-        });
-        const interactionEvidence = {
-          version: 1,
-          candidateId: candidate.manifest.candidateId,
-          sourceDigest,
-          observations: [],
-          pairs: [],
-          failures: [],
-        };
-        candidateResult.interactionEvidence = interactionEvidence;
-        try {
-          for (const viewport of [
-            { name: "desktop", width: 1536, height: 864 },
-            { name: "compact", width: 1366, height: 768 },
-            { name: "mobile", width: 390, height: 844 },
-          ]) {
-            const page = await browser.newPage({ viewport });
-            const browserErrors = [];
-            page.on("pageerror", (error) => browserErrors.push(error.message));
-            await page.goto(origin, { waitUntil: "networkidle" });
-            // Let the authored first-view reveal settle before measuring
-            // opacity-sensitive visual evidence or taking the viewport shot.
-            await page.waitForTimeout(900);
-            const evidence = await inspect(page);
-            const failures = [
-              ...hardFailures(evidence, viewport),
-              browserErrors.length > 0 && "browser error",
-            ].filter(Boolean);
-            const compositionTopology =
+          await phase("promote", () =>
+            promoteCreativeCandidate({
+              siteDir: root,
+              candidateDir: path.relative(
+                root,
+                path.join(candidateRoot, candidate.directory),
+              ),
+              contentManifest: candidate.contentManifest,
+              // Rendering a candidate for the bakeoff must remain available even
+              // when source-level visual findings are present. Production
+              // publication is enforced by the final promotion call below.
+              preview: true,
+            }),
+          );
+          await phase("build", () => run("npm", ["run", "build"], root));
+          // Only the pages a creative candidate actually styles can carry its
+          // corrections: the homepage and the authored service, service-index,
+          // and location pages. Deterministic routes (contact, about, blog)
+          // never load the candidate stylesheet, so auditing them would block
+          // every candidate on findings no repair can reach.
+          const authored = (await builtRoutes(path.join(root, "dist"))).filter(
+            (route) =>
+              route === "/" ||
+              route.startsWith("/services/") ||
+              route.startsWith("/locations/"),
+          );
+          candidateResult.contrast = await phase("contrast", () =>
+            contrastEvaluator({
+              dist: path.join(root, "dist"),
+              browser,
+              routes: authored.length ? authored : null,
+              stylesPath: path.join(
+                candidateRoot,
+                candidate.directory,
+                "styles.css",
+              ),
+              deployedStylesPath: path.join(
+                root,
+                "src/generated-experiences/selected/styles.css",
+              ),
+              reportPath: path.join(
+                evidenceDir,
+                `${candidate.manifest.candidateId}-contrast.json`,
+              ),
+              repair: allowContrastRepair,
+              build: () => run("npm", ["run", "build"], root),
+            }),
+          );
+          if (!candidateResult.contrast.pass)
+            candidateResult.failures.push(
+              ...contrastFailureMessages(candidateResult.contrast.after),
+            );
+          if (candidateResult.contrast.repairs.length) {
+            stylesSource = await fs.readFile(
+              path.join(candidateRoot, candidate.directory, "styles.css"),
+              "utf8",
+            );
+            candidateResult.referenceFidelity =
               candidate.manifest.version >= 2
-                ? candidate.manifest.referenceDna?.compositionTopology
-                : null;
-            const compositionGeometry = compositionTopology
-              ? validateRenderedCompositionTopology(
-                  compositionTopology,
-                  evidence.compositionEvidence,
-                  {
-                    viewportKind:
-                      viewport.name === "mobile" ? "mobile" : "desktop",
-                  },
-                )
-              : candidate.manifest.version >= 2
-                ? {
-                    pass: true,
-                    skipped: true,
-                    reason:
-                      "Reference DNA predates the normalized composition topology contract.",
-                  }
-                : null;
-            if (compositionGeometry && !compositionGeometry.pass)
-              failures.push(
-                ...compositionGeometry.findings.map(
-                  (finding) => `rendered composition: ${finding.message}`,
+                ? validateReferenceCandidate({
+                    referenceDna: candidate.manifest.referenceDna,
+                    experienceSource,
+                    stylesSource,
+                    motionSource,
+                  })
+                : sourceFidelity;
+            if (!candidateResult.referenceFidelity.pass)
+              candidateResult.failures.push(
+                ...candidateResult.referenceFidelity.hardFindings.map(
+                  (item) => `repaired source: ${item.message}`,
                 ),
               );
-            candidateResult.failures.push(
-              ...failures.map((failure) => `${viewport.name}: ${failure}`),
-            );
-            candidateResult.viewports.push({
-              ...viewport,
-              ...evidence,
-              compositionGeometry,
-              browserErrors,
-            });
-            candidateResult.compositionGeometryByViewport = {
-              ...(candidateResult.compositionGeometryByViewport || {}),
-              [viewport.name]: compositionGeometry,
-            };
-            if (candidate.manifest.version >= 2) {
-              const renderedFidelity = validateReferenceCandidate({
-                referenceDna: candidate.manifest.referenceDna,
-                experienceSource,
-                stylesSource,
-                motionSource,
-                renderedDom: await page
-                  .locator("[data-creative-host]")
-                  .evaluate((element) => element.outerHTML),
-              });
-              const viewportVisualFindings =
-                renderedFidelity.visualFindings.map((item) => ({
-                  ...item,
-                  viewport: viewport.name,
-                }));
-              candidateResult.referenceFidelity = {
-                ...candidateResult.referenceFidelity,
-                rendered: renderedFidelity,
-                renderedByViewport: {
-                  ...(candidateResult.referenceFidelity.renderedByViewport ||
-                    {}),
-                  [viewport.name]: renderedFidelity,
-                },
-                renderedVisualFindings: [
-                  ...(candidateResult.referenceFidelity
-                    .renderedVisualFindings || []),
-                  ...viewportVisualFindings,
-                ],
-                pass:
-                  candidateResult.referenceFidelity.pass &&
-                  renderedFidelity.pass,
-              };
-              if (!renderedFidelity.pass)
-                candidateResult.failures.push(
-                  ...renderedFidelity.hardFindings.map(
-                    (item) => `${viewport.name}: ${item.message}`,
-                  ),
-                );
-            }
-            // The reference judge needs the actual first viewport for hero
-            // geometry. Keep a separate full-page capture for section rhythm,
-            // lower content, and the final visual-quality gate.
-            if (candidate.manifest.version >= 2)
-              await page.screenshot({
-                path: path.join(
-                  evidenceDir,
-                  `${candidate.manifest.candidateId}-${viewport.name}-viewport.png`,
-                ),
-              });
-            await page.screenshot({
-              path: path.join(
-                evidenceDir,
-                `${candidate.manifest.candidateId}-${viewport.name}.png`,
-              ),
-              fullPage: true,
-            });
-            await page.close();
-            if (candidate.manifest.version >= 2) {
-              const capture = await captureRenderedInteractionEvidence({
-                browser,
-                origin,
-                dist: path.join(root, "dist"),
-                candidateId: candidate.manifest.candidateId,
-                sourceDigest,
-                viewport,
-                evidenceDir,
-                requiredPurposeful: requiresPurposefulInteraction(
-                  candidate.contentManifest?.visualBrief,
-                ),
-                scrollRequired: /scroll|reading.progress/iu.test(
-                  candidate.manifest.referenceDna?.motion?.primitive || "",
-                ),
-                capturePair: viewport.name !== "compact",
-              });
-              interactionEvidence.observations.push(capture.observation);
-              interactionEvidence.pairs.push(...capture.pairs);
-              interactionEvidence.failures.push(...capture.failures);
-              candidateResult.failures.push(...capture.failures);
-            }
           }
-          const authoredPages = [
-            {
-              kind: "service",
-              file: "ServicePage.jsx",
-              route: serviceSlug ? `/services/${serviceSlug}/` : "",
-            },
-            {
-              kind: "location",
-              file: "LocationPage.jsx",
-              route: locationSlug ? `/locations/${locationSlug}/` : "",
-            },
-            {
-              kind: "services-index",
-              file: "ServicesIndexPage.jsx",
-              route: "/services/",
-            },
-          ].filter((authoredPage) => authoredPage.route);
-          const homepageIdentity =
-            candidateResult.viewports.find(
-              (viewport) => viewport.name === "desktop",
-            )?.identity || null;
-          for (const authoredPage of authoredPages) {
-            const authoredPagePath = path.join(
-              candidateRoot,
-              candidate.directory,
-              authoredPage.file,
-            );
-            const hasAuthoredPage = await fs
-              .access(authoredPagePath)
-              .then(() => true)
-              .catch(() => false);
-            if (!hasAuthoredPage) continue;
-            const pageResult = {
-              kind: authoredPage.kind,
-              route: authoredPage.route,
-              viewports: [],
-              failures: [],
-            };
-            for (const viewport of [
-              { name: "desktop", width: 1536, height: 864 },
-              { name: "mobile", width: 390, height: 844 },
-            ]) {
+          const { server, origin } = await startServer(path.join(root, "dist"));
+          const sourceDigest = interactionSourceDigest({
+            experience: experienceSource,
+            styles: stylesSource,
+            motion: motionSource,
+          });
+          const interactionEvidence = {
+            version: 1,
+            candidateId: candidate.manifest.candidateId,
+            sourceDigest,
+            observations: [],
+            pairs: [],
+            failures: [],
+          };
+          candidateResult.interactionEvidence = interactionEvidence;
+          let captureStartedAt = Date.now();
+          try {
+            for (const viewport of HOMEPAGE_VIEWPORTS) {
               const page = await browser.newPage({ viewport });
               const browserErrors = [];
               page.on("pageerror", (error) =>
                 browserErrors.push(error.message),
               );
-              try {
-                await page.goto(`${origin}${authoredPage.route}`, {
-                  waitUntil: "networkidle",
-                });
-                await page.waitForTimeout(900);
-                const brief = pageBriefReport.briefs.find(
-                  (brief) => brief.path === authoredPage.route,
-                );
-                if (brief?.mode === "supported") {
-                  const disclosureStates = await page
-                    .locator("details")
-                    .evaluateAll((nodes) =>
-                      nodes.map((node) => {
-                        const open = node.open;
-                        node.open = true;
-                        return open;
-                      }),
-                    );
-                  const visibleText = await page.locator("body").innerText();
-                  await page
-                    .locator("details")
-                    .evaluateAll(
-                      (nodes, states) =>
-                        nodes.forEach(
-                          (node, index) => (node.open = states[index]),
-                        ),
-                      disclosureStates,
-                    );
-                  if (
-                    pageBriefExpectedContent(brief).some(
-                      (value) => !visibleText.includes(value),
-                    )
+              await page.goto(origin, { waitUntil: "networkidle" });
+              // Let the authored first-view reveal settle before measuring
+              // opacity-sensitive visual evidence or taking the viewport shot.
+              await page.waitForTimeout(VIEWPORT_SETTLE_MS);
+              const evidence = await inspect(page);
+              const failures = [
+                ...hardFailures(evidence, viewport),
+                browserErrors.length > 0 && "browser error",
+              ].filter(Boolean);
+              const compositionTopology =
+                candidate.manifest.version >= 2
+                  ? candidate.manifest.referenceDna?.compositionTopology
+                  : null;
+              const compositionGeometry = compositionTopology
+                ? validateRenderedCompositionTopology(
+                    compositionTopology,
+                    evidence.compositionEvidence,
+                    {
+                      viewportKind:
+                        viewport.name === "mobile" ? "mobile" : "desktop",
+                    },
                   )
-                    pageResult.failures.push(
-                      `${viewport.name}: supported page brief content is missing after hydration.`,
-                    );
-                }
-
-                const evidence = await inspectAuthoredPage(page);
-                const identityFindings = authoredPageIdentityFindings(
-                  homepageIdentity,
-                  evidence.identity,
-                  AUTHORED_PAGE_LABELS[authoredPage.kind] || "authored page",
+                : candidate.manifest.version >= 2
+                  ? {
+                      pass: true,
+                      skipped: true,
+                      reason:
+                        "Reference DNA predates the normalized composition topology contract.",
+                    }
+                  : null;
+              if (compositionGeometry && !compositionGeometry.pass)
+                failures.push(
+                  ...compositionGeometry.findings.map(
+                    (finding) => `rendered composition: ${finding.message}`,
+                  ),
                 );
-                const failures = [
-                  ...authoredPageFailures(evidence, authoredPage.kind),
-                  ...identityFindings,
-                  browserErrors.length > 0 && "browser error",
-                ].filter(Boolean);
-                pageResult.viewports.push({
-                  ...viewport,
-                  ...evidence,
-                  identityFindings,
-                  browserErrors,
+              candidateResult.failures.push(
+                ...failures.map((failure) => `${viewport.name}: ${failure}`),
+              );
+              candidateResult.viewports.push({
+                ...viewport,
+                ...evidence,
+                compositionGeometry,
+                browserErrors,
+              });
+              candidateResult.compositionGeometryByViewport = {
+                ...(candidateResult.compositionGeometryByViewport || {}),
+                [viewport.name]: compositionGeometry,
+              };
+              if (candidate.manifest.version >= 2) {
+                const renderedFidelity = validateReferenceCandidate({
+                  referenceDna: candidate.manifest.referenceDna,
+                  experienceSource,
+                  stylesSource,
+                  motionSource,
+                  renderedDom: await page
+                    .locator("[data-creative-host]")
+                    .evaluate((element) => element.outerHTML),
                 });
-                pageResult.failures.push(
-                  ...failures.map((failure) => `${viewport.name}: ${failure}`),
-                );
+                const viewportVisualFindings =
+                  renderedFidelity.visualFindings.map((item) => ({
+                    ...item,
+                    viewport: viewport.name,
+                  }));
+                candidateResult.referenceFidelity = {
+                  ...candidateResult.referenceFidelity,
+                  rendered: renderedFidelity,
+                  renderedByViewport: {
+                    ...(candidateResult.referenceFidelity.renderedByViewport ||
+                      {}),
+                    [viewport.name]: renderedFidelity,
+                  },
+                  renderedVisualFindings: [
+                    ...(candidateResult.referenceFidelity
+                      .renderedVisualFindings || []),
+                    ...viewportVisualFindings,
+                  ],
+                  pass:
+                    candidateResult.referenceFidelity.pass &&
+                    renderedFidelity.pass,
+                };
+                if (!renderedFidelity.pass)
+                  candidateResult.failures.push(
+                    ...renderedFidelity.hardFindings.map(
+                      (item) => `${viewport.name}: ${item.message}`,
+                    ),
+                  );
+              }
+              // The reference judge needs the actual first viewport for hero
+              // geometry. Keep a separate full-page capture for section rhythm,
+              // lower content, and the final visual-quality gate.
+              if (candidate.manifest.version >= 2)
                 await page.screenshot({
                   path: path.join(
                     evidenceDir,
-                    `${candidate.manifest.candidateId}-${authoredPage.kind}-${viewport.name}-viewport.png`,
+                    `${candidate.manifest.candidateId}-${viewport.name}-viewport.png`,
                   ),
                 });
-                await page.screenshot({
-                  path: path.join(
-                    evidenceDir,
-                    `${candidate.manifest.candidateId}-${authoredPage.kind}-${viewport.name}.png`,
+              await page.screenshot({
+                path: path.join(
+                  evidenceDir,
+                  `${candidate.manifest.candidateId}-${viewport.name}.png`,
+                ),
+                fullPage: true,
+              });
+              await page.close();
+              if (candidate.manifest.version >= 2) {
+                const capture = await captureRenderedInteractionEvidence({
+                  browser,
+                  origin,
+                  dist: path.join(root, "dist"),
+                  candidateId: candidate.manifest.candidateId,
+                  sourceDigest,
+                  viewport,
+                  evidenceDir,
+                  requiredPurposeful: requiresPurposefulInteraction(
+                    candidate.contentManifest?.visualBrief,
                   ),
-                  fullPage: true,
+                  scrollRequired: /scroll|reading.progress/iu.test(
+                    candidate.manifest.referenceDna?.motion?.primitive || "",
+                  ),
+                  capturePair: viewport.name !== "compact",
                 });
-              } catch (error) {
-                pageResult.failures.push(
-                  `${viewport.name}: ${error instanceof Error ? error.message : String(error)}`,
-                );
-              } finally {
-                await page.close();
+                interactionEvidence.observations.push(capture.observation);
+                interactionEvidence.pairs.push(...capture.pairs);
+                interactionEvidence.failures.push(...capture.failures);
+                candidateResult.failures.push(...capture.failures);
               }
             }
-            pageResult.failures = [...new Set(pageResult.failures)];
-            pageResult.pass = pageResult.failures.length === 0;
-            candidateResult[AUTHORED_PAGE_EVIDENCE_KEYS[authoredPage.kind]] =
-              pageResult;
-            candidateResult.failures.push(
-              ...pageResult.failures.map(
-                (failure) => `${authoredPage.kind}-page ${failure}`,
-              ),
+            captureStartedAt = recordPhase("capture", captureStartedAt);
+            const authoredPages = [
+              {
+                kind: "service",
+                file: "ServicePage.jsx",
+                route: serviceSlug ? `/services/${serviceSlug}/` : "",
+              },
+              {
+                kind: "location",
+                file: "LocationPage.jsx",
+                route: locationSlug ? `/locations/${locationSlug}/` : "",
+              },
+              {
+                kind: "services-index",
+                file: "ServicesIndexPage.jsx",
+                route: "/services/",
+              },
+            ].filter((authoredPage) => authoredPage.route);
+            const homepageIdentity =
+              candidateResult.viewports.find(
+                (viewport) => viewport.name === "desktop",
+              )?.identity || null;
+            for (const authoredPage of authoredPages) {
+              const authoredPagePath = path.join(
+                candidateRoot,
+                candidate.directory,
+                authoredPage.file,
+              );
+              const hasAuthoredPage = await fs
+                .access(authoredPagePath)
+                .then(() => true)
+                .catch(() => false);
+              if (!hasAuthoredPage) continue;
+              const pageResult = {
+                kind: authoredPage.kind,
+                route: authoredPage.route,
+                viewports: [],
+                failures: [],
+              };
+              for (const viewport of AUTHORED_PAGE_VIEWPORTS) {
+                const page = await browser.newPage({ viewport });
+                const browserErrors = [];
+                page.on("pageerror", (error) =>
+                  browserErrors.push(error.message),
+                );
+                try {
+                  await page.goto(`${origin}${authoredPage.route}`, {
+                    waitUntil: "networkidle",
+                  });
+                  await page.waitForTimeout(VIEWPORT_SETTLE_MS);
+                  const brief = pageBriefReport.briefs.find(
+                    (brief) => brief.path === authoredPage.route,
+                  );
+                  if (brief?.mode === "supported") {
+                    const disclosureStates = await page
+                      .locator("details")
+                      .evaluateAll((nodes) =>
+                        nodes.map((node) => {
+                          const open = node.open;
+                          node.open = true;
+                          return open;
+                        }),
+                      );
+                    const visibleText = await page.locator("body").innerText();
+                    await page
+                      .locator("details")
+                      .evaluateAll(
+                        (nodes, states) =>
+                          nodes.forEach(
+                            (node, index) => (node.open = states[index]),
+                          ),
+                        disclosureStates,
+                      );
+                    if (
+                      pageBriefExpectedContent(brief).some(
+                        (value) => !visibleText.includes(value),
+                      )
+                    )
+                      pageResult.failures.push(
+                        `${viewport.name}: supported page brief content is missing after hydration.`,
+                      );
+                  }
+
+                  const evidence = await inspectAuthoredPage(page);
+                  const identityFindings = authoredPageIdentityFindings(
+                    homepageIdentity,
+                    evidence.identity,
+                    AUTHORED_PAGE_LABELS[authoredPage.kind] || "authored page",
+                  );
+                  const failures = [
+                    ...authoredPageFailures(evidence, authoredPage.kind),
+                    ...identityFindings,
+                    browserErrors.length > 0 && "browser error",
+                  ].filter(Boolean);
+                  pageResult.viewports.push({
+                    ...viewport,
+                    ...evidence,
+                    identityFindings,
+                    browserErrors,
+                  });
+                  pageResult.failures.push(
+                    ...failures.map(
+                      (failure) => `${viewport.name}: ${failure}`,
+                    ),
+                  );
+                  await page.screenshot({
+                    path: path.join(
+                      evidenceDir,
+                      `${candidate.manifest.candidateId}-${authoredPage.kind}-${viewport.name}-viewport.png`,
+                    ),
+                  });
+                  await page.screenshot({
+                    path: path.join(
+                      evidenceDir,
+                      `${candidate.manifest.candidateId}-${authoredPage.kind}-${viewport.name}.png`,
+                    ),
+                    fullPage: true,
+                  });
+                } catch (error) {
+                  pageResult.failures.push(
+                    `${viewport.name}: ${error instanceof Error ? error.message : String(error)}`,
+                  );
+                } finally {
+                  await page.close();
+                }
+              }
+              pageResult.failures = [...new Set(pageResult.failures)];
+              pageResult.pass = pageResult.failures.length === 0;
+              candidateResult[AUTHORED_PAGE_EVIDENCE_KEYS[authoredPage.kind]] =
+                pageResult;
+              candidateResult.failures.push(
+                ...pageResult.failures.map(
+                  (failure) => `${authoredPage.kind}-page ${failure}`,
+                ),
+              );
+            }
+            recordPhase("authored-pages", captureStartedAt);
+          } finally {
+            await new Promise((resolve, reject) =>
+              server.close((error) => (error ? reject(error) : resolve())),
             );
           }
-        } finally {
-          await new Promise((resolve, reject) =>
-            server.close((error) => (error ? reject(error) : resolve())),
-          );
-        }
-        if (candidate.manifest.version >= 2) {
-          const renderedReference = await renderedReferenceEvaluator({
-            candidateId: candidate.manifest.candidateId,
-            sourceDigest,
-            interactionEvidence,
-            referenceDna: candidate.manifest.referenceDna,
-            visualBrief: candidate.contentManifest?.visualBrief || {},
-            candidateScreenshots: {
-              desktop: path.join(
-                evidenceDir,
-                `${candidate.manifest.candidateId}-desktop-viewport.png`,
-              ),
-              compact: path.join(
-                evidenceDir,
-                `${candidate.manifest.candidateId}-compact-viewport.png`,
-              ),
-              mobile: path.join(
-                evidenceDir,
-                `${candidate.manifest.candidateId}-mobile-viewport.png`,
-              ),
-              fullDesktop: path.join(
-                evidenceDir,
-                `${candidate.manifest.candidateId}-desktop.png`,
-              ),
-            },
-            renderedGeometry: Object.fromEntries(
-              candidateResult.viewports.map((viewport) => [
-                viewport.name,
-                {
-                  viewportWidth: viewport.width,
-                  viewportHeight: viewport.viewportHeight,
-                  heroBottom: viewport.heroBottom,
-                },
-              ]),
-            ),
-          });
-          candidateResult.renderedReferenceFidelity = renderedReference;
-          candidateResult.referenceFidelity = {
-            ...candidateResult.referenceFidelity,
-            sourceContractScore:
-              candidateResult.referenceFidelity?.score ?? 100,
-            sourceVisualFindings:
-              candidateResult.referenceFidelity?.visualFindings || [],
-            pixelScore: renderedReference.score,
-            pixelPass: renderedReference.pass,
-            score: renderedReference.score,
-            pass:
-              candidateResult.referenceFidelity?.pass !== false &&
-              renderedReference.pass,
-          };
-          if (!renderedReference.pass) {
-            const visualFindings = renderedReference.audit?.findings || [];
-            candidateResult.failures.push(
-              ...(visualFindings.length
-                ? visualFindings.map(
-                    (item) =>
-                      `rendered-reference: ${item.evidence || item.category}`,
-                  )
-                : ["rendered-reference: reference fidelity did not pass"]),
-            );
-          }
+          renderComplete = true;
+          if (candidate.manifest.version >= 2)
+            judgeTask = scheduleCandidateJudge();
         }
       } catch (error) {
         candidateResult.failures.push(
           error instanceof Error ? error.message : String(error),
         );
+      }
+      candidateResult.timings.totalMs = Date.now() - candidateStartedAt;
+      pendingCandidateEvidence.push({
+        candidate,
+        candidateResult,
+        judgeTask,
+        cachedJudgeEvidence,
+        cacheKeys,
+        renderComplete: renderComplete && !candidateResult.reused,
+      });
+    }
+
+    // Post-render pass: merge deferred judge results (overlapped with the
+    // renders above), write reusable evidence, then score every candidate.
+    for (const pending of pendingCandidateEvidence) {
+      const { candidate, candidateResult } = pending;
+      let renderedReference = null;
+      if (pending.judgeTask) {
+        const outcome = await pending.judgeTask;
+        if (outcome.ok) renderedReference = outcome.value;
+        else
+          candidateResult.failures.push(
+            outcome.error instanceof Error
+              ? outcome.error.message
+              : String(outcome.error),
+          );
+      } else if (pending.cachedJudgeEvidence) {
+        renderedReference = pending.cachedJudgeEvidence;
+      }
+      // Render-phase evidence snapshot, taken before judge fields merge so the
+      // cached bundle stays judge-independent. Judge timing keys are stripped
+      // explicitly: `recordPhase` writes `timings.judge` while the judge task
+      // runs, before this snapshot is taken.
+      let renderSnapshot = null;
+      if (pending.renderComplete) {
+        const timings = { ...candidateResult.timings };
+        delete timings.judge;
+        delete timings.judgeCallMs;
+        delete timings.judgeAttempts;
+        renderSnapshot = {
+          ...candidateResult,
+          failures: [...candidateResult.failures],
+          timings,
+        };
+      }
+      if (renderedReference) {
+        if (pending.judgeTask && Number.isFinite(renderedReference.durationMs))
+          candidateResult.timings.judgeCallMs = renderedReference.durationMs;
+        if (pending.judgeTask && Number.isFinite(renderedReference.attempts))
+          candidateResult.timings.judgeAttempts = renderedReference.attempts;
+        candidateResult.renderedReferenceFidelity = renderedReference;
+        candidateResult.referenceFidelity = {
+          ...candidateResult.referenceFidelity,
+          sourceContractScore: candidateResult.referenceFidelity?.score ?? 100,
+          sourceVisualFindings:
+            candidateResult.referenceFidelity?.visualFindings || [],
+          pixelScore: renderedReference.score,
+          pixelPass: renderedReference.pass,
+          score: renderedReference.score,
+          pass:
+            candidateResult.referenceFidelity?.pass !== false &&
+            renderedReference.pass,
+        };
+        if (!renderedReference.pass) {
+          const visualFindings = renderedReference.audit?.findings || [];
+          candidateResult.failures.push(
+            ...(visualFindings.length
+              ? visualFindings.map(
+                  (item) =>
+                    `rendered-reference: ${item.evidence || item.category}`,
+                )
+              : ["rendered-reference: reference fidelity did not pass"]),
+          );
+        }
+      }
+      if (cacheRoot && pending.renderComplete && pending.cacheKeys) {
+        try {
+          const files = await collectCandidateEvidenceFileNames(
+            evidenceDir,
+            candidateResult.candidateId,
+          );
+          const requiredHomepageEvidence = [
+            `${candidateResult.candidateId}-desktop-viewport.png`,
+            `${candidateResult.candidateId}-compact-viewport.png`,
+            `${candidateResult.candidateId}-mobile-viewport.png`,
+          ];
+          if (requiredHomepageEvidence.every((name) => files.includes(name)))
+            await writeEvidenceBundle(cacheRoot, pending.cacheKeys, {
+              evidenceDir,
+              files,
+              renderCandidateResult: renderSnapshot,
+              judgeResult: renderedReference,
+            });
+        } catch (error) {
+          console.warn(
+            `creative evidence cache write skipped: ${error?.message || String(error)}`,
+          );
+        }
       }
       candidateResult.failures = [...new Set(candidateResult.failures)];
       candidateResult.valid = candidateResult.failures.length === 0;
@@ -1389,19 +1644,31 @@ export async function runCreativeBakeoff({
   );
   let visualDiversity;
   if (pixelCandidates.length >= 2) {
-    const judged = await renderedDiversityEvaluator({
-      candidates: pixelCandidates.map((candidate) => ({
-        candidateId: candidate.candidateId,
-        desktop: path.join(
-          evidenceDir,
-          `${candidate.candidateId}-desktop-viewport.png`,
-        ),
-        mobile: path.join(
-          evidenceDir,
-          `${candidate.candidateId}-mobile-viewport.png`,
-        ),
-      })),
-    });
+    const judged = await bakeoffTiming.time(
+      "diversity",
+      "candidate-set",
+      () =>
+        renderedDiversityEvaluator({
+          candidates: pixelCandidates.map((candidate) => ({
+            candidateId: candidate.candidateId,
+            desktop: path.join(
+              evidenceDir,
+              `${candidate.candidateId}-desktop-viewport.png`,
+            ),
+            mobile: path.join(
+              evidenceDir,
+              `${candidate.candidateId}-mobile-viewport.png`,
+            ),
+          })),
+        }),
+      {
+        details: (result) => ({
+          pass: result?.pass,
+          callMs: result?.durationMs,
+          candidates: pixelCandidates.length,
+        }),
+      },
+    );
     visualDiversity = {
       version: judged.version,
       model: judged.model,
@@ -1411,6 +1678,9 @@ export async function runCreativeBakeoff({
       genericFallbackDetected: Boolean(judged.audit?.genericFallbackDetected),
       summary: judged.audit?.summary || "",
       pass: judged.pass,
+      ...(Number.isFinite(judged.durationMs)
+        ? { durationMs: judged.durationMs }
+        : {}),
     };
   } else if (versionTwoCandidates.length) {
     visualDiversity = {
@@ -1603,8 +1873,24 @@ export async function runCreativeBakeoff({
     fallback: !selectionPass,
     promotionReady: Boolean(winner && measuredDiversityPass && winner.eligible),
   };
+  report.timings = {
+    version: 1,
+    totalMs: Date.now() - bakeoffStartedAt,
+    reuse: {
+      candidates: results.length,
+      reusedRender: results.filter(
+        (candidate) => candidate.timings?.reused === true,
+      ).length,
+    },
+    categories: bakeoffTiming.summary(),
+    entries: bakeoffTiming.entries(),
+  };
   await fs.mkdir(path.dirname(reportFile), { recursive: true });
   await fs.writeFile(reportFile, `${JSON.stringify(report, null, 2)}\n`);
+  logTimingSummary("creative-bakeoff", {
+    totalMs: report.timings.totalMs,
+    categories: report.timings.categories,
+  });
 
   const shouldPublishSelection =
     (promote && report.promotionReady) ||

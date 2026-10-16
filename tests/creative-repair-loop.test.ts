@@ -1171,6 +1171,12 @@ describe("creative repair loop", () => {
     expect(prompt).toContain("CLIENT VISUAL BRIEF");
     expect(prompt).toContain("#f5f0e4");
     expect(prompt).toContain("Light tactile craft collage");
+    // Both authoring and repair carry the pinned design guidance and the
+    // template-adherence boundary.
+    expect(prompt).toContain("TEMPLATE ADHERENCE CONTRACT");
+    expect(prompt).toContain("Adapt within the template");
+    expect(prompt).toContain("PINNED FRONTEND-DESIGN GUIDANCE");
+    expect(prompt).toContain("Anthropic frontend-design skill");
     expect(prompt).toContain("CLIENT PALETTE ROLE CONTRACT");
     expect(prompt).toContain("surfaceColor is the dominant page surface");
     expect(prompt).toContain(

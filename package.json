@@ -42,6 +42,7 @@
     "format": "prettier --write .",
     "preflight:reasoning": "node scripts/run-reasoning-preflight.mjs",
     "quality:contrast": "node scripts/verify-contrast.mjs",
+    "report:creative-timings": "node scripts/report-creative-timings.mjs",
     "verify:site-route-fixtures": "node scripts/verify-site-route-fixtures.mjs"
   },
   "dependencies": {
