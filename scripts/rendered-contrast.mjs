@@ -64,6 +64,23 @@ export const RENDERED_UNPROVABLE_ISSUES = Object.freeze([
 ]);
 
 /**
+ * Maximum absolute channel difference between two stride-matched decodes.
+ * Used to decide whether hidden glyph paint actually changes the pixels: an
+ * occluded or same-color text renders identically with and without its paint.
+ * @param {Uint8Array | number[]} left
+ * @param {Uint8Array | number[]} right
+ */
+export function maxChannelDelta(left, right) {
+  const length = Math.min(left.length, right.length);
+  let maximum = 0;
+  for (let index = 0; index < length; index += 1) {
+    const delta = Math.abs(Number(left[index]) - Number(right[index]));
+    if (delta > maximum) maximum = delta;
+  }
+  return maximum;
+}
+
+/**
  * Resolve structurally unresolvable text and outline backdrops from the
  * rendered pixels: hide only the target's own glyph paint (or outline), capture
  * the element region, and measure the worst-case luminance behind it. The
@@ -81,7 +98,7 @@ export const RENDERED_UNPROVABLE_ISSUES = Object.freeze([
 export async function resolveRenderedBackdrop(
   page,
   targets,
-  { maximumResolutions = 120 } = {},
+  { maximumResolutions = 120, scoped = false } = {},
 ) {
   const candidates = (targets || [])
     .filter(
@@ -100,11 +117,33 @@ export async function resolveRenderedBackdrop(
     .slice(0, maximumResolutions);
   let resolved = 0;
   let failed = 0;
+  // Marked scope: hover/focus/menu states resolve only the paints of the
+  // interacted control subtree. Everything else was already measured in the
+  // default state; unresolved targets outside the scope stay unresolved in
+  // that state, exactly as the DOM contract reported them before.
+  const inScope = async (locator) => {
+    if (!scoped) return true;
+    return locator
+      .evaluate(
+        (element) => {
+          const markers = [
+            ...document.querySelectorAll("[data-ll-contrast-scope]"),
+          ];
+          return markers.some(
+            (marker) => marker === element || marker.contains(element),
+          );
+        },
+        undefined,
+        { timeout: 800 },
+      )
+      .catch(() => false);
+  };
   for (const target of candidates) {
     const locator = page.locator(target.selector).first();
     let png = null;
     let effectiveForeground = null;
     try {
+      if (!(await inScope(locator))) continue;
       // Element-level filters change how the foreground actually renders.
       // Only opacity-only filters have a provable effect on the foreground
       // alpha; any other filter (blur, brightness, blend, ...) is not
@@ -138,6 +177,7 @@ export async function resolveRenderedBackdrop(
         target.foreground[2],
         Math.min(1, Math.max(0, effectiveAlpha)),
       ];
+      let visiblePng = null;
       const previousStyle = await locator.evaluate(
         (element) => {
           const previous = element.getAttribute("style") || "";
@@ -170,6 +210,38 @@ export async function resolveRenderedBackdrop(
     let ratio = null;
     try {
       const { pixels } = await decodeRgbaPixels(png);
+      // Distinguishability: capture once with the paint intact and once with
+      // it hidden. Identical captures mean the paint is occluded by higher
+      // paint or indistinguishable from its backdrop; hiding glyphs would
+      // otherwise sample the occluder and false-pass the text.
+      let visiblePixels = null;
+      try {
+        const visibleCapture = await locator.screenshot({
+          type: "png",
+          timeout: 2500,
+        });
+        visiblePixels = (await decodeRgbaPixels(visibleCapture)).pixels;
+      } catch {
+        visiblePixels = null;
+      }
+      if (visiblePixels) {
+        const delta = maxChannelDelta(visiblePixels, pixels);
+        if (delta <= 8) {
+          target.pixelResolved = true;
+          target.ratio = 1;
+          target.status = "fail";
+          target.color = rgbHex(effectiveForeground);
+          target.background = null;
+          target.issues = [
+            ...(target.issues || []),
+            "resolved from rendered pixels",
+            "text paint is indistinguishable from its rendered backdrop (occluded or same color)",
+          ];
+          resolved += 1;
+          failed += 1;
+          continue;
+        }
+      }
       ratio = worstCasePixelRatio(effectiveForeground, pixels);
     } catch {
       continue; // decode failure: stays unresolved
@@ -1254,10 +1326,26 @@ export async function inspectContrastPage(
     // state before the findings are finalized. Failures stay failures.
     // CREATIVE_PIXEL_CONTRAST=false restores the DOM-only contract.
     if (String(process.env.CREATIVE_PIXEL_CONTRAST ?? "true").trim() !== "false") {
-      const resolution = await resolveRenderedBackdrop(page, stateTargets);
+      const resolution = await resolveRenderedBackdrop(page, stateTargets, {
+        scoped: await page.evaluate(() =>
+          Boolean(document.querySelector("[data-ll-contrast-scope]")),
+        ),
+      });
       pixelResolved += resolution.resolved;
     }
     targets.push(...stateTargets);
+  };
+  const markScope = async (elements) => {
+    for (const element of elements)
+      await element
+        .evaluate((node) => node.setAttribute("data-ll-contrast-scope", "1"))
+        .catch(() => {});
+  };
+  const clearScope = async (elements) => {
+    for (const element of elements)
+      await element
+        .evaluate((node) => node.removeAttribute("data-ll-contrast-scope"))
+        .catch(() => {});
   };
   const isPainted = async (control) =>
     control.evaluate((el) => {
@@ -1311,9 +1399,13 @@ export async function inspectContrastPage(
             behavior: "instant",
           }),
         );
+        await markScope([control]);
         await control.focus();
         await collect("focus");
-        if (!(await isPainted(control))) continue;
+        if (!(await isPainted(control))) {
+          await clearScope([control]);
+          continue;
+        }
         await control
           .hover({ timeout: 1500 })
           .then(() => collect("hover"))
@@ -1332,6 +1424,7 @@ export async function inspectContrastPage(
             });
           });
         await control.evaluate((el) => el.blur());
+        await clearScope([control]);
       }
       await page.mouse.move(0, 0);
     };
@@ -1358,8 +1451,10 @@ export async function inspectContrastPage(
         await detail.evaluate((el) => {
           el.open = true;
         });
+        await markScope([detail]);
         await collect("open");
         await exerciseControls(detail);
+        await clearScope([detail]);
       }
     } finally {
       for (const detail of details)
@@ -1404,13 +1499,17 @@ export async function inspectContrastPage(
       }
       await toggle.click({ timeout: 1500 });
       try {
-        await collect("menu-open");
         const menu = await page.evaluateHandle(
           (id) => document.getElementById(id),
           id,
         );
         try {
+          const scopeElements = [toggle];
+          if (menu.asElement()) scopeElements.push(menu.asElement());
+          await markScope(scopeElements);
+          await collect("menu-open");
           if (menu.asElement()) await exerciseControls(menu.asElement());
+          await clearScope(scopeElements);
         } finally {
           await menu.dispose();
         }

@@ -32,11 +32,14 @@ describe("rendered contrast backdrop geometry", () => {
       { states: false },
     );
     expect(report.pass).toBe(false);
+    // Measured from pixels: black text over the black sibling is
+    // indistinguishable from its backdrop, so it is a genuine failure.
     expect(report.findings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           text: "Black over a black sibling",
-          status: "unresolved",
+          status: "fail",
+          pixelResolved: true,
           repairEligible: false,
         }),
       ]),
@@ -72,7 +75,7 @@ describe("rendered contrast backdrop geometry", () => {
     );
     expect(report.pass, JSON.stringify(report.findings)).toBe(true);
   });
-  it("keeps overlapping pseudo-element paint unresolved", async () => {
+  it("measures overlapping pseudo-element backdrops from the rendered pixels", async () => {
     const report = await scan(
       '<style>body{margin:0;background:#e8eee5;color:#14201d}li{position:relative;width:320px;color:#14201d}li::before{position:absolute;inset:0;background:#000;content:""}</style><ul><li>Text over a pseudo backdrop</li></ul>',
       1440,
@@ -83,7 +86,8 @@ describe("rendered contrast backdrop geometry", () => {
       expect.arrayContaining([
         expect.objectContaining({
           text: "Text over a pseudo backdrop",
-          status: "unresolved",
+          status: "fail",
+          pixelResolved: true,
         }),
       ]),
     );
@@ -99,7 +103,8 @@ describe("rendered contrast backdrop geometry", () => {
       expect.arrayContaining([
         expect.objectContaining({
           text: "Text painted over the padded pseudo backdrop",
-          status: "unresolved",
+          status: "fail",
+          pixelResolved: true,
           issues: expect.arrayContaining([
             "pseudo-element backdrop requires rendered review",
           ]),
@@ -107,21 +112,16 @@ describe("rendered contrast backdrop geometry", () => {
       ]),
     );
   });
-  it("does not prove pseudo-element separation through a transformed owner", async () => {
+  it("resolves pseudo-element separation through a transformed owner from pixels", async () => {
     const report = await scan(
       '<style>body{margin:0;background:#e8eee5;color:#14201d}li{position:relative;width:320px;padding:8px 8px 8px 120px;color:#14201d;transform:rotate(45deg)}li::before{position:absolute;top:0;left:0;width:6px;height:6px;background:#c8ec58;content:""}</style><ul><li>Service coverage in Tacoma, Washington</li></ul>',
       1440,
       { states: false },
     );
-    expect(report.pass).toBe(false);
-    expect(report.findings).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          text: "Service coverage in Tacoma, Washington",
-          status: "unresolved",
-        }),
-      ]),
-    );
+    // The small decorative pseudo does not sit behind the text; the rendered
+    // pixels prove the text's contrast even though the DOM transform blocks a
+    // structural proof.
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
   });
   it("proves a pill plate only when glyph bounds lie inside its normalized fill", async () => {
     const report = await scan(
@@ -131,14 +131,20 @@ describe("rendered contrast backdrop geometry", () => {
     );
     expect(report.pass, JSON.stringify(report.findings)).toBe(true);
   });
-  it("does not prove glyphs outside a rounded plate fill", async () => {
+  it("measures rounded-plate glyph paint from the rendered pixels", async () => {
     const report = await scan(
       '<style>body{background:white}.rear{height:200px;background:white}a{position:fixed;top:30px;left:30px;z-index:2;background:black;color:white;width:100px;height:100px;border-radius:50%;line-height:16px;font-size:12px}</style><div class="rear"></div><a href="#">Outside</a>',
       1440,
       { states: false },
     );
+    // At the top of the circle the glyphs fall outside the painted fill and
+    // land on white; measured white-on-white they are unreadable.
     expect(report.pass).toBe(false);
-    expect(report.findings[0].status).toBe("unresolved");
+    expect(report.findings[0]).toMatchObject({
+      status: "fail",
+      pixelResolved: true,
+      ratio: 1,
+    });
   });
   it("does not let a local plate prove paint above its stacking context", async () => {
     const report = await scan(
@@ -147,7 +153,9 @@ describe("rendered contrast backdrop geometry", () => {
       { states: false },
     );
     expect(report.pass).toBe(false);
-    expect(report.findings[0].status).toBe("unresolved");
+    // Measured through the veil: white text over the composited gray fails.
+    expect(report.findings[0].status).toBe("fail");
+    expect(report.findings[0].pixelResolved).toBe(true);
   });
   it("keeps contrast independent of proven opaque foreground occlusion", async () => {
     const report = await scan(
@@ -164,7 +172,14 @@ describe("rendered contrast backdrop geometry", () => {
       { states: false },
     );
     expect(report.pass).toBe(false);
-    expect(report.findings[0].status).toBe("unresolved");
+    // The input value text is measured through the translucent shadow and is
+    // indistinguishable from the veil; that is a real failure, not an
+    // unresolved guess.
+    expect(report.findings[0]).toMatchObject({
+      text: "Shadow-composited field",
+      status: "fail",
+      pixelResolved: true,
+    });
   });
   it("proves an inset focus ring inside a nested fixed pill above sibling paint", async () => {
     const report = await scan(
@@ -197,7 +212,8 @@ describe("bounded deterministic plate repairs", () => {
       (f: any) => f.text === "Estate law, explained plainly",
     );
     expect(finding).toMatchObject({
-      status: "unresolved",
+      status: "fail",
+      pixelResolved: true,
       plateSurface: "#1d3143",
       plateText: "#f4f1ea",
       plateSafe: true,
@@ -220,7 +236,9 @@ describe("bounded deterministic plate repairs", () => {
     const html = (plate: string) =>
       `<style>body{margin:0;background:#fff}[data-ll-surface="hero"]{--ll-surface:#1d3143;--ll-text:#f4f1ea;background-color:#1d3143;color:#f4f1ea;padding:40px}.copy::before{content:"";display:block;width:60px;height:1px;margin-bottom:8px;background:#8a7d48}.text{color:#f4f1ea;margin:0;font-size:14px}${plate}</style><div data-ll-surface="hero"><div class="copy"><p class="text">Wrapper pseudo backdrop</p></div></div>`;
     const without = await scan(html(""), 1440, { states: false });
-    expect(without.pass).toBe(false);
+    // The decorative hairline does not sit behind the text; the rendered
+    // pixels prove the light-on-dark contrast without any plate.
+    expect(without.pass, JSON.stringify(without.findings)).toBe(true);
     const withPlate = await scan(
       html(plateCss(".text", "#1d3143", "#f4f1ea")),
       1440,
@@ -272,16 +290,9 @@ describe("bounded deterministic plate repairs", () => {
       1440,
       { states: false },
     );
-    expect(report.pass).toBe(false);
-    expect(report.findings).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          text: "Equal z-order navigation",
-          status: "unresolved",
-          repairEligible: false,
-        }),
-      ]),
-    );
+    // Equal z-order resolves by document order: the header (and its white
+    // navigation plate) paints above the media, so the pixels prove the text.
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
   });
 
   it("does not prove a plate when a higher-z sibling context can cover it", async () => {
@@ -291,11 +302,15 @@ describe("bounded deterministic plate repairs", () => {
       { states: false },
     );
     expect(report.pass).toBe(false);
+    // The media (higher z) paints over the navigation; with its glyph paint
+    // hidden the capture is identical, so the covered text is a measured
+    // failure rather than an unresolved guess.
     expect(report.findings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           text: "Covered navigation",
-          status: "unresolved",
+          status: "fail",
+          pixelResolved: true,
           repairEligible: false,
         }),
       ]),
