@@ -103,6 +103,22 @@ describe("creative evidence cache", () => {
     expect(after).toBe(before);
   });
 
+  it("isolates candidate digests so a sibling change cannot invalidate another candidate", async () => {
+    const { root, candidate } = await siteFixture();
+    const sibling = path.join(
+      root,
+      ".launchloom/generated-experiences/candidate-b",
+    );
+    await fs.cp(candidate, sibling, { recursive: true });
+    const shared = await computeSharedEvidenceDigest(root);
+    const digestA = await computeCandidateEvidenceDigest(candidate);
+    const digestB = await computeCandidateEvidenceDigest(sibling);
+    await write(path.join(sibling, "styles.css"), "body{color:#222}\n");
+    expect(await computeSharedEvidenceDigest(root)).toBe(shared);
+    expect(await computeCandidateEvidenceDigest(candidate)).toBe(digestA);
+    expect(await computeCandidateEvidenceDigest(sibling)).not.toBe(digestB);
+  });
+
   it("normalizes managed contrast corrections in candidate styles", async () => {
     const { candidate } = await siteFixture();
     const digest = await computeCandidateEvidenceDigest(candidate);
