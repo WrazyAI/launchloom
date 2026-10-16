@@ -1210,47 +1210,52 @@ export async function runRenderedCreativeRepair({
   // time went. Additive evidence only; never changes repair decisions.
   // Per-operation wall-clock instrumentation. Entries are flushed to
   // timing.json as they are recorded so a failing run still explains where its
-  // time went. Writes are serialized and land via rename so a reader never
-  // observes a partial file. Additive evidence only; never changes decisions.
+  // time went. Writes are serialized through a promise chain and land via a
+  // staging file + rename so a reader never observes a partial file, and no
+  // timer or background task outlives the run. Additive evidence only; never
+  // changes repair decisions.
   const runTiming = createTimingRecorder();
-  let timingWriteScheduled = false;
-  let timingWriteChain = Promise.resolve();
-  const persistRunTiming = async () => {
-    const write = timingWriteChain.then(async () => {
-      const payload = `${JSON.stringify(
-        {
-          version: 1,
-          model: resolvedModel,
-          categories: runTiming.summary(),
-          entries: runTiming.entries(),
-        },
-        null,
-        2,
-      )}\n`;
-      const staging = path.join(
-        evidenceRoot,
-        `timing.json.${process.pid}.staging`,
-      );
-      await fs.writeFile(staging, payload);
-      await fs.rename(staging, path.join(evidenceRoot, "timing.json"));
-    });
-    timingWriteChain = write.catch(() => {});
+  const timingJsonPath = path.join(evidenceRoot, "timing.json");
+  const timingStagingPath = path.join(
+    evidenceRoot,
+    `timing.json.${process.pid}.staging`,
+  );
+  const writeTimingFile = async () => {
+    const payload = `${JSON.stringify(
+      {
+        version: 1,
+        model: resolvedModel,
+        categories: runTiming.summary(),
+        entries: runTiming.entries(),
+      },
+      null,
+      2,
+    )}\n`;
     try {
-      await write;
+      await fs.writeFile(timingStagingPath, payload);
+      await fs.rename(timingStagingPath, timingJsonPath);
     } catch (error) {
-      console.warn(
-        `creative timing persist failed: ${error?.message || String(error)}`,
-      );
+      await fs.rm(timingStagingPath, { force: true }).catch(() => {});
+      throw error;
     }
+  };
+  let timingWriteChain = Promise.resolve();
+  const queueTimingWrite = () => {
+    timingWriteChain = timingWriteChain
+      .then(writeTimingFile)
+      .catch((error) => {
+        console.warn(
+          `creative timing persist failed: ${error?.message || String(error)}`,
+        );
+      });
+    return timingWriteChain;
+  };
+  const persistRunTiming = async () => {
+    await timingWriteChain;
   };
   const recordRunTiming = (entry) => {
     runTiming.record(entry);
-    if (timingWriteScheduled) return;
-    timingWriteScheduled = true;
-    setTimeout(() => {
-      timingWriteScheduled = false;
-      void persistRunTiming();
-    }, 0);
+    void queueTimingWrite();
   };
   const requestedMode = mode === "promote" ? "promote" : "preview";
   const frozenCreativeSession = creativeSession

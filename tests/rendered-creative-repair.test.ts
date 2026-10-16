@@ -31,7 +31,11 @@ afterEach(async () => {
   await Promise.all(
     roots
       .splice(0)
-      .map((root) => fs.rm(root, { recursive: true, force: true })),
+      // A run may still be flushing its atomic timing write when the test
+      // resolves; retry briefly on ENOTEMPTY instead of failing teardown.
+      .map((root) =>
+        fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }),
+      ),
   );
 });
 
