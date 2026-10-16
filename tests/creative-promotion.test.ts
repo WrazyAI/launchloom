@@ -148,6 +148,34 @@ export default function Experience({ content, runtime }) {
   return root;
 }
 
+/**
+ * Promote the fixture candidate to a version-two candidate bound to the first
+ * registered reference so the judge path is exercised.
+ */
+async function makeVersionTwoCandidate(root: string) {
+  const record = JSON.parse(
+    await fs.readFile("data/inspiration-registry.json", "utf8"),
+  ).records[0];
+  const baseDna = buildReferenceDna(record, { requireEvidence: true });
+  const metadataPath = path.join(root, "candidate-a/metadata.json");
+  const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+  metadata.version = 2;
+  metadata.referenceDna = baseDna;
+  metadata.referenceEvidence = {
+    desktop: baseDna.evidence.desktopScreenshot.path,
+    mobile: baseDna.evidence.mobileScreenshot?.path || "",
+    complete: true,
+  };
+  metadata.creativeManifest = {
+    ...metadata.creativeManifest,
+    version: 2,
+    referenceDna: baseDna,
+    referenceEvidence: metadata.referenceEvidence,
+  };
+  await fs.writeFile(metadataPath, JSON.stringify(metadata));
+  await writeV2ContentManifest(root);
+}
+
 async function writeV2ContentManifest(root: string, directory = "candidate-a") {
   await fs.writeFile(
     path.join(root, directory, "content-manifest.json"),
@@ -510,27 +538,7 @@ describe("creative candidate promotion", () => {
   it("reuses unchanged candidate evidence across bakeoffs and invalidates on input changes", async () => {
     const root = await makeFixture();
     // Render as a version-two candidate so the judge path is exercised too.
-    const record = JSON.parse(
-      await fs.readFile("data/inspiration-registry.json", "utf8"),
-    ).records[0];
-    const baseDna = buildReferenceDna(record, { requireEvidence: true });
-    const metadataPath = path.join(root, "candidate-a/metadata.json");
-    const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
-    metadata.version = 2;
-    metadata.referenceDna = baseDna;
-    metadata.referenceEvidence = {
-      desktop: baseDna.evidence.desktopScreenshot.path,
-      mobile: baseDna.evidence.mobileScreenshot?.path || "",
-      complete: true,
-    };
-    metadata.creativeManifest = {
-      ...metadata.creativeManifest,
-      version: 2,
-      referenceDna: baseDna,
-      referenceEvidence: metadata.referenceEvidence,
-    };
-    await fs.writeFile(metadataPath, JSON.stringify(metadata));
-    await writeV2ContentManifest(root);
+    await makeVersionTwoCandidate(root);
     const siteRoot = await makeTemplateCopy();
     let contrastCalls = 0;
     let fidelityCalls = 0;
@@ -615,6 +623,60 @@ describe("creative candidate promotion", () => {
     const fourth = await bakeoff("fourth");
     expect(contrastCalls).toBe(3);
     expect(fourth.timings.reuse.reusedRender).toBe(0);
+  }, 600_000);
+
+  it("reuses a render whose judge failed and retries the judge instead of caching a failure", async () => {
+    const root = await makeFixture();
+    await makeVersionTwoCandidate(root);
+    const siteRoot = await makeTemplateCopy();
+    let contrastCalls = 0;
+    let fidelityCalls = 0;
+    const contrastEvaluator = async () => {
+      contrastCalls += 1;
+      return {
+        pass: true,
+        repairs: [],
+        before: { findings: [] },
+        after: { findings: [] },
+      };
+    };
+    const failingJudge = async () => {
+      fidelityCalls += 1;
+      throw new Error("judge transport failed");
+    };
+    const passingJudge = async () => {
+      fidelityCalls += 1;
+      return {
+        version: 1,
+        model: "test/model",
+        score: 100,
+        pass: true,
+        audit: { scores: {}, findings: [] },
+      };
+    };
+    const cacheDir = path.join(root, "evidence-cache");
+    const bakeoff = (label: string, renderedReferenceEvaluator: any) =>
+      runCreativeBakeoff({
+        siteDir: siteRoot,
+        candidatesDir: root,
+        reportPath: path.join(root, `${label}-report.json`),
+        screenshotsDir: path.join(root, `${label}-screenshots`),
+        evidenceCacheDir: cacheDir,
+        contrastEvaluator,
+        renderedReferenceEvaluator,
+      });
+
+    const first = await bakeoff("first", failingJudge);
+    expect(fidelityCalls).toBe(1);
+    expect(first.candidates[0].renderedReferenceFidelity).toBeUndefined();
+
+    // The render is reused, but the failed judge is not cached as a pass: the
+    // judge runs again for the same inputs.
+    const second = await bakeoff("second", passingJudge);
+    expect(contrastCalls).toBe(1);
+    expect(fidelityCalls).toBe(2);
+    expect(second.candidates[0].timings.reused).toBe(true);
+    expect(second.candidates[0].renderedReferenceFidelity?.pass).toBe(true);
   }, 600_000);
 
   it("renders authored service, location, and services-index pages with the homepage visual identity", async () => {

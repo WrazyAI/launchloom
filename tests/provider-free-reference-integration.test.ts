@@ -25,6 +25,7 @@ import {
   referenceImplementationChecklist,
 } from "../scripts/creative-authoring-output.mjs";
 import { cacheableReferenceDna } from "../scripts/openrouter-client.mjs";
+import { designAdherencePromptBlock } from "../scripts/design-adherence-guidance.mjs";
 import { requestRepair } from "../scripts/creative-repair-loop.mjs";
 import {
   promptImagePart,
@@ -76,6 +77,7 @@ function authorPromptBuilders() {
       referenceImplementationChecklist,
       omitDuplicateRouteDesignTemplates,
       cacheableReferenceDna,
+      designAdherencePromptBlock,
       formatModelBoundContentShape,
       typographyPalettePrompt,
       creativeServicePageShape,

@@ -1171,6 +1171,9 @@ export async function runRenderedCreativeRepair({
   // must not be repeated indefinitely. Two consecutive no-progress repairs
   // mark the candidate stagnated; its remaining budget stays unspent and the
   // loop reports an explicit blocked failure instead of thrashing.
+  // `CREATIVE_REPAIR_STAGNATION=false` restores the pre-optimization path.
+  const stagnationGuardEnabled =
+    String(process.env.CREATIVE_REPAIR_STAGNATION ?? "true").trim() !== "false";
   const repairBaselines = new Map();
   const repairAttemptCounts = new Map();
   const assessedRepairAttempts = new Map();
@@ -1178,6 +1181,7 @@ export async function runRenderedCreativeRepair({
   const stagnatedCandidateIds = new Set();
   /** Mark a candidate stagnated when its latest repair produced no change. */
   const assessRepairProgress = (candidateId, findings) => {
+    if (!stagnationGuardEnabled) return false;
     const baseline = repairBaselines.get(candidateId);
     if (!baseline) return false;
     const attempts = repairAttemptCounts.get(candidateId) || 0;
@@ -1204,12 +1208,16 @@ export async function runRenderedCreativeRepair({
   // Per-operation wall-clock instrumentation. Entries are flushed to
   // timing.json as they are recorded so a failing run still explains where its
   // time went. Additive evidence only; never changes repair decisions.
+  // Per-operation wall-clock instrumentation. Entries are flushed to
+  // timing.json as they are recorded so a failing run still explains where its
+  // time went. Writes are serialized and land via rename so a reader never
+  // observes a partial file. Additive evidence only; never changes decisions.
   const runTiming = createTimingRecorder();
   let timingWriteScheduled = false;
+  let timingWriteChain = Promise.resolve();
   const persistRunTiming = async () => {
-    await fs.writeFile(
-      path.join(evidenceRoot, "timing.json"),
-      `${JSON.stringify(
+    const write = timingWriteChain.then(async () => {
+      const payload = `${JSON.stringify(
         {
           version: 1,
           model: resolvedModel,
@@ -1218,8 +1226,22 @@ export async function runRenderedCreativeRepair({
         },
         null,
         2,
-      )}\n`,
-    );
+      )}\n`;
+      const staging = path.join(
+        evidenceRoot,
+        `timing.json.${process.pid}.staging`,
+      );
+      await fs.writeFile(staging, payload);
+      await fs.rename(staging, path.join(evidenceRoot, "timing.json"));
+    });
+    timingWriteChain = write.catch(() => {});
+    try {
+      await write;
+    } catch (error) {
+      console.warn(
+        `creative timing persist failed: ${error?.message || String(error)}`,
+      );
+    }
   };
   const recordRunTiming = (entry) => {
     runTiming.record(entry);
@@ -1227,11 +1249,7 @@ export async function runRenderedCreativeRepair({
     timingWriteScheduled = true;
     setTimeout(() => {
       timingWriteScheduled = false;
-      persistRunTiming().catch((error) => {
-        console.warn(
-          `creative timing persist failed: ${error?.message || String(error)}`,
-        );
-      });
+      void persistRunTiming();
     }, 0);
   };
   const requestedMode = mode === "promote" ? "promote" : "preview";
@@ -1659,6 +1677,7 @@ export async function runRenderedCreativeRepair({
         const stagnationDetail = stagnatedCandidateIds.size
           ? ` Stagnation guard: blockers did not change across ${MAX_STAGNANT_REPAIRS} consecutive repairs for ${[...stagnatedCandidateIds].sort().join(", ")}.`
           : "";
+        await persistRunTiming();
         throw new Error(
           `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.${stagnationDetail}`,
         );
@@ -1806,6 +1825,7 @@ export async function runRenderedCreativeRepair({
       ];
       if (assessRepairProgress(selectedId, gateBlockers)) {
         record.stagnatedCandidates = [...stagnatedCandidateIds].sort();
+        await persistRunTiming();
         throw new Error(
           `Selected candidate ${selectedId} still fails rendered visual QA and its blockers did not change across ${MAX_STAGNANT_REPAIRS} consecutive repairs; stopping instead of repeating equivalent work.`,
         );

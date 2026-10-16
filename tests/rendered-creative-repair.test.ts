@@ -2732,6 +2732,50 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
     ).toHaveLength(3);
   });
 
+  it("honors CREATIVE_REPAIR_STAGNATION=false and spends the full budget", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let repairCalls = 0;
+    let bakeoffCalls = 0;
+    process.env.CREATIVE_REPAIR_STAGNATION = "false";
+    try {
+      await expect(
+        runRenderedCreativeRepair({
+          siteDir: root,
+          candidatesDir: candidates,
+          outDir: path.join(root, "evidence"),
+          mode: "preview",
+          maxCycles: 3,
+          runBakeoffImpl: async (options: any) => {
+            bakeoffCalls += 1;
+            return writeBakeoffEvidence(
+              options,
+              report({
+                selectedCandidateId: null,
+                candidates: [
+                  candidate("candidate-a", {
+                    valid: false,
+                    eligible: false,
+                    failures: ["Rendered candidate needs repair."],
+                  }),
+                ],
+              }),
+            );
+          },
+          repairCandidateImpl: async () => {
+            repairCalls += 1;
+          },
+          promoteImpl: async () => {
+            throw new Error("Must not promote an exhausted candidate");
+          },
+        }),
+      ).rejects.toThrow("3-cycle repair budget is exhausted");
+    } finally {
+      delete process.env.CREATIVE_REPAIR_STAGNATION;
+    }
+    expect(repairCalls).toBe(3);
+    expect(bakeoffCalls).toBe(4);
+  });
+
   it("allows the final render after independent reference and visual-gate repair budgets are used", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     let bakeoffCalls = 0;
