@@ -22,11 +22,21 @@ import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
 
 const roots: string[] = [];
 const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
+// Repair-switch isolation: tests that exercise the kill-switches must restore
+// the caller's ambient configuration instead of deleting it.
+const originalCreativeSwitches = {
+  CREATIVE_EVIDENCE_REUSE: process.env.CREATIVE_EVIDENCE_REUSE,
+  CREATIVE_REPAIR_STAGNATION: process.env.CREATIVE_REPAIR_STAGNATION,
+};
 
 afterEach(async () => {
   if (originalOpenRouterKey === undefined)
     delete process.env.OPENROUTER_API_KEY;
   else process.env.OPENROUTER_API_KEY = originalOpenRouterKey;
+  for (const [key, value] of Object.entries(originalCreativeSwitches)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
   vi.unstubAllGlobals();
   await Promise.all(
     roots
@@ -1525,6 +1535,7 @@ export default function Experience({ content, runtime }) {
 
   it("threads the evidence cache into bakeoffs and honors the reuse kill-switch", async () => {
     const { root, candidates } = await fixture();
+    process.env.CREATIVE_EVIDENCE_REUSE = "true";
     const seenCacheDirs: Array<string | null> = [];
     const runOnce = () =>
       runRenderedCreativeRepair({
@@ -1544,12 +1555,9 @@ export default function Experience({ content, runtime }) {
     expect(seenCacheDirs[0]).toBe(
       path.join(root, "evidence", "evidence-cache"),
     );
+    // The afterEach hook restores the caller's ambient switch values.
     process.env.CREATIVE_EVIDENCE_REUSE = "false";
-    try {
-      await runOnce();
-    } finally {
-      delete process.env.CREATIVE_EVIDENCE_REUSE;
-    }
+    await runOnce();
     expect(seenCacheDirs[1]).toBeNull();
   });
 
@@ -2685,6 +2693,7 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
 
   it("stops repeating equivalent repairs when a candidate's blockers do not change", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
+    process.env.CREATIVE_REPAIR_STAGNATION = "true";
     let repairCalls = 0;
     let bakeoffCalls = 0;
 
@@ -2740,42 +2749,39 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
     const { root, candidates } = await fixture(["candidate-a"]);
     let repairCalls = 0;
     let bakeoffCalls = 0;
+    // The afterEach hook restores the caller's ambient switch value.
     process.env.CREATIVE_REPAIR_STAGNATION = "false";
-    try {
-      await expect(
-        runRenderedCreativeRepair({
-          siteDir: root,
-          candidatesDir: candidates,
-          outDir: path.join(root, "evidence"),
-          mode: "preview",
-          maxCycles: 3,
-          runBakeoffImpl: async (options: any) => {
-            bakeoffCalls += 1;
-            return writeBakeoffEvidence(
-              options,
-              report({
-                selectedCandidateId: null,
-                candidates: [
-                  candidate("candidate-a", {
-                    valid: false,
-                    eligible: false,
-                    failures: ["Rendered candidate needs repair."],
-                  }),
-                ],
-              }),
-            );
-          },
-          repairCandidateImpl: async () => {
-            repairCalls += 1;
-          },
-          promoteImpl: async () => {
-            throw new Error("Must not promote an exhausted candidate");
-          },
-        }),
-      ).rejects.toThrow("3-cycle repair budget is exhausted");
-    } finally {
-      delete process.env.CREATIVE_REPAIR_STAGNATION;
-    }
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "preview",
+        maxCycles: 3,
+        runBakeoffImpl: async (options: any) => {
+          bakeoffCalls += 1;
+          return writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [
+                candidate("candidate-a", {
+                  valid: false,
+                  eligible: false,
+                  failures: ["Rendered candidate needs repair."],
+                }),
+              ],
+            }),
+          );
+        },
+        repairCandidateImpl: async () => {
+          repairCalls += 1;
+        },
+        promoteImpl: async () => {
+          throw new Error("Must not promote an exhausted candidate");
+        },
+      }),
+    ).rejects.toThrow("3-cycle repair budget is exhausted");
     expect(repairCalls).toBe(3);
     expect(bakeoffCalls).toBe(4);
   });

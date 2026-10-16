@@ -102,7 +102,11 @@ export async function summarizeCreativeRun(launchloomDir) {
   )
     .filter((entry) => entry.isDirectory() && /^round-\d+$/u.test(entry.name))
     .map((entry) => entry.name)
-    .sort();
+    .sort(
+      (left, right) =>
+        Number(left.slice("round-".length)) -
+        Number(right.slice("round-".length)),
+    );
 
   const rounds = [];
   const judgeDurations = [];
@@ -164,10 +168,11 @@ export async function summarizeCreativeRun(launchloomDir) {
 
   for (const entry of entries) {
     if (entry?.category !== "repair") continue;
+    // Match on the parsed round number so unpadded or three-digit round names
+    // are attributed correctly to their round directory.
+    const target = Number(entry?.details?.round);
     const round = rounds.find(
-      (item) =>
-        item.round ===
-        `round-${String(entry?.details?.round ?? -1).padStart(2, "0")}`,
+      (item) => Number(item.round.slice("round-".length)) === target,
     );
     if (round)
       round.repairs.push({
