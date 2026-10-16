@@ -907,10 +907,13 @@ export async function runCreativeBakeoff({
             directory: candidate.directory,
             reused: true,
           });
-          candidateResult.timings = {
-            ...(cached.timings || {}),
-            reused: true,
-          };
+          const {
+            judge: _cachedJudgeMs,
+            judgeCallMs: _cachedJudgeCallMs,
+            judgeAttempts: _cachedJudgeAttempts,
+            ...cachedRenderTimings
+          } = cached.timings || {};
+          candidateResult.timings = { ...cachedRenderTimings, reused: true };
           cachedJudgeEvidence =
             reusedEvidence.judge?.renderedReferenceFidelity || null;
           if (!cachedJudgeEvidence && candidate.manifest.version >= 2)
@@ -1367,19 +1370,26 @@ export async function runCreativeBakeoff({
       } else if (pending.cachedJudgeEvidence) {
         renderedReference = pending.cachedJudgeEvidence;
       }
-      // Render-phase evidence snapshot, taken before judge fields merge so
-      // the cached bundle stays judge-independent.
-      const renderSnapshot = pending.renderComplete
-        ? {
-            ...candidateResult,
-            failures: [...candidateResult.failures],
-            timings: { ...candidateResult.timings },
-          }
-        : null;
+      // Render-phase evidence snapshot, taken before judge fields merge so the
+      // cached bundle stays judge-independent. Judge timing keys are stripped
+      // explicitly: `recordPhase` writes `timings.judge` while the judge task
+      // runs, before this snapshot is taken.
+      let renderSnapshot = null;
+      if (pending.renderComplete) {
+        const timings = { ...candidateResult.timings };
+        delete timings.judge;
+        delete timings.judgeCallMs;
+        delete timings.judgeAttempts;
+        renderSnapshot = {
+          ...candidateResult,
+          failures: [...candidateResult.failures],
+          timings,
+        };
+      }
       if (renderedReference) {
-        if (Number.isFinite(renderedReference.durationMs))
+        if (pending.judgeTask && Number.isFinite(renderedReference.durationMs))
           candidateResult.timings.judgeCallMs = renderedReference.durationMs;
-        if (Number.isFinite(renderedReference.attempts))
+        if (pending.judgeTask && Number.isFinite(renderedReference.attempts))
           candidateResult.timings.judgeAttempts = renderedReference.attempts;
         candidateResult.renderedReferenceFidelity = renderedReference;
         candidateResult.referenceFidelity = {

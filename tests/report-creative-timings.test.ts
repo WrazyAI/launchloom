@@ -92,6 +92,12 @@ async function fixtureRun({
       ],
     },
     "creative-repair/round-00/creative-bakeoff.json": {
+      timings: {
+        categories: {
+          judge: { count: 2, totalMs: 250_000, maxMs: 130_000 },
+          diversity: { count: 1, totalMs: 150_000, maxMs: 150_000 },
+        },
+      },
       candidates: [
         {
           candidateId: "candidate-a",
@@ -102,6 +108,12 @@ async function fixtureRun({
           candidateId: "candidate-b",
           timings: { totalMs: 260_000, judge: 130_000 },
           renderedReferenceFidelity: { durationMs: 125_000, pass: true },
+        },
+        {
+          // A reused candidate carries render timings only; it must not be
+          // counted as a judge call in this round.
+          candidateId: "candidate-c",
+          timings: { totalMs: null, reused: true },
         },
       ],
       visualDiversity: { durationMs: 150_000, pass: false },
@@ -138,12 +150,14 @@ describe("creative timing report", () => {
     expect(run.creative.totals).toMatchObject({
       bakeoffMs: 300_000,
       judgeMs: 250_000,
+      diversityMs: 150_000,
       repairMs: 200_000,
       gateMs: 90_000,
     });
     expect(run.creative.calls.judge.count).toBe(2);
     expect(run.creative.calls.judge.averageMs).toBe(125_000);
     expect(run.creative.calls.diversity.count).toBe(1);
+    expect(run.creative.calls.diversity.averageMs).toBe(150_000);
     expect(run.creative.calls.repair).toMatchObject({
       count: 2,
       averageMs: 190_000,
@@ -155,6 +169,12 @@ describe("creative timing report", () => {
       bakeoffMs: 300_000,
       selectedCandidateId: null,
     });
+    // A reused candidate is reported but never counted as a fresh judge call.
+    expect(
+      run.rounds[0].candidates.find(
+        (candidate) => candidate.candidateId === "candidate-c",
+      ),
+    ).toMatchObject({ reused: true, judgeMs: null });
     expect(run.rounds[0].repairs).toEqual([
       {
         candidateId: "candidate-a",

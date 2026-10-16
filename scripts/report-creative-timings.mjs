@@ -18,6 +18,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 function argsFrom(argv) {
   const args = { _: [] };
@@ -107,6 +108,13 @@ export async function summarizeCreativeRun(launchloomDir) {
   const judgeDurations = [];
   const diversityDurations = [];
   const candidateTimings = {};
+  // The bakeoff's own per-round recorder is the authoritative source for
+  // judge and diversity call counts: it counts only calls made in that round,
+  // so reused candidates (whose round reports carry render timings only)
+  // cannot inflate totals. `timing.json` carries the orchestrator-level
+  // bakeoff/gate/repair entries instead of per-call judge entries.
+  const roundJudge = { count: 0, totalMs: 0 };
+  const roundDiversity = { count: 0, totalMs: 0 };
   for (const roundDir of roundDirs) {
     const report = await readJsonIfPresent(
       path.join(dir, "creative-repair", roundDir, "creative-bakeoff.json"),
@@ -127,6 +135,15 @@ export async function summarizeCreativeRun(launchloomDir) {
       candidateTimings[candidate.candidateId] ||= [];
       if (Number.isFinite(timings.totalMs))
         candidateTimings[candidate.candidateId].push(Number(timings.totalMs));
+    }
+    const categories = report?.timings?.categories || {};
+    if (Number.isFinite(Number(categories.judge?.count))) {
+      roundJudge.count += Number(categories.judge.count);
+      roundJudge.totalMs += Number(categories.judge.totalMs) || 0;
+    }
+    if (Number.isFinite(Number(categories.diversity?.count))) {
+      roundDiversity.count += Number(categories.diversity.count);
+      roundDiversity.totalMs += Number(categories.diversity.totalMs) || 0;
     }
     if (Number.isFinite(Number(report?.visualDiversity?.durationMs)))
       diversityDurations.push(Number(report.visualDiversity.durationMs));
@@ -174,12 +191,39 @@ export async function summarizeCreativeRun(launchloomDir) {
   const verdict =
     pipelineReport?.verdict ||
     (summary?.status === "passed" ? "passed" : summary?.status || "unknown");
-  // Instrumented runs record judge entries directly; older evidence falls
-  // back to per-candidate round-report timings.
+  const sum = (values) => values.reduce((total, value) => total + value, 0);
+  // Call counts prefer the bakeoff's per-round recorder, then orchestrator
+  // timing entries, then per-candidate round timings (pre-instrumentation
+  // evidence only). Maxima come from per-call data when it exists.
   const entryJudgeDurations = durationsByCategory("judge");
-  const judgeCallDurations = entryJudgeDurations.length
-    ? entryJudgeDurations
-    : judgeDurations;
+  const judgeStats = roundJudge.count
+    ? {
+        count: roundJudge.count,
+        totalMs: roundJudge.totalMs,
+        maxMs: Math.max(0, ...judgeDurations),
+      }
+    : entryJudgeDurations.length
+      ? {
+          count: entryJudgeDurations.length,
+          totalMs: sum(entryJudgeDurations),
+          maxMs: Math.max(...entryJudgeDurations),
+        }
+      : {
+          count: judgeDurations.length,
+          totalMs: sum(judgeDurations),
+          maxMs: Math.max(0, ...judgeDurations),
+        };
+  const diversityStats = roundDiversity.count
+    ? {
+        count: roundDiversity.count,
+        totalMs: roundDiversity.totalMs,
+        maxMs: Math.max(0, ...diversityDurations),
+      }
+    : {
+        count: diversityDurations.length,
+        totalMs: sum(diversityDurations),
+        maxMs: Math.max(0, ...diversityDurations),
+      };
 
   return {
     launchloomDir: dir,
@@ -195,24 +239,27 @@ export async function summarizeCreativeRun(launchloomDir) {
       status: summary?.status || null,
       totals: {
         bakeoffMs: durationsByCategory("bakeoff").reduce((a, b) => a + b, 0),
-        judgeMs: judgeCallDurations.reduce((a, b) => a + b, 0),
-        diversityMs: durationsByCategory("diversity").reduce(
-          (a, b) => a + b,
-          0,
-        ),
+        judgeMs: judgeStats.totalMs,
+        diversityMs: diversityStats.totalMs,
         repairMs: durationsByCategory("repair").reduce((a, b) => a + b, 0),
         gateMs: durationsByCategory("gate").reduce((a, b) => a + b, 0),
       },
       calls: {
         judge: {
-          count: judgeCallDurations.length,
-          averageMs: roundTo(average(judgeCallDurations)),
-          maxMs: Math.max(0, ...judgeCallDurations),
+          count: judgeStats.count,
+          averageMs: roundTo(
+            judgeStats.count ? judgeStats.totalMs / judgeStats.count : 0,
+          ),
+          maxMs: judgeStats.maxMs,
         },
         diversity: {
-          count: diversityDurations.length,
-          averageMs: roundTo(average(diversityDurations)),
-          maxMs: Math.max(0, ...diversityDurations),
+          count: diversityStats.count,
+          averageMs: roundTo(
+            diversityStats.count
+              ? diversityStats.totalMs / diversityStats.count
+              : 0,
+          ),
+          maxMs: diversityStats.maxMs,
         },
         repair: {
           count: repairDurations.length,
@@ -421,4 +468,5 @@ async function main() {
   else console.log(formatCreativeRunReport(run));
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) await main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  await main();

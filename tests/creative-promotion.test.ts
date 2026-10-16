@@ -596,6 +596,9 @@ describe("creative candidate promotion", () => {
     expect(fidelityCalls).toBe(1);
     expect(second.timings.reuse).toEqual({ candidates: 1, reusedRender: 1 });
     expect(second.candidates[0].timings.reused).toBe(true);
+    // A reused judge must not look like a call made in this round.
+    expect(second.candidates[0].timings.judge).toBeUndefined();
+    expect(second.candidates[0].timings.judgeCallMs).toBeUndefined();
     expect(second.candidates[0].failures).toEqual(
       first.candidates[0].failures,
     );
@@ -652,6 +655,8 @@ describe("creative candidate promotion", () => {
         score: 100,
         pass: true,
         audit: { scores: {}, findings: [] },
+        durationMs: 1000,
+        attempts: 1,
       };
     };
     const cacheDir = path.join(root, "evidence-cache");
@@ -676,6 +681,8 @@ describe("creative candidate promotion", () => {
     expect(contrastCalls).toBe(1);
     expect(fidelityCalls).toBe(2);
     expect(second.candidates[0].timings.reused).toBe(true);
+    // The retried judge is a real call in this round and records its timing.
+    expect(second.candidates[0].timings.judgeCallMs).toBe(1000);
     expect(second.candidates[0].renderedReferenceFidelity?.pass).toBe(true);
   }, 600_000);
 
