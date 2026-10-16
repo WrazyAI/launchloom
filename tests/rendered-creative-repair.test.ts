@@ -1588,6 +1588,24 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
         await fs.readFile(path.join(root, "evidence", "summary.json"), "utf8"),
       ).status,
     ).toBe("passed");
+    // Timing evidence is flushed with the run so failing runs stay explainable.
+    const timing = JSON.parse(
+      await fs.readFile(path.join(root, "evidence", "timing.json"), "utf8"),
+    );
+    const categories = new Set(
+      timing.entries.map((entry: { category: string }) => entry.category),
+    );
+    expect(categories.has("bakeoff")).toBe(true);
+    expect(categories.has("gate")).toBe(true);
+    expect(categories.has("repair")).toBe(true);
+    const repairEntry = timing.entries.find(
+      (entry: { category: string }) => entry.category === "repair",
+    );
+    expect(repairEntry).toMatchObject({
+      name: "candidate-a",
+      status: "ok",
+      details: { gate: true, reason: "selected-visual-gate" },
+    });
   });
 
   it("threads one frozen creative session through repairs and summary evidence", async () => {

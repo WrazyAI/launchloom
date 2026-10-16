@@ -31,6 +31,7 @@ import {
 import { runHumanRevisionGate } from "./human-revision-gate.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 import { RENDERED_REFERENCE_THRESHOLDS } from "./rendered-reference-fidelity.mjs";
+import { createTimingRecorder, logTimingSummary } from "./creative-timing.mjs";
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
 // Visual-gate repairs run after selection and outside the reference-fidelity
@@ -1149,6 +1150,39 @@ export async function runRenderedCreativeRepair({
   const bestState = new Map();
   let restoredFinalState = false;
   const history = [];
+  // Per-operation wall-clock instrumentation. Entries are flushed to
+  // timing.json as they are recorded so a failing run still explains where its
+  // time went. Additive evidence only; never changes repair decisions.
+  const runTiming = createTimingRecorder();
+  let timingWriteScheduled = false;
+  const persistRunTiming = async () => {
+    await fs.writeFile(
+      path.join(evidenceRoot, "timing.json"),
+      `${JSON.stringify(
+        {
+          version: 1,
+          model: resolvedModel,
+          categories: runTiming.summary(),
+          entries: runTiming.entries(),
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  };
+  const recordRunTiming = (entry) => {
+    runTiming.record(entry);
+    if (timingWriteScheduled) return;
+    timingWriteScheduled = true;
+    setTimeout(() => {
+      timingWriteScheduled = false;
+      persistRunTiming().catch((error) => {
+        console.warn(
+          `creative timing persist failed: ${error?.message || String(error)}`,
+        );
+      });
+    }, 0);
+  };
   const requestedMode = mode === "promote" ? "promote" : "preview";
   const frozenCreativeSession = creativeSession
     ? validateCreativeSessionConfig(creativeSession, {
@@ -1243,20 +1277,45 @@ export async function runRenderedCreativeRepair({
     const attempts = [];
     for (;;) {
       try {
-        await repairCandidateImpl({
-          candidateDir,
-          candidateId,
-          findings: activeFindings,
-          screenshots: availableScreenshots,
-          interactionEvidence,
-          comparisonScreenshots,
-          model: resolvedModel,
-          creativeSession: frozenCreativeSession,
-          cycle: appliedSoFar + 1,
-          maxCycles: appliedLimit,
-          ...(providerBudget ? { automaticSpanRepair: true, fetchImpl: providerBudget.forCandidate(candidateId) } : {}),
-          onUsage: (record) => repairUsage.push(record),
-        });
+        const repairCallStartedAt = Date.now();
+        try {
+          await repairCandidateImpl({
+            candidateDir,
+            candidateId,
+            findings: activeFindings,
+            screenshots: availableScreenshots,
+            interactionEvidence,
+            comparisonScreenshots,
+            model: resolvedModel,
+            creativeSession: frozenCreativeSession,
+            cycle: appliedSoFar + 1,
+            maxCycles: appliedLimit,
+            ...(providerBudget ? { automaticSpanRepair: true, fetchImpl: providerBudget.forCandidate(candidateId) } : {}),
+            onUsage: (record) => repairUsage.push(record),
+          });
+          recordRunTiming({
+            category: "repair",
+            name: candidateId,
+            startedAt: repairCallStartedAt,
+            durationMs: Date.now() - repairCallStartedAt,
+            details: { round, reason, gate: Boolean(gate) },
+          });
+        } catch (error) {
+          recordRunTiming({
+            category: "repair",
+            name: candidateId,
+            startedAt: repairCallStartedAt,
+            durationMs: Date.now() - repairCallStartedAt,
+            status: "error",
+            details: {
+              round,
+              reason,
+              gate: Boolean(gate),
+              error: String(error?.message || error).slice(0, 300),
+            },
+          });
+          throw error;
+        }
         await persistRepairUsage();
         if (gate) gateUse.set(candidateId, appliedSoFar + 1);
         else cycleUse.set(candidateId, appliedSoFar + 1);
@@ -1384,14 +1443,13 @@ export async function runRenderedCreativeRepair({
   }
 
   for (let round = 0; round < maxRounds; round += 1) {
-    const roundDir = path.join(
-      evidenceRoot,
-      `round-${String(round).padStart(2, "0")}`,
-    );
+    const roundLabel = `round-${String(round).padStart(2, "0")}`;
+    const roundDir = path.join(evidenceRoot, roundLabel);
     const screenshotsDir = path.join(roundDir, "screenshots");
     const reportPath = path.join(roundDir, "creative-bakeoff.json");
     await fs.mkdir(roundDir, { recursive: true });
     let report;
+    const bakeoffStartedAt = Date.now();
     try {
       report = await runBakeoffImpl({
         siteDir: root,
@@ -1405,7 +1463,28 @@ export async function runRenderedCreativeRepair({
         allowContrastRepair: !humanFeedback,
         excludedCandidateIds: [...excludedCandidateIds].sort(),
       });
+      recordRunTiming({
+        category: "bakeoff",
+        name: roundLabel,
+        startedAt: bakeoffStartedAt,
+        durationMs: Date.now() - bakeoffStartedAt,
+        details: {
+          selectedCandidateId: report?.selectedCandidateId || null,
+          candidates: (report?.candidates || []).map((candidate) => ({
+            candidateId: candidate.candidateId,
+            totalMs: candidate.timings?.totalMs ?? null,
+          })),
+        },
+      });
     } catch (error) {
+      recordRunTiming({
+        category: "bakeoff",
+        name: roundLabel,
+        startedAt: bakeoffStartedAt,
+        durationMs: Date.now() - bakeoffStartedAt,
+        status: "error",
+        details: { error: String(error?.message || error).slice(0, 300) },
+      });
       const isExhaustedPreview =
         requestedMode === "preview" &&
         /No creative candidates remain after exclusions:/u.test(
@@ -1599,14 +1678,35 @@ export async function runRenderedCreativeRepair({
       targetDir: gateScreenshots,
     });
     const gateReportPath = path.join(roundDir, "visual-gate.json");
-    const visualGate = await runVisualGateImpl({
-      siteDir: root,
-      screenshotsDir: gateScreenshots,
-      reportPath: gateReportPath,
-      candidateId: selectedId,
-      round,
-      configPath: gateConfigPath,
-      ...(visualGateScript ? { visualGateScript } : {}),
+    const gateStartedAt = Date.now();
+    let visualGate;
+    try {
+      visualGate = await runVisualGateImpl({
+        siteDir: root,
+        screenshotsDir: gateScreenshots,
+        reportPath: gateReportPath,
+        candidateId: selectedId,
+        round,
+        configPath: gateConfigPath,
+        ...(visualGateScript ? { visualGateScript } : {}),
+      });
+    } catch (error) {
+      recordRunTiming({
+        category: "gate",
+        name: roundLabel,
+        startedAt: gateStartedAt,
+        durationMs: Date.now() - gateStartedAt,
+        status: "error",
+        details: { error: String(error?.message || error).slice(0, 300) },
+      });
+      throw error;
+    }
+    recordRunTiming({
+      category: "gate",
+      name: roundLabel,
+      startedAt: gateStartedAt,
+      durationMs: Date.now() - gateStartedAt,
+      details: { verdict: visualGate?.audit?.verdict || null },
     });
     record.visualGateVerdict = visualGate.audit?.verdict || "error";
 
@@ -1644,11 +1744,32 @@ export async function runRenderedCreativeRepair({
         roundDir,
         "human-revision-gate.json",
       );
-      const humanGate = await runHumanGateImpl({
-        configPath: gateConfigPath,
-        screenshotsDir: gateScreenshots,
-        feedback: humanFeedback,
-        reportPath: humanGateReportPath,
+      const humanGateStartedAt = Date.now();
+      let humanGate;
+      try {
+        humanGate = await runHumanGateImpl({
+          configPath: gateConfigPath,
+          screenshotsDir: gateScreenshots,
+          feedback: humanFeedback,
+          reportPath: humanGateReportPath,
+        });
+      } catch (error) {
+        recordRunTiming({
+          category: "human-gate",
+          name: roundLabel,
+          startedAt: humanGateStartedAt,
+          durationMs: Date.now() - humanGateStartedAt,
+          status: "error",
+          details: { error: String(error?.message || error).slice(0, 300) },
+        });
+        throw error;
+      }
+      recordRunTiming({
+        category: "human-gate",
+        name: roundLabel,
+        startedAt: humanGateStartedAt,
+        durationMs: Date.now() - humanGateStartedAt,
+        details: { verdict: humanGate?.audit?.verdict || null },
       });
       record.humanRevisionVerdict = humanGate.audit?.verdict || "error";
       if (humanGate.audit?.verdict !== "pass") {
@@ -1841,9 +1962,13 @@ export async function runRenderedCreativeRepair({
       path.join(evidenceRoot, "summary.json"),
       `${JSON.stringify(passedSummary, null, 2)}\n`,
     );
+    await persistRunTiming();
+    logTimingSummary("creative-repair", { categories: runTiming.summary() });
     return { ...passedSummary, bakeoff: report, visualGate };
   }
 
+  await persistRunTiming();
+  logTimingSummary("creative-repair", { categories: runTiming.summary() });
   throw new Error(
     `Rendered creative repair exceeded its bounded orchestration rounds (${maxRounds}).`,
   );

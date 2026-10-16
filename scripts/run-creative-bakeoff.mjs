@@ -37,6 +37,7 @@ import {
   launchesForSiteConfig,
   readLaunchHistory,
 } from "./launch-history.mjs";
+import { createTimingRecorder, logTimingSummary } from "./creative-timing.mjs";
 
 function argsFrom(argv) {
   return Object.fromEntries(
@@ -691,6 +692,10 @@ export async function runCreativeBakeoff({
       : "";
   const results = [];
   await fs.mkdir(evidenceDir, { recursive: true });
+  // Per-phase wall-clock instrumentation. Additive evidence only; entries are
+  // persisted with the bakeoff report for run-to-run comparison.
+  const bakeoffTiming = createTimingRecorder();
+  const bakeoffStartedAt = Date.now();
 
   try {
     for (const candidate of candidates) {
@@ -715,39 +720,73 @@ export async function runCreativeBakeoff({
         failures: [],
         viewports: [],
       };
+      const candidateStartedAt = Date.now();
+      candidateResult.timings = {};
+      /** Record one render phase; used per candidate and per run. */
+      const recordPhase = (name, startedAt, category = "render") => {
+        const durationMs = Date.now() - startedAt;
+        candidateResult.timings[name] = durationMs;
+        bakeoffTiming.record({
+          category,
+          name: `${candidate.manifest.candidateId}:${name}`,
+          startedAt,
+          durationMs,
+        });
+        return Date.now();
+      };
+      /** Time one render phase; recorded per candidate and per run. */
+      const phase = async (name, fn) => {
+        const startedAt = Date.now();
+        try {
+          return await fn();
+        } finally {
+          recordPhase(name, startedAt);
+        }
+      };
       try {
         if (candidate.contentManifestError)
           throw new Error(candidate.contentManifestError);
-        const experienceSource = await fs.readFile(
-          path.join(candidateRoot, candidate.directory, "Experience.jsx"),
-          "utf8",
+        let stylesSource;
+        const { experienceSource, motionSource, sourceFidelity } = await phase(
+          "source",
+          async () => {
+            const experience = await fs.readFile(
+              path.join(candidateRoot, candidate.directory, "Experience.jsx"),
+              "utf8",
+            );
+            stylesSource = await fs.readFile(
+              path.join(candidateRoot, candidate.directory, "styles.css"),
+              "utf8",
+            );
+            const motion = await fs.readFile(
+              path.join(candidateRoot, candidate.directory, "motion.js"),
+              "utf8",
+            );
+            const fidelity =
+              candidate.manifest.version >= 2
+                ? validateReferenceCandidate({
+                    referenceDna: candidate.manifest.referenceDna,
+                    experienceSource: experience,
+                    stylesSource,
+                    motionSource: motion,
+                  })
+                : {
+                    version: 1,
+                    pass: true,
+                    visualPass: true,
+                    score: 100,
+                    findings: [],
+                    hardFindings: [],
+                    visualFindings: [],
+                    requiredSignatures: [],
+                  };
+            return {
+              experienceSource: experience,
+              motionSource: motion,
+              sourceFidelity: fidelity,
+            };
+          },
         );
-        let stylesSource = await fs.readFile(
-          path.join(candidateRoot, candidate.directory, "styles.css"),
-          "utf8",
-        );
-        const motionSource = await fs.readFile(
-          path.join(candidateRoot, candidate.directory, "motion.js"),
-          "utf8",
-        );
-        const sourceFidelity =
-          candidate.manifest.version >= 2
-            ? validateReferenceCandidate({
-                referenceDna: candidate.manifest.referenceDna,
-                experienceSource,
-                stylesSource,
-                motionSource,
-              })
-            : {
-                version: 1,
-                pass: true,
-                visualPass: true,
-                score: 100,
-                findings: [],
-                hardFindings: [],
-                visualFindings: [],
-                requiredSignatures: [],
-              };
         candidateResult.referenceFidelity = sourceFidelity;
         if (!sourceFidelity.pass)
           candidateResult.failures.push(
@@ -755,19 +794,21 @@ export async function runCreativeBakeoff({
               (item) => `source: ${item.message}`,
             ),
           );
-        await promoteCreativeCandidate({
-          siteDir: root,
-          candidateDir: path.relative(
-            root,
-            path.join(candidateRoot, candidate.directory),
-          ),
-          contentManifest: candidate.contentManifest,
-          // Rendering a candidate for the bakeoff must remain available even
-          // when source-level visual findings are present. Production
-          // publication is enforced by the final promotion call below.
-          preview: true,
-        });
-        await run("npm", ["run", "build"], root);
+        await phase("promote", () =>
+          promoteCreativeCandidate({
+            siteDir: root,
+            candidateDir: path.relative(
+              root,
+              path.join(candidateRoot, candidate.directory),
+            ),
+            contentManifest: candidate.contentManifest,
+            // Rendering a candidate for the bakeoff must remain available even
+            // when source-level visual findings are present. Production
+            // publication is enforced by the final promotion call below.
+            preview: true,
+          }),
+        );
+        await phase("build", () => run("npm", ["run", "build"], root));
         // Only the pages a creative candidate actually styles can carry its
         // corrections: the homepage and the authored service, service-index,
         // and location pages. Deterministic routes (contact, about, blog)
@@ -779,26 +820,28 @@ export async function runCreativeBakeoff({
             route.startsWith("/services/") ||
             route.startsWith("/locations/"),
         );
-        candidateResult.contrast = await contrastEvaluator({
-          dist: path.join(root, "dist"),
-          browser,
-          routes: authored.length ? authored : null,
-          stylesPath: path.join(
-            candidateRoot,
-            candidate.directory,
-            "styles.css",
-          ),
-          deployedStylesPath: path.join(
-            root,
-            "src/generated-experiences/selected/styles.css",
-          ),
-          reportPath: path.join(
-            evidenceDir,
-            `${candidate.manifest.candidateId}-contrast.json`,
-          ),
-          repair: allowContrastRepair,
-          build: () => run("npm", ["run", "build"], root),
-        });
+        candidateResult.contrast = await phase("contrast", () =>
+          contrastEvaluator({
+            dist: path.join(root, "dist"),
+            browser,
+            routes: authored.length ? authored : null,
+            stylesPath: path.join(
+              candidateRoot,
+              candidate.directory,
+              "styles.css",
+            ),
+            deployedStylesPath: path.join(
+              root,
+              "src/generated-experiences/selected/styles.css",
+            ),
+            reportPath: path.join(
+              evidenceDir,
+              `${candidate.manifest.candidateId}-contrast.json`,
+            ),
+            repair: allowContrastRepair,
+            build: () => run("npm", ["run", "build"], root),
+          }),
+        );
         if (!candidateResult.contrast.pass)
           candidateResult.failures.push(
             ...contrastFailureMessages(candidateResult.contrast.after),
@@ -839,6 +882,7 @@ export async function runCreativeBakeoff({
           failures: [],
         };
         candidateResult.interactionEvidence = interactionEvidence;
+        let captureStartedAt = Date.now();
         try {
           for (const viewport of [
             { name: "desktop", width: 1536, height: 864 },
@@ -977,6 +1021,7 @@ export async function runCreativeBakeoff({
               candidateResult.failures.push(...capture.failures);
             }
           }
+          captureStartedAt = recordPhase("capture", captureStartedAt);
           const authoredPages = [
             {
               kind: "service",
@@ -1113,47 +1158,58 @@ export async function runCreativeBakeoff({
               ),
             );
           }
+          recordPhase("authored-pages", captureStartedAt);
         } finally {
           await new Promise((resolve, reject) =>
             server.close((error) => (error ? reject(error) : resolve())),
           );
         }
         if (candidate.manifest.version >= 2) {
-          const renderedReference = await renderedReferenceEvaluator({
-            candidateId: candidate.manifest.candidateId,
-            sourceDigest,
-            interactionEvidence,
-            referenceDna: candidate.manifest.referenceDna,
-            visualBrief: candidate.contentManifest?.visualBrief || {},
-            candidateScreenshots: {
-              desktop: path.join(
-                evidenceDir,
-                `${candidate.manifest.candidateId}-desktop-viewport.png`,
+          const judgeStartedAt = Date.now();
+          let renderedReference;
+          try {
+            renderedReference = await renderedReferenceEvaluator({
+              candidateId: candidate.manifest.candidateId,
+              sourceDigest,
+              interactionEvidence,
+              referenceDna: candidate.manifest.referenceDna,
+              visualBrief: candidate.contentManifest?.visualBrief || {},
+              candidateScreenshots: {
+                desktop: path.join(
+                  evidenceDir,
+                  `${candidate.manifest.candidateId}-desktop-viewport.png`,
+                ),
+                compact: path.join(
+                  evidenceDir,
+                  `${candidate.manifest.candidateId}-compact-viewport.png`,
+                ),
+                mobile: path.join(
+                  evidenceDir,
+                  `${candidate.manifest.candidateId}-mobile-viewport.png`,
+                ),
+                fullDesktop: path.join(
+                  evidenceDir,
+                  `${candidate.manifest.candidateId}-desktop.png`,
+                ),
+              },
+              renderedGeometry: Object.fromEntries(
+                candidateResult.viewports.map((viewport) => [
+                  viewport.name,
+                  {
+                    viewportWidth: viewport.width,
+                    viewportHeight: viewport.viewportHeight,
+                    heroBottom: viewport.heroBottom,
+                  },
+                ]),
               ),
-              compact: path.join(
-                evidenceDir,
-                `${candidate.manifest.candidateId}-compact-viewport.png`,
-              ),
-              mobile: path.join(
-                evidenceDir,
-                `${candidate.manifest.candidateId}-mobile-viewport.png`,
-              ),
-              fullDesktop: path.join(
-                evidenceDir,
-                `${candidate.manifest.candidateId}-desktop.png`,
-              ),
-            },
-            renderedGeometry: Object.fromEntries(
-              candidateResult.viewports.map((viewport) => [
-                viewport.name,
-                {
-                  viewportWidth: viewport.width,
-                  viewportHeight: viewport.viewportHeight,
-                  heroBottom: viewport.heroBottom,
-                },
-              ]),
-            ),
-          });
+            });
+          } finally {
+            recordPhase("judge", judgeStartedAt, "judge");
+          }
+          if (Number.isFinite(renderedReference?.durationMs))
+            candidateResult.timings.judgeCallMs = renderedReference.durationMs;
+          if (Number.isFinite(renderedReference?.attempts))
+            candidateResult.timings.judgeAttempts = renderedReference.attempts;
           candidateResult.renderedReferenceFidelity = renderedReference;
           candidateResult.referenceFidelity = {
             ...candidateResult.referenceFidelity,
@@ -1185,6 +1241,7 @@ export async function runCreativeBakeoff({
           error instanceof Error ? error.message : String(error),
         );
       }
+      candidateResult.timings.totalMs = Date.now() - candidateStartedAt;
       candidateResult.failures = [...new Set(candidateResult.failures)];
       candidateResult.valid = candidateResult.failures.length === 0;
       const desktopEvidence = candidateResult.viewports.filter(
@@ -1389,19 +1446,31 @@ export async function runCreativeBakeoff({
   );
   let visualDiversity;
   if (pixelCandidates.length >= 2) {
-    const judged = await renderedDiversityEvaluator({
-      candidates: pixelCandidates.map((candidate) => ({
-        candidateId: candidate.candidateId,
-        desktop: path.join(
-          evidenceDir,
-          `${candidate.candidateId}-desktop-viewport.png`,
-        ),
-        mobile: path.join(
-          evidenceDir,
-          `${candidate.candidateId}-mobile-viewport.png`,
-        ),
-      })),
-    });
+    const judged = await bakeoffTiming.time(
+      "diversity",
+      "candidate-set",
+      () =>
+        renderedDiversityEvaluator({
+          candidates: pixelCandidates.map((candidate) => ({
+            candidateId: candidate.candidateId,
+            desktop: path.join(
+              evidenceDir,
+              `${candidate.candidateId}-desktop-viewport.png`,
+            ),
+            mobile: path.join(
+              evidenceDir,
+              `${candidate.candidateId}-mobile-viewport.png`,
+            ),
+          })),
+        }),
+      {
+        details: (result) => ({
+          pass: result?.pass,
+          callMs: result?.durationMs,
+          candidates: pixelCandidates.length,
+        }),
+      },
+    );
     visualDiversity = {
       version: judged.version,
       model: judged.model,
@@ -1411,6 +1480,9 @@ export async function runCreativeBakeoff({
       genericFallbackDetected: Boolean(judged.audit?.genericFallbackDetected),
       summary: judged.audit?.summary || "",
       pass: judged.pass,
+      ...(Number.isFinite(judged.durationMs)
+        ? { durationMs: judged.durationMs }
+        : {}),
     };
   } else if (versionTwoCandidates.length) {
     visualDiversity = {
@@ -1603,8 +1675,18 @@ export async function runCreativeBakeoff({
     fallback: !selectionPass,
     promotionReady: Boolean(winner && measuredDiversityPass && winner.eligible),
   };
+  report.timings = {
+    version: 1,
+    totalMs: Date.now() - bakeoffStartedAt,
+    categories: bakeoffTiming.summary(),
+    entries: bakeoffTiming.entries(),
+  };
   await fs.mkdir(path.dirname(reportFile), { recursive: true });
   await fs.writeFile(reportFile, `${JSON.stringify(report, null, 2)}\n`);
+  logTimingSummary("creative-bakeoff", {
+    totalMs: report.timings.totalMs,
+    categories: report.timings.categories,
+  });
 
   const shouldPublishSelection =
     (promote && report.promotionReady) ||

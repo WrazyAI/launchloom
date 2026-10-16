@@ -1233,6 +1233,10 @@ Return a complete replacement for only this requested file. Keep source non-empt
       });
 
     let maxCompletionTokens = CREATIVE_REPAIR_MAX_COMPLETION_TOKENS;
+    // Wall-clock timing for the repair call, including a provider-affordability
+    // retry when one happens.
+    const callStartedAt = Date.now();
+    let repairAttempts = 1;
     let response = await sendRepairRequest(maxCompletionTokens);
     let payload = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -1246,6 +1250,7 @@ Return a complete replacement for only this requested file. Keep source non-empt
           `creative_repair_retry reason=provider-affordability requested_max_completion_tokens=${maxCompletionTokens} retry_max_completion_tokens=${retryLimit}`,
         );
         maxCompletionTokens = retryLimit;
+        repairAttempts += 1;
         response = await sendRepairRequest(maxCompletionTokens);
         payload = await response.json().catch(() => ({}));
       }
@@ -1263,6 +1268,8 @@ Return a complete replacement for only this requested file. Keep source non-empt
         provider: payload.provider || null,
         usage: payload.usage || null,
         at: Date.now(),
+        durationMs: Date.now() - callStartedAt,
+        attempts: repairAttempts,
       });
     const responseContent = payload.choices?.[0]?.message?.content || "";
     const diagnostics = authoringCompletionDiagnostics({

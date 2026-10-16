@@ -494,6 +494,17 @@ describe("creative candidate promotion", () => {
     expect(report.candidates[0].eligible).toBe(false);
     expect(report.fallback).toBe(true);
     expect(report.selectedCandidateId).toBeNull();
+    // Per-phase timing evidence is recorded with the report.
+    expect(report.timings.version).toBe(1);
+    expect(report.timings.totalMs).toBeGreaterThan(0);
+    expect(report.timings.categories.render.count).toBeGreaterThan(0);
+    expect(report.candidates[0].timings).toMatchObject({
+      promote: expect.any(Number),
+      build: expect.any(Number),
+      contrast: expect.any(Number),
+      capture: expect.any(Number),
+      totalMs: expect.any(Number),
+    });
   }, 300_000);
 
   it("renders authored service, location, and services-index pages with the homepage visual identity", async () => {
