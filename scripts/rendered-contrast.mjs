@@ -1,4 +1,193 @@
 import { composite, relativeLuminance, rgbHex } from "./color-contrast.mjs";
+import sharp from "sharp";
+
+/**
+ * Decode a PNG screenshot into sampled RGBA pixels. Sampling caps the work for
+ * very large element captures while keeping deterministic strides.
+ * @param {Buffer} buffer
+ * @param {{maximumSamples?: number}} [options]
+ */
+export async function decodeRgbaPixels(buffer, { maximumSamples = 250_000 } = {}) {
+  const { data, info } = await sharp(buffer)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info;
+  const rowStep = Math.max(
+    1,
+    Math.ceil(Math.sqrt((width * height) / maximumSamples)),
+  );
+  const pixels = [];
+  for (let y = 0; y < height; y += rowStep) {
+    for (let x = 0; x < width; x += rowStep) {
+      const offset = (y * width + x) * channels;
+      pixels.push(data[offset], data[offset + 1], data[offset + 2], 255);
+    }
+  }
+  return { pixels: Uint8Array.from(pixels), width, height, rowStep };
+}
+
+/**
+ * Worst-case contrast between a foreground color and a set of decoded pixels.
+ * The foreground is alpha-composited over every sampled pixel, so translucent
+ * text colors are measured as they actually render.
+ * @param {number[]} foreground [r, g, b, alpha] with alpha in 0..1
+ * @param {Uint8Array | number[]} pixels RGBA bytes
+ */
+export function worstCasePixelRatio(foreground, pixels) {
+  let worst = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < pixels.length; index += 4) {
+    const backdrop = [
+      Number(pixels[index]),
+      Number(pixels[index + 1]),
+      Number(pixels[index + 2]),
+      1,
+    ];
+    const composited = composite(foreground, backdrop);
+    const text = relativeLuminance(composited);
+    const plate = relativeLuminance(backdrop);
+    const ratio =
+      (Math.max(text, plate) + 0.05) / (Math.min(text, plate) + 0.05);
+    if (ratio < worst) worst = ratio;
+  }
+  return Number.isFinite(worst) ? worst : 0;
+}
+
+/**
+ * Issue classes a single rendered frame cannot prove: an unsettled paint
+ * animation changes color over time, and text-clipped backgrounds paint the
+ * glyphs themselves (hiding glyph paint would hide the measured foreground).
+ */
+export const RENDERED_UNPROVABLE_ISSUES = Object.freeze([
+  "paint animation did not settle",
+  "text-clipped background is not a provable backdrop",
+]);
+
+/**
+ * Resolve structurally unresolvable text and outline backdrops from the
+ * rendered pixels: hide only the target's own glyph paint (or outline), capture
+ * the element region, and measure the worst-case luminance behind it. The
+ * DOM-based audit cannot bound overlapping non-ancestor paint, filters, or
+ * partially covering plates; the rendered pixels can.
+ *
+ * Fails closed: a missing element, capture error, or decode error leaves the
+ * target `unresolved`, never a pass.
+ *
+ * @param {import("playwright").Page} page
+ * @param {Array<Record<string, any>>} targets already measured targets
+ * @param {{maximumResolutions?: number}} [options]
+ * @returns {Promise<{resolved: number, failed: number, attempted: number}>}
+ */
+export async function resolveRenderedBackdrop(
+  page,
+  targets,
+  { maximumResolutions = 120 } = {},
+) {
+  const candidates = (targets || [])
+    .filter(
+      (target) =>
+        target?.status === "unresolved" &&
+        target.foreground &&
+        target.selector &&
+        target.rect &&
+        target.rect.width > 0 &&
+        target.rect.height > 0 &&
+        (target.kind === "text" || target.kind === "focus") &&
+        !(target.issues || []).some((issue) =>
+          RENDERED_UNPROVABLE_ISSUES.includes(issue),
+        ),
+    )
+    .slice(0, maximumResolutions);
+  let resolved = 0;
+  let failed = 0;
+  for (const target of candidates) {
+    const locator = page.locator(target.selector).first();
+    let png = null;
+    let effectiveForeground = null;
+    try {
+      // Element-level filters change how the foreground actually renders.
+      // Only opacity-only filters have a provable effect on the foreground
+      // alpha; any other filter (blur, brightness, blend, ...) is not
+      // recoverable from a hidden-paint capture and fails closed.
+      const effect = await locator.evaluate(
+        (element) => {
+          const style = getComputedStyle(element);
+          return {
+            opacity: Number(style.opacity),
+            filter:
+              style.filter && style.filter !== "none" ? style.filter : "",
+          };
+        },
+        undefined,
+        { timeout: 1500 },
+      );
+      const filterOpacityValues = [
+        ...String(effect.filter).matchAll(/opacity\(([\d.]+)\)/gu),
+      ].map((match) => Number(match[1]));
+      const onlyOpacityFilter =
+        !effect.filter ||
+        /^(?:opacity\([\d.]+\)\s*)+$/u.test(effect.filter);
+      if (!onlyOpacityFilter) continue;
+      const effectiveAlpha =
+        (Number(target.foreground?.[3]) || 1) *
+        (Number.isFinite(effect.opacity) ? effect.opacity : 1) *
+        filterOpacityValues.reduce((product, value) => product * value, 1);
+      effectiveForeground = [
+        target.foreground[0],
+        target.foreground[1],
+        target.foreground[2],
+        Math.min(1, Math.max(0, effectiveAlpha)),
+      ];
+      const previousStyle = await locator.evaluate(
+        (element) => {
+          const previous = element.getAttribute("style") || "";
+          element.setAttribute(
+            "style",
+            `${previous};color:transparent !important;-webkit-text-fill-color:transparent !important;text-shadow:none !important;outline-color:transparent !important;`,
+          );
+          return previous;
+        },
+        undefined,
+        { timeout: 1500 },
+      );
+      try {
+        png = await locator.screenshot({ type: "png", timeout: 2500 });
+      } finally {
+        await locator
+          .evaluate(
+            (element, previous) => {
+              if (previous) element.setAttribute("style", previous);
+              else element.removeAttribute("style");
+            },
+            previousStyle,
+            { timeout: 1500 },
+          )
+          .catch(() => {});
+      }
+    } catch {
+      continue; // missing or unmeasurable element: stays unresolved
+    }
+    let ratio = null;
+    try {
+      const { pixels } = await decodeRgbaPixels(png);
+      ratio = worstCasePixelRatio(effectiveForeground, pixels);
+    } catch {
+      continue; // decode failure: stays unresolved
+    }
+    target.pixelResolved = true;
+    target.ratio = ratio;
+    target.status = ratio + 1e-9 >= Number(target.minimum) ? "pass" : "fail";
+    target.color = rgbHex(effectiveForeground);
+    target.background = null;
+    target.issues = [
+      ...(target.issues || []),
+      "resolved from rendered pixels",
+    ];
+    resolved += 1;
+    if (target.status === "fail") failed += 1;
+  }
+  return { resolved, failed, attempted: candidates.length };
+}
 
 /** Runs in Chromium. Collect text runs rather than a stylesheet class whitelist.
  * Browser color resolution handles currentColor, OKLCH and wide gamut CSS.
@@ -963,7 +1152,7 @@ export function collectContrastTargets({
   return targets;
 }
 
-function measure(target) {
+export function measure(target) {
   const { foreground, backgrounds, issues, variable } = target;
   if (!foreground || !backgrounds?.length || issues.length)
     return {
@@ -1017,6 +1206,7 @@ export async function inspectContrastPage(
 ) {
   const targets = [],
     visited = [];
+  let pixelResolved = 0;
   const settle = async () => {
     await page.evaluate(async () => {
       // Let observers and frame-scheduled widget state react before settling paint.
@@ -1056,11 +1246,15 @@ export async function inspectContrastPage(
   const collect = async (state) => {
     await settle();
     visited.push(state);
-    targets.push(
-      ...(await page.evaluate(collectContrastTargets, { route, state })).map(
-        measure,
-      ),
-    );
+    const stateTargets = (
+      await page.evaluate(collectContrastTargets, { route, state })
+    ).map(measure);
+    // Structurally unresolvable backdrops (overlapping paint, filters,
+    // partial plates) are resolved from the rendered pixels of this exact
+    // state before the findings are finalized. Failures stay failures.
+    const resolution = await resolveRenderedBackdrop(page, stateTargets);
+    pixelResolved += resolution.resolved;
+    targets.push(...stateTargets);
   };
   const isPainted = async (control) =>
     control.evaluate((el) => {
@@ -1248,6 +1442,7 @@ export async function inspectContrastPage(
     route,
     pass: measured.every((t) => t.status === "pass"),
     visitedStates: [...new Set(visited)],
+    pixelResolved,
     targets: measured,
     findings: measured.filter((t) => t.status !== "pass"),
   };

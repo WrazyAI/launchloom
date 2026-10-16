@@ -217,9 +217,34 @@ export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
         !/^body(?: > [a-z][a-z0-9-]*:nth-of-type\(\d+\))*$/.test(f.selector)
       )
         continue;
-      const peers = page.targets.filter(
-        (t) => t.selector === f.selector && t.kind === "text",
-      );
+      // Corrections are state-scoped. Hover and outline failures are repaired
+      // with :hover and :focus-visible rules, so an element whose paint
+      // differs between states no longer blocks its own repair. Default-state
+      // repairs keep the strict cross-state guard: a static color rule would
+      // clobber a passing authored hover or focus paint.
+      const focusScoped =
+        f.paintProperty === "outline-color" ||
+        f.kind === "focus" ||
+        f.state === "focus";
+      const stateScope = focusScoped
+        ? ":focus-visible"
+        : f.state === "hover"
+          ? ":hover"
+          : f.state === "default"
+            ? ""
+            : null;
+      if (stateScope === null || (!focusScoped && f.kind !== "text")) continue;
+      const peers =
+        stateScope === ""
+          ? page.targets.filter(
+              (t) => t.selector === f.selector && t.kind === f.kind,
+            )
+          : page.targets.filter(
+              (t) =>
+                t.selector === f.selector &&
+                t.state === f.state &&
+                t.kind === f.kind,
+            );
       if (
         peers.some(
           (t) =>
@@ -230,7 +255,12 @@ export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
         )
       )
         continue;
-      const key = JSON.stringify([page.route, page.viewport.name, f.selector]);
+      const key = JSON.stringify([
+        page.route,
+        page.viewport.name,
+        f.selector,
+        stateScope,
+      ]);
       const previous = groups.get(key);
       const minimum = Math.max(
         f.minimum,
@@ -243,13 +273,13 @@ export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
         viewport: page.viewport,
         mediaConditions: page.mediaConditions,
         selector: f.selector,
+        stateScope,
         minimum,
-        paintProperty:
-          f.paintProperty === "-webkit-text-fill-color"
+        paintProperty: focusScoped
+          ? "outline-color"
+          : f.paintProperty === "-webkit-text-fill-color"
             ? "-webkit-text-fill-color"
-            : f.paintProperty === "outline-color"
-              ? "outline-color"
-              : "color",
+            : "color",
         original: f.color,
         background: f.background,
         ratio: f.ratio,
@@ -288,10 +318,11 @@ export function contrastRepairCss(repairs) {
         .filter(Boolean)
         .join(" and "),
     ];
-    const scopedSelector = r.selector.replace(
-      /^body/,
-      `body[data-ll-route=${JSON.stringify(r.route)}]`,
-    );
+    const scopedSelector =
+      r.selector.replace(
+        /^body/,
+        `body[data-ll-route=${JSON.stringify(r.route)}]`,
+      ) + (r.stateScope || "");
     const property = r.paintProperty || "color";
     const key = JSON.stringify([conditions, property, r.color]);
     if (!groups.has(key))

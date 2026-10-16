@@ -238,15 +238,19 @@ describe("rendered contrast independent of authored classes", () => {
     expect(report.pass).toBe(false);
     expect(report.findings[0].status).toBe("unresolved");
   });
-  it("does not prove translucent colored text from only grayscale image endpoints", async () => {
-    // Endpoints give 3.0436:1, but a red pixel behind this scrim gives 2.9663:1.
+  it("measures translucent colored text over an image from rendered pixels", async () => {
+    // Grayscale endpoints give 3.0436:1, but the red pixels behind this scrim
+    // are worse (2.9663:1). The pixel pass measures the actual composite and
+    // still fails the text; it must never pass from endpoint guesses alone.
     const report = await scan(
       '<section style="background:linear-gradient(black,red)"><div style="background:rgba(0,0,0,.9)"><h1 style="font-size:32px;color:rgba(64,192,255,.5)">Colored translucent title</h1></div></section>',
       1440,
       { states: false },
     );
     expect(report.pass).toBe(false);
-    expect(report.findings[0].status).toBe("unresolved");
+    expect(report.findings[0].status).toBe("fail");
+    expect(report.findings[0].ratio).toBeLessThan(3.1);
+    expect(report.findings[0].pixelResolved).toBe(true);
   });
   it.each([
     "border-bottom:2px solid black",
@@ -294,12 +298,16 @@ describe("rendered contrast independent of authored classes", () => {
     expect(report.pass).toBe(false);
     expect(report.findings[0].ratio).toBeLessThan(1.3);
   });
-  it("passes an opaque local plate over an image and blocks an unbounded image", async () => {
+  it("passes an opaque local plate over an image and fails text over its light region", async () => {
     const bad = await scan(
       '<section style="background-image:linear-gradient(white,black);color:white"><p>Over image</p></section>',
     );
     expect(bad.pass).toBe(false);
-    expect(bad.findings[0].status).toBe("unresolved");
+    // White text crosses the white half of the gradient: measured from the
+    // rendered pixels it is a genuine failure, not an unresolved guess.
+    expect(bad.findings[0].status).toBe("fail");
+    expect(bad.findings[0].ratio).toBeLessThan(1.4);
+    expect(bad.findings[0].pixelResolved).toBe(true);
     const good = await scan(
       '<section style="background-image:linear-gradient(white,black)"><p style="background:#14201d;color:white">Local plate</p></section>',
     );
@@ -357,11 +365,15 @@ describe("rendered contrast independent of authored classes", () => {
       "Services",
     );
   });
-  it("marks blend/filter effects unresolved instead of reporting a false pass", async () => {
+  it("measures blend/filter effects from rendered pixels instead of a false pass", async () => {
     const report = await scan(
       '<p style="color:black;filter:opacity(.1)">Filtered text</p>',
     );
-    expect(report.findings[0].status).toBe("unresolved");
+    // The filtered text renders near the page background; the pixel pass
+    // measures the actual composite and fails it rather than passing.
+    expect(report.findings[0].status).toBe("fail");
+    expect(report.findings[0].ratio).toBeLessThan(1.5);
+    expect(report.findings[0].pixelResolved).toBe(true);
   });
   it("renders paired semantic light/dark/nav surfaces as readable", async () => {
     const css = semanticColorCss({
@@ -400,7 +412,11 @@ describe("contrast audit review regressions", () => {
       { states: false },
     );
     expect(report.pass).toBe(false);
-    expect(report.findings[0].ratio).toBe(1);
+    // Measured from the rendered pixels: somewhere behind the glyphs the
+    // backdrop luminance matches the text, so the worst case is ~1:1.
+    expect(report.findings[0].status).toBe("fail");
+    expect(report.findings[0].ratio).toBeLessThan(1.3);
+    expect(report.findings[0].pixelResolved).toBe(true);
   });
   it.each([
     '<svg style="background:white"><text x="10" y="30" fill="#eeeeee">SVG heading</text></svg>',

@@ -346,8 +346,9 @@ describe("persisted bounded contrast sweep", () => {
     });
     expect(consistent.length).toBeGreaterThan(0);
     expect(consistent.every((r: any) => r.kind !== "plate")).toBe(true);
-    // A passing default with a different backdrop conflicts with the focus
-    // failure; without plates the sweep refuses and defers to author repair.
+    // A passing default with a different paint no longer blocks the focus
+    // repair: the correction is scoped to :focus-visible, so it cannot
+    // clobber the authored default paint. Plates remain retired.
     const mixed = module.planContrastRepairs(
       {
         pages: page([
@@ -365,7 +366,39 @@ describe("persisted bounded contrast sweep", () => {
       },
       { plates: true } as any,
     );
-    expect(mixed).toEqual([]);
+    expect(mixed.length).toBeGreaterThan(0);
+    expect(mixed.every((r: any) => r.kind !== "plate")).toBe(true);
+    expect(
+      mixed.every((r: any) => r.stateScope === ":focus-visible"),
+    ).toBe(true);
+    const mixedCss = module.contrastRepairCss(mixed);
+    expect(mixedCss).toContain(":focus-visible{");
+    expect(mixedCss).not.toContain("background-color:");
+    // The default-state repair still refuses when another state of the same
+    // selector paints a different color: a static rule would clobber it.
+    const blockedDefault = (module.planContrastRepairs as any)({
+      pages: page([
+        {
+          ...base,
+          state: "default",
+          status: "fail",
+          color: "#ffffff",
+          background: "#f8f6f0",
+          foreground: [255, 255, 255, 1],
+          backgrounds: [[248, 246, 240, 1]],
+        },
+        {
+          ...base,
+          state: "hover",
+          status: "pass",
+          color: "#111111",
+          background: "#ffffff",
+          foreground: [17, 17, 17, 1],
+          backgrounds: [[255, 255, 255, 1]],
+        },
+      ]),
+    });
+    expect(blockedDefault).toEqual([]);
   });
   it("repairs a failing focus indicator with an outline-color correction", async () => {
     const module = await modulePromise;
