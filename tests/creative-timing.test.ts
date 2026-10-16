@@ -52,7 +52,7 @@ describe("creative timing recorder", () => {
   it("attaches details returned by the details callback", async () => {
     const recorder = createTimingRecorder();
     await recorder.time("judge", "candidate-a", async () => ({ score: 91 }), {
-      details: (result) => ({ score: result.score }),
+      details: (result: { score: number }) => ({ score: result.score }),
     });
     expect(recorder.entries()[0].details).toEqual({ score: 91 });
   });

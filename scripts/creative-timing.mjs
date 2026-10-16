@@ -29,7 +29,7 @@ export function createTimingRecorder() {
   const record = ({
     category,
     name,
-    startedAt,
+    startedAt = Date.now(),
     durationMs,
     status = "ok",
     details = null,
@@ -89,6 +89,7 @@ export function createTimingRecorder() {
     },
     /**
      * Aggregate entries per category: call count and total/maximum wall time.
+     * @returns {Record<string, {count: number, errorCount: number, totalMs: number, maxMs: number}>}
      */
     summary() {
       const byCategory = {};
@@ -112,6 +113,7 @@ export function createTimingRecorder() {
 /**
  * Reduce timing entries to per-category aggregates for compact reporting.
  * @param {Array<Record<string, any>>} entries
+ * @returns {Record<string, {count: number, errorCount: number, totalMs: number, maxMs: number, names: Record<string, number>}>}
  */
 export function summarizeTimingEntries(entries) {
   const byCategory = {};

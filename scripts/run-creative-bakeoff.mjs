@@ -586,7 +586,7 @@ function renderedPairMetrics(visualDiversity, candidateIds) {
 }
 
 /**
- * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, deferPromotion?: boolean, excludedCandidateIds?: string[], renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, contrastEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean}} options
+ * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, deferPromotion?: boolean, excludedCandidateIds?: string[], renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, contrastEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean, evidenceCacheDir?: string | null, judgeConcurrency?: number | null}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function runCreativeBakeoff({
