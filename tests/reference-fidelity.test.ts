@@ -24,6 +24,33 @@ describe("reference fidelity validator", () => {
     expect(report.hardFindings).toContainEqual(expect.objectContaining({ code: "css-token-collision" }));
   });
 
+  it("flags a reference section that appears out of the assigned order", () => {
+    const outOfOrder = validExperience
+      .replace(
+        '<section data-reference-section="image-chapter"></section><section data-reference-section="editorial-intro"></section>',
+        '<section data-reference-section="editorial-intro"></section><section data-reference-section="image-chapter"></section>',
+      );
+    expect(outOfOrder).not.toBe(validExperience);
+    const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: outOfOrder, stylesSource: validStyles, motionSource: validMotion });
+    expect(report.pass).toBe(false);
+    expect(report.hardFindings).toContainEqual(
+      expect.objectContaining({ code: "section-order" }),
+    );
+  });
+
+  it("allows extra local sections between reference sections", () => {
+    const withLocalSection = validExperience.replace(
+      '<section data-reference-section="image-chapter"></section>',
+      '<section data-reference-section="image-chapter"></section><section data-local-addon><p>{content.hero.heading}</p></section>',
+    );
+    expect(withLocalSection).not.toBe(validExperience);
+    const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: withLocalSection, stylesSource: validStyles, motionSource: validMotion });
+    expect(report.pass).toBe(true);
+    expect(report.hardFindings).not.toContainEqual(
+      expect.objectContaining({ code: "section-order" }),
+    );
+  });
+
   it("does not mistake CSS feature queries for unisolated custom-property declarations", () => {
     const report = validateReferenceCandidate({
       referenceDna: dna,

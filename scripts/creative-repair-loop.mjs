@@ -29,6 +29,7 @@ import {
   formatModelBoundContentShape,
 } from "./author-prompt-budget.mjs";
 import { referenceDossierPromptBlock } from "./reference-dossier.mjs";
+import { designAdherencePromptBlock } from "./design-adherence-guidance.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 import {
   cacheableReferenceDna,
@@ -922,6 +923,8 @@ ${JSON.stringify(stableReferenceDna, null, 2)}
 
 ASSIGNED REFERENCE DOSSIER
 ${referenceDossierPromptBlock(referenceDossier) || "No dossier prompt was attached; use the measured Reference DNA and screenshots without inferring missing evidence."}
+
+${designAdherencePromptBlock()}
 
 SEALED CONTENT TOKENS
 ${contentTokens.join("\n") || "(not supplied)"}

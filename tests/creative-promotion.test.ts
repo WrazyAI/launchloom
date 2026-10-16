@@ -507,6 +507,116 @@ describe("creative candidate promotion", () => {
     });
   }, 300_000);
 
+  it("reuses unchanged candidate evidence across bakeoffs and invalidates on input changes", async () => {
+    const root = await makeFixture();
+    // Render as a version-two candidate so the judge path is exercised too.
+    const record = JSON.parse(
+      await fs.readFile("data/inspiration-registry.json", "utf8"),
+    ).records[0];
+    const baseDna = buildReferenceDna(record, { requireEvidence: true });
+    const metadataPath = path.join(root, "candidate-a/metadata.json");
+    const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+    metadata.version = 2;
+    metadata.referenceDna = baseDna;
+    metadata.referenceEvidence = {
+      desktop: baseDna.evidence.desktopScreenshot.path,
+      mobile: baseDna.evidence.mobileScreenshot?.path || "",
+      complete: true,
+    };
+    metadata.creativeManifest = {
+      ...metadata.creativeManifest,
+      version: 2,
+      referenceDna: baseDna,
+      referenceEvidence: metadata.referenceEvidence,
+    };
+    await fs.writeFile(metadataPath, JSON.stringify(metadata));
+    await writeV2ContentManifest(root);
+    const siteRoot = await makeTemplateCopy();
+    let contrastCalls = 0;
+    let fidelityCalls = 0;
+    const contrastEvaluator = async () => {
+      contrastCalls += 1;
+      return {
+        pass: true,
+        repairs: [],
+        before: { findings: [] },
+        after: { findings: [] },
+      };
+    };
+    const renderedReferenceEvaluator = async () => {
+      fidelityCalls += 1;
+      return {
+        version: 1,
+        model: "test/model",
+        score: 100,
+        pass: true,
+        audit: { scores: {}, findings: [] },
+      };
+    };
+    const cacheDir = path.join(root, "evidence-cache");
+    const bakeoff = (label: string) =>
+      runCreativeBakeoff({
+        siteDir: siteRoot,
+        candidatesDir: root,
+        reportPath: path.join(root, `${label}-report.json`),
+        screenshotsDir: path.join(root, `${label}-screenshots`),
+        evidenceCacheDir: cacheDir,
+        contrastEvaluator,
+        renderedReferenceEvaluator,
+        renderedDiversityEvaluator: async () => ({
+          version: 1,
+          model: "test/model",
+          score: 92,
+          pass: true,
+          minimumPairDistance: 90,
+          audit: {
+            pairs: [],
+            genericFallbackDetected: false,
+            summary: "single candidate",
+          },
+        }),
+      });
+
+    const first = await bakeoff("first");
+    expect(contrastCalls).toBe(1);
+    expect(fidelityCalls).toBe(1);
+    expect(first.timings.reuse).toEqual({ candidates: 1, reusedRender: 0 });
+
+    // Unchanged inputs reuse both the rendered evidence and the judge call.
+    const second = await bakeoff("second");
+    expect(contrastCalls).toBe(1);
+    expect(fidelityCalls).toBe(1);
+    expect(second.timings.reuse).toEqual({ candidates: 1, reusedRender: 1 });
+    expect(second.candidates[0].timings.reused).toBe(true);
+    expect(second.candidates[0].failures).toEqual(
+      first.candidates[0].failures,
+    );
+    expect(second.candidates[0].eligible).toBe(first.candidates[0].eligible);
+    expect(second.candidates[0].renderedReferenceFidelity?.pass).toBe(true);
+    // The restored screenshots are available in the new round's directory.
+    await fs.access(
+      path.join(root, "second-screenshots", "candidate-a-desktop-viewport.png"),
+    );
+
+    // A candidate source change invalidates that candidate's cached render.
+    await fs.appendFile(
+      path.join(root, "candidate-a/styles.css"),
+      "\n/* cache-invalidation-probe */\n",
+    );
+    const third = await bakeoff("third");
+    expect(contrastCalls).toBe(2);
+    expect(third.timings.reuse.reusedRender).toBe(0);
+
+    // A shared site change invalidates every candidate, not just an edited one.
+    await fs.writeFile(
+      path.join(siteRoot, "public/cache-invalidation-probe.txt"),
+      "probe\n",
+    );
+    const fourth = await bakeoff("fourth");
+    expect(contrastCalls).toBe(3);
+    expect(fourth.timings.reuse.reusedRender).toBe(0);
+  }, 600_000);
+
   it("renders authored service, location, and services-index pages with the homepage visual identity", async () => {
     const root = await makeFixture();
     await fs.writeFile(

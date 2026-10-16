@@ -1,5 +1,5 @@
 import { createQaRepairCallBudget, initializeQaRepairReceipt } from "./creative-repair-experiment.mjs";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
@@ -38,6 +38,10 @@ const VIEWPORTS = ["desktop", "compact", "mobile"];
 // cycle budget: content-integrity blockers such as duplicated sections are
 // only observable once a selected candidate is rendered as the page.
 const MAX_GATE_REPAIRS = 2;
+// Progress-aware repair budget: two consecutive repairs that leave a
+// candidate's blocking set unchanged mark it stagnated so the loop stops
+// repeating equivalent work instead of consuming the rest of its budget.
+export const MAX_STAGNANT_REPAIRS = 2;
 
 function cliArgs(argv) {
   return Object.fromEntries(
@@ -795,6 +799,20 @@ function repairFindingText(finding) {
 }
 
 /**
+ * Stable signature of one candidate's blocking findings set, used to detect
+ * repair attempts that produce no measurable change.
+ */
+export function blockingFindingsSignature(findings) {
+  const texts = (findings || [])
+    .map((finding) =>
+      repairFindingText(finding).replace(/\s+/gu, " ").trim().toLowerCase(),
+    )
+    .filter(Boolean)
+    .sort();
+  return createHash("sha256").update(texts.join("\n")).digest("hex");
+}
+
+/**
  * A repair may only repaint the candidate when a finding actually asks for a
  * palette, color, surface, or contrast change. Only explicit palette signals
  * count: a palette-adherence category, a failing paletteAdherence dimension
@@ -1138,12 +1156,45 @@ export async function runRenderedCreativeRepair({
     );
   };
   const cycleLimit = boundedCycles(maxCycles);
+  // Exact-input evidence reuse is on by default; `CREATIVE_EVIDENCE_REUSE=false`
+  // is the operational kill-switch that restores the pre-optimization path
+  // without changing anything else.
+  const reuseEvidenceEnabled =
+    String(process.env.CREATIVE_EVIDENCE_REUSE ?? "true").trim() !== "false";
   const cycleUse = new Map();
   // Contract rejections (an unapplicable edit, a broken marker, an invalid
   // edit count) write nothing to the candidate, so they must not consume the
   // candidate's applied-repair cycles. They are bounded separately.
   const rejectionUse = new Map();
   const gateUse = new Map();
+  // Progress-aware repairs: a repair that leaves the blocking set unchanged
+  // must not be repeated indefinitely. Two consecutive no-progress repairs
+  // mark the candidate stagnated; its remaining budget stays unspent and the
+  // loop reports an explicit blocked failure instead of thrashing.
+  const repairBaselines = new Map();
+  const repairAttemptCounts = new Map();
+  const assessedRepairAttempts = new Map();
+  const stagnantRepairCounts = new Map();
+  const stagnatedCandidateIds = new Set();
+  /** Mark a candidate stagnated when its latest repair produced no change. */
+  const assessRepairProgress = (candidateId, findings) => {
+    const baseline = repairBaselines.get(candidateId);
+    if (!baseline) return false;
+    const attempts = repairAttemptCounts.get(candidateId) || 0;
+    if (assessedRepairAttempts.get(candidateId) === attempts)
+      return stagnatedCandidateIds.has(candidateId);
+    assessedRepairAttempts.set(candidateId, attempts);
+    const signature = blockingFindingsSignature(findings);
+    if (signature === baseline.signature) {
+      const count = (stagnantRepairCounts.get(candidateId) || 0) + 1;
+      stagnantRepairCounts.set(candidateId, count);
+      if (count >= MAX_STAGNANT_REPAIRS)
+        stagnatedCandidateIds.add(candidateId);
+    } else {
+      stagnantRepairCounts.set(candidateId, 0);
+    }
+    return stagnatedCandidateIds.has(candidateId);
+  };
   // Hill-climbing baseline: keep each candidate's best measured state so a
   // regressing repair never becomes the base for the next repair, and the
   // final selection can fall back to it.
@@ -1329,6 +1380,12 @@ export async function runRenderedCreativeRepair({
           cyclesUsed: appliedSoFar + 1,
           attempts,
         });
+        const attemptCount = (repairAttemptCounts.get(candidateId) || 0) + 1;
+        repairAttemptCounts.set(candidateId, attemptCount);
+        repairBaselines.set(candidateId, {
+          signature: blockingFindingsSignature(activeFindings),
+          attempt: attemptCount,
+        });
         return { status: "repaired", attempts };
       } catch (error) {
         await persistPrivateRepairRejection({ outDir: evidenceRoot, round, candidateId,
@@ -1462,6 +1519,9 @@ export async function runRenderedCreativeRepair({
         requireDiversity,
         allowContrastRepair: !humanFeedback,
         excludedCandidateIds: [...excludedCandidateIds].sort(),
+        ...(reuseEvidenceEnabled
+          ? { evidenceCacheDir: path.join(evidenceRoot, "evidence-cache") }
+          : {}),
       });
       recordRunTiming({
         category: "bakeoff",
@@ -1470,9 +1530,11 @@ export async function runRenderedCreativeRepair({
         durationMs: Date.now() - bakeoffStartedAt,
         details: {
           selectedCandidateId: report?.selectedCandidateId || null,
+          reusedCandidates: report?.timings?.reuse?.reusedRender ?? null,
           candidates: (report?.candidates || []).map((candidate) => ({
             candidateId: candidate.candidateId,
             totalMs: candidate.timings?.totalMs ?? null,
+            reused: candidate.timings?.reused === true,
           })),
         },
       });
@@ -1525,13 +1587,34 @@ export async function runRenderedCreativeRepair({
       const candidates = (report.candidates || []).filter(candidateNeedsRepair);
       const previewDiversity =
         requestedMode === "preview" ? previewDiversityEvidence(report) : null;
+      // Assess whether the previous repair for each failing candidate changed
+      // its blocking set. A candidate whose blockers are unchanged will not
+      // receive another equivalent repair.
+      const assessmentDiversity =
+        previewDiversity?.pass === false
+          ? previewDiversity
+          : report.visualDiversity;
+      for (const candidate of candidates) {
+        const diversityLine = candidateDiversityFinding(
+          report,
+          candidate.candidateId,
+          assessmentDiversity,
+        );
+        assessRepairProgress(candidate.candidateId, [
+          ...candidateFindings(candidate),
+          ...(diversityLine ? [diversityLine] : []),
+        ]);
+      }
+      if (stagnatedCandidateIds.size)
+        record.stagnatedCandidates = [...stagnatedCandidateIds].sort();
       const previewDiversityTargets =
         previewDiversity?.pass === false
           ? diversityRepairTargets(report, previewDiversity)
           : [];
       const canRepair = (candidateId) =>
         (cycleUse.get(candidateId) || 0) < cycleLimit &&
-        !excludedCandidateIds.has(candidateId);
+        !excludedCandidateIds.has(candidateId) &&
+        !stagnatedCandidateIds.has(candidateId);
       const repairCandidates = candidates
         .filter((candidate) => canRepair(candidate.candidateId))
         .map((candidate) => ({
@@ -1573,8 +1656,11 @@ export async function runRenderedCreativeRepair({
           restoredFinalState = true;
           continue;
         }
+        const stagnationDetail = stagnatedCandidateIds.size
+          ? ` Stagnation guard: blockers did not change across ${MAX_STAGNANT_REPAIRS} consecutive repairs for ${[...stagnatedCandidateIds].sort().join(", ")}.`
+          : "";
         throw new Error(
-          `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
+          `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.${stagnationDetail}`,
         );
       }
 
@@ -1711,15 +1797,22 @@ export async function runRenderedCreativeRepair({
     record.visualGateVerdict = visualGate.audit?.verdict || "error";
 
     if (!gatePass(visualGate)) {
+      const gateBlockers = [
+        ...candidateFindings(reportCandidate(report, selectedId)),
+        ...(candidateDiversityFinding(report, selectedId)
+          ? [candidateDiversityFinding(report, selectedId)]
+          : []),
+        ...gateFindings(visualGate),
+      ];
+      if (assessRepairProgress(selectedId, gateBlockers)) {
+        record.stagnatedCandidates = [...stagnatedCandidateIds].sort();
+        throw new Error(
+          `Selected candidate ${selectedId} still fails rendered visual QA and its blockers did not change across ${MAX_STAGNANT_REPAIRS} consecutive repairs; stopping instead of repeating equivalent work.`,
+        );
+      }
       const repaired = await repair(
         selectedId,
-        [
-          ...candidateFindings(reportCandidate(report, selectedId)),
-          ...(candidateDiversityFinding(report, selectedId)
-            ? [candidateDiversityFinding(report, selectedId)]
-            : []),
-          ...gateFindings(visualGate),
-        ],
+        gateBlockers,
         "selected-visual-gate",
         round,
         screenshotsDir,
@@ -1896,6 +1989,7 @@ export async function runRenderedCreativeRepair({
       previewDiversityStrategy: report.previewDiversity?.strategy || null,
       repairCycles: combinedRepairCycles(),
       rejectedCandidates,
+      stagnatedCandidates: [...stagnatedCandidateIds].sort(),
       history,
       final: {
         bakeoffReport: path.join(finalDir, "creative-bakeoff.json"),

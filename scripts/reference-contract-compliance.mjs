@@ -369,6 +369,34 @@ export function validateReferenceContractCompliance({
   ) || source.toLowerCase().includes(item));
   if (matched.length < Math.min(3, expected.length))
     findings.push(finding("section-rhythm", "critical", "The authored section sequence does not represent the assigned reference rhythm."));
+  // Structural drift check before any rendered judging: the authoring contract
+  // requires each data-reference-section value on its section in the assigned
+  // DOM order. Extra local sections are allowed; reference sections appearing
+  // out of order are a repairable structural finding.
+  const expectedIndexFor = (actual) => {
+    for (let index = 0; index < expected.length; index += 1) {
+      const item = expected[index];
+      if (actual === item || actual.includes(item) || item.includes(actual))
+        return index;
+    }
+    return -1;
+  };
+  let highestIndex = -1;
+  for (const actual of sections) {
+    const index = expectedIndexFor(actual);
+    if (index === -1) continue;
+    if (index < highestIndex) {
+      findings.push(
+        finding(
+          "section-order",
+          "critical",
+          `Reference section "${actual}" appears out of its assigned order. Keep the data-reference-section values in the exact DOM order supplied by the route checklist.`,
+        ),
+      );
+      break;
+    }
+    highestIndex = Math.max(highestIndex, index);
+  }
   if (!/data-hero(?:\s|=)/iu.test(experienceSource) || !/data-hero-geometry=/iu.test(experienceSource))
     findings.push(finding("hero-geometry", "critical", "The authored hero is missing its explicit reference geometry marker."));
   else if (!markerMatches(experienceSource, "data-hero-geometry", referenceDna.heroGeometry.mode))

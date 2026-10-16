@@ -587,11 +587,13 @@ export default function Experience({ content, runtime }) { return <main><section
       runBakeoffImpl: async (options: any) => {
         bakeoffCalls += 1;
         expect(options.allowContrastRepair).toBe(true);
+        // Vary the blocker text per call so the budget cap is exercised
+        // independently of the no-progress stagnation guard.
         return writeBakeoffEvidence(options, report({
           selectedCandidateId: null,
           candidates: [candidate("candidate-a", {
             valid: false, eligible: false,
-            failures: ["Rendered candidate needs repair."],
+            failures: [`Rendered candidate needs repair (round ${bakeoffCalls}).`],
           })],
         }));
       },
@@ -1515,6 +1517,36 @@ export default function Experience({ content, runtime }) {
     expect(repaired).toContain(
       'src={content.hero.secondaryImage} alt="" aria-hidden="true"',
     );
+  });
+
+  it("threads the evidence cache into bakeoffs and honors the reuse kill-switch", async () => {
+    const { root, candidates } = await fixture();
+    const seenCacheDirs: Array<string | null> = [];
+    const runOnce = () =>
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        runBakeoffImpl: async (options: any) => {
+          seenCacheDirs.push(options.evidenceCacheDir ?? null);
+          return writeBakeoffEvidence(options, report());
+        },
+        runVisualGateImpl: async (options: any) =>
+          visualGate(options, "pass"),
+        repairCandidateImpl: async () => {},
+        promoteImpl: async () => ({ candidateId: "candidate-a" }),
+      });
+    await runOnce();
+    expect(seenCacheDirs[0]).toBe(
+      path.join(root, "evidence", "evidence-cache"),
+    );
+    process.env.CREATIVE_EVIDENCE_REUSE = "false";
+    try {
+      await runOnce();
+    } finally {
+      delete process.env.CREATIVE_EVIDENCE_REUSE;
+    }
+    expect(seenCacheDirs[1]).toBeNull();
   });
 
   it("repairs the selected source only after a rendered visual failure and rerenders before passing", async () => {
@@ -2641,10 +2673,63 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
           repairCalls += 1;
         },
       }),
-    ).rejects.toThrow(/still fails rendered visual QA after 2 gate repairs/iu);
+    ).rejects.toThrow(/still fails rendered visual QA/iu);
 
     expect(repairCalls).toBe(2);
     expect(bakeoffCalls).toBe(3);
+  });
+
+  it("stops repeating equivalent repairs when a candidate's blockers do not change", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let repairCalls = 0;
+    let bakeoffCalls = 0;
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "preview",
+        maxCycles: 3,
+        runBakeoffImpl: async (options: any) => {
+          bakeoffCalls += 1;
+          return writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [
+                candidate("candidate-a", {
+                  valid: false,
+                  eligible: false,
+                  failures: ["Rendered candidate needs repair."],
+                }),
+              ],
+            }),
+          );
+        },
+        repairCandidateImpl: async () => {
+          repairCalls += 1;
+        },
+        promoteImpl: async () => {
+          throw new Error("Must not promote a stagnated candidate");
+        },
+      }),
+    ).rejects.toThrow(/Stagnation guard/iu);
+
+    // Two repairs ran against an unchanged blocker set; the third equivalent
+    // attempt is refused and the loop fails explicitly instead of consuming
+    // the rest of the budget.
+    expect(repairCalls).toBe(2);
+    expect(bakeoffCalls).toBe(3);
+    const timing = JSON.parse(
+      await fs.readFile(path.join(root, "evidence", "timing.json"), "utf8"),
+    );
+    expect(
+      timing.entries.filter((entry: any) => entry.category === "repair"),
+    ).toHaveLength(2);
+    expect(
+      timing.entries.filter((entry: any) => entry.category === "bakeoff"),
+    ).toHaveLength(3);
   });
 
   it("allows the final render after independent reference and visual-gate repair budgets are used", async () => {
