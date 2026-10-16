@@ -1,0 +1,833 @@
+{
+  "version": 1,
+  "seed": "2026-10-16",
+  "targets": {
+    "minPassRate": 0.05,
+    "nearMiss": 0.8
+  },
+  "sources": [
+    "base134b",
+    "base158",
+    "opt134b",
+    "opt158"
+  ],
+  "samples": {
+    "total": 105,
+    "skipped": 0,
+    "calibration": 67,
+    "holdout": 38,
+    "calibrationGroups": [
+      "base134b::candidate-b",
+      "base134b::candidate-c",
+      "base158::candidate-a",
+      "base158::candidate-c",
+      "opt134b::candidate-a",
+      "opt134b::candidate-c",
+      "opt158::candidate-a",
+      "opt158::candidate-b"
+    ],
+    "holdoutGroups": [
+      "base134b::candidate-a",
+      "base158::candidate-b",
+      "opt134b::candidate-b",
+      "opt158::candidate-c"
+    ],
+    "runs": [
+      "base134b",
+      "base158",
+      "opt134b",
+      "opt158"
+    ]
+  },
+  "derived": {
+    "percentile": 98,
+    "bars": {
+      "perDimension": {
+        "artDirection": 81,
+        "ctaPlacement": 79,
+        "heroGeometry": 79,
+        "imagery": 73,
+        "interactionEvidence": 88,
+        "mobileRecomposition": 74,
+        "navigation": 80,
+        "overall": 71,
+        "paletteAdherence": 96,
+        "servicePresentation": 74,
+        "spatialRhythm": 74,
+        "typography": 78
+      },
+      "overall": 71,
+      "majorsStrict": 0
+    },
+    "floorMet": false,
+    "calibrationJudgePassRate": 0,
+    "calibrationDeliverableStrictRate": 0,
+    "nearMiss": {
+      "overallMargin": 20,
+      "maxDimMisses": 6,
+      "maxShortfall": 15,
+      "majors": 6,
+      "calibrationRunRate": 0,
+      "ceilingReached": true
+    }
+  },
+  "holdout": {
+    "judgePassRate": 0,
+    "deliverableStrictRate": 0,
+    "nearMissSampleRate": 0,
+    "nearMissRunRate": 0,
+    "families": {
+      "editorial-monument": {
+        "samples": 11,
+        "judgePassRate": 0,
+        "nearMissRate": 0
+      },
+      "typographic-poster": {
+        "samples": 22,
+        "judgePassRate": 0,
+        "nearMissRate": 0
+      },
+      "cinematic-stage": {
+        "samples": 5,
+        "judgePassRate": 0,
+        "nearMissRate": 0
+      }
+    }
+  },
+  "fullSet": {
+    "judgePassRate": 0,
+    "nearMissRunRate": 0,
+    "hardCleanSamples": 40,
+    "zeroMajorSamples": 0
+  },
+  "distribution": {
+    "artDirection": {
+      "min": 3,
+      "p50": 46,
+      "p75": 62,
+      "p90": 76,
+      "max": 81,
+      "currentBar": 80,
+      "sampleCount": 105
+    },
+    "ctaPlacement": {
+      "min": 6,
+      "p50": 57,
+      "p75": 70,
+      "p90": 76,
+      "max": 84,
+      "currentBar": 75,
+      "sampleCount": 105
+    },
+    "heroGeometry": {
+      "min": 5,
+      "p50": 48,
+      "p75": 58,
+      "p90": 64,
+      "max": 84,
+      "currentBar": 80,
+      "sampleCount": 105
+    },
+    "imagery": {
+      "min": 3,
+      "p50": 24,
+      "p75": 38,
+      "p90": 58,
+      "max": 76,
+      "currentBar": 72,
+      "sampleCount": 105
+    },
+    "interactionEvidence": {
+      "min": 4,
+      "p50": 48,
+      "p75": 65,
+      "p90": 76,
+      "max": 90,
+      "currentBar": 65,
+      "sampleCount": 105
+    },
+    "mobileRecomposition": {
+      "min": 3,
+      "p50": 39,
+      "p75": 52,
+      "p90": 60,
+      "max": 77,
+      "currentBar": 78,
+      "sampleCount": 105
+    },
+    "navigation": {
+      "min": 5,
+      "p50": 58,
+      "p75": 64,
+      "p90": 68,
+      "max": 80,
+      "currentBar": 75,
+      "sampleCount": 105
+    },
+    "overall": {
+      "min": 22,
+      "p50": 47,
+      "p75": 54,
+      "p90": 62,
+      "max": 77,
+      "currentBar": 78,
+      "sampleCount": 105
+    },
+    "paletteAdherence": {
+      "min": 2,
+      "p50": 86,
+      "p75": 91,
+      "p90": 92,
+      "max": 96,
+      "currentBar": 80,
+      "sampleCount": 105
+    },
+    "servicePresentation": {
+      "min": 3,
+      "p50": 53,
+      "p75": 65,
+      "p90": 72,
+      "max": 78,
+      "currentBar": 75,
+      "sampleCount": 105
+    },
+    "spatialRhythm": {
+      "min": 5,
+      "p50": 45,
+      "p75": 55,
+      "p90": 67,
+      "max": 76,
+      "currentBar": 78,
+      "sampleCount": 105
+    },
+    "typography": {
+      "min": 5,
+      "p50": 58,
+      "p75": 72,
+      "p90": 74,
+      "max": 82,
+      "currentBar": 78,
+      "sampleCount": 105
+    }
+  },
+  "rateCurve": [
+    {
+      "percentile": 70,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 70,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 70,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 70,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 71,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 71,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 71,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 71,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 72,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 72,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 72,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 72,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 73,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 73,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 73,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 73,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 74,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 74,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 74,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 74,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 75,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 75,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 75,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 75,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 76,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 76,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 76,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 76,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 77,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 77,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 77,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 77,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 78,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 78,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 78,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 78,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 79,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 79,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 79,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 79,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 80,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 80,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 80,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 80,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 81,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 81,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 81,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 81,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 82,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 82,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 82,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 82,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 83,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 83,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 83,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 83,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 84,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 84,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 84,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 84,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 85,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 85,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 85,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 85,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 86,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 86,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 86,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 86,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 87,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 87,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 87,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 87,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 88,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 88,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 88,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 88,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 89,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 89,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 89,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 89,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 90,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 90,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 90,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 90,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 91,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 91,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 91,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 91,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 92,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 92,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 92,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 92,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 93,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 93,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 93,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 93,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 94,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 94,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 94,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 94,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 95,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 95,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 95,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 95,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 96,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 96,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 96,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 96,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 97,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 97,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 97,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 97,
+      "majorsStrict": 3,
+      "rate": 0
+    },
+    {
+      "percentile": 98,
+      "majorsStrict": 0,
+      "rate": 0
+    },
+    {
+      "percentile": 98,
+      "majorsStrict": 1,
+      "rate": 0
+    },
+    {
+      "percentile": 98,
+      "majorsStrict": 2,
+      "rate": 0
+    },
+    {
+      "percentile": 98,
+      "majorsStrict": 3,
+      "rate": 0
+    }
+  ],
+  "alternatives": {
+    "overallOnly_p90": {
+      "overallBar": 62,
+      "majors": 0,
+      "floor": null,
+      "sampleRate": 0,
+      "runRate": 0
+    },
+    "overallOnly_p90_majors1": {
+      "overallBar": 62,
+      "majors": 1,
+      "floor": null,
+      "sampleRate": 0.0095,
+      "runRate": 0.25
+    },
+    "overallOnly_p95_majors1": {
+      "overallBar": 68,
+      "majors": 1,
+      "floor": null,
+      "sampleRate": 0.0095,
+      "runRate": 0.25
+    },
+    "floor40_p90_majors1": {
+      "overallBar": 62,
+      "majors": 1,
+      "floor": 40,
+      "sampleRate": 0.0095,
+      "runRate": 0.25
+    },
+    "floor50_p90_majors1": {
+      "overallBar": 62,
+      "majors": 1,
+      "floor": 50,
+      "sampleRate": 0.0095,
+      "runRate": 0.25
+    }
+  },
+  "skippedDetail": []
+}
