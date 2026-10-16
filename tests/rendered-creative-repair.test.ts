@@ -27,6 +27,7 @@ const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
 const originalCreativeSwitches = {
   CREATIVE_EVIDENCE_REUSE: process.env.CREATIVE_EVIDENCE_REUSE,
   CREATIVE_REPAIR_STAGNATION: process.env.CREATIVE_REPAIR_STAGNATION,
+  CREATIVE_NEAR_MISS_PREVIEW: process.env.CREATIVE_NEAR_MISS_PREVIEW,
 };
 
 afterEach(async () => {
@@ -984,6 +985,7 @@ export default function Experience({ content, runtime }) { return <main><section
         }),
     );
     const bakeoffExclusions: string[][] = [];
+    const bakeoffUnselectable: string[][] = [];
     const repairCalls: string[] = [];
     const promotions: string[] = [];
     let bakeoffCalls = 0;
@@ -997,6 +999,7 @@ export default function Experience({ content, runtime }) { return <main><section
       runBakeoffImpl: async (options: any) => {
         bakeoffCalls += 1;
         bakeoffExclusions.push(options.excludedCandidateIds || []);
+        bakeoffUnselectable.push(options.unselectableCandidateIds || []);
         return writeBakeoffEvidence(
           options,
           bakeoffCalls <= 3
@@ -1031,7 +1034,10 @@ export default function Experience({ content, runtime }) { return <main><section
     expect(result.selectedCandidateId).toBe("candidate-b");
     expect(bakeoffCalls).toBe(4);
     expect(repairCalls).toEqual(["candidate-a", "candidate-b", "candidate-c"]);
-    expect(bakeoffExclusions[3]).toEqual(["candidate-c"]);
+    // Rejected candidates stay in the bakeoff for diversity evidence; they
+    // only become unselectable. Nothing is excluded from rendering.
+    expect(bakeoffExclusions[3]).toEqual([]);
+    expect(bakeoffUnselectable[3]).toEqual(["candidate-c"]);
     expect(promotions).toEqual(["candidate-b"]);
     expect(result.rejectedCandidates["candidate-c"]).toMatch(
       /content\.hero\.image/iu,
@@ -1061,6 +1067,7 @@ export default function Experience({ content, runtime }) { return <main><section
   it("rejects a repaired FAQList with missing sealed content and selects a passing sibling", async () => {
     const { root, candidates } = await fixture(["candidate-a", "candidate-b"]);
     const bakeoffExclusions: string[][] = [];
+    const bakeoffUnselectable: string[][] = [];
     const repairCalls: string[] = [];
     const promotions: string[] = [];
     let bakeoffCalls = 0;
@@ -1075,6 +1082,7 @@ export default function Experience({ content, runtime }) { return <main><section
       runBakeoffImpl: async (options: any) => {
         bakeoffCalls += 1;
         bakeoffExclusions.push(options.excludedCandidateIds || []);
+        bakeoffUnselectable.push(options.unselectableCandidateIds || []);
         return writeBakeoffEvidence(
           options,
           bakeoffCalls === 1
@@ -1135,7 +1143,8 @@ export default function Experience({ content, runtime }) {
     expect(bakeoffCalls).toBe(2);
     expect(visualCalls).toBe(2);
     expect(repairCalls).toEqual(["candidate-a"]);
-    expect(bakeoffExclusions[1]).toEqual(["candidate-a"]);
+    expect(bakeoffExclusions[1]).toEqual([]);
+    expect(bakeoffUnselectable[1]).toEqual(["candidate-a"]);
     expect(result.rejectedCandidates["candidate-a"]).toMatch(
       /FAQList.*content=\{content\}/iu,
     );
@@ -1217,6 +1226,7 @@ export default function Experience({ content, runtime }) {
     ];
     const { root, candidates } = await fixture(candidateIds);
     const exclusionsByRound: string[][] = [];
+    const unselectableByRound: string[][] = [];
     const promotions: string[] = [];
 
     const result = await runRenderedCreativeRepair({
@@ -1227,13 +1237,16 @@ export default function Experience({ content, runtime }) {
       maxCycles: 1,
       runBakeoffImpl: async (options: any) => {
         const excluded = options.excludedCandidateIds || [];
+        const unselectable = options.unselectableCandidateIds || [];
         exclusionsByRound.push(excluded);
-        const available = candidateIds.filter((id) => !excluded.includes(id));
+        unselectableByRound.push(unselectable);
+        const rendered = candidateIds.filter((id) => !excluded.includes(id));
+        const selectable = rendered.filter((id) => !unselectable.includes(id));
         return writeBakeoffEvidence(
           options,
           report({
-            selectedCandidateId: available[0],
-            candidates: available.map((id) => candidate(id)),
+            selectedCandidateId: selectable[0],
+            candidates: rendered.map((id) => candidate(id)),
           }),
         );
       },
@@ -1257,7 +1270,10 @@ export default function Experience({ content, runtime }) {
 
     expect(result.status).toBe("passed");
     expect(result.selectedCandidateId).toBe("candidate-5");
-    expect(exclusionsByRound).toEqual([
+    // Rejected candidates keep rendering in every round; only their
+    // selectability is removed, one per round, until a candidate passes.
+    expect(exclusionsByRound).toEqual([[], [], [], [], []]);
+    expect(unselectableByRound).toEqual([
       [],
       ["candidate-1"],
       ["candidate-1", "candidate-2"],
@@ -2745,6 +2761,183 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
     ).toHaveLength(3);
   });
 
+
+  function nearMissCandidate(overrides: Record<string, any> = {}) {
+    return candidate("candidate-a", {
+      valid: false,
+      eligible: false,
+      failures: ["rendered-reference: composition drift"],
+      renderedReferenceFidelity: {
+        pass: false,
+        audit: {
+          overallScore: 62,
+          scores: { spatialRhythm: 60, imagery: 55, paletteAdherence: 90 },
+          findings: [
+            {
+              severity: "major",
+              category: "hero-geometry",
+              viewport: "desktop",
+              evidence: "hero drift",
+              repair: "tighten the hero",
+            },
+          ],
+        },
+      },
+      ...overrides,
+    });
+  }
+
+  const nearMissGate = async () => ({
+    version: 1,
+    mode: "verify",
+    status: "quality-blocked",
+    audit: {
+      verdict: "revise",
+      findings: [
+        {
+          severity: "major",
+          category: "spatial-rhythm",
+          viewport: "both",
+          evidence: "section pacing",
+          recommendation: "tighten pacing",
+        },
+      ],
+      operations: [],
+    },
+    blockers: [],
+  });
+
+  it("delivers a near-miss preview with open findings when the strict budget is exhausted", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const promotions: any[] = [];
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) =>
+        writeBakeoffEvidence(
+          options,
+          report({
+            selectedCandidateId: null,
+            candidates: [nearMissCandidate()],
+          }),
+        ),
+      runVisualGateImpl: nearMissGate,
+      repairCandidateImpl: async () => {},
+      promoteImpl: async (options: any) => {
+        promotions.push(options);
+        return { candidateId: "candidate-a" };
+      },
+    });
+    expect(result.status).toBe("previewed-with-open-findings");
+    expect(result.promotionReady).toBe(false);
+    expect(result.nearMiss).toMatchObject({
+      candidateId: "candidate-a",
+      overall: 62,
+    });
+    expect(result.nearMiss.openFindings.length).toBeGreaterThanOrEqual(2);
+    expect(promotions).toHaveLength(1);
+    expect(promotions[0].selectionMode).toBe("creative-near-miss");
+    const summary = JSON.parse(
+      await fs.readFile(path.join(root, "evidence", "summary.json"), "utf8"),
+    );
+    expect(summary.status).toBe("previewed-with-open-findings");
+    const finalReport = JSON.parse(
+      await fs.readFile(
+        path.join(root, "evidence", "final", "creative-bakeoff.json"),
+        "utf8",
+      ),
+    );
+    expect(finalReport.selectedCandidateId).toBe("candidate-a");
+    expect(finalReport.nearMissSelection).toBe(true);
+  });
+
+  it("refuses near-miss delivery when a hard gate failed", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const promotions: any[] = [];
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "preview",
+        maxCycles: 1,
+        runBakeoffImpl: async (options: any) =>
+          writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [
+                nearMissCandidate({
+                  failures: [
+                    "desktop: horizontal overflow",
+                    "rendered-reference: composition drift",
+                  ],
+                }),
+              ],
+            }),
+          ),
+        runVisualGateImpl: nearMissGate,
+        repairCandidateImpl: async () => {},
+        promoteImpl: async (options: any) => {
+          promotions.push(options);
+          return { candidateId: "candidate-a" };
+        },
+      }),
+    ).rejects.toThrow(/repair budget is exhausted/u);
+    expect(promotions).toHaveLength(0);
+  });
+
+  it("honors CREATIVE_NEAR_MISS_PREVIEW=false", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    process.env.CREATIVE_NEAR_MISS_PREVIEW = "false";
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "preview",
+        maxCycles: 1,
+        runBakeoffImpl: async (options: any) =>
+          writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [nearMissCandidate()],
+            }),
+          ),
+        runVisualGateImpl: nearMissGate,
+        repairCandidateImpl: async () => {},
+        promoteImpl: async () => ({ candidateId: "candidate-a" }),
+      }),
+    ).rejects.toThrow(/repair budget is exhausted/u);
+  });
+
+  it("never delivers a near-miss preview in promotion mode", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "promote",
+        maxCycles: 1,
+        runBakeoffImpl: async (options: any) =>
+          writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [nearMissCandidate()],
+            }),
+          ),
+        runVisualGateImpl: nearMissGate,
+        repairCandidateImpl: async () => {},
+        promoteImpl: async () => ({ candidateId: "candidate-a" }),
+      }),
+    ).rejects.toThrow(/repair budget is exhausted/u);
+  });
   it("honors CREATIVE_REPAIR_STAGNATION=false and spends the full budget", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     let repairCalls = 0;

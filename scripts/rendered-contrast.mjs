@@ -1252,8 +1252,11 @@ export async function inspectContrastPage(
     // Structurally unresolvable backdrops (overlapping paint, filters,
     // partial plates) are resolved from the rendered pixels of this exact
     // state before the findings are finalized. Failures stay failures.
-    const resolution = await resolveRenderedBackdrop(page, stateTargets);
-    pixelResolved += resolution.resolved;
+    // CREATIVE_PIXEL_CONTRAST=false restores the DOM-only contract.
+    if (String(process.env.CREATIVE_PIXEL_CONTRAST ?? "true").trim() !== "false") {
+      const resolution = await resolveRenderedBackdrop(page, stateTargets);
+      pixelResolved += resolution.resolved;
+    }
     targets.push(...stateTargets);
   };
   const isPainted = async (control) =>

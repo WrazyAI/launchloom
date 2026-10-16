@@ -184,6 +184,8 @@ jobs:
       CREATIVE_EVIDENCE_REUSE: ${{ vars.CREATIVE_EVIDENCE_REUSE || 'true' }}
       CREATIVE_JUDGE_CONCURRENCY: ${{ vars.CREATIVE_JUDGE_CONCURRENCY || '2' }}
       CREATIVE_REPAIR_STAGNATION: ${{ vars.CREATIVE_REPAIR_STAGNATION || 'true' }}
+      CREATIVE_NEAR_MISS_PREVIEW: ${{ vars.CREATIVE_NEAR_MISS_PREVIEW || 'true' }}
+      CREATIVE_PIXEL_CONTRAST: ${{ vars.CREATIVE_PIXEL_CONTRAST || 'true' }}
       # Authored rendering is mandatory for every new intake. The only mode
       # distinction is whether the passing candidate is previewed or promoted;
       # no repository variable can route a new site back to the legacy DOM.

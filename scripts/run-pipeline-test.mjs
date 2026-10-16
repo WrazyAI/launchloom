@@ -1081,12 +1081,30 @@ export function createCloudDependencies(
       const summary = await readJson(
         path.join(evidence, "creative-repair/summary.json"),
       );
-      if (summary.promotionReady !== true || summary.visualGatePass !== true)
+      // A near-miss preview (approved 2026-10-16) delivers the best bounded
+      // candidate with open findings instead of failing the run. It is never
+      // a promotion and every hard deterministic gate stayed in force.
+      const nearMissDelivered =
+        summary.status === "previewed-with-open-findings" &&
+        summary.nearMiss?.candidateId;
+      if (
+        !nearMissDelivered &&
+        (summary.promotionReady !== true || summary.visualGatePass !== true)
+      )
         throw new Error(
           "Creative reference, diversity or visual acceptance did not pass.",
         );
       return {
         artifact: ".launchloom/creative-repair/final/creative-bakeoff.json",
+        ...(nearMissDelivered
+          ? {
+              nearMiss: {
+                candidateId: summary.nearMiss.candidateId,
+                overall: summary.nearMiss.overall,
+                openFindings: summary.nearMiss.openFindings.length,
+              },
+            }
+          : {}),
       };
     },
     async select() {
@@ -1101,7 +1119,15 @@ export function createCloudDependencies(
         const bakeoff = await readJson(
           path.join(evidence, "creative-repair/final/creative-bakeoff.json"),
         ).catch(() => null);
-        const preferred = bakeoff?.selectedCandidateId;
+        const creativeSummary = await readJson(
+          path.join(evidence, "creative-repair/summary.json"),
+        ).catch(() => null);
+        const nearMissCandidateId =
+          creativeSummary?.status === "previewed-with-open-findings"
+            ? creativeSummary.nearMiss?.candidateId
+            : null;
+        const preferred =
+          nearMissCandidateId || bakeoff?.selectedCandidateId;
         const names = [
           ...new Set(
             [preferred, "candidate-a", "candidate-b", "candidate-c"].filter(
@@ -1142,7 +1168,9 @@ export function createCloudDependencies(
         siteDir: site,
         candidateDir: selected.directory,
         preview: true,
-        selectionMode: "pipeline-test-diagnostic",
+        selectionMode: nearMissCandidateId
+          ? "creative-near-miss"
+          : "pipeline-test-diagnostic",
         contentManifest: selected.manifest,
       });
       // Promotion can rewrite config; reassert immutable test marker afterward.

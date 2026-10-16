@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   classifyFailureLine,
+  classifyJudgeFinding,
+  HARD_JUDGE_CATEGORIES,
+  nearMissAssessment,
   splitFailureLines,
 } from "../scripts/creative-gate-severity.mjs";
 
@@ -63,5 +66,103 @@ describe("creative gate severity classification", () => {
       "rendered-reference: composition drift",
       "contrast unresolved: / mobile (unresolved; required 4.5)",
     ]);
+  });
+});
+
+describe("judge finding classification", () => {
+  it.each([
+    [{ severity: "critical", category: "hero-geometry" }, "critical"],
+    [{ severity: "critical", category: "content-integrity" }, "critical"],
+    [{ severity: "major", category: "content-integrity" }, "hard"],
+    [{ severity: "major", category: "accessibility" }, "hard"],
+    [{ severity: "major", category: "hero-geometry" }, "open"],
+    [{ severity: "major", category: "imagery" }, "open"],
+    [{ severity: "minor", category: "content-integrity" }, "open"],
+    [{ severity: "", category: "" }, "open"],
+    [undefined, "open"],
+  ])("classifies %j as %s", (finding, expected) => {
+    expect(classifyJudgeFinding(finding as any)).toBe(expected);
+  });
+
+  it("declares the hard judge categories", () => {
+    expect(HARD_JUDGE_CATEGORIES).toEqual(["content-integrity", "accessibility"]);
+  });
+});
+
+describe("near-miss assessment", () => {
+  function candidate(overrides: Record<string, any> = {}) {
+    return {
+      candidateId: "candidate-a",
+      failures: [],
+      renderedReferenceFidelity: {
+        audit: {
+          overallScore: 62,
+          scores: { spatialRhythm: 60, imagery: 55, paletteAdherence: 90 },
+          findings: [{ severity: "major", category: "hero-geometry", evidence: "drift" }],
+        },
+      },
+      ...overrides,
+    };
+  }
+
+  it("delivers a clean-gate candidate with fidelity findings as open", () => {
+    const assessment = nearMissAssessment(candidate());
+    expect(assessment.eligible).toBe(true);
+    expect(assessment.reasons).toEqual([]);
+    expect(assessment.overall).toBe(62);
+    expect(assessment.openFindings).toEqual([
+      "major hero-geometry: drift",
+    ]);
+  });
+
+  it("blocks hard failures, critical findings, low overall, and floor misses", () => {
+    expect(
+      nearMissAssessment(
+        candidate({ failures: ["desktop: horizontal overflow"] }),
+      ).eligible,
+    ).toBe(false);
+    expect(
+      nearMissAssessment(
+        candidate({ failures: ["contrast unresolved: / desktop (unresolved; required 4.5)"] }),
+      ).eligible,
+    ).toBe(true);
+    const critical = candidate();
+    critical.renderedReferenceFidelity.audit.findings = [
+      { severity: "critical", category: "content-integrity", evidence: "sealed content" },
+    ];
+    expect(nearMissAssessment(critical).eligible).toBe(false);
+    expect(nearMissAssessment(critical).criticalFindings).toHaveLength(1);
+    const hardMajor = candidate();
+    hardMajor.renderedReferenceFidelity.audit.findings = [
+      { severity: "major", category: "accessibility", evidence: "contrast" },
+    ];
+    expect(nearMissAssessment(hardMajor).eligible).toBe(false);
+    expect(
+      nearMissAssessment(candidate({}), { overallBar: 70 }).eligible,
+    ).toBe(false);
+    const floored = candidate();
+    (floored.renderedReferenceFidelity.audit as Record<string, any>).scores = {
+      spatialRhythm: 60,
+      imagery: 20,
+    };
+    const flooredAssessment = nearMissAssessment(floored);
+    expect(flooredAssessment.eligible).toBe(false);
+    expect(flooredAssessment.reasons.join(" ")).toContain("imagery 20");
+  });
+
+  it("keeps hard failure lines out of the open findings list", () => {
+    const assessment = nearMissAssessment(
+      candidate({
+        failures: [
+          "desktop: horizontal overflow",
+          "rendered-reference: composition drift",
+        ],
+      }),
+    );
+    expect(assessment.openFindings).toEqual([
+      "rendered-reference: composition drift",
+      "major hero-geometry: drift",
+    ]);
+    expect(assessment.hardFailures).toEqual(["desktop: horizontal overflow"]);
   });
 });

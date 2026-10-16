@@ -36,6 +36,10 @@ import {
   collectEvidenceSamples,
   summarizeGateHealth,
 } from "./gate-health.mjs";
+import {
+  nearMissAssessment,
+  NEAR_MISS_PREVIEW_DEFAULTS,
+} from "./creative-gate-severity.mjs";
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
 // Visual-gate repairs run after selection and outside the reference-fidelity
@@ -1113,6 +1117,7 @@ function safeRepairRejectionMessage(error) {
  *   repairCandidateImpl?: (options: Record<string, unknown>) => Promise<Record<string, string> | void> | Record<string, string> | void,
  *   promoteImpl?: (options: Record<string, unknown>) => Promise<Record<string, any>>,
  * }} options
+ * @returns {Promise<Record<string, any>>}
  */
 export async function runRenderedCreativeRepair({
   siteDir = "templates/client-site",
@@ -1296,6 +1301,11 @@ export async function runRenderedCreativeRepair({
   let humanRepairPending = humanFindings.length > 0;
   let verifiedHumanFeedback = null;
   const excludedCandidateIds = new Set();
+  // Candidates whose repair budget is exhausted stay renderable: they keep
+  // contributing evidence and diversity comparisons (dropping them collapsed
+  // diversity evidence entirely), while repair targeting skips them. Only
+  // candidates whose evidence cannot render are excluded from the bakeoff.
+  const repairBlockedCandidateIds = new Set();
   /** @type {Record<string, string>} */
   const rejectedCandidates = {};
   if (!providerBudget) {
@@ -1438,7 +1448,7 @@ export async function runRenderedCreativeRepair({
           error: message,
         });
         if (contractRetriesExhausted) {
-          excludedCandidateIds.add(candidateId);
+          repairBlockedCandidateIds.add(candidateId);
           rejectedCandidates[candidateId] = message;
           await persistRepairEvidence({
             outDir: evidenceRoot,
@@ -1526,6 +1536,188 @@ export async function runRenderedCreativeRepair({
     return Object.fromEntries(combined);
   }
 
+
+  // Near-miss preview delivery (approved 2026-10-16): when the strict
+  // promotion conjunction cannot be met, deliver a bounded preview with open
+  // findings instead of failing the whole run. Hard deterministic gates and
+  // critical findings still block. Production promotion (mode "promote") never
+  // takes this path, and CREATIVE_NEAR_MISS_PREVIEW=false disables it.
+  const nearMissPreviewEnabled =
+    String(process.env.CREATIVE_NEAR_MISS_PREVIEW ?? "true").trim() !== "false";
+  const describeGateFinding = (finding) =>
+    `${finding?.severity || "major"} ${finding?.category || "gate"}: ${String(
+      finding?.evidence || finding?.recommendation || "",
+    )
+      .replace(/\s+/gu, " ")
+      .trim()
+      .slice(0, 180)}`;
+
+  async function attemptNearMissPreview({
+    round,
+    roundLabel,
+    report,
+    roundDir,
+    screenshotsDir,
+  }) {
+    if (requestedMode !== "preview") return null;
+    if (!nearMissPreviewEnabled) return null;
+    if (humanFeedback) return null;
+    const startedAt = Date.now();
+    const assessments = (report.candidates || [])
+      .map((candidate) => ({
+        candidate,
+        assessment: nearMissAssessment(candidate),
+      }))
+      .filter((entry) => entry.assessment.eligible);
+    if (!assessments.length) return null;
+    assessments.sort(
+      (left, right) =>
+        right.assessment.overall - left.assessment.overall ||
+        left.assessment.openFindings.length -
+          right.assessment.openFindings.length ||
+        left.candidate.candidateId.localeCompare(right.candidate.candidateId),
+    );
+    const { candidate: picked, assessment } = assessments[0];
+    const candidateId = picked.candidateId;
+    const gateConfigPath = await writeVisualGateConfig({
+      siteDir: root,
+      roundDir,
+      selected: picked,
+      selectionMode: "creative-near-miss",
+    });
+    const gateScreenshots = path.join(roundDir, "near-miss-gate-screenshots");
+    await copySelectedScreenshots({
+      screenshotsDir,
+      candidateId,
+      targetDir: gateScreenshots,
+    });
+    const gateReportPath = path.join(roundDir, "near-miss-visual-gate.json");
+    let visualGate = null;
+    try {
+      visualGate = await runVisualGateImpl({
+        siteDir: root,
+        screenshotsDir: gateScreenshots,
+        reportPath: gateReportPath,
+        candidateId,
+        round,
+        configPath: gateConfigPath,
+        ...(visualGateScript ? { visualGateScript } : {}),
+      });
+    } catch (error) {
+      console.warn(
+        `near-miss visual gate could not run: ${error?.message || error}`,
+      );
+      return null;
+    }
+    const gateAudit = visualGate?.audit || {};
+    const gateCritical = (gateAudit.findings || []).filter(
+      (finding) => String(finding?.severity) === "critical",
+    );
+    if (
+      visualGate?.status === "error" ||
+      !["pass", "revise"].includes(gateAudit.verdict) ||
+      gateCritical.length
+    )
+      return null;
+    const openFindings = [
+      ...assessment.openFindings,
+      ...gateFindings(visualGate).map(describeGateFinding),
+    ]
+      .filter(Boolean)
+      .slice(0, 80);
+    const pickedDirectory = resolveCandidateDirectory(
+      candidateRoot,
+      picked.directory,
+    );
+    try {
+      await promoteImpl({
+        siteDir: root,
+        candidateDir: pickedDirectory,
+        visualScore: picked.visualScore,
+        distinctivenessScore: picked.distinctivenessScore,
+        selectionMode: "creative-near-miss",
+        preview: true,
+      });
+    } catch (error) {
+      console.warn(
+        `near-miss promotion failed: ${error?.message || error}`,
+      );
+      return null;
+    }
+    // Final evidence copy; downstream selection prefers this candidate.
+    const finalDir = path.join(evidenceRoot, "final");
+    await fs.rm(finalDir, { recursive: true, force: true });
+    await fs.mkdir(finalDir, { recursive: true });
+    const finalReport = JSON.parse(
+      await fs.readFile(path.join(roundDir, "creative-bakeoff.json"), "utf8"),
+    );
+    finalReport.selectedCandidateId = candidateId;
+    finalReport.nearMissSelection = true;
+    await fs.writeFile(
+      path.join(finalDir, "creative-bakeoff.json"),
+      `${JSON.stringify(finalReport, null, 2)}\n`,
+    );
+    // The gate process normally writes its report; injected gates may not.
+    await fs
+      .copyFile(gateReportPath, path.join(finalDir, "visual-gate.json"))
+      .catch(() => {});
+    const finalScreenshots = path.join(finalDir, "screenshots");
+    await fs.mkdir(finalScreenshots, { recursive: true });
+    for (const viewport of VIEWPORTS)
+      await fs.copyFile(
+        path.join(screenshotsDir, `${candidateId}-${viewport}.png`),
+        path.join(finalScreenshots, `${candidateId}-${viewport}.png`),
+      );
+    const summary = {
+      version: 1,
+      status: "previewed-with-open-findings",
+      mode: requestedMode,
+      model: resolvedModel,
+      selectedCandidateId: candidateId,
+      promotionReady: false,
+      visualGatePass: gatePass(visualGate),
+      nearMiss: {
+        candidateId,
+        overall: assessment.overall,
+        bars: NEAR_MISS_PREVIEW_DEFAULTS,
+        gateVerdict: gateAudit.verdict || null,
+        openFindings,
+      },
+      repairCycles: combinedRepairCycles(),
+      rejectedCandidates,
+      repairBlockedCandidates: [...repairBlockedCandidateIds].sort(),
+      stagnatedCandidates: [...stagnatedCandidateIds].sort(),
+      history,
+      final: {
+        bakeoffReport: path.join(finalDir, "creative-bakeoff.json"),
+        visualGateReport: path.join(finalDir, "visual-gate.json"),
+        screenshotsDir: finalScreenshots,
+      },
+    };
+    await fs.writeFile(
+      path.join(evidenceRoot, "summary.json"),
+      `${JSON.stringify(summary, null, 2)}\n`,
+    );
+    recordRunTiming({
+      category: "near-miss",
+      name: roundLabel,
+      startedAt,
+      durationMs: Date.now() - startedAt,
+      details: { candidateId, openFindings: openFindings.length },
+    });
+    console.log(
+      JSON.stringify({
+        creativeNearMiss: {
+          candidateId,
+          overall: assessment.overall,
+          openFindings: openFindings.length,
+          gateVerdict: gateAudit.verdict || null,
+        },
+      }),
+    );
+    return summary;
+  }
+
   for (let round = 0; round < maxRounds; round += 1) {
     const roundLabel = `round-${String(round).padStart(2, "0")}`;
     const roundDir = path.join(evidenceRoot, roundLabel);
@@ -1546,6 +1738,7 @@ export async function runRenderedCreativeRepair({
         requireDiversity,
         allowContrastRepair: !humanFeedback,
         excludedCandidateIds: [...excludedCandidateIds].sort(),
+        unselectableCandidateIds: [...repairBlockedCandidateIds].sort(),
         ...(reuseEvidenceEnabled
           ? { evidenceCacheDir: path.join(evidenceRoot, "evidence-cache") }
           : {}),
@@ -1640,6 +1833,7 @@ export async function runRenderedCreativeRepair({
           : [];
       const canRepair = (candidateId) =>
         (cycleUse.get(candidateId) || 0) < cycleLimit &&
+        !repairBlockedCandidateIds.has(candidateId) &&
         !excludedCandidateIds.has(candidateId) &&
         !stagnatedCandidateIds.has(candidateId);
       const repairCandidates = candidates
@@ -1686,6 +1880,24 @@ export async function runRenderedCreativeRepair({
         const stagnationDetail = stagnatedCandidateIds.size
           ? ` Stagnation guard: blockers did not change across ${MAX_STAGNANT_REPAIRS} consecutive repairs for ${[...stagnatedCandidateIds].sort().join(", ")}.`
           : "";
+        const nearMissSummary = await attemptNearMissPreview({
+          round,
+          roundLabel,
+          report,
+          roundDir,
+          screenshotsDir,
+        });
+        if (nearMissSummary) {
+          record.nearMiss = {
+            candidateId: nearMissSummary.nearMiss.candidateId,
+            openFindings: nearMissSummary.nearMiss.openFindings.length,
+          };
+          await persistRunTiming();
+          logTimingSummary("creative-repair", {
+            categories: runTiming.summary(),
+          });
+          return nearMissSummary;
+        }
         await persistRunTiming();
         throw new Error(
           `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.${stagnationDetail}`,
@@ -1825,6 +2037,35 @@ export async function runRenderedCreativeRepair({
     record.visualGateVerdict = visualGate.audit?.verdict || "error";
 
     if (!gatePass(visualGate)) {
+      if (repairBlockedCandidateIds.has(selectedId)) {
+        // The selected candidate's repair contract was already rejected and
+        // it cannot be excluded without collapsing the candidate pool for
+        // diversity evidence. Before failing, deliver a bounded near-miss
+        // preview when any candidate qualifies; otherwise stop with an
+        // explicit blocked failure instead of repeating rejected repairs.
+        const nearMissSummary = await attemptNearMissPreview({
+          round,
+          roundLabel,
+          report,
+          roundDir,
+          screenshotsDir,
+        });
+        if (nearMissSummary) {
+          record.nearMiss = {
+            candidateId: nearMissSummary.nearMiss.candidateId,
+            openFindings: nearMissSummary.nearMiss.openFindings.length,
+          };
+          await persistRunTiming();
+          logTimingSummary("creative-repair", {
+            categories: runTiming.summary(),
+          });
+          return nearMissSummary;
+        }
+        await persistRunTiming();
+        throw new Error(
+          `Selected candidate ${selectedId} still fails rendered visual QA and its repair contract was already rejected; stopping instead of repeating equivalent work.`,
+        );
+      }
       const gateBlockers = [
         ...candidateFindings(reportCandidate(report, selectedId)),
         ...(candidateDiversityFinding(report, selectedId)
@@ -1951,7 +2192,9 @@ export async function runRenderedCreativeRepair({
       const target = closestToPassingFirst(
         report,
         targets.filter(
-          (item) => (cycleUse.get(item.candidateId) || 0) < cycleLimit,
+          (item) =>
+            (cycleUse.get(item.candidateId) || 0) < cycleLimit &&
+            !repairBlockedCandidateIds.has(item.candidateId),
         ),
       )[0];
       if (!target)
@@ -2019,6 +2262,7 @@ export async function runRenderedCreativeRepair({
       previewDiversityStrategy: report.previewDiversity?.strategy || null,
       repairCycles: combinedRepairCycles(),
       rejectedCandidates,
+      repairBlockedCandidates: [...repairBlockedCandidateIds].sort(),
       stagnatedCandidates: [...stagnatedCandidateIds].sort(),
       ...(gateHealthSamples.length
         ? { gateHealth: summarizeGateHealth(gateHealthSamples) }
@@ -2146,6 +2390,13 @@ async function main() {
       reasoningMode: creativeSession?.mode || null,
       repairCycles: result.repairCycles,
       rejectedCandidates: result.rejectedCandidates,
+      nearMiss: result.nearMiss
+        ? {
+            candidateId: result.nearMiss.candidateId,
+            overall: result.nearMiss.overall,
+            openFindings: result.nearMiss.openFindings.length,
+          }
+        : null,
       summary: path.resolve(
         args["site-dir"] || "templates/client-site",
         args.out || ".launchloom/creative-repair",

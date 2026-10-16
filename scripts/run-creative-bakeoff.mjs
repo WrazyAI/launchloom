@@ -605,6 +605,7 @@ export async function runCreativeBakeoff({
   allowContrastRepair = true,
   evidenceCacheDir = null,
   judgeConcurrency = null,
+  unselectableCandidateIds = [],
 } = {}) {
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
@@ -631,6 +632,16 @@ export async function runCreativeBakeoff({
   const excludedIds = new Set(
     Array.isArray(excludedCandidateIds)
       ? excludedCandidateIds.filter(
+          (candidateId) => typeof candidateId === "string" && candidateId,
+        )
+      : [],
+  );
+  // Candidates whose repair contract was rejected keep rendering and judging
+  // (their evidence still feeds diversity comparisons) but can never win the
+  // selection. This is distinct from exclusion, which removes evidence.
+  const unselectableIds = new Set(
+    Array.isArray(unselectableCandidateIds)
+      ? unselectableCandidateIds.filter(
           (candidateId) => typeof candidateId === "string" && candidateId,
         )
       : [],
@@ -1736,7 +1747,9 @@ export async function runCreativeBakeoff({
         failedPeers: [],
       };
 
-  let previewSelectionPool = previewEligible;
+  let previewSelectionPool = previewEligible.filter(
+    (candidate) => !unselectableIds.has(candidate.candidateId),
+  );
   let previewDiversity = {
     required: false,
     pass: true,
@@ -1837,7 +1850,10 @@ export async function runCreativeBakeoff({
     preview && !promote
       ? previewSelectionPool
       : diversityPass
-        ? results.filter((candidate) => candidate.eligible)
+        ? results.filter(
+            (candidate) =>
+              candidate.eligible && !unselectableIds.has(candidate.candidateId),
+          )
         : [];
   const winner =
     valid.sort(
@@ -1865,6 +1881,7 @@ export async function runCreativeBakeoff({
     previewDiversity,
     diversityRequired: requireDiversity,
     excludedCandidateIds: [...excludedIds].sort(),
+    unselectableCandidateIds: [...unselectableIds].sort(),
     candidates: results,
     selectedCandidateId: selectionPass ? winner.candidateId : null,
     // Preview selection is authored-only and now treats rendered hero
