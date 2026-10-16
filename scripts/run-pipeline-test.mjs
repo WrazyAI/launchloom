@@ -8,6 +8,10 @@ import {
   resolvePipelineTestPolicy,
 } from "./pipeline-test-policy.mjs";
 import { summarizeGenerationCosts } from "./generation-cost-summary.mjs";
+import {
+  collectEvidenceSamples,
+  summarizeGateHealth,
+} from "./gate-health.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { businessFactReadiness } from "../templates/client-site/src/lib/business-facts.mjs";
 import { pageBriefReadiness } from "../templates/client-site/src/lib/page-briefs.mjs";
@@ -1310,6 +1314,16 @@ export function createCloudDependencies(
       report.costs = await costSummary(report);
       const persisted = structuredClone(report);
       delete persisted.stages.persist;
+      // Passive gate-health measurement for the creative promotion gate. It
+      // records distributions and failure classes only; it never changes any
+      // selection, repair, or promotion behavior, and it must never fail the
+      // persist stage.
+      try {
+        const { samples } = await collectEvidenceSamples(evidence);
+        if (samples.length) persisted.gateHealth = summarizeGateHealth(samples);
+      } catch {
+        // Measurement is advisory evidence; persistence continues without it.
+      }
       await writeJson(
         path.join(evidence, "pipeline-test-report.json"),
         persisted,

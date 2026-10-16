@@ -32,6 +32,10 @@ import { runHumanRevisionGate } from "./human-revision-gate.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 import { RENDERED_REFERENCE_THRESHOLDS } from "./rendered-reference-fidelity.mjs";
 import { createTimingRecorder, logTimingSummary } from "./creative-timing.mjs";
+import {
+  collectEvidenceSamples,
+  summarizeGateHealth,
+} from "./gate-health.mjs";
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
 // Visual-gate repairs run after selection and outside the reference-fidelity
@@ -1984,6 +1988,7 @@ export async function runRenderedCreativeRepair({
         path.join(finalScreenshots, `${selectedId}-${viewport}.png`),
       );
 
+    const gateHealthSamples = (await collectEvidenceSamples(evidenceRoot)).samples;
     const summary = {
       version: 1,
       status: "promotion-pending",
@@ -2015,6 +2020,9 @@ export async function runRenderedCreativeRepair({
       repairCycles: combinedRepairCycles(),
       rejectedCandidates,
       stagnatedCandidates: [...stagnatedCandidateIds].sort(),
+      ...(gateHealthSamples.length
+        ? { gateHealth: summarizeGateHealth(gateHealthSamples) }
+        : {}),
       history,
       final: {
         bakeoffReport: path.join(finalDir, "creative-bakeoff.json"),
