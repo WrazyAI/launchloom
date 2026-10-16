@@ -199,6 +199,18 @@ explicitly clear the accent (`role: "accent"` in structured colors);
 unrelated palette revisions preserve a configured accent, and font choices
 survive palette-only revisions.
 
+## Rendered-pixel contrast resolution
+
+Text and outline backdrops the DOM audit cannot bound (decorative siblings
+overlapping a text box, filters and blend modes, partially covering plates)
+are resolved from the rendered pixels of the measured state: the glyph paint is
+hidden only for the capture and the worst-case pixel behind the text decides
+pass or fail. Filters other than opacity, unsettled paint animations, and any
+capture failure remain explicit unresolved evidence, and provable low contrast
+is always a failure. Automated contrast corrections stay foreground-only and
+state-scoped; a static correction never overrides a passing authored hover or
+focus state.
+
 ## Lead forms and delivery
 
 Generated sites render their lead form in the initial server HTML; never

@@ -57,6 +57,8 @@ rendered technical gates.
 | `CREATIVE_JUDGE_CONCURRENCY` | `2` | Judge worker bound, clamped to 1-3. `1` restores fully serial judges. |
 | `CREATIVE_REPAIR_STAGNATION` | `true` | `false` restores the pre-optimization repair loop (no stagnation guard). |
 | `CREATIVE_REFERENCE_JUDGE_MODEL` | `openai/gpt-6-luna` | Judge model; part of the evidence cache key, so changing it re-judges. |
+| `CREATIVE_NEAR_MISS_PREVIEW` | `true` | `false` refuses open-findings preview delivery; runs fail as before when the strict conjunction is unmet. |
+| `CREATIVE_PIXEL_CONTRAST` | `true` | `false` restores the DOM-only contrast contract; structural bail classes stay unresolved. |
 
 Repair budget and stagnation policy live in
 `scripts/run-rendered-creative-repair.mjs` (`maxCycles`, `MAX_GATE_REPAIRS`,
