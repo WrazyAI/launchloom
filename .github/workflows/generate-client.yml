@@ -178,6 +178,12 @@ jobs:
       # repository override so it cannot silently keep new intakes on 5.6.
       CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL == 'openai/gpt-5.6-luna' && 'openai/gpt-6-luna' || vars.CREATIVE_EXPERIENCE_MODEL || 'openai/gpt-6-luna' }}
       CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'xhigh' }}
+      # Creative-stage performance switches. Defaults match the code; flipping
+      # a variable back is the manual rollback (see
+      # docs/creative-generation-performance.md).
+      CREATIVE_EVIDENCE_REUSE: ${{ vars.CREATIVE_EVIDENCE_REUSE || 'true' }}
+      CREATIVE_JUDGE_CONCURRENCY: ${{ vars.CREATIVE_JUDGE_CONCURRENCY || '2' }}
+      CREATIVE_REPAIR_STAGNATION: ${{ vars.CREATIVE_REPAIR_STAGNATION || 'true' }}
       # Authored rendering is mandatory for every new intake. The only mode
       # distinction is whether the passing candidate is previewed or promoted;
       # no repository variable can route a new site back to the legacy DOM.

@@ -56,6 +56,11 @@ jobs:
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
       CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL == 'openai/gpt-5.6-luna' && 'openai/gpt-6-luna' || vars.CREATIVE_EXPERIENCE_MODEL || 'openai/gpt-6-luna' }}
       CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'xhigh' }}
+      # Creative-stage performance switches (defaults match the code; see
+      # docs/creative-generation-performance.md).
+      CREATIVE_EVIDENCE_REUSE: ${{ vars.CREATIVE_EVIDENCE_REUSE || 'true' }}
+      CREATIVE_JUDGE_CONCURRENCY: ${{ vars.CREATIVE_JUDGE_CONCURRENCY || '2' }}
+      CREATIVE_REPAIR_STAGNATION: ${{ vars.CREATIVE_REPAIR_STAGNATION || 'true' }}
       REASONING_PREFLIGHT_MODE: ${{ vars.REASONING_PREFLIGHT_MODE || 'shadow' }}
       REASONING_PREFLIGHT_MODEL: ${{ vars.REASONING_PREFLIGHT_MODEL || 'jev-1.13.0' }}
       SEO_RESEARCH_MAX_TASKS: ${{ vars.SEO_RESEARCH_MAX_TASKS || '16' }}
