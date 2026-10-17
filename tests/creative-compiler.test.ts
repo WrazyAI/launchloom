@@ -176,13 +176,13 @@ describe("creative compiler", () => {
     })).toThrow(/incomplete Reference Dossier binding/iu);
   });
 
-  it("keeps the approved 2026-10-01 promotion calibration", () => {
+  it("keeps the approved 2026-10-17 promotion calibration", () => {
     expect(CREATIVE_PROMOTION_THRESHOLDS).toEqual({
-      visualScore: 78,
+      visualScore: 50,
       distinctivenessScore: 70,
       minimumFingerprintDistance: 4,
       minimumUniqueDimensions: 4,
-      referenceFidelityScore: 78,
+      referenceFidelityScore: 47,
       minimumPairwiseVisualDistance: 72,
     });
   });

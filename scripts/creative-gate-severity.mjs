@@ -103,11 +103,14 @@ function describeJudgment(finding) {
   return `${severity} ${category}: ${detail}`;
 }
 
-/** Injected scalar near-miss bars (Task 4 recalibrates these from a measured
- * distribution after the contrast fixes land; see docs/calibration). */
+/** Scalar near-miss bars, calibrated 2026-10-17 from 353 judged samples
+ * (docs/calibration/2026-10-17-final-creative-gates.json): bar 47 with floor
+ * 30 is the maximum combination meeting a 5% run-rate floor on both the
+ * calibration and holdout splits. The strict gate shares these bars and adds
+ * the majors allowance. */
 export const NEAR_MISS_PREVIEW_DEFAULTS = Object.freeze({
-  overallBar: 50,
-  dimensionFloor: 40,
+  overallBar: 47,
+  dimensionFloor: 30,
 });
 
 /**

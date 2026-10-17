@@ -741,7 +741,7 @@ export default function Experience({ content, runtime }) { return <main><section
             interactionEvidence: {
               version: 1,
               candidateId: "candidate-a",
-              sourceDigest: (score === 60 ? "b" : "a").repeat(64),
+              sourceDigest: (score === 38 ? "b" : "a").repeat(64),
               observations: [], pairs: [], failures: [],
             },
             valid: false,
@@ -773,9 +773,9 @@ export default function Experience({ content, runtime }) { return <main><section
         return writeBakeoffEvidence(
           options,
           bakeoffCalls === 1
-            ? failing(RENDERED_REFERENCE_THRESHOLDS.overall)
+            ? failing(60)
             : bakeoffCalls === 2
-              ? failing(60)
+              ? failing(38)
               : report({
                   selectedCandidateId: "candidate-a",
                   candidates: [candidate("candidate-a")],
@@ -800,8 +800,8 @@ export default function Experience({ content, runtime }) { return <main><section
     expect(seenAtRepair[1]).toBe(originalSource);
     expect(seenInteractionDigests).toEqual(["a".repeat(64), "a".repeat(64)]);
     expect(repairFindings[1]).toContain("must not regress");
-    expect(repairFindings[1]).toContain(`overall ${RENDERED_REFERENCE_THRESHOLDS.overall}`);
-    expect(repairFindings[1]).not.toContain("scored 60");
+    expect(repairFindings[1]).toContain("overall 60");
+    expect(repairFindings[1]).not.toContain("scored 38");
   });
 
   it("prefers the snapshot with more passing measurements when scores tie", async () => {
@@ -947,9 +947,9 @@ export default function Experience({ content, runtime }) { return <main><section
     });
 
     const findings = repairFindings[0].join("\n");
-    expect(findings).toContain(
-      `rendered-reference overall fidelity scored 74 and must reach ${RENDERED_REFERENCE_THRESHOLDS.overall}`,
-    );
+    // overall 74 is above the calibrated scalar bar (47): no overall line,
+    // only the advisory dimension misses and the no-regression guard.
+    expect(findings).not.toContain("rendered-reference overall fidelity scored");
     expect(findings).toContain(
       "rendered-reference dimension paletteAdherence scored 56 and must reach 80",
     );

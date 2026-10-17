@@ -801,11 +801,42 @@ describe("rendered reference fidelity", () => {
             paletteAdherence: 54,
             artDirection: 62,
           },
-          findings: [],
+          findings: [
+            {
+              severity: "major",
+              category: "palette-adherence",
+              viewport: "all",
+              evidence: "The unrequested house palette replaces the client direction.",
+              repair: "Restore the client surface and primary colors.",
+            },
+            {
+              severity: "major",
+              category: "client-art-direction",
+              viewport: "all",
+              evidence: "The collage direction renders as flat generic cards.",
+              repair: "Restore the chalk-and-ivory craft collage.",
+            },
+            {
+              severity: "major",
+              category: "palette-adherence",
+              viewport: "mobile",
+              evidence: "The mobile surfaces invert the requested light direction.",
+              repair: "Keep the light surface direction on mobile.",
+            },
+            {
+              severity: "major",
+              category: "client-art-direction",
+              viewport: "desktop",
+              evidence: "The opening reads as a template hero.",
+              repair: "Restore the reference opening composition.",
+            },
+          ],
           summary: "Mechanically strong but client palette is wrong.",
         }),
     });
 
+    // Drift blocks through the majors allowance even when the scores stay
+    // above the scalar bars.
     expect(result.pass).toBe(false);
     expect(result.audit.scores.paletteAdherence).toBe(54);
     expect(result.audit.scores.artDirection).toBe(62);
@@ -835,6 +866,27 @@ describe("rendered reference fidelity", () => {
                 "The candidate collapses into a familiar centered hero and card stack.",
               repair:
                 "Restore the reference's image-led chapters and archive rhythm.",
+            },
+            {
+              severity: "major",
+              category: "generic-grammar",
+              viewport: "desktop",
+              evidence: "The services section repeats generic feature cards.",
+              repair: "Use the reference archive ledger pattern.",
+            },
+            {
+              severity: "major",
+              category: "generic-grammar",
+              viewport: "mobile",
+              evidence: "Mobile stacks the desktop layout without recomposition.",
+              repair: "Recompose mobile chapters from the reference strategy.",
+            },
+            {
+              severity: "major",
+              category: "generic-grammar",
+              viewport: "all",
+              evidence: "Typography collapses to one uniform scale.",
+              repair: "Restore the reference type scale contrast.",
             },
           ],
           summary: "Technically valid but visually generic.",
@@ -875,7 +927,7 @@ describe("rendered reference fidelity", () => {
     expect(result.audit.findings).toHaveLength(1);
   });
 
-  it("still fails a revise with a major finding at passing scores", async () => {
+  it("passes a revise within the majors allowance at the scalar bars", async () => {
     process.env.OPENROUTER_API_KEY = "test";
     const files = await evidence();
     const result = await evaluateRenderedReferenceFidelity({
@@ -900,6 +952,41 @@ describe("rendered reference fidelity", () => {
             },
           ],
           summary: "One major spatial-rhythm finding remains.",
+        }),
+    });
+    expect(result.pass).toBe(true);
+    expect(result.audit.findings).toHaveLength(1);
+  });
+
+  it("blocks a revise with more majors than the allowance", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const finding = {
+      severity: "major",
+      category: "spatial-rhythm",
+      viewport: "desktop",
+      evidence: "The hero rhythm collapses at desktop.",
+      repair: "Restore the reference opening rhythm.",
+    };
+    const result = await evaluateRenderedReferenceFidelity({
+      referenceDna: dna(files),
+      candidateScreenshots: {
+        desktop: files.candidateDesktop,
+        compact: files.candidateCompact,
+        mobile: files.candidateMobile,
+      },
+      fetchImpl: async () =>
+        response({
+          verdict: "revise",
+          overallScore: 90,
+          scores: passingScores,
+          findings: [
+            finding,
+            { ...finding, viewport: "compact" },
+            { ...finding, viewport: "mobile" },
+            { ...finding, viewport: "all" },
+          ],
+          summary: "More majors than the calibrated allowance.",
         }),
     });
     expect(result.pass).toBe(false);
@@ -1116,11 +1203,17 @@ describe("rendered reference fidelity", () => {
     ]);
   });
 
-  it("keeps the approved 2026-10-01 rendered-reference calibration", () => {
-    expect(RENDERED_REFERENCE_THRESHOLDS.overall).toBe(78);
+  it("keeps the approved 2026-10-17 rendered-reference calibration", () => {
+    expect(RENDERED_REFERENCE_THRESHOLDS.overall).toBe(47);
+    expect(RENDERED_REFERENCE_THRESHOLDS.dimensionFloor).toBe(30);
+    expect(RENDERED_REFERENCE_THRESHOLDS.majorsAllowance).toBe(3);
     expect(RENDERED_REFERENCE_THRESHOLDS.servicePresentation).toBe(75);
     expect(RENDERED_REFERENCE_THRESHOLDS).toEqual({
-      overall: 78,
+      overall: 47,
+      dimensionFloor: 30,
+      majorsAllowance: 3,
+      // Advisory per-dimension guidance: reporting and repair messaging
+      // only; the scalar floor above is the binding absolute floor.
       heroGeometry: 80,
       typography: 78,
       spatialRhythm: 78,

@@ -354,6 +354,12 @@ function rememberPrivateRepairOutput(value, payload) {
 const creativeProvider = creativeLaneProvider();
 const REPAIR_SYSTEM_PROMPT =
   "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.";
+const HERO_VIEWPORT_FIT_REPAIR_GUIDANCE = `HERO VIEWPORT FIT (hard gate)
+The rendered capture put the header plus hero taller than the first viewport (desktop 1536x864, compact 1366x768). Fix it structurally in this repair:
+- Size the hero from the viewport, not from its content: cap the hero block at the viewport height minus the header (for example min-height: min(720px, calc(100svh - 88px)) or an explicit vh calculation) and let the media cover that box with object-fit: cover instead of an intrinsic image height.
+- Compress everything stacked above the fold: oversized hero padding, multi-line subcopy, extra actions, or a separate stats strip inside the hero block.
+- Keep the hero image chapter and the primary action visible inside the viewport; never delete the image, flatten the composition into a plain band, or hide the CTA just to fit. If the copy cannot fit beside or above the image, move secondary copy below the hero instead of growing the hero.
+- Verify the arithmetic before returning: header height plus hero height must be at most the viewport height at both 1536x864 and 1366x768.`;
 
 export function privateRepairRejectionEvidence(value) {
   return value && typeof value === "object" ? privateRepairOutputs.get(value) || null : null;
@@ -1136,7 +1142,7 @@ ${
 
   const buildRepairContent = (
     currentFiles,
-    { targetFile = null, editsOnly = false } = {},
+    { targetFile = null, editsOnly = false, heroFit = false } = {},
   ) => {
     const requestContent = [
       ...referenceContext,
@@ -1163,6 +1169,8 @@ Return only trusted span IDs and replacements described below. Select the exact 
 TARGET CANDIDATE FILE: ${targetFile}
 Return a complete replacement for only this requested file. Keep source non-empty, at most ${MAX_REPAIR_FILE_SOURCE_CHARS} characters, and free of inline image data. All other files remain immutable; the combined bundle must pass source validation, rebuild, and rendered gates.`,
       });
+    if (heroFit)
+      requestContent.push({ type: "text", text: HERO_VIEWPORT_FIT_REPAIR_GUIDANCE });
     assertModelPromptTextBudget(requestContent);
     return requestContent;
   };
@@ -1194,7 +1202,11 @@ Return a complete replacement for only this requested file. Keep source non-empt
     const spanCatalog = !scopedHumanRepair && editsOnly ? buildRepairSpanCatalog(currentFiles) : null;
     if (spanCatalog && !spanCatalog.spans.length) throw repairOutputRejection("No trusted bounded source spans are available.");
     const requestBudget = spanCatalog ? buildSpanRequestBudget(spanCatalog) : null;
-    const requestContent = buildRepairContent(currentFiles, { targetFile, editsOnly });
+    const requestContent = buildRepairContent(currentFiles, {
+      targetFile,
+      editsOnly,
+      heroFit: hasFinding(findings, /hero exceeds .*viewport/iu),
+    });
     if (spanCatalog) {
       requestContent.push({ type: "text", text: "TRUSTED SOURCE SPANS\n" + JSON.stringify(spanCatalog) +
         "\nReturn edits with spanId and replace only. Do not generate find text or file names. Select an ID from this exact source snapshot and supply the entire replacement for its shown span. Keep 1-12 edits, each non-empty replacement at most6000 characters, total original-span-plus-replacement at most24000. Preserve all unrelated source and bindings." });

@@ -1485,14 +1485,16 @@ export async function runRenderedCreativeRepair({
         if (repairProviderUnavailable) {
           const message =
             "Creative repair provider unavailable (billing or outage).";
-          // A provider outage is not the candidate's fault, but a run must not
-          // retry a downed provider every cooldown forever: block the
-          // candidate permanently for this run so the loop can still reach
-          // its terminal paths (and repair other candidates if the provider
-          // recovers).
           repairBlockedCandidateIds.add(candidateId);
           repairBlockedRounds.set(candidateId, round);
-          rejectionCycles.set(candidateId, REPAIR_REJECTION_CYCLES_ALLOWED);
+          // Billing/quota exhaustion is permanent for the run; transient
+          // transport failures only cool down so the candidate can be
+          // retried when the provider recovers.
+          const permanent =
+            /quota|billing|402/iu.test(String(error?.message || "")) ||
+            /quota|billing/iu.test(String(error?.providerStatus || ""));
+          if (permanent)
+            rejectionCycles.set(candidateId, REPAIR_REJECTION_CYCLES_ALLOWED);
           rejectionContext.set(candidateId, message);
           rejectedCandidates[candidateId] = message;
           attempts.push({

@@ -167,3 +167,29 @@ numbers are set in a single edit once one funded, post-fix run pair lands.
 The local end-to-end reproduction on a real 213-finding candidate already
 shows the machinery's ceiling: 3 hard findings remain, all in the documented
 unprovable class (text over a mid-gray plus white backdrop range).
+
+### 2026-10-17 final calibration (scalar shape applied)
+
+The evidence hold was lifted with a representative post-fix set: 13 runs of
+creative-only evidence, 353 judged samples, including the OpenCode Go lane
+with working repairs and rejection cooldowns
+(`docs/calibration/2026-10-17-final-creative-gates.json`). Derived with the
+policy "highest floor and bar meeting a 5% run-rate floor on both the
+calibration and holdout splits":
+
+| Shape | overall bar | dimension floor | majors allowance | calibration runs | holdout runs |
+|---|---|---|---|---|---|
+| Strict promotion (`RENDERED_REFERENCE_THRESHOLDS`, `scorePass`) | 47 | 30 | 3 | 2/13 | 1/13 |
+| Near-miss preview (`NEAR_MISS_PREVIEW_DEFAULTS`) | 47 | 30 | unlimited (fidelity majors travel as open findings) | 2/13 | 1/13 |
+
+Floor 30 is the highest floor with holdout support; floor 40 has none yet.
+Per-dimension numbers in `RENDERED_REFERENCE_THRESHOLDS` remain advisory
+guidance for repair messaging and reporting, not conjunctive gates. Bakeoff
+eligibility bars were recalibrated from the same evidence:
+`referenceFidelityScore` 78 -> 47 (p75 of its measured distribution) and
+`visualScore` 78 -> 50 (p75 of 412 measured candidate visual scores; p50 44,
+p90 57). The migrated judge, analyzer, visual gate, and repair lanes now run
+on the OpenCode Go transport behind `CREATIVE_EXPERIENCE_PROVIDER`; the
+visual gate substitutes its legacy OpenRouter model for the reviewed Go model
+with an explicit log line. Hard deterministic gates are unchanged and remain
+absolute for every path.

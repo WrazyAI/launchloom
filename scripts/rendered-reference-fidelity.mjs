@@ -31,12 +31,20 @@ export const RENDERED_REFERENCE_MODEL =
 const RENDERED_JUDGE_SYSTEM_PROMPT =
   "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. overallScore must measure assigned-reference mechanics only; do not lower it for client-only palette or art-direction misses. Score paletteAdherence and artDirection separately, and still return blocking findings for client-brief failures. Return JSON only.";
 
-// Calibrated 2026-10-01 with product approval. Across the observed failure
-// window the best candidates reached overall 78 and servicePresentation 77,
-// while every other minimum was demonstrably reachable. Only these two bars
-// moved. See docs/creative-quality-bar-review.md.
+// Calibrated 2026-10-17 with product approval after the 2026-10-16 diagnosis
+// proved the per-dimension conjunction impossible (0 of 105 judged draws; the
+// overall bar 78 exceeded every observed draw). The strict shape is now
+// scalar: hard gates clean, zero critical findings, a majors allowance, the
+// overall bar, and an absolute dimension floor. Measured on 353 judged samples
+// across 13 runs (docs/calibration/2026-10-17-final-creative-gates.json):
+// overall 47 with floor 30 and majors <= 3 meets a 5% run-rate floor on both
+// calibration (2/13 runs) and holdout (1/13 runs); floor 30 is the highest
+// floor with holdout support. Per-dimension numbers below remain advisory
+// guidance for repair messaging and reporting, not conjunctive gates.
 export const RENDERED_REFERENCE_THRESHOLDS = Object.freeze({
-  overall: 78,
+  overall: 47,
+  dimensionFloor: 30,
+  majorsAllowance: 3,
   heroGeometry: 80,
   typography: 78,
   spatialRhythm: 78,
@@ -454,36 +462,50 @@ async function resolveEvidencePath(record) {
   return "";
 }
 
+const SCORED_DIMENSIONS = [
+  "heroGeometry",
+  "typography",
+  "spatialRhythm",
+  "imagery",
+  "servicePresentation",
+  "navigation",
+  "ctaPlacement",
+  "mobileRecomposition",
+  "interactionEvidence",
+  "paletteAdherence",
+  "artDirection",
+];
+
 function scorePass(audit, thresholds = RENDERED_REFERENCE_THRESHOLDS) {
   const scores = audit?.scores || {};
-  const major = (audit?.findings || []).filter(
-    (item) => item.severity === "critical" || item.severity === "major",
+  const criticals = (audit?.findings || []).filter(
+    (item) => item.severity === "critical",
   );
-  const required = [
-    ["heroGeometry", thresholds.heroGeometry],
-    ["typography", thresholds.typography],
-    ["spatialRhythm", thresholds.spatialRhythm],
-    ["imagery", thresholds.imagery],
-    ["servicePresentation", thresholds.servicePresentation],
-    ["navigation", thresholds.navigation],
-    ["ctaPlacement", thresholds.ctaPlacement],
-    ["mobileRecomposition", thresholds.mobileRecomposition],
-    ["interactionEvidence", thresholds.interactionEvidence],
-    ["paletteAdherence", thresholds.paletteAdherence],
-    ["artDirection", thresholds.artDirection],
-  ];
+  const majors = (audit?.findings || []).filter(
+    (item) => item.severity === "major",
+  );
+  const allowance = Number.isFinite(Number(thresholds.majorsAllowance))
+    ? Number(thresholds.majorsAllowance)
+    : 0;
+  const floor = Number.isFinite(Number(thresholds.dimensionFloor))
+    ? Number(thresholds.dimensionFloor)
+    : 0;
   const verdictAllows =
     audit?.verdict === "pass" ||
-    // Graded promotion (approved 2026-10-02): a revise verdict with only
-    // minor findings passes when every calibrated bar is met. The minor
-    // findings stay in the audit for developer review. An explicit block
-    // verdict still fails.
-    (audit?.verdict === "revise" && major.length === 0);
+    // Graded promotion (approved 2026-10-02, scalar shape 2026-10-17): a
+    // revise verdict passes when the hard gates, the critical count, the
+    // majors allowance, the overall bar, and the dimension floor are met.
+    // Remaining findings stay in the audit for developer review. An explicit
+    // block verdict still fails.
+    (audit?.verdict === "revise" &&
+      criticals.length === 0 &&
+      majors.length <= allowance);
   return (
     verdictAllows &&
-    Number(audit?.overallScore || 0) >= thresholds.overall &&
-    required.every(([key, minimum]) => Number(scores[key] || 0) >= minimum) &&
-    major.length === 0
+    criticals.length === 0 &&
+    majors.length <= allowance &&
+    Number(audit?.overallScore || 0) >= Number(thresholds.overall) &&
+    SCORED_DIMENSIONS.every((key) => Number(scores[key] || 0) >= floor)
   );
 }
 

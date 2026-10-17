@@ -421,7 +421,7 @@ export function deriveCalibration({
   // sample and run rates for the full parameter space so Task 4 can pick a
   // discriminating bar from the measured distribution instead of a guess.
   const scalarMatrix = [];
-  const floorCandidates = [null, 30, 35, 40, 45, 50];
+  const floorCandidates = [null, 25, 30, 35, 40, 45, 50];
   // 99 means unlimited majors: the near-miss shape lets fidelity majors
   // travel as open findings and only blocks hard gates and criticals.
   const majorAllowances = [0, 1, 2, 3, 4, 6, 8, 99];
@@ -476,7 +476,7 @@ export function deriveCalibration({
         right.runRate - left.runRate ||
         right.overallBar - left.overallBar,
     )
-    .slice(0, 60);
+    .slice(0, 500);
 
   return {
     version: CALIBRATION_VERSION,

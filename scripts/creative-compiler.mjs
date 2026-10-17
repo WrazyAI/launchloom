@@ -465,12 +465,15 @@ export function scoreCreativeCandidate({ hardPass, visual = {}, technical = {}, 
 }
 
 export const CREATIVE_PROMOTION_THRESHOLDS = Object.freeze({
-  visualScore: 78,
+  // Recalibrated 2026-10-17 from 412 judged candidate measurements across the
+  // same 13-run evidence set (p50 44 / p75 50 / p90 57); 50 keeps the bar at
+  // the top quartile of what authored candidates actually render.
+  visualScore: 50,
   distinctivenessScore: 70,
   minimumFingerprintDistance: 4,
   minimumUniqueDimensions: 4,
-  // Tracks the rendered-reference overall bar, recalibrated to 78 on
-  // 2026-10-01. The earlier 80 sat above the judge's own pass value.
-  referenceFidelityScore: 78,
+  // Tracks the rendered-reference overall bar; recalibrated to 47 on
+  // 2026-10-17 with the scalar strict shape (floor 30, majors <= 3).
+  referenceFidelityScore: 47,
   minimumPairwiseVisualDistance: 72,
 });

@@ -186,7 +186,8 @@ describe("gate health summary", () => {
       min: 30,
       median: 50,
       max: 77,
-      passCount: 0,
+      // overall 30 fails the calibrated 47 bar; 50, 70, and 77 pass it.
+      passCount: 3,
     });
     expect(health.perDimension.spatialRhythm).toMatchObject({
       bar: RENDERED_REFERENCE_THRESHOLDS.spatialRhythm,
