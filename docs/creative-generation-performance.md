@@ -57,6 +57,8 @@ rendered technical gates.
 | `CREATIVE_JUDGE_CONCURRENCY` | `2` | Judge worker bound, clamped to 1-3. `1` restores fully serial judges. |
 | `CREATIVE_REPAIR_STAGNATION` | `true` | `false` restores the pre-optimization repair loop (no stagnation guard). |
 | `CREATIVE_REFERENCE_JUDGE_MODEL` | `openai/gpt-6-luna` | Judge model; part of the evidence cache key, so changing it re-judges. |
+| `CREATIVE_EXPERIENCE_PROVIDER` | `openrouter` | `opencode-go` runs the whole creative lane (authoring, reference analysis, rendered judge, visual quality gate, repairs) on the OpenCode Go transport; OpenRouter-only models substitute to `CREATIVE_EXPERIENCE_GO_MODEL` with a log line. |
+| `CREATIVE_EXPERIENCE_GO_MODEL` | `openai/gpt-6-luna` | Reviewed Go model used when the configured component model is not served by the Go slice (for example the visual gate's legacy OpenRouter model). |
 | `CREATIVE_NEAR_MISS_PREVIEW` | `true` | `false` refuses open-findings preview delivery; runs fail as before when the strict conjunction is unmet. |
 | `CREATIVE_PIXEL_CONTRAST` | `true` | `false` restores the DOM-only contrast contract; structural bail classes stay unresolved. |
 
