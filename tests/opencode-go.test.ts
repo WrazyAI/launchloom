@@ -374,3 +374,23 @@ describe("author CLI provider selection gates", () => {
     );
   });
 });
+
+describe("opencode go deepseek wire models", () => {
+  it("maps the reviewed DeepSeek logical models to their wire ids", async () => {
+    const module = await import("../scripts/opencode-go.mjs");
+    expect(module.opencodeGoWireModel("opencode-go/deepseek-v4.1-flash")).toBe(
+      "deepseek-v4.1-flash",
+    );
+    expect(module.opencodeGoWireModel("deepseek-v4.1-flash")).toBe(
+      "deepseek-v4.1-flash",
+    );
+    expect(module.opencodeGoWireModel("opencode-go/deepseek-v4-pro")).toBe(
+      "deepseek-v4-pro",
+    );
+    const profile = module.opencodeGoResponsesProfile({
+      logicalModel: "opencode-go/deepseek-v4.1-flash",
+    });
+    expect(profile.model).toBe("deepseek-v4.1-flash");
+    expect(profile.capabilities.outputFormats).toContain("json-schema");
+  });
+});

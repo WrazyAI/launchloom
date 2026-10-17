@@ -26,6 +26,35 @@ export const CREATIVE_LANE_PROVIDERS = Object.freeze([
   "opencode-go",
 ]);
 
+/** Default logical model per transport. The Go slice serves DeepSeek V4.1
+ * Flash (verified live 2026-10-17: structured output, vision, and every
+ * effort level); the OpenRouter fallback keeps GPT-6 Luna. */
+export function creativeLaneDefaultModel(provider = creativeLaneProvider()) {
+  return provider === "opencode-go"
+    ? "opencode-go/deepseek-v4.1-flash"
+    : "openai/gpt-6-luna";
+}
+
+/** Default reasoning effort for the creative lane. DeepSeek V4.1 Flash runs
+ * at `max` unless an explicit environment override selects otherwise. */
+export function creativeLaneDefaultEffort(provider = creativeLaneProvider()) {
+  return provider === "opencode-go" ? "max" : "xhigh";
+}
+
+/** Resolve one lane's reasoning effort: lane env, then the shared creative
+ * env, then the provider default. On OpenRouter each lane keeps its historical
+ * default (`openrouterDefault`); the Go transport always defaults to `max`. */
+export function creativeLaneEffort(
+  env = process.env,
+  { lane = null, openrouterDefault = "xhigh" } = {},
+) {
+  const laneValue = lane ? String(env[lane] || "").trim() : "";
+  if (laneValue) return laneValue;
+  const shared = String(env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "").trim();
+  if (shared) return shared;
+  return creativeLaneProvider(env) === "opencode-go" ? "max" : openrouterDefault;
+}
+
 /**
  * Resolve the creative-lane provider from the environment. Unknown values fail
  * loudly instead of silently picking a provider.
@@ -50,7 +79,7 @@ export function creativeLaneProvider(env = process.env) {
 export function resolveGoLogicalModel(requestedModel, env = process.env) {
   const requested = String(requestedModel || "").trim();
   const preferred = String(
-    env.CREATIVE_EXPERIENCE_GO_MODEL || "openai/gpt-6-luna",
+    env.CREATIVE_EXPERIENCE_GO_MODEL || "opencode-go/deepseek-v4.1-flash",
   ).trim();
   if (requested) {
     try {

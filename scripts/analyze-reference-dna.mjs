@@ -14,13 +14,21 @@ import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 import {
   buildGoCreativeRequest,
   completeGoCreative,
+  creativeLaneDefaultModel,
+  creativeLaneEffort,
   creativeLaneProvider,
   goCreativeUsageMetrics,
   parseGoCreativeOutput,
 } from "./creative-lane-inference.mjs";
 
-const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-6-luna";
 const creativeProvider = creativeLaneProvider();
+const model =
+  process.env.CREATIVE_REFERENCE_ANALYZER_MODEL ||
+  creativeLaneDefaultModel(creativeProvider);
+const analyzerEffort = creativeLaneEffort(process.env, {
+  lane: "CREATIVE_REFERENCE_ANALYZER_EFFORT",
+  openrouterDefault: "medium",
+});
 
 const ANALYZER_SYSTEM_PROMPT =
   "Return one syntactically valid JSON object only, matching the provided strict schema. Escape quotes and backslashes inside strings. Do not use markdown or surrounding prose. You are a senior visual systems designer extracting measurable, transferable design mechanics from screenshots.";
@@ -345,7 +353,7 @@ Rules:
             schemaName: schema.name,
             schema: schema.schema,
             maxOutputTokens: 9000,
-            effort: "medium",
+            effort: analyzerEffort,
             sessionId,
           }),
         });

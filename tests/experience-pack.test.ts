@@ -182,25 +182,27 @@ describe("experience-pack compiler", () => {
     expect(lab).toContain("unsupported claims");
   });
 
-  it("uses xhigh effort as the default Luna creative reasoning effort", () => {
+  it("uses the creative lane reasoning effort default (max on OpenCode Go)", () => {
     const author = readFileSync(
       "scripts/author-production-experiences.mjs",
       "utf8",
     );
     const repair = readFileSync("scripts/creative-repair-loop.mjs", "utf8");
-    expect(author).toContain(
-      '(model === "openai/gpt-6-luna" ? "xhigh" : "low")',
-    );
+    const lane = readFileSync("scripts/creative-lane-inference.mjs", "utf8");
+    // The shared helper defaults to `max` for the Go transport and keeps the
+    // OpenRouter fallback's historical xhigh effort.
+    expect(lane).toContain('return provider === "opencode-go" ? "max" : "xhigh";');
+    expect(author).toContain('creativeLaneEffort(process.env, {');
+    expect(repair).toContain('creativeLaneEffort(process.env, {');
     const sessionEffortIndex = repair.indexOf(
       "creativeSession?.reasoningEffort",
     );
     const envEffortIndex = repair.indexOf(
-      "process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT",
+      "creativeLaneEffort(process.env",
+      sessionEffortIndex,
     );
-    const xhighFallbackIndex = repair.indexOf('"xhigh";', envEffortIndex);
     expect(sessionEffortIndex).toBeGreaterThan(-1);
     expect(envEffortIndex).toBeGreaterThan(sessionEffortIndex);
-    expect(xhighFallbackIndex).toBeGreaterThan(envEffortIndex);
   });
 
   it("runs one reasoning preflight before Luna and threads the frozen session through repair", () => {
@@ -322,9 +324,9 @@ describe("experience-pack compiler", () => {
     expect(creativeRender).not.toContain("continue-on-error: true");
     expect(workflow).toContain("Authored creative renderer was not selected");
     expect(workflow).toContain("CANDIDATE_ID=$(jq -r");
-    expect(workflow).toContain("openai/gpt-6-luna");
+    expect(workflow).toContain("opencode-go/deepseek-v4.1-flash");
     expect(workflow).toContain(
-      "vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'xhigh'",
+      "vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'max'",
     );
     expect(workflow).toContain(".launchloom/creative-bakeoff.json");
     expect(workflow).not.toContain("experience-bakeoff-screenshots");

@@ -44,8 +44,10 @@ repository variables were then set to `opencode-go` at 21:06Z.
 - The Go path requires `OPENCODE_GO_API_KEY`; the OpenRouter path still
   requires `OPENROUTER_API_KEY`. Both secrets are requested by the workflows;
   `generate-client.yml` fails early when a Go-selected run has no Go key.
-- The frozen logical session model stays `openai/gpt-6-luna`; the wire model is
-  `gpt-6-luna`. Reasoning-preflight allowlists, session provenance and reuse
+- The default creative-lane logical model is
+  `opencode-go/deepseek-v4.1-flash` (wire `deepseek-v4.1-flash`); the legacy
+  `openai/gpt-6-luna` session model remains supported for frozen luna sessions.
+  Reasoning-preflight allowlists, session provenance and reuse
   validators are unchanged.
 
 ## Verified wire contract
@@ -54,10 +56,10 @@ Verified against the live service on 2026-10-14 (small capability probes plus
 the 2026-10-12 supervised runs; see the progress ledger):
 
 - Endpoint `https://opencode.ai/inference/go/v1/responses` (documented), bearer
-  auth, model `gpt-6-luna`, stable `x-opencode-session`, identifying
+  auth, the resolved wire model, stable `x-opencode-session`, identifying
   `User-Agent` (`launchloom-production/0.1`), stateless `store:false`.
 - Reasoning efforts `low` through `max` accepted. **`temperature` is rejected
-  for gpt-6-luna**, so the Go request builders never send it.
+  for the Go slice's models**, so the Go request builders never send it.
 - Base64 image inputs with `detail: high`, strict JSON schema and schema-free
   JSON mode were proven in the 2026-10-12 author run and the bounded example.
 - Responses report `input_tokens` (including cached reads and cache writes),

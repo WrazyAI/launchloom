@@ -17,6 +17,7 @@ import {
 import {
   buildGoCreativeRequest,
   completeGoCreative,
+  creativeLaneEffort,
   creativeLaneProvider,
   goCreativeUsageMetrics,
   parseGoCreativeOutput,
@@ -202,7 +203,10 @@ async function requestAudit(manifest) {
             schemaName: auditSchema.name,
             schema: auditSchema.schema,
             maxOutputTokens: [6000, 9000, 12000][attempt - 1],
-            effort: "low",
+            effort: creativeLaneEffort(process.env, {
+              lane: "VISUAL_GATE_EFFORT",
+              openrouterDefault: "low",
+            }),
             sessionId,
           }),
         });

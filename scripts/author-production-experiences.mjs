@@ -46,6 +46,11 @@ import {
   opencodeGoUsageMetrics,
   responsesImagePart,
 } from "./opencode-go.mjs";
+import {
+  creativeLaneDefaultModel,
+  creativeLaneEffort,
+  creativeLaneProvider,
+} from "./creative-lane-inference.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 import {
   AUTHORING_STAGE_BUDGETS,
@@ -77,21 +82,20 @@ const sessionPath = args.session ? path.resolve(args.session) : "";
 const sessionConfig = sessionPath
   ? JSON.parse(await fs.readFile(sessionPath, "utf8"))
   : null;
+const provider = creativeLaneProvider();
 const model =
-  requestedModel || sessionConfig?.creativeModel || "openai/gpt-6-luna";
+  requestedModel ||
+  sessionConfig?.creativeModel ||
+  creativeLaneDefaultModel(provider);
 const creativeSession = sessionConfig
   ? validateCreativeSessionConfig(sessionConfig, { creativeModel: model })
   : null;
 const reasoningEffort =
   creativeSession?.reasoningEffort ||
-  process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT ||
-  (model === "openai/gpt-6-luna" ? "xhigh" : "low");
+  creativeLaneEffort(process.env, {
+    lane: "CREATIVE_EXPERIENCE_REASONING_EFFORT",
+  });
 const failureMode = args["failure-mode"] || "throw";
-const provider = String(
-  process.env.CREATIVE_EXPERIENCE_PROVIDER || "openrouter",
-).trim();
-if (!["openrouter", "opencode-go"].includes(provider))
-  throw new Error(`Unsupported CREATIVE_EXPERIENCE_PROVIDER: ${provider}`);
 const opencodeGoProfile =
   provider === "opencode-go"
     ? opencodeGoResponsesProfile({ logicalModel: model })

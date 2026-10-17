@@ -43,6 +43,8 @@ import {
 import {
   buildGoCreativeRequest,
   completeGoCreative,
+  creativeLaneDefaultModel,
+  creativeLaneEffort,
   creativeLaneProvider,
   goCreativeUsageMetrics,
 } from "./creative-lane-inference.mjs";
@@ -1177,8 +1179,9 @@ Return a complete replacement for only this requested file. Keep source non-empt
 
   const reasoningEffort =
     creativeSession?.reasoningEffort ||
-    process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT ||
-    "xhigh";
+    creativeLaneEffort(process.env, {
+      lane: "CREATIVE_EXPERIENCE_REASONING_EFFORT",
+    });
   const sessionId =
     creativeSession?.sessionId ||
     openRouterSessionId(
@@ -1508,7 +1511,7 @@ async function main() {
     args.model ||
     sessionConfig?.creativeModel ||
     process.env.CREATIVE_EXPERIENCE_MODEL ||
-    "openai/gpt-6-luna";
+    creativeLaneDefaultModel(creativeProvider);
   const creativeSession = sessionConfig
     ? validateCreativeSessionConfig(sessionConfig, { creativeModel: model })
     : null;

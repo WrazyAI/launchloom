@@ -348,10 +348,12 @@ export async function runPipelineTest(input, dependencies) {
     ),
   };
   const context = { input, policy, report };
+  let nearMissDelivery = false;
   async function stage(name) {
     const started = Date.now();
     try {
       const result = await dependencies[name](context);
+      if (name === "creative" && result?.nearMiss) nearMissDelivery = true;
       report.stages[name] = {
         status: "passed",
         durationMs: Date.now() - started,
@@ -363,6 +365,34 @@ export async function runPipelineTest(input, dependencies) {
         name === "technical" &&
         error?.code === "PIPELINE_QUALITY_GATE" &&
         ["seo-only", "creative-only"].includes(input.profile);
+      // A near-miss delivery is the intended outcome for a preview request:
+      // when the creative stage delivered `previewed-with-open-findings`, the
+      // delivered candidate's contrast result is recorded as open findings
+      // instead of failing the run. Every structural gate (rendered routes,
+      // browser errors, missing markers) and every other failure class still
+      // fails, and the production canary profile is never softened.
+      const nearMissContrastOnly =
+        name === "technical" &&
+        input.profile === "creative-only" &&
+        nearMissDelivery &&
+        error?.code === "PIPELINE_QUALITY_GATE" &&
+        Array.isArray(error.gates) &&
+        error.gates.length > 0 &&
+        error.gates.every(
+          (gate) => !gate.passed && gate.name === "contrast",
+        );
+      if (nearMissContrastOnly) {
+        report.deliveryMode = "creative-near-miss";
+        report.stages[name] = {
+          status: "passed",
+          durationMs: Date.now() - started,
+          deliveryMode: "creative-near-miss",
+          openFindings: true,
+          gates: error.gates,
+          note: "Contrast quality gate recorded as open findings for the delivered near-miss preview; structural gates passed.",
+        };
+        return report.stages[name];
+      }
       report.stages[name] = {
         status: "failed",
         durationMs: Date.now() - started,

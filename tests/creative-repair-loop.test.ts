@@ -438,7 +438,7 @@ describe("creative repair loop", () => {
         "../scripts/creative-repair-loop.mjs"
       );
       const result = await requestRepairOnGo({
-        model: "openai/gpt-6-luna",
+        model: "opencode-go/deepseek-v4.1-flash",
         referenceDna: {
           familyId: "editorial",
           sectionSequence: repairSectionSequence,
@@ -463,7 +463,7 @@ describe("creative repair loop", () => {
       const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
       expect(String(url)).toContain("opencode.ai/inference/go");
       const body = JSON.parse(String(init?.body));
-      expect(body.model).toBe("gpt-6-luna");
+      expect(body.model).toBe("deepseek-v4.1-flash");
       expect(body.text?.format?.type).toBe("json_schema");
       expect(body.text?.format?.name).toContain("repair_edits");
     } finally {
