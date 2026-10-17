@@ -123,6 +123,27 @@ function atLightness(lab, L) {
     ),
   );
 }
+/** A color with the given color's hue and roughly the requested relative
+ * luminance, found by binary-searching OKLab lightness. Used to turn a proven
+ * luminance window into an actual foreground color. */
+export function atLuminance(color, target) {
+  const lab = toOklab(color);
+  const luminance = (lightness) => relativeLuminance(atLightness(lab, lightness));
+  const clamped = Math.max(0, Math.min(1, Number(target)));
+  let low = 0,
+    high = 1;
+  const lowLuminance = luminance(0),
+    highLuminance = luminance(1);
+  if (clamped <= lowLuminance) return rgbHex(atLightness(lab, 0));
+  if (clamped >= highLuminance) return rgbHex(atLightness(lab, 1));
+  for (let i = 0; i < 40; i++) {
+    const mid = (low + high) / 2;
+    if (luminance(mid) < clamped) low = mid;
+    else high = mid;
+  }
+  return rgbHex(atLightness(lab, (low + high) / 2));
+}
+
 export function ensureContrast(color, background, minimum = 4.5) {
   if (!Number.isFinite(minimum) || minimum < 1 || minimum > 21)
     throw new Error("Invalid contrast threshold");

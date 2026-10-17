@@ -7,6 +7,9 @@ import {
   rgbHex,
   composite,
   contrast,
+  atLuminance,
+  relativeLuminance,
+  parseRgba,
 } from "./color-contrast.mjs";
 import { inspectContrastPage } from "./rendered-contrast.mjs";
 
@@ -232,8 +235,35 @@ function backdropCandidates(targets) {
  * @param {string[]} backdrops
  * @param {number} minimum
  */
-export function proveForegroundAgainst(original, backdrops, minimum) {
+export function proveForegroundAgainst(
+  original,
+  backdrops,
+  minimum,
+  { provable = null, extremes = null } = {},
+) {
   const candidates = [];
+  // A measured feasible luminance window is the strongest proof available:
+  // its colors satisfy the minimum against every sampled pixel by
+  // construction. Preserve the original hue at the nearest window edge.
+  if (
+    provable &&
+    Number.isFinite(provable.min) &&
+    Number.isFinite(provable.max) &&
+    provable.min <= provable.max
+  ) {
+    const originalLuminance = relativeLuminance(parseRgba(original));
+    const clampLow = provable.min + (provable.max - provable.min) * 0.02;
+    const clampHigh = provable.max - (provable.max - provable.min) * 0.02;
+    const target = Math.max(
+      clampLow,
+      Math.min(clampHigh, originalLuminance),
+    );
+    try {
+      candidates.push(atLuminance(original, target));
+    } catch {
+      // Hue-preserving derivation failed; other candidates still apply.
+    }
+  }
   for (const backdrop of backdrops) {
     try {
       candidates.push(ensureContrast(original, backdrop, minimum));
@@ -248,6 +278,22 @@ export function proveForegroundAgainst(original, backdrops, minimum) {
   candidates.push("#000000", "#ffffff");
   for (const candidate of candidates) {
     let pass = true;
+    // Measured pixel ranges without a feasible window contain tones no
+    // single static color can be proven against. The extremes only bound the
+    // full set outside the range, so a candidate inside it is unprovable and
+    // must be refused rather than guessed.
+    if (
+      extremes &&
+      Number.isFinite(extremes.min) &&
+      Number.isFinite(extremes.max)
+    ) {
+      const luminance = relativeLuminance(parseRgba(candidate));
+      if (
+        luminance > extremes.min + 0.0005 &&
+        luminance < extremes.max - 0.0005
+      )
+        pass = false;
+    }
     for (const backdrop of backdrops) {
       const ratio = contrast(candidate, backdrop);
       if (!Number.isFinite(ratio) || ratio + 1e-9 < minimum) {
@@ -316,7 +362,37 @@ export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
       const effective = f.pixelResolved
         ? f.color
         : rgbHex(composite(f.foreground, f.backgrounds[0]));
-      const color = proveForegroundAgainst(effective, backdrops, minimum);
+      // Intersect the measured feasible windows of every peer; an empty
+      // intersection cannot be proven from ranges alone.
+      let provable = null;
+      for (const peer of peers) {
+        const range = peer.pixelBackdrop?.provable;
+        if (!range) continue;
+        provable = provable
+          ? {
+              min: Math.max(provable.min, range.min),
+              max: Math.min(provable.max, range.max),
+            }
+          : { min: range.min, max: range.max };
+      }
+      if (provable && provable.min > provable.max) provable = null;
+      let extremes = null;
+      for (const peer of peers) {
+        const backdrop = peer.pixelBackdrop;
+        if (!backdrop?.dark || !backdrop?.light) continue;
+        const dark = relativeLuminance(parseRgba(backdrop.dark));
+        const light = relativeLuminance(parseRgba(backdrop.light));
+        extremes = extremes
+          ? {
+              min: Math.min(extremes.min, dark),
+              max: Math.max(extremes.max, light),
+            }
+          : { min: dark, max: light };
+      }
+      const color = proveForegroundAgainst(effective, backdrops, minimum, {
+        provable,
+        extremes: provable ? null : extremes,
+      });
       if (!color) continue;
       const key = JSON.stringify([
         page.route,
@@ -366,8 +442,19 @@ export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
 }
 export function contrastRepairCss(repairs) {
   const groups = new Map();
+  // Accumulated passes can hold several generations of a correction for the
+  // same selector and state scope. Only the latest generation may render:
+  // otherwise a stale color from an earlier pass competes in the cascade and
+  // can win by source order, re-breaking an element the current plan fixed.
+  const latest = new Map();
   for (const r of repairs) {
     if (r.kind === "plate") continue;
+    latest.set(
+      JSON.stringify([r.mediaConditions ?? r.viewport?.name, r.route, r.selector, r.stateScope]),
+      r,
+    );
+  }
+  for (const r of latest.values()) {
     const conditions = r.mediaConditions ?? [
       [
         `(min-width: ${r.viewport.min}px)`,
@@ -401,7 +488,10 @@ export function contrastRepairCss(repairs) {
   const colorRules = [...groups.values()].map((g) => {
     const selectorList = [...g.selectors].join(",");
     let rule = g.indicator
-      ? `${selectorList}{outline:2px solid ${g.color}!important;outline-offset:2px!important}`
+      ? // Inset ring: outline paint lives inside the border box, so rounded
+        // or overflow-hidden ancestors cannot clip it away, and the ring's
+        // backdrop is exactly the element region the pixel proof sampled.
+        `${selectorList}{outline:2px solid ${g.color}!important;outline-offset:-2px!important}`
       : `${selectorList}{--ll-creative-auto-text:${g.color};${g.property}:var(--ll-creative-auto-text)!important}`;
     for (const condition of g.conditions) rule = `@media ${condition}{${rule}}`;
     return rule;

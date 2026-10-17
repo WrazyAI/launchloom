@@ -36,13 +36,31 @@ export async function decodeRgbaPixels(buffer, { maximumSamples = 250_000 } = {}
  * @param {number[]} foreground [r, g, b, alpha] with alpha in 0..1
  * @param {Uint8Array | number[]} pixels RGBA bytes
  */
-export function analyzePixelBackdrop(foreground, pixels) {
+export function analyzePixelBackdrop(
+  foreground,
+  pixels,
+  { band = 0, width = 0, height = 0, rowStep = 1, minimum = 0 } = {},
+) {
   let worst = Number.POSITIVE_INFINITY;
   let darkPixel = null;
   let lightPixel = null;
   let darkLuminance = Number.POSITIVE_INFINITY;
   let lightLuminance = Number.NEGATIVE_INFINITY;
-  for (let index = 0; index < pixels.length; index += 4) {
+  // Outline rings paint only a perimeter band; measuring them against every
+  // interior pixel would compare the ring color with surfaces it never
+  // covers (and a mid-gray icon could make every ring color unprovable).
+  const colsCount =
+    band > 0 && width > 0 ? Math.ceil(width / rowStep) : 0;
+  const samples = pixels.length / 4;
+  for (let sample = 0; sample < samples; sample += 1) {
+    const index = sample * 4;
+    if (band > 0 && colsCount > 0) {
+      const x = (sample % colsCount) * rowStep;
+      const y = Math.floor(sample / colsCount) * rowStep;
+      const inBand =
+        x < band || y < band || x >= width - band || y >= height - band;
+      if (!inBand) continue;
+    }
     const backdrop = [
       Number(pixels[index]),
       Number(pixels[index + 1]),
@@ -64,10 +82,80 @@ export function analyzePixelBackdrop(foreground, pixels) {
       lightPixel = backdrop;
     }
   }
+  // Feasible luminance window: a foreground at luminance Lc satisfies the
+  // minimum against every sampled pixel exactly when no pixel luminance lies
+  // strictly inside ((Lc+0.05)/m - 0.05, m*(Lc+0.05) - 0.05). Scanning Lc
+  // over a fine grid finds the window the repair can move within, which a
+  // mixed band (dark card, lime accent, ivory page) otherwise hides behind
+  // two extremes that individually conflict.
+  let provableMinimum = null;
+  let provableMaximum = null;
+  const parseMinimum = Number(minimum);
+  if (Number.isFinite(parseMinimum) && parseMinimum > 1 && pixels.length >= 4) {
+    const luminances = [];
+    for (let sample = 0; sample < pixels.length / 4; sample += 1) {
+      if (band > 0 && colsCount > 0) {
+        const x = (sample % colsCount) * rowStep;
+        const y = Math.floor(sample / colsCount) * rowStep;
+        const inBand =
+          x < band || y < band || x >= width - band || y >= height - band;
+        if (!inBand) continue;
+      }
+      const offset = sample * 4;
+      luminances.push(
+        relativeLuminance([
+          Number(pixels[offset]),
+          Number(pixels[offset + 1]),
+          Number(pixels[offset + 2]),
+          1,
+        ]),
+      );
+    }
+    // A small margin keeps the window clear of midpoint rounding so the
+    // resulting color still verifies against the recorded extremes.
+    const m = parseMinimum + 0.05;
+    const sorted = luminances.slice().sort((left, right) => left - right);
+    const firstGreater = (value) => {
+      let low = 0,
+        high = sorted.length;
+      while (low < high) {
+        const mid = (low + high) >> 1;
+        if (sorted[mid] <= value) low = mid + 1;
+        else high = mid;
+      }
+      return low;
+    };
+    const firstGreaterOrEqual = (value) => {
+      let low = 0,
+        high = sorted.length;
+      while (low < high) {
+        const mid = (low + high) >> 1;
+        if (sorted[mid] < value) low = mid + 1;
+        else high = mid;
+      }
+      return low;
+    };
+    const feasible = (lc) => {
+      const upper = (lc + 0.05) / m - 0.05 - 0.002;
+      const lower = m * (lc + 0.05) - 0.05 + 0.002;
+      if (lower <= upper) return false;
+      return firstGreaterOrEqual(lower) - firstGreater(upper) === 0;
+    };
+    for (let stepIndex = 0; stepIndex <= 400; stepIndex += 1) {
+      const lc = stepIndex / 400;
+      if (!feasible(lc)) continue;
+      if (provableMinimum === null) provableMinimum = lc;
+      provableMaximum = lc;
+    }
+  }
   return {
     ratio: Number.isFinite(worst) ? worst : 0,
     darkPixel,
     lightPixel,
+    provable:
+      provableMinimum === null
+        ? null
+        : { min: provableMinimum, max: provableMaximum },
   };
 }
 
@@ -129,23 +217,53 @@ export async function resolveRenderedBackdrop(
   targets,
   { maximumResolutions = 120, scoped = false } = {},
 ) {
+  const outlineTargetOf = (target) =>
+    target?.kind === "focus" || target?.paintProperty === "outline-color";
   const candidates = (targets || [])
-    .filter(
-      (target) =>
-        target?.status === "unresolved" &&
-        target.foreground &&
-        target.selector &&
-        target.rect &&
-        target.rect.width > 0 &&
-        target.rect.height > 0 &&
-        (target.kind === "text" || target.kind === "focus") &&
-        !(target.issues || []).some((issue) =>
+    .filter((target) => {
+      if (
+        !target ||
+        !target.foreground ||
+        !target.selector ||
+        !target.rect ||
+        target.rect.width <= 0 ||
+        target.rect.height <= 0
+      )
+        return false;
+      if (target.kind !== "text" && target.kind !== "focus") return false;
+      if (
+        (target.issues || []).some((issue) =>
           RENDERED_UNPROVABLE_ISSUES.includes(issue),
-        ),
-    )
+        )
+      )
+        return false;
+      // Unresolved targets are resolved from pixels. Failing outline targets
+      // additionally gather band evidence even when the DOM proved a fail: a
+      // ring crosses every surface along its perimeter, and its repair must
+      // be proven against all of them, not one DOM-computed background.
+      return (
+        target.status === "unresolved" ||
+        (target.status === "fail" && outlineTargetOf(target))
+      );
+    })
     .slice(0, maximumResolutions);
   let resolved = 0;
   let failed = 0;
+  let evidenceOnly = 0;
+  // A single managed rule hides descendant glyph paint during captures so the
+  // sampled backdrop is surfaces only: a child paragraph or span is not the
+  // backdrop of the target text or focus ring, and its pixels must not be
+  // mistaken for it (a gray child label once matched a synthesized ring).
+  await page
+    .evaluate(() => {
+      if (document.getElementById("data-ll-contrast-hide-children")) return;
+      const style = document.createElement("style");
+      style.id = "data-ll-contrast-hide-children";
+      style.textContent =
+        "[data-ll-contrast-hide-children] *{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important}";
+      document.head.appendChild(style);
+    })
+    .catch(() => {});
   // Marked scope: hover/focus/menu states resolve only the paints of the
   // interacted control subtree. Everything else was already measured in the
   // default state; unresolved targets outside the scope stay unresolved in
@@ -214,6 +332,7 @@ export async function resolveRenderedBackdrop(
             "style",
             `${previous};color:transparent !important;-webkit-text-fill-color:transparent !important;text-shadow:none !important;outline-color:transparent !important;`,
           );
+          element.setAttribute("data-ll-contrast-hide-children", "1");
           return previous;
         },
         undefined,
@@ -227,6 +346,7 @@ export async function resolveRenderedBackdrop(
             (element, previous) => {
               if (previous) element.setAttribute("style", previous);
               else element.removeAttribute("style");
+              element.removeAttribute("data-ll-contrast-hide-children");
             },
             previousStyle,
             { timeout: 1500 },
@@ -238,7 +358,6 @@ export async function resolveRenderedBackdrop(
     }
     let ratio = null;
     try {
-      const { pixels } = await decodeRgbaPixels(png);
       // Distinguishability: capture once with the paint intact and once with
       // it hidden. Identical captures mean the paint is occluded by higher
       // paint or indistinguishable from its backdrop; hiding glyphs would
@@ -253,14 +372,29 @@ export async function resolveRenderedBackdrop(
       } catch {
         visiblePixels = null;
       }
-      const analysis = analyzePixelBackdrop(effectiveForeground, pixels);
+      const outlineTarget = outlineTargetOf(target);
+      const decoded = await decodeRgbaPixels(png);
+      const analysis = analyzePixelBackdrop(effectiveForeground, decoded.pixels, {
+        band: outlineTarget ? 4 : 0,
+        width: decoded.width,
+        height: decoded.height,
+        rowStep: decoded.rowStep,
+        minimum: Number(target.minimum),
+      });
       if (analysis.darkPixel && analysis.lightPixel)
         target.pixelBackdrop = {
           dark: rgbHex(analysis.darkPixel),
           light: rgbHex(analysis.lightPixel),
+          ...(analysis.provable ? { provable: analysis.provable } : {}),
         };
+      if (target.status === "fail") {
+        // DOM-proven failure: the capture only enriches the repair evidence;
+        // the verdict stays exactly as the DOM audit reported it.
+        evidenceOnly += 1;
+        continue;
+      }
       if (visiblePixels) {
-        const delta = maxChannelDelta(visiblePixels, pixels);
+        const delta = maxChannelDelta(visiblePixels, decoded.pixels);
         if (delta <= 8) {
           target.pixelResolved = true;
           target.ratio = 1;
@@ -293,7 +427,12 @@ export async function resolveRenderedBackdrop(
     resolved += 1;
     if (target.status === "fail") failed += 1;
   }
-  return { resolved, failed, attempted: candidates.length };
+  return {
+    resolved,
+    failed,
+    evidenceOnly,
+    attempted: candidates.length,
+  };
 }
 
 /** Runs in Chromium. Collect text runs rather than a stylesheet class whitelist.

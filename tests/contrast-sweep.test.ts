@@ -434,7 +434,7 @@ describe("persisted bounded contrast sweep", () => {
     expect(repairs[0].paintProperty).toBe("outline");
     const css = module.contrastRepairCss(repairs);
     expect(css).toContain(":focus-visible{outline:2px solid #");
-    expect(css).toContain("outline-offset:2px!important");
+    expect(css).toContain("outline-offset:-2px!important");
   });
   it("scopes an audit to an explicit route allowlist", async () => {
     const module = await modulePromise;
@@ -608,7 +608,7 @@ describe("persisted bounded contrast sweep", () => {
   it("strips synthesized outline indicator rules from legacy blocks", async () => {
     const module = await modulePromise;
     const legacy =
-      "/* launchloom: bounded rendered contrast corrections */\nbody > a{outline:2px solid #0a0a0a!important;outline-offset:2px!important}\np{color:red}";
+      "/* launchloom: bounded rendered contrast corrections */\nbody > a{outline:2px solid #0a0a0a!important;outline-offset:-2px!important}\np{color:red}";
     const stripped = module.stripBoundedCorrections(legacy);
     expect(stripped).not.toContain("outline:2px solid");
     expect(stripped).toContain("p{color:red}");
