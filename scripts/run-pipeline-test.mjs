@@ -343,6 +343,7 @@ export async function runPipelineTest(input, dependencies) {
     startedAt: new Date().toISOString(),
     verdict: "failed",
     previewDelivered: false,
+    deliveryMode: null,
     stages: Object.fromEntries(
       STAGES.map((stage) => [stage, { status: "not_run" }]),
     ),

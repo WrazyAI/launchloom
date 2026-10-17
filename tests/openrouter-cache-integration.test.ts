@@ -69,21 +69,19 @@ describe("OpenRouter cache integration", () => {
     expect(source).not.toContain("message?.content");
   });
 
-  it("uses xhigh as the default Luna creative reasoning effort", () => {
+  it("uses the creative lane reasoning effort default (max on OpenCode Go)", () => {
     const author = fs.readFileSync(
       "scripts/author-production-experiences.mjs",
       "utf8",
     );
     const repair = fs.readFileSync("scripts/creative-repair-loop.mjs", "utf8");
-    expect(author).toContain(
-      '(model === "openai/gpt-6-luna" ? "xhigh" : "low")',
-    );
+    const lane = fs.readFileSync("scripts/creative-lane-inference.mjs", "utf8");
+    expect(lane).toContain('return provider === "opencode-go" ? "max" : "xhigh";');
+    expect(author).toContain("creativeLaneEffort(process.env, {");
     expect(repair).toContain("creativeSession?.reasoningEffort");
-    expect(repair).toContain(
-      "process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT",
-    );
+    expect(repair).toContain("creativeLaneEffort(process.env, {");
     expect(repair).toMatch(
-      /creativeSession\?\.reasoningEffort[\s\S]*process\.env\.CREATIVE_EXPERIENCE_REASONING_EFFORT[\s\S]*"xhigh"/u,
+      /creativeSession\?\.reasoningEffort[\s\S]*creativeLaneEffort\(process\.env/u,
     );
   });
 
