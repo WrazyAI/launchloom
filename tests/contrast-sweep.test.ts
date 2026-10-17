@@ -266,7 +266,7 @@ describe("persisted bounded contrast sweep", () => {
     ])
       expect(css).not.toContain(forbidden);
   });
-  it("refuses an over-budget repair plan instead of falling back to paint", async () => {
+  it("budgets a heavy repair plan worst-first instead of falling back to paint", async () => {
     const module = await modulePromise;
     const makeTarget = (index: number) => ({
       selector: `body > main:nth-of-type(1) > p:nth-of-type(${index + 1})`,
@@ -294,12 +294,26 @@ describe("persisted bounded contrast sweep", () => {
       targets,
       findings: targets,
     }));
-    // Every page carries its own media condition, so the plan exceeds the
-    // group budget and must refuse entirely rather than paint anything.
-    expect(
-      module.planContrastRepairs({ pages }, { plates: true } as any),
-    ).toEqual([]);
-    expect(module.planContrastRepairs({ pages })).toEqual([]);
+    // Every page carries its own media condition. A heavy candidate gets the
+    // bounded, worst-first plan instead of a wholesale refusal, and the
+    // retired plate option still cannot paint anything.
+    const planned = module.planContrastRepairs(
+      { pages },
+      { plates: true } as any,
+    );
+    expect(planned).toHaveLength(40);
+    expect(planned.every((r: any) => r.kind !== "plate")).toBe(true);
+    const bounded = module.planContrastRepairs(
+      { pages },
+      { maxRepairs: 4 } as any,
+    );
+    expect(bounded).toHaveLength(4);
+    const capped = module.planContrastRepairs(
+      { pages },
+      { maxPlanCssChars: 900 } as any,
+    );
+    expect(capped.length).toBeGreaterThan(0);
+    expect(capped.length).toBeLessThan(40);
   });
   it("leaves state-conflicting failures to author repair once plates are retired", async () => {
     const module = await modulePromise;

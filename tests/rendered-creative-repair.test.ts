@@ -2854,6 +2854,72 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
     expect(finalReport.nearMissSelection).toBe(true);
   });
 
+  it("degrades provider billing failures into blocked repairs instead of aborting", async () => {
+    const { root, candidates } = await fixture(["candidate-a", "candidate-b"]);
+    const promotions: any[] = [];
+    const failingA = candidate("candidate-a", {
+      valid: false,
+      eligible: false,
+      failures: ["rendered-reference: composition drift"],
+      renderedReferenceFidelity: {
+        pass: false,
+        audit: {
+          overallScore: 55,
+          scores: { spatialRhythm: 55, imagery: 50, paletteAdherence: 90 },
+          findings: [
+            { severity: "major", category: "hero-geometry", evidence: "drift" },
+          ],
+        },
+      },
+    });
+    const cleanB = candidate("candidate-b", {
+      valid: false,
+      eligible: false,
+      failures: [],
+      renderedReferenceFidelity: {
+        pass: false,
+        audit: {
+          overallScore: 61,
+          scores: { spatialRhythm: 61, imagery: 52, paletteAdherence: 91 },
+          findings: [
+            { severity: "major", category: "hero-geometry", evidence: "drift" },
+          ],
+        },
+      },
+    });
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) =>
+        writeBakeoffEvidence(
+          options,
+          report({
+            selectedCandidateId: null,
+            candidates: [failingA, cleanB],
+          }),
+        ),
+      runVisualGateImpl: nearMissGate,
+      repairCandidateImpl: async () => {
+        throw new Error("OpenRouter creative repair failed (402).");
+      },
+      promoteImpl: async (options: any) => {
+        promotions.push(options);
+        return { candidateId: options.candidateId };
+      },
+    });
+    // The billing failure blocks only that candidate's repairs; the loop
+    // survives and delivers the hard-clean sibling as a near-miss preview.
+    expect(result.status).toBe("previewed-with-open-findings");
+    expect(result.nearMiss.candidateId).toBe("candidate-b");
+    expect(result.rejectedCandidates["candidate-a"]).toMatch(
+      /provider unavailable/iu,
+    );
+    expect(promotions[0].selectionMode).toBe("creative-near-miss");
+  });
+
   it("refuses near-miss delivery when a hard gate failed", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     const promotions: any[] = [];

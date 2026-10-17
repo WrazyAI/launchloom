@@ -415,6 +415,69 @@ export function deriveCalibration({
     };
   }
 
+  // Scalar shapes (approved 2026-10-16): the strict conjunction of per
+  // dimension bars is replaced by an overall bar, an absolute dimension floor,
+  // a majors allowance, and the absolute hard gates. The matrix below reports
+  // sample and run rates for the full parameter space so Task 4 can pick a
+  // discriminating bar from the measured distribution instead of a guess.
+  const scalarMatrix = [];
+  const floorCandidates = [null, 30, 35, 40, 45, 50];
+  // 99 means unlimited majors: the near-miss shape lets fidelity majors
+  // travel as open findings and only blocks hard gates and criticals.
+  const majorAllowances = [0, 1, 2, 3, 4, 6, 8, 99];
+  const dimensionalKeys = dimensionKeys.filter((key) => key !== "overall");
+  const criticalsOf = (sample) =>
+    (sample.majors || []).filter((major) => major?.severity === "critical")
+      .length;
+  const majorCountOf = (sample) =>
+    (sample.majors || []).filter((major) => major?.severity === "major").length;
+  const hardCleanOf = (sample) =>
+    (sample.hardFailures || []).length === 0 && criticalsOf(sample) === 0;
+  const matchesShape = (sample, { overallBar, floor, majorsAllowance }) =>
+    hardCleanOf(sample) &&
+    Number(sample.overall) >= overallBar &&
+    majorCountOf(sample) <= majorsAllowance &&
+    (floor === null ||
+      dimensionalKeys.every((key) => scoreValue(sample, key) >= floor));
+  const runRateOf = (list, predicate) => {
+    const runIds = new Set(list.map((sample) => sample.runId));
+    if (!runIds.size) return 0;
+    const matched = runIdsWith(list, predicate);
+    return round4(matched.size / runIds.size);
+  };
+  for (const floor of floorCandidates) {
+    for (const majorsAllowance of majorAllowances) {
+      for (let overallBar = 40; overallBar <= 72; overallBar += 1) {
+        const predicate = (sample) =>
+          matchesShape(sample, { overallBar, floor, majorsAllowance });
+        scalarMatrix.push({
+          overallBar,
+          floor,
+          majorsAllowance,
+          sampleRate: shareMatching(calibration, predicate),
+          runRate: runRateOf(calibration, predicate),
+          holdoutSampleRate: shareMatching(holdout, predicate),
+          holdoutRunRate: runRateOf(holdout, predicate),
+          hardCleanRate: shareMatching(calibration, hardCleanOf),
+        });
+      }
+    }
+  }
+  const scalarSummary = scalarMatrix
+    .filter(
+      (entry) =>
+        entry.sampleRate > 0 ||
+        entry.runRate > 0 ||
+        entry.holdoutSampleRate > 0,
+    )
+    .sort(
+      (left, right) =>
+        right.holdoutRunRate - left.holdoutRunRate ||
+        right.runRate - left.runRate ||
+        right.overallBar - left.overallBar,
+    )
+    .slice(0, 60);
+
   return {
     version: CALIBRATION_VERSION,
     seed,
@@ -503,6 +566,7 @@ export function deriveCalibration({
     distribution,
     rateCurve,
     alternatives,
+    scalarSummary,
     skippedDetail: skipped.slice(0, 50),
   };
 }

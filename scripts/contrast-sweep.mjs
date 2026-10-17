@@ -316,7 +316,10 @@ export function proveForegroundAgainst(
  * ranges, ambiguous selectors, and over-budget plans defer to bounded author
  * repair. All repairs must pass the rebuilt audit and the caller's existing
  * source/fidelity/visual gates. */
-export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
+export function planContrastRepairs(
+  report,
+  { maxRepairs = 256, maxPlanCssChars = 262_144 } = {},
+) {
   const groups = new Map();
   for (const page of report.pages) {
     if (!page.repairScopeVerified) continue;
@@ -422,23 +425,24 @@ export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
       });
     }
   }
-  const colorRepairs = [...groups.values()];
-  // A bounded color sweep never fixes an arbitrary prefix and hides the rest,
-  // so an over-budget color plan is refused entirely and defers to the
-  // bounded author repair path.
-  const colorGroups = new Set(
-    colorRepairs.map((r) =>
-      JSON.stringify([
-        r.mediaConditions ?? r.viewport,
-        r.paintProperty,
-        r.color,
-      ]),
-    ),
+  // Heavy candidates can need far more than a handful of corrections. The
+  // sweep applies the worst failures first and stops at the budget instead of
+  // refusing everything: every applied correction is re-audited, so a partial
+  // plan can never hide an unfixed finding, and the remaining findings stay
+  // hard for authored repair.
+  const ordered = [...groups.values()].sort(
+    (left, right) =>
+      (Number(left.ratio) || 0) - (Number(right.ratio) || 0) ||
+      left.selector.localeCompare(right.selector),
   );
-  return colorGroups.size > maxRepairs ||
-    contrastRepairCss(colorRepairs).length > 16384
-    ? []
-    : colorRepairs;
+  const fitted = [];
+  for (const repair of ordered) {
+    if (fitted.length >= maxRepairs) break;
+    const candidate = [...fitted, repair];
+    if (contrastRepairCss(candidate).length > maxPlanCssChars) break;
+    fitted.push(repair);
+  }
+  return fitted;
 }
 export function contrastRepairCss(repairs) {
   const groups = new Map();
@@ -580,7 +584,10 @@ export async function enforceBuiltContrast({
   repair = true,
   routes = null,
   maxPasses = 8,
-  maxTotalCssChars = 98_304,
+  // Corrections are managed and strippable, and heavy candidates need the
+  // room: a 213-finding candidate fits in roughly 130 rules with the current
+  // media wrapping.
+  maxTotalCssChars = 262_144,
 }) {
   const before = await auditBuiltContrast({
     dist,

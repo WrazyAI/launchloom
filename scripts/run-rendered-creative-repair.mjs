@@ -1436,6 +1436,40 @@ export async function runRenderedCreativeRepair({
           requestedMode === "preview" &&
           !humanFeedback &&
           error?.code === "CREATIVE_REPAIR_OUTPUT_REJECTED";
+        // Provider billing or outage failures are not candidate defects: the
+        // run stays alive by blocking further repair attempts for this
+        // candidate (its evidence still feeds diversity) and letting the loop
+        // reach its terminal paths, where a hard-clean sibling can still
+        // deliver.
+        const repairProviderUnavailable =
+          /OpenRouter creative repair failed \((?:40[0-9]|42[0-9]|5\d\d)\)\.?/u.test(
+            error?.message || "",
+          ) ||
+          error?.status === 402 ||
+          error?.status === 429;
+        if (repairProviderUnavailable) {
+          const message =
+            "Creative repair provider unavailable (billing or outage).";
+          repairBlockedCandidateIds.add(candidateId);
+          rejectedCandidates[candidateId] = message;
+          attempts.push({
+            cycle: attempts.length + 1,
+            status: "blocked",
+            error: String(error?.message || error),
+          });
+          await persistRepairEvidence({
+            outDir: evidenceRoot,
+            round,
+            candidateId,
+            reason,
+            findings: activeFindings,
+            cyclesUsed: appliedSoFar,
+            status: "blocked",
+            error: String(error?.message || error),
+            attempts,
+          }).catch(() => {});
+          return { status: "rejected", error: message, attempts };
+        }
         if (!mayRetryRepairOutputRejection) throw error;
 
         const message = safeRepairRejectionMessage(error);
