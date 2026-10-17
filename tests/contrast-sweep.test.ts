@@ -619,6 +619,57 @@ describe("persisted bounded contrast sweep", () => {
     expect(contrast(repairs[0].color, "#d6f37a")).toBeGreaterThanOrEqual(4.5);
   });
 
+  it("repairs a provable default failure despite unresolved focus-state peers", async () => {
+    const module = await modulePromise;
+    const { contrast } = await import("../scripts/color-contrast.mjs");
+    const target = {
+      selector: "body > main:nth-of-type(1) > p:nth-of-type(1)",
+      kind: "text",
+      state: "default",
+      status: "fail",
+      repairEligible: false,
+      pixelResolved: true,
+      color: "#676c69",
+      background: null,
+      foreground: [103, 108, 105, 1],
+      backgrounds: [[232, 238, 230, 1]],
+      pixelBackdrop: {
+        dark: "#e6ede3",
+        light: "#e8eee6",
+        provable: { min: 0, max: 0.1425 },
+      },
+      minimum: 4.5,
+      ratio: 4.48,
+      issues: ["resolved from rendered pixels"],
+      text: "Choose the service",
+    };
+    const focusPeer = {
+      ...target,
+      state: "focus",
+      status: "unresolved",
+      ratio: null,
+      color: null,
+      pixelBackdrop: undefined,
+      pixelResolved: undefined,
+      issues: ["overlapping non-ancestor paint requires rendered review"],
+    };
+    const pages = [
+      {
+        route: "/",
+        viewport: module.CONTRAST_VIEWPORTS[0],
+        repairScopeVerified: true,
+        mediaConditions: null,
+        targets: [target, focusPeer],
+        findings: [target],
+      },
+    ];
+    const repairs = module.planContrastRepairs({ pages });
+    expect(repairs).toHaveLength(1);
+    expect(repairs[0].kind).toBe("foreground");
+    expect(contrast(repairs[0].color, "#e6ede3")).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(repairs[0].color, "#e8eee6")).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("strips synthesized outline indicator rules from legacy blocks", async () => {
     const module = await modulePromise;
     const legacy =

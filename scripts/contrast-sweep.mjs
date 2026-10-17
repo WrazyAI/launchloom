@@ -357,7 +357,16 @@ export function planContrastRepairs(
                 t.state === f.state &&
                 t.kind === f.kind,
             );
-      if (peers.some((t) => t.status === "unresolved" || t.color !== f.color))
+      // Only provable paint is protected: a passing peer that renders a
+      // different foreground color must keep it. Unresolved or failing peers
+      // have no proven contrast to preserve, and the correction is proven
+      // against every measured backdrop of every state, so blocking on them
+      // would refuse exactly the repairs the sweep exists to make.
+      if (
+        peers.some(
+          (t) => t.status === "pass" && t.color && f.color && t.color !== f.color,
+        )
+      )
         continue;
       const backdrops = backdropCandidates(peers);
       if (!backdrops.length) continue;
