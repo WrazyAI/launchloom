@@ -119,3 +119,51 @@ artDirection up to 84 (80).
 The recalibration does not lower any quality check other than the two
 measured bars, and it does not promote weak draws: a candidate must still
 pass every other dimension and every hard gate.
+
+## 2026-10-17 recalibration: scalar shapes, measured matrix, and the evidence hold
+
+The 2026-10-16 diagnosis proved the promotion conjunction was impossible:
+with per-dimension bars at 78-80, overall 78, and zero majors, no draw of 105
+judged candidates could pass (strict rate 0 at every percentile; overall never
+exceeded 77). The approved follow-up separates three things that were
+conflated:
+
+1. **Hard deterministic gates** (overflow, broken images, missing
+   sections/markers, unnamed controls, missing alt, browser errors,
+   sealed-content failures, broken navigation, provable low contrast). These
+   are absolute for every path and never weakened. `hero exceeds desktop
+   viewport` and `horizontal overflow` are the bakeoff's own gates
+   (`hardFailures()` in `scripts/run-creative-bakeoff.mjs`) and stay hard.
+2. **Strict promotion shape**, migrating from a twelve-way per-dimension
+   conjunction to a scalar shape: hard gates clean, zero critical findings,
+   an overall bar, an absolute dimension floor, and a majors allowance. The
+   shape is implemented behind `RENDERED_REFERENCE_THRESHOLDS` /
+   `scorePass`; the *numbers* are set from the measured matrix, not yet
+   finalized because the representative post-fix run has not executed.
+3. **Near-miss previews** (`previewed-with-open-findings`): hard gates clean,
+   zero criticals, the overall bar, and the dimension floor; design-fidelity
+   findings travel with the preview as open findings. Never
+   `promotionReady`, never production; marked `creative-near-miss`.
+
+Measurement infrastructure (committed):
+
+- `scripts/calibrate-creative-gates.mjs` with the scalar matrix
+  (overall bar x dimension floor x majors allowance; calibration and holdout
+  run and sample rates) and `docs/calibration/2026-10-17-post-fix-creative-gates.json`
+  (12 runs, 293 samples).
+- `scripts/gate-health.mjs` passive measurement (`gateHealth` in repair
+  summaries and round evidence).
+- Every automated contrast correction is bounded, state-scoped, strip-able,
+  and re-audited; provable low contrast is always a failure, and unprovable
+  single-color ranges are refused instead of guessed.
+
+**Evidence hold.** The representative post-fix distribution could not be
+measured: the final validation pair died at the author stage on OpenRouter
+402 (credits exhausted, shared with the repair loop). The most recent
+completed runs predate the sweep-budget, provider-resilience, and
+provable-paint guard fixes and are not representative (2 hard-clean samples
+of 95). The matrix and the scalar implementation are ready; Task 4's bar
+numbers are set in a single edit once one funded, post-fix run pair lands.
+The local end-to-end reproduction on a real 213-finding candidate already
+shows the machinery's ceiling: 3 hard findings remain, all in the documented
+unprovable class (text over a mid-gray plus white backdrop range).
