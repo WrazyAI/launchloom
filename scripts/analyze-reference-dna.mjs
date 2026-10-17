@@ -11,8 +11,19 @@ import {
   openRouterSessionId,
 } from "./openrouter-client.mjs";
 import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
+import {
+  buildGoCreativeRequest,
+  completeGoCreative,
+  creativeLaneProvider,
+  goCreativeUsageMetrics,
+  parseGoCreativeOutput,
+} from "./creative-lane-inference.mjs";
 
 const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-6-luna";
+const creativeProvider = creativeLaneProvider();
+
+const ANALYZER_SYSTEM_PROMPT =
+  "Return one syntactically valid JSON object only, matching the provided strict schema. Escape quotes and backslashes inside strings. Do not use markdown or surrounding prose. You are a senior visual systems designer extracting measurable, transferable design mechanics from screenshots.";
 
 // Bounded per-process usage evidence for the generation cost ledger. The
 // enriched inspiration pack output is unchanged.
@@ -20,7 +31,7 @@ const modelUsageRecords = [];
 
 function recordModelUsage(label, usage) {
   if (!usage || typeof usage !== "object") return;
-  modelUsageRecords.push({ label, model, usage });
+  modelUsageRecords.push({ label, model, usage, provider: creativeProvider });
 }
 
 export function getReferenceDnaUsageRecords() {
@@ -321,6 +332,50 @@ Rules:
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 180_000);
   const requestAnalysis = async (responseCache) => {
+    if (creativeProvider === "opencode-go") {
+      let result;
+      try {
+        result = await completeGoCreative({
+          logicalModel: model,
+          signal: controller.signal,
+          fetchImpl,
+          request: buildGoCreativeRequest({
+            systemPrompt: ANALYZER_SYSTEM_PROMPT,
+            userContent: content,
+            schemaName: schema.name,
+            schema: schema.schema,
+            maxOutputTokens: 9000,
+            effort: "medium",
+            sessionId,
+          }),
+        });
+      } catch (error) {
+        if (error?.code !== "CREATIVE_GO_INCOMPLETE") throw error;
+        // Preserve the transport-independent retry contract: an incomplete
+        // response is retried once, exactly like invalid JSON.
+        const incomplete = new Error(
+          `Reference analyzer did not complete for ${route.id} (${error.providerStatus || "error"}).`,
+        );
+        incomplete.code = "REFERENCE_ANALYZER_INVALID_JSON";
+        incomplete.finishReason = error.providerStatus || "go-incomplete";
+        throw incomplete;
+      }
+      const usage = result.usage || null;
+      recordModelUsage("reference-dna", usage);
+      goCreativeUsageMetrics(result, {
+        label: "reference-dna",
+        logger: (line) => console.warn(line),
+      });
+      try {
+        return parseGoCreativeOutput(result, {
+          invalidJsonCode: "REFERENCE_ANALYZER_INVALID_JSON",
+          label: `Reference analyzer for ${route.id}`,
+        });
+      } catch (error) {
+        error.finishReason = error.finishReason || "go-parse";
+        throw error;
+      }
+    }
     const response = await openRouterChatCompletion({
       title: "LaunchLoom Reference DNA Analyzer",
       signal: controller.signal,
@@ -335,10 +390,7 @@ Rules:
         max_tokens: 9000,
         response_format: { type: "json_schema", json_schema: schema },
         messages: [
-          {
-            role: "system",
-            content: "Return one syntactically valid JSON object only, matching the provided strict schema. Escape quotes and backslashes inside strings. Do not use markdown or surrounding prose. You are a senior visual systems designer extracting measurable, transferable design mechanics from screenshots."
-          },
+          { role: "system", content: ANALYZER_SYSTEM_PROMPT },
           { role: "user", content }
         ]
       },
@@ -385,8 +437,18 @@ export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
       route.referenceDna?.canonical !== true ||
       !route.referenceDna?.measurements,
   );
-  if (requiresModelAnalysis && !process.env.OPENROUTER_API_KEY)
-    throw new Error("OPENROUTER_API_KEY is required to derive Reference DNA from screenshots.");
+  if (requiresModelAnalysis) {
+    if (creativeProvider === "opencode-go") {
+      if (!process.env.OPENCODE_GO_API_KEY)
+        throw new Error(
+          "OPENCODE_GO_API_KEY is required to derive Reference DNA from screenshots.",
+        );
+    } else if (!process.env.OPENROUTER_API_KEY) {
+      throw new Error(
+        "OPENROUTER_API_KEY is required to derive Reference DNA from screenshots.",
+      );
+    }
+  }
   const routes = [];
   for (const route of pack.routes) {
     const analyzed = await analyzeRoute(route, fetchImpl);

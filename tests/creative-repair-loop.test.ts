@@ -327,6 +327,94 @@ describe("creative repair loop", () => {
     expect(result).toEqual(edits);
   });
 
+  it("repairs on OpenCode Go when the provider selects it", async () => {
+    vi.resetModules();
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-go-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience:
+        '<section data-reference-section="hero"><h1>Old</h1></section>',
+      styles: '[data-reference-section="hero"] h1 { font-size: 4rem; }',
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+    };
+    const edits = {
+      edits: [
+        { file: "experience", find: "<h1>Old</h1>", replace: "<h1>New</h1>" },
+      ],
+    };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            id: "resp_repair_go",
+            status: "completed",
+            output: [
+              {
+                type: "message",
+                role: "assistant",
+                status: "completed",
+                content: [
+                  { type: "output_text", text: JSON.stringify(edits) },
+                ],
+              },
+            ],
+            usage: {
+              input_tokens: 4000,
+              output_tokens: 700,
+              input_tokens_details: { cached_tokens: 0 },
+            },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      // The module resolves its provider once at import time; use a fresh
+      // instance so the stubbed environment applies.
+      const { requestRepair: requestRepairOnGo } = await import(
+        "../scripts/creative-repair-loop.mjs"
+      );
+      const result = await requestRepairOnGo({
+        model: "openai/gpt-6-luna",
+        referenceDna: {
+          familyId: "editorial",
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [
+          {
+            category: "human-review-feedback",
+            message: "Improve the hero layout.",
+          },
+        ],
+        files,
+        screenshots: [],
+        creativeRepairScope: {
+          version: 1,
+          sectionIds: ["hero"],
+          allowMotion: false,
+          requestText: "Improve the hero layout.",
+        },
+      });
+      expect(result).toEqual(edits);
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(String(url)).toContain("opencode.ai/inference/go");
+      const body = JSON.parse(String(init?.body));
+      expect(body.model).toBe("gpt-6-luna");
+      expect(body.text?.format?.type).toBe("json_schema");
+      expect(body.text?.format?.name).toContain("repair_edits");
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
+  });
+
   it("keeps distinct contrast ratios, unresolved causes, and non-contrast findings intact", () => {
     const findings = [
       'contrast fail: / desktop default h1 text "Heading" (2.100; required 4.5); foreground gray, background white;',

@@ -40,6 +40,12 @@ import {
   promptCachedText,
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
+import {
+  buildGoCreativeRequest,
+  completeGoCreative,
+  creativeLaneProvider,
+  goCreativeUsageMetrics,
+} from "./creative-lane-inference.mjs";
 import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 
@@ -345,6 +351,10 @@ function rememberPrivateRepairOutput(value, payload) {
   });
   return value;
 }
+const creativeProvider = creativeLaneProvider();
+const REPAIR_SYSTEM_PROMPT =
+  "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.";
+
 export function privateRepairRejectionEvidence(value) {
   return value && typeof value === "object" ? privateRepairOutputs.get(value) || null : null;
 }
@@ -1193,8 +1203,69 @@ Return a complete replacement for only this requested file. Keep source non-empt
         `\nFor this request return 1-${requestBudget.maxEdits} edits only, each replacement at most${requestBudget.maxReplacementChars} UTF16 code units. Each edit costs its shown original find length plus replacement length. Prioritize the most consequential findings within these reservations; do not copy additional unrelated windows into a replacement. JavaScript counts astral characters as two code units; schema string length alone does not replace the local checks. All existing source and rendered gates still apply.` });
       assertModelPromptTextBudget(requestContent);
     }
-    const sendRepairRequest = (maxCompletionTokens) =>
-      openRouterChatCompletion({
+    const repairJsonSchema = spanCatalog ? {
+      name: "launchloom_creative_repair_spans", strict: true,
+      schema: { type: "object", additionalProperties: false, required: ["edits"],
+        properties: { edits: { type: "array", ...(requestBudget ? { minItems: 1, maxItems: requestBudget.maxEdits } : {}), items: { type: "object", additionalProperties: false,
+          required: ["spanId", "replace"], properties: {
+            spanId: { type: "string", enum: spanCatalog.spans.map(span => span.id) }, replace: { type: "string", ...(requestBudget ? { pattern: `^[\\s\\S]{1,${requestBudget.maxReplacementChars}}$` } : {}) },
+          } } } } },
+    } : scopedHumanRepair || editsOnly
+      ? repairEditSchemaFor(currentFiles, { includeInnerPages: !scopedHumanRepair })
+      : targetFile ? REPAIR_FILE_SCHEMA : repairSchemaFor(currentFiles);
+    const sendRepairRequest = async (maxCompletionTokens) => {
+      if (creativeProvider === "opencode-go") {
+        const goResult = await completeGoCreative({
+          logicalModel: model,
+          fetchImpl,
+          request: buildGoCreativeRequest({
+            systemPrompt: REPAIR_SYSTEM_PROMPT,
+            userContent: requestContent,
+            schemaName: repairJsonSchema.name,
+            schema: repairJsonSchema.schema,
+            maxOutputTokens: maxCompletionTokens,
+            effort: reasoningEffort,
+            sessionId,
+          }),
+        });
+        goCreativeUsageMetrics(goResult, {
+          label: "creative-repair",
+          logger: (line) => logger(line),
+        });
+        const goUsage = goResult.usage || null;
+        const openRouterShapedUsage = goUsage
+          ? {
+              prompt_tokens: Number(goUsage.inputTokens || 0),
+              completion_tokens: Number(goUsage.outputTokens || 0),
+              total_tokens:
+                Number(goUsage.inputTokens || 0) +
+                Number(goUsage.outputTokens || 0),
+              completion_tokens_details: {
+                reasoning_tokens: Number(goUsage.reasoningTokens || 0),
+              },
+              prompt_tokens_details: {
+                cached_tokens: Number(goUsage.cachedInputTokens || 0),
+              },
+            }
+          : null;
+        const payload = {
+          choices: [
+            { message: { content: goResult.text }, finish_reason: "stop" },
+          ],
+          usage: openRouterShapedUsage,
+          provider: "opencode-go",
+        };
+        // Response-like shim so the shared completion handling below
+        // (affordability retry, diagnostics, parsing, usage ledger) runs
+        // identically on both transports.
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers(),
+          json: async () => payload,
+        };
+      }
+      return openRouterChatCompletion({
         title: "LaunchLoom creative repair",
         fetchImpl,
         sessionId,
@@ -1210,30 +1281,19 @@ Return a complete replacement for only this requested file. Keep source non-empt
           },
           response_format: {
             type: "json_schema",
-            json_schema:
-              spanCatalog ? {
-                name: "launchloom_creative_repair_spans", strict: true,
-                schema: { type: "object", additionalProperties: false, required: ["edits"],
-                  properties: { edits: { type: "array", ...(requestBudget ? { minItems: 1, maxItems: requestBudget.maxEdits } : {}), items: { type: "object", additionalProperties: false,
-                    required: ["spanId", "replace"], properties: {
-                      spanId: { type: "string", enum: spanCatalog.spans.map(span => span.id) }, replace: { type: "string", ...(requestBudget ? { pattern: `^[\\s\\S]{1,${requestBudget.maxReplacementChars}}$` } : {}) },
-                    } } } } },
-              } : scopedHumanRepair || editsOnly
-                ? repairEditSchemaFor(currentFiles, { includeInnerPages: !scopedHumanRepair })
-                : targetFile ? REPAIR_FILE_SCHEMA : repairSchemaFor(currentFiles),
-
+            json_schema: repairJsonSchema,
           },
           ...completionLimitRequestField(maxCompletionTokens),
           messages: [
             {
               role: "system",
-              content:
-                "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.",
+              content: REPAIR_SYSTEM_PROMPT,
             },
             { role: "user", content: requestContent },
           ],
         },
       });
+    };
 
     let maxCompletionTokens = CREATIVE_REPAIR_MAX_COMPLETION_TOKENS;
     // Wall-clock timing for the repair call, including a provider-affordability

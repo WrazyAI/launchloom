@@ -147,6 +147,47 @@ describe("rendered reference request retries", () => {
     });
   }
 
+  it("judges on OpenCode Go when the provider selects it", async () => {
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    try {
+      const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            id: "resp_judge_go",
+            status: "completed",
+            output: [
+              {
+                type: "message",
+                role: "assistant",
+                status: "completed",
+                content: [{ type: "output_text", text: JSON.stringify(audit) }],
+              },
+            ],
+            usage: {
+              input_tokens: 5000,
+              output_tokens: 900,
+              input_tokens_details: { cached_tokens: 0 },
+            },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      );
+      const result = await evaluate(fetchImpl);
+      expect(result.audit.overallScore).toBe(audit.overallScore);
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+      const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+      expect(String(url)).toContain("opencode.ai/inference/go");
+      const body = String(init?.body || "");
+      expect(body).toContain('"type":"json_schema"');
+      expect(new Headers(init?.headers).get("Authorization")).toBe(
+        "Bearer test-go-key",
+      );
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("keeps candidate-specific geometry after the reusable reference cache boundary", async () => {
     const fetchImpl = vi
       .fn<typeof fetch>()

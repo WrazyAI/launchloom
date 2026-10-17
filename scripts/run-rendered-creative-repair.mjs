@@ -1445,6 +1445,8 @@ export async function runRenderedCreativeRepair({
           /OpenRouter creative repair failed \((?:40[0-9]|42[0-9]|5\d\d)\)\.?/u.test(
             error?.message || "",
           ) ||
+          error?.code === "CREATIVE_GO_INCOMPLETE" ||
+          /OpenCode Go (?:incomplete|error|quota)/iu.test(error?.message || "") ||
           error?.status === 402 ||
           error?.status === 429;
         if (repairProviderUnavailable) {

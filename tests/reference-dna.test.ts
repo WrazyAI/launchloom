@@ -168,6 +168,95 @@ describe("Reference DNA", () => {
     }
   }, 15_000);
 
+  it("runs the reference analyzer on OpenCode Go when the provider selects it", async () => {
+    vi.resetModules();
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    const goAnalysis = {
+      annotatedDescription: "Measured the hierarchy, imagery, and spacing from the paired screenshots.",
+      heroGeometry: { mode: "image-led", alignment: "asymmetric", viewport: "adapted desktop composition" },
+      navigationGeometry: { mode: "compact", placement: "top edge", mobile: "collapsed menu" },
+      typography: { display: "editorial serif", body: "neutral sans", scale: "oversized to compact" },
+      palette: { surfaces: ["warm ivory"], ink: "deep green", accents: ["ochre"], contrastIntent: "high contrast" },
+      imageTreatment: { mode: "full bleed", crop: "wide crop", focalPoint: "center-right" },
+      sectionSequence: ["hero", "services", "studio story", "contact"],
+      servicePresentation: { pattern: "editorial rows", interaction: "static links" },
+      ctaPlacement: { primary: "hero", secondary: "footer", early: "visible in first viewport" },
+      motion: { primitive: "subtle reveal", library: "CSS", reducedMotion: "disable reveal" },
+      mobileRecomposition: { strategy: "single column", rules: ["stack media", "keep CTA above the fold"] },
+      prohibitedPatterns: ["generic card wall", "split hero", "repeated accordion"],
+      requiredSignatureElements: [
+        { id: "oversized-title", selector: "h1", description: "large editorial title" },
+        { id: "archive-rows", selector: "[data-section='archive']", description: "thin ruled archive rows" },
+      ],
+      acceptanceChecks: ["retain title scale", "keep the archive", "use the screenshot crop", "preserve mobile order"],
+      measurements: {
+        headlineWidthRatio: 0.7,
+        headlineHeightRatio: 0.2,
+        heroImageOccupancyRatio: 0.6,
+        contentColumnWidthRatio: 0.5,
+        navTopRatio: 0.03,
+        navSideInsetRatio: 0.04,
+        ctaTopRatio: 0.7,
+        dominantSectionHeightRatios: [0.8, 0.7, 0.9],
+        imageAspectRatios: [1.5],
+        overlapRelationships: [],
+        surfaceTransitions: ["ivory to dark green"],
+        mobile: { headlineWidthRatio: 0.9, imageOccupancyRatio: 0.5, ctaTopRatio: 1.1, contentInsetRatio: 0.05 },
+      },
+    };
+    const requestCalls: Array<{ url: string; init?: RequestInit }> = [];
+    const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
+      requestCalls.push({ url, init });
+      return new Response(
+        JSON.stringify({
+          id: "resp_go_1",
+          status: "completed",
+          output: [
+            {
+              type: "message",
+              role: "assistant",
+              status: "completed",
+              content: [{ type: "output_text", text: JSON.stringify(goAnalysis) }],
+            },
+          ],
+          usage: {
+            input_tokens: 1200,
+            output_tokens: 800,
+            input_tokens_details: { cached_tokens: 0 },
+          },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    });
+    const pack = buildInspirationPack(
+      {
+        seed: "reference-analyzer-go",
+        industry: "legal-services",
+        styleTerms: [],
+        recentReferenceIds: [],
+        recentRouteSignatures: [],
+      },
+      productionRegistry,
+    );
+    try {
+      const { enrichInspirationPack: enrichGo } = await import(
+        "../scripts/analyze-reference-dna.mjs"
+      );
+      const enriched = await enrichGo(pack, { fetchImpl: fetchImpl as typeof fetch });
+      expect(enriched.routes.length).toBeGreaterThan(0);
+      expect(fetchImpl).toHaveBeenCalled();
+      expect(
+        requestCalls.every(({ url }) => url.includes("opencode.ai/inference/go")),
+      ).toBe(true);
+      const headers = new Headers(requestCalls[0].init?.headers);
+      expect(headers.get("Authorization")).toBe("Bearer test-go-key");
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
+  }, 20_000);
+
   it("fails closed after one uncached retry still returns invalid JSON", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
     const requestCalls: Array<{ url: string; init?: RequestInit }> = [];

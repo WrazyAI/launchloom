@@ -13,6 +13,13 @@ import {
 } from "./openrouter-client.mjs";
 import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 import {
+  buildGoCreativeRequest,
+  completeGoCreative,
+  creativeLaneProvider,
+  goCreativeUsageMetrics,
+  parseGoCreativeOutput,
+} from "./creative-lane-inference.mjs";
+import {
   CLIENT_PALETTE_ROLE_CONTRACT,
   CLIENT_TYPOGRAPHY_CONTRACT,
 } from "./creative-authoring-output.mjs";
@@ -20,6 +27,9 @@ import { interactionPromptParts, validateInteractionEvidence } from "./rendered-
 
 export const RENDERED_REFERENCE_MODEL =
   process.env.CREATIVE_REFERENCE_JUDGE_MODEL || "openai/gpt-6-luna";
+
+const RENDERED_JUDGE_SYSTEM_PROMPT =
+  "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. overallScore must measure assigned-reference mechanics only; do not lower it for client-only palette or art-direction misses. Score paletteAdherence and artDirection separately, and still return blocking findings for client-brief failures. Return JSON only.";
 
 // Calibrated 2026-10-01 with product approval. Across the observed failure
 // window the best candidates reached overall 78 and servicePresentation 77,
@@ -248,10 +258,17 @@ async function requestJson({
   reasoningEffort = "medium",
   fetchImpl = fetch,
 }) {
-  if (!process.env.OPENROUTER_API_KEY)
+  const creativeProvider = creativeLaneProvider();
+  if (creativeProvider === "opencode-go") {
+    if (!process.env.OPENCODE_GO_API_KEY)
+      throw new Error(
+        "OPENCODE_GO_API_KEY is required for rendered reference evaluation.",
+      );
+  } else if (!process.env.OPENROUTER_API_KEY) {
     throw new Error(
       "OPENROUTER_API_KEY is required for rendered reference evaluation.",
     );
+  }
   // Wall-clock timing for the whole logical call, including any retry. Retries
   // are rare; when one happens the elapsed time is the honest per-call figure.
   const callStartedAt = Date.now();
@@ -268,6 +285,54 @@ async function requestJson({
     const timeout = setTimeout(() => controller.abort(), 180_000);
     let retryDelayMs = 500 * (attempt + 1);
     try {
+      if (creativeProvider === "opencode-go") {
+        let goResult;
+        try {
+          goResult = await completeGoCreative({
+            logicalModel: model,
+            signal: controller.signal,
+            fetchImpl,
+            request: buildGoCreativeRequest({
+              systemPrompt: RENDERED_JUDGE_SYSTEM_PROMPT,
+              userContent: content,
+              schemaName: schema.name,
+              schema: schema.schema,
+              maxOutputTokens: maxTokens,
+              effort: activeReasoningEffort,
+              sessionId,
+            }),
+          });
+        } catch (error) {
+          if (error?.code !== "CREATIVE_GO_INCOMPLETE") throw error;
+          if (!truncatedRetryUsed && activeReasoningEffort !== "low") {
+            console.info(
+              `rendered_judge_retry reason=truncated label=${label} provider=opencode-go reasoning_effort=${activeReasoningEffort}->low max_tokens=${maxTokens}`,
+            );
+            activeReasoningEffort = "low";
+            truncatedRetryUsed = true;
+            continue;
+          }
+          throw new Error(
+            `${label} did not complete on OpenCode Go (${error.providerStatus || "incomplete"}).`,
+          );
+        }
+        const cache = goCreativeUsageMetrics(goResult, {
+          label,
+          logger: (line) => console.info(line),
+        });
+        return {
+          audit: parseGoCreativeOutput(goResult, {
+            invalidJsonCode: "RENDERED_JUDGE_INVALID_JSON",
+            label,
+          }),
+          usage: goResult.usage || null,
+          cache,
+          responseCache: null,
+          provider: goResult.provider || "opencode-go",
+          durationMs: Date.now() - callStartedAt,
+          attempts: attempt + 1,
+        };
+      }
       const response = await openRouterChatCompletion({
         title: "LaunchLoom Rendered Reference Judge",
         signal: controller.signal,
@@ -285,8 +350,7 @@ async function requestJson({
           messages: [
             {
               role: "system",
-              content:
-                "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. overallScore must measure assigned-reference mechanics only; do not lower it for client-only palette or art-direction misses. Score paletteAdherence and artDirection separately, and still return blocking findings for client-brief failures. Return JSON only.",
+              content: RENDERED_JUDGE_SYSTEM_PROMPT,
             },
             { role: "user", content },
           ],

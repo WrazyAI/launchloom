@@ -82,6 +82,56 @@ await import(${JSON.stringify(path.resolve("scripts/visual-quality-gate.mjs"))})
     expect(result.audit.verdict).toBe("revise");
     expect(result.blockers).toEqual([finding]);
   });
+  it("runs the real QA CLI on OpenCode Go when the provider selects it", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-real-qa-go-"));
+    roots.push(root);
+    await fs.mkdir(path.join(root, "src"));
+    const screenshotsDir = path.join(root, "screenshots");
+    await fs.mkdir(screenshotsDir);
+    for (const viewport of ["desktop", "compact", "mobile"])
+      await fs.writeFile(
+        path.join(screenshotsDir, `${viewport}.png`),
+        "fixture pixels",
+      );
+    await fs.writeFile(
+      path.join(root, "src/site.config.json"),
+      JSON.stringify({
+        businessName: "Controlled QA fixture",
+        design: {
+          experience: {
+            renderer: "creative-candidate",
+            candidateId: "candidate-a",
+          },
+        },
+      }),
+    );
+    const script = path.join(root, "gate.mjs");
+    await fs.writeFile(
+      script,
+      `
+process.env.CREATIVE_EXPERIENCE_PROVIDER = 'opencode-go';
+process.env.OPENCODE_GO_API_KEY = 'test-only-go-key';
+globalThis.fetch = async () => Response.json({
+  id: 'resp_gate_go',
+  status: 'completed',
+  output: [{ type: 'message', role: 'assistant', status: 'completed', content: [{ type: 'output_text', text: ${JSON.stringify(JSON.stringify(qualityReport.audit))} }] }],
+  usage: { input_tokens: 900, output_tokens: 300 },
+});
+await import(${JSON.stringify(path.resolve("scripts/visual-quality-gate.mjs"))});
+`,
+    );
+    const result = await runVisualGateProcess({
+      siteDir: root,
+      screenshotsDir,
+      reportPath: path.join(root, "report.json"),
+      visualGateScript: script,
+    });
+    expect(result.processExitCode).toBe(2);
+    expect(result.status).toBe("quality-blocked");
+    expect(result.audit.verdict).toBe("revise");
+    expect(result.blockers).toEqual([finding]);
+  });
+
   it("returns actionable failed quality to the repair caller without calling it a pass", async () => {
     const result = await invoke(qualityReport, 2);
     expect(result.audit.verdict).toBe("revise");

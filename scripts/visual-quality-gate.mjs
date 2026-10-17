@@ -14,6 +14,13 @@ import {
   openRouterChatCompletion,
   openRouterSessionId,
 } from "./openrouter-client.mjs";
+import {
+  buildGoCreativeRequest,
+  completeGoCreative,
+  creativeLaneProvider,
+  goCreativeUsageMetrics,
+  parseGoCreativeOutput,
+} from "./creative-lane-inference.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -36,10 +43,17 @@ const reportPath = path.resolve(
 );
 const model = args.model || VISUAL_GATE_MODEL;
 
-if (!process.env.OPENROUTER_API_KEY)
+const creativeProvider = creativeLaneProvider();
+if (creativeProvider === "opencode-go") {
+  if (!process.env.OPENCODE_GO_API_KEY)
+    throw new Error(
+      "OPENCODE_GO_API_KEY is required for the visual quality gate with OpenCode Go.",
+    );
+} else if (!process.env.OPENROUTER_API_KEY) {
   throw new Error(
     "OPENROUTER_API_KEY is required for the visual quality gate.",
   );
+}
 
 const auditSchema = {
   name: "launchloom_visual_quality_gate",
@@ -138,6 +152,9 @@ async function imagePart(file) {
   };
 }
 
+const GATE_SYSTEM_PROMPT =
+  "You are LaunchLoom's strict pre-deployment visual QA gate. Inspect the complete desktop and mobile screenshots against the supplied public-content manifest. Only design.requiredSections are mandatory. design.optionalSections may be absent when verified content is unavailable. When design.renderer.type is experience-pack or creative-candidate, judge its declared navigation, hero, conversion, services, proof, closing, family, and fingerprint instead of inferring a legacy variant from other fields, and return operations as an empty array. Only report actual defects that require a change. Never put compliments, confirmations, or the absence of a problem in findings; a passing audit should normally return findings as an empty array. Critical means content is visibly corrupted or clipped, industry language or imagery is clearly unrelated, a primary action is unusable or obscured, horizontal overflow breaks the page, or a required public section is absent. Generic composition, decorative numbering without sequence meaning, weak distinctiveness, repeated template grammar, and visibly overlong hero or card copy are major, not critical. Any major finding requires verdict revise or block; verdict pass is reserved for zero critical and zero major findings. Never invent business facts. Recommend at most three safe layout operations for legacy pages only. A creative candidate must be repaired or rejected by its authoring stage, never structurally rewritten into a shared template. For unused operation fields return empty strings. In verify mode return no operations. Do not use em dashes.";
+
 async function requestAudit(manifest) {
   const screenshots = ["desktop.png", "compact.png", "mobile.png"];
   const missing = [];
@@ -160,6 +177,52 @@ async function requestAudit(manifest) {
         business: manifest.business?.name || manifest.brand?.name || "",
         address: manifest.business?.address || manifest.brand?.address || "",
       });
+      const gateUserContent = [
+        {
+          type: "text",
+          text: `Public manifest: ${JSON.stringify(manifest)}\nConfirm visible content integrity, industry fit, contextual imagery, conversion clarity, hierarchy, distinctiveness, and mobile layout.`,
+        },
+        {
+          type: "text",
+          text: `Mode: ${mode}. In plan mode suggest only bounded layout corrections. In verify mode judge the rebuilt result and return operations as an empty array.`,
+        },
+        { type: "text", text: "Desktop screenshot:" },
+        await imagePart(path.join(screenshotsDir, "desktop.png")),
+        ...(missing.includes("compact.png") ? [] : [{ type: "text", text: "Compact desktop screenshot:" }, await imagePart(path.join(screenshotsDir, "compact.png"))]),
+        { type: "text", text: "Mobile screenshot:" },
+        await imagePart(path.join(screenshotsDir, "mobile.png")),
+      ];
+      if (creativeProvider === "opencode-go") {
+        const goResult = await completeGoCreative({
+          logicalModel: model,
+          signal: controller.signal,
+          request: buildGoCreativeRequest({
+            systemPrompt: GATE_SYSTEM_PROMPT,
+            userContent: gateUserContent,
+            schemaName: auditSchema.name,
+            schema: auditSchema.schema,
+            maxOutputTokens: [6000, 9000, 12000][attempt - 1],
+            effort: "low",
+            sessionId,
+          }),
+        });
+        const cache = goCreativeUsageMetrics(goResult, {
+          label: "visual-quality-gate",
+          logger: (line) => console.info(line),
+        });
+        return {
+          audit: parseGoCreativeOutput(goResult, {
+            invalidJsonCode: "VISUAL_GATE_INVALID_JSON",
+            label: "visual quality gate",
+          }),
+          usage: goResult.usage || null,
+          cache,
+          responseCache: null,
+          sessionId,
+          provider: goResult.provider || "opencode-go",
+          attempt,
+        };
+      }
       const response = await openRouterChatCompletion({
         title: "LaunchLoom visual quality gate",
         signal: controller.signal,
@@ -174,29 +237,8 @@ async function requestAudit(manifest) {
             provider: { require_parameters: true },
             response_format: { type: "json_schema", json_schema: auditSchema },
             messages: [
-              {
-                role: "system",
-                content:
-                  "You are LaunchLoom's strict pre-deployment visual QA gate. Inspect the complete desktop and mobile screenshots against the supplied public-content manifest. Only design.requiredSections are mandatory. design.optionalSections may be absent when verified content is unavailable. When design.renderer.type is experience-pack or creative-candidate, judge its declared navigation, hero, conversion, services, proof, closing, family, and fingerprint instead of inferring a legacy variant from other fields, and return operations as an empty array. Only report actual defects that require a change. Never put compliments, confirmations, or the absence of a problem in findings; a passing audit should normally return findings as an empty array. Critical means content is visibly corrupted or clipped, industry language or imagery is clearly unrelated, a primary action is unusable or obscured, horizontal overflow breaks the page, or a required public section is absent. Generic composition, decorative numbering without sequence meaning, weak distinctiveness, repeated template grammar, and visibly overlong hero or card copy are major, not critical. Any major finding requires verdict revise or block; verdict pass is reserved for zero critical and zero major findings. Never invent business facts. Recommend at most three safe layout operations for legacy pages only. A creative candidate must be repaired or rejected by its authoring stage, never structurally rewritten into a shared template. For unused operation fields return empty strings. In verify mode return no operations. Do not use em dashes.",
-              },
-              {
-                role: "user",
-                content: [
-                  {
-                    type: "text",
-                    text: `Public manifest: ${JSON.stringify(manifest)}\nConfirm visible content integrity, industry fit, contextual imagery, conversion clarity, hierarchy, distinctiveness, and mobile layout.`,
-                  },
-                  {
-                    type: "text",
-                    text: `Mode: ${mode}. In plan mode suggest only bounded layout corrections. In verify mode judge the rebuilt result and return operations as an empty array.`,
-                  },
-                  { type: "text", text: "Desktop screenshot:" },
-                  await imagePart(path.join(screenshotsDir, "desktop.png")),
-                  ...(missing.includes("compact.png") ? [] : [{ type: "text", text: "Compact desktop screenshot:" }, await imagePart(path.join(screenshotsDir, "compact.png"))]),
-                  { type: "text", text: "Mobile screenshot:" },
-                  await imagePart(path.join(screenshotsDir, "mobile.png")),
-                ],
-              },
+              { role: "system", content: GATE_SYSTEM_PROMPT },
+              { role: "user", content: gateUserContent },
             ],
           },
       });
