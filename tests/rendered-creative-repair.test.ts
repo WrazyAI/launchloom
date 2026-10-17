@@ -1270,13 +1270,29 @@ export default function Experience({ content, runtime }) {
 
     expect(result.status).toBe("passed");
     expect(result.selectedCandidateId).toBe("candidate-5");
-    // Rejected candidates keep rendering in every round; only their
-    // selectability is removed, one per round, until a candidate passes.
-    expect(exclusionsByRound).toEqual([[], [], [], [], []]);
+    // Rejected candidates keep rendering in every round; selectability
+    // returns after a two-round cooldown and becomes permanent after a
+    // second rejection cycle, so the walk revisits each candidate once
+    // before every candidate is spent and the passing one wins.
+    expect(exclusionsByRound).toEqual([
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+    ]);
     expect(unselectableByRound).toEqual([
       [],
       ["candidate-1"],
+      ["candidate-2"],
+      ["candidate-1"],
       ["candidate-1", "candidate-2"],
+      ["candidate-1", "candidate-2", "candidate-3"],
+      ["candidate-1", "candidate-2", "candidate-4"],
       ["candidate-1", "candidate-2", "candidate-3"],
       ["candidate-1", "candidate-2", "candidate-3", "candidate-4"],
     ]);
@@ -2852,6 +2868,69 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
     );
     expect(finalReport.selectedCandidateId).toBe("candidate-a");
     expect(finalReport.nearMissSelection).toBe(true);
+  });
+
+  it("retries a rejection-cooldown candidate with explicit rejection context", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const calls: Array<{ bakeoffCalls: number; findings: any[] }> = [];
+    let repairCalls = 0;
+    let bakeoffCalls = 0;
+    const failing = candidate("candidate-a", {
+      valid: false,
+      eligible: false,
+      failures: ["desktop: horizontal overflow"],
+      renderedReferenceFidelity: {
+        pass: false,
+        audit: {
+          overallScore: 55,
+          scores: { spatialRhythm: 55, imagery: 50, paletteAdherence: 90 },
+          findings: [],
+        },
+      },
+    });
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "preview",
+        maxCycles: 1,
+        runBakeoffImpl: async (options: any) => {
+          bakeoffCalls += 1;
+          return writeBakeoffEvidence(
+            options,
+            report({ selectedCandidateId: null, candidates: [failing] }),
+          );
+        },
+        runVisualGateImpl: nearMissGate,
+        repairCandidateImpl: async (options: any) => {
+          repairCalls += 1;
+          calls.push({
+            bakeoffCalls,
+            findings: options.findings || [],
+          });
+          if (repairCalls === 1) {
+            const error = new Error(
+              "Creative repair edit 1 does not change the candidate source.",
+            );
+            Object.assign(error, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+            throw error;
+          }
+          return undefined;
+        },
+        promoteImpl: async () => ({ candidateId: "candidate-a" }),
+      }),
+    ).rejects.toThrow(/repair budget is exhausted/u);
+    // One rejection cycle, a cooldown round, then a retry that carries the
+    // rejection reason as explicit repair context.
+    expect(calls).toHaveLength(2);
+    expect(calls[0].bakeoffCalls).toBe(1);
+    expect(calls[1].bakeoffCalls).toBeGreaterThanOrEqual(3);
+    const context = calls[1].findings.find(
+      (finding: any) => finding?.category === "repair-output-rejected",
+    );
+    expect(context).toBeTruthy();
+    expect(String(context.evidence)).toMatch(/does not change/u);
   });
 
   it("degrades provider billing failures into blocked repairs instead of aborting", async () => {

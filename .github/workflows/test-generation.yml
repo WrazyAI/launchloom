@@ -29,7 +29,11 @@ concurrency:
 jobs:
   focused:
     runs-on: ubuntu-24.04
-    timeout-minutes: 150
+    # Authoring keeps its own 100-minute fail-closed budget; the creative
+    # repair loop can legitimately spend longer once repairs succeed on Go
+    # (builds, judges, sweeps, and bounded retry cooldowns), so the runner
+    # timeout stays above the whole pipeline budget.
+    timeout-minutes: 210
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}

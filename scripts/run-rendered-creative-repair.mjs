@@ -1306,6 +1306,30 @@ export async function runRenderedCreativeRepair({
   // diversity evidence entirely), while repair targeting skips them. Only
   // candidates whose evidence cannot render are excluded from the bakeoff.
   const repairBlockedCandidateIds = new Set();
+  // Contract rejections and provider outages block repairs with a cooldown
+  // instead of forever: the candidate closest to qualifying must keep getting
+  // chances, and the rejected attempt's reason travels into the next attempt
+  // as explicit context. Two rejection cycles are allowed before the block is
+  // permanent; provider outages never consume cycles because they are not the
+  // candidate's fault.
+  const repairBlockedRounds = new Map();
+  const rejectionCycles = new Map();
+  const rejectionContext = new Map();
+  const REPAIR_BLOCK_COOLDOWN_ROUNDS = 2;
+  const REPAIR_REJECTION_CYCLES_ALLOWED = 2;
+  const isRepairBlockedAt = (candidateId, atRound) => {
+    if (!repairBlockedCandidateIds.has(candidateId)) return false;
+    if (
+      (rejectionCycles.get(candidateId) || 0) >=
+      REPAIR_REJECTION_CYCLES_ALLOWED
+    )
+      return true;
+    const blockedAt = repairBlockedRounds.get(candidateId);
+    return (
+      !Number.isFinite(blockedAt) ||
+      atRound - blockedAt < REPAIR_BLOCK_COOLDOWN_ROUNDS
+    );
+  };
   /** @type {Record<string, string>} */
   const rejectedCandidates = {};
   if (!providerBudget) {
@@ -1332,6 +1356,15 @@ export async function runRenderedCreativeRepair({
     const appliedLimit = gate ? MAX_GATE_REPAIRS : cycleLimit;
     if (appliedSoFar >= appliedLimit) return { status: "exhausted" };
     const rejections = rejectionUse.get(candidateId) || 0;
+    if (
+      rejections >= cycleLimit &&
+      (rejectionCycles.get(candidateId) || 0) > 0
+    ) {
+      // First repair call of a new rejection cycle after the cooldown: grant
+      // a fresh contract-retry burst instead of insta-exhausting on the first
+      // rejection.
+      rejectionUse.set(candidateId, 0);
+    }
     const candidateDir = resolveCandidateDirectory(
       candidateRoot,
       candidateDirectory,
@@ -1452,7 +1485,15 @@ export async function runRenderedCreativeRepair({
         if (repairProviderUnavailable) {
           const message =
             "Creative repair provider unavailable (billing or outage).";
+          // A provider outage is not the candidate's fault, but a run must not
+          // retry a downed provider every cooldown forever: block the
+          // candidate permanently for this run so the loop can still reach
+          // its terminal paths (and repair other candidates if the provider
+          // recovers).
           repairBlockedCandidateIds.add(candidateId);
+          repairBlockedRounds.set(candidateId, round);
+          rejectionCycles.set(candidateId, REPAIR_REJECTION_CYCLES_ALLOWED);
+          rejectionContext.set(candidateId, message);
           rejectedCandidates[candidateId] = message;
           attempts.push({
             cycle: attempts.length + 1,
@@ -1485,6 +1526,15 @@ export async function runRenderedCreativeRepair({
         });
         if (contractRetriesExhausted) {
           repairBlockedCandidateIds.add(candidateId);
+          repairBlockedRounds.set(candidateId, round);
+          rejectionContext.set(candidateId, message);
+          rejectionCycles.set(
+            candidateId,
+            (rejectionCycles.get(candidateId) || 0) + 1,
+          );
+          // The next attempt carries different instructions, so the
+          // unchanged-blockers stagnation guard must not veto it.
+          stagnatedCandidateIds.delete(candidateId);
           rejectedCandidates[candidateId] = message;
           await persistRepairEvidence({
             outDir: evidenceRoot,
@@ -1774,7 +1824,9 @@ export async function runRenderedCreativeRepair({
         requireDiversity,
         allowContrastRepair: !humanFeedback,
         excludedCandidateIds: [...excludedCandidateIds].sort(),
-        unselectableCandidateIds: [...repairBlockedCandidateIds].sort(),
+        unselectableCandidateIds: [...repairBlockedCandidateIds]
+          .filter((candidateId) => isRepairBlockedAt(candidateId, round))
+          .sort(),
         ...(reuseEvidenceEnabled
           ? { evidenceCacheDir: path.join(evidenceRoot, "evidence-cache") }
           : {}),
@@ -1869,7 +1921,7 @@ export async function runRenderedCreativeRepair({
           : [];
       const canRepair = (candidateId) =>
         (cycleUse.get(candidateId) || 0) < cycleLimit &&
-        !repairBlockedCandidateIds.has(candidateId) &&
+        !isRepairBlockedAt(candidateId, round) &&
         !excludedCandidateIds.has(candidateId) &&
         !stagnatedCandidateIds.has(candidateId);
       const repairCandidates = candidates
@@ -1897,6 +1949,17 @@ export async function runRenderedCreativeRepair({
           report.visualDiversity?.source === "incomplete-rendered-evidence"
         )
           throw new Error(incompleteDiversityFailure(report));
+        // A candidate whose rejection cooldown is still pending becomes
+        // eligible again in one or two rounds; an extra round is cheaper than
+        // giving up while a near-clean candidate still has retries left.
+        const coolingDown = (report.candidates || []).some(
+          (candidate) =>
+            isRepairBlockedAt(candidate.candidateId, round) &&
+            (rejectionCycles.get(candidate.candidateId) || 0) <
+              REPAIR_REJECTION_CYCLES_ALLOWED &&
+            !excludedCandidateIds.has(candidate.candidateId),
+        );
+        if (coolingDown && round + 1 < maxRounds) continue;
         // No candidate has repair budget left. Before giving up, put every
         // candidate back to its best measured state and judge once more.
         let restored = false;
@@ -1961,6 +2024,19 @@ export async function runRenderedCreativeRepair({
               : candidateFindings(target.candidate)),
             ...(diversityFinding ? [diversityFinding] : []),
             ...(humanRepairPending ? humanFindings : []),
+            ...(rejectionContext.has(target.candidateId)
+              ? [
+                  {
+                    category: "repair-output-rejected",
+                    severity: "major",
+                    message:
+                      "A previous repair attempt for this candidate was rejected; the new attempt must be a valid, source-changing edit.",
+                    evidence: rejectionContext.get(target.candidateId),
+                    recommendation:
+                      "Return a minimal edit that actually changes the candidate source and satisfies the bounded repair contract. Do not repeat the rejected approach; address the highest-impact blocking failure first.",
+                  },
+                ]
+              : []),
           ];
       const repaired = await repair(
         target.candidateId,
@@ -1984,6 +2060,7 @@ export async function runRenderedCreativeRepair({
       );
       if (repaired.status === "repaired") {
         record.repairs.push(target.candidateId);
+        rejectionContext.delete(target.candidateId);
         if (humanRepairPending) humanRepairPending = false;
       } else if (repaired.status === "rejected") {
         record.rejectedCandidates.push(target.candidateId);
@@ -2073,7 +2150,7 @@ export async function runRenderedCreativeRepair({
     record.visualGateVerdict = visualGate.audit?.verdict || "error";
 
     if (!gatePass(visualGate)) {
-      if (repairBlockedCandidateIds.has(selectedId)) {
+      if (isRepairBlockedAt(selectedId, round)) {
         // The selected candidate's repair contract was already rejected and
         // it cannot be excluded without collapsing the candidate pool for
         // diversity evidence. Before failing, deliver a bounded near-miss
@@ -2230,7 +2307,7 @@ export async function runRenderedCreativeRepair({
         targets.filter(
           (item) =>
             (cycleUse.get(item.candidateId) || 0) < cycleLimit &&
-            !repairBlockedCandidateIds.has(item.candidateId),
+            !isRepairBlockedAt(item.candidateId, round),
         ),
       )[0];
       if (!target)
