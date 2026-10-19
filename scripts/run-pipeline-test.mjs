@@ -579,6 +579,16 @@ export function createCloudDependencies(
   const research = path.join(evidence, "seo-research.json");
   const inspiration = path.join(evidence, "inspiration-pack.json");
   const session = path.join(evidence, "reasoning-preflight.json");
+  // The adaptive reasoning session is only created for the allowlisted Luna
+  // models; other creative models use the static reasoning-effort env and
+  // must not receive a --session argument for a file that does not exist.
+  const sessionArgs = async () =>
+    (await fs
+      .access(session)
+      .then(() => true)
+      .catch(() => false))
+      ? ["--session", session]
+      : [];
   const candidates = path.join(evidence, "generated-experiences");
   const reviewEnv = {
     PUBLIC_REVIEW_MODE: "true",
@@ -1088,8 +1098,7 @@ export function createCloudDependencies(
         inspiration,
         "--out",
         candidates,
-        "--session",
-        session,
+        ...(await sessionArgs()),
         "--failure-mode",
         "throw",
         "--test-profile",
@@ -1116,8 +1125,7 @@ export function createCloudDependencies(
           candidates,
           "--out",
           path.join(evidence, "creative-repair"),
-          "--session",
-          session,
+          ...(await sessionArgs()),
           "--mode",
           "preview",
           "--max-cycles",
