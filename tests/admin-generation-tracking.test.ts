@@ -19,6 +19,39 @@ const input = {
   observedAt: 1000,
 };
 describe("trusted attempt producer", () => {
+  it("redacts prefixed quoted credential keys and entire escaped JSON values in object and serialized details", () => {
+    const detail = {
+      OPENROUTER_API_KEY: "synthetic-sensitive-value",
+      CLOUDFLARE_ACCESS_CLIENT_SECRET:
+        'synthetic-before"synthetic-after\\synthetic-tail',
+      nested: { AWS_SESSION_TOKEN: "synthetic-nested-value" },
+      complete: true,
+    };
+    const serialized = JSON.stringify(detail);
+    const observation = contract.buildAttemptObservation(input);
+    for (const value of [detail, serialized]) {
+      const [event] = contract.buildAttemptEvents(
+        [
+          {
+            eventKey: "cost:json-redaction",
+            stage: "author",
+            status: "recorded",
+            detail: value,
+          },
+        ],
+        observation,
+      );
+      expect(event.detail).not.toMatch(
+        /synthetic-(?:sensitive|before|after|tail|nested)/,
+      );
+      expect(JSON.parse(event.detail!)).toMatchObject({ complete: true });
+    }
+    const clean = contract.redactTrackingText(serialized)!;
+    expect(clean).not.toMatch(
+      /synthetic-(?:sensitive|before|after|tail|nested)/,
+    );
+    expect(JSON.parse(clean)).toMatchObject({ complete: true });
+  });
   it("rejects reserved outcome keys disguised as unrelated stage events", () => {
     const observation = contract.buildAttemptObservation(input);
     for (const eventKey of ["execution", "delivery"])

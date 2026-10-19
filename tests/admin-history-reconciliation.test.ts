@@ -62,6 +62,7 @@ function fixture(
               total_count: 1,
               jobs: [
                 {
+                  id: 70001,
                   name: "configure token=private https://private.test/?token=secret",
                   conclusion: "failure",
                   completed_at: "2026-10-01T00:02:00Z",
@@ -84,6 +85,95 @@ function fixture(
   };
 }
 describe("fixture-only independent history reconciliation", () => {
+  it.each([
+    [
+      "truncated",
+      [
+        {
+          total_count: 101,
+          jobs: [{ id: 1, completed_at: "2026-10-01T00:01:00Z" }],
+        },
+      ],
+    ],
+    ["empty", [{ total_count: 1, jobs: [] }]],
+    [
+      "duplicate within page",
+      [{ total_count: 2, jobs: [{ id: 1 }, { id: 1 }] }],
+    ],
+    [
+      "duplicate across pages",
+      [
+        {
+          total_count: 101,
+          jobs: Array.from({ length: 100 }, (_, i) => ({ id: i + 1 })),
+        },
+        { total_count: 101, jobs: [{ id: 1 }] },
+      ],
+    ],
+    ["missing total", [{ jobs: [{ id: 1 }] }]],
+    ["malformed job", [{ total_count: 1, jobs: [null] }]],
+    ["negative total", [{ total_count: -1, jobs: [] }]],
+  ])(
+    "keeps the source cursor and partial health for %s job evidence",
+    async (_name, pages) => {
+      const f = fixture([run()]);
+      const baseFetch = f.fetchImpl;
+      const fetchImpl = async (url: string, init?: RequestInit) =>
+        url.includes("/jobs")
+          ? Response.json(
+              (pages as unknown[])[
+                Number(new URL(url).searchParams.get("page")) - 1
+              ],
+            )
+          : baseFetch(url, init);
+      const report = await history.reconcileGenerationHistory({
+        ...f,
+        fetchImpl,
+        mode: "incremental",
+        dryRun: false,
+      });
+      expect(report.complete).toBe(false);
+      expect(report.upsertCount).toBe(0);
+      expect(report.errors).toContain("invalid GitHub jobs page");
+      expect(JSON.parse(report.nextCheckpoint!)).toMatchObject({
+        workflow: 0,
+        page: 1,
+      });
+      expect(f.writes.flatMap((b) => b.attempts)).toEqual([]);
+      expect(f.writes.at(-1)).toMatchObject({
+        checkpoint: report.nextCheckpoint,
+        health: { partial: true, lastError: "invalid GitHub jobs page" },
+      });
+    },
+  );
+  it("uses the complete unique paginated job set for the execution completion time", async () => {
+    const f = fixture([run()]);
+    const baseFetch = f.fetchImpl;
+    const fetchImpl = async (url: string, init?: RequestInit) =>
+      url.includes("/jobs")
+        ? Response.json({
+            total_count: 101,
+            jobs: url.includes("page=2")
+              ? [{ id: 101, completed_at: "2026-10-01T00:03:00Z" }]
+              : Array.from({ length: 100 }, (_, i) => ({
+                  id: i + 1,
+                  completed_at: "2026-10-01T00:01:00Z",
+                })),
+          })
+        : baseFetch(url, init);
+    const report = await history.reconcileGenerationHistory({
+      ...f,
+      fetchImpl,
+      mode: "incremental",
+      dryRun: false,
+    });
+    expect(report.complete).toBe(true);
+    expect(report.errors).toEqual([]);
+    expect(f.writes.flatMap((b) => b.attempts)[0].observation.completedAt).toBe(
+      Date.parse("2026-10-01T00:03:00Z"),
+    );
+    expect(f.writes.at(-1).health.partial).toBe(false);
+  });
   it("deduplicates executions across actual page boundaries without skipping the next workflow", async () => {
     const runs = Array.from({ length: 100 }, (_, i) => run(10000 + i));
     const f = fixture(runs);
@@ -205,6 +295,7 @@ describe("fixture-only independent history reconciliation", () => {
     expect(report.warnings).toContain(
       "Job evidence expired; failure details not recorded.",
     );
+    expect(f.writes.at(-1).health.partial).toBe(true);
     expect(f.writes.flatMap((b) => b.attempts)[0].observation).toMatchObject({
       executionStatus: "failed",
       completedAt: null,

@@ -46,7 +46,7 @@ export function redactTrackingText(value, limit = 500) {
     value
       .replace(/[\u0000-\u001f\u007f]/gu, " ")
       .replace(
-        /"(?:token|secret|password|api[_-]?key|authorization|signature)"\s*:\s*"[^"\n]*"/giu,
+        /"(?:[A-Za-z0-9_]*_)?(?:token|secret|password|api[_-]?key|authorization|signature)"\s*:\s*"(?:\\.|[^"\\])*"/giu,
         '"credential":"[redacted]"',
       )
       .replace(

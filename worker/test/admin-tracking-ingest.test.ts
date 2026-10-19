@@ -36,6 +36,88 @@ const post = (
 const ledger = () =>
   bindings.GENERATION_LEDGER.getByName("launchloom-generations");
 describe("trusted attempt ingestion", () => {
+  it("redacts prefixed structured credentials before persistence", async () => {
+    const detail = {
+      OPENROUTER_API_KEY: "synthetic-persist-value",
+      CLOUDFLARE_ACCESS_CLIENT_SECRET:
+        'synthetic-escaped"synthetic-suffix\\synthetic-tail',
+      complete: true,
+    };
+    const payload = {
+      observation: observation({ runId: "9090" }),
+      events: [
+        {
+          eventKey: "structured-object",
+          stage: "author",
+          status: "recorded",
+          detail,
+        },
+        {
+          eventKey: "structured-string",
+          stage: "author",
+          status: "recorded",
+          detail: JSON.stringify(detail),
+        },
+      ],
+    };
+    expect((await post(payload)).status).toBe(200);
+    const item = (await ledger().listAttempts({ search: "9090" })).items.find(
+      (a) => a.runId === "9090",
+    )!;
+    const stored = await ledger().getAttempt(item.attemptId);
+    expect(JSON.stringify(stored)).not.toMatch(
+      /synthetic-(?:persist|escaped|suffix|tail)/,
+    );
+    for (const key of ["structured-object", "structured-string"])
+      expect(
+        JSON.parse(stored!.events.find((e) => e.eventKey === key)!.detail!),
+      ).toMatchObject({ complete: true });
+  });
+  it("redacts prefixed escaped JSON credentials on workspace reads of older raw details", async () => {
+    const detail = {
+      OPENROUTER_API_KEY: "synthetic-persist-value",
+      CLOUDFLARE_ACCESS_CLIENT_SECRET:
+        'synthetic-escaped"synthetic-suffix\\synthetic-tail',
+      complete: true,
+    };
+    expect(
+      (await post({ observation: observation({ runId: "9091" }), events: [] }))
+        .status,
+    ).toBe(200);
+    const item = (await ledger().listAttempts({ search: "9091" })).items.find(
+      (a) => a.runId === "9091",
+    )!;
+    // Bypass ingestion only to simulate an already-retained raw legacy detail.
+    await ledger().recordAttemptEvents(item.attemptId, [
+      {
+        eventKey: "legacy-raw-json",
+        stage: "author",
+        status: "recorded",
+        source: "callback",
+        observedAt: 2000,
+        detail: JSON.stringify(detail),
+      },
+    ]);
+    expect(JSON.stringify(await ledger().getAttempt(item.attemptId))).toContain(
+      "synthetic-persist-value",
+    );
+    const response = await worker.fetch(
+      new Request(
+        `https://api.launchloom.test/api/admin/onboarding-invites/workspace/attempts/${encodeURIComponent(item.attemptId)}/events`,
+      ),
+      bindings,
+      {
+        access: {
+          aud: "launchloom-local-onboarding-admin",
+          getIdentity: async () => ({ email: "admin@example.test" }),
+        },
+      } as unknown as ExecutionContext,
+    );
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(body).not.toMatch(/synthetic-(?:persist|escaped|suffix|tail)/);
+    expect(body).toContain("complete");
+  });
   it("keeps a recorded failure diagnosis when newer GitHub evidence has no diagnosis", async () => {
     const first = {
       observation: observation({

@@ -120,6 +120,8 @@ export async function reconcileGenerationHistory({
   }
   async function jobsFor(run) {
     const jobs = [];
+    const ids = new Set();
+    let total = null;
     for (let page = 1; page <= 10; page++) {
       const body = await get(
         `${api}/actions/runs/${run.id}/attempts/${run.run_attempt}/jobs?per_page=100&page=${page}`,
@@ -131,10 +133,37 @@ export async function reconcileGenerationHistory({
         );
         return [];
       }
-      if (!Array.isArray(body.jobs))
+      if (
+        !body ||
+        !Array.isArray(body.jobs) ||
+        body.jobs.length > 100 ||
+        !Number.isSafeInteger(body.total_count) ||
+        body.total_count < 0 ||
+        (total !== null && total !== body.total_count)
+      )
         throw new Error("invalid GitHub jobs page");
+      total = body.total_count;
+      for (const job of body.jobs) {
+        if (
+          !job ||
+          typeof job !== "object" ||
+          Array.isArray(job) ||
+          !Number.isSafeInteger(job.id) ||
+          job.id < 1 ||
+          ids.has(job.id)
+        )
+          throw new Error("invalid GitHub jobs page");
+        ids.add(job.id);
+      }
       jobs.push(...body.jobs);
-      if (body.jobs.length < 100) return jobs;
+      // Counts represent distinct jobs, not raw page lengths. A short/duplicate
+      // page must never advance the enclosing run-page cursor or invent its end.
+      if (
+        jobs.length > total ||
+        (body.jobs.length < 100 && jobs.length < total)
+      )
+        throw new Error("invalid GitHub jobs page");
+      if (jobs.length === total) return jobs;
     }
     throw new Error("job page budget exceeded");
   }
