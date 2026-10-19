@@ -34,6 +34,7 @@ import {
 import type { PublicationCommand } from "./publication";
 import { OnboardingInvites } from "./onboarding-invites";
 import { legacyAccessPrincipal, principalActor, workspaceApi, workspaceError, attemptIngest } from "./admin/workspace-api";
+import { proxyAdminAuth, renderAdminLoginShell } from "./admin/neon-auth";
 import { IntakeRecoveryError, intakeOperationMarker, recoverIntakeIssue, readIntakeIssuePayload, verifyIntakeIssueOwnership, type IntakeIssue } from "./intake-recovery";
 import {
   GenerationLedger,
@@ -82,6 +83,10 @@ export interface Env {
   LAUNCHLOOM_FEEDBACK_EMAIL?: string;
   REVISION_COORDINATOR_SECRET: string;
   REVISION_COORDINATOR: DurableObjectNamespace<RevisionCoordinator>;
+  ADMIN_AUTH_MODE?: "access" | "neon";
+  NEON_AUTH_BASE_URL?: string;
+  NEON_AUTH_COOKIE_SECRET?: string;
+  ADMIN_PUBLIC_ORIGIN?: string;
   ONBOARDING_INVITE_SIGNING_SECRET?: string;
   ONBOARDING_ORIGIN?: string;
   ONBOARDING_ADMIN_EMAILS?: string;
@@ -3679,6 +3684,10 @@ async function aiChat(request: Request, env: Env) {
 export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const path = new URL(request.url).pathname;
+    if (path.startsWith("/api/admin/onboarding-invites/auth/"))
+      return proxyAdminAuth(request, env);
+    if (path === "/admin/login" && env.ADMIN_AUTH_MODE === "neon")
+      return renderAdminLoginShell();
     if (path === "/api/onboarding-invites/validate")
       return inviteValidation(request, env);
     if (path.startsWith("/api/admin/onboarding-invites/workspace/")) {
