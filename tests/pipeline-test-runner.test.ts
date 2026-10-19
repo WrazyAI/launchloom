@@ -769,7 +769,7 @@ describe("focused pipeline orchestration", () => {
 
     expect(report.verdict).toBe("failed");
     expect(report.stages.technical.status).toBe("failed");
-    expect(report.deliveryMode).toBeUndefined();
+    expect(report.deliveryMode).toBeNull();
   });
 
   it("keeps a creative-only contrast failure failing without a near-miss delivery", async () => {

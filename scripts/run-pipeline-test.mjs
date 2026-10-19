@@ -687,12 +687,22 @@ export function createCloudDependencies(
       "--usage-out",
       path.join(evidence, "reference-dna-usage.json"),
     ]);
-    await node("run-reasoning-preflight.mjs", [
-      "--inspiration",
-      inspiration,
-      "--out",
-      session,
-    ]);
+    // The adaptive reasoning preflight is a GPT-6 Luna mechanism with its own
+    // allowlist and frozen-session contract. Other creative models (for
+    // example the OpenCode Go DeepSeek default) use the static
+    // CREATIVE_EXPERIENCE_REASONING_EFFORT instead, matching the workflow
+    // guard in generate-client.yml.
+    const creativeModel = String(
+      process.env.CREATIVE_EXPERIENCE_MODEL || "",
+    ).trim();
+    if (["openai/gpt-6-luna", "openai/gpt-5.6-luna"].includes(creativeModel)) {
+      await node("run-reasoning-preflight.mjs", [
+        "--inspiration",
+        inspiration,
+        "--out",
+        session,
+      ]);
+    }
     const assetInspiration = path.join(evidence, "asset-inspiration-pack.json");
     const pack = await readJson(inspiration);
     await writeJson(assetInspiration, {
