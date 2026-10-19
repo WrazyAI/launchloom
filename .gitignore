@@ -49,3 +49,6 @@ artifacts/
 
 # Local execution notes for this reliability plan
 .superpowers/reliability/
+
+# Local design companion (includes session access keys)
+.superpowers/brainstorm/
