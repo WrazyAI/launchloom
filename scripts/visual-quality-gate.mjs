@@ -202,7 +202,7 @@ async function requestAudit(manifest) {
             userContent: gateUserContent,
             schemaName: auditSchema.name,
             schema: auditSchema.schema,
-            maxOutputTokens: [6000, 9000, 12000][attempt - 1],
+            maxOutputTokens: [16_000, 24_000, 32_000][attempt - 1],
             effort: creativeLaneEffort(process.env, {
               lane: "VISUAL_GATE_EFFORT",
               openrouterDefault: "low",
@@ -236,7 +236,7 @@ async function requestAudit(manifest) {
         body: {
             model,
             temperature: 0,
-            max_completion_tokens: [6000, 9000, 12000][attempt - 1],
+            max_completion_tokens: [16_000, 24_000, 32_000][attempt - 1],
             reasoning_effort: "low",
             provider: { require_parameters: true },
             response_format: { type: "json_schema", json_schema: auditSchema },

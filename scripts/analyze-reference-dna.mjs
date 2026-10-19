@@ -352,7 +352,9 @@ Rules:
             userContent: content,
             schemaName: schema.name,
             schema: schema.schema,
-            maxOutputTokens: 9000,
+            // DeepSeek at max effort spends a large reasoning budget before
+            // the answer; the analyzer answer itself is a few thousand tokens.
+            maxOutputTokens: 48_000,
             effort: analyzerEffort,
             sessionId,
           }),

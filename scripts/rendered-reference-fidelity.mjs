@@ -265,7 +265,9 @@ async function requestJson({
   label,
   sessionId,
   promptCacheKey,
-  maxTokens = 7000,
+  // Reasoning at the creative-lane effort counts against this ceiling; the
+  // audit JSON itself is small, so the headroom only prevents truncation.
+  maxTokens = 24_000,
   reasoningEffort = creativeLaneEffort(process.env, {
     lane: "CREATIVE_REFERENCE_JUDGE_EFFORT",
     openrouterDefault: "medium",
