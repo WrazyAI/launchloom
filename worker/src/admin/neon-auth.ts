@@ -361,23 +361,22 @@ async function fetchUpstream(
   headers: Headers,
   body?: string,
 ): Promise<{ status: number; headers: Headers; text: string }> {
-  let response: Response;
   try {
-    response = await fetch(url.href, {
+    const response = await fetch(url.href, {
       method,
       headers,
       body,
       redirect: "manual",
       signal: AbortSignal.timeout(10_000),
     });
-  } catch {
+    // Body consumption is part of the transport boundary: a reset, truncated
+    // stream, or abort while reading must not escape as a raw TypeError.
+    const text = await readUpstreamText(response);
+    return { status: response.status, headers: response.headers, text };
+  } catch (error) {
+    if (error instanceof AdminAuthDependencyError) throw error;
     throw new AdminAuthDependencyError();
   }
-  return {
-    status: response.status,
-    headers: response.headers,
-    text: await readUpstreamText(response),
-  };
 }
 
 function upstreamUrl(baseUrl: string, path: string, search: string) {

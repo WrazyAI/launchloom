@@ -129,8 +129,9 @@ Security boundary:
   identity, email, or expiry) raise `AdminAuthDependencyError`
   (`code: dependency_unavailable`, HTTP 503). The only supported signed-out
   shapes are JSON `null` and `{session:null,user:null}`. A well-formed expired
-  session is `null`. Provider `5xx`/`429`/transport failures/oversized responses
-  are also typed 503s, never a signed-out result and never an Access fallback.
+  session is `null`. Provider `5xx`/`429`/transport failures/oversized responses/response-body
+  stream failures (including reader aborts/resets) are also typed 503s, never a
+  raw exception, a signed-out result, or an Access fallback.
 - Forged headers such as `Cf-Access-Authenticated-User-Email`,
   `X-Forwarded-Email`, and `X-Auth-Request-Email` are ignored.
 - No request body, password, cookie value, or provider error detail is logged by
@@ -153,7 +154,7 @@ Security boundary:
   covering malformed successes, credential leakage, manual redirect, and
   session-cookie return.
 - GREEN: `npx vitest run --config vitest.worker.config.ts worker/test/admin-neon-auth.test.ts`
-  passes **36 tests** in the actual Worker/workerd test runtime with all provider
+  passes **38 tests** in the actual Worker/workerd test runtime with all provider
   traffic intercepted by the existing MSW Worker harness. No live provider calls
   were made.
 - The suite covers multiple `Set-Cookie` preservation, host/`HttpOnly`/`Secure`
@@ -164,8 +165,8 @@ Security boundary:
   provider renewal/clearing cookies returned from the session read, provider 503
   typing, forged identity headers, unsafe/encoded/backslash/CRLF callbacks,
   partial configuration readiness, no Access fallback, origin/body/rate bounds,
-  password non-logging, generic provider failure output, and unproxied
-  provider-admin paths.
+  response-body stream failure normalization, password non-logging, generic
+  provider failure output, and unproxied provider-admin paths.
 
 Provenance note: an earlier report quoted a **774.06 KiB** dry-run bundle from a
 stale log while the saved `task4-wrangler-final.log` recorded **723.04 KiB** for

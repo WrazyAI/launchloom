@@ -93,6 +93,18 @@ function jsonBody(body: unknown) {
   };
 }
 
+
+function failingBodyResponse(message: string) {
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        controller.error(new Error(message));
+      },
+    }),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  );
+}
+
 describe("Neon same-origin session adapter", () => {
   it("pins the SDK cookie prefix used by the adapter boundary", () => {
     expect(NEON_AUTH_COOKIE_PREFIX).toBe("__Secure-neon-auth");
@@ -849,6 +861,40 @@ describe("Neon same-origin session adapter", () => {
 
     const error = await readNeonSession(sessionRequest(), neonEnv()).catch((reason: unknown) => reason);
     expect(error).toBeInstanceOf(AdminAuthDependencyError);
+  });
+
+  it("normalizes a rejected session response-body stream into a typed dependency error", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(failingBodyResponse("raw session stream failure"));
+
+    try {
+      const error = await readNeonSession(sessionRequest(), neonEnv()).catch((reason: unknown) => reason);
+      expect(error).toBeInstanceOf(AdminAuthDependencyError);
+      expect(error).toMatchObject({ code: "dependency_unavailable", status: 503 });
+      expect(String((error as Error).message)).not.toContain("raw session stream failure");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("returns a generic 503 when a proxied response-body stream fails", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(failingBodyResponse("raw proxy stream failure"));
+
+    try {
+      const response = await proxyAdminAuth(
+        request(`${sessionPath}/sign-in/email`, jsonBody({ email: "owner@example.test", password: "password" })),
+        neonEnv(),
+      );
+      expect(response.status).toBe(503);
+      const body = await response.text();
+      expect(body).toContain("dependency_unavailable");
+      expect(body).not.toContain("raw proxy stream failure");
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 
 });
