@@ -345,7 +345,11 @@ export function planContrastRepairs(
           : f.state === "default"
             ? ""
             : null;
-      if (stateScope === null || (!focusScoped && f.kind !== "text")) continue;
+      if (
+        stateScope === null ||
+        (!focusScoped && f.kind !== "text" && f.kind !== "icon")
+      )
+        continue;
       const peers =
         stateScope === ""
           ? page.targets.filter(
@@ -423,9 +427,13 @@ export function planContrastRepairs(
         minimum: Math.max(minimum, previous?.minimum || 0),
         paintProperty: focusScoped
           ? "outline"
-          : f.paintProperty === "-webkit-text-fill-color"
-            ? "-webkit-text-fill-color"
-            : "color",
+          : f.kind === "icon"
+            ? f.paintProperty === "stroke"
+              ? "stroke"
+              : "fill"
+            : f.paintProperty === "-webkit-text-fill-color"
+              ? "-webkit-text-fill-color"
+              : "color",
         original: f.color,
         background: backdrops.join(","),
         ratio: f.ratio,

@@ -121,6 +121,58 @@ describe("rendered pixel contrast resolution", () => {
     expect(targets[3].pixelResolved).toBeUndefined();
   }, 20000);
 
+  it("re-measures a variable-backdrop text fail and an icon from pixels", async () => {
+    const page = await fixturePage();
+    // A readable dark icon part on the light page; the DOM cannot bound its
+    // backdrop, the pixels can.
+    await page.evaluate(() => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("role", "img");
+      svg.setAttribute("aria-label", "Icon");
+      svg.setAttribute("width", "16");
+      svg.setAttribute("height", "16");
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("fill", "#111111");
+      rect.setAttribute("width", "16");
+      rect.setAttribute("height", "16");
+      svg.appendChild(rect);
+      document.body.appendChild(svg);
+    });
+    const targets: any[] = [
+      // Variable-backdrop text fail from the DOM endpoint estimate.
+      target({
+        selector: "#good",
+        foreground: [16, 16, 16, 1],
+        status: "fail",
+        ratio: 1,
+        background: null,
+        issues: ["overlapping non-ancestor paint requires rendered review"],
+      }),
+      target({
+        selector: 'svg[role="img"] rect',
+        kind: "icon",
+        foreground: [16, 16, 16, 1],
+        status: "fail",
+        ratio: 1,
+        background: null,
+        issues: ["overlapping non-ancestor paint requires rendered review"],
+      }),
+    ];
+    await resolveRenderedBackdrop(page, targets);
+    // Dark text on the light overlapping field is actually readable: the
+    // conservative DOM fail is overturned by the measured pixels.
+    expect(targets[0]).toMatchObject({
+      status: "pass",
+      pixelResolved: true,
+    });
+    expect(targets[0].ratio).toBeGreaterThan(4.5);
+    // The icon is measurably readable on the page surface.
+    expect(targets[1]).toMatchObject({
+      status: "pass",
+      pixelResolved: true,
+    });
+  }, 20000);
+
   it("resolves real collected targets by their nth-of-type selectors", async () => {
     const page = await fixturePage();
     const collected = await page.evaluate(collectContrastTargets, {
