@@ -107,7 +107,10 @@ describe("Neon same-origin session adapter", () => {
       }),
     );
 
-    await expect(readNeonSession(request("/admin/onboarding-invites"), neonEnv())).resolves.toBeNull();
+    await expect(readNeonSession(request("/admin/onboarding-invites"), neonEnv())).resolves.toEqual({
+      session: null,
+      setCookies: [],
+    });
     expect(providerCalls).toBe(0);
   });
 
@@ -127,7 +130,10 @@ describe("Neon same-origin session adapter", () => {
         "X-Auth-Request-Email": "owner@example.test",
       },
     });
-    await expect(readNeonSession(forged, neonEnv())).resolves.toBeNull();
+    await expect(readNeonSession(forged, neonEnv())).resolves.toEqual({
+      session: null,
+      setCookies: [],
+    });
     expect(providerCalls).toBe(0);
   });
 
@@ -151,11 +157,12 @@ describe("Neon same-origin session adapter", () => {
       }),
     );
 
-    const session = await readNeonSession(
+    const { session, setCookies } = await readNeonSession(
       sessionRequest(`${sessionCookieName}=first; ${sessionDataCookieName}=forged-cache`),
       neonEnv(),
     );
 
+    expect(setCookies).toEqual([]);
     expect(observed).toEqual({
       cookie: `${sessionCookieName}=first; ${sessionDataCookieName}=forged-cache`,
       query: "true",
@@ -177,7 +184,7 @@ describe("Neon same-origin session adapter", () => {
       ),
     );
 
-    const session = await readNeonSession(sessionRequest(), neonEnv());
+    const { session } = await readNeonSession(sessionRequest(), neonEnv());
     expect(session).toMatchObject({ emailVerified: false, email: "owner@example.test" });
   });
 
@@ -187,21 +194,30 @@ describe("Neon same-origin session adapter", () => {
         HttpResponse.json(sessionPayload({ expiresAt: new Date(Date.now() - 1_000).toISOString() })),
       ),
     );
-    await expect(readNeonSession(sessionRequest(), neonEnv())).resolves.toBeNull();
+    await expect(readNeonSession(sessionRequest(), neonEnv())).resolves.toEqual({
+      session: null,
+      setCookies: [],
+    });
 
     network.use(
       http.get(`${authOrigin}/get-session`, () =>
         HttpResponse.json({ session: null, user: null }),
       ),
     );
-    await expect(readNeonSession(sessionRequest(), neonEnv())).resolves.toBeNull();
+    await expect(readNeonSession(sessionRequest(), neonEnv())).resolves.toEqual({
+      session: null,
+      setCookies: [],
+    });
 
     network.use(
       http.get(`${authOrigin}/get-session`, () =>
         HttpResponse.json({ message: "Invalid session" }, { status: 401 }),
       ),
     );
-    await expect(readNeonSession(sessionRequest(), neonEnv())).resolves.toBeNull();
+    await expect(readNeonSession(sessionRequest(), neonEnv())).resolves.toEqual({
+      session: null,
+      setCookies: [],
+    });
   });
 
   it("types provider outages as dependency-unavailable instead of signed out", async () => {
@@ -518,7 +534,7 @@ describe("Neon same-origin session adapter", () => {
     expect(statuses[10]).toBe(429);
   });
 
-  it("returns the same reset response for admin and non-admin addresses", async () => {
+  it("passes through identical provider reset responses without a local member lookup", async () => {
     network.use(
       http.post(`${authOrigin}/forget-password`, () =>
         HttpResponse.json({ status: true }),
@@ -639,4 +655,200 @@ describe("Neon same-origin session adapter", () => {
       expect(response.status).toBe(404);
     }
   });
+  it("types malformed successful provider payloads as dependency-unavailable", async () => {
+    const payloads: Array<() => Response> = [
+      () =>
+        new HttpResponse("not json", {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      () => new HttpResponse(null, { status: 200 }),
+      () => HttpResponse.json({ unexpected: true }),
+      () =>
+        HttpResponse.json({
+          session: { id: "synthetic-session", expiresAt: new Date(Date.now() + 3_600_000).toISOString() },
+          user: { id: "synthetic-user" },
+        }),
+      () => HttpResponse.json({ session: null }),
+      () => HttpResponse.json({ session: { id: "synthetic-session" }, user: null }),
+    ];
+
+    for (const payload of payloads) {
+      network.use(http.get(`${authOrigin}/get-session`, () => payload()));
+      const error = await readNeonSession(sessionRequest(), neonEnv()).catch((reason: unknown) => reason);
+      expect(error).toBeInstanceOf(AdminAuthDependencyError);
+      expect(error).toMatchObject({ code: "dependency_unavailable", status: 503 });
+    }
+  });
+
+  it("preserves the explicit supported signed-out provider shapes", async () => {
+    for (const payload of [
+      () => new HttpResponse("null", { status: 200, headers: { "Content-Type": "application/json" } }),
+      () => HttpResponse.json({ session: null, user: null }),
+    ]) {
+      network.use(http.get(`${authOrigin}/get-session`, () => payload()));
+      await expect(readNeonSession(sessionRequest(), neonEnv())).resolves.toEqual({
+        session: null,
+        setCookies: [],
+      });
+    }
+  });
+
+  it("strips provider credential headers and session tokens from browser responses", async () => {
+    network.use(
+      http.post(`${authOrigin}/sign-in/email`, () =>
+        HttpResponse.json(
+          {
+            token: "secret-bearer",
+            refreshToken: "secret-refresh",
+            user: { id: "u1", email: "owner@example.test", emailVerified: true, name: "Owner" },
+            session: {
+              token: "secret-session",
+              expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+            },
+          },
+          {
+            headers: [
+              ["Set-Cookie", `${sessionCookieName}=cookie-only; Path=/; HttpOnly; Secure`],
+              ["set-auth-token", "secret-bearer"],
+              ["set-auth-jwt", "secret-jwt"],
+            ],
+          },
+        ),
+      ),
+      http.get(`${authOrigin}/get-session`, () => HttpResponse.json(sessionPayload())),
+    );
+
+    const signIn = await proxyAdminAuth(
+      request(`${sessionPath}/sign-in/email`, jsonBody({ email: "owner@example.test", password: "password" })),
+      neonEnv(),
+    );
+    expect(signIn.headers.get("set-auth-token")).toBeNull();
+    expect(signIn.headers.get("set-auth-jwt")).toBeNull();
+    expect(signIn.headers.getSetCookie()).toHaveLength(1);
+    const signInBody = await signIn.text();
+    for (const secret of ["secret-bearer", "secret-session", "secret-refresh", "secret-jwt"]) {
+      expect(signInBody).not.toContain(secret);
+    }
+    expect(signInBody).toContain('"ok":true');
+
+    const browserSession = await proxyAdminAuth(
+      request(`${sessionPath}/get-session`, {
+        headers: { Cookie: `${sessionCookieName}=opaque-session` },
+      }),
+      neonEnv(),
+    );
+    const sessionBody = await browserSession.text();
+    expect(sessionBody).not.toContain("opaque-session");
+    expect(sessionBody).toContain('"ok":true');
+  });
+
+  it("never follows an upstream redirect and emits only a validated browser Location", async () => {
+    let followed = 0;
+    network.use(
+      http.get(`${authOrigin}/verify-email`, () =>
+        new HttpResponse(null, {
+          status: 302,
+          headers: [
+            ["Location", "https://evil.example/steal"],
+            ["Set-Cookie", `${sessionCookieName}=renewed; Path=/; HttpOnly; Secure`],
+            ["Set-Cookie", `${sessionDataCookieName}=; Max-Age=0; Path=/; HttpOnly; Secure`],
+          ],
+        }),
+      ),
+      http.get("https://evil.example/steal", () => {
+        followed += 1;
+        return HttpResponse.json({});
+      }),
+    );
+
+    const response = await proxyAdminAuth(
+      request(`${sessionPath}/verify-email?token=synthetic-verify-token`),
+      neonEnv(),
+    );
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("/admin/onboarding-invites");
+    expect(followed).toBe(0);
+    const cookies = response.headers.getSetCookie();
+    expect(cookies).toHaveLength(2);
+    expect(cookies[0]).toContain(`${sessionCookieName}=renewed`);
+    expect(cookies[1]).toContain("Max-Age=0");
+  });
+
+  it("accepts an absolute same-origin admin redirect Location", async () => {
+    network.use(
+      http.get(`${authOrigin}/verify-email`, () =>
+        new HttpResponse(null, {
+          status: 302,
+          headers: { Location: `${publicOrigin}/admin/onboarding-invites?view=clients` },
+        }),
+      ),
+    );
+
+    const response = await proxyAdminAuth(
+      request(`${sessionPath}/verify-email?token=synthetic-verify-token`),
+      neonEnv(),
+    );
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("/admin/onboarding-invites?view=clients");
+  });
+
+  it("returns provider renewal and clearing cookies from the session read", async () => {
+    network.use(
+      http.get(`${authOrigin}/get-session`, () =>
+        HttpResponse.json(sessionPayload(), {
+          headers: [
+            ["Set-Cookie", `${sessionCookieName}=renewed; Path=/; HttpOnly; Secure`],
+            ["Set-Cookie", `${sessionDataCookieName}=; Max-Age=0; Path=/; HttpOnly; Secure`],
+          ],
+        }),
+      ),
+    );
+
+    const result = await readNeonSession(sessionRequest(), neonEnv());
+
+    expect(result.session).toMatchObject({ email: "owner@example.test", emailVerified: true });
+    expect(result.setCookies).toHaveLength(2);
+    expect(result.setCookies[0]).toContain(`${sessionCookieName}=renewed`);
+    expect(result.setCookies[0]).toContain("Secure");
+    expect(result.setCookies[0]).toContain("HttpOnly");
+    expect(result.setCookies[1]).toContain("Max-Age=0");
+  });
+
+  it("returns clearing cookies even when the provider rejects the session", async () => {
+    network.use(
+      http.get(`${authOrigin}/get-session`, () =>
+        new HttpResponse(JSON.stringify({ message: "Invalid session" }), {
+          status: 401,
+          headers: [
+            ["Content-Type", "application/json"],
+            ["Set-Cookie", `${sessionCookieName}=; Max-Age=0; Path=/; HttpOnly; Secure`],
+          ],
+        }),
+      ),
+    );
+
+    const result = await readNeonSession(sessionRequest(), neonEnv());
+
+    expect(result.session).toBeNull();
+    expect(result.setCookies).toHaveLength(1);
+    expect(result.setCookies[0]).toContain("Max-Age=0");
+  });
+
+  it("fails closed when the provider response is oversized", async () => {
+    network.use(
+      http.get(`${authOrigin}/get-session`, () =>
+        new HttpResponse("x".repeat(300_000), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+
+    const error = await readNeonSession(sessionRequest(), neonEnv()).catch((reason: unknown) => reason);
+    expect(error).toBeInstanceOf(AdminAuthDependencyError);
+  });
+
 });

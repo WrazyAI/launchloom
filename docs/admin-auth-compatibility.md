@@ -29,10 +29,18 @@ node -e "import('@neondatabase/auth/server').then(m => console.log(typeof m.hand
   (`BUILDING-AN-ADAPTER.md`, `dist/server/index.d.mts`). The implementation uses
   the Web Standards `Request`/`Response` surface, not the Next.js adapter.
 - The SDK is dynamically imported only for an explicit neon-mode auth request so the default access-mode deployment does not evaluate the auth toolkit during Durable Object/legacy-route startup.
-- `processAuthMiddleware` is intentionally not used: this task authenticates API
-  requests through `readNeonSession`, not page middleware, and OAuth callbacks are
-  not enabled in the baseline. Page-route protection belongs to Accounts Task 6
-  and the admin UI tasks.
+- Transport decision after review: the installed toolkit's proxy fetches with
+  default redirect following and its response allowlist forwards
+  `set-auth-token`/`set-auth-jwt`, so `handleAuthProxyRequest` and
+  `createAuthServer.getSession` could not satisfy the redirect, credential and
+  cookie-update requirements. The adapter now owns a single-hop `fetch` with
+  `redirect: "manual"` and uses the SDK only for its stable cookie primitives
+  (`extractNeonAuthCookies`, `parseSetCookies`, `serializeSetCookie`,
+  `NEON_AUTH_COOKIE_PREFIX`). Session shape/expiry validation is performed by the
+  adapter. `processAuthMiddleware` is still intentionally not used: this task
+  authenticates API requests through `readNeonSession`, not page middleware, and
+  OAuth callbacks are not enabled in the baseline. Page-route protection belongs
+  to Accounts Task 6 and the admin UI tasks.
 
 Dependency-resolution note: adding `@neondatabase/auth` briefly allowed npm to
 downgrade the existing TypeScript 6.0.3 install to 5.9.3 through a transitive
@@ -50,13 +58,21 @@ Files:
 - `vitest.worker.config.ts` (test-only bindings; default mode is `access`)
 - `package.json` / `package-lock.json`
 
-Public interface:
+Public interface (Task 6 consumes the session-read shape):
 
 ```ts
 proxyAdminAuth(request: Request, env: AdminAuthEnv): Promise<Response>
-readNeonSession(request: Request, env: AdminAuthEnv): Promise<VerifiedSession | null>
+readNeonSession(request: Request, env: AdminAuthEnv): Promise<{ session: VerifiedSession | null; setCookies: string[] }>
 VerifiedSession = { subject, email, emailVerified, displayName, expiresAt }
 ```
+
+`setCookies` carries sanitized provider renewal, clearing, or rotation cookies
+that the caller must apply to the browser-facing response. The protected-read
+path is deliberately read-only with respect to the Worker and returns cookies
+instead of dropping them. The signed `session_data` cache is bypassed and never
+minted by this adapter; `NEON_AUTH_COOKIE_SECRET` is required for readiness and
+reserved for the session toolkit/membership integration, not used to sign a
+protected-authorization cache here.
 
 Configuration in neon mode:
 
@@ -95,38 +111,68 @@ Security boundary:
   merging). Only Neon Auth cookies are forwarded. Cookies are rewritten as
   host-scoped (`Domain` removed), `Path=/`, `Secure`, `HttpOnly`,
   `SameSite=Lax`; `Partitioned` is removed.
-- Upstream `Location` is not trusted. Redirect responses are rewritten to a
-  validated admin destination or the secure default.
-- `readNeonSession` calls `getSession({query:{disableCookieCache:'true'}})`
-  against the configured provider. A valid signed session token is required; the
-  signed `session_data` cookie cache is never used for protected enforcement.
-- Missing/expired/revoked sessions return `null`. Provider `5xx`, rate limiting,
-  transport failures, malformed provider responses, and unexpected toolkit errors
-  raise `AdminAuthDependencyError` (`code: dependency_unavailable`, HTTP 503),
-  never a signed-out result and never an Access fallback.
+- Browser-facing successful responses are normalized to a deliberately public
+  schema (`{ok,user:{id,email,emailVerified,name}|null,session:{expiresAt}|null}`).
+  Provider `set-auth-token` / `set-auth-jwt` headers are never forwarded and
+  bearer/session/refresh token fields are never returned, so cookie-only
+  credentials are not readable from JavaScript.
+- The upstream call is a single hop with `redirect: "manual"`. A provider
+  redirect is never followed server-side; only a validated same-origin `/admin`
+  `Location` (or the secure default) is emitted to the browser, and intermediate
+  `Set-Cookie` headers are retained. Caller `Authorization`/`Host`/`Referer`
+  headers are not forwarded.
+- `readNeonSession` calls upstream `get-session` with
+  `disableCookieCache=true`. The signed `session_data` cookie cache is never used
+  for protected enforcement.
+- A provider `200` must be valid JSON in a supported shape. Invalid JSON,
+  non-object/array payloads, wrong shapes, and incomplete sessions (missing
+  identity, email, or expiry) raise `AdminAuthDependencyError`
+  (`code: dependency_unavailable`, HTTP 503). The only supported signed-out
+  shapes are JSON `null` and `{session:null,user:null}`. A well-formed expired
+  session is `null`. Provider `5xx`/`429`/transport failures/oversized responses
+  are also typed 503s, never a signed-out result and never an Access fallback.
 - Forged headers such as `Cf-Access-Authenticated-User-Email`,
   `X-Forwarded-Email`, and `X-Auth-Request-Email` are ignored.
 - No request body, password, cookie value, or provider error detail is logged by
-  this adapter. The toolkit logger is resolved at `silent` for this boundary.
+  this adapter. The adapter does not use the toolkit logger.
 - Sensitive routes have a bounded per-isolate fixed-window limiter (10 attempts
   per 60 seconds per Cloudflare client IP) as defense in depth. It is not a
   distributed rate limit; provider/edge limits and the live behavior remain part
   of the gate below.
+- Known deferred gap: provider error-message passthrough for reset/sign-in is
+  not normalized, so resistance to a provider that returns distinguishable
+  account-existence responses is unproven. No local admin-membership lookup is
+  performed or exposed.
 
 ## Synthetic verification completed
 
-- RED observed before implementation: the focused suite could not import
-  `../src/admin/neon-auth`.
+- Initial round RED observed before implementation: the focused suite could not
+  import `../src/admin/neon-auth`.
+- Fix-round RED observed: with the first committed implementation restored, the
+  expanded review-fix suite failed **13 tests / 23 passed** (`task4-fix1-red.log`),
+  covering malformed successes, credential leakage, manual redirect, and
+  session-cookie return.
 - GREEN: `npx vitest run --config vitest.worker.config.ts worker/test/admin-neon-auth.test.ts`
-  passes 28 tests in the actual Worker/workerd test runtime with all provider
+  passes **36 tests** in the actual Worker/workerd test runtime with all provider
   traffic intercepted by the existing MSW Worker harness. No live provider calls
   were made.
 - The suite covers multiple `Set-Cookie` preservation, host/`HttpOnly`/`Secure`
-  cookie rewriting, signed-out/expired/revoked rejection, uncached session
-  enforcement, provider 503 typing, forged identity headers, unsafe/encoded/
-  backslash/CRLF callbacks, partial configuration readiness, no Access fallback,
-  origin/body/rate bounds, non-enumerable reset responses, password non-logging,
-  generic provider failure output, and unproxied provider-admin paths.
+  cookie rewriting, signed-out/expired/revoked rejection, malformed/wrong-shape/
+  incomplete `200` payloads as typed dependency errors, explicit signed-out
+  shapes, browser credential stripping (headers and body), manual redirect with
+  an unfetched malicious target, validated absolute/relative admin `Location`,
+  provider renewal/clearing cookies returned from the session read, provider 503
+  typing, forged identity headers, unsafe/encoded/backslash/CRLF callbacks,
+  partial configuration readiness, no Access fallback, origin/body/rate bounds,
+  password non-logging, generic provider failure output, and unproxied
+  provider-admin paths.
+
+Provenance note: an earlier report quoted a **774.06 KiB** dry-run bundle from a
+stale log while the saved `task4-wrangler-final.log` recorded **723.04 KiB** for
+the pre-fix build. The fix-round dry-run is **778.61 KiB / 164.14 KiB gzip**
+(`/tmp/opencode/task4-fix1-wrangler-final.log`). `task4-check-final.log` records 0
+errors/0 warnings/5 pre-existing unused-variable hints, not pristine output. No
+bundle-size figure is used as security evidence.
 
 This proves the adapter against synthetic provider responses on the Worker
 runtime. It does **not** prove a real Neon Auth project, real browser cookie
@@ -167,7 +213,11 @@ Exact live evidence still required:
 - Email signup, verification-email delivery, verified sign-in, logout, and
   password reset on the deployed Worker.
 - Cookie persistence and host scope across reloads and top-level verification and
-  reset navigation.
+  reset navigation, including provider cookie renewal/clearing returned by
+  `readNeonSession`.
+- Manual redirect behavior on the deployed Worker: the provider 3xx status and
+  `Location` must be exposed without server-side following, and the browser must
+  navigate only the validated admin destination.
 - Expired/revoked session rejection and provider-outage behavior against the real
   provider.
 - No double Access OTP on the tested path, and a rehearsed restricted Access

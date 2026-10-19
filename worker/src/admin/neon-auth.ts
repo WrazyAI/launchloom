@@ -1,7 +1,4 @@
-import type { NeonAuthLogger, RequestContext } from "@neondatabase/auth/server";
-
 type NeonAuthModule = typeof import("@neondatabase/auth/server");
-
 // The auth SDK is loaded only on an explicit neon-mode auth request. Keeping it
 // out of the static module graph preserves Durable Object and legacy-route
 // startup for the default access-mode deployment.
@@ -13,24 +10,23 @@ function loadNeonAuth() {
 }
 
 // Must match the package's public NEON_AUTH_COOKIE_PREFIX export; the focused
-// test asserts the current SDK value so a provider rename cannot pass silently.
+// test pins the current SDK value so a provider rename cannot pass silently.
 const NEON_AUTH_COOKIE_PREFIX_VALUE = "__Secure-neon-auth";
-const NEON_AUTH_COOKIE_PATTERN = new RegExp(`(?:^|;\\s*)${NEON_AUTH_COOKIE_PREFIX_VALUE}`, "u");
+const NEON_AUTH_COOKIE_PATTERN = new RegExp(
+  `(?:^|;\\s*)${NEON_AUTH_COOKIE_PREFIX_VALUE}`,
+  "u",
+);
 
 const AUTH_PATH_PREFIX = "/api/admin/onboarding-invites/auth/";
 const SECURE_DEFAULT_CALLBACK = "/admin/onboarding-invites";
 const MIN_COOKIE_SECRET_LENGTH = 32;
 const MAX_BODY_BYTES = 16 * 1024;
+const MAX_UPSTREAM_BYTES = 256 * 1024;
+const MAX_RESPONSE_COOKIES = 8;
+const MAX_COOKIE_LENGTH = 4 * 1024;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_ATTEMPTS = 10;
 const RATE_LIMIT_MAX_KEYS = 5_000;
-
-const silentLog: NeonAuthLogger = {
-  error: () => undefined,
-  warn: () => undefined,
-  info: () => undefined,
-  debug: () => undefined,
-};
 
 export type AdminAuthMode = "access" | "neon";
 
@@ -47,6 +43,11 @@ export interface VerifiedSession {
   emailVerified: boolean;
   displayName: string;
   expiresAt: number;
+}
+
+export interface NeonSessionRead {
+  session: VerifiedSession | null;
+  setCookies: string[];
 }
 
 export class AdminAuthConfigError extends Error {
@@ -72,7 +73,6 @@ export class AdminAuthDependencyError extends Error {
 }
 
 type NeonConfig = {
-  mode: "neon";
   baseUrl: string;
   cookieSecret: string;
   publicOrigin: string;
@@ -130,7 +130,6 @@ function requireNeonConfig(env: AdminAuthEnv): NeonConfig {
   const missing = readiness(env);
   if (missing.length > 0) throw new AdminAuthConfigError(missing);
   return {
-    mode: "neon",
     baseUrl: isHttpsUrl(env.NEON_AUTH_BASE_URL, true)!,
     cookieSecret: env.NEON_AUTH_COOKIE_SECRET!,
     publicOrigin: isHttpsUrl(env.ADMIN_PUBLIC_ORIGIN, false)!,
@@ -138,16 +137,12 @@ function requireNeonConfig(env: AdminAuthEnv): NeonConfig {
 }
 
 function responseJson(body: unknown, status: number, headers: HeadersInit = {}) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-      "Referrer-Policy": "no-referrer",
-      ...headers,
-    },
-  });
+  const merged = new Headers(headers);
+  if (!merged.has("Content-Type")) merged.set("Content-Type", "application/json; charset=utf-8");
+  if (!merged.has("Cache-Control")) merged.set("Cache-Control", "no-store");
+  if (!merged.has("X-Content-Type-Options")) merged.set("X-Content-Type-Options", "nosniff");
+  if (!merged.has("Referrer-Policy")) merged.set("Referrer-Policy", "no-referrer");
+  return new Response(JSON.stringify(body), { status, headers: merged });
 }
 
 function dependencyUnavailable() {
@@ -164,6 +159,10 @@ function dependencyUnavailable() {
 
 function notFound() {
   return responseJson({ error: { code: "not_found", message: "Not found." } }, 404);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 /**
@@ -203,10 +202,23 @@ export function safeAdminReturnPath(value: unknown): string | null {
   }
 }
 
+function safeAdminReturnLocation(value: unknown, publicOrigin: string): string | null {
+  const relative = safeAdminReturnPath(value);
+  if (relative) return relative;
+  if (typeof value !== "string" || !value || value.length > 2_048) return null;
+  try {
+    const url = new URL(value);
+    if (url.origin !== publicOrigin) return null;
+    return safeAdminReturnPath(`${url.pathname}${url.search}`);
+  } catch {
+    return null;
+  }
+}
+
 function readCallback(value: unknown) {
-  if (value === undefined) return { value: SECURE_DEFAULT_CALLBACK, present: false };
+  if (value === undefined) return { value: SECURE_DEFAULT_CALLBACK };
   const safe = safeAdminReturnPath(value);
-  return safe === null ? null : { value: safe, present: true };
+  return safe === null ? null : { value: safe };
 }
 
 function rewriteJsonCallbacks(
@@ -219,15 +231,14 @@ function rewriteJsonCallbacks(
   } catch {
     return { error: "invalid_body" };
   }
-  if (!body || typeof body !== "object" || Array.isArray(body)) return { error: "invalid_body" };
+  if (!isRecord(body)) return { error: "invalid_body" };
 
-  const record = body as Record<string, unknown>;
-  if (!route.callbackField) return { text: JSON.stringify(record) };
+  if (!route.callbackField) return { text: JSON.stringify(body) };
 
   const acceptedKeys = ["callbackURL", "callbackUrl", "redirectTo", "returnTo"];
   const supplied = acceptedKeys
-    .filter((key) => record[key] !== undefined)
-    .map((key) => ({ key, value: record[key] }));
+    .filter((key) => body[key] !== undefined)
+    .map((key) => ({ key, value: body[key] }));
 
   let callback = SECURE_DEFAULT_CALLBACK;
   for (const candidate of supplied) {
@@ -236,9 +247,9 @@ function rewriteJsonCallbacks(
     callback = safe.value;
   }
 
-  for (const key of acceptedKeys) if (key !== route.callbackField) delete record[key];
-  record[route.callbackField] = callback;
-  return { text: JSON.stringify(record) };
+  for (const key of acceptedKeys) if (key !== route.callbackField) delete body[key];
+  body[route.callbackField] = callback;
+  return { text: JSON.stringify(body) };
 }
 
 function rewriteQueryCallback(
@@ -314,62 +325,211 @@ async function readBoundedBody(request: Request): Promise<string | null> {
   return new TextDecoder().decode(merged);
 }
 
-function sanitizeAuthCookies(headers: Headers, authModule: NeonAuthModule) {
-  const setCookies = headers.getSetCookie();
-  if (setCookies.length === 0) return;
-  headers.delete("Set-Cookie");
-  for (const raw of setCookies) {
-    for (const cookie of authModule.parseSetCookies(raw)) {
-      if (!cookie.name.startsWith(authModule.NEON_AUTH_COOKIE_PREFIX)) continue;
-      headers.append(
-        "Set-Cookie",
-        authModule.serializeSetCookie({
-          ...cookie,
-          domain: undefined,
-          path: "/",
-          secure: true,
-          httpOnly: true,
-          sameSite: "lax",
-          partitioned: undefined,
-        }),
-      );
+async function readUpstreamText(response: Response) {
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    total += value.byteLength;
+    if (total > MAX_UPSTREAM_BYTES) {
+      await reader.cancel().catch(() => undefined);
+      throw new AdminAuthDependencyError();
     }
+    chunks.push(value);
   }
-}
-
-function sanitizeProxyResponse(response: Response, authModule: NeonAuthModule): Response {
-  const headers = new Headers(response.headers);
-  sanitizeAuthCookies(headers, authModule);
-  headers.set("Cache-Control", "no-store");
-  headers.set("X-Content-Type-Options", "nosniff");
-  headers.set("Referrer-Policy", "no-referrer");
-  headers.set("Cross-Origin-Resource-Policy", "same-origin");
-  headers.set("Vary", "Cookie");
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
-}
-
-function createRequestContext(
-  request: Request,
-  publicOrigin: string,
-  extractCookies: (value: string) => string,
-): RequestContext {
-  return {
-    getCookies: () => extractCookies(request.headers.get("cookie") ?? ""),
-    setCookie: () => undefined,
-    getHeader: (name) => request.headers.get(name),
-    getOrigin: () => publicOrigin,
-    getFramework: () => "cloudflare-worker",
-  };
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(merged);
 }
 
 /**
- * Proxy only the baseline email auth surface. This is not a generic reverse
- * proxy: paths, methods, callback destinations, request bodies, and cookies are
- * all validated here before the toolkit sees the request.
+ * Single-hop upstream call with `redirect: "manual"` so a provider redirect can
+ * never be followed server-side. There is no retry, proxy, or caller-supplied
+ * upstream target.
+ */
+async function fetchUpstream(
+  url: URL,
+  method: string,
+  headers: Headers,
+  body?: string,
+): Promise<{ status: number; headers: Headers; text: string }> {
+  let response: Response;
+  try {
+    response = await fetch(url.href, {
+      method,
+      headers,
+      body,
+      redirect: "manual",
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    throw new AdminAuthDependencyError();
+  }
+  return {
+    status: response.status,
+    headers: response.headers,
+    text: await readUpstreamText(response),
+  };
+}
+
+function upstreamUrl(baseUrl: string, path: string, search: string) {
+  const base = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  const url = new URL(path, base);
+  url.search = search;
+  return url;
+}
+
+function upstreamHeaders(publicOrigin: string, cookieHeader: string, json: boolean) {
+  const headers = new Headers({
+    Origin: publicOrigin,
+    Accept: "application/json",
+    "x-neon-auth-proxy": "cloudflare-worker",
+    "x-neon-auth-middleware": "true",
+  });
+  if (cookieHeader) headers.set("Cookie", cookieHeader);
+  if (json) headers.set("Content-Type", "application/json");
+  return headers;
+}
+
+function sanitizeSetCookies(rawCookies: string[], authModule: NeonAuthModule): string[] {
+  const result: string[] = [];
+  for (const raw of rawCookies) {
+    for (const cookie of authModule.parseSetCookies(raw)) {
+      if (!cookie.name.startsWith(authModule.NEON_AUTH_COOKIE_PREFIX)) continue;
+      const serialized = authModule.serializeSetCookie({
+        ...cookie,
+        domain: undefined,
+        path: "/",
+        secure: true,
+        httpOnly: true,
+        sameSite: "lax",
+        partitioned: undefined,
+      });
+      if (serialized.length > MAX_COOKIE_LENGTH) continue;
+      result.push(serialized);
+      if (result.length >= MAX_RESPONSE_COOKIES) return result;
+    }
+  }
+  return result;
+}
+
+function browserHeaders(setCookies: string[], extra: Record<string, string> = {}) {
+  const headers = new Headers({
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+    "Cross-Origin-Resource-Policy": "same-origin",
+    Vary: "Cookie",
+    ...extra,
+  });
+  for (const cookie of setCookies) headers.append("Set-Cookie", cookie);
+  return headers;
+}
+
+function cleanEmail(value: unknown) {
+  if (typeof value !== "string") return "";
+  const email = value.trim().toLowerCase();
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email)) return "";
+  return email;
+}
+
+function cleanText(value: unknown, limit: number) {
+  if (typeof value !== "string") return "";
+  return value.replace(/[\u0000-\u001f\u007f]/gu, "").trim().slice(0, limit);
+}
+
+function sessionExpiry(value: unknown) {
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === "number") return value;
+  if (typeof value === "string") return Date.parse(value);
+  return Number.NaN;
+}
+
+function publicUser(value: Record<string, unknown>) {
+  const id = cleanText(value.id, 200);
+  const email = cleanEmail(value.email);
+  if (!id || !email) return null;
+  return {
+    id,
+    email,
+    emailVerified: value.emailVerified === true,
+    name: cleanText(value.name, 100),
+  };
+}
+
+function publicSession(value: Record<string, unknown>) {
+  const expiresAt = sessionExpiry(value.expiresAt);
+  return Number.isFinite(expiresAt) ? { expiresAt } : null;
+}
+
+/**
+ * Deliberately public browser schema: user display fields and a session expiry,
+ * never a bearer token, refresh token, JWT, or provider session token.
+ */
+function publicAuthPayload(value: unknown) {
+  if (value === null || value === undefined) return { ok: true, user: null, session: null };
+  if (!isRecord(value)) return null;
+  return {
+    ok: true,
+    user: isRecord(value.user) ? publicUser(value.user) : null,
+    session: isRecord(value.session) ? publicSession(value.session) : null,
+  };
+}
+
+function providerErrorMessage(value: unknown) {
+  if (!isRecord(value)) return "The request could not be completed.";
+  const direct = typeof value.message === "string" ? value.message : "";
+  const nested = isRecord(value.error) && typeof value.error.message === "string" ? value.error.message : "";
+  return cleanText(direct || nested, 240) || "The request could not be completed.";
+}
+
+function verifiedSessionFrom(raw: unknown): VerifiedSession | null {
+  if (!isRecord(raw)) throw new AdminAuthDependencyError();
+  // Explicit supported signed-out shape.
+  if (raw.session === null && raw.user === null) return null;
+  const session = isRecord(raw.session) ? raw.session : null;
+  const user = isRecord(raw.user) ? raw.user : null;
+  if (!session || !user) throw new AdminAuthDependencyError();
+
+  const subject = cleanText(user.id, 200);
+  const email = cleanEmail(user.email);
+  const expiresAt = sessionExpiry(session.expiresAt);
+  if (!subject || !email || !Number.isFinite(expiresAt))
+    throw new AdminAuthDependencyError();
+  // A well-formed but expired session is a supported signed-out result.
+  if (expiresAt <= Date.now()) return null;
+
+  return {
+    subject,
+    email,
+    emailVerified: user.emailVerified === true,
+    displayName: cleanText(user.name, 100),
+    expiresAt,
+  };
+}
+
+function parseUpstreamJson(text: string): unknown {
+  if (!text.trim()) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new AdminAuthDependencyError();
+  }
+}
+
+/**
+ * Proxy only the baseline email auth surface through a controlled single-hop
+ * transport. This is not a generic reverse proxy: paths, methods, callbacks,
+ * request bodies, cookies, and redirects are validated here, and the browser
+ * response excludes provider credential fields.
  */
 export async function proxyAdminAuth(request: Request, env: AdminAuthEnv): Promise<Response> {
   if (env.ADMIN_AUTH_MODE !== "neon") return notFound();
@@ -437,25 +597,6 @@ export async function proxyAdminAuth(request: Request, env: AdminAuthEnv): Promi
     proxyUrl = rewritten.url;
   }
 
-  const upstreamRequest = new Request(proxyUrl.href, {
-    method: request.method,
-    headers: (() => {
-      const headers = new Headers(request.headers);
-      // The provider must only see the trusted deployment origin, never a
-      // caller-controlled Referer or unvalidated Origin.
-      headers.set("Origin", config.publicOrigin);
-      headers.delete("Referer");
-      headers.delete("Content-Length");
-      headers.delete("Host");
-      // Protected authorization is cookie-only; a caller-supplied bearer token
-      // must not be forwarded to the provider as an alternate identity.
-      headers.delete("Authorization");
-      if (body !== undefined) headers.set("Content-Type", "application/json");
-      return headers;
-    })(),
-    body,
-  });
-
   let authModule: NeonAuthModule;
   try {
     authModule = await loadNeonAuth();
@@ -463,70 +604,69 @@ export async function proxyAdminAuth(request: Request, env: AdminAuthEnv): Promi
     return dependencyUnavailable();
   }
 
+  const cookieHeader = authModule.extractNeonAuthCookies(request.headers.get("cookie") ?? "");
+  let upstream: { status: number; headers: Headers; text: string };
   try {
-    const upstream = await authModule.handleAuthProxyRequest({
-      request: upstreamRequest,
-      path,
-      baseUrl: config.baseUrl,
-      cookieSecret: config.cookieSecret,
-      sameSite: "lax",
-      log: silentLog,
-    });
-    if (upstream.status >= 500 || upstream.status === 429) return dependencyUnavailable();
-    const sanitized = sanitizeProxyResponse(upstream, authModule);
-    if (sanitized.status >= 300 && sanitized.status < 400) {
-      const fallback = route.callbackField ? proxyUrl.searchParams.get(route.callbackField) : null;
-      const safe = safeAdminReturnPath(fallback) || SECURE_DEFAULT_CALLBACK;
-      sanitized.headers.set("Location", safe);
-    }
-    return sanitized;
+    upstream = await fetchUpstream(
+      upstreamUrl(config.baseUrl, path, proxyUrl.search),
+      request.method,
+      upstreamHeaders(config.publicOrigin, cookieHeader, body !== undefined),
+      body,
+    );
   } catch (error) {
     if (error instanceof AdminAuthDependencyError) return dependencyUnavailable();
     return dependencyUnavailable();
   }
-}
 
-function providerSessionData(value: unknown) {
-  if (!value || typeof value !== "object") return null;
-  const data = value as {
-    session?: Record<string, unknown> | null;
-    user?: Record<string, unknown> | null;
-  };
-  if (!data.session || !data.user) return null;
-  return { session: data.session, user: data.user };
-}
+  const setCookies = sanitizeSetCookies(upstream.headers.getSetCookie(), authModule);
 
-function sessionExpiry(value: unknown) {
-  if (value instanceof Date) return value.getTime();
-  if (typeof value === "number") return value;
-  if (typeof value === "string") return Date.parse(value);
-  return Number.NaN;
-}
+  if (upstream.status >= 500 || upstream.status === 429) return dependencyUnavailable();
 
-function cleanEmail(value: unknown) {
-  if (typeof value !== "string") return "";
-  const email = value.trim().toLowerCase();
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email)) return "";
-  return email;
-}
+  if (upstream.status >= 300 && upstream.status < 400) {
+    const location =
+      safeAdminReturnLocation(upstream.headers.get("location"), config.publicOrigin) ??
+      SECURE_DEFAULT_CALLBACK;
+    return new Response(null, {
+      status: 302,
+      headers: browserHeaders(setCookies, { Location: location }),
+    });
+  }
 
-function cleanText(value: unknown, limit: number) {
-  if (typeof value !== "string") return "";
-  return value.replace(/[\u0000-\u001f\u007f]/gu, "").trim().slice(0, limit);
+  let parsed: unknown;
+  try {
+    parsed = parseUpstreamJson(upstream.text);
+  } catch (error) {
+    if (upstream.status >= 200 && upstream.status < 300) return dependencyUnavailable();
+    parsed = null;
+  }
+
+  if (upstream.status >= 200 && upstream.status < 300) {
+    const payload = publicAuthPayload(parsed);
+    if (!payload) return dependencyUnavailable();
+    return responseJson(payload, 200, browserHeaders(setCookies));
+  }
+
+  return responseJson(
+    { error: { code: "auth_failed", message: providerErrorMessage(parsed) } },
+    upstream.status,
+    browserHeaders(setCookies),
+  );
 }
 
 /**
- * Read the current session from the provider without using the signed
- * session-data cookie cache. A provider outage is a typed 503, never a null
- * (signed-out) result and never an Access fallback.
+ * Read the current provider session without the signed session-data cookie
+ * cache. Malformed successful payloads, wrong shapes, incomplete sessions and
+ * invalid JSON are typed dependency failures, never signed-out. The returned
+ * `setCookies` are sanitized provider renewal/clearing cookies the caller must
+ * apply to the browser response (task 6 contract).
  */
 export async function readNeonSession(
   request: Request,
   env: AdminAuthEnv,
-): Promise<VerifiedSession | null> {
+): Promise<NeonSessionRead> {
   const config = requireNeonConfig(env);
   const cookieHeader = request.headers.get("cookie") || "";
-  if (!NEON_AUTH_COOKIE_PATTERN.test(cookieHeader)) return null;
+  if (!NEON_AUTH_COOKIE_PATTERN.test(cookieHeader)) return { session: null, setCookies: [] };
 
   let authModule: NeonAuthModule;
   try {
@@ -535,52 +675,29 @@ export async function readNeonSession(
     throw new AdminAuthDependencyError();
   }
 
-  const auth = authModule.createAuthServer({
-    baseUrl: config.baseUrl,
-    context: () =>
-      createRequestContext(request, config.publicOrigin, authModule.extractNeonAuthCookies),
-    cookieSecret: config.cookieSecret,
-    sameSite: "lax",
-    log: silentLog,
-  });
+  const upstream = await fetchUpstream(
+    upstreamUrl(config.baseUrl, "get-session", "?disableCookieCache=true"),
+    "GET",
+    upstreamHeaders(
+      config.publicOrigin,
+      authModule.extractNeonAuthCookies(cookieHeader),
+      false,
+    ),
+  );
+  const setCookies = sanitizeSetCookies(upstream.headers.getSetCookie(), authModule);
 
-  let result: {
-    data: unknown;
-    error: {
-      status?: number;
-      code?: string;
-      message?: string;
-    } | null;
-  };
-  try {
-    result = (await auth.getSession({
-      query: { disableCookieCache: "true" },
-    })) as typeof result;
-  } catch {
+  if (upstream.status === 400 || upstream.status === 401 || upstream.status === 403 || upstream.status === 422)
+    return { session: null, setCookies };
+  if (upstream.status < 200 || upstream.status >= 300 || upstream.status === 429)
     throw new AdminAuthDependencyError();
-  }
-
-  if (result.error) {
-    const status = result.error.status ?? 0;
-    if (status === 400 || status === 401 || status === 403 || status === 422) return null;
-    throw new AdminAuthDependencyError();
-  }
-
-  const data = providerSessionData(result.data);
-  if (!data) return null;
-
-  const subject = cleanText(data.user.id, 200);
-  const email = cleanEmail(data.user.email);
-  const expiresAt = sessionExpiry(data.session.expiresAt);
-  if (!subject || !email || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) return null;
-
-  return {
-    subject,
-    email,
-    emailVerified: data.user.emailVerified === true,
-    displayName: cleanText(data.user.name, 100),
-    expiresAt,
-  };
+  // A successful session read must carry an explicit JSON body; empty or
+  // non-JSON output cannot be treated as signed-out.
+  if (!upstream.text.trim()) throw new AdminAuthDependencyError();
+  const parsed = parseUpstreamJson(upstream.text);
+  // Better Auth returns JSON `null` for a supported signed-out session.
+  if (parsed === null) return { session: null, setCookies };
+  const session = verifiedSessionFrom(parsed);
+  return { session, setCookies };
 }
 
 /**
