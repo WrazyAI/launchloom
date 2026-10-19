@@ -63,7 +63,7 @@ describe("Access-protected invite administration", () => {
       new Request(`${apiOrigin}/api/admin/onboarding-invites`, {
         method: "POST",
         headers: { Origin: apiOrigin, "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "create", clientEmail: "owner@example.test" }),
+        body: JSON.stringify({ action: "create", clientEmail: "owner@example.test", creator: { id: "forged", role: "owner" } }),
       }),
       testEnv,
       accessContext("admin@example.test"),
@@ -71,6 +71,11 @@ describe("Access-protected invite administration", () => {
     expect(created.status).toBe(201);
     const result = await created.json() as { inviteId: string; clientEmail: string; url: string };
     expect(result).toMatchObject({ clientEmail: "owner@example.test" });
+    const shared = await inviteNamespace.getByName("launchloom-onboarding-invites").listPage({});
+    const saved = shared.items.find(item => item.inviteId === result.inviteId);
+    expect(saved?.creator).toMatchObject({ kind: "admin", source: "cloudflare-access", email: "admin@example.test" });
+    expect(saved?.creator.id).toMatch(/^access:[a-f0-9]{64}$/);
+    expect(saved?.creator.id).not.toBe("forged");
     expect(result.url).toMatch(/^https:\/\/onboard\.example\.test\/onboard\/#invite=/u);
     const token = new URL(result.url).hash.slice("#invite=".length);
     const validated = await SELF.fetch("https://api.launchloom.test/api/onboarding-invites/validate", {
@@ -345,6 +350,11 @@ describe("operator-confirmed intake reconciliation", () => {
     const repeated=await worker.fetch(recoveryAdminRequest(inviteId,12001),testEnv,accessContext("admin@example.test"));
     expect(repeated.status).toBe(200);
     expect(dispatches).toBe(1);expect(receipts).toBe(1);
+    const attempts = await testEnv.GENERATION_LEDGER.getByName("launchloom-generations").listAttempts({clientId:`submission:${payload.submissionId}`});
+    expect(attempts.items).toHaveLength(1);
+    expect(attempts.items[0].initiator).toMatchObject({kind:"admin",email:"admin@example.test",source:"cloudflare-access"});
+    const accepted = (await coordinator.acceptedPage({})).items.find(item=>item.submissionId===payload.submissionId);
+    expect(accepted).toMatchObject({businessName:"Synthetic Recovery",email:"owner@example.test"});
     expect((await coordinator.list()).find(row=>row.inviteId===inviteId)).toMatchObject({status:"consumed",issueNumber:12001,recoveryRequired:false});
     await runInDurableObject(coordinator,(_,state)=>{
       expect(state.storage.sql.exec<{issue_number:number;reviewer_email:string}>("SELECT issue_number, reviewer_email FROM intake_reconciliations WHERE invite_id = ?",inviteId).toArray()[0]).toEqual({issue_number:12001,reviewer_email:"admin@example.test"});

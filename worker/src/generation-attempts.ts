@@ -12,7 +12,12 @@ import type {
   Health,
   InitialDispatchRegistration,
   Page,
+  ClientInput,
+  ClientRecord,
+  ClientFilters,
+  DispatchRequest,
 } from "../../src/lib/admin-contracts";
+import { pageRecords } from "./admin/pagination";
 
 const executions = [
   "queued",
@@ -219,6 +224,13 @@ export class GenerationAttempts {
         partial INTEGER NOT NULL DEFAULT 1, last_error TEXT, pending_projection_count INTEGER NOT NULL DEFAULT 0
       );
       INSERT OR IGNORE INTO admin_sync_state(id) VALUES (1);
+      CREATE TABLE IF NOT EXISTS admin_clients (
+        client_id TEXT PRIMARY KEY, invite_id TEXT UNIQUE, submission_id TEXT UNIQUE,
+        issue_number INTEGER NOT NULL UNIQUE, data TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS admin_dispatch_requests (
+        request_id TEXT PRIMARY KEY, data TEXT NOT NULL
+      );
     `);
   }
 
@@ -229,6 +241,203 @@ export class GenerationAttempts {
         id,
       )
       .toArray()[0];
+  }
+  upsertClient(input: ClientInput): ClientRecord {
+    if (
+      !nonempty(input.clientId) ||
+      !Number.isSafeInteger(input.issueNumber) ||
+      input.issueNumber < 1 ||
+      (input.submittedAt !== null && !timestamp(input.submittedAt))
+    )
+      invalid("client");
+    if (
+      input.submissionId
+        ? input.clientId !== `submission:${input.submissionId}`
+        : input.clientId !== `legacy-issue:${input.issueNumber}`
+    )
+      invalid("client identity");
+    return this.storage.transactionSync(() => {
+      const old = this.getClient(input.clientId);
+      const collision = this.storage.sql
+        .exec<{ client_id: string }>(
+          "SELECT client_id FROM admin_clients WHERE (invite_id=? OR submission_id=? OR issue_number=?) AND client_id<>?",
+          input.inviteId,
+          input.submissionId,
+          input.issueNumber,
+          input.clientId,
+        )
+        .toArray()[0];
+      if (collision) conflict("client references");
+      if (old) {
+        for (const k of [
+          "inviteId",
+          "submissionId",
+          "issueNumber",
+          "submittedAt",
+          "businessName",
+          "contactName",
+          "email",
+          "phone",
+        ] as const)
+          if (input[k] !== null && old[k] !== null && old[k] !== input[k])
+            conflict(`client ${k}`);
+      }
+      const record: ClientRecord = {
+        ...input,
+        creator: old
+          ? mergeActor(old.creator, input.creator, "client creator")
+          : input.creator,
+        createdAt: old?.createdAt ?? input.submittedAt ?? Date.now(),
+        updatedAt: old?.updatedAt ?? input.submittedAt ?? Date.now(),
+        previewUrl: old?.previewUrl ?? null,
+        productionUrl: old?.productionUrl ?? null,
+      };
+      if (old)
+        for (const k of [
+          "inviteId",
+          "submissionId",
+          "businessName",
+          "contactName",
+          "email",
+          "phone",
+        ] as const)
+          record[k] ??= old[k];
+      record.submittedAt ??= old?.submittedAt ?? null;
+      this.storage.sql.exec(
+        `INSERT INTO admin_clients(client_id,invite_id,submission_id,issue_number,data) VALUES(?,?,?,?,?)
+        ON CONFLICT(client_id) DO UPDATE SET invite_id=excluded.invite_id,submission_id=excluded.submission_id,data=excluded.data`,
+        record.clientId,
+        record.inviteId,
+        record.submissionId,
+        record.issueNumber,
+        JSON.stringify(record),
+      );
+      return record;
+    });
+  }
+  getClient(id: string): ClientRecord | null {
+    const row = this.storage.sql
+      .exec<{ data: string }>(
+        "SELECT data FROM admin_clients WHERE client_id=?",
+        id,
+      )
+      .toArray()[0];
+    return row ? JSON.parse(row.data) : null;
+  }
+  listClients(query: ClientFilters): Page<ClientRecord> {
+    const filters = {
+      search: query.search?.trim().toLowerCase() || null,
+      from: query.from ?? null,
+      to: query.to ?? null,
+    };
+    for (const t of [filters.from, filters.to])
+      if (t !== null && !timestamp(t)) invalid("date filter");
+    const rows = this.storage.sql
+      .exec<{ data: string }>("SELECT data FROM admin_clients")
+      .toArray()
+      .map((row) => JSON.parse(row.data) as ClientRecord)
+      .filter(
+        (c) =>
+          (filters.from === null || c.createdAt >= filters.from) &&
+          (filters.to === null || c.createdAt <= filters.to) &&
+          (!filters.search ||
+            [
+              c.clientId,
+              c.inviteId,
+              c.submissionId,
+              c.issueNumber,
+              c.businessName,
+              c.contactName,
+              c.email,
+            ].some((v) =>
+              String(v ?? "")
+                .toLowerCase()
+                .includes(filters.search!),
+            )),
+      );
+    return pageRecords(
+      rows,
+      query,
+      JSON.stringify(["clients", filters]),
+      (c) => c.clientId,
+      (c) => c.createdAt,
+    );
+  }
+  registerDispatch(input: DispatchRequest): {
+    attemptId: string;
+    requestId: string;
+  } {
+    return this.storage.transactionSync(() => {
+      const client = this.getClient(input.clientId);
+      if (
+        !client ||
+        client.inviteId !== input.inviteId ||
+        client.submissionId !== input.submissionId ||
+        client.issueNumber !== input.issueNumber
+      )
+        conflict("dispatch client evidence");
+      const old = this.storage.sql
+        .exec<{ data: string }>(
+          "SELECT data FROM admin_dispatch_requests WHERE request_id=?",
+          input.requestId,
+        )
+        .toArray()[0];
+      if (old) {
+        const previous: DispatchRequest = JSON.parse(old.data);
+        for (const key of [
+          "requestId",
+          "attemptId",
+          "clientId",
+          "inviteId",
+          "submissionId",
+          "issueNumber",
+          "createdAt",
+        ] as const)
+          if (previous[key] !== input[key]) conflict("dispatch evidence");
+        if (
+          actorKey(previous.initiator) !== actorKey(input.initiator) ||
+          actorKey(previous.invitationCreator) !==
+            actorKey(input.invitationCreator)
+        )
+          conflict("dispatch actor evidence");
+      }
+      if (!old)
+        this.storage.sql.exec(
+          "INSERT INTO admin_dispatch_requests(request_id,data) VALUES(?,?)",
+          input.requestId,
+          JSON.stringify(input),
+        );
+      const result = this.upsertAttempt({
+        attemptId: input.attemptId,
+        requestId: input.requestId,
+        clientId: input.clientId,
+        issueNumber: input.issueNumber,
+        profile: "full",
+        initiator: input.initiator,
+        invitationCreator: input.invitationCreator,
+        repository: null,
+        runId: null,
+        runAttempt: null,
+        executionStatus: "queued",
+        deliveryStatus: "none",
+        stale: false,
+        createdAt: input.createdAt,
+        updatedAt: input.createdAt,
+        startedAt: null,
+        completedAt: null,
+        failure: {
+          category: null,
+          stage: null,
+          summary: null,
+          evidenceUrl: null,
+          nextStep: null,
+        },
+      });
+      return this.registerInitialDispatch({
+        requestId: input.requestId,
+        initialAttemptId: result.attemptId,
+      });
+    });
   }
   private save(input: AttemptInput, state: State) {
     this.storage.sql.exec(
@@ -497,9 +706,13 @@ export class GenerationAttempts {
     }
     if (normalized.search !== null) {
       clauses.push(
-        "(instr(lower(attempt_id), ?) > 0 OR instr(lower(COALESCE(client_id,'')), ?) > 0 OR instr(lower(COALESCE(run_id,'')), ?) > 0 OR instr(lower(COALESCE(repository,'')), ?) > 0 OR instr(lower(COALESCE(request_id,'')), ?) > 0 OR CAST(issue_number AS TEXT) = ?)",
+        `(instr(lower(attempt_id), ?) > 0 OR instr(lower(COALESCE(client_id,'')), ?) > 0 OR instr(lower(COALESCE(run_id,'')), ?) > 0 OR instr(lower(COALESCE(repository,'')), ?) > 0 OR instr(lower(COALESCE(request_id,'')), ?) > 0 OR CAST(issue_number AS TEXT) = ?
+          OR EXISTS (SELECT 1 FROM admin_clients c WHERE c.client_id=generation_attempts.client_id AND (
+            instr(lower(COALESCE(json_extract(c.data,'$.businessName'),'')),?)>0 OR
+            instr(lower(COALESCE(json_extract(c.data,'$.contactName'),'')),?)>0 OR
+            instr(lower(COALESCE(json_extract(c.data,'$.email'),'')),?)>0)))`,
       );
-      args.push(...Array<string>(6).fill(normalized.search));
+      args.push(...Array<string>(9).fill(normalized.search));
     }
     if (normalized.from !== null) {
       clauses.push("created_at >= ?");

@@ -33,6 +33,7 @@ import {
 } from "./seo-readiness";
 import type { PublicationCommand } from "./publication";
 import { OnboardingInvites } from "./onboarding-invites";
+import { legacyAccessPrincipal, principalActor, workspaceApi, workspaceError } from "./admin/workspace-api";
 import { IntakeRecoveryError, intakeOperationMarker, recoverIntakeIssue, readIntakeIssuePayload, verifyIntakeIssueOwnership, type IntakeIssue } from "./intake-recovery";
 import {
   GenerationLedger,
@@ -319,6 +320,18 @@ async function onboardingAdminPage(request: Request, env: Env, ctx: ExecutionCon
   });
 }
 
+async function authenticatedWorkspace(request: Request, env: Env, ctx: ExecutionContext) {
+  const origin = request.headers.get("Origin");
+  if (origin && origin !== new URL(request.url).origin) return workspaceError("forbidden","Invalid request origin.",403);
+  if (!ctx.access) return workspaceError("signed_out","Sign in required.",401);
+  try {
+    if (!(await accessAdminEmail(ctx,env))) return workspaceError("forbidden","Access denied.",403);
+  } catch {
+    return workspaceError("unavailable","Workspace authorization is temporarily unavailable.",503);
+  }
+  return workspaceApi(request,env);
+}
+
 async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
   const workerOrigin = new URL(request.url).origin;
   const origin = request.headers.get("Origin") || "";
@@ -382,7 +395,7 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
           return json({ error: "The original intake is missing valid contact details.", code: "recovery_mismatch" }, 409, headers);
         const reconciled = await coordinator.reconcileIssue({inviteId, submissionId: reservation.submissionId,
           submissionHash: reservation.submissionHash, operationId: reservation.operationId, issueNumber,
-          reviewerEmail: administratorEmail, recipient, businessName});
+          reviewerEmail: administratorEmail, recipient, businessName, actor:principalActor(await legacyAccessPrincipal(administratorEmail))});
         if (!reconciled) return json({ error: "The invitation changed during recovery. Refresh and review it again.", code: "recovery_mismatch" }, 409, headers);
       }
       await coordinator.queueWorkflowDispatch(inviteId, reservation.submissionId, issueNumber);
@@ -453,6 +466,7 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
       allowedOrigin: claims.allowedOrigins[0],
       tokenHash,
       now: Date.now(),
+      creator: principalActor(await legacyAccessPrincipal(administratorEmail)),
     });
     return json({
       inviteId: claims.inviteId,
@@ -1237,6 +1251,7 @@ async function intake(request: Request, env: Env) {
       if (!reservation.duplicate) {
         const recorded = await inviteCoordinator(env).recordIssue(
           invite.claims.inviteId, normalized.submissionId, submissionHash, issueNumber,
+          Date.now(), {businessName:normalized.businessName,contactName:normalized.contactName,email:normalized.email,phone:normalized.phone},
         );
         if (!recorded) throw new Error("Intake acceptance could not be recorded.");
       }
@@ -3666,6 +3681,9 @@ export default {
     const path = new URL(request.url).pathname;
     if (path === "/api/onboarding-invites/validate")
       return inviteValidation(request, env);
+    if (path.startsWith("/api/admin/onboarding-invites/workspace/")) {
+      return authenticatedWorkspace(request,env,ctx);
+    }
     if (path === "/api/admin/onboarding-invites")
       return adminInvites(request, env, ctx);
     if (path === "/admin/onboarding-invites")

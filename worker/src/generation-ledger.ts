@@ -5,6 +5,7 @@ import type {
   AttemptEventInput,
   AttemptFilters,
   InitialDispatchRegistration,
+  ClientInput, ClientFilters, DispatchRequest,
 } from "../../src/lib/admin-contracts";
 
 export type GenerationCostKind = "actual" | "estimated" | "unreported";
@@ -268,6 +269,18 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
 
   async upsertAttempt(input: AttemptInput) {
     return this.attempts.upsertAttempt(input);
+  }
+  async upsertClient(input: ClientInput) { return this.attempts.upsertClient(input); }
+  async listClients(query: ClientFilters) { return this.attempts.listClients(query); }
+  async getClient(id: string) { return this.attempts.getClient(id); }
+  async registerDispatch(input: DispatchRequest) { return this.attempts.registerDispatch(input); }
+  /** Projection failures are retryable data, not failures of accepted client work. */
+  async projectAcceptedIntake(client: ClientInput, dispatch: DispatchRequest | null) {
+    try {
+      this.attempts.upsertClient(client);
+      const binding = dispatch ? this.attempts.registerDispatch(dispatch) : null;
+      return {ok:true as const,binding};
+    } catch { return {ok:false as const,binding:null}; }
   }
 
   async registerInitialDispatch(input: InitialDispatchRegistration) {

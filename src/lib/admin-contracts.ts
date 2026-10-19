@@ -127,3 +127,70 @@ export type AttemptDetail = AttemptSummary & {
   eventsNextCursor: string | null;
   eventCount: number;
 };
+
+export type ClientInput = {
+  clientId: string;
+  inviteId: string | null;
+  submissionId: string | null;
+  issueNumber: number;
+  businessName: string | null;
+  contactName: string | null;
+  email: string | null;
+  phone: string | null;
+  creator: ActorSnapshot;
+  submittedAt: number | null;
+};
+export type ClientRecord = ClientInput & {
+  createdAt: number;
+  updatedAt: number;
+  previewUrl: string | null;
+  productionUrl: string | null;
+};
+export type ClientFilters = {
+  search?: string;
+  from?: number;
+  to?: number;
+  cursor?: string;
+  limit?: number;
+};
+export type InviteFilters = {
+  cursor?: string;
+  limit?: number;
+  search?: string;
+  status?: string;
+  creatorId?: string;
+};
+export type InviteSummary = {
+  inviteId: string;
+  clientEmail: string | null;
+  submitterEmail: string | null;
+  expiresAt: number;
+  status: string;
+  createdAt: number;
+  updatedAt: number;
+  creator: ActorSnapshot;
+  submissionId: string | null;
+  issueNumber: number | null;
+  clientId: string | null;
+};
+export type AcceptedIntake = ClientInput & {
+  inviteId: string;
+  submissionId: string;
+  requestId: string | null;
+  attemptId: string | null;
+  initiator: ActorSnapshot;
+  outboxState: "pending" | "delivered" | "missing";
+  dispatchCreatedAt: number | null;
+};
+/** Trusted coordinator evidence for a persisted initial workflow outbox operation. */
+export type DispatchRequest = {
+  requestId: string;
+  attemptId: string;
+  clientId: string;
+  inviteId: string;
+  submissionId: string;
+  issueNumber: number;
+  initiator: ActorSnapshot;
+  invitationCreator: ActorSnapshot;
+  createdAt: number;
+};
