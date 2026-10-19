@@ -28,7 +28,8 @@
   --admin-sage: #bad8c8;
   --admin-lime: #d9f06b;
   --admin-line: #d9ddd1;
-  --admin-focus: #10251f;
+  --admin-focus-light: #10251f;
+  --admin-focus-dark: #d9f06b;
   margin: 0;
   min-height: 100vh;
   background: var(--admin-ivory);
@@ -65,8 +66,12 @@
 }
 
 .admin-page :focus-visible {
-  outline: 3px solid var(--admin-focus);
+  outline: 3px solid var(--admin-focus-light);
   outline-offset: 3px;
+}
+
+.admin-sidebar :focus-visible {
+  outline-color: var(--admin-focus-dark);
 }
 
 .admin-page button:focus-visible,
@@ -181,10 +186,10 @@
 .admin-eyebrow {
   color: var(--admin-muted);
   font-family: "Manrope", "Avenir Next", "Segoe UI", system-ui, sans-serif;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
 }
 
 .admin-section {

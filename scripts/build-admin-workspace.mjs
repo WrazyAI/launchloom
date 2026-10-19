@@ -156,7 +156,7 @@ export async function buildAdminWorkspace({
     jsxImportSource: "react",
     entryNames: "[name]",
     chunkNames: "chunks/[name]-[hash]",
-    assetNames: "fonts/[name]",
+    assetNames: "fonts/[name]-[hash]",
     loader: { ".woff2": "file" },
     minify: production,
     sourcemap: false,

@@ -52,7 +52,7 @@ describe("same-origin admin shell assets", () => {
     expect(testEnv.ADMIN_STATIC).not.toBe(testEnv.ASSETS);
   });
 
-  it("serves only allowlisted data-free assets from the Worker", async () => {
+  it("serves only allowlisted data-free assets with stale-safe caching", async () => {
     const javascript = await SELF.fetch(`${origin}/admin-assets/app.js`);
     expect(javascript.status).toBe(200);
     expect(javascript.headers.get("Content-Type")).toBe(
@@ -64,6 +64,10 @@ describe("same-origin admin shell assets", () => {
     expect(javascript.headers.get("Cross-Origin-Resource-Policy")).toBe(
       "same-origin",
     );
+    const scriptValidator =
+      javascript.headers.get("ETag") ||
+      javascript.headers.get("Last-Modified");
+    expect(scriptValidator).toBeTruthy();
     const script = await javascript.text();
     expect(script).toContain("Operations workspace");
     expect(script).not.toContain("client@example.test");
@@ -72,20 +76,62 @@ describe("same-origin admin shell assets", () => {
     const css = await SELF.fetch(`${origin}/admin-assets/app.css`);
     expect(css.status).toBe(200);
     expect(css.headers.get("Content-Type")).toBe("text/css; charset=utf-8");
+    expect(css.headers.get("Cache-Control")).toBe(
+      "public, max-age=0, must-revalidate",
+    );
+    expect(
+      css.headers.get("ETag") || css.headers.get("Last-Modified"),
+    ).toBeTruthy();
     const styles = await css.text();
     expect(styles).toContain("@font-face");
     expect(styles).not.toMatch(/url\(\s*['"]?https?:/iu);
+    const fontUrls = [
+      ...styles.matchAll(/url\("\.\/(fonts\/[^"]+\.woff2)"\)/gu),
+    ].map((match) => match[1]);
+    expect(fontUrls).toHaveLength(2);
+    expect(
+      fontUrls.some((file) =>
+        /^fonts\/manrope-latin-[A-Za-z0-9]+\.woff2$/u.test(file),
+      ),
+    ).toBe(true);
+    expect(
+      fontUrls.some((file) =>
+        /^fonts\/source-sans-3-latin-[A-Za-z0-9]+\.woff2$/u.test(file),
+      ),
+    ).toBe(true);
 
-    for (const [file, type] of [
-      ["admin-assets/fonts/manrope-latin.woff2", "font/woff2"],
-      ["admin-assets/fonts/source-sans-3-latin.woff2", "font/woff2"],
-      ["admin-assets/fonts/LICENSE-Manrope.txt", "text/plain"],
-    ] as const) {
-      const response = await SELF.fetch(`${origin}/${file}`);
-      expect(response.status).toBe(200);
-      expect(response.headers.get("Content-Type")).toContain(type);
-      expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    for (const file of fontUrls) {
+      const response = await SELF.fetch(`${origin}/admin-assets/${file}`);
+      expect(response.status, file).toBe(200);
+      expect(response.headers.get("Content-Type"), file).toBe("font/woff2");
+      expect(response.headers.get("Cache-Control"), file).toBe(
+        "public, max-age=31536000, immutable",
+      );
+      expect(response.headers.get("X-Content-Type-Options"), file).toBe(
+        "nosniff",
+      );
     }
+
+    const license = await SELF.fetch(
+      `${origin}/admin-assets/fonts/LICENSE-Manrope.txt`,
+    );
+    expect(license.status).toBe(200);
+    expect(license.headers.get("Content-Type")).toContain("text/plain");
+    expect(license.headers.get("Cache-Control")).toBe(
+      "public, max-age=0, must-revalidate",
+    );
+
+    const conditionalHeaders: Record<string, string> = javascript.headers.get("ETag")
+      ? { "If-None-Match": javascript.headers.get("ETag")! }
+      : { "If-Modified-Since": javascript.headers.get("Last-Modified")! };
+    const revalidated = await SELF.fetch(`${origin}/admin-assets/app.js`, {
+      headers: conditionalHeaders,
+    });
+    expect(revalidated.status).toBe(304);
+    expect(await revalidated.text()).toBe("");
+    expect(revalidated.headers.get("Cache-Control")).toBe(
+      "public, max-age=0, must-revalidate",
+    );
   });
 
   it("returns 404 for HTML, maps, indexes and unknown static paths", async () => {

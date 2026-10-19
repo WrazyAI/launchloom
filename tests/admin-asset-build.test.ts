@@ -40,6 +40,33 @@ async function exists(target: string) {
   );
 }
 
+function cssToken(css: string, name: string) {
+  const match = css.match(new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})`, "u"));
+  if (!match) throw new Error(`Missing CSS token ${name}`);
+  return match[1];
+}
+
+function channel(value: number) {
+  const normalized = value / 255;
+  return normalized <= 0.04045
+    ? normalized / 12.92
+    : ((normalized + 0.055) / 1.055) ** 2.4;
+}
+
+function luminance(hex: string) {
+  const value = hex.replace("#", "");
+  const red = channel(Number.parseInt(value.slice(0, 2), 16));
+  const green = channel(Number.parseInt(value.slice(2, 4), 16));
+  const blue = channel(Number.parseInt(value.slice(4, 6), 16));
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+function contrastRatio(first: string, second: string) {
+  const lighter = Math.max(luminance(first), luminance(second));
+  const darker = Math.min(luminance(first), luminance(second));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 afterEach(async () => {
   while (tempDirectories.length)
     await rm(tempDirectories.pop()!, { recursive: true, force: true });
@@ -67,12 +94,18 @@ describe("admin workspace asset build", () => {
     expect(manifest.files).toContain(
       "admin-assets/fonts/LICENSE-SourceSans3.txt",
     );
-    expect(manifest.files).toContain(
-      "admin-assets/fonts/manrope-latin.woff2",
-    );
-    expect(manifest.files).toContain(
-      "admin-assets/fonts/source-sans-3-latin.woff2",
-    );
+    const fontFiles = manifest.files.filter((file) => file.endsWith(".woff2"));
+    expect(fontFiles).toHaveLength(2);
+    expect(
+      fontFiles.some((file) =>
+        /^admin-assets\/fonts\/manrope-latin-[A-Za-z0-9]+\.woff2$/u.test(file),
+      ),
+    ).toBe(true);
+    expect(
+      fontFiles.some((file) =>
+        /^admin-assets\/fonts\/source-sans-3-latin-[A-Za-z0-9]+\.woff2$/u.test(file),
+      ),
+    ).toBe(true);
 
     const outputs = await outputMap(outDir);
     for (const file of manifest.files) expect(outputs.has(file)).toBe(true);
@@ -86,6 +119,13 @@ describe("admin workspace asset build", () => {
       .join("\n");
 
     expect(css).toContain("@font-face");
+    expect(css).toMatch(
+      /url\("\.\/fonts\/manrope-latin-[A-Za-z0-9]+\.woff2"\)/u,
+    );
+    expect(css).toMatch(
+      /url\("\.\/fonts\/source-sans-3-latin-[A-Za-z0-9]+\.woff2"\)/u,
+    );
+    expect(css).not.toContain("text-transform:uppercase");
     expect(css).not.toMatch(/@import\s+url\(\s*['"]?https?:/iu);
     expect(css).not.toMatch(/url\(\s*['"]?https?:/iu);
     expect(css).not.toContain("fonts.googleapis.com");
@@ -187,6 +227,29 @@ describe("admin workspace asset build", () => {
     expect(wrangler).toMatch(
       /"r2_buckets":\s*\[\s*\{\s*"binding":\s*"ASSETS"/u,
     );
+  });
+
+  it("uses contrasting focus rings and sentence-case labels", async () => {
+    const css = await readFile(
+      path.join(ROOT, "src", "admin", "styles.css"),
+      "utf8",
+    );
+    const forest = cssToken(css, "--admin-forest");
+    const ivory = cssToken(css, "--admin-ivory");
+    const paper = cssToken(css, "--admin-paper");
+    const focusOnDark = cssToken(css, "--admin-focus-dark");
+    const focusOnLight = cssToken(css, "--admin-focus-light");
+
+    expect(contrastRatio(focusOnDark, forest)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(focusOnLight, ivory)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(focusOnLight, paper)).toBeGreaterThanOrEqual(3);
+    expect(css).toMatch(
+      /\.admin-page\s+:focus-visible\s*\{[^}]*outline:\s*3px solid var\(--admin-focus-light\)/u,
+    );
+    expect(css).toMatch(
+      /\.admin-sidebar\s+:focus-visible\s*\{[^}]*outline-color:\s*var\(--admin-focus-dark\)/u,
+    );
+    expect(css).not.toMatch(/text-transform\s*:\s*uppercase/iu);
   });
 
   it("builds admin assets before Worker tests and Worker deployment", async () => {
