@@ -47,26 +47,264 @@ const invites = () =>
   bindings.ONBOARDING_INVITES.getByName("launchloom-onboarding-invites");
 
 describe("shared workspace", () => {
+  it("assigns stable correlation to migrated pending operations on alarm recovery without a queue RPC", async () => {
+    const coordinator = bindings.ONBOARDING_INVITES.getByName(
+      "fix1-migrated-pending",
+    );
+    const operationTime = Date.now() - 60000;
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      state.storage.sql
+        .exec(`INSERT INTO onboarding_invites(invite_id,expires_at,allowed_origin,token_hash,status,submission_id,issue_number,created_at,updated_at)
+        VALUES('migrated-pending',9999999999999,'https://onboard.example.test','migrated-pending-hash','consumed','migrated-submission',91001,1000,2000)`);
+      state.storage.sql.exec(
+        `INSERT INTO intake_outbox(invite_id,submission_id,task_type,issue_number,status,next_attempt_at,created_at,updated_at)
+        VALUES('migrated-pending','migrated-submission','workflow',91001,'pending',?,?,?)`,
+        operationTime,
+        operationTime,
+        operationTime,
+      );
+      await state.storage.deleteAlarm();
+    });
+    const payloads: Array<Record<string, unknown>> = [];
+    network.use(
+      http.post(
+        "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+        async ({ request }) => {
+          payloads.push(
+            (
+              (await request.json()) as {
+                client_payload: Record<string, unknown>;
+              }
+            ).client_payload,
+          );
+          return new HttpResponse(null, {
+            status: payloads.length === 1 ? 500 : 204,
+          });
+        },
+      ),
+    );
+    await evictDurableObject(coordinator);
+    await coordinator.acceptedPage({});
+    expect(await runDurableObjectAlarm(coordinator)).toBe(true);
+    expect(payloads).toHaveLength(1);
+    expect(payloads[0].request_id).toEqual(expect.any(String));
+    expect(payloads[0].attempt_id).toEqual(expect.any(String));
+    const attempts = await ledger().listAttempts({
+      clientId: "submission:migrated-submission",
+    });
+    expect(attempts.items).toHaveLength(1);
+    expect(attempts.items[0]).toMatchObject({
+      attemptId: payloads[0].attempt_id,
+      requestId: payloads[0].request_id,
+      createdAt: operationTime,
+      executionStatus: "queued",
+    });
+    expect(await coordinator.projectionHealth()).toMatchObject({
+      pendingProjectionCount: 0,
+    });
+    await runInDurableObject(coordinator, (_instance, state) => {
+      state.storage.sql.exec(
+        "UPDATE intake_outbox SET next_attempt_at=? WHERE status='pending'",
+        Date.now() - 1,
+      );
+    });
+    await evictDurableObject(coordinator);
+    await coordinator.acceptedPage({});
+    expect(await runDurableObjectAlarm(coordinator)).toBe(true);
+    expect(payloads).toHaveLength(2);
+    expect(payloads[1]).toEqual(payloads[0]);
+    expect(
+      (
+        await ledger().listAttempts({
+          clientId: "submission:migrated-submission",
+        })
+      ).items,
+    ).toHaveLength(1);
+    await runInDurableObject(ledger(), (_instance, state) => {
+      expect(
+        state.storage.sql
+          .exec<{ initial_attempt_id: string }>(
+            "SELECT initial_attempt_id FROM generation_dispatches WHERE request_id=?",
+            String(payloads[0].request_id),
+          )
+          .one().initial_attempt_id,
+      ).toBe(payloads[0].attempt_id);
+    });
+  });
+
+  it("does not invent correlation for already-delivered legacy operations, even on queue replay", async () => {
+    const coordinator = bindings.ONBOARDING_INVITES.getByName(
+      "fix1-migrated-delivered",
+    );
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      state.storage.sql
+        .exec(`INSERT INTO onboarding_invites(invite_id,expires_at,allowed_origin,token_hash,status,submission_id,issue_number,created_at,updated_at)
+        VALUES('migrated-delivered',9999999999999,'https://onboard.example.test','migrated-delivered-hash','consumed','delivered-submission',91002,1000,2000)`);
+      state.storage.sql
+        .exec(`INSERT INTO intake_outbox(invite_id,submission_id,task_type,issue_number,status,next_attempt_at,created_at,updated_at)
+        VALUES('migrated-delivered','delivered-submission','workflow',91002,'delivered',1000,1000,2000)`);
+      await state.storage.deleteAlarm();
+    });
+    await evictDurableObject(coordinator);
+    await coordinator.acceptedPage({});
+    await runDurableObjectAlarm(coordinator);
+    await coordinator.queueWorkflowDispatch(
+      "migrated-delivered",
+      "delivered-submission",
+      91002,
+    );
+    await runInDurableObject(coordinator, (_instance, state) => {
+      expect(
+        state.storage.sql
+          .exec(
+            "SELECT request_id,attempt_id,status FROM intake_outbox WHERE invite_id='migrated-delivered'",
+          )
+          .one(),
+      ).toEqual({ request_id: null, attempt_id: null, status: "delivered" });
+    });
+    expect(
+      (
+        await ledger().listAttempts({
+          clientId: "submission:delivered-submission",
+        })
+      ).items,
+    ).toHaveLength(0);
+  });
+
+  it("uses actual delayed workflow operation creation time, not acceptance or projection enqueue time", async () => {
+    const coordinator =
+      bindings.ONBOARDING_INVITES.getByName("fix1-delayed-queue");
+    const acceptedAt = Date.now() - 3600000;
+    const operationTime = Date.now() - 60000;
+    const expiresAt = Date.now() + 60000;
+    await coordinator.register({
+      inviteId: "delayed-queue",
+      clientEmail: null,
+      expiresAt,
+      allowedOrigin: origin,
+      tokenHash: "delayed-hash",
+      now: acceptedAt,
+      creator,
+    });
+    expect(
+      await coordinator.reserveSubmission(
+        "delayed-queue",
+        "delayed-hash",
+        expiresAt,
+        origin,
+        "delayed-submission",
+        "payload",
+        "client@example.test",
+        acceptedAt,
+      ),
+    ).toMatchObject({ accepted: true });
+    await coordinator.recordIssue(
+      "delayed-queue",
+      "delayed-submission",
+      "payload",
+      91003,
+      acceptedAt,
+      { businessName: "Delayed client", email: "client@example.test" },
+    );
+    await runInDurableObject(coordinator, (_instance, state) => {
+      const row = state.storage.sql
+        .exec<{ data: string }>(
+          "SELECT data FROM intake_projection_outbox WHERE invite_id='delayed-queue'",
+        )
+        .one();
+      expect(JSON.parse(row.data)).toMatchObject({
+        dispatchCreatedAt: null,
+        requestId: null,
+        attemptId: null,
+      });
+      // Old snapshots can contain the acceptance-time fallback from FIX_BASE;
+      // registration must ignore it in favor of the actual workflow operation.
+      state.storage.sql.exec(
+        "UPDATE intake_projection_outbox SET data=? WHERE invite_id='delayed-queue'",
+        JSON.stringify({
+          ...JSON.parse(row.data),
+          dispatchCreatedAt: acceptedAt,
+        }),
+      );
+    });
+    network.use(
+      http.post(
+        "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+    await coordinator.queueWorkflowDispatch(
+      "delayed-queue",
+      "delayed-submission",
+      91003,
+      operationTime,
+    );
+    const before = (
+      await ledger().listAttempts({ clientId: "submission:delayed-submission" })
+    ).items;
+    expect(before).toHaveLength(1);
+    expect(before[0]).toMatchObject({
+      createdAt: operationTime,
+      updatedAt: operationTime,
+      startedAt: null,
+    });
+    await evictDurableObject(coordinator);
+    await evictDurableObject(ledger());
+    await coordinator.queueWorkflowDispatch(
+      "delayed-queue",
+      "delayed-submission",
+      91003,
+      Date.now(),
+    );
+    expect(
+      (
+        await ledger().listAttempts({
+          clientId: "submission:delayed-submission",
+        })
+      ).items,
+    ).toEqual(before);
+    expect(
+      (
+        await ledger().listAttempts({
+          clientId: "submission:delayed-submission",
+          to: acceptedAt,
+        })
+      ).total,
+    ).toBe(0);
+    expect(
+      (
+        await ledger().listAttempts({
+          clientId: "submission:delayed-submission",
+          from: operationTime,
+          to: operationTime,
+        })
+      ).total,
+    ).toBe(1);
+  });
+
   it("paginates and searches all 251 explicitly bound clients without merging email matches", async () => {
-    await runInDurableObject(ledger(), async (raw) => {
+    const store = bindings.GENERATION_LEDGER.getByName(
+      "workspace-client-pagination",
+    );
+    await runInDurableObject(store, async (raw) => {
       const instance = raw as unknown as GenerationLedger;
       for (let n = 0; n < 251; n++) await instance.upsertClient(client(n));
     });
     let cursor: string | undefined;
     const ids: string[] = [];
     do {
-      const page = await ledger().listClients({ limit: 100, cursor });
+      const page = await store.listClients({ limit: 100, cursor });
       expect(page.total).toBe(251);
       ids.push(...page.items.map((item) => item.clientId));
       cursor = page.nextCursor ?? undefined;
     } while (cursor);
     expect(new Set(ids).size).toBe(251);
     expect(
-      (await ledger().listClients({ search: "oldest unique" })).items.map(
+      (await store.listClients({ search: "oldest unique" })).items.map(
         (c) => c.clientId,
       ),
     ).toEqual(["submission:s-0"]);
-    await runInDurableObject(ledger(), async (raw) => {
+    await runInDurableObject(store, async (raw) => {
       const instance = raw as unknown as GenerationLedger;
       await expect(
         instance.upsertClient({ ...client(0), inviteId: "different" }),

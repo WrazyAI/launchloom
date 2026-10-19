@@ -232,16 +232,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       now,
       now,
     );
-    // Correlation belongs to the existing operation, persisted before any send.
-    const projection = this.projection(inviteId, submissionId);
-    this.ctx.storage.sql.exec(
-      `UPDATE intake_outbox SET request_id=COALESCE(request_id,?), attempt_id=COALESCE(attempt_id,?)
-      WHERE invite_id=? AND submission_id=? AND task_type='workflow'`,
-      projection?.requestId ?? crypto.randomUUID(),
-      projection?.attemptId ?? crypto.randomUUID(),
-      inviteId,
-      submissionId,
-    );
+    this.correlatePendingWorkflow(inviteId, submissionId);
     await this.deliverProjection(inviteId, submissionId, now);
     await this.scheduleOutboxAlarm();
     await this.deliverOutboxTask(inviteId, submissionId, "workflow", now);
@@ -393,8 +384,45 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     await this.scheduleOutboxAlarm();
   }
 
+  /** Only an undelivered operation can acquire correlation. Preserve partial
+   * assignments and preallocated legacy projection IDs, but never rewrite them. */
+  private correlatePendingWorkflow(inviteId: string, submissionId: string) {
+    const projection = this.projection(inviteId, submissionId);
+    return this.ctx.storage.sql
+      .exec<OutboxRow>(
+        `UPDATE intake_outbox SET request_id=COALESCE(request_id,?), attempt_id=COALESCE(attempt_id,?)
+       WHERE invite_id=? AND submission_id=? AND task_type='workflow'
+         AND status IN ('pending','delivering') RETURNING *`,
+        projection?.requestId ?? crypto.randomUUID(),
+        projection?.attemptId ?? crypto.randomUUID(),
+        inviteId,
+        submissionId,
+      )
+      .toArray()[0];
+  }
+
   private async sendIntakeDispatch(task: OutboxRow) {
+    // The send boundary is shared by immediate queue delivery and alarm/lease
+    // recovery. Persist correlation on the existing operation before network I/O.
+    const correlated = this.correlatePendingWorkflow(
+      task.invite_id,
+      task.submission_id,
+    );
+    if (!correlated) throw new Error("Workflow operation is not pending");
+    task = correlated;
     const invite = this.row(task.invite_id);
+    if (
+      invite?.status === "consumed" &&
+      invite.submission_id === task.submission_id &&
+      invite.issue_number === task.issue_number
+    ) {
+      this.enqueueProjection(invite, Date.now());
+      await this.deliverProjection(
+        task.invite_id,
+        task.submission_id,
+        Date.now(),
+      );
+    }
     // Prefer the inviter-configured email; fall back to the email the client
     // submitted with the intake so link-only invites are still attributed.
     const attributedEmail = invite?.client_email || invite?.submitter_email;
@@ -953,9 +981,6 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
   }
   private enqueueProjection(row: InviteRow, now: number) {
     const evidence = this.accepted(row);
-    evidence.requestId ??= crypto.randomUUID();
-    evidence.attemptId ??= crypto.randomUUID();
-    evidence.dispatchCreatedAt ??= now;
     this.ctx.storage.sql.exec(
       `INSERT OR IGNORE INTO intake_projection_outbox(invite_id,submission_id,data,next_attempt_at) VALUES(?,?,?,?)`,
       row.invite_id,
@@ -1030,7 +1055,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
               issueNumber,
               initiator: evidence.initiator,
               invitationCreator: creator,
-              createdAt: evidence.dispatchCreatedAt!,
+              createdAt: workflow.created_at,
             }
           : null,
       );
