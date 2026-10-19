@@ -1,3 +1,5 @@
+import { renderAdminLoginHtml } from "../admin-dashboard";
+
 type NeonAuthModule = typeof import("@neondatabase/auth/server");
 // The auth SDK is loaded only on an explicit neon-mode auth request. Keeping it
 // out of the static module graph preserves Durable Object and legacy-route
@@ -700,91 +702,20 @@ export async function readNeonSession(
 }
 
 /**
- * Public, data-free baseline login shell. The admin UI task replaces this with
- * the designed application; it deliberately contains no client data, no
- * localStorage token, and no provider credentials.
+ * Public, data-free login shell. It mounts the same compiled admin entry as the
+ * workspace and contains no client data, localStorage token or provider
+ * credentials. Account forms arrive with the accounts UI task.
  */
 export function renderAdminLoginShell(): Response {
-  const html = `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sign in | LaunchLoom</title>
-<style>
-:root{color-scheme:light}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f4f2ea;color:#10251f;font:16px/1.5 system-ui,sans-serif}main{width:min(28rem,calc(100% - 2rem));background:#fffefa;border:1px solid #d9ddd1;border-radius:12px;padding:2rem}h1{font-size:1.5rem;margin:0 0 .5rem}p{color:#587069;margin:0 0 1.5rem}label{display:block;font-weight:600;margin:1rem 0 .35rem}input{box-sizing:border-box;width:100%;padding:.7rem;border:1px solid #587069;border-radius:8px;font:inherit}button{width:100%;margin-top:1rem;padding:.75rem;border:1px solid #10251f;border-radius:8px;background:#10251f;color:#fffefa;font:inherit;font-weight:600;cursor:pointer}button.secondary{background:transparent;color:#10251f}#status{min-height:1.5rem;margin-top:1rem;color:#587069}</style>
-</head>
-<body>
-<main>
-<h1>LaunchLoom admin</h1>
-<p>Sign in with your approved admin account.</p>
-<form id="auth-form">
-<label for="email">Email</label>
-<input id="email" name="email" type="email" autocomplete="username" required>
-<label for="password">Password</label>
-<input id="password" name="password" type="password" autocomplete="current-password" required>
-<button type="submit">Sign in</button>
-<button type="button" class="secondary" id="reset">Email a password reset link</button>
-</form>
-<div id="status" role="status" aria-live="polite"></div>
-</main>
-<script>
-const prefix = "/api/admin/onboarding-invites/auth";
-const fallback = "/admin/onboarding-invites";
-const status = document.getElementById("status");
-const email = document.getElementById("email");
-const password = document.getElementById("password");
-function safeReturn(value) {
-  try {
-    const url = new URL(value || fallback, location.origin);
-    if (url.origin !== location.origin) return fallback;
-    if (url.pathname !== "/admin" && !url.pathname.startsWith("/admin/")) return fallback;
-    return url.pathname + url.search;
-  } catch { return fallback; }
-}
-const returnTo = safeReturn(new URLSearchParams(location.search).get("returnTo"));
-async function post(path, payload) {
-  const response = await fetch(prefix + path, {
-    method: "POST",
-    credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  return response;
-}
-document.querySelector("form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  status.textContent = "Signing in\u2026";
-  const response = await post("/sign-in/email", {
-    email: email.value,
-    password: password.value,
-    callbackURL: returnTo,
-  }).catch(() => null);
-  password.value = "";
-  if (response && response.ok) {
-    location.assign(returnTo);
-    return;
-  }
-  status.textContent = "Email or password did not match an approved account.";
-});
-document.getElementById("reset").addEventListener("click", async () => {
-  if (!email.value) { status.textContent = "Enter your email first."; return; }
-  status.textContent = "Requesting a reset link\u2026";
-  await post("/request-password-reset", { email: email.value, redirectTo: returnTo }).catch(() => null);
-  status.textContent = "If the account exists, a reset link has been sent.";
-});
-</script>
-</body>
-</html>`;
-  return new Response(html, {
+  return new Response(renderAdminLoginHtml(), {
     status: 200,
     headers: {
-      "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "no-referrer",
+      "Content-Type": "text/html; charset=utf-8",
       "Content-Security-Policy":
-        "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'",
     },
   });
 }

@@ -34,7 +34,8 @@ import {
 import type { PublicationCommand } from "./publication";
 import { OnboardingInvites } from "./onboarding-invites";
 import { legacyAccessPrincipal, principalActor, workspaceApi, workspaceError, attemptIngest } from "./admin/workspace-api";
-import { proxyAdminAuth, renderAdminLoginShell } from "./admin/neon-auth";
+import { proxyAdminAuth } from "./admin/neon-auth";
+import { accessAdminEmail, routeAdminRequest } from "./admin/router";
 import { IntakeRecoveryError, intakeOperationMarker, recoverIntakeIssue, readIntakeIssuePayload, verifyIntakeIssueOwnership, type IntakeIssue } from "./intake-recovery";
 import {
   GenerationLedger,
@@ -42,7 +43,6 @@ import {
   type GenerationEventInput,
   type GenerationRecordInput,
 } from "./generation-ledger";
-import { renderAdminDashboardHtml } from "./admin-dashboard";
 import {
   CLIENT_INTAKE_V2_ISSUE_FIELDS,
   normalizeClientIntake,
@@ -70,6 +70,9 @@ export interface Env {
       arrayBuffer(): Promise<ArrayBuffer>;
       httpMetadata?: { contentType?: string };
     } | null>;
+  };
+  ADMIN_STATIC: {
+    fetch(request: Request): Promise<Response>;
   };
   ASSET_BASE_URL: string;
   PLATFORM_ORIGINS: string;
@@ -294,35 +297,6 @@ async function verifiedInvite(
   if (!status.valid && !(allowConsumed && status.accepted))
     throw new Error("Invalid invite.");
   return { claims, tokenHash, origin, clientEmail: status.clientEmail || "", status };
-}
-
-async function accessAdminEmail(ctx: ExecutionContext, env: Env) {
-  if (!ctx.access || !env.ONBOARDING_ACCESS_AUD || !env.ONBOARDING_ADMIN_EMAILS)
-    return "";
-  if (ctx.access.aud !== env.ONBOARDING_ACCESS_AUD) return "";
-  const identity = await ctx.access.getIdentity();
-  const email = clean(identity?.email, 240).toLowerCase();
-  const permitted = env.ONBOARDING_ADMIN_EMAILS.split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
-  return email && permitted.includes(email) ? email : "";
-}
-
-
-async function onboardingAdminPage(request: Request, env: Env, ctx: ExecutionContext) {
-  if (request.method !== "GET") return new Response("Method not allowed", { status: 405 });
-  if (!(await accessAdminEmail(ctx, env)))
-    return new Response("Access denied.", { status: 403, headers: { "Cache-Control": "no-store" } });
-  return new Response(renderAdminDashboardHtml(), {
-    status: 200,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-      "Referrer-Policy": "no-referrer",
-      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
-    },
-  });
 }
 
 async function authenticatedWorkspace(request: Request, env: Env, ctx: ExecutionContext) {
@@ -3682,12 +3656,12 @@ async function aiChat(request: Request, env: Env) {
 }
 
 export default {
-  fetch(request: Request, env: Env, ctx: ExecutionContext) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    const adminResponse = await routeAdminRequest(request, env, ctx);
+    if (adminResponse) return adminResponse;
     const path = new URL(request.url).pathname;
     if (path.startsWith("/api/admin/onboarding-invites/auth/"))
       return proxyAdminAuth(request, env);
-    if (path === "/admin/login" && env.ADMIN_AUTH_MODE === "neon")
-      return renderAdminLoginShell();
     if (path === "/api/onboarding-invites/validate")
       return inviteValidation(request, env);
     if (path.startsWith("/api/admin/onboarding-invites/workspace/")) {
@@ -3695,8 +3669,6 @@ export default {
     }
     if (path === "/api/admin/onboarding-invites")
       return adminInvites(request, env, ctx);
-    if (path === "/admin/onboarding-invites")
-      return onboardingAdminPage(request, env, ctx);
     if (path === "/api/intake") return intake(request, env);
     if (path === "/api/upload") return upload(request, env);
     if (path === "/api/places") return places(request, env);

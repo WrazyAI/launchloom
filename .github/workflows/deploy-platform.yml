@@ -66,6 +66,8 @@ jobs:
           fi
       - name: Build platform
         run: npm run build
+      - name: Build admin workspace assets
+        run: npm run build:admin
       - name: Prepare invite-only onboarding Pages bundle
         run: npm run build:onboarding-pages -- "$RUNNER_TEMP/launchloom-onboarding"
       - name: Deploy invite-only onboarding Pages project

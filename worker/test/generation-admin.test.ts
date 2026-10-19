@@ -81,7 +81,7 @@ async function seedGeneration(generationId: string) {
 }
 
 describe("Access-protected generation tracking administration", () => {
-  it("renders the operations dashboard with generations and invitations", async () => {
+  it("renders the data-free operations shell and keeps generation APIs available", async () => {
     const page = await worker.fetch(
       new Request(`${apiOrigin}/admin/onboarding-invites`),
       testEnv,
@@ -89,15 +89,12 @@ describe("Access-protected generation tracking administration", () => {
     );
     expect(page.status).toBe(200);
     const html = await page.text();
-    expect(html).toContain("Invites and client generations");
-    expect(html).toContain("Create private link");
-    expect(html).toContain("Recent invitations");
-    expect(html).toContain("/api/admin/onboarding-invites/generations");
-    expect(html).toContain('class="tab is-active" id="tab-invites"');
-    expect(html).toContain(
-      'id="panel-generations" role="tabpanel" aria-labelledby="tab-generations" hidden',
-    );
-    expect(html).toContain('id="gen-drawer"');
+    expect(html).toContain("Operations workspace");
+    expect(html).toContain('data-admin-view="workspace"');
+    expect(html).toContain('src="/admin-assets/app.js"');
+    expect(html).toContain('href="/admin-assets/app.css"');
+    expect(html).not.toContain("Create private link");
+    expect(html).not.toContain("client@example.test");
     expect(page.headers.get("Cache-Control")).toBe("no-store");
     expect(page.headers.get("Content-Security-Policy")).toContain("img-src 'self'");
     expect(page.headers.get("Content-Security-Policy")).toContain(

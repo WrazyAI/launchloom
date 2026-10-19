@@ -1,0 +1,121 @@
+import type { Env } from "../index";
+import { renderAdminDashboardHtml } from "../admin-dashboard";
+import { renderAdminLoginShell } from "./neon-auth";
+import { serveAdminAsset } from "./asset-handler";
+
+const WORKSPACE_PATH = "/admin/onboarding-invites";
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "no-referrer",
+};
+
+function shellHeaders() {
+  return {
+    ...NO_STORE_HEADERS,
+    "Content-Type": "text/html; charset=utf-8",
+    "Content-Security-Policy":
+      "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'",
+  };
+}
+
+function notFound() {
+  return new Response("Not found", {
+    status: 404,
+    headers: {
+      ...NO_STORE_HEADERS,
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  });
+}
+
+function denied(request: Request, env: Env) {
+  if (env.ADMIN_AUTH_MODE === "neon") {
+    const url = new URL(request.url);
+    const returnTo = `${WORKSPACE_PATH}${url.search}`;
+    return new Response(null, {
+      status: 303,
+      headers: {
+        ...NO_STORE_HEADERS,
+        Location: `/admin/login?returnTo=${encodeURIComponent(returnTo)}`,
+      },
+    });
+  }
+  return new Response("Access denied.", {
+    status: 403,
+    headers: {
+      ...NO_STORE_HEADERS,
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  });
+}
+
+/** Existing Access audience and allowlist verification for the legacy path. */
+export async function accessAdminEmail(ctx: ExecutionContext, env: Env) {
+  if (!ctx.access || !env.ONBOARDING_ACCESS_AUD || !env.ONBOARDING_ADMIN_EMAILS)
+    return "";
+  if (ctx.access.aud !== env.ONBOARDING_ACCESS_AUD) return "";
+  const identity = await ctx.access.getIdentity();
+  const email = String(identity?.email || "")
+    .replace(/\u0000/g, "")
+    .trim()
+    .slice(0, 240)
+    .toLowerCase();
+  const permitted = env.ONBOARDING_ADMIN_EMAILS.split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  return email && permitted.includes(email) ? email : "";
+}
+
+/**
+ * The same-origin admin boundary. Assets are public and data-free; the
+ * workspace HTML remains behind Access until the account rollout replaces it.
+ * Unknown /admin paths return 404 rather than an HTML or SPA fallback.
+ */
+export async function routeAdminRequest(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response | null> {
+  const url = new URL(request.url);
+  const path = url.pathname;
+
+  if (path === "/admin-assets" || path.startsWith("/admin-assets/"))
+    return serveAdminAsset(request, env);
+
+  if (path === "/admin/login") {
+    if (env.ADMIN_AUTH_MODE !== "neon") return notFound();
+    return renderAdminLoginShell();
+  }
+
+  if (path === WORKSPACE_PATH) {
+    if (request.method !== "GET" && request.method !== "HEAD")
+      return new Response("Method not allowed", {
+        status: 405,
+        headers: { ...NO_STORE_HEADERS, Allow: "GET, HEAD" },
+      });
+    let email = "";
+    try {
+      email = await accessAdminEmail(ctx, env);
+    } catch {
+      return new Response(
+        "Workspace authorization is temporarily unavailable.",
+        {
+          status: 503,
+          headers: {
+            ...NO_STORE_HEADERS,
+            "Content-Type": "text/plain; charset=utf-8",
+          },
+        },
+      );
+    }
+    if (!email) return denied(request, env);
+    return new Response(
+      request.method === "HEAD" ? null : renderAdminDashboardHtml(),
+      { status: 200, headers: shellHeaders() },
+    );
+  }
+
+  if (path === "/admin" || path.startsWith("/admin/")) return notFound();
+  return null;
+}

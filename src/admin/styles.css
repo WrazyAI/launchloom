@@ -1,0 +1,398 @@
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("./fonts/manrope-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Source Sans 3";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/source-sans-3-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+.admin-page {
+  --admin-forest: #10251f;
+  --admin-muted: #587069;
+  --admin-ivory: #f4f2ea;
+  --admin-paper: #fffefa;
+  --admin-sage: #bad8c8;
+  --admin-lime: #d9f06b;
+  --admin-line: #d9ddd1;
+  --admin-focus: #10251f;
+  margin: 0;
+  min-height: 100vh;
+  background: var(--admin-ivory);
+  color: var(--admin-forest);
+  font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.admin-page *,
+.admin-page *::before,
+.admin-page *::after {
+  box-sizing: border-box;
+}
+
+.admin-page h1,
+.admin-page h2,
+.admin-page h3,
+.admin-page p {
+  margin: 0;
+}
+
+.admin-page h1,
+.admin-page h2,
+.admin-page h3 {
+  font-family: "Manrope", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.admin-page a {
+  color: inherit;
+}
+
+.admin-page :focus-visible {
+  outline: 3px solid var(--admin-focus);
+  outline-offset: 3px;
+}
+
+.admin-page button:focus-visible,
+.admin-page a:focus-visible {
+  border-radius: 6px;
+}
+
+.admin-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  padding: 22px 18px;
+  background: var(--admin-forest);
+  color: var(--admin-paper);
+}
+
+.admin-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-brand__name {
+  font-family: "Manrope", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.admin-brand__product {
+  color: var(--admin-sage);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.admin-nav {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.admin-nav a {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--admin-sage);
+  font-family: "Manrope", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.admin-nav a:hover {
+  border-color: #587069;
+  color: var(--admin-paper);
+}
+
+.admin-nav a[aria-current="page"] {
+  border-color: var(--admin-lime);
+  background: var(--admin-lime);
+  color: var(--admin-forest);
+}
+
+.admin-sidebar__note {
+  display: none;
+  color: var(--admin-sage);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.admin-main {
+  min-width: 0;
+  padding: 24px 18px 56px;
+}
+
+.admin-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 28px;
+  align-items: end;
+  justify-content: space-between;
+  max-width: 1180px;
+  margin: 0 auto 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.admin-topbar h1 {
+  margin-top: 6px;
+  font-size: clamp(1.9rem, 2.8vw, 2.65rem);
+  font-weight: 800;
+}
+
+.admin-topbar__scope {
+  max-width: 34rem;
+  color: var(--admin-muted);
+  font-size: 0.95rem;
+}
+
+.admin-eyebrow {
+  color: var(--admin-muted);
+  font-family: "Manrope", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.admin-section {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(20px, 3vw, 34px);
+  border: 1px solid var(--admin-line);
+  border-radius: 16px;
+  background: var(--admin-paper);
+  box-shadow: 0 18px 44px #10251f12;
+}
+
+.admin-section__head {
+  display: grid;
+  gap: 10px;
+  max-width: 46rem;
+  margin-bottom: 24px;
+}
+
+.admin-section__head h2 {
+  font-size: clamp(1.45rem, 2.2vw, 1.9rem);
+  font-weight: 800;
+}
+
+.admin-section__head > p:last-child {
+  color: var(--admin-muted);
+  overflow-wrap: anywhere;
+}
+
+.admin-placeholder,
+.admin-integration {
+  display: grid;
+  gap: 14px;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid var(--admin-line);
+  border-radius: 12px;
+  background: var(--admin-ivory);
+}
+
+.admin-placeholder h3,
+.admin-integration h3 {
+  font-size: 1.12rem;
+  font-weight: 750;
+}
+
+.admin-placeholder p,
+.admin-integration p {
+  color: var(--admin-muted);
+  max-width: 62rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-placeholder ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 1.15rem;
+  color: var(--admin-muted);
+}
+
+.admin-placeholder li::marker {
+  color: var(--admin-forest);
+}
+
+.admin-integration {
+  background: var(--admin-paper);
+  border-color: var(--admin-sage);
+}
+
+.admin-integration__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: start;
+  justify-content: space-between;
+}
+
+.admin-status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 5px 12px;
+  border: 1px solid var(--admin-forest);
+  border-radius: 999px;
+  background: var(--admin-sage);
+  color: var(--admin-forest);
+  font-family: "Manrope", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.admin-integration button {
+  justify-self: start;
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 1px solid var(--admin-line);
+  border-radius: 9px;
+  background: var(--admin-ivory);
+  color: var(--admin-muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: not-allowed;
+}
+
+.admin-muted {
+  color: var(--admin-muted);
+  font-size: 0.88rem;
+}
+
+.admin-auth {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px 16px;
+  background: var(--admin-ivory);
+}
+
+.admin-auth__card {
+  display: grid;
+  gap: 14px;
+  width: min(28rem, 100%);
+  padding: clamp(24px, 5vw, 40px);
+  border: 1px solid var(--admin-line);
+  border-radius: 16px;
+  background: var(--admin-paper);
+  box-shadow: 0 20px 60px #10251f1a;
+}
+
+.admin-auth__card h1 {
+  font-size: clamp(1.8rem, 6vw, 2.3rem);
+  font-weight: 800;
+}
+
+.admin-auth__card p {
+  color: var(--admin-muted);
+  overflow-wrap: anywhere;
+}
+
+.admin-auth__note {
+  padding-top: 14px;
+  border-top: 1px solid var(--admin-line);
+  font-size: 0.88rem;
+}
+
+.admin-fallback {
+  display: grid;
+  gap: 12px;
+  width: min(46rem, calc(100% - 32px));
+  margin: 10vh auto;
+  padding: clamp(24px, 5vw, 44px);
+  border: 1px solid var(--admin-line);
+  border-radius: 16px;
+  background: var(--admin-paper);
+}
+
+.admin-fallback h1 {
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 800;
+}
+
+.admin-fallback p {
+  color: var(--admin-muted);
+}
+
+@media (min-width: 900px) {
+  .admin-shell {
+    grid-template-columns: 16rem minmax(0, 1fr);
+  }
+
+  .admin-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    padding: 28px 22px;
+  }
+
+  .admin-nav {
+    flex-direction: column;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .admin-nav a {
+    padding: 9px 12px;
+    white-space: normal;
+  }
+
+  .admin-sidebar__note {
+    display: block;
+    margin-top: auto;
+  }
+
+  .admin-main {
+    padding: 34px 34px 72px;
+  }
+
+  .admin-auth {
+    padding: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-page *,
+  .admin-page *::before,
+  .admin-page *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

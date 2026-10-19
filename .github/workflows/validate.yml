@@ -71,6 +71,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run application tests
         run: npm test
+      - name: Build admin workspace assets
+        run: npm run build:admin
       - name: Run worker tests
         run: npm run test:worker
       - name: Check Astro and TypeScript
