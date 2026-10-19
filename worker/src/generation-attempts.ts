@@ -1,0 +1,674 @@
+import type {
+  ActorSnapshot,
+  AttemptDetail,
+  AttemptEventInput,
+  AttemptEventRecord,
+  AttemptEventSource,
+  AttemptFilters,
+  AttemptInput,
+  AttemptSummary,
+  DeliveryStatus,
+  ExecutionStatus,
+  Health,
+  Page,
+} from "../../src/lib/admin-contracts";
+
+const executions = [
+  "queued",
+  "running",
+  "succeeded",
+  "failed",
+  "cancelled",
+  "skipped",
+  "unknown",
+];
+const deliveries = [
+  "none",
+  "diagnostic",
+  "attention",
+  "preview_ready",
+  "published",
+];
+const profiles = ["full", "full-preview", "creative-only", "seo-only"];
+const sources = ["legacy-import", "callback", "github-reconcile"];
+type Clock = { source: AttemptEventSource; version: number };
+type State = {
+  execution: Clock;
+  delivery: Clock;
+  executionVersions: Partial<Record<AttemptEventSource, number>>;
+  snapshotVersion: number;
+};
+type AttemptRow = { attempt_id: string; data: string; state: string };
+type EventRow = { data: string };
+const terminal = (status: string) =>
+  ["succeeded", "failed", "cancelled", "skipped"].includes(status);
+const invalid = (field: string): never => {
+  throw new Error(`invalid ${field}`);
+};
+const conflict = (field: string): never => {
+  throw new Error(`conflict: immutable ${field}`);
+};
+const timestamp = (value: number) => Number.isSafeInteger(value) && value >= 0;
+const nonempty = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0;
+function pageLimit(limit?: number) {
+  if (limit === undefined) return 50;
+  if (!Number.isFinite(limit) || limit < 1) return invalid("limit");
+  return Math.min(100, Math.floor(limit));
+}
+function actorKey(actor: ActorSnapshot) {
+  return JSON.stringify([
+    actor.kind,
+    actor.id,
+    actor.name,
+    actor.email,
+    actor.source,
+  ]);
+}
+function mergeActor(
+  old: ActorSnapshot,
+  incoming: ActorSnapshot,
+  field: string,
+) {
+  if (old.kind === "unknown") return incoming;
+  if (incoming.kind === "unknown") return old;
+  if (actorKey(old) !== actorKey(incoming)) return conflict(field);
+  return old;
+}
+function newer(incoming: Clock, old: Clock) {
+  return (
+    incoming.version > old.version ||
+    (incoming.version === old.version &&
+      sources.indexOf(incoming.source) > sources.indexOf(old.source))
+  );
+}
+function executionAllowed(
+  status: ExecutionStatus,
+  clock: Clock,
+  oldStatus: ExecutionStatus,
+  oldClock: Clock,
+) {
+  const authoritative = clock.source === "github-reconcile" && terminal(status);
+  const locked = oldClock.source === "github-reconcile" && terminal(oldStatus);
+  if (locked) return authoritative && newer(clock, oldClock);
+  if (authoritative) return true;
+  if (terminal(oldStatus) && !terminal(status)) return false;
+  if (oldStatus === "running" && ["queued", "unknown"].includes(status))
+    return false;
+  return newer(clock, oldClock);
+}
+function observeExecution(
+  state: State,
+  status: ExecutionStatus,
+  clock: Clock,
+  oldStatus: ExecutionStatus,
+) {
+  const previous = state.executionVersions[clock.source];
+  if (previous !== undefined && clock.version <= previous) return false;
+  state.executionVersions[clock.source] = clock.version;
+  return executionAllowed(status, clock, oldStatus, state.execution);
+}
+function validateInput(input: AttemptInput) {
+  if (!nonempty(input.attemptId)) invalid("attemptId");
+  for (const key of ["requestId", "clientId", "repository", "runId"] as const)
+    if (input[key] !== null && !nonempty(input[key])) invalid(key);
+  for (const key of ["issueNumber", "runAttempt"] as const)
+    if (
+      input[key] !== null &&
+      (!Number.isSafeInteger(input[key]) || input[key]! < 1)
+    )
+      invalid(key);
+  if (!profiles.includes(input.profile)) invalid("profile");
+  if (!executions.includes(input.executionStatus)) invalid("executionStatus");
+  if (!deliveries.includes(input.deliveryStatus)) invalid("deliveryStatus");
+  for (const key of ["createdAt", "updatedAt"] as const)
+    if (!timestamp(input[key])) invalid(key);
+  for (const key of ["startedAt", "completedAt"] as const)
+    if (input[key] !== null && !timestamp(input[key]!)) invalid(key);
+  if (typeof input.stale !== "boolean") invalid("stale");
+  for (const actor of [input.initiator, input.invitationCreator]) {
+    if (
+      !actor ||
+      !["admin", "client", "github", "system", "unknown"].includes(
+        actor.kind,
+      ) ||
+      ![
+        "neon",
+        "cloudflare-access",
+        "intake",
+        "github",
+        "system",
+        "legacy",
+      ].includes(actor.source)
+    )
+      invalid("actor");
+    for (const key of ["id", "name", "email"] as const)
+      if (actor[key] !== null && typeof actor[key] !== "string")
+        invalid("actor");
+  }
+  if (!input.failure) invalid("failure");
+  for (const key of [
+    "category",
+    "stage",
+    "summary",
+    "evidenceUrl",
+    "nextStep",
+  ] as const)
+    if (input.failure[key] !== null && typeof input.failure[key] !== "string")
+      invalid("failure");
+}
+
+type Cursor = { v: 1; scope: string; time: number; key: string };
+function encodeCursor(scope: string, time: number, key: string) {
+  return btoa(encodeURIComponent(JSON.stringify({ v: 1, scope, time, key })));
+}
+function decodeCursor(
+  cursor: string | undefined,
+  scope: string,
+): Cursor | null {
+  if (cursor === undefined) return null;
+  try {
+    const value = JSON.parse(decodeURIComponent(atob(cursor))) as Cursor;
+    if (
+      value.v !== 1 ||
+      value.scope !== scope ||
+      !timestamp(value.time) ||
+      !nonempty(value.key)
+    )
+      throw new Error();
+    return value;
+  } catch {
+    throw new Error("invalid cursor or cursor filters");
+  }
+}
+
+/** Additive SQLite model owned by GenerationLedger; no network or legacy-table writes. */
+export class GenerationAttempts {
+  constructor(private storage: DurableObjectStorage) {}
+
+  initialize() {
+    this.storage.sql.exec(`
+      CREATE TABLE IF NOT EXISTS generation_attempts (
+        attempt_id TEXT PRIMARY KEY, request_id TEXT, client_id TEXT, issue_number INTEGER,
+        repository TEXT COLLATE NOCASE, run_id TEXT, run_attempt INTEGER,
+        profile TEXT NOT NULL, execution_status TEXT NOT NULL,
+        initiator_id TEXT, creator_id TEXT, created_at INTEGER NOT NULL,
+        data TEXT NOT NULL, state TEXT NOT NULL
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS generation_attempts_execution
+        ON generation_attempts(repository, run_id, run_attempt)
+        WHERE repository IS NOT NULL AND run_id IS NOT NULL AND run_attempt IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS generation_attempts_date ON generation_attempts(created_at DESC, attempt_id DESC);
+      CREATE INDEX IF NOT EXISTS generation_attempts_client ON generation_attempts(client_id, created_at DESC, attempt_id DESC);
+      CREATE INDEX IF NOT EXISTS generation_attempts_status ON generation_attempts(execution_status, created_at DESC, attempt_id DESC);
+      CREATE INDEX IF NOT EXISTS generation_attempts_initiator ON generation_attempts(initiator_id, created_at DESC, attempt_id DESC);
+      CREATE INDEX IF NOT EXISTS generation_attempts_creator ON generation_attempts(creator_id, created_at DESC, attempt_id DESC);
+      CREATE INDEX IF NOT EXISTS generation_attempts_request ON generation_attempts(request_id);
+      CREATE TABLE IF NOT EXISTS generation_dispatches (
+        request_id TEXT PRIMARY KEY, initial_attempt_id TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS attempt_events (
+        attempt_id TEXT NOT NULL, event_key TEXT NOT NULL, created_at INTEGER NOT NULL,
+        cost_usd REAL, cost_kind TEXT NOT NULL, data TEXT NOT NULL,
+        PRIMARY KEY (attempt_id, event_key)
+      );
+      CREATE INDEX IF NOT EXISTS attempt_events_date ON attempt_events(attempt_id, created_at DESC, event_key DESC);
+      CREATE TABLE IF NOT EXISTS admin_sync_state (
+        id INTEGER PRIMARY KEY CHECK (id = 1), last_sync_at INTEGER, coverage_start INTEGER,
+        partial INTEGER NOT NULL DEFAULT 1, last_error TEXT, pending_projection_count INTEGER NOT NULL DEFAULT 0
+      );
+      INSERT OR IGNORE INTO admin_sync_state(id) VALUES (1);
+    `);
+  }
+
+  private row(id: string) {
+    return this.storage.sql
+      .exec<AttemptRow>(
+        "SELECT attempt_id, data, state FROM generation_attempts WHERE attempt_id = ?",
+        id,
+      )
+      .toArray()[0];
+  }
+  private save(input: AttemptInput, state: State) {
+    this.storage.sql.exec(
+      `INSERT INTO generation_attempts
+      (attempt_id, request_id, client_id, issue_number, repository, run_id, run_attempt, profile,
+       execution_status, initiator_id, creator_id, created_at, data, state)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(attempt_id) DO UPDATE SET request_id=excluded.request_id, client_id=excluded.client_id,
+        issue_number=excluded.issue_number, repository=excluded.repository, run_id=excluded.run_id,
+        run_attempt=excluded.run_attempt, initiator_id=excluded.initiator_id, creator_id=excluded.creator_id,
+        execution_status=excluded.execution_status, data=excluded.data, state=excluded.state`,
+      input.attemptId,
+      input.requestId,
+      input.clientId,
+      input.issueNumber,
+      input.repository,
+      input.runId,
+      input.runAttempt,
+      input.profile,
+      input.executionStatus,
+      input.initiator.id,
+      input.invitationCreator.id,
+      input.createdAt,
+      JSON.stringify(input),
+      JSON.stringify(state),
+    );
+    if (input.requestId !== null)
+      this.storage.sql.exec(
+        "INSERT OR IGNORE INTO generation_dispatches(request_id, initial_attempt_id) VALUES (?, ?)",
+        input.requestId,
+        input.attemptId,
+      );
+  }
+
+  upsertAttempt(input: AttemptInput): { attemptId: string; created: boolean } {
+    validateInput(input);
+    return this.storage.transactionSync(() => {
+      let existing = this.row(input.attemptId);
+      if (
+        input.repository !== null &&
+        input.runId !== null &&
+        input.runAttempt !== null
+      ) {
+        const canonical = this.storage.sql
+          .exec<AttemptRow>(
+            "SELECT attempt_id, data, state FROM generation_attempts WHERE repository = ? AND run_id = ? AND run_attempt = ?",
+            input.repository,
+            input.runId,
+            input.runAttempt,
+          )
+          .toArray()[0];
+        if (
+          canonical &&
+          existing &&
+          canonical.attempt_id !== existing.attempt_id
+        )
+          conflict("execution identity");
+        existing ??= canonical;
+      }
+      const clock: Clock = { source: "callback", version: input.updatedAt };
+      if (!existing) {
+        this.save(input, {
+          execution: clock,
+          delivery:
+            input.deliveryStatus === "none"
+              ? { source: "legacy-import", version: -1 }
+              : clock,
+          executionVersions: { callback: input.updatedAt },
+          snapshotVersion: input.updatedAt,
+        });
+        return { attemptId: input.attemptId, created: true };
+      }
+      const old: AttemptInput = JSON.parse(existing.data);
+      const state: State = JSON.parse(existing.state);
+      const merged = { ...old };
+      for (const key of [
+        "requestId",
+        "clientId",
+        "issueNumber",
+        "repository",
+        "runId",
+        "runAttempt",
+      ] as const) {
+        const incoming = input[key];
+        if (incoming === null) continue;
+        const equal =
+          key === "repository"
+            ? String(old[key]).toLowerCase() === String(incoming).toLowerCase()
+            : old[key] === incoming;
+        if (old[key] !== null && !equal) conflict(key);
+        // Assign via a common record to retain the correlated key/value types.
+        Object.assign(merged, { [key]: old[key] ?? incoming });
+      }
+      if (
+        merged.repository !== null &&
+        merged.runId !== null &&
+        merged.runAttempt !== null
+      ) {
+        const collision = this.storage.sql
+          .exec<{ attempt_id: string }>(
+            "SELECT attempt_id FROM generation_attempts WHERE repository=? AND run_id=? AND run_attempt=? AND attempt_id<>?",
+            merged.repository,
+            merged.runId,
+            merged.runAttempt,
+            merged.attemptId,
+          )
+          .toArray()[0];
+        if (collision) conflict("execution identity");
+      }
+      if (old.profile !== input.profile) conflict("profile");
+      merged.initiator = mergeActor(
+        old.initiator,
+        input.initiator,
+        "initiator",
+      );
+      merged.invitationCreator = mergeActor(
+        old.invitationCreator,
+        input.invitationCreator,
+        "invitationCreator",
+      );
+      if (
+        observeExecution(
+          state,
+          input.executionStatus,
+          clock,
+          old.executionStatus,
+        )
+      ) {
+        merged.executionStatus = input.executionStatus;
+        merged.completedAt = input.completedAt ?? old.completedAt;
+        merged.failure = input.failure;
+        state.execution = clock;
+      }
+      if (input.deliveryStatus !== "none" && newer(clock, state.delivery)) {
+        // 'none' is absence of delivery evidence, not a demotion of an existing delivery.
+        merged.deliveryStatus = input.deliveryStatus;
+        state.delivery = clock;
+      }
+      if (input.updatedAt > state.snapshotVersion) {
+        // Trusted matching-result snapshots can enrich a late diagnosis without
+        // changing the source/version that locked the execution outcome.
+        if (
+          terminal(old.executionStatus) &&
+          input.executionStatus === old.executionStatus
+        ) {
+          merged.failure = {
+            category: input.failure.category ?? old.failure.category,
+            stage: input.failure.stage ?? old.failure.stage,
+            summary: input.failure.summary ?? old.failure.summary,
+            evidenceUrl: input.failure.evidenceUrl ?? old.failure.evidenceUrl,
+            nextStep: input.failure.nextStep ?? old.failure.nextStep,
+          };
+        }
+        merged.stale = input.stale;
+        state.snapshotVersion = input.updatedAt;
+      }
+      merged.startedAt ??= input.startedAt;
+      // Observation versions are not execution timestamps. Only fill completion
+      // from an explicit verified snapshot matching the retained terminal result.
+      if (
+        terminal(merged.executionStatus) &&
+        input.executionStatus === merged.executionStatus
+      )
+        merged.completedAt ??= input.completedAt;
+      merged.updatedAt = Math.max(old.updatedAt, input.updatedAt);
+      this.save(merged, state);
+      return { attemptId: old.attemptId, created: false };
+    });
+  }
+
+  private summary(row: AttemptRow): AttemptSummary {
+    const costs = this.storage.sql
+      .exec<{
+        actual: number | null;
+        estimated: number | null;
+        unreported: number;
+      }>(
+        `
+      SELECT SUM(CASE WHEN cost_kind='actual' THEN cost_usd END) AS actual,
+             SUM(CASE WHEN cost_kind='estimated' THEN cost_usd END) AS estimated,
+             COALESCE(SUM(CASE WHEN cost_kind='unreported' THEN 1 ELSE 0 END), 0) AS unreported
+      FROM attempt_events WHERE attempt_id=?`,
+        row.attempt_id,
+      )
+      .one();
+    return {
+      ...(JSON.parse(row.data) as AttemptInput),
+      costs: {
+        actualUsd: costs.actual,
+        estimatedUsd: costs.estimated,
+        unreportedCount: costs.unreported,
+      },
+    };
+  }
+  getAttempt(id: string): AttemptDetail | null {
+    const row = this.row(id);
+    if (!row) return null;
+    const page = this.getAttemptEvents(id);
+    return {
+      ...this.summary(row),
+      events: page.items,
+      eventsNextCursor: page.nextCursor,
+      eventCount: page.total,
+    };
+  }
+  listAttempts(filters: AttemptFilters): Page<AttemptSummary> {
+    const normalized = {
+      search: filters.search?.trim().toLowerCase() || null,
+      executionStatus: filters.executionStatus ?? null,
+      initiatorId: filters.initiatorId ?? null,
+      creatorId: filters.creatorId ?? null,
+      profile: filters.profile ?? null,
+      clientId: filters.clientId ?? null,
+      from: filters.from ?? null,
+      to: filters.to ?? null,
+    };
+    if (
+      normalized.executionStatus !== null &&
+      !executions.includes(normalized.executionStatus)
+    )
+      invalid("executionStatus");
+    if (normalized.profile !== null && !profiles.includes(normalized.profile))
+      invalid("profile");
+    for (const time of [normalized.from, normalized.to])
+      if (time !== null && !timestamp(time)) invalid("date filter");
+    const scope = JSON.stringify(["attempts", normalized]);
+    const cursor = decodeCursor(filters.cursor, scope);
+    const clauses: string[] = [];
+    const args: (string | number)[] = [];
+    for (const [key, column] of [
+      ["executionStatus", "execution_status"],
+      ["initiatorId", "initiator_id"],
+      ["creatorId", "creator_id"],
+      ["profile", "profile"],
+      ["clientId", "client_id"],
+    ] as const) {
+      if (normalized[key] !== null) {
+        clauses.push(`${column} = ?`);
+        args.push(normalized[key]!);
+      }
+    }
+    if (normalized.search !== null) {
+      clauses.push(
+        "(instr(lower(attempt_id), ?) > 0 OR instr(lower(COALESCE(client_id,'')), ?) > 0 OR instr(lower(COALESCE(run_id,'')), ?) > 0 OR instr(lower(COALESCE(repository,'')), ?) > 0 OR instr(lower(COALESCE(request_id,'')), ?) > 0 OR CAST(issue_number AS TEXT) = ?)",
+      );
+      args.push(...Array<string>(6).fill(normalized.search));
+    }
+    if (normalized.from !== null) {
+      clauses.push("created_at >= ?");
+      args.push(normalized.from);
+    }
+    if (normalized.to !== null) {
+      clauses.push("created_at <= ?");
+      args.push(normalized.to);
+    }
+    const where = clauses.length ? clauses.join(" AND ") : "1=1";
+    const total = this.storage.sql
+      .exec<{ total: number }>(
+        `SELECT COUNT(*) AS total FROM generation_attempts WHERE ${where}`,
+        ...args,
+      )
+      .one().total;
+    if (cursor) {
+      clauses.push("(created_at < ? OR (created_at = ? AND attempt_id < ?))");
+      args.push(cursor.time, cursor.time, cursor.key);
+    }
+    const limit = pageLimit(filters.limit);
+    const rows = this.storage.sql
+      .exec<AttemptRow>(
+        `SELECT attempt_id, data, state FROM generation_attempts
+      WHERE ${clauses.length ? clauses.join(" AND ") : "1=1"} ORDER BY created_at DESC, attempt_id DESC LIMIT ?`,
+        ...args,
+        limit + 1,
+      )
+      .toArray();
+    const items = rows.slice(0, limit).map((row) => this.summary(row));
+    const last = items.at(-1);
+    return {
+      items,
+      total,
+      nextCursor:
+        rows.length > limit && last
+          ? encodeCursor(scope, last.createdAt, last.attemptId)
+          : null,
+    };
+  }
+
+  recordAttemptEvents(
+    id: string,
+    events: AttemptEventInput[],
+  ): { recorded: number } {
+    return this.storage.transactionSync(() => {
+      const row = this.row(id);
+      if (!row) throw new Error("attempt not found");
+      const attempt: AttemptInput = JSON.parse(row.data);
+      const state: State = JSON.parse(row.state);
+      let recorded = 0;
+      for (const event of events) {
+        if (
+          !nonempty(event.eventKey) ||
+          !nonempty(event.stage) ||
+          !nonempty(event.status) ||
+          !timestamp(event.observedAt) ||
+          !sources.includes(event.source)
+        )
+          invalid("event");
+        if (event.createdAt != null && !timestamp(event.createdAt))
+          invalid("event.createdAt");
+        if (
+          event.costUsd != null &&
+          (!Number.isFinite(event.costUsd) || event.costUsd < 0)
+        )
+          invalid("event.costUsd");
+        if (
+          event.costKind !== undefined &&
+          !["actual", "estimated", "unreported"].includes(event.costKind)
+        )
+          invalid("event.costKind");
+        if (event.stage === "execution" && !executions.includes(event.status))
+          invalid("execution observation");
+        if (event.stage === "delivery" && !deliveries.includes(event.status))
+          invalid("delivery observation");
+        const previousRow = this.storage.sql
+          .exec<EventRow>(
+            "SELECT data FROM attempt_events WHERE attempt_id=? AND event_key=?",
+            id,
+            event.eventKey,
+          )
+          .toArray()[0];
+        const previous: AttemptEventRecord | null = previousRow
+          ? JSON.parse(previousRow.data)
+          : null;
+        const clock: Clock = {
+          source: event.source,
+          version: event.observedAt,
+        };
+        if (
+          previous &&
+          !newer(clock, {
+            source: previous.source,
+            version: previous.observedAt,
+          })
+        )
+          continue;
+        const record: AttemptEventRecord = {
+          ...event,
+          attemptId: id,
+          provider: event.provider ?? null,
+          model: event.model ?? null,
+          costUsd: event.costUsd ?? null,
+          costKind: event.costKind ?? "unreported",
+          detail: event.detail ?? null,
+          createdAt: previous?.createdAt ?? event.createdAt ?? event.observedAt,
+          updatedAt: Date.now(),
+        };
+        this.storage.sql.exec(
+          `INSERT INTO attempt_events(attempt_id,event_key,created_at,cost_usd,cost_kind,data) VALUES(?,?,?,?,?,?)
+          ON CONFLICT(attempt_id,event_key) DO UPDATE SET cost_usd=excluded.cost_usd,cost_kind=excluded.cost_kind,data=excluded.data`,
+          id,
+          event.eventKey,
+          record.createdAt,
+          record.costUsd,
+          record.costKind,
+          JSON.stringify(record),
+        );
+        recorded++;
+        if (
+          event.stage === "execution" &&
+          observeExecution(
+            state,
+            event.status as ExecutionStatus,
+            clock,
+            attempt.executionStatus,
+          )
+        ) {
+          attempt.executionStatus = event.status as ExecutionStatus;
+          state.execution = clock;
+        }
+        if (event.stage === "delivery" && newer(clock, state.delivery)) {
+          attempt.deliveryStatus = event.status as DeliveryStatus;
+          state.delivery = clock;
+        }
+        attempt.updatedAt = Math.max(attempt.updatedAt, event.observedAt);
+      }
+      if (recorded) this.save(attempt, state);
+      return { recorded };
+    });
+  }
+  getAttemptEvents(
+    id: string,
+    cursor?: string,
+    limit?: number,
+  ): Page<AttemptEventRecord> {
+    const scope = JSON.stringify(["events", id]);
+    const position = decodeCursor(cursor, scope);
+    const bounded = pageLimit(limit);
+    const total = this.storage.sql
+      .exec<{ total: number }>(
+        "SELECT COUNT(*) AS total FROM attempt_events WHERE attempt_id=?",
+        id,
+      )
+      .one().total;
+    const rows = this.storage.sql
+      .exec<EventRow>(
+        `SELECT data FROM attempt_events WHERE attempt_id=?
+      ${position ? "AND (created_at < ? OR (created_at = ? AND event_key < ?))" : ""}
+      ORDER BY created_at DESC, event_key DESC LIMIT ?`,
+        id,
+        ...(position ? [position.time, position.time, position.key] : []),
+        bounded + 1,
+      )
+      .toArray();
+    const items: AttemptEventRecord[] = rows
+      .slice(0, bounded)
+      .map((row) => JSON.parse(row.data));
+    const last = items.at(-1);
+    return {
+      items,
+      total,
+      nextCursor:
+        rows.length > bounded && last
+          ? encodeCursor(scope, last.createdAt, last.eventKey)
+          : null,
+    };
+  }
+  getHealth(): Health {
+    const row = this.storage.sql
+      .exec<{
+        last_sync_at: number | null;
+        coverage_start: number | null;
+        partial: number;
+        last_error: string | null;
+        pending_projection_count: number;
+      }>("SELECT * FROM admin_sync_state WHERE id=1")
+      .one();
+    return {
+      lastSyncAt: row.last_sync_at,
+      coverageStart: row.coverage_start,
+      partial: Boolean(row.partial),
+      lastError: row.last_error,
+      pendingProjectionCount: row.pending_projection_count,
+    };
+  }
+}

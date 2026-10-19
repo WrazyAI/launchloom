@@ -1,4 +1,10 @@
 import { DurableObject } from "cloudflare:workers";
+import { GenerationAttempts } from "./generation-attempts";
+import type {
+  AttemptInput,
+  AttemptEventInput,
+  AttemptFilters,
+} from "../../src/lib/admin-contracts";
 
 export type GenerationCostKind = "actual" | "estimated" | "unreported";
 
@@ -193,9 +199,13 @@ function eventFromRow(row: GenerationEventRow): GenerationEventRecord {
 type GenerationLedgerEnvironment = Record<string, never>;
 
 export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment> {
+  private attempts: GenerationAttempts;
+
   constructor(ctx: DurableObjectState, env: GenerationLedgerEnvironment) {
     super(ctx, env);
+    this.attempts = new GenerationAttempts(ctx.storage);
     ctx.blockConcurrencyWhile(async () => {
+      this.attempts.initialize();
       ctx.storage.sql.exec(`
         CREATE TABLE IF NOT EXISTS generations (
           generation_id TEXT PRIMARY KEY,
@@ -253,6 +263,30 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
         generationId,
       )
       .toArray()[0];
+  }
+
+  async upsertAttempt(input: AttemptInput) {
+    return this.attempts.upsertAttempt(input);
+  }
+
+  async getAttempt(id: string) {
+    return this.attempts.getAttempt(id);
+  }
+
+  async listAttempts(filters: AttemptFilters) {
+    return this.attempts.listAttempts(filters);
+  }
+
+  async recordAttemptEvents(id: string, events: AttemptEventInput[]) {
+    return this.attempts.recordAttemptEvents(id, events);
+  }
+
+  async getAttemptEvents(id: string, cursor?: string, limit?: number) {
+    return this.attempts.getAttemptEvents(id, cursor, limit);
+  }
+
+  async getHealth() {
+    return this.attempts.getHealth();
   }
 
   async upsertGeneration(input: GenerationRecordInput) {
