@@ -18,6 +18,7 @@ import type {
   DispatchRequest,
 } from "../../src/lib/admin-contracts";
 import { pageRecords } from "./admin/pagination";
+import type { AttemptObservation } from "../../scripts/generation-tracking-contract.mjs";
 
 const executions = [
   "queued",
@@ -231,6 +232,9 @@ export class GenerationAttempts {
       CREATE TABLE IF NOT EXISTS admin_dispatch_requests (
         request_id TEXT PRIMARY KEY, data TEXT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS generation_reconciliation_state (
+        id INTEGER PRIMARY KEY CHECK(id=1), checkpoint TEXT
+      );
     `);
   }
 
@@ -241,6 +245,171 @@ export class GenerationAttempts {
         id,
       )
       .toArray()[0];
+  }
+
+  /** Trusted ingestion transaction: bindings, events and cursor either all persist
+   * or none do. Only the persisted dispatch operation can supply client actors. */
+  ingestObservations(
+    batch: Array<{
+      observation: AttemptObservation;
+      events: AttemptEventInput[];
+    }>,
+    sync?: {
+      checkpoint: string | null;
+      health: Omit<Health, "pendingProjectionCount">;
+    },
+  ) {
+    return this.storage.transactionSync(() => {
+      const ids: string[] = [];
+      const unknown: ActorSnapshot = {
+        kind: "unknown",
+        id: null,
+        name: null,
+        email: null,
+        source: "legacy",
+      };
+      for (const { observation: o, events } of batch) {
+        const dispatchRow = o.requestId
+          ? this.storage.sql
+              .exec<{ data: string }>(
+                "SELECT data FROM admin_dispatch_requests WHERE request_id=?",
+                o.requestId,
+              )
+              .toArray()[0]
+          : null;
+        const dispatch: DispatchRequest | null = dispatchRow
+          ? JSON.parse(dispatchRow.data)
+          : null;
+        const initial = o.requestId
+          ? this.storage.sql
+              .exec<{ initial_attempt_id: string }>(
+                "SELECT initial_attempt_id FROM generation_dispatches WHERE request_id=?",
+                o.requestId,
+              )
+              .toArray()[0]
+          : null;
+        const executed = this.storage.sql
+          .exec<AttemptRow>(
+            "SELECT attempt_id,data,state FROM generation_attempts WHERE repository=? COLLATE NOCASE AND run_id=? AND run_attempt=?",
+            o.repository,
+            o.runId,
+            o.runAttempt,
+          )
+          .toArray()[0];
+        const existing: AttemptInput | null = executed
+          ? JSON.parse(executed.data)
+          : null;
+        if (
+          dispatch &&
+          (dispatch.issueNumber !== o.issueNumber || o.profile !== "full")
+        )
+          conflict("dispatch routing");
+        // A request reference alone, even attempt 1, is never initial binding.
+        // Only a producer carrying the explicitly registered initial ID can bind it.
+        const bindsInitial = !!(
+          dispatch &&
+          initial &&
+          o.attemptId === initial.initial_attempt_id &&
+          o.runAttempt === 1
+        );
+        if (o.attemptId && !bindsInitial && o.attemptId !== existing?.attemptId)
+          conflict("unverified attempt id");
+        const id = bindsInitial
+          ? initial!.initial_attempt_id
+          : (existing?.attemptId ?? `github:${o.runId}:${o.runAttempt}`);
+        const prior = this.row(id);
+        const previous: AttemptInput | null = prior
+          ? JSON.parse(prior.data)
+          : null;
+        const github: ActorSnapshot = o.triggeringActor
+          ? {
+              kind: "github",
+              id: o.triggeringActor,
+              name: null,
+              email: null,
+              source: "github",
+            }
+          : unknown;
+        if (
+          previous?.initiator.kind === "github" &&
+          github.kind === "github" &&
+          previous.initiator.id !== github.id
+        )
+          conflict("triggering actor");
+        const result = this.upsertAttempt({
+          attemptId: id,
+          requestId: o.requestId,
+          clientId: dispatch?.clientId ?? null,
+          issueNumber: o.issueNumber,
+          profile: o.profile,
+          initiator: bindsInitial
+            ? dispatch!.initiator
+            : previous && previous.initiator.kind !== "unknown"
+              ? previous.initiator
+              : github,
+          invitationCreator:
+            dispatch?.invitationCreator ??
+            previous?.invitationCreator ??
+            unknown,
+          repository: o.repository,
+          runId: o.runId,
+          runAttempt: o.runAttempt,
+          executionStatus: o.executionStatus,
+          deliveryStatus: o.deliveryStatus,
+          stale: false,
+          createdAt: previous?.createdAt ?? o.createdAt ?? o.observedAt,
+          startedAt: o.startedAt,
+          completedAt: o.completedAt,
+          updatedAt: o.observedAt,
+          failure: o.failure,
+        });
+        const outcome: AttemptEventInput = {
+          eventKey: "execution",
+          stage: "execution",
+          status: o.executionStatus,
+          source: o.source,
+          observedAt: o.observedAt,
+          createdAt: o.observedAt,
+          detail: null,
+        };
+        const delivery: AttemptEventInput[] =
+          o.deliveryStatus === "none"
+            ? []
+            : [
+                {
+                  eventKey: "delivery",
+                  stage: "delivery",
+                  status: o.deliveryStatus,
+                  source: o.source,
+                  observedAt: o.observedAt,
+                  createdAt: o.observedAt,
+                },
+              ];
+        this.recordAttemptEvents(result.attemptId, [
+          outcome,
+          ...delivery,
+          ...events,
+        ]);
+        ids.push(result.attemptId);
+      }
+      if (sync) {
+        const h = sync.health;
+        this.storage.sql.exec(
+          "INSERT INTO generation_reconciliation_state(id,checkpoint) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET checkpoint=excluded.checkpoint",
+          sync.checkpoint,
+        );
+        this.storage.sql.exec(
+          "UPDATE admin_sync_state SET last_sync_at=?, coverage_start=CASE WHEN coverage_start IS NULL THEN ? WHEN ? IS NULL THEN coverage_start ELSE MIN(coverage_start,?) END, partial=?, last_error=? WHERE id=1",
+          h.lastSyncAt,
+          h.coverageStart,
+          h.coverageStart,
+          h.coverageStart,
+          h.partial ? 1 : 0,
+          h.lastError,
+        );
+      }
+      return { attemptIds: ids };
+    });
   }
   upsertClient(input: ClientInput): ClientRecord {
     if (

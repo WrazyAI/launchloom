@@ -33,7 +33,7 @@ import {
 } from "./seo-readiness";
 import type { PublicationCommand } from "./publication";
 import { OnboardingInvites } from "./onboarding-invites";
-import { legacyAccessPrincipal, principalActor, workspaceApi, workspaceError } from "./admin/workspace-api";
+import { legacyAccessPrincipal, principalActor, workspaceApi, workspaceError, attemptIngest } from "./admin/workspace-api";
 import { IntakeRecoveryError, intakeOperationMarker, recoverIntakeIssue, readIntakeIssuePayload, verifyIntakeIssueOwnership, type IntakeIssue } from "./intake-recovery";
 import {
   GenerationLedger,
@@ -3704,6 +3704,11 @@ export default {
       return creativeRepairCoordinator(request, env);
     if (path === "/api/internal/generations")
       return generationIngest(request, env);
+    if (path === '/api/internal/generation-attempts' || path === '/api/internal/generation-reconciliation') {
+      if (!env.GENERATION_TRACKING_SECRET) return workspaceError('unavailable','Generation tracking is not configured.',503);
+      if (!internalSecretAuthorized(request,env.GENERATION_TRACKING_SECRET)) return workspaceError('unauthorized','Unauthorized.',401);
+      return attemptIngest(request,env,path.endsWith('generation-reconciliation'));
+    }
     if (path === "/api/internal/generations/hero")
       return generationHeroUpload(request, env);
     if (path === "/api/admin/generations")

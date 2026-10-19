@@ -1,6 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
+import {
+  buildAttemptObservation,
+  buildAttemptEvents,
+} from "./generation-tracking-contract.mjs";
 
 const DEFAULT_API_URL = "https://api.launchloom.wrazyos.com";
 const MAX_HERO_BYTES = 1_800_000;
@@ -61,7 +65,8 @@ export function resolveGenerationId(args) {
  */
 export function buildGenerationTrackingPayload(args = {}, events = []) {
   const generationId = resolveGenerationId(args);
-  if (!generationId) throw new Error("A generation id, submission id, or issue is required.");
+  if (!generationId)
+    throw new Error("A generation id, submission id, or issue is required.");
   const generation = { generationId };
   const textFields = {
     submissionId: clean(args["submission-id"], 100).toLowerCase(),
@@ -88,18 +93,47 @@ export function buildGenerationTrackingPayload(args = {}, events = []) {
   for (const [key, value] of Object.entries(numericFields)) {
     if (value !== null) generation[key] = Math.round(value);
   }
-  if (args.failure !== undefined) generation.failureReason = clean(args.failure, 500);
+  if (args.failure !== undefined)
+    generation.failureReason = clean(args.failure, 500);
   const action = clean(args.action, 20).toLowerCase() || "event";
   if (!["start", "event", "complete"].includes(action))
     throw new Error(`Unsupported action: ${action}`);
   return { action, generationId, generation, events };
 }
 
-async function postJson(api, secret, body, fetchImpl = fetch) {
+export function buildAttemptTrackingPayload(args = {}, events = []) {
+  if (!args["run-id"]) return null; // legacy behavior is opt-in, never inferred from status/action
+  const observation = buildAttemptObservation({
+    repository: process.env.GITHUB_REPOSITORY || "WrazyAI/launchloom",
+    runId: String(args["run-id"]),
+    runAttempt: Number(args["run-attempt"]),
+    requestId: args["request-id"] || null,
+    attemptId: args["attempt-id"] || null,
+    profile: args.profile,
+    issueNumber: numberOrNull(args.issue),
+    triggeringActor: args["triggering-actor"] || null,
+    executionStatus: args["execution-status"],
+    deliveryStatus: args["delivery-status"],
+    observedAt: Number(args["observed-at"]),
+    createdAt: numberOrNull(args["created-at"]),
+    startedAt: numberOrNull(args["started-at"]),
+    completedAt: numberOrNull(args["completed-at"]),
+    failure: args.failure ? { summary: args.failure } : undefined,
+  });
+  return { observation, events: buildAttemptEvents(events, observation) };
+}
+
+async function postJson(
+  api,
+  secret,
+  body,
+  fetchImpl = fetch,
+  endpoint = "generations",
+) {
   let lastError;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
-      const response = await fetchImpl(`${api}/api/internal/generations`, {
+      const response = await fetchImpl(`${api}/api/internal/${endpoint}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${secret}`,
@@ -115,9 +149,28 @@ async function postJson(api, secret, body, fetchImpl = fetch) {
     } catch (error) {
       lastError = error;
     }
-    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 750));
+    if (attempt < 3)
+      await new Promise((resolve) => setTimeout(resolve, attempt * 750));
   }
   throw lastError || new Error("Tracking endpoint is unavailable.");
+}
+
+export async function postAttemptTracking(
+  payload,
+  {
+    secret = process.env.GENERATION_TRACKING_SECRET,
+    api = process.env.LAUNCHLOOM_API_URL || DEFAULT_API_URL,
+    fetchImpl = fetch,
+  } = {},
+) {
+  if (!secret) return { ok: true, disabled: true };
+  return postJson(
+    api.replace(/\/$/u, ""),
+    secret,
+    payload,
+    fetchImpl,
+    "generation-attempts",
+  );
 }
 
 /** Convert the hero screenshot to a bounded WebP and store it in the ledger. */
@@ -156,7 +209,10 @@ export async function uploadGenerationHero({
 if (import.meta.url === `file://${process.argv[1]}`) {
   const args = argsFrom(process.argv.slice(2));
   const required = args.required === "true";
-  const secret = clean(args.secret || process.env.GENERATION_TRACKING_SECRET, 500);
+  const secret = clean(
+    args.secret || process.env.GENERATION_TRACKING_SECRET,
+    500,
+  );
   const api = clean(
     args.api || process.env.LAUNCHLOOM_API_URL || DEFAULT_API_URL,
     400,
@@ -171,20 +227,68 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const events = [];
     for (const file of eventFiles) {
       const parsed = await readJson(file);
-      const list = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.events) ? parsed.events : [];
+      const list = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.events)
+          ? parsed.events
+          : [];
       for (const event of list) {
-        const index = events.findIndex((item) => item.eventKey === event.eventKey);
+        const index = events.findIndex(
+          (item) => item.eventKey === event.eventKey,
+        );
         if (index >= 0) events[index] = event;
         else events.push(event);
       }
     }
-    const payload = buildGenerationTrackingPayload(args, events);
+    let attemptPayload = null;
+    try {
+      attemptPayload = buildAttemptTrackingPayload(args, events);
+    } catch (error) {
+      if (required) throw error;
+      console.warn("attempt_tracking=skipped reason=invalid-evidence");
+    }
+    // An explicit observation without a legacy action is attempt-only. Existing
+    // lifecycle callbacks retain their original payload, hero and status behavior.
+    const payload =
+      args["run-id"] && !args.action
+        ? null
+        : buildGenerationTrackingPayload(args, events);
     if (args["dry-run"] === "true") {
-      console.log(JSON.stringify(payload, null, 2));
+      console.log(
+        JSON.stringify(
+          attemptPayload
+            ? { legacy: payload, attempt: attemptPayload }
+            : payload,
+          null,
+          2,
+        ),
+      );
       process.exit(0);
     }
+    if (attemptPayload) {
+      try {
+        const attemptResult = await postJson(
+          api,
+          secret,
+          attemptPayload,
+          fetch,
+          "generation-attempts",
+        );
+        if (!attemptResult.ok)
+          throw new Error(
+            `Attempt tracking rejected (${attemptResult.status}).`,
+          );
+      } catch (error) {
+        if (required) throw error;
+        console.warn("attempt_tracking=skipped reason=unavailable");
+      }
+    }
+    if (!payload) process.exit(0);
     const result = await postJson(api, secret, payload);
-    if (!result.ok) throw new Error(`Tracking endpoint rejected the payload (${result.status}).`);
+    if (!result.ok)
+      throw new Error(
+        `Tracking endpoint rejected the payload (${result.status}).`,
+      );
     let hero = "skipped";
     if (args.hero) {
       try {

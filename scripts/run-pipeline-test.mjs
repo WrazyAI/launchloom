@@ -4,14 +4,16 @@ import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  buildAttemptObservation,
+  buildAttemptEvents,
+} from "./generation-tracking-contract.mjs";
+import { postAttemptTracking } from "./record-generation-event.mjs";
+import {
   parsePipelineTestArgs,
   resolvePipelineTestPolicy,
 } from "./pipeline-test-policy.mjs";
 import { summarizeGenerationCosts } from "./generation-cost-summary.mjs";
-import {
-  collectEvidenceSamples,
-  summarizeGateHealth,
-} from "./gate-health.mjs";
+import { collectEvidenceSamples, summarizeGateHealth } from "./gate-health.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { businessFactReadiness } from "../templates/client-site/src/lib/business-facts.mjs";
 import { pageBriefReadiness } from "../templates/client-site/src/lib/page-briefs.mjs";
@@ -34,7 +36,11 @@ export function focusedSeoReadiness(config) {
 }
 
 export function currentRunCostInputs(costs, report) {
-  return { ...costs, creativeRun: report.stages.author.status === "not_run" ? null : costs.creativeRun };
+  return {
+    ...costs,
+    creativeRun:
+      report.stages.author.status === "not_run" ? null : costs.creativeRun,
+  };
 }
 
 export function currentRunCostSummary(costs, report, falImageUsdPerImage) {
@@ -47,12 +53,18 @@ export function currentRunCostSummary(costs, report, falImageUsdPerImage) {
 
 export function assertPipelineTestFacts(config) {
   const readiness = businessFactReadiness(config);
-  if (!readiness.allowed) throw new Error(readiness.error || "Business facts are not ready.");
+  if (!readiness.allowed)
+    throw new Error(readiness.error || "Business facts are not ready.");
 }
 
 export function pagesDeploymentUrl(output) {
-  const matches = [...String(output).matchAll(/Deployment complete![^\r\n]*?(https:\/\/[a-z0-9.-]+\.pages\.dev)/giu)];
-  if (matches.length !== 1) throw new Error("Immutable Pages deployment URL was not returned.");
+  const matches = [
+    ...String(output).matchAll(
+      /Deployment complete![^\r\n]*?(https:\/\/[a-z0-9.-]+\.pages\.dev)/giu,
+    ),
+  ];
+  if (matches.length !== 1)
+    throw new Error("Immutable Pages deployment URL was not returned.");
   return new URL(matches[0][1]).href.replace(/\/$/u, "");
 }
 
@@ -70,7 +82,9 @@ export function assertTestPreviewIndexingPolicy({
   if (String(sitemapXml).trim())
     throw new Error("Test preview must not publish a sitemap.");
   if (!/\bnoindex\b/iu.test(xRobotsTag))
-    throw new Error("Test preview response must include an X-Robots-Tag noindex directive.");
+    throw new Error(
+      "Test preview response must include an X-Robots-Tag noindex directive.",
+    );
   return true;
 }
 
@@ -111,9 +125,13 @@ export async function verifyTestPreviewAccess({
     new Promise((resolve) => setTimeout(resolve, milliseconds)),
 }) {
   if (!clientId || !clientSecret)
-    throw new Error("Cloudflare Access service-token credentials are required.");
+    throw new Error(
+      "Cloudflare Access service-token credentials are required.",
+    );
   if (!Number.isInteger(attempts) || attempts < 1 || attempts > 12)
-    throw new Error("Access verification attempts must be an integer from 1 to 12.");
+    throw new Error(
+      "Access verification attempts must be an integer from 1 to 12.",
+    );
   let anonymous = await send(url, { method: "GET", redirect: "manual" });
   let authenticated = null;
   let lastNetworkError = null;
@@ -129,7 +147,8 @@ export async function verifyTestPreviewAccess({
       });
     } catch (error) {
       authenticated = null;
-      lastNetworkError = error instanceof Error ? error : new Error(String(error));
+      lastNetworkError =
+        error instanceof Error ? error : new Error(String(error));
       if (attempt < attempts) await wait(5_000);
       continue;
     }
@@ -191,29 +210,49 @@ export function resolveTestPreviewProject(
   value = process.env.LAUNCHLOOM_TEST_PAGES_PROJECT ||
     "launchloom-pipeline-preview",
 ) {
-  const project = String(value || "").trim().toLowerCase();
+  const project = String(value || "")
+    .trim()
+    .toLowerCase();
   if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(project))
     throw new Error("Test preview Pages project name is invalid.");
   return project;
 }
 
-export async function assertCompatibleTestAssets(current, previous, manifest, publicRoot) {
-  const canonical = (value) => JSON.stringify(Object.entries(value || {}).filter(([, v]) => Boolean(v)).sort(([a], [b]) => a.localeCompare(b)));
-  if (canonical(current.assets) !== canonical(previous.assets)) throw new Error("Client assets changed; fresh authoring is required.");
+export async function assertCompatibleTestAssets(
+  current,
+  previous,
+  manifest,
+  publicRoot,
+) {
+  const canonical = (value) =>
+    JSON.stringify(
+      Object.entries(value || {})
+        .filter(([, v]) => Boolean(v))
+        .sort(([a], [b]) => a.localeCompare(b)),
+    );
+  if (canonical(current.assets) !== canonical(previous.assets))
+    throw new Error("Client assets changed; fresh authoring is required.");
   const paths = new Set();
   const collect = (value) => {
-    if (typeof value === "string" && value.startsWith("/images/generated/")) paths.add(value);
-    else if (value && typeof value === "object") Object.values(value).forEach(collect);
+    if (typeof value === "string" && value.startsWith("/images/generated/"))
+      paths.add(value);
+    else if (value && typeof value === "object")
+      Object.values(value).forEach(collect);
   };
   collect(previous.creativeAssets);
   for (const asset of paths) {
     const entry = manifest?.placements?.find((item) => item.path === asset);
-    if (!entry || !/^[a-f0-9]{64}$/iu.test(entry.sha256 || "")) throw new Error("Generated asset provenance is missing.");
+    if (!entry || !/^[a-f0-9]{64}$/iu.test(entry.sha256 || ""))
+      throw new Error("Generated asset provenance is missing.");
     const root = await fs.realpath(publicRoot);
     const file = await fs.realpath(path.resolve(root, `.${asset}`));
-    if (!file.startsWith(`${root}${path.sep}`)) throw new Error("Generated asset escaped its source root.");
-    const checksum = createHash("sha256").update(await fs.readFile(file)).digest("hex");
-    if (checksum !== entry.sha256.toLowerCase()) throw new Error("Generated asset checksum mismatch.");
+    if (!file.startsWith(`${root}${path.sep}`))
+      throw new Error("Generated asset escaped its source root.");
+    const checksum = createHash("sha256")
+      .update(await fs.readFile(file))
+      .digest("hex");
+    if (checksum !== entry.sha256.toLowerCase())
+      throw new Error("Generated asset checksum mismatch.");
   }
 }
 
@@ -498,7 +537,11 @@ export async function command(
 export async function pushPipelineTestEvidence({
   cwd,
   branch,
-  push = () => command("git", ["push", "--set-upstream", "origin", branch], { cwd, capture: true }),
+  push = () =>
+    command("git", ["push", "--set-upstream", "origin", branch], {
+      cwd,
+      capture: true,
+    }),
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) {
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -507,8 +550,14 @@ export async function pushPipelineTestEvidence({
       return { attempts: attempt + 1 };
     } catch (error) {
       const message = String(error?.message || error);
-      const permanent = /authentication failed|permission denied|non-fast-forward|large files|exceeds?.*limit/iu.test(message);
-      const transient = /internal server error|HTTP\s+50[0234]|returned error:\s*50[0234]|service unavailable|bad gateway|gateway timeout/iu.test(message);
+      const permanent =
+        /authentication failed|permission denied|non-fast-forward|large files|exceeds?.*limit/iu.test(
+          message,
+        );
+      const transient =
+        /internal server error|HTTP\s+50[0234]|returned error:\s*50[0234]|service unavailable|bad gateway|gateway timeout/iu.test(
+          message,
+        );
       if (permanent || !transient || attempt === 2) throw error;
       await wait([1000, 3000][attempt]);
     }
@@ -531,11 +580,12 @@ export function createCloudDependencies(
 ) {
   if (!work)
     throw new Error("RUNNER_TEMP is required for the isolated test workspace.");
-  const profileSlug = input.profile === "seo-only"
-    ? "seo"
-    : input.profile === "creative-only"
-      ? "creative"
-      : "full";
+  const profileSlug =
+    input.profile === "seo-only"
+      ? "seo"
+      : input.profile === "creative-only"
+        ? "creative"
+        : "full";
   const slug = `llqa-${input.issue}-${profileSlug}-${input.runId}`;
   const site = path.join(work, slug);
   const evidence = path.join(site, ".launchloom");
@@ -560,7 +610,8 @@ export function createCloudDependencies(
       ...options,
     });
   async function costSummary(report) {
-    const { readGenerationCostInputs } = await import("./generation-cost-summary.mjs");
+    const { readGenerationCostInputs } =
+      await import("./generation-cost-summary.mjs");
     const costs = await readGenerationCostInputs({
       seo: input.profile !== "creative-only" ? research : undefined,
       siteConfigUsage: path.join(evidence, "site-config-usage.json"),
@@ -589,7 +640,14 @@ export function createCloudDependencies(
     if (current.status === 404) {
       await command(
         path.join(root, "node_modules/.bin/wrangler"),
-        ["pages", "project", "create", pagesProject, "--production-branch", "main"],
+        [
+          "pages",
+          "project",
+          "create",
+          pagesProject,
+          "--production-branch",
+          "main",
+        ],
         { cwd: root },
       );
     } else if (!current.ok) {
@@ -601,7 +659,7 @@ export function createCloudDependencies(
     await fs.mkdir(probeDir, { recursive: true });
     await fs.writeFile(
       path.join(probeDir, "index.html"),
-      "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"noindex,nofollow\"><title>LaunchLoom preview access probe</title></head><body><main><h1>Access control probe</h1><p>This page contains no client or business data.</p></main></body></html>\n",
+      '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>LaunchLoom preview access probe</title></head><body><main><h1>Access control probe</h1><p>This page contains no client or business data.</p></main></body></html>\n',
     );
     await fs.writeFile(
       path.join(probeDir, "_headers"),
@@ -629,7 +687,11 @@ export function createCloudDependencies(
       { cwd: root, capture: true },
     );
     const probeUrl = pagesDeploymentUrl(deployment);
-    await node("wait-for-pages-preview.mjs", ["--url", probeUrl, "--protected-preview"]);
+    await node("wait-for-pages-preview.mjs", [
+      "--url",
+      probeUrl,
+      "--protected-preview",
+    ]);
     const access = await verifyTestPreviewAccess({
       url: probeUrl,
       clientId: process.env.CLOUDFLARE_ACCESS_CLIENT_ID,
@@ -953,9 +1015,14 @@ export function createCloudDependencies(
           const previous = await readJson(
             path.join(source, "src/site.config.json"),
           );
-          await assertCompatibleTestAssets(current, previous,
-            await readJson(path.join(source, ".launchloom/generated-assets.json")).catch(() => ({})),
-            path.join(source, "public"));
+          await assertCompatibleTestAssets(
+            current,
+            previous,
+            await readJson(
+              path.join(source, ".launchloom/generated-assets.json"),
+            ).catch(() => ({})),
+            path.join(source, "public"),
+          );
           current.creativeAssets = previous.creativeAssets || {};
           const {
             buildCreativeContentManifest,
@@ -1212,10 +1279,7 @@ export function createCloudDependencies(
         );
         gates.push({ name: "rendered", passed: true });
       } catch (error) {
-        const finding = classifyDiagnosticQualityGateFailure(
-          "rendered",
-          error,
-        );
+        const finding = classifyDiagnosticQualityGateFailure("rendered", error);
         if (!finding) throw error;
         gates.push(finding);
       }
@@ -1227,10 +1291,7 @@ export function createCloudDependencies(
         });
         gates.push({ name: "contrast", passed: true });
       } catch (error) {
-        const finding = classifyDiagnosticQualityGateFailure(
-          "contrast",
-          error,
-        );
+        const finding = classifyDiagnosticQualityGateFailure("contrast", error);
         if (!finding) throw error;
         gates.push(finding);
       }
@@ -1270,7 +1331,8 @@ export function createCloudDependencies(
       const pageReadiness = pageBriefReadiness(finalConfig);
       if (!pageReadiness.allowed)
         throw new Error(
-          pageReadiness.error || "Route-specific content readiness did not pass.",
+          pageReadiness.error ||
+            "Route-specific content readiness did not pass.",
         );
       return { artifact: ".launchloom/seo-review-report.json" };
     },
@@ -1302,7 +1364,11 @@ export function createCloudDependencies(
         { cwd: site, capture: true },
       );
       const url = pagesDeploymentUrl(deployed);
-      await node("wait-for-pages-preview.mjs", ["--url", url, "--protected-preview"]);
+      await node("wait-for-pages-preview.mjs", [
+        "--url",
+        url,
+        "--protected-preview",
+      ]);
       const previewAccess = await verifyTestPreviewAccess({
         url,
         clientId: process.env.CLOUDFLARE_ACCESS_CLIENT_ID,
@@ -1331,7 +1397,9 @@ export function createCloudDependencies(
         xRobotsTag: response.headers.get("x-robots-tag") || "",
       });
       if (!response.ok)
-        throw new Error("Live diagnostic did not return a successful homepage response.");
+        throw new Error(
+          "Live diagnostic did not return a successful homepage response.",
+        );
       report.previewUrl = url;
       return { url, access: previewAccess };
     },
@@ -1379,6 +1447,47 @@ export function createCloudDependencies(
   };
 }
 
+/** @param {any} report @param {Record<string,string|undefined>} environment @param {number|string|null} issueNumber */
+export function buildPipelineAttemptTracking(
+  report,
+  environment = process.env,
+  issueNumber = null,
+) {
+  const failed =
+    report.verdict !== "passed" ||
+    report.stages?.notify?.status === "failed" ||
+    report.stages?.persist?.status === "failed";
+  const stage =
+    Object.entries(report.stages || {}).find(
+      ([, value]) => value.status === "failed",
+    )?.[0] ?? null;
+  const observation = buildAttemptObservation({
+    repository: environment.GITHUB_REPOSITORY || "WrazyAI/launchloom",
+    runId: environment.GITHUB_RUN_ID,
+    runAttempt: Number(environment.GITHUB_RUN_ATTEMPT || 1),
+    profile: report.profile,
+    issueNumber: Number(issueNumber) || null,
+    triggeringActor: environment.GITHUB_TRIGGERING_ACTOR || null,
+    executionStatus: failed ? "failed" : "succeeded",
+    deliveryStatus: report.previewDelivered ? "diagnostic" : "none",
+    observedAt: Date.parse(report.finishedAt),
+    startedAt: Date.parse(report.startedAt),
+    completedAt: Date.parse(report.finishedAt),
+    failure: failed
+      ? {
+          category: "pipeline",
+          stage,
+          summary: stage ? "Recorded pipeline stage failed." : null,
+          evidenceUrl: `https://github.com/WrazyAI/launchloom/actions/runs/${environment.GITHUB_RUN_ID}`,
+        }
+      : {},
+  });
+  return {
+    observation,
+    events: buildAttemptEvents(report.costs?.events || [], observation),
+  };
+}
+
 if (
   process.argv[1] &&
   fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
@@ -1393,13 +1502,25 @@ if (
   };
   validatePipelineTestInput(input);
   const report = await runPipelineTest(input, createCloudDependencies(input));
+  try {
+    await postAttemptTracking(
+      buildPipelineAttemptTracking(report, process.env, input.issue),
+    );
+  } catch {
+    console.warn("attempt_tracking=skipped reason=unavailable");
+  }
   console.log(
     JSON.stringify({
       profile: report.profile,
       verdict: report.verdict,
       previewDelivered: report.previewDelivered,
       previewUrl: report.previewUrl || null,
-      stages: Object.fromEntries(Object.entries(report.stages).map(([name, stage]) => [name, stage.status])),
+      stages: Object.fromEntries(
+        Object.entries(report.stages).map(([name, stage]) => [
+          name,
+          stage.status,
+        ]),
+      ),
     }),
   );
   if (
