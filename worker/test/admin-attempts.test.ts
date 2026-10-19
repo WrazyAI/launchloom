@@ -489,6 +489,10 @@ describe("GenerationLedger attempt history", () => {
     const store = ledger();
     const input = attempt({ attemptId: "original", requestId: "dispatch" });
     await store.upsertAttempt(input);
+    await store.registerInitialDispatch({
+      requestId: "dispatch",
+      initialAttemptId: "original",
+    });
     await store.recordAttemptEvents("original", [
       event("github", {
         stage: "execution",
@@ -629,5 +633,148 @@ describe("GenerationLedger attempt history", () => {
       executionStatus: "failed",
       failure,
     });
+  });
+
+  it.each(["callback-first", "github-first"] as const)(
+    "retains same-key authoritative terminal evidence with %s arrival",
+    async (order) => {
+      const store = ledger();
+      await store.upsertAttempt(attempt({ attemptId: "a" }));
+      const callback = event("execution", {
+        stage: "execution",
+        status: "running",
+        observedAt: 9000,
+      });
+      const github = event("execution", {
+        stage: "execution",
+        status: "failed",
+        source: "github-reconcile",
+        observedAt: 4000,
+      });
+      for (const observation of order === "callback-first"
+        ? [callback, github]
+        : [github, callback]) {
+        await store.recordAttemptEvents("a", [observation]);
+      }
+      await evictDurableObject(store);
+      const detail = await store.getAttempt("a");
+      expect(detail?.executionStatus).toBe("failed");
+      expect(detail?.events).toHaveLength(1);
+      expect(detail?.events[0]).toMatchObject({
+        eventKey: "execution",
+        source: "github-reconcile",
+        status: "failed",
+        observedAt: 4000,
+      });
+      expect(await store.recordAttemptEvents("a", [github, callback])).toEqual({
+        recorded: 0,
+      });
+      expect((await store.getAttempt("a"))?.executionStatus).toBe("failed");
+    },
+  );
+
+  it("does not infer an initial dispatch binding from rerun or initial-run membership", async () => {
+    const store = ledger();
+    for (const runAttempt of [2, 1]) {
+      await store.upsertAttempt(
+        attempt({
+          attemptId: `run-${runAttempt}`,
+          requestId: "dispatch",
+          repository: "org/repo",
+          runId: "9001",
+          runAttempt,
+        }),
+      );
+    }
+    await inside(store, (_instance, state) => {
+      expect(
+        state.storage.sql
+          .exec(
+            "SELECT * FROM generation_dispatches WHERE request_id='dispatch'",
+          )
+          .toArray(),
+      ).toEqual([]);
+    });
+    await store.registerInitialDispatch({
+      requestId: "dispatch",
+      initialAttemptId: "run-1",
+    });
+    await inside(store, (_instance, state) => {
+      expect(
+        state.storage.sql
+          .exec(
+            "SELECT initial_attempt_id FROM generation_dispatches WHERE request_id='dispatch'",
+          )
+          .one(),
+      ).toEqual({ initial_attempt_id: "run-1" });
+    });
+  });
+
+  it("binds delayed queued projection explicitly and never rewrites its verified initial binding", async () => {
+    const store = ledger();
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "rerun",
+        requestId: "dispatch",
+        repository: "org/repo",
+        runId: "9001",
+        runAttempt: 2,
+      }),
+    );
+    await store.upsertAttempt(
+      attempt({ attemptId: "queued", requestId: "dispatch" }),
+    );
+    expect(
+      await store.registerInitialDispatch({
+        requestId: "dispatch",
+        initialAttemptId: "queued",
+      }),
+    ).toEqual({ requestId: "dispatch", attemptId: "queued" });
+    await evictDurableObject(store);
+    expect(
+      await store.registerInitialDispatch({
+        requestId: "dispatch",
+        initialAttemptId: "queued",
+      }),
+    ).toEqual({ requestId: "dispatch", attemptId: "queued" });
+    await store.upsertAttempt(
+      attempt({ attemptId: "other", requestId: "dispatch" }),
+    );
+    await inside(store, async (instance) => {
+      await expect(
+        instance.registerInitialDispatch({
+          requestId: "dispatch",
+          initialAttemptId: "other",
+        }),
+      ).rejects.toThrow(/conflict/i);
+      await expect(
+        instance.registerInitialDispatch({
+          requestId: "dispatch",
+          initialAttemptId: "rerun",
+        }),
+      ).rejects.toThrow(/conflict/i);
+      await expect(
+        instance.registerInitialDispatch({
+          requestId: "another",
+          initialAttemptId: "queued",
+        }),
+      ).rejects.toThrow(/conflict/i);
+      await expect(
+        instance.registerInitialDispatch({
+          requestId: "dispatch",
+          initialAttemptId: "missing",
+        }),
+      ).rejects.toThrow(/not found/i);
+    });
+    await inside(store, (_instance, state) => {
+      expect(
+        state.storage.sql
+          .exec(
+            "SELECT initial_attempt_id FROM generation_dispatches WHERE request_id='dispatch'",
+          )
+          .one(),
+      ).toEqual({ initial_attempt_id: "queued" });
+    });
+    expect((await store.listAttempts({})).total).toBe(3);
   });
 });

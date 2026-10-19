@@ -74,6 +74,15 @@ export type AttemptInput = {
   updatedAt: number;
   failure: Failure;
 };
+/**
+ * Explicit server-verified initial-dispatch evidence, not workflow membership.
+ * Call only from the trusted initial dispatch/outbox projection. The attempt
+ * must already exist with this requestId; reconciliation alone cannot assert it.
+ */
+export type InitialDispatchRegistration = {
+  requestId: string;
+  initialAttemptId: string;
+};
 export type AttemptSummary = AttemptInput & {
   costs: {
     actualUsd: number | null;

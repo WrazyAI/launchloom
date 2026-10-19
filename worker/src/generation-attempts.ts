@@ -10,6 +10,7 @@ import type {
   DeliveryStatus,
   ExecutionStatus,
   Health,
+  InitialDispatchRegistration,
   Page,
 } from "../../src/lib/admin-contracts";
 
@@ -254,12 +255,37 @@ export class GenerationAttempts {
       JSON.stringify(input),
       JSON.stringify(state),
     );
-    if (input.requestId !== null)
-      this.storage.sql.exec(
-        "INSERT OR IGNORE INTO generation_dispatches(request_id, initial_attempt_id) VALUES (?, ?)",
-        input.requestId,
-        input.attemptId,
-      );
+  }
+
+  registerInitialDispatch(input: InitialDispatchRegistration): {
+    requestId: string;
+    attemptId: string;
+  } {
+    if (!nonempty(input.requestId) || !nonempty(input.initialAttemptId))
+      invalid("initial dispatch");
+    return this.storage.transactionSync(() => {
+      const row = this.row(input.initialAttemptId);
+      if (!row) throw new Error("attempt not found");
+      const attempt: AttemptInput = JSON.parse(row.data);
+      if (attempt.requestId !== input.requestId) conflict("dispatch request");
+      if (attempt.runAttempt !== null && attempt.runAttempt !== 1)
+        conflict("initial dispatch attempt");
+      const binding = this.storage.sql
+        .exec<{ initial_attempt_id: string }>(
+          "SELECT initial_attempt_id FROM generation_dispatches WHERE request_id=?",
+          input.requestId,
+        )
+        .toArray()[0];
+      if (binding && binding.initial_attempt_id !== attempt.attemptId)
+        conflict("initial dispatch binding");
+      if (!binding)
+        this.storage.sql.exec(
+          "INSERT INTO generation_dispatches(request_id,initial_attempt_id) VALUES (?,?)",
+          input.requestId,
+          attempt.attemptId,
+        );
+      return { requestId: input.requestId, attemptId: attempt.attemptId };
+    });
   }
 
   upsertAttempt(input: AttemptInput): { attemptId: string; created: boolean } {
@@ -525,6 +551,7 @@ export class GenerationAttempts {
       const attempt: AttemptInput = JSON.parse(row.data);
       const state: State = JSON.parse(row.state);
       let recorded = 0;
+      let observedExecution = false;
       for (const event of events) {
         if (
           !nonempty(event.eventKey) ||
@@ -564,12 +591,36 @@ export class GenerationAttempts {
           source: event.source,
           version: event.observedAt,
         };
+        // Outcome authority and per-source watermarks must see observations
+        // even when the materialized event row would deduplicate by timestamp.
+        if (event.stage === "execution") {
+          observedExecution = true;
+          if (
+            observeExecution(
+              state,
+              event.status as ExecutionStatus,
+              clock,
+              attempt.executionStatus,
+            )
+          ) {
+            attempt.executionStatus = event.status as ExecutionStatus;
+            state.execution = clock;
+            attempt.updatedAt = Math.max(attempt.updatedAt, event.observedAt);
+          }
+        }
         if (
           previous &&
-          !newer(clock, {
-            source: previous.source,
-            version: previous.observedAt,
-          })
+          !(event.stage === "execution" && previous.stage === "execution"
+            ? executionAllowed(
+                event.status as ExecutionStatus,
+                clock,
+                previous.status as ExecutionStatus,
+                { source: previous.source, version: previous.observedAt },
+              )
+            : newer(clock, {
+                source: previous.source,
+                version: previous.observedAt,
+              }))
         )
           continue;
         const record: AttemptEventRecord = {
@@ -594,25 +645,13 @@ export class GenerationAttempts {
           JSON.stringify(record),
         );
         recorded++;
-        if (
-          event.stage === "execution" &&
-          observeExecution(
-            state,
-            event.status as ExecutionStatus,
-            clock,
-            attempt.executionStatus,
-          )
-        ) {
-          attempt.executionStatus = event.status as ExecutionStatus;
-          state.execution = clock;
-        }
         if (event.stage === "delivery" && newer(clock, state.delivery)) {
           attempt.deliveryStatus = event.status as DeliveryStatus;
           state.delivery = clock;
         }
         attempt.updatedAt = Math.max(attempt.updatedAt, event.observedAt);
       }
-      if (recorded) this.save(attempt, state);
+      if (recorded || observedExecution) this.save(attempt, state);
       return { recorded };
     });
   }

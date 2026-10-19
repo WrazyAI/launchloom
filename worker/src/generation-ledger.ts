@@ -4,6 +4,7 @@ import type {
   AttemptInput,
   AttemptEventInput,
   AttemptFilters,
+  InitialDispatchRegistration,
 } from "../../src/lib/admin-contracts";
 
 export type GenerationCostKind = "actual" | "estimated" | "unreported";
@@ -267,6 +268,10 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
 
   async upsertAttempt(input: AttemptInput) {
     return this.attempts.upsertAttempt(input);
+  }
+
+  async registerInitialDispatch(input: InitialDispatchRegistration) {
+    return this.attempts.registerInitialDispatch(input);
   }
 
   async getAttempt(id: string) {
