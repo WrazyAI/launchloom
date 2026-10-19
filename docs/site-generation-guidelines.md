@@ -84,8 +84,9 @@ sticky controls, placeholder links, horizontal overflow, and text embedded in
 images. Never use em dashes in generated or rendered content.
 
 At desktop widths, size opening typography and vertical spacing against both
-viewport width and height. The header and complete hero must fit within a
-1536 by 864 viewport at 100% browser zoom. Do not rely on browser zoom to reveal
+viewport width and height. The header and complete hero must fit within both
+the 1536 by 864 desktop viewport and the 1366 by 768 compact viewport at 100%
+browser zoom. Do not rely on browser zoom to reveal
 the opening copy, actions, or primary image. Mobile openings may remain
 content-driven when their copy and image stack vertically.
 
