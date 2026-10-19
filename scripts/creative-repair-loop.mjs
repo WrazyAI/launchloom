@@ -1180,7 +1180,8 @@ Return a complete replacement for only this requested file. Keep source non-empt
   const reasoningEffort =
     creativeSession?.reasoningEffort ||
     creativeLaneEffort(process.env, {
-      lane: "CREATIVE_EXPERIENCE_REASONING_EFFORT",
+      lane: "CREATIVE_REPAIR_EFFORT",
+      openrouterDefault: "xhigh",
     });
   const sessionId =
     creativeSession?.sessionId ||
@@ -1230,19 +1231,36 @@ Return a complete replacement for only this requested file. Keep source non-empt
       : targetFile ? REPAIR_FILE_SCHEMA : repairSchemaFor(currentFiles);
     const sendRepairRequest = async (maxCompletionTokens) => {
       if (creativeProvider === "opencode-go") {
-        const goResult = await completeGoCreative({
-          logicalModel: model,
-          fetchImpl,
-          request: buildGoCreativeRequest({
+        let goResult;
+        try {
+          goResult = await completeGoCreative({
+            logicalModel: model,
+            fetchImpl,
+            request: buildGoCreativeRequest({
             systemPrompt: REPAIR_SYSTEM_PROMPT,
             userContent: requestContent,
             schemaName: repairJsonSchema.name,
             schema: repairJsonSchema.schema,
             maxOutputTokens: maxCompletionTokens,
             effort: reasoningEffort,
-            sessionId,
-          }),
-        });
+              sessionId,
+            }),
+          });
+        } catch (error) {
+          // An incomplete response means the model exhausted its output
+          // budget (reasoning plus answer). That is a retryable repair-output
+          // failure, not a provider outage: the bounded repair contract
+          // retries it with fresh instructions.
+          if (
+            error?.code === "CREATIVE_GO_INCOMPLETE" &&
+            error?.providerStatus === "incomplete"
+          ) {
+            throw repairOutputRejection(
+              "Creative repair response was truncated by the provider output budget.",
+            );
+          }
+          throw error;
+        }
         goCreativeUsageMetrics(goResult, {
           label: "creative-repair",
           logger: (line) => logger(line),
