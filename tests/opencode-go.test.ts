@@ -394,3 +394,87 @@ describe("opencode go deepseek wire models", () => {
     expect(profile.capabilities.outputFormats).toContain("json-schema");
   });
 });
+
+describe("creative lane Go transport retries", () => {
+  const completedResponse = () =>
+    new Response(
+      JSON.stringify({
+        id: "resp_retry",
+        status: "completed",
+        output: [
+          {
+            type: "message",
+            role: "assistant",
+            status: "completed",
+            content: [{ type: "output_text", text: "{\"ok\":true}" }],
+          },
+        ],
+        usage: { input_tokens: 10, output_tokens: 5 },
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+
+  it("retries transient provider errors with backoff", async () => {
+    const module = await import("../scripts/creative-lane-inference.mjs");
+    let calls = 0;
+    const fetchImpl = async () => {
+      calls += 1;
+      if (calls < 3)
+        return new Response(JSON.stringify({ error: { message: "upstream" } }), {
+          status: 503,
+          headers: { "content-type": "application/json" },
+        });
+      return completedResponse();
+    };
+    const result = await module.completeGoCreative({
+      logicalModel: "opencode-go/deepseek-v4.1-flash",
+      request: module.buildGoCreativeRequest({
+        systemPrompt: "Return JSON.",
+        userContent: [{ type: "text", text: "Say ok." }],
+        schemaName: "probe",
+        schema: {
+          type: "object",
+          additionalProperties: false,
+          required: ["ok"],
+          properties: { ok: { type: "boolean" } },
+        },
+        maxOutputTokens: 100,
+        sessionId: "launchloom:test-session",
+      }),
+      fetchImpl: fetchImpl as typeof fetch,
+      env: { OPENCODE_GO_API_KEY: "test-go-key" },
+      retryDelayMs: 0,
+    });
+    expect(result.status).toBe("completed");
+    expect(calls).toBe(3);
+  });
+
+  it("does not retry authentication failures", async () => {
+    const module = await import("../scripts/creative-lane-inference.mjs");
+    let calls = 0;
+    const fetchImpl = async () => {
+      calls += 1;
+      return new Response(JSON.stringify({ error: { message: "unauthorized" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
+    };
+    await expect(
+      module.completeGoCreative({
+        logicalModel: "opencode-go/deepseek-v4.1-flash",
+        request: module.buildGoCreativeRequest({
+          systemPrompt: "Return JSON.",
+          userContent: [{ type: "text", text: "Say ok." }],
+          schemaName: "probe",
+          schema: { type: "object", additionalProperties: false, required: ["ok"], properties: { ok: { type: "boolean" } } },
+          maxOutputTokens: 100,
+          sessionId: "launchloom:test-session",
+        }),
+        fetchImpl: fetchImpl as typeof fetch,
+        env: { OPENCODE_GO_API_KEY: "test-go-key" },
+        retryDelayMs: 0,
+      }),
+    ).rejects.toThrow(/OpenCode Go error/u);
+    expect(calls).toBe(1);
+  });
+});

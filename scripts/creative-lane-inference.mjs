@@ -160,6 +160,14 @@ export function buildGoCreativeRequest({
   };
 }
 
+const TRANSIENT_GO_ERROR_CODES = new Set([
+  "transport",
+  "rate-limit",
+  "timeout",
+  "upstream",
+  "provider-error",
+]);
+
 /**
  * One creative-lane Go completion. Throws before any request when the
  * credential is missing, and throws a typed error when the provider reports
@@ -171,7 +179,11 @@ export function buildGoCreativeRequest({
  *   signal?: AbortSignal,
  *   fetchImpl?: typeof fetch,
  *   env?: Record<string, string | undefined>,
+ *   maxAttempts?: number,
+ *   retryDelayMs?: number,
+ *   sleep?: (ms: number) => Promise<void>,
  * }} input
+ * @returns {Promise<Record<string, any>>}
  */
 export async function completeGoCreative({
   logicalModel,
@@ -179,32 +191,45 @@ export async function completeGoCreative({
   signal,
   fetchImpl,
   env = process.env,
+  maxAttempts = 3,
+  retryDelayMs = 1500,
+  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) {
   if (!env.OPENCODE_GO_API_KEY)
     throw new Error(
       "OPENCODE_GO_API_KEY is required for the creative lane with OpenCode Go.",
     );
-  const completion = await completeGeneration({
-    inference: {
-      profile: opencodeGoResponsesProfile({
-        logicalModel: resolveGoLogicalModel(logicalModel, env),
-      }),
-      apiKey: env.OPENCODE_GO_API_KEY,
-      signal,
-      request,
-      ...(fetchImpl ? { fetchImpl } : {}),
-    },
+  const profile = opencodeGoResponsesProfile({
+    logicalModel: resolveGoLogicalModel(logicalModel, env),
   });
-  const result = completion?.result || {};
-  if (result.status !== "completed") {
-    const error = new Error(
-      `OpenCode Go ${result.status || "error"} for the creative lane: ${result?.error?.code || "request failed"}.`,
-    );
-    error.code = "CREATIVE_GO_INCOMPLETE";
-    error.providerStatus = result.status || "error";
-    throw error;
+  let result = {};
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const completion = await completeGeneration({
+      inference: {
+        profile,
+        apiKey: env.OPENCODE_GO_API_KEY,
+        signal,
+        request,
+        ...(fetchImpl ? { fetchImpl } : {}),
+      },
+    });
+    result = completion?.result || {};
+    if (result.status === "completed") return result;
+    // A transient provider error (transport, rate limit, timeout, upstream)
+    // is retried with backoff; incomplete/refused/requires-action responses
+    // are caller-managed outcomes and are not retried here.
+    const transient =
+      result.status === "error" &&
+      TRANSIENT_GO_ERROR_CODES.has(String(result?.error?.code || ""));
+    if (!transient || attempt === maxAttempts) break;
+    await sleep(retryDelayMs * attempt);
   }
-  return result;
+  const error = new Error(
+    `OpenCode Go ${result.status || "error"} for the creative lane: ${result?.error?.code || "request failed"}.`,
+  );
+  error.code = "CREATIVE_GO_INCOMPLETE";
+  error.providerStatus = result.status || "error";
+  throw error;
 }
 
 /**

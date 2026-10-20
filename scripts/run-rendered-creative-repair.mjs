@@ -1304,6 +1304,7 @@ export async function runRenderedCreativeRepair({
   // per-candidate limits. Reserve one round per candidate for excluding a
   // rejected repair, plus the single best-state restore and final evaluation,
   // so the orchestration cap cannot expire before those bounded budgets do.
+  let finalRoundContext = null;
   const maxRounds = Math.max(
     1,
     candidateCount * (cycleLimit + MAX_GATE_REPAIRS + 1) + 2,
@@ -1857,6 +1858,7 @@ export async function runRenderedCreativeRepair({
           ? { evidenceCacheDir: path.join(evidenceRoot, "evidence-cache") }
           : {}),
       });
+      finalRoundContext = { round, roundLabel, report, roundDir, screenshotsDir };
       recordRunTiming({
         category: "bakeoff",
         name: roundLabel,
@@ -2477,6 +2479,23 @@ export async function runRenderedCreativeRepair({
     return { ...passedSummary, bakeoff: report, visualGate };
   }
 
+  // The round cap is a terminal path like budget exhaustion: a hard-clean
+  // candidate delivered mid-loop must still become a near-miss preview
+  // instead of dying with the cap error.
+  if (finalRoundContext) {
+    const nearMissSummary = await attemptNearMissPreview(finalRoundContext);
+    if (nearMissSummary) {
+      record.nearMiss = {
+        candidateId: nearMissSummary.nearMiss.candidateId,
+        openFindings: nearMissSummary.nearMiss.openFindings.length,
+      };
+      await persistRunTiming();
+      logTimingSummary("creative-repair", {
+        categories: runTiming.summary(),
+      });
+      return nearMissSummary;
+    }
+  }
   await persistRunTiming();
   logTimingSummary("creative-repair", { categories: runTiming.summary() });
   throw new Error(
