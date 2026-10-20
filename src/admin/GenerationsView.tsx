@@ -140,11 +140,16 @@ function HealthNotice({
 export function GenerationsView({
   api,
   state,
+  cursorTrail,
   onNavigate,
 }: {
   api: AdminApi;
   state: AdminRouteState;
-  onNavigate: (next: AdminRouteState) => void;
+  cursorTrail: string[];
+  onNavigate: (
+    next: AdminRouteState,
+    options?: { cursorTrail?: string[] },
+  ) => void;
 }) {
   const filters = state.filters;
   const cursor = state.cursor;
@@ -161,7 +166,11 @@ export function GenerationsView({
   const [refreshToken, setRefreshToken] = useState(0);
   const [health, setHealth] = useState<Health | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
-  const [cursorTrail, setCursorTrail] = useState<string[]>([]);
+  const [attention, setAttention] = useState<{
+    failed: number;
+    unknown: number;
+  } | null>(null);
+  const [attentionError, setAttentionError] = useState<string | null>(null);
 
   const [detail, setDetail] = useState<AttemptDetail | null>(null);
   const [detailClient, setDetailClient] = useState<ClientRecord | null>(null);
@@ -178,6 +187,7 @@ export function GenerationsView({
   const queryKeyRef = useRef("");
   const loadedRef = useRef(false);
   const healthRequest = useRef(0);
+  const attentionRequest = useRef(0);
   const detailRequest = useRef(0);
   const detailIdRef = useRef<string | null>(null);
   const clientRequest = useRef(0);
@@ -191,10 +201,6 @@ export function GenerationsView({
 
   useEffect(() => {
     setDraft(draftFromState(state));
-  }, [filterSignature]);
-
-  useEffect(() => {
-    setCursorTrail([]);
   }, [filterSignature]);
 
   useEffect(() => {
@@ -257,6 +263,37 @@ export function GenerationsView({
         )
           return;
         setHealthError(requestErrorMessage(failure));
+      });
+    return () => controller.abort();
+  }, [api, refreshToken]);
+
+  useEffect(() => {
+    const requestId = ++attentionRequest.current;
+    const controller = new AbortController();
+    setAttentionError(null);
+    Promise.all([
+      api.listAttempts(
+        { executionStatus: "failed", limit: 1 },
+        { signal: controller.signal },
+      ),
+      api.listAttempts(
+        { executionStatus: "unknown", limit: 1 },
+        { signal: controller.signal },
+      ),
+    ])
+      .then(([failed, unknown]) => {
+        if (attentionRequest.current !== requestId) return;
+        setAttention({ failed: failed.total, unknown: unknown.total });
+      })
+      .catch((failure) => {
+        if (
+          controller.signal.aborted ||
+          attentionRequest.current !== requestId ||
+          isAbortError(failure)
+        )
+          return;
+        setAttention(null);
+        setAttentionError(requestErrorMessage(failure));
       });
     return () => controller.abort();
   }, [api, refreshToken]);
@@ -377,14 +414,16 @@ export function GenerationsView({
 
   function applyFilters(event: { preventDefault: () => void }) {
     event.preventDefault();
-    setCursorTrail([]);
-    navigate({
-      ...state,
-      filters: filtersFromDraft(draft),
-      cursor: null,
-      attemptId: null,
-      clientId: null,
-    });
+    onNavigate(
+      {
+        ...state,
+        filters: filtersFromDraft(draft),
+        cursor: null,
+        attemptId: null,
+        clientId: null,
+      },
+      { cursorTrail: [] },
+    );
   }
 
   function clearFilters() {
@@ -398,14 +437,40 @@ export function GenerationsView({
       to: "",
       limit: String(DEFAULT_LIMIT),
     });
-    setCursorTrail([]);
-    navigate({
-      ...state,
-      filters: {},
-      cursor: null,
-      attemptId: null,
-      clientId: null,
+    onNavigate(
+      {
+        ...state,
+        filters: {},
+        cursor: null,
+        attemptId: null,
+        clientId: null,
+      },
+      { cursorTrail: [] },
+    );
+  }
+
+  function applyAttentionFilter(status: ExecutionStatus) {
+    const nextLimit = filters.limit || DEFAULT_LIMIT;
+    setDraft({
+      search: "",
+      status,
+      profile: "",
+      initiator: "",
+      creator: "",
+      from: "",
+      to: "",
+      limit: String(nextLimit),
     });
+    onNavigate(
+      {
+        ...state,
+        filters: { executionStatus: status, limit: nextLimit },
+        cursor: null,
+        attemptId: null,
+        clientId: null,
+      },
+      { cursorTrail: [] },
+    );
   }
 
   function selectAttempt(
@@ -419,16 +484,19 @@ export function GenerationsView({
 
   function nextPage() {
     if (!nextCursor) return;
-    setCursorTrail((trail) => [...trail, cursor || ""]);
-    navigate({ ...state, cursor: nextCursor });
+    onNavigate(
+      { ...state, cursor: nextCursor },
+      { cursorTrail: [...cursorTrail, cursor || ""] },
+    );
   }
 
   function previousPage() {
     if (!cursorTrail.length) return;
-    const trail = [...cursorTrail];
-    const previous = trail.pop() || null;
-    setCursorTrail(trail);
-    navigate({ ...state, cursor: previous });
+    const previous = cursorTrail[cursorTrail.length - 1] || null;
+    onNavigate(
+      { ...state, cursor: previous },
+      { cursorTrail: cursorTrail.slice(0, -1) },
+    );
   }
 
   function loadMoreEvents() {
@@ -469,6 +537,18 @@ export function GenerationsView({
       : loading
         ? "Loading attempts"
         : "No attempts to show";
+  const attentionPartial =
+    Boolean(healthError) ||
+    Boolean(
+      health && (health.partial || health.pendingProjectionCount > 0),
+    );
+  const attentionScope = attentionError
+    ? "Attention counts could not be loaded. No estimate is shown."
+    : attentionPartial
+      ? "Server totals for the current ledger. Coverage is partial and may omit attempts."
+      : health
+        ? "Full-dataset server totals for the current ledger."
+        : "Server totals for the current ledger. Coverage is still being checked.";
 
   return (
     <div id="generations-view" className="admin-view" data-route="generations">
@@ -487,6 +567,56 @@ export function GenerationsView({
         </button>
       </div>
 
+      <section
+        className="admin-attention"
+        aria-label="Attention summary"
+        data-attention-summary
+        data-attention-failed={
+          attention ? String(attention.failed) : attentionError ? "unavailable" : "loading"
+        }
+        data-attention-unknown={
+          attention ? String(attention.unknown) : attentionError ? "unavailable" : "loading"
+        }
+      >
+        <div className="admin-attention__metric">
+          <strong>
+            {attention
+              ? attention.failed.toLocaleString("en-GB")
+              : attentionError
+                ? "Unavailable"
+                : "Checking"}
+          </strong>
+          <span>Failed attempts</span>
+        </div>
+        <div className="admin-attention__metric">
+          <strong>
+            {attention
+              ? attention.unknown.toLocaleString("en-GB")
+              : attentionError
+                ? "Unavailable"
+                : "Checking"}
+          </strong>
+          <span>Unknown attempts</span>
+        </div>
+        <div className="admin-attention__actions">
+          <button
+            type="button"
+            className="admin-button admin-button--quiet"
+            onClick={() => applyAttentionFilter("failed")}
+          >
+            View failures
+          </button>
+          <button
+            type="button"
+            className="admin-button admin-button--quiet"
+            onClick={() => applyAttentionFilter("unknown")}
+          >
+            View unknown
+          </button>
+        </div>
+        <p className="admin-attention__scope">{attentionScope}</p>
+      </section>
+
       {filters.clientId ? (
         <div className="admin-notice">
           <strong>Client filter</strong>
@@ -495,12 +625,15 @@ export function GenerationsView({
             type="button"
             className="admin-link-button"
             onClick={() =>
-              navigate({
-                ...state,
-                filters: { ...filters, clientId: undefined },
-                cursor: null,
-                attemptId: null,
-              })
+              onNavigate(
+                {
+                  ...state,
+                  filters: { ...filters, clientId: undefined },
+                  cursor: null,
+                  attemptId: null,
+                },
+                { cursorTrail: [] },
+              )
             }
           >
             Clear client filter
@@ -703,7 +836,9 @@ export function GenerationsView({
                           }`}
                           aria-expanded={selectedId === attempt.attemptId}
                           aria-controls={
-                            selectedId ? "attempt-inspector" : undefined
+                            selectedId === attempt.attemptId
+                              ? "attempt-inspector"
+                              : undefined
                           }
                           onClick={(event) => selectAttempt(attempt, event)}
                         >
@@ -779,13 +914,16 @@ export function GenerationsView({
             onRetry={() => setDetailToken((token) => token + 1)}
             onLoadMoreEvents={loadMoreEvents}
             onOpenClient={(clientId) =>
-              navigate({
-                view: "clients",
-                clientId,
-                attemptId: null,
-                filters: {},
-                cursor: null,
-              })
+              onNavigate(
+                {
+                  view: "clients",
+                  clientId,
+                  attemptId: null,
+                  filters: {},
+                  cursor: null,
+                },
+                { cursorTrail: [] },
+              )
             }
           />
         ) : null}

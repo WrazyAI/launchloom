@@ -160,7 +160,7 @@ function unknownAttempt(): AttemptSummary {
     deliveryStatus: "none",
     stale: true,
     createdAt: BASE_TIME - 400 * 60_000,
-    startedAt: null,
+    startedAt: BASE_TIME - 399 * 60_000,
     completedAt: null,
     updatedAt: BASE_TIME - 399 * 60_000,
     failure: {

@@ -244,11 +244,16 @@ function ClientAttempts({
 export function ClientsView({
   api,
   state,
+  cursorTrail,
   onNavigate,
 }: {
   api: AdminApi;
   state: AdminRouteState;
-  onNavigate: (next: AdminRouteState) => void;
+  cursorTrail: string[];
+  onNavigate: (
+    next: AdminRouteState,
+    options?: { cursorTrail?: string[] },
+  ) => void;
 }) {
   const filters = state.filters;
   const cursor = state.cursor;
@@ -265,7 +270,6 @@ export function ClientsView({
   const [health, setHealth] = useState<Health | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
-  const [cursorTrail, setCursorTrail] = useState<string[]>([]);
 
   const [client, setClient] = useState<ClientRecord | null>(null);
   const [clientLoading, setClientLoading] = useState(false);
@@ -294,10 +298,6 @@ export function ClientsView({
 
   useEffect(() => {
     setDraft(draftFromState(state));
-  }, [filterSignature]);
-
-  useEffect(() => {
-    setCursorTrail([]);
   }, [filterSignature]);
 
   useEffect(() => {
@@ -454,14 +454,16 @@ export function ClientsView({
 
   function applyFilters(event: { preventDefault: () => void }) {
     event.preventDefault();
-    setCursorTrail([]);
-    onNavigate({
-      ...state,
-      filters: filtersFromDraft(draft),
-      cursor: null,
-      clientId: null,
-      attemptId: null,
-    });
+    onNavigate(
+      {
+        ...state,
+        filters: filtersFromDraft(draft),
+        cursor: null,
+        clientId: null,
+        attemptId: null,
+      },
+      { cursorTrail: [] },
+    );
   }
 
   function clearFilters() {
@@ -471,14 +473,16 @@ export function ClientsView({
       to: "",
       limit: String(DEFAULT_LIMIT),
     });
-    setCursorTrail([]);
-    onNavigate({
-      ...state,
-      filters: {},
-      cursor: null,
-      clientId: null,
-      attemptId: null,
-    });
+    onNavigate(
+      {
+        ...state,
+        filters: {},
+        cursor: null,
+        clientId: null,
+        attemptId: null,
+      },
+      { cursorTrail: [] },
+    );
   }
 
   function selectClient(
@@ -496,16 +500,19 @@ export function ClientsView({
 
   function nextPage() {
     if (!nextCursor) return;
-    setCursorTrail((trail) => [...trail, cursor || ""]);
-    onNavigate({ ...state, cursor: nextCursor });
+    onNavigate(
+      { ...state, cursor: nextCursor },
+      { cursorTrail: [...cursorTrail, cursor || ""] },
+    );
   }
 
   function previousPage() {
     if (!cursorTrail.length) return;
-    const trail = [...cursorTrail];
-    const previous = trail.pop() || null;
-    setCursorTrail(trail);
-    onNavigate({ ...state, cursor: previous });
+    const previous = cursorTrail[cursorTrail.length - 1] || null;
+    onNavigate(
+      { ...state, cursor: previous },
+      { cursorTrail: cursorTrail.slice(0, -1) },
+    );
   }
 
   function loadMoreAttempts() {
@@ -697,7 +704,9 @@ export function ClientsView({
                           }`}
                           aria-expanded={selectedId === record.clientId}
                           aria-controls={
-                            selectedId ? "client-inspector" : undefined
+                            selectedId === record.clientId
+                              ? "client-inspector"
+                              : undefined
                           }
                           onClick={(event) => selectClient(record, event)}
                         >
@@ -871,13 +880,16 @@ export function ClientsView({
                   nextCursor={attemptsNextCursor}
                   total={attemptTotal}
                   onOpenAttempt={(attemptId) =>
-                    onNavigate({
-                      view: "generations",
-                      attemptId,
-                      clientId: null,
-                      filters: { clientId: client.clientId },
-                      cursor: null,
-                    })
+                    onNavigate(
+                      {
+                        view: "generations",
+                        attemptId,
+                        clientId: null,
+                        filters: { clientId: client.clientId },
+                        cursor: null,
+                      },
+                      { cursorTrail: [] },
+                    )
                   }
                   onLoadMore={loadMoreAttempts}
                   onRetry={() => setClientToken((token) => token + 1)}

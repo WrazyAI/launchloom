@@ -359,13 +359,14 @@ export function AttemptInspector({
               </div>
               <div>
                 <dt>Elapsed</dt>
-                <dd>
+                <dd data-attempt-elapsed>
                   {formatElapsed(
                     attempt.startedAt,
                     attempt.completedAt,
-                    ["succeeded", "failed", "cancelled", "skipped"].includes(
-                      attempt.executionStatus,
-                    ),
+                    attempt.stale ||
+                      ["succeeded", "failed", "cancelled", "skipped", "unknown"].includes(
+                        attempt.executionStatus,
+                      ),
                   )}
                 </dd>
               </div>

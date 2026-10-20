@@ -31,6 +31,12 @@ import {
 
 const ATTEMPTS = syntheticAttempts();
 const CLIENTS = syntheticClients();
+const FAILED_ATTEMPTS = ATTEMPTS.filter(
+  (attempt) => attempt.executionStatus === "failed",
+).length;
+const UNKNOWN_ATTEMPTS = ATTEMPTS.filter(
+  (attempt) => attempt.executionStatus === "unknown",
+).length;
 const adminPrincipal = {
   id: "admin:browser",
   email: "admin@example.test",
@@ -90,7 +96,21 @@ function record(pathname: string, params: URLSearchParams) {
 }
 
 function lastRequest(pathname: string) {
-  return requests.filter((entry) => entry.path === pathname).at(-1);
+  return requests
+    .filter(
+      (entry) => entry.path === pathname && entry.params.limit !== "1",
+    )
+    .at(-1);
+}
+
+function attentionRequests(pathname = "/attempts") {
+  return requests.filter(
+    (entry) =>
+      entry.path === pathname &&
+      entry.params.limit === "1" &&
+      (entry.params.executionStatus === "failed" ||
+        entry.params.executionStatus === "unknown"),
+  );
 }
 
 function attemptPage(params: URLSearchParams) {
@@ -858,6 +878,169 @@ describe("real admin workspace browser behavior", () => {
         .toBe(0);
       await visible(heading);
       autoErrors(errors, { allowResource503: true });
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("shows a compact full-dataset attention summary with a real failures action", async () => {
+    health = fixtureHealth({
+      partial: true,
+      pendingProjectionCount: 2,
+      lastError: "Reconciliation delayed.",
+    });
+    const { page, errors } = await openPage();
+    try {
+      await waitForGenerations(page);
+      const summary = page.locator("[data-attention-summary]");
+      await visible(summary);
+      await expect
+        .poll(() => summary.getAttribute("data-attention-failed"))
+        .toBe(String(FAILED_ATTEMPTS));
+      await expect
+        .poll(() => summary.getAttribute("data-attention-unknown"))
+        .toBe(String(UNKNOWN_ATTEMPTS));
+      await visible(
+        summary.getByText(/coverage is partial and may omit attempts/iu),
+      );
+      expect(
+        attentionRequests().some(
+          (entry) =>
+            entry.params.executionStatus === "failed" &&
+            entry.params.limit === "1",
+        ),
+      ).toBe(true);
+      expect(
+        attentionRequests().some(
+          (entry) =>
+            entry.params.executionStatus === "unknown" &&
+            entry.params.limit === "1",
+        ),
+      ).toBe(true);
+
+      await summary.getByRole("button", { name: "View failures" }).click();
+      await expect
+        .poll(() => lastRequest("/attempts")?.params.executionStatus)
+        .toBe("failed");
+      await expect
+        .poll(() => page.locator("#generations-view tbody tr").count())
+        .toBe(FAILED_ATTEMPTS);
+      expect(page.url()).toContain("status=failed");
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("never infers active progress for an unknown attempt with a start time", async () => {
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-unknown",
+    });
+    try {
+      const inspector = page.locator("#attempt-inspector");
+      await visible(
+        inspector.getByRole("heading", { name: "Attempt attempt-unknown" }),
+      );
+      expect(
+        await inspector.getByText("In progress", { exact: true }).count(),
+      ).toBe(0);
+      await expect
+        .poll(() => inspector.locator("[data-attempt-elapsed]").textContent())
+        .toBe("Not recorded");
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps previous and next cursor state aligned with browser history", async () => {
+    const { page, errors } = await openPage();
+    try {
+      await waitForGenerations(page);
+      const previous = page.getByRole("button", { name: "Previous page" });
+      const next = page.getByRole("button", { name: "Next page" });
+      await page.getByLabel("Rows per page").selectOption("100");
+      await page.getByRole("button", { name: "Apply filters" }).click();
+      await expect.poll(() => lastRequest("/attempts")?.params.limit).toBe("100");
+      await expect
+        .poll(() => page.locator("#generations-view tbody tr").count(), {
+          timeout: 10_000,
+        })
+        .toBe(100);
+
+      await next.click();
+      await expect.poll(() => lastRequest("/attempts")?.params.cursor).toBe(
+        "offset:100",
+      );
+      await expect
+        .poll(() => page.locator("#generations-view tbody tr").count(), {
+          timeout: 10_000,
+        })
+        .toBe(100);
+      await next.click();
+      await expect.poll(() => lastRequest("/attempts")?.params.cursor).toBe(
+        "offset:200",
+      );
+
+      await page.goBack();
+      await expect.poll(() => lastRequest("/attempts")?.params.cursor).toBe(
+        "offset:100",
+      );
+      await page.goBack();
+      await expect.poll(() => lastRequest("/attempts")?.params.cursor).toBe(
+        undefined,
+      );
+      await expect.poll(() => previous.isDisabled()).toBe(true);
+
+      await page.goForward();
+      await expect.poll(() => lastRequest("/attempts")?.params.cursor).toBe(
+        "offset:100",
+      );
+      await expect.poll(() => previous.isDisabled()).toBe(false);
+      await page.goForward();
+      await expect.poll(() => lastRequest("/attempts")?.params.cursor).toBe(
+        "offset:200",
+      );
+
+      await page.goBack();
+      await expect.poll(() => lastRequest("/attempts")?.params.cursor).toBe(
+        "offset:100",
+      );
+      await previous.click();
+      await expect.poll(() => lastRequest("/attempts")?.params.cursor).toBe(
+        undefined,
+      );
+      await expect
+        .poll(() => page.locator("#generations-view tbody tr").count(), {
+          timeout: 10_000,
+        })
+        .toBe(100);
+      await expect.poll(() => previous.isDisabled()).toBe(true);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("only associates the expanded row with the visible inspector", async () => {
+    const { page, errors } = await openPage();
+    try {
+      await waitForGenerations(page);
+      const first = page.getByRole("button", {
+        name: /Open attempt attempt-0000/u,
+      });
+      const second = page.getByRole("button", {
+        name: /Open attempt attempt-0001/u,
+      });
+      await first.click();
+      await visible(
+        page.getByRole("heading", { name: "Attempt attempt-0000" }),
+      );
+      expect(await first.getAttribute("aria-controls")).toBe(
+        "attempt-inspector",
+      );
+      expect(await second.getAttribute("aria-controls")).toBeNull();
+      autoErrors(errors);
     } finally {
       await page.close();
     }

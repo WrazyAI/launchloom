@@ -18,6 +18,20 @@ const DEFAULT_STATE: AdminRouteState = {
   cursor: null,
 };
 
+type NavigateOptions = { cursorTrail?: string[] };
+
+function readHistoryCursorTrail(value: unknown): string[] {
+  if (typeof value !== "object" || value === null) return [];
+  const trail = (value as { cursorTrail?: unknown }).cursorTrail;
+  if (!Array.isArray(trail)) return [];
+  return trail
+    .filter(
+      (cursor): cursor is string =>
+        typeof cursor === "string" && cursor.length <= 500,
+    )
+    .slice(-50);
+}
+
 const VIEW_COPY: Record<
   AdminView,
   {
@@ -86,9 +100,15 @@ function useRouteState() {
   const [state, setState] = useState<AdminRouteState>(() =>
     readRouteState(window.location.href),
   );
+  const [cursorTrail, setCursorTrail] = useState<string[]>(() =>
+    readHistoryCursorTrail(window.history.state),
+  );
 
   useEffect(() => {
-    const onPopState = () => setState(readRouteState(window.location.href));
+    const onPopState = () => {
+      setState(readRouteState(window.location.href));
+      setCursorTrail(readHistoryCursorTrail(window.history.state));
+    };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
@@ -97,7 +117,7 @@ function useRouteState() {
     document.title = `${VIEW_COPY[state.view].label} | LaunchLoom operations`;
   }, [state.view]);
 
-  return [state, setState] as const;
+  return [state, setState, cursorTrail, setCursorTrail] as const;
 }
 
 function IntegrationsPlaceholder() {
@@ -144,22 +164,31 @@ function SectionPlaceholder({ view }: { view: AdminView }) {
 }
 
 export function AdminApp() {
-  const [state, setState] = useRouteState();
+  const [state, setState, cursorTrail, setCursorTrail] = useRouteState();
   const [api] = useState(createAdminApi);
   const copy = VIEW_COPY[state.view];
 
-  function commit(next: AdminRouteState) {
+  function commit(next: AdminRouteState, options: NavigateOptions = {}) {
+    const trail = options.cursorTrail ?? cursorTrail;
     const url = writeRouteState(next);
-    window.history.pushState(null, "", `${url.pathname}${url.search}`);
+    window.history.pushState(
+      { cursorTrail: trail },
+      "",
+      `${url.pathname}${url.search}`,
+    );
+    setCursorTrail(trail);
     setState(next);
   }
 
   function selectView(view: AdminView) {
     if (view === state.view) return;
-    commit({
-      ...DEFAULT_STATE,
-      view,
-    });
+    commit(
+      {
+        ...DEFAULT_STATE,
+        view,
+      },
+      { cursorTrail: [] },
+    );
   }
 
   return (
@@ -171,9 +200,19 @@ export function AdminApp() {
       description={copy.description}
     >
       {state.view === "generations" ? (
-        <GenerationsView api={api} state={state} onNavigate={commit} />
+        <GenerationsView
+          api={api}
+          state={state}
+          cursorTrail={cursorTrail}
+          onNavigate={commit}
+        />
       ) : state.view === "clients" ? (
-        <ClientsView api={api} state={state} onNavigate={commit} />
+        <ClientsView
+          api={api}
+          state={state}
+          cursorTrail={cursorTrail}
+          onNavigate={commit}
+        />
       ) : (
         <SectionPlaceholder view={state.view} />
       )}
