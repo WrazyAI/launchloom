@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BootstrapError,
+  legacyAccessId,
   parseBootstrapArgs,
   runBootstrap,
 } from "../scripts/bootstrap-admin-owner.mjs";
@@ -149,7 +150,12 @@ describe("bootstrap-admin-owner script", () => {
     expect(output).not.toContain(secretUrl);
     expect(output).not.toContain("private-password");
     const write = sql.calls.find((call) => /bootstrap_owner/u.test(call.text));
-    expect(write?.params).toEqual(["test-subject", "owner@example.test", "Opera Tør"]);
+    expect(write?.params).toEqual([
+      "test-subject",
+      "owner@example.test",
+      "Opera Tør",
+      legacyAccessId("owner@example.test"),
+    ]);
   });
 
   it("requires a database URL from the environment or a file path", async () => {

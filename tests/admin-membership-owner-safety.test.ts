@@ -7,6 +7,7 @@ import {
   type MembershipSql,
   type MembershipStore,
 } from "../worker/src/admin/membership-store";
+import { legacyAccessId } from "../worker/src/admin/workspace-api";
 import { splitSqlStatements } from "./admin-sql";
 
 const baseConnectionString = process.env.ADMIN_DATABASE_URL || "";
@@ -52,6 +53,13 @@ describe.skipIf(!connectionString)("last-owner safety in an isolated two-owner w
     store = createMembershipStore(sql as unknown as MembershipSql);
     const migration = await readFile("db/admin/001-membership.sql", "utf8");
     for (const statement of splitSqlStatements(migration)) await sql.query(statement);
+    for (const file of [
+      "db/admin/002-legacy-identity-link.sql",
+      "db/admin/003-atomic-legacy-link.sql",
+    ]) {
+      const additive = await readFile(file, "utf8");
+      for (const statement of splitSqlStatements(additive)) await sql.query(statement);
+    }
 
     // The dedicated test database is disposable; clear leftovers from an
     // interrupted run before asserting the two-owner fixture is isolated.
@@ -71,6 +79,37 @@ describe.skipIf(!connectionString)("last-owner safety in an isolated two-owner w
     )) as Array<{ count: number }>;
     if (leftovers[0].count > 0)
       throw new Error("The isolated test database is not empty; refusing to run.");
+
+    const bootstrapSubject = subject("bootstrap");
+    const bootstrapEmail = `${bootstrapSubject}@launchloom.test`;
+    const bootstrapLegacyId = await legacyAccessId(bootstrapEmail);
+    const bootstrapped = (await sql.query(
+      `select * from launchloom_admin.bootstrap_owner($1, $2, $3, $4)`,
+      [bootstrapSubject, bootstrapEmail, "Bootstrap Owner", bootstrapLegacyId],
+    )) as Array<{ subject: string; role: string; active: boolean }>;
+    expect(bootstrapped[0]).toMatchObject({
+      subject: bootstrapSubject,
+      role: "owner",
+      active: true,
+    });
+    const bootstrapLink = (await sql.query(
+      `select legacy_id, subject from launchloom_admin.legacy_identity_links where subject = $1`,
+      [bootstrapSubject],
+    )) as Array<{ legacy_id: string; subject: string }>;
+    expect(bootstrapLink).toEqual([
+      { legacy_id: bootstrapLegacyId, subject: bootstrapSubject },
+    ]);
+    await sql.query(
+      `delete from launchloom_admin.membership_audit where target_subject = $1`,
+      [bootstrapSubject],
+    );
+    await sql.query(
+      `delete from launchloom_admin.legacy_identity_links where subject = $1`,
+      [bootstrapSubject],
+    );
+    await sql.query(`delete from launchloom_admin.members where subject = $1`, [
+      bootstrapSubject,
+    ]);
 
     await sql.query(
       `insert into launchloom_admin.members(subject, email, display_name, role, active)

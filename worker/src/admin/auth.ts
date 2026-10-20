@@ -140,7 +140,8 @@ export function resolveAdminAuthMode(env: {
 }
 
 /** Existing Access audience and allowlist verification for the legacy path. */
-export async function accessAdminEmail(  ctx: ExecutionContext,
+export async function accessAdminEmail(
+  ctx: ExecutionContext,
   env: Env,
 ): Promise<string> {
   if (!ctx.access || !env.ONBOARDING_ACCESS_AUD || !env.ONBOARDING_ADMIN_EMAILS)

@@ -5,6 +5,7 @@ import { splitSqlStatements } from "./admin-sql";
 
 const migrationPath = "db/admin/001-membership.sql";
 const linkMigrationPath = "db/admin/002-legacy-identity-link.sql";
+const atomicMigrationPath = "db/admin/003-atomic-legacy-link.sql";
 const connectionString = process.env.ADMIN_DATABASE_URL || "";
 
 const FUNCTIONS = [
@@ -130,6 +131,36 @@ describe("admin membership migration", () => {
     expect(migration).not.toMatch(/\b(?:DROP|TRUNCATE|DELETE)\b/u);
     expect(migration).not.toMatch(/GRANT[^;]*\bTO\s+(?:PUBLIC|anon|authenticated|service_role)\b/u);
   });
+
+  it("moves legacy linking into the enrollment and bootstrap transactions", async () => {
+    const migration = await readFile(atomicMigrationPath, "utf8");
+    expect(migration).toContain(
+      "DROP FUNCTION IF EXISTS launchloom_admin.accept_enrollment(text, text, text, text)",
+    );
+    expect(migration).toContain(
+      "DROP FUNCTION IF EXISTS launchloom_admin.bootstrap_owner(text, text, text)",
+    );
+    expect(migration).toContain("p_legacy_id text DEFAULT NULL");
+    expect(migration).toContain("invalid_legacy_id");
+    expect(migration).toContain(
+      "PERFORM launchloom_admin.link_legacy_identity(p_legacy_id, p_subject)",
+    );
+    expect(migration).not.toMatch(/\b(?:TRUNCATE|DELETE)\b/u);
+    expect(migration).not.toMatch(/\bDROP\s+TABLE\b/u);
+    const accept = migration.slice(
+      migration.indexOf("FUNCTION launchloom_admin.accept_enrollment"),
+      migration.indexOf("FUNCTION launchloom_admin.bootstrap_owner"),
+    );
+    expect(accept.indexOf("link_legacy_identity(p_legacy_id, p_subject)")).toBeGreaterThan(-1);
+    expect(accept.indexOf("link_legacy_identity(p_legacy_id, p_subject)")).toBeLessThan(
+      accept.indexOf("SET consumed_at = now()"),
+    );
+    const bootstrap = migration.slice(
+      migration.indexOf("FUNCTION launchloom_admin.bootstrap_owner"),
+    );
+    expect(bootstrap).toContain("PERFORM launchloom_admin.link_legacy_identity(p_legacy_id, p_subject)");
+    expect(bootstrap).toContain("owner_bootstrapped");
+  });
 });
 
 if (connectionString) {
@@ -147,6 +178,11 @@ if (connectionString) {
       const linkStatements = splitSqlStatements(linkMigration);
       for (const statement of linkStatements) await sql.query(statement);
       for (const statement of linkStatements) await sql.query(statement);
+
+      const atomicMigration = await readFile(atomicMigrationPath, "utf8");
+      const atomicStatements = splitSqlStatements(atomicMigration);
+      for (const statement of atomicStatements) await sql.query(statement);
+      for (const statement of atomicStatements) await sql.query(statement);
 
       const tables = (await sql.query(
         `select table_name from information_schema.tables

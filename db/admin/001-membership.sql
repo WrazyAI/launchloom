@@ -133,7 +133,8 @@ CREATE OR REPLACE FUNCTION launchloom_admin.accept_enrollment(
   p_token_hash text,
   p_subject text,
   p_email text,
-  p_display_name text DEFAULT NULL
+  p_display_name text DEFAULT NULL,
+  p_legacy_id text DEFAULT NULL
 ) RETURNS launchloom_admin.members
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -143,6 +144,9 @@ DECLARE
   v_enrollment launchloom_admin.enrollments%ROWTYPE;
   v_member launchloom_admin.members%ROWTYPE;
 BEGIN
+  IF p_legacy_id IS NOT NULL AND p_legacy_id !~ '^access:[0-9a-f]{64}$' THEN
+    RAISE EXCEPTION 'invalid_legacy_id';
+  END IF;
   SELECT * INTO v_enrollment FROM launchloom_admin.enrollments
     WHERE token_hash = p_token_hash FOR UPDATE;
   IF NOT FOUND THEN
@@ -174,6 +178,11 @@ BEGIN
       VALUES (p_subject, lower(trim(p_email)), nullif(left(trim(coalesce(p_display_name, '')), 100), ''), 'admin')
       RETURNING * INTO v_member;
   END IF;
+  -- The link, member insert and token consumption share this transaction. A
+  -- conflict or missing link function rolls all three back.
+  IF p_legacy_id IS NOT NULL THEN
+    PERFORM launchloom_admin.link_legacy_identity(p_legacy_id, p_subject);
+  END IF;
   UPDATE launchloom_admin.enrollments
     SET consumed_at = now(), consumed_subject = p_subject
     WHERE id = v_enrollment.id;
@@ -186,7 +195,8 @@ $$;
 CREATE OR REPLACE FUNCTION launchloom_admin.bootstrap_owner(
   p_subject text,
   p_email text,
-  p_display_name text DEFAULT NULL
+  p_display_name text DEFAULT NULL,
+  p_legacy_id text DEFAULT NULL
 ) RETURNS launchloom_admin.members
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -195,6 +205,9 @@ AS $$
 DECLARE
   v_member launchloom_admin.members%ROWTYPE;
 BEGIN
+  IF p_legacy_id IS NOT NULL AND p_legacy_id !~ '^access:[0-9a-f]{64}$' THEN
+    RAISE EXCEPTION 'invalid_legacy_id';
+  END IF;
   PERFORM 1 FROM launchloom_admin.workspace_guard WHERE id FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'workspace_guard_missing';
@@ -205,6 +218,9 @@ BEGIN
   INSERT INTO launchloom_admin.members (subject, email, display_name, role, active)
     VALUES (p_subject, lower(trim(p_email)), nullif(left(trim(coalesce(p_display_name, '')), 100), ''), 'owner', true)
     RETURNING * INTO v_member;
+  IF p_legacy_id IS NOT NULL THEN
+    PERFORM launchloom_admin.link_legacy_identity(p_legacy_id, p_subject);
+  END IF;
   INSERT INTO launchloom_admin.membership_audit (action, target_subject)
     VALUES ('owner_bootstrapped', p_subject);
   RETURN v_member;

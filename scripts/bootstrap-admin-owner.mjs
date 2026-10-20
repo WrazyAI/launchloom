@@ -10,11 +10,20 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import crypto from "node:crypto";
 import { neon } from "@neondatabase/serverless";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
 const SUBJECT_PATTERN = /^[A-Za-z0-9._:@-]{1,200}$/u;
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/u;
+
+/** Deterministic legacy ID derived only from the operator-verified email. */
+export function legacyAccessId(verifiedEmail) {
+  return `access:${crypto
+    .createHash("sha256")
+    .update(String(verifiedEmail).trim().toLowerCase())
+    .digest("hex")}`;
+}
 
 export class BootstrapError extends Error {
   constructor(code, message) {
@@ -171,8 +180,8 @@ export async function runBootstrap({
 
   try {
     await sql.query(
-      "select * from launchloom_admin.bootstrap_owner($1, $2, $3)",
-      [args.subject, args.email, args.name],
+      "select * from launchloom_admin.bootstrap_owner($1, $2, $3, $4)",
+      [args.subject, args.email, args.name, legacyAccessId(args.email)],
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "";

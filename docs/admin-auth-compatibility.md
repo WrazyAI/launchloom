@@ -501,14 +501,16 @@ There is no automatic fallback from neon to access inside a request.
   Access-policy cutover was tested.
 - Provider account-existence error normalization for reset/sign-in remains
   unproven from Task 4.
-- Deactivation is proven in the Worker authorization matrix and Task 5 live
-  database suite; a second live provider session for the same local Worker was
-  not available to repeat the two-account live deactivation scenario.
+- Password reset and real session-expiry verification remain blocked on an
+  approved test mailbox. Deactivation and logout are proven by the live
+  two-session proof in the fix sections below.
 
 ## Task 6 fix round 1: cookie propagation, legacy links and live two-session proof
 
-Status: the three review findings were addressed and re-verified locally. No
-deployment, staging/production, Access-policy or role change was made.
+Status: review findings 1-5 were addressed for their scoped criteria and
+re-verified locally. Password reset and real session expiry remain blocked on
+the missing approved test mailbox. No deployment, staging/production,
+Access-policy or role change was made.
 
 ### Central response wrapper for provider cookies
 
@@ -539,13 +541,16 @@ Apply it after the membership migration:
 
 ```bash
 psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/admin/002-legacy-identity-link.sql
+psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/admin/003-atomic-legacy-link.sql
 ```
 
 The Worker computes the legacy ID only from the already-verified normalized
-session email after `accept_enrollment` succeeds. It never accepts a legacy ID,
-subject or actor from the browser. A database without this function fails the
-acceptance call as a safe dependency error rather than creating an unlinked
-account.
+session email and passes it into the enrollment acceptance or owner bootstrap
+call. It never accepts a legacy ID, subject or actor from the browser. The
+`link_legacy_identity` function remains available for idempotent repair and
+backfill. Round 1 initially called it in a second query after acceptance;
+round 2 moved the insert into the acceptance/bootstrap transaction so a missing
+function or conflict cannot leave an active unlinked member with a spent token.
 
 ### Live two-session deactivation and logout proof
 
@@ -588,3 +593,66 @@ Access default, while any other value produces a safe 503
 proxy. `/admin/login` now accepts only GET and HEAD; other methods return 405
 with `Allow: GET, HEAD`. Access mode remains unchanged and there is still no
 online fallback from Neon to Access.
+
+## Task 6 fix round 2: atomic legacy link
+
+Status: the non-atomic link defect is fixed and re-verified. No deployment,
+staging/production or production data change was made.
+
+### Transactional acceptance and bootstrap
+
+`db/admin/003-atomic-legacy-link.sql` supersedes the original acceptance and
+bootstrap signatures:
+
+- `accept_enrollment(p_token_hash, p_subject, p_email, p_display_name DEFAULT
+  NULL, p_legacy_id DEFAULT NULL)`
+- `bootstrap_owner(p_subject, p_email, p_display_name DEFAULT NULL, p_legacy_id
+  DEFAULT NULL)`
+
+Both validate `p_legacy_id` as `access:<64 lowercase hex>` or NULL and call
+`link_legacy_identity` inside the same database transaction, after the member
+row is written and before acceptance consumes the token. A conflicting link,
+invalid ID or missing link function raises, rolling back the member insert and
+token consumption together. An exact existing link for the same subject is
+idempotent.
+
+PostgreSQL cannot change an argument list with `CREATE OR REPLACE`, so the
+migration drops only the old four-argument `accept_enrollment(text,text,text,
+text)` and three-argument `bootstrap_owner(text,text,text)` overloads. It drops
+no table, row, index or sequence and recreates the explicit PUBLIC revoke plus
+conditional `launchloom_worker` execute grant. `db/admin/001-membership.sql`
+carries the same atomic definitions for fresh installs. Apply 002 followed by
+003 on databases created before this round.
+
+`worker/src/admin/membership-store.ts` now calls `accept_enrollment` once with
+the server-derived legacy ID; the separate post-acceptance
+`link_legacy_identity` query is removed. `scripts/bootstrap-admin-owner.mjs`
+computes the same `access:<sha256(lower email)>` ID and passes it to
+`bootstrap_owner`, so first owners are linked atomically. The 002
+`link_legacy_identity` function remains for idempotent repair and backfill.
+
+### Atomic rollback evidence
+
+The real-DB suite creates a conflicting link for the invitee's legacy ID, then
+attempts acceptance with a fresh one-use token. It asserts the call returns
+`conflict` 409, no member row exists for the invitee, and `consumed_at` remains
+NULL. After removing the conflict, the same token succeeds and creates the
+member plus the correct link. Live bootstrap is also exercised in the isolated
+`launchloom_admin_test` database: `bootstrap_owner` with a legacy ID creates the
+owner and matching link, then the fixture is removed before the two-owner
+safety tests.
+
+The local two-session Worker proof was rerun after the atomic change and again
+showed: admin accepted and linked, owner deactivated the admin (next `/me` 403),
+owner remained 200, provider sign-out then owner 401, and cleanup readback
+`members=0`, `enrollments=0`, `links=0`, one active owner.
+
+### Remaining limits
+
+- Least-privilege DB roles remain an operator blocker.
+- No deployed/staging/production, Access-policy cutover/rollback, browser cookie
+  matrix or email delivery test.
+- Password reset and real session expiry still require an approved test mailbox.
+- Deferred minors remain deferred: synthetic-wrapper cookie test instead of
+  routed handlers, trace-ID logging, durable limiter, job-wide secret scoping,
+  saved cookie cleanup, and link consumers in history views.

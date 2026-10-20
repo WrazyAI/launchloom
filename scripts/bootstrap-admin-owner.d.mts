@@ -20,6 +20,8 @@ export declare type BootstrapSql = {
   ): Promise<T[]>;
 };
 
+export declare function legacyAccessId(verifiedEmail: string): string;
+
 export declare function parseBootstrapArgs(argv?: string[]): BootstrapArgs;
 
 export declare function runBootstrap(options?: {

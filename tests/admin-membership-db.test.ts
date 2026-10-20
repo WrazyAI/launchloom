@@ -222,6 +222,58 @@ describe.skipIf(!connectionString)("durable membership against the isolated deve
     expect(retained).toEqual([{ subject: invitee.subject }]);
   });
 
+  it("rolls back member creation and token use when the legacy link conflicts", async () => {
+    const invitee = { subject: subject("atomic-invitee"), email: email("atomic-invitee") };
+    const other = { subject: subject("atomic-other"), email: email("atomic-other") };
+    subjects.add(invitee.subject);
+    subjects.add(other.subject);
+    await sql.query(
+      `insert into launchloom_admin.members(subject, email, display_name, role, active)
+       values ($1, $2, $3, 'admin', true)`,
+      [other.subject, other.email, "Atomic Other"],
+    );
+    const legacyId = await legacyAccessId(invitee.email);
+    await sql.query("select * from launchloom_admin.link_legacy_identity($1, $2)", [
+      legacyId,
+      other.subject,
+    ]);
+    const enrollment = await enrollmentFor(owner.subject, invitee.email);
+
+    const conflict = await rejection(
+      store.acceptEnrollment(verified(invitee.subject, invitee.email), enrollment.token),
+    );
+    expect(conflict).toMatchObject({ code: "conflict", status: 409 });
+
+    // The failed acceptance must not leave an active unlinked member or spend
+    // the one-use token.
+    const members = (await sql.query(
+      `select subject from launchloom_admin.members where subject = $1`,
+      [invitee.subject],
+    )) as Array<{ subject: string }>;
+    expect(members).toEqual([]);
+    const state = (await sql.query(
+      `select consumed_at from launchloom_admin.enrollments where id = $1`,
+      [enrollment.enrollmentId],
+    )) as Array<{ consumed_at: string | null }>;
+    expect(state[0].consumed_at).toBeNull();
+
+    // Repairing the conflicting link lets the same token claim succeed.
+    await sql.query(
+      `delete from launchloom_admin.legacy_identity_links where legacy_id = $1`,
+      [legacyId],
+    );
+    const claimed = await store.acceptEnrollment(
+      verified(invitee.subject, invitee.email),
+      enrollment.token,
+    );
+    expect(claimed).toMatchObject({ id: invitee.subject, role: "admin" });
+    const link = (await sql.query(
+      `select legacy_id, subject from launchloom_admin.legacy_identity_links where legacy_id = $1`,
+      [legacyId],
+    )) as Array<{ legacy_id: string; subject: string }>;
+    expect(link).toEqual([{ legacy_id: legacyId, subject: invitee.subject }]);
+  });
+
   it("rejects an expired invitation", async () => {
     const invitee = email(`expired-${tokenSequence++}`);
     const token = `${prefix}expiredtoken`

@@ -393,9 +393,10 @@ export function createMembershipStore(
           ? session.displayName.trim()
           : null;
       const tokenHash = await hashEnrollmentToken(token);
+      const legacyId = await legacyAccessId(email);
       const rows = await query<MemberRow>(
-        "select * from launchloom_admin.accept_enrollment($1, $2, $3, $4)",
-        [tokenHash, subject, email, displayName],
+        "select * from launchloom_admin.accept_enrollment($1, $2, $3, $4, $5)",
+        [tokenHash, subject, email, displayName, legacyId],
       );
       if (!rows[0])
         throw new MembershipError(
@@ -405,15 +406,7 @@ export function createMembershipStore(
       const member = memberFromRow(rows[0]);
       if (!member.active)
         throw new MembershipError("forbidden", "This membership is inactive.");
-      const principal = principalFromMember(member);
-      // The legacy ID is derived only from the already-verified session email.
-      // The database function is idempotent for the same subject and refuses
-      // to overwrite a link owned by a different subject.
-      await query("select launchloom_admin.link_legacy_identity($1, $2)", [
-        await legacyAccessId(email),
-        principal.id,
-      ]);
-      return principal;
+      return principalFromMember(member);
     },
 
     async updateOwnProfile(subject, input) {
