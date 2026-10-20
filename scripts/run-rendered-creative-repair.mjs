@@ -39,6 +39,7 @@ import {
 import {
   nearMissAssessment,
   NEAR_MISS_PREVIEW_DEFAULTS,
+  splitFailureLines,
 } from "./creative-gate-severity.mjs";
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
@@ -243,12 +244,18 @@ function incompleteDiversityFailure(report) {
 
 function repairPriority(report, candidateId) {
   const candidate = reportCandidate(report, candidateId);
-  const scores = [
-    candidate?.renderedReferenceFidelity?.score,
-    candidate?.referenceFidelity?.score,
-    candidate?.visualScore,
-  ].filter((score) => typeof score === "number" && Number.isFinite(score));
-  return scores.length ? Math.min(...scores) : Number.NEGATIVE_INFINITY;
+  // Repair budget goes to the candidate closest to qualifying: fewest hard
+  // failures first, then the highest rendered overall. Pre-judge scores alone
+  // once favored a candidate with a hundred unprovable contrast failures over
+  // one that was a single hero-fit fix away from delivery.
+  const hardCount = splitFailureLines(candidate?.failures || []).hard.length;
+  const overall = Number(
+    candidate?.renderedReferenceFidelity?.audit?.overallScore,
+  );
+  const scoreBasis = Number.isFinite(overall)
+    ? overall
+    : diversitySiblingPriority(report, candidateId);
+  return scoreBasis - hardCount * 1_000;
 }
 
 /** Count of rendered measurements at or above their thresholds. */
@@ -294,12 +301,29 @@ function isBetterState(next, existing) {
 // weakest candidate first historically spent every cycle on candidates that
 // could not close a twenty-point gap and left the leader unrepaired.
 function closestToPassingFirst(report, targets) {
+  // Candidate-finding repairs use the delivery priority (fewest hard
+  // failures first). Diversity targets keep the sibling-score ordering the
+  // diversity contract expects: the failing sibling is repaired, not the
+  // passing one.
+  const priorityOf = (target) =>
+    target.finding
+      ? diversitySiblingPriority(report, target.candidateId)
+      : repairPriority(report, target.candidateId);
   return [...targets].sort((left, right) => {
-    const scoreDelta =
-      repairPriority(report, right.candidateId) -
-      repairPriority(report, left.candidateId);
+    const scoreDelta = priorityOf(right) - priorityOf(left);
     return scoreDelta || left.candidateId.localeCompare(right.candidateId);
   });
+}
+
+/** Pre-judge score ordering used for diversity repair targets. */
+function diversitySiblingPriority(report, candidateId) {
+  const candidate = reportCandidate(report, candidateId);
+  const scores = [
+    candidate?.renderedReferenceFidelity?.score,
+    candidate?.referenceFidelity?.score,
+    candidate?.visualScore,
+  ].filter((score) => typeof score === "number" && Number.isFinite(score));
+  return scores.length ? Math.min(...scores) : Number.NEGATIVE_INFINITY;
 }
 
 function closestFailedSibling(report, candidateId) {

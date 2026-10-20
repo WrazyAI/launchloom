@@ -211,6 +211,16 @@ export const HERO_MEDIA_FOCUS_CONTRACT = [
   "When the composition needs unplated copy, move the media to a non-overlapping field instead of boxing the text. Do not delete or flatten the hero image chapter.",
 ].join("\n");
 
+export const CONTRAST_STRUCTURE_CONTRACT = [
+  "CONTRAST STRUCTURE CONTRACT",
+  "Every run of visible text must sit entirely on one solid surface. Text that overlaps two surfaces (a panel edge, a media boundary, a gradient, or a decorative layer) cannot be proven and is a hard delivery failure: no single foreground color satisfies the contrast gate against two different backdrops.",
+  "- Keep each text block inside one surface box with padding that contains the whole block; never let copy cross a panel edge or sit on the seam between sections.",
+  "- Decorative rules, gradients, shadows, floating marks, and pseudo-elements must never paint behind or across text. Keep them outside text boxes or behind their own surface.",
+  "- When copy must sit near media, give the text one deliberate solid field sized to the copy, or move the copy off the media. Never per-line chips, highlight spans, or a translucent wash.",
+  "- Hover, focus, and open states re-pair the text with the same surface: keep the surface box stable so the pair stays provable.",
+  "- Icons and focus rings follow the same rule: give them a single surface or keep them away from boundaries. Size focus rings inset so rounded or overflow-hidden ancestors cannot clip them.",
+].join("\n");
+
 export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "CLIENT PALETTE ROLE CONTRACT",
   "Map the client visual brief palette to page surfaces by role:",
@@ -221,6 +231,7 @@ export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "Treat each hover, active, and focus style as a separate foreground/background pair. When an action fill changes, also choose a readable foreground for that changed fill. Never pair --ll-text as an action fill with --ll-on-action text unless that exact pair is verified to meet contrast.",
   "Image text is solved foreground-first: choose a text color that proves against the worst-case region of the backdrop, or a soft scrim whose darkest text region proves the ratio; when neither is possible, move the copy to a solid field. Never add opaque per-line background boxes, chips or highlights behind text. Do not rely on a dark average photo or text shadow. Unknown image, pseudo-element, blend and filter backdrops are unresolved until proved or repaired. Do not paint text-bearing elements with pseudo-element backdrops; use native list markers or an explicit aria-hidden child marker instead. The same deterministic rendered contrast gate applies to all pages.",
   HERO_MEDIA_FOCUS_CONTRACT,
+  CONTRAST_STRUCTURE_CONTRACT,
   "- surfaceColor is the dominant page surface. The page body and the large content fields use it.",
   "- heroColor is the opening hero surface. It stays distinct from the page surface.",
   "- brandSurfaceColor and brandSurfaceTextColor are limited brand bands, such as one conversion band or the footer, and never the dominant page surface.",

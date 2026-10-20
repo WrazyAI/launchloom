@@ -327,6 +327,69 @@ describe("creative repair loop", () => {
     expect(result).toEqual(edits);
   });
 
+  it("adds contrast structure guidance when findings straddle surfaces", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-structure-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience:
+        '<section data-reference-section="hero"><h1>Old</h1></section>',
+      styles: '[data-reference-section="hero"] h1 { font-size: 4rem; }',
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+    };
+    const edits = {
+      edits: [
+        { file: "experience", find: "<h1>Old</h1>", replace: "<h1>New</h1>" },
+      ],
+    };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(edits) },
+              },
+            ],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        familyId: "editorial",
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [
+        'contrast fail: / desktop default body > div > p text "Only Rugs" (2.7; required 4.5); foreground #14201d, background variable; overlapping non-ancestor paint requires rendered review, resolved from rendered pixels',
+      ],
+      files,
+      screenshots: [],
+      creativeRepairScope: null,
+    });
+    expect(result).toEqual(edits);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const prompt = body.messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(prompt).toContain("CONTRAST STRUCTURE REPAIR (hard gate)");
+    expect(prompt).toMatch(/move the affected copy/iu);
+  });
+
+  it("keeps the contrast structure contract in the palette contract", () => {
+    expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain("CONTRAST STRUCTURE CONTRACT");
+    expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain(
+      "Every run of visible text must sit entirely on one solid surface.",
+    );
+  });
+
   it("adds hero viewport fit guidance when the hard gate is in the findings", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-herofit-"),

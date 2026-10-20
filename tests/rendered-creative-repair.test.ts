@@ -2870,6 +2870,73 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
     expect(finalReport.nearMissSelection).toBe(true);
   });
 
+  it("repairs the candidate with the fewest hard failures first", async () => {
+    const { root, candidates } = await fixture(["candidate-a", "candidate-b"]);
+    const repairs: string[] = [];
+    let bakeoffCalls = 0;
+    const far = candidate("candidate-a", {
+      valid: false,
+      eligible: false,
+      failures: [
+        "desktop: horizontal overflow",
+        "compact: horizontal overflow",
+        "rendered-reference: composition drift",
+      ],
+      renderedReferenceFidelity: {
+        pass: false,
+        audit: {
+          overallScore: 80,
+          scores: { spatialRhythm: 80, imagery: 70, paletteAdherence: 90 },
+          findings: [],
+        },
+      },
+    });
+    const near = candidate("candidate-b", {
+      valid: false,
+      eligible: false,
+      failures: ["desktop: hero exceeds desktop viewport"],
+      renderedReferenceFidelity: {
+        pass: false,
+        audit: {
+          overallScore: 50,
+          scores: { spatialRhythm: 50, imagery: 45, paletteAdherence: 88 },
+          findings: [],
+        },
+      },
+    });
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({
+                selectedCandidateId: null,
+                candidates: [far, near],
+              })
+            : report({
+                selectedCandidateId: "candidate-b",
+                candidates: [candidate("candidate-b")],
+              }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ candidateId }: any) => {
+        repairs.push(candidateId);
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-b" }),
+    });
+    expect(result.status).toBe("passed");
+    // The near candidate (one hero-fit fix) gets the budget, not the one with
+    // three hard failures and a higher overall.
+    expect(repairs[0]).toBe("candidate-b");
+  });
+
   it("retries a rejection-cooldown candidate with explicit rejection context", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     const calls: Array<{ bakeoffCalls: number; findings: any[] }> = [];

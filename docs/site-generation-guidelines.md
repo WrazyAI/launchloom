@@ -200,6 +200,25 @@ explicitly clear the accent (`role: "accent"` in structured colors);
 unrelated palette revisions preserve a configured accent, and font choices
 survive palette-only revisions.
 
+## Contrast structure
+
+Every run of visible text must sit entirely on one solid surface. Text that
+straddles a panel edge, a media boundary, a gradient, or a decorative layer
+cannot be proven and is a hard delivery failure: no single foreground color
+satisfies the contrast gate against two different backdrops.
+
+- Keep each text block inside one surface box whose padding contains the whole
+  block; never let copy cross a section seam.
+- Decorative rules, gradients, shadows, floating marks, and pseudo-elements
+  never paint behind or across text.
+- Copy near media gets one deliberate solid field sized to the copy, or moves
+  off the media. No per-line chips, highlight spans, or translucent washes.
+- Hover, focus, and open states keep the same surface box so each pair stays
+  provable; focus rings stay inset so rounded or overflow-hidden ancestors
+  cannot clip them.
+- Icons follow the same rule and need a single surface or distance from
+  boundaries.
+
 ## Rendered-pixel contrast resolution
 
 Text and outline backdrops the DOM audit cannot bound (decorative siblings

@@ -356,6 +356,14 @@ function rememberPrivateRepairOutput(value, payload) {
 const creativeProvider = creativeLaneProvider();
 const REPAIR_SYSTEM_PROMPT =
   "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.";
+const CONTRAST_STRUCTURE_REPAIR_GUIDANCE = `CONTRAST STRUCTURE REPAIR (hard gate)
+These text, icon, or focus findings straddle two surfaces or media; no single color can prove them. Fix the structure in this repair:
+- Move the affected copy into one solid surface field that contains the whole text block, or move the copy off the media or boundary. Do not only change the color: no single foreground satisfies 4.5:1 against two different backdrops.
+- Never add per-line background chips, highlight spans, or box individual lines; use one deliberate field sized to the content.
+- Keep decorative rules, gradients, shadows, and floating marks out from behind text.
+- Keep the surface stable across hover, focus, and open states so each pair stays provable.
+- For icons and focus rings, give the element one surface or move it away from the boundary; keep focus rings inset so rounded or overflow-hidden ancestors cannot clip them.`;
+
 const HERO_VIEWPORT_FIT_REPAIR_GUIDANCE = `HERO VIEWPORT FIT (hard gate)
 The rendered capture put the header plus hero taller than the first viewport (desktop 1536x864, compact 1366x768). Fix it structurally in this repair:
 - Size the hero from the viewport, not from its content: cap the hero block at the viewport height minus the header (for example min-height: min(720px, calc(100svh - 88px)) or an explicit vh calculation) and let the media cover that box with object-fit: cover instead of an intrinsic image height.
@@ -1144,7 +1152,12 @@ ${
 
   const buildRepairContent = (
     currentFiles,
-    { targetFile = null, editsOnly = false, heroFit = false } = {},
+    {
+      targetFile = null,
+      editsOnly = false,
+      heroFit = false,
+      contrastStructure = false,
+    } = {},
   ) => {
     const requestContent = [
       ...referenceContext,
@@ -1173,6 +1186,11 @@ Return a complete replacement for only this requested file. Keep source non-empt
       });
     if (heroFit)
       requestContent.push({ type: "text", text: HERO_VIEWPORT_FIT_REPAIR_GUIDANCE });
+    if (contrastStructure)
+      requestContent.push({
+        type: "text",
+        text: CONTRAST_STRUCTURE_REPAIR_GUIDANCE,
+      });
     assertModelPromptTextBudget(requestContent);
     return requestContent;
   };
@@ -1210,6 +1228,10 @@ Return a complete replacement for only this requested file. Keep source non-empt
       targetFile,
       editsOnly,
       heroFit: hasFinding(findings, /hero exceeds .*viewport/iu),
+      contrastStructure: hasFinding(
+        findings,
+        /overlapping non-ancestor paint|background plate only partially covers|filter, blend, backdrop-filter|pseudo-element backdrop/iu,
+      ),
     });
     if (spanCatalog) {
       requestContent.push({ type: "text", text: "TRUSTED SOURCE SPANS\n" + JSON.stringify(spanCatalog) +
