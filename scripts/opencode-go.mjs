@@ -34,6 +34,10 @@ const WIRE_MODELS = {
   "opencode-go/deepseek-v4.1-flash": "deepseek-v4.1-flash",
   "deepseek-v4-pro": "deepseek-v4-pro",
   "opencode-go/deepseek-v4-pro": "deepseek-v4-pro",
+  "glm-5.3-flash": "glm-5.3-flash",
+  "z-ai/glm-5.3-flash": "glm-5.3-flash",
+  "glm-5.3": "glm-5.3",
+  "z-ai/glm-5.3": "glm-5.3",
 };
 
 /**
@@ -44,7 +48,7 @@ export function opencodeGoWireModel(logicalModel) {
   const wire = WIRE_MODELS[String(logicalModel || "").trim()];
   if (!wire)
     throw new Error(
-      `Unsupported OpenCode Go logical model: ${logicalModel} (this slice supports gpt-6-luna, deepseek-v4.1-flash, and deepseek-v4-pro).`,
+      `Unsupported OpenCode Go logical model: ${logicalModel} (this slice supports gpt-6-luna, deepseek-v4.1-flash, deepseek-v4-pro, glm-5.3, and glm-5.3-flash).`,
     );
   return wire;
 }

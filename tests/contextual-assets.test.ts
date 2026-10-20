@@ -6,6 +6,7 @@ import sharp from "sharp";
 import {
   DEFAULT_MAX_PROMPT_LENGTH,
   generateContextualAssets,
+  reviewGeneratedAsset,
 } from "../scripts/generate-contextual-assets.mjs";
 import { CREATIVE_FAMILIES } from "../scripts/creative-compiler.mjs";
 
@@ -1389,4 +1390,76 @@ describe("contextual image generation", () => {
       true,
     );
   });
+});
+
+describe("generated asset review on OpenCode Go", () => {
+  it("reviews the bitmap through the Go transport with the GLM wire model", async () => {
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    const image = await sharp({
+      create: {
+        width: 16,
+        height: 16,
+        channels: 3,
+        background: { r: 40, g: 90, b: 70 },
+      },
+    })
+      .webp()
+      .toBuffer();
+    const requests: Array<{ url: string; body: any }> = [];
+    vi.stubGlobal("fetch", async (url: string, init: RequestInit) => {
+      requests.push({ url: String(url), body: JSON.parse(String(init.body)) });
+      return new Response(
+        JSON.stringify({
+          id: "resp_review_go",
+          status: "completed",
+          output: [
+            {
+              type: "message",
+              role: "assistant",
+              status: "completed",
+              content: [
+                {
+                  type: "output_text",
+                  text: JSON.stringify({
+                    isStandaloneImage: true,
+                    containsWebsiteOrInterface: false,
+                    containsVisibleTextOrTextLikeMarks: false,
+                    containsLogoOrWatermark: false,
+                    isRelevantToBusiness: true,
+                  }),
+                },
+              ],
+            },
+          ],
+          usage: { input_tokens: 900, output_tokens: 40 },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    });
+    try {
+      const review = await reviewGeneratedAsset({
+        imageData: image,
+        placement: "hero",
+        businessKind: "bicycle workshop",
+        services: ["tune-ups"],
+        familyId: "utility-diagnostic",
+      });
+      expect(review.available).toBe(true);
+      expect(review.approved).toBe(true);
+      expect(review.reasonCodes).toEqual([]);
+      expect(review.model).toBe("z-ai/glm-5.3-flash");
+      expect(requests).toHaveLength(1);
+      expect(requests[0].url).toContain("opencode.ai/inference/go");
+      expect(requests[0].body.model).toBe("glm-5.3-flash");
+      expect(requests[0].body.text?.format?.type).toBe("json_schema");
+      const imagePart = (requests[0].body.input || [])
+        .flatMap((item: any) => item.content || [])
+        .find((part: any) => part.type === "input_image");
+      expect(imagePart?.image_url).toMatch(/^data:image\/webp;base64,/u);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  }, 20000);
 });

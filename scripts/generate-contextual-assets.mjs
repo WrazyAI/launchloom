@@ -11,6 +11,13 @@ import {
   openRouterSessionId,
   readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
+import { opencodeGoUsageMetrics } from "./opencode-go.mjs";
+import {
+  buildGoCreativeRequest,
+  completeGoCreative,
+  creativeLaneProvider,
+  parseGoCreativeOutput,
+} from "./creative-lane-inference.mjs";
 import { VISUAL_GATE_MODEL } from "./visual-quality-gate-lib.mjs";
 
 export const DEFAULT_FAL_MODEL = "fal-ai/minimax/image-01";
@@ -193,6 +200,22 @@ function reviewUsageSummary(usage) {
   return Object.keys(summary).length ? summary : null;
 }
 
+/** Normalize Go token usage into the OpenRouter-shaped summary the asset
+ * review ledger already records. */
+function goReviewUsage(usage) {
+  if (!usage || typeof usage !== "object") return null;
+  const promptTokens = Number(usage.inputTokens || 0);
+  const completionTokens = Number(usage.outputTokens || 0);
+  const cachedTokens = Number(usage.cachedInputTokens || 0);
+  return {
+    prompt_tokens: promptTokens,
+    completion_tokens: completionTokens,
+    total_tokens: promptTokens + completionTokens,
+    cost: opencodeGoUsageMetrics(usage).cost,
+    prompt_tokens_details: { cached_tokens: cachedTokens },
+  };
+}
+
 function safeRequestId(value) {
   const candidate = String(value || "").trim();
   return /^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/u.test(candidate)
@@ -333,7 +356,9 @@ export async function reviewGeneratedAsset({
   apiKey = process.env.OPENROUTER_API_KEY,
   timeoutMs = 45_000,
 } = {}) {
-  if (!apiKey)
+  const creativeProvider = creativeLaneProvider();
+  const goApiKey = String(process.env.OPENCODE_GO_API_KEY || "").trim();
+  if (creativeProvider === "opencode-go" ? !goApiKey : !apiKey)
     return unavailableAssetReview("not_configured", {
       model,
       imageBytes: imageData?.byteLength,
@@ -367,6 +392,66 @@ export async function reviewGeneratedAsset({
         },
       },
     ];
+    if (creativeProvider === "opencode-go") {
+      const result = await completeGoCreative({
+        logicalModel: model,
+        signal: controller.signal,
+        env: process.env,
+        maxAttempts: 2,
+        request: buildGoCreativeRequest({
+          systemPrompt:
+            "You are a strict visual asset integrity reviewer. Evaluate only what is visible in the supplied pixels. A fake website screenshot with nonsense text is still a website screenshot and must be rejected. Do not infer that a design mockup is acceptable because its text is unreadable. Return only the required structured fields.",
+          userContent: content,
+          schemaName: GENERATED_ASSET_REVIEW_SCHEMA.name,
+          schema: GENERATED_ASSET_REVIEW_SCHEMA.schema,
+          maxOutputTokens: 1000,
+          sessionId: openRouterSessionId(
+            "generated-asset-review",
+            model,
+            sha256(imageData),
+          ),
+        }),
+      });
+      const diagnostics = {
+        model,
+        usage: reviewUsageSummary(goReviewUsage(result.usage)),
+        imageBytes: imageData?.byteLength,
+      };
+      let checks;
+      try {
+        checks = parseGoCreativeOutput(result, {
+          invalidJsonCode: "GENERATED_ASSET_REVIEW_INVALID_JSON",
+          label: "Generated asset review",
+        });
+      } catch {
+        return unavailableAssetReview("invalid_checks", diagnostics);
+      }
+      const requiredChecks = [
+        "isStandaloneImage",
+        "containsWebsiteOrInterface",
+        "containsVisibleTextOrTextLikeMarks",
+        "containsLogoOrWatermark",
+        "isRelevantToBusiness",
+      ];
+      if (
+        !checks ||
+        typeof checks !== "object" ||
+        requiredChecks.some((key) => typeof checks[key] !== "boolean")
+      )
+        return unavailableAssetReview("invalid_checks", diagnostics);
+      const reasonCodes = assetReviewReasonCodes(checks);
+      return {
+        available: true,
+        approved: reasonCodes.length === 0,
+        reasonCodes,
+        model,
+        usage: reviewUsageSummary(goReviewUsage(result.usage)),
+        cache: {
+          provider: "opencode-go",
+          ...opencodeGoUsageMetrics(result.usage),
+        },
+      };
+    }
     const response = await openRouterChatCompletion({
       title: "LaunchLoom generated asset review",
       signal: controller.signal,
