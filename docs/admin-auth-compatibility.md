@@ -351,11 +351,10 @@ repository, logs or a shared drive.
   and connection details are never returned.
 
 The route handlers in `worker/src/admin/accounts-api.ts` are injectable and
-accept an already-verified `AdminPrincipal`; they are intentionally not mounted
-by `worker/src/index.ts` in this task. Task 6 must wire them behind
-`requireAdmin`, keep the existing Access `/me` shape until cutover, and enforce
-same-origin and active-membership checks. Acceptance still requires a verified
-session but no existing membership.
+accept an already-verified `AdminPrincipal`; they are wired by Accounts Task 6
+behind the central guard described below. Same-origin, verified-session and
+active-membership checks are enforced at that boundary. Acceptance requires a
+verified session but no existing membership.
 
 ### Verification commands
 
@@ -377,3 +376,131 @@ The owner-safety suite derives the sibling `launchloom_admin_test` database
 (override with `ADMIN_TEST_DATABASE_URL`), clears any interrupted `test-`
 leftovers, and refuses to run if that isolated database is not empty. No live
 email, provider or production call is made.
+
+## Central authorization and live membership wiring (Accounts Task 6)
+
+Status: implemented and verified in the local Worker runtime against the
+isolated development database and a real Neon Auth `get-session` read using a
+saved synthetic session. No deployment, staging/production, browser matrix,
+email delivery, Access policy change or role remediation was performed.
+
+### Guard contract
+
+`worker/src/admin/auth.ts` is the single admin boundary:
+
+```ts
+requireAdmin(request, env, ctx): Promise<AdminPrincipal>
+actorFromPrincipal(principal): ActorSnapshot
+```
+
+`requireAdminContext` additionally returns the sanitized provider `setCookies`
+and the membership store; `withAdminCookies` appends them to the browser
+response. Denials and dependency failures are typed `AdminAuthError`
+(`status`, `code`, `message`) and are rendered as safe JSON with a random trace
+id. Raw provider, SQL, constraint and connection text is never returned.
+
+- `access` mode keeps the existing Access audience plus allowlist check and the
+  source-marked legacy principal (`access:<sha256(email)>`,
+  `authSource: "cloudflare-access"`). An unauthenticated Worker request is still
+  denied as 403 because Cloudflare Access terminates the sign-in flow outside
+  the Worker in a real deployment.
+- `neon` mode re-reads the upstream session with `disableCookieCache=true` and
+  then re-reads the active membership on every protected request. There is no
+  principal or role cache and no fallback to Access.
+- Neon denials: no session 401; unverified email 403; missing/inactive
+  membership 403; stored membership email differing from the verified session
+  email 403; partial configuration 503; provider or membership store outage 503.
+- Provider renewal/clearing cookies returned by the session read are attached
+  to successful and denied browser responses.
+- Owner/admin role checks use the fresh store principal. The browser cannot
+  supply `actor`, `role`, `email`, `subject` or `active`.
+
+### Mounted routes
+
+All account routes stay under the existing workspace prefix
+`/api/admin/onboarding-invites/workspace`:
+
+- `GET /me`: membership principal in neon mode; the unchanged Task 9 Access
+  principal shape in access mode.
+- `PATCH /me`: display name and approved avatar key only; neon mode only.
+- `GET /team`: active members only; owner and admin may read.
+- `POST /team/enrollments`: owner only, returns a copy-once invitation link.
+- `PATCH /team/:id`: owner only, role and active state.
+- `POST /enrollments/accept`: verified provider session plus one-use token; no
+  existing membership required; same-origin; bounded by the shared fixed-window
+  auth limiter (10 attempts per 60 seconds per client address).
+
+Operational reads (`/health`, `/clients`, `/attempts`, `/invites`) and the
+legacy invite, generation-list and private hero routes use the same central
+guard. Their Access-mode behavior and distinct review/intake/ingestion secrets
+are unchanged. In access mode, profile changes and membership management are
+denied because there is no provider account identity; no second login is added.
+Hero responses are `no-store` so deactivation cannot leave a cached private
+artifact usable by role.
+
+`:id` route parameter decoding, JSON body bounds (8 KiB), same-origin write
+checks and typed membership errors remain owned by `accounts-api.ts`.
+
+### Configuration and deployment guard
+
+`ADMIN_AUTH_MODE` defaults to `access`. Neon mode requires all of
+`NEON_AUTH_BASE_URL` (HTTPS), `NEON_AUTH_COOKIE_SECRET` (at least 32
+characters), `ADMIN_PUBLIC_ORIGIN` (HTTPS origin) and `ADMIN_DATABASE_URL`
+(private binding). The deployment workflow validates that set before writing
+secrets or deploying; access-mode deployments do not require or write any Neon
+resource. `ADMIN_PUBLIC_ORIGIN` additionally accepts a loopback HTTP origin
+(`localhost`, `127.0.0.1`, `[::1]`, origin only) for local `wrangler dev`; it is
+not reachable from the public internet. Production origin and mode changes
+remain master Task 11.
+
+### Local Worker proof
+
+Command (private `.dev.vars` created with mode 0600, ignored by git, removed
+after the run):
+
+```bash
+npx wrangler dev --port 8787 --ip 127.0.0.1
+node /tmp/opencode/launchloom-task6-live-proof.mjs
+```
+
+Observed without printing cookies or the provider/database URLs:
+
+- owner session -> `GET /workspace/me` 200 with subject
+  `4b4f068f-728c-468f-8247-ad3d4cbf7dbb`, role `owner`, `active: true`,
+  `authSource: "neon"`;
+- `GET /workspace/team` 200 with one active member (the same owner) and no
+  inactive rows;
+- the same request without a session cookie -> 401;
+- the development owner row was not modified.
+
+This proves the local Worker -> Neon Auth session read -> membership store ->
+route wiring. It does not prove a deployed Access cutover, a real browser
+cookie lifecycle, email delivery, or production behavior.
+
+### Access rollback
+
+Rollback is an explicit operator action, not an online bypass:
+
+1. Set `ADMIN_AUTH_MODE=access` (repository variable) and deploy the Worker.
+   Access mode requires no Neon resource and reads no membership store.
+2. Re-apply/restore the restricted Cloudflare Access application and policy for
+   `/admin/*` and `/api/admin/*`.
+3. Keep Neon Auth accounts, memberships, enrollments, audit rows and
+   `legacy_identity_links` intact. Re-enrolling or resetting provider sessions
+   is not part of rollback.
+4. Verify the deployed commit and policy before claiming the rollback is live.
+
+There is no automatic fallback from neon to access inside a request.
+
+### Remaining limits
+
+- The provisioned development database roles remain over-privileged; production
+  needs the least-privilege operator role described above. Task 6 did not alter
+  or rotate credentials.
+- No deployed/staging/production, browser cookie matrix, email delivery or
+  Access-policy cutover was tested.
+- Provider account-existence error normalization for reset/sign-in remains
+  unproven from Task 4.
+- Deactivation is proven in the Worker authorization matrix and Task 5 live
+  database suite; a second live provider session for the same local Worker was
+  not available to repeat the two-account live deactivation scenario.

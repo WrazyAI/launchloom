@@ -2,6 +2,12 @@ import type { Env } from "../index";
 import { renderAdminDashboardHtml } from "../admin-dashboard";
 import { renderAdminLoginShell } from "./neon-auth";
 import { serveAdminAsset } from "./asset-handler";
+import {
+  accessAdminEmail,
+  requireAdminContext,
+  toAdminAuthError,
+  withAdminCookies,
+} from "./auth";
 
 const WORKSPACE_PATH = "/admin/onboarding-invites";
 const NO_STORE_HEADERS = {
@@ -50,27 +56,11 @@ function denied(request: Request, env: Env) {
   });
 }
 
-/** Existing Access audience and allowlist verification for the legacy path. */
-export async function accessAdminEmail(ctx: ExecutionContext, env: Env) {
-  if (!ctx.access || !env.ONBOARDING_ACCESS_AUD || !env.ONBOARDING_ADMIN_EMAILS)
-    return "";
-  if (ctx.access.aud !== env.ONBOARDING_ACCESS_AUD) return "";
-  const identity = await ctx.access.getIdentity();
-  const email = String(identity?.email || "")
-    .replace(/\u0000/g, "")
-    .trim()
-    .slice(0, 240)
-    .toLowerCase();
-  const permitted = env.ONBOARDING_ADMIN_EMAILS.split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
-  return email && permitted.includes(email) ? email : "";
-}
-
 /**
  * The same-origin admin boundary. Assets are public and data-free; the
- * workspace HTML remains behind Access until the account rollout replaces it.
- * Unknown /admin paths return 404 rather than an HTML or SPA fallback.
+ * workspace HTML is guarded by Cloudflare Access in `access` mode and by the
+ * central Neon session + active-membership guard in `neon` mode. Unknown
+ * /admin paths return 404 rather than an HTML or SPA fallback.
  */
 export async function routeAdminRequest(
   request: Request,
@@ -94,6 +84,39 @@ export async function routeAdminRequest(
         status: 405,
         headers: { ...NO_STORE_HEADERS, Allow: "GET, HEAD" },
       });
+
+    if (env.ADMIN_AUTH_MODE === "neon") {
+      try {
+        const guard = await requireAdminContext(request, env, ctx);
+        return withAdminCookies(
+          new Response(
+            request.method === "HEAD" ? null : renderAdminDashboardHtml(),
+            { status: 200, headers: shellHeaders() },
+          ),
+          guard.setCookies,
+        );
+      } catch (error) {
+        const denial = toAdminAuthError(error);
+        if (denial.status === 401)
+          return withAdminCookies(denied(request, env), denial.setCookies);
+        return withAdminCookies(
+          new Response(
+            denial.status === 503
+              ? "Workspace authorization is temporarily unavailable."
+              : "Access denied.",
+            {
+              status: denial.status,
+              headers: {
+                ...NO_STORE_HEADERS,
+                "Content-Type": "text/plain; charset=utf-8",
+              },
+            },
+          ),
+          denial.setCookies,
+        );
+      }
+    }
+
     let email = "";
     try {
       email = await accessAdminEmail(ctx, env);

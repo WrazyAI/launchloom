@@ -399,18 +399,15 @@ describe("interim Access principal", () => {
     expect(signedOut.status).toBe(401);
   });
 
-  it("does not fabricate a principal when Neon mode is selected", async () => {
+  it("does not fabricate an Access principal in Neon mode", async () => {
     const response = await worker.fetch(
       new Request(meUrl),
       { ...testEnv, ADMIN_AUTH_MODE: "neon" } as Env,
       accessContext("admin@example.test"),
     );
-    expect(response.status).toBe(503);
-    await expect(response.json()).resolves.toEqual({
-      error: {
-        code: "not_enabled",
-        message: "Persistent account profiles are not enabled.",
-      },
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: "signed_out", traceId: expect.any(String) },
     });
   });
 });

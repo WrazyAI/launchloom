@@ -33,9 +33,25 @@ import {
 } from "./seo-readiness";
 import type { PublicationCommand } from "./publication";
 import { OnboardingInvites } from "./onboarding-invites";
-import { legacyAccessPrincipal, principalActor, workspaceApi, workspaceError, attemptIngest } from "./admin/workspace-api";
-import { proxyAdminAuth } from "./admin/neon-auth";
-import { accessAdminEmail, routeAdminRequest } from "./admin/router";
+import { workspaceApi, workspaceError, attemptIngest } from "./admin/workspace-api";
+import {
+  authAttemptRateLimit,
+  proxyAdminAuth,
+} from "./admin/neon-auth";
+import { routeAdminRequest } from "./admin/router";
+import {
+  accessAdminEmail,
+  actorFromPrincipal,
+  adminAuthErrorResponse,
+  requireAdmin,
+  requireAdminContext,
+  requireVerifiedSession,
+  withAdminCookies,
+} from "./admin/auth";
+import {
+  accountsApi,
+  acceptEnrollmentApi,
+} from "./admin/accounts-api";
 import { IntakeRecoveryError, intakeOperationMarker, recoverIntakeIssue, readIntakeIssuePayload, verifyIntakeIssueOwnership, type IntakeIssue } from "./intake-recovery";
 import {
   GenerationLedger,
@@ -300,18 +316,101 @@ async function verifiedInvite(
   return { claims, tokenHash, origin, clientEmail: status.clientEmail || "", status };
 }
 
-async function authenticatedWorkspace(request: Request, env: Env, ctx: ExecutionContext) {
+const WORKSPACE_API_PREFIX = "/api/admin/onboarding-invites/workspace";
+
+function workspaceSuffix(request: Request) {
+  const path = new URL(request.url).pathname;
+  if (!path.startsWith(WORKSPACE_API_PREFIX)) return "/";
+  return path.slice(WORKSPACE_API_PREFIX.length) || "/";
+}
+
+/**
+ * One-use enrollment acceptance is the only account action available before a
+ * membership exists. It is session-only, same-origin, bounded by the shared
+ * auth limiter, and never accepts an actor, role or email from the browser.
+ */
+async function enrollmentAccept(request: Request, env: Env) {
+  const retryAfter = authAttemptRateLimit("admin-enrollment-accept", request);
+  if (retryAfter !== null)
+    return json(
+      { error: { code: "rate_limited", message: "Too many enrollment attempts." } },
+      429,
+      { "Retry-After": String(retryAfter), "Cache-Control": "no-store" },
+    );
+  try {
+    const verified = await requireVerifiedSession(request, env);
+    const response = await acceptEnrollmentApi(request, {
+      store: verified.store,
+      session: verified.session,
+    });
+    return withAdminCookies(response, verified.setCookies);
+  } catch (error) {
+    return adminAuthErrorResponse(error);
+  }
+}
+
+async function authenticatedWorkspace(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+) {
   const origin = request.headers.get("Origin");
-  if (origin && origin !== new URL(request.url).origin) return workspaceError("forbidden","Invalid request origin.",403);
-  if (!ctx.access) return workspaceError("signed_out","Sign in required.",401);
+  if (origin && origin !== new URL(request.url).origin)
+    return workspaceError("forbidden", "Invalid request origin.", 403);
+  const suffix = workspaceSuffix(request);
+
+  if (env.ADMIN_AUTH_MODE === "neon") {
+    if (suffix === "/enrollments/accept") return enrollmentAccept(request, env);
+    let guard;
+    try {
+      guard = await requireAdminContext(request, env, ctx);
+    } catch (error) {
+      return adminAuthErrorResponse(error);
+    }
+    const response =
+      suffix === "/me" || suffix === "/team" || suffix.startsWith("/team/")
+        ? await accountsApi(request, {
+            store: guard.store!,
+            principal: guard.principal,
+          })
+        : await workspaceApi(request, env, guard.principal.email);
+    return withAdminCookies(response, guard.setCookies);
+  }
+
+  if (!ctx.access) return workspaceError("signed_out", "Sign in required.", 401);
   let verifiedEmail = "";
   try {
-    verifiedEmail = await accessAdminEmail(ctx,env);
+    verifiedEmail = await accessAdminEmail(ctx, env);
   } catch {
-    return workspaceError("unavailable","Workspace authorization is temporarily unavailable.",503);
+    return workspaceError(
+      "unavailable",
+      "Workspace authorization is temporarily unavailable.",
+      503,
+    );
   }
-  if (!verifiedEmail) return workspaceError("forbidden","Access denied.",403);
-  return workspaceApi(request,env,verifiedEmail);
+  if (!verifiedEmail) return workspaceError("forbidden", "Access denied.", 403);
+
+  // Access mode keeps the verified legacy /me and operational reads, but has no
+  // provider account identity for profile or membership administration.
+  if (suffix === "/enrollments/accept")
+    return workspaceError(
+      "not_enabled",
+      "Workspace enrollment is not enabled.",
+      403,
+    );
+  if (suffix === "/me" && request.method !== "GET")
+    return workspaceError(
+      "forbidden",
+      "Profile changes require a Neon account.",
+      403,
+    );
+  if (suffix === "/team" || suffix.startsWith("/team/"))
+    return workspaceError(
+      "forbidden",
+      "Membership management requires a Neon account.",
+      403,
+    );
+  return workspaceApi(request, env, verifiedEmail);
 }
 
 async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
@@ -337,9 +436,14 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
   if (request.method === "POST") {
     if (!origin) return json({ error: "Invalid request origin." }, 403, headers);
   }
-  const administratorEmail = await accessAdminEmail(ctx, env);
-  if (!administratorEmail)
-    return json({ error: "Access denied." }, 403, headers);
+  let principal;
+  try {
+    principal = await requireAdmin(request, env, ctx);
+  } catch (error) {
+    return adminAuthErrorResponse(error);
+  }
+  const administratorEmail = principal.email;
+  const actor = actorFromPrincipal(principal);
   if (!env.ONBOARDING_INVITE_SIGNING_SECRET || !env.ONBOARDING_ORIGIN)
     return json({ error: "Invite management is not configured." }, 503, headers);
   if (request.method === "GET")
@@ -377,7 +481,7 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
           return json({ error: "The original intake is missing valid contact details.", code: "recovery_mismatch" }, 409, headers);
         const reconciled = await coordinator.reconcileIssue({inviteId, submissionId: reservation.submissionId,
           submissionHash: reservation.submissionHash, operationId: reservation.operationId, issueNumber,
-          reviewerEmail: administratorEmail, recipient, businessName, actor:principalActor(await legacyAccessPrincipal(administratorEmail))});
+          reviewerEmail: administratorEmail, recipient, businessName, actor});
         if (!reconciled) return json({ error: "The invitation changed during recovery. Refresh and review it again.", code: "recovery_mismatch" }, 409, headers);
       }
       await coordinator.queueWorkflowDispatch(inviteId, reservation.submissionId, issueNumber);
@@ -448,7 +552,7 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
       allowedOrigin: claims.allowedOrigins[0],
       tokenHash,
       now: Date.now(),
-      creator: principalActor(await legacyAccessPrincipal(administratorEmail)),
+      creator: actor,
     });
     return json({
       inviteId: claims.inviteId,
@@ -736,8 +840,11 @@ async function adminGenerations(
     return json({ error: "Invalid request origin." }, 403, headers);
   if (request.method !== "GET")
     return json({ error: "Method not allowed." }, 405, headers);
-  if (!(await accessAdminEmail(ctx, env)))
-    return json({ error: "Access denied." }, 403, headers);
+  try {
+    await requireAdmin(request, env, ctx);
+  } catch (error) {
+    return adminAuthErrorResponse(error);
+  }
   const id = clean(new URL(request.url).searchParams.get("id"), 120).toLowerCase();
   if (id) {
     if (!GENERATION_ID_PATTERN.test(id))
@@ -760,11 +867,11 @@ async function adminGenerationHero(
     return new Response("Forbidden", { status: 403, headers: { "Cache-Control": "no-store" } });
   if (request.method !== "GET")
     return new Response("Method not allowed", { status: 405 });
-  if (!(await accessAdminEmail(ctx, env)))
-    return new Response("Access denied.", {
-      status: 403,
-      headers: { "Cache-Control": "no-store" },
-    });
+  try {
+    await requireAdmin(request, env, ctx);
+  } catch (error) {
+    return adminAuthErrorResponse(error);
+  }
   const id = clean(new URL(request.url).searchParams.get("id"), 120).toLowerCase();
   if (!GENERATION_ID_PATTERN.test(id))
     return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
@@ -775,7 +882,7 @@ async function adminGenerationHero(
     status: 200,
     headers: {
       "Content-Type": hero.contentType,
-      "Cache-Control": "private, max-age=60",
+      "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
     },
   });
@@ -3668,15 +3775,6 @@ export default {
     if (path === "/api/onboarding-invites/validate")
       return inviteValidation(request, env);
     if (path.startsWith("/api/admin/onboarding-invites/workspace/")) {
-      if (
-        path === "/api/admin/onboarding-invites/workspace/me" &&
-        env.ADMIN_AUTH_MODE === "neon"
-      )
-        return workspaceError(
-          "not_enabled",
-          "Persistent account profiles are not enabled.",
-          503,
-        );
       return authenticatedWorkspace(request,env,ctx);
     }
     if (path === "/api/admin/onboarding-invites")

@@ -118,14 +118,40 @@ function isHttpsUrl(value: string | undefined, allowPath: boolean) {
   }
 }
 
+/**
+ * The trusted browser origin is HTTPS in every deployment. A loopback HTTP
+ * origin is accepted only for local `wrangler dev` (localhost/127.0.0.1/[::1],
+ * origin only, no path). It cannot be reached from the public internet.
+ */
+function isTrustedAdminOrigin(value: string | undefined) {
+  const https = isHttpsUrl(value, false);
+  if (https) return https;
+  if (!value || value.length > 2_048) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "http:") return null;
+    if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) return null;
+    if (url.username || url.password || url.search || url.hash) return null;
+    if (url.pathname !== "/") return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
 function readiness(env: AdminAuthEnv) {
   const missing: string[] = [];
   if (env.ADMIN_AUTH_MODE !== "neon") missing.push("ADMIN_AUTH_MODE=neon");
   if (!isHttpsUrl(env.NEON_AUTH_BASE_URL, true)) missing.push("NEON_AUTH_BASE_URL");
   if (!env.NEON_AUTH_COOKIE_SECRET || env.NEON_AUTH_COOKIE_SECRET.length < MIN_COOKIE_SECRET_LENGTH)
     missing.push("NEON_AUTH_COOKIE_SECRET");
-  if (!isHttpsUrl(env.ADMIN_PUBLIC_ORIGIN, false)) missing.push("ADMIN_PUBLIC_ORIGIN");
+  if (!isTrustedAdminOrigin(env.ADMIN_PUBLIC_ORIGIN)) missing.push("ADMIN_PUBLIC_ORIGIN");
   return missing;
+}
+
+/** Partial neon configuration must fail closed before any session read. */
+export function adminAuthReadiness(env: AdminAuthEnv) {
+  return readiness(env);
 }
 
 function requireNeonConfig(env: AdminAuthEnv): NeonConfig {
@@ -134,7 +160,7 @@ function requireNeonConfig(env: AdminAuthEnv): NeonConfig {
   return {
     baseUrl: isHttpsUrl(env.NEON_AUTH_BASE_URL, true)!,
     cookieSecret: env.NEON_AUTH_COOKIE_SECRET!,
-    publicOrigin: isHttpsUrl(env.ADMIN_PUBLIC_ORIGIN, false)!,
+    publicOrigin: isTrustedAdminOrigin(env.ADMIN_PUBLIC_ORIGIN)!,
   };
 }
 
@@ -298,6 +324,14 @@ function rateLimit(route: string, request: Request) {
   current.count += 1;
   if (current.count <= RATE_LIMIT_MAX_ATTEMPTS) return null;
   return Math.max(1, Math.ceil((current.resetAt - now) / 1_000));
+}
+
+/**
+ * Shared fixed-window limiter for sensitive account actions. Returns the
+ * retry-after seconds when the caller is over budget, otherwise null.
+ */
+export function authAttemptRateLimit(route: string, request: Request) {
+  return rateLimit(route, request);
 }
 
 async function readBoundedBody(request: Request): Promise<string | null> {

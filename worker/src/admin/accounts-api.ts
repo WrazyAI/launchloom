@@ -134,8 +134,10 @@ export async function accountsApi(
       return json({ principal: member });
     }
 
-    if (suffix === "/team" && method === "GET")
-      return json({ members: await deps.store.list() });
+    if (suffix === "/team" && method === "GET") {
+      const members = await deps.store.list();
+      return json({ members: members.filter((member) => member.active) });
+    }
 
     if (suffix === "/team/enrollments" && method === "POST") {
       requireOwner(deps.principal);
