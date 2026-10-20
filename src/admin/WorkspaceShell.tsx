@@ -93,6 +93,10 @@ export function WorkspaceShell({
           <span className="admin-brand__product">Operations workspace</span>
         </div>
         <WorkspaceNav active={active} onNavigate={onNavigate} />
+        <p className="admin-sidebar__note">
+          Read-only Access mode. Account profiles and persistent sign-in are not
+          enabled yet.
+        </p>
         <div className="admin-sidebar__identity">
           <span className="admin-sidebar__identity-mark" aria-hidden="true">
             LL

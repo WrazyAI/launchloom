@@ -412,6 +412,36 @@ async function focused(locator: Locator) {
     .toBe(true);
 }
 
+function colorChannels(value: string) {
+  const match = /^rgba?\(([^)]+)\)$/u.exec(value.trim());
+  if (!match) throw new Error(`Unsupported color value: ${value}`);
+  const channels = match[1]
+    .split(/[,\s/]+/u)
+    .filter(Boolean)
+    .map(Number);
+  if (channels.length < 3 || channels.some((channel) => Number.isNaN(channel)))
+    throw new Error(`Unsupported color value: ${value}`);
+  return channels.slice(0, 3);
+}
+
+function relativeLuminance(value: string) {
+  const [red, green, blue] = colorChannels(value).map((channel) => {
+    const srgb = channel / 255;
+    return srgb <= 0.03928
+      ? srgb / 12.92
+      : Math.pow((srgb + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+function contrastRatio(foreground: string, background: string) {
+  const first = relativeLuminance(foreground);
+  const second = relativeLuminance(background);
+  const lighter = Math.max(first, second);
+  const darker = Math.min(first, second);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 function autoErrors(
   errors: string[],
   options: { allowResource503?: boolean } = {},
@@ -779,8 +809,12 @@ describe("real admin workspace browser behavior", () => {
       });
       try {
         await waitForGenerations(page);
+        const inspector = page.getByRole("dialog", {
+          name: "Attempt attempt-diagnostic",
+        });
+        await visible(inspector);
         await visible(
-          page.getByRole("heading", { name: "Attempt attempt-diagnostic" }),
+          inspector.getByRole("heading", { name: "Attempt attempt-diagnostic" }),
         );
         const metrics = await page.evaluate(() => ({
           documentWidth: document.documentElement.scrollWidth,
@@ -798,6 +832,8 @@ describe("real admin workspace browser behavior", () => {
         );
         expect(table.scrollWidth).toBeGreaterThan(table.clientWidth);
 
+        await page.keyboard.press("Escape");
+        await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
         await page.getByRole("link", { name: "Clients", exact: true }).click();
         await waitForClients(page);
         await page
@@ -824,6 +860,181 @@ describe("real admin workspace browser behavior", () => {
     },
     60_000,
   );
+
+  it.each([390, 320])(
+    "opens attempt details in a modal sheet at %ipx and returns focus to the row",
+    async (width) => {
+      const { page, errors } = await openPage({
+        viewport: { width, height: 844 },
+      });
+      try {
+        await waitForGenerations(page);
+        const row = page.getByRole("button", {
+          name: /Open attempt attempt-0000/u,
+        });
+        await row.scrollIntoViewIfNeeded();
+        await row.focus();
+        await page.keyboard.press("Enter");
+        const dialog = page.getByRole("dialog", {
+          name: "Attempt attempt-0000",
+        });
+        await visible(dialog);
+        await visible(dialog.getByText("Attempt summary"));
+        await visible(dialog.getByText("Stage timeline"));
+
+        const sheet = await dialog.boundingBox();
+        expect(sheet).not.toBeNull();
+        expect(sheet!.y).toBeGreaterThanOrEqual(0);
+        expect(sheet!.y).toBeLessThan(844);
+        expect(sheet!.width).toBeLessThanOrEqual(width);
+        const heading = dialog.getByRole("heading", {
+          name: "Attempt attempt-0000",
+        });
+        await visible(heading);
+        expect(page.url()).toContain("attempt=attempt-0000");
+
+        const openMetrics = await page.evaluate(() => ({
+          documentWidth: document.documentElement.scrollWidth,
+          bodyWidth: document.body.scrollWidth,
+          viewport: window.innerWidth,
+        }));
+        expect(openMetrics.documentWidth).toBeLessThanOrEqual(
+          openMetrics.viewport,
+        );
+        expect(openMetrics.bodyWidth).toBeLessThanOrEqual(openMetrics.viewport);
+
+        for (let step = 0; step < 12; step += 1) {
+          await page.keyboard.press("Tab");
+          await expect
+            .poll(() =>
+              page.evaluate(() => {
+                const open = document.querySelector("dialog[open]");
+                return Boolean(open && open.contains(document.activeElement));
+              }),
+            )
+            .toBe(true);
+        }
+
+        await page.keyboard.press("Escape");
+        await expect.poll(() => dialog.count()).toBe(0);
+        await focused(row);
+        expect(page.url()).not.toContain("attempt=");
+        autoErrors(errors);
+      } finally {
+        await page.close();
+      }
+    },
+    60_000,
+  );
+
+  it("opens a deep-linked attempt as a modal sheet and closes on the backdrop", async () => {
+    const { page, errors } = await openPage({
+      viewport: { width: 390, height: 844 },
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+    });
+    try {
+      await waitForGenerations(page);
+      const dialog = page.getByRole("dialog", {
+        name: "Attempt attempt-diagnostic",
+      });
+      await visible(dialog);
+      await visible(
+        dialog.getByText(
+          "Diagnostic delivery is for review only, not production approval.",
+        ),
+      );
+      expect(page.url()).toContain("attempt=attempt-diagnostic");
+
+      await page.mouse.click(195, 16);
+      await expect.poll(() => dialog.count()).toBe(0);
+      expect(page.url()).not.toContain("attempt=");
+      await focused(page.locator("#admin-view-title"));
+
+      const row = page.getByRole("button", {
+        name: /Open attempt attempt-0000/u,
+      });
+      await row.click();
+      await visible(
+        page.getByRole("dialog", { name: "Attempt attempt-0000" }),
+      );
+      await page.mouse.click(195, 16);
+      await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
+      await focused(row);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps the desktop inspector in the two-column layout without a dialog", async () => {
+    const { page, errors } = await openPage();
+    try {
+      await waitForGenerations(page);
+      await page
+        .getByRole("button", { name: /Open attempt attempt-0000/u })
+        .click();
+      const inspector = page.locator("#attempt-inspector");
+      await visible(
+        inspector.getByRole("heading", { name: "Attempt attempt-0000" }),
+      );
+      expect(await page.getByRole("dialog").count()).toBe(0);
+      const columns = await page
+        .locator(".admin-view-layout")
+        .evaluate((element) => getComputedStyle(element).gridTemplateColumns);
+      expect(columns.split(" ")).toHaveLength(2);
+      const ledger = await page.locator(".admin-view__ledger").boundingBox();
+      const panel = await inspector.boundingBox();
+      expect(ledger).not.toBeNull();
+      expect(panel).not.toBeNull();
+      expect(panel!.x).toBeGreaterThanOrEqual(ledger!.x + ledger!.width);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("renders six quiet navigation items and reserves lime for focus", async () => {
+    const { page, errors } = await openPage();
+    try {
+      await waitForGenerations(page);
+      const nav = page.getByRole("navigation", {
+        name: "Workspace sections",
+      });
+      await expect.poll(() => nav.getByRole("link").count()).toBe(6);
+      const active = nav.locator('[aria-current="page"]');
+      await expect.poll(() => active.count()).toBe(1);
+      await expect.poll(() => active.textContent()).toBe("Generations");
+
+      const tone = await active.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          background: style.backgroundColor,
+          color: style.color,
+          border: style.borderTopColor,
+        };
+      });
+      expect(tone.background).not.toBe("rgb(217, 240, 107)");
+      expect(relativeLuminance(tone.background)).toBeGreaterThan(0.5);
+      expect(contrastRatio(tone.color, tone.background)).toBeGreaterThanOrEqual(
+        4.5,
+      );
+
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Tab");
+      const focus = await page.evaluate(() => {
+        const element = document.activeElement as HTMLElement | null;
+        return {
+          text: element?.textContent?.trim() || "",
+          outline: element ? getComputedStyle(element).outlineColor : "",
+        };
+      });
+      expect(focus.text).toBe("Generations");
+      expect(focus.outline).toBe("rgb(217, 240, 107)");
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
 
   it("supports keyboard row selection, inspector focus and focus return", async () => {
     const { page, errors } = await openPage();

@@ -1,4 +1,4 @@
-import type { RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import type {
   AttemptDetail,
   AttemptEventRecord,
@@ -24,6 +24,26 @@ function isTextInput(target: EventTarget | null) {
     target instanceof HTMLTextAreaElement ||
     target instanceof HTMLSelectElement
   );
+}
+
+const WIDE_INSPECTOR_QUERY = "(min-width: 1180px)";
+
+function useWideInspector() {
+  const [wide, setWide] = useState(() =>
+    typeof window === "undefined"
+      ? true
+      : window.matchMedia(WIDE_INSPECTOR_QUERY).matches,
+  );
+
+  useEffect(() => {
+    const query = window.matchMedia(WIDE_INSPECTOR_QUERY);
+    const update = () => setWide(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  return wide;
 }
 
 export type AttemptInspectorProps = {
@@ -216,19 +236,24 @@ export function AttemptInspector({
   onLoadMoreEvents,
   onOpenClient,
 }: AttemptInspectorProps) {
-  return (
-    <section
-      id="attempt-inspector"
-      className="admin-inspector"
-      aria-labelledby="attempt-inspector-title"
-      aria-busy={loading || eventsLoading}
-      onKeyDown={(event) => {
-        if (event.key === "Escape" && !isTextInput(event.target)) {
-          event.preventDefault();
-          onClose();
-        }
-      }}
-    >
+  const wide = useWideInspector();
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
+
+  useEffect(() => {
+    if (wide) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (!dialog.open) dialog.showModal();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      if (dialog.open) dialog.close();
+    };
+  }, [wide]);
+
+  const body = (
+    <>
       <div className="admin-inspector__top">
         <div>
           <p className="admin-eyebrow">Selected attempt</p>
@@ -428,6 +453,75 @@ export function AttemptInspector({
           />
         </>
       ) : null}
-    </section>
+    </>
+  );
+
+  if (wide) {
+    return (
+      <section
+        id="attempt-inspector"
+        className="admin-inspector"
+        data-inspector-surface="panel"
+        aria-labelledby="attempt-inspector-title"
+        aria-busy={loading || eventsLoading}
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && !isTextInput(event.target)) {
+            event.preventDefault();
+            onClose();
+          }
+        }}
+      >
+        {body}
+      </section>
+    );
+  }
+
+  return (
+    <dialog
+      id="attempt-inspector"
+      ref={dialogRef}
+      className="admin-inspector admin-inspector--sheet"
+      data-inspector-surface="dialog"
+      aria-labelledby="attempt-inspector-title"
+      aria-busy={loading || eventsLoading}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "Tab") return;
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        const focusable = Array.from(
+          dialog.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter((element) => element.getClientRects().length > 0);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement;
+        if (!dialog.contains(active)) {
+          event.preventDefault();
+          first.focus();
+          return;
+        }
+        if (event.shiftKey && active === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && active === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }}
+    >
+      <div className="admin-inspector__sheet">
+        <span className="admin-inspector__grabber" aria-hidden="true" />
+        {body}
+      </div>
+    </dialog>
   );
 }

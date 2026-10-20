@@ -251,9 +251,19 @@ describe("interim Access identity and unavailable account surfaces", () => {
       await expect(
         page.getByText("Cloudflare Access", { exact: true }).count(),
       ).resolves.toBe(1);
-      await expect(
-        page.getByText(PRINCIPAL.id, { exact: true }).count(),
-      ).resolves.toBe(1);
+      const rendered = await page.content();
+      expect(rendered).not.toContain(PRINCIPAL.id);
+      const fullHash = PRINCIPAL.id.slice("access:".length);
+      expect(rendered).not.toContain(fullHash);
+      expect(
+        await page.getByText("Stable identity", { exact: true }).count(),
+      ).toBe(0);
+      const details = page.locator("details", { hasText: "Technical reference" });
+      await expect(details.getAttribute("open")).resolves.toBeNull();
+      await details.locator("summary").click();
+      const reference = details.locator("[data-identity-reference]");
+      await visible(reference);
+      await expect(reference.textContent()).resolves.toBe("access:abababab");
       expect(requests).toEqual([
         {
           method: "GET",

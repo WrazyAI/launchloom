@@ -2,6 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import type { AccessModePrincipal, AdminApi } from "./api";
 import { requestErrorMessage } from "./format";
 
+function identityReference(id: string) {
+  const separator = id.indexOf(":");
+  const scheme = separator === -1 ? "" : id.slice(0, separator);
+  const digest = separator === -1 ? id : id.slice(separator + 1);
+  const prefix = scheme === "access" ? "access:" : "";
+  return `${prefix}${digest.slice(0, 8)}`;
+}
+
 function initials(principal: AccessModePrincipal) {
   const source = principal.displayName || principal.email.split("@")[0] || "";
   const letters = source.replace(/[^\p{L}\p{N}]+/gu, " ").trim().split(/\s+/u);
@@ -108,11 +116,18 @@ export function ProfileView({ api }: { api: AdminApi }) {
               <dt>Identity source</dt>
               <dd>Cloudflare Access</dd>
             </div>
-            <div>
-              <dt>Stable identity</dt>
-              <dd className="admin-facts__code">{principal.id}</dd>
-            </div>
           </dl>
+          <details className="admin-facts__details">
+            <summary>Technical reference</summary>
+            <p className="admin-facts__reference">
+              <span>Identity reference</span>
+              <code data-identity-reference>{identityReference(principal.id)}</code>
+            </p>
+            <p>
+              Only this short reference is shown. Use it if support needs to
+              trace this Access identity.
+            </p>
+          </details>
           <p className="admin-muted">
             Account editing, sign-in, password reset and sign-out are not part of
             this interim Access-mode surface. All authorized admins see the same
