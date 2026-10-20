@@ -90,6 +90,7 @@ export interface Env {
   NEON_AUTH_BASE_URL?: string;
   NEON_AUTH_COOKIE_SECRET?: string;
   ADMIN_PUBLIC_ORIGIN?: string;
+  ADMIN_DATABASE_URL?: string;
   ONBOARDING_INVITE_SIGNING_SECRET?: string;
   ONBOARDING_ORIGIN?: string;
   ONBOARDING_ADMIN_EMAILS?: string;

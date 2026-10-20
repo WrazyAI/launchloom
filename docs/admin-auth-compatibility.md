@@ -228,4 +228,107 @@ Exact live evidence still required:
 
 No live compatibility, staging, browser, or production claim is made until the
 above evidence exists. Normal-route Access cutover and membership authorization
-remain master Tasks 10/11 and Accounts Tasks 5/6.
+remain master Tasks 10/11 and Accounts Task 6.
+
+## Membership store and migration runbook (Accounts Task 5)
+
+Status: durable membership, enrollment, profiles and owner safety are implemented
+and verified against the isolated development database. The Neon Auth browser
+session gate above is still blocked; no production or provider resource was
+changed.
+
+### Applying the private schema
+
+`db/admin/001-membership.sql` is additive and idempotent (`CREATE ... IF NOT
+EXISTS`, `CREATE OR REPLACE`, guarded singleton insert). Apply it with a
+server-side operator connection, never from the browser and never with the
+connection string in shell history:
+
+```bash
+psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/admin/001-membership.sql
+```
+
+The schema is `launchloom_admin`; it contains `workspace_guard`, `members`,
+`enrollments`, `membership_audit` and `legacy_identity_links`, plus the
+application functions. The migration grants no privileges and creates no RLS
+policies or Data API exposure. The Worker must connect as the dedicated
+server-side role; `ADMIN_DATABASE_URL` is a private Worker binding and must never
+be a `PUBLIC_*` variable or client asset.
+
+**Least-privilege finding (open operator action).** The provisioned development
+role `launchloom_admin` is not least privilege: it currently has `CREATEDB`,
+`CREATEROLE`, `BYPASSRLS` and `REPLICATION`. It is not a superuser. Task 5 does
+not alter roles; an operator must reduce those attributes (or provision a
+dedicated app role with login and only the schema/table/function privileges it
+needs) before production use.
+
+### First-owner bootstrap
+
+There is no open-first-user or app-startup bootstrap. Use the confirmed script:
+
+```bash
+# Dry run is the default and writes nothing.
+node scripts/bootstrap-admin-owner.mjs \
+  --subject <provider-auth-subject> \
+  --email <operator-confirmed-verified-email> \
+  --name "<display name>" \
+  --database-url-file /path/to/private/url-file
+
+# Explicit write; refuses when any active owner already exists.
+node scripts/bootstrap-admin-owner.mjs ... --confirm
+```
+
+The script reads `ADMIN_DATABASE_URL` first, otherwise the private
+`--database-url-file`. It prints the subject, email, name, mode and active-owner
+count, but never the URL or an invitation token. It writes one audited
+`owner_bootstrapped` membership. Existing allowlisted admins are enrolled through
+invitations, not guessed or bootstrapped.
+
+### Enrollment and profile operations
+
+- An owner creates an invitation (`create_enrollment`). The store generates 32
+  random bytes, returns the base64url token once in
+  `/admin/login?enrollment=<token>`, stores only its SHA-256 hex digest, and sets
+  a 72-hour expiry. The UI route that consumes the link is wired with the account
+  UI/authorization task; the handler itself is implemented.
+- Acceptance requires a verified provider session whose normalized email matches
+  the invitation exactly. The token is claimed atomically once; repeated, expired
+  and mismatched claims are typed refusals. Acceptance does not require an
+  existing membership.
+- Profile updates accept only display name (1 to 100 Unicode code points) and an
+  approved local avatar key. Email, role, active state and actor are never
+  accepted from the browser. `avatarKey: null` means "keep the current avatar"
+  because the existing SQL function uses `coalesce`; clearing an avatar needs a
+  separately reviewed additive migration.
+- Membership changes are owner-only. The database locks the singleton
+  `workspace_guard` row before counting owners; concurrent last-owner
+  deactivation/demotion leaves at least one active owner and returns a safe
+  conflict. Deactivation retains the member row and audit attribution.
+- Typed store errors (`forbidden`, `last_owner`, `not_found`, `conflict`,
+  `invalid`, `email_mismatch`, `enrollment_used`, `expired`,
+  `dependency_unavailable`) map to safe JSON statuses. Raw SQL, constraint names
+  and connection details are never returned.
+
+The route handlers in `worker/src/admin/accounts-api.ts` are injectable and
+accept an already-verified `AdminPrincipal`; they are intentionally not mounted
+by `worker/src/index.ts` in this task. Task 6 must wire them behind
+`requireAdmin`, keep the existing Access `/me` shape until cutover, and enforce
+same-origin and active-membership checks. Acceptance still requires a verified
+session but no existing membership.
+
+### Verification commands
+
+```bash
+npx vitest run --config vitest.worker.config.ts worker/test/admin-membership.test.ts
+npx vitest run tests/admin-membership-migration.test.ts tests/admin-membership-db.test.ts
+ADMIN_DATABASE_URL="$(cat /path/to/private/url-file)" \
+  npx vitest run tests/admin-membership-db.test.ts
+npm run check:worker
+npm run test:worker -- --maxWorkers=1
+```
+
+The live database suite creates `test-` members, enrollments and audit rows,
+cleans them in `afterAll`, and asserts the existing development owner
+(`4b4f068f-728c-468f-8247-ad3d4cbf7dbb`) is unchanged. It skips when
+`ADMIN_DATABASE_URL` is absent. No live email, provider or production call is
+made.
