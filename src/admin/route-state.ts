@@ -86,6 +86,8 @@ export function readRouteState(input: URL | string): AdminRouteState {
   if (initiatorId) filters.initiatorId = initiatorId;
   const creatorId = safeId(params.get("creator"));
   if (creatorId) filters.creatorId = creatorId;
+  const clientFilter = safeId(params.get("clientFilter"));
+  if (clientFilter) filters.clientId = clientFilter;
   const from = safeInteger(params.get("from"), 0, Number.MAX_SAFE_INTEGER);
   if (from !== undefined) filters.from = from;
   const to = safeInteger(params.get("to"), 0, Number.MAX_SAFE_INTEGER);
@@ -108,17 +110,45 @@ export function writeRouteState(state: AdminRouteState): URL {
   const url = new URL("/admin/onboarding-invites", origin);
   const params = url.searchParams;
   params.set("view", safeView(state.view));
-  if (state.clientId) params.set("client", state.clientId);
-  if (state.attemptId) params.set("attempt", state.attemptId);
+  const clientId = safeId(state.clientId);
+  if (clientId) params.set("client", clientId);
+  const attemptId = safeId(state.attemptId);
+  if (attemptId) params.set("attempt", attemptId);
   const filters = state.filters;
-  if (filters.search) params.set("search", filters.search);
-  if (filters.executionStatus) params.set("status", filters.executionStatus);
-  if (filters.profile) params.set("profile", filters.profile);
-  if (filters.initiatorId) params.set("initiator", filters.initiatorId);
-  if (filters.creatorId) params.set("creator", filters.creatorId);
-  if (filters.from !== undefined) params.set("from", String(filters.from));
-  if (filters.to !== undefined) params.set("to", String(filters.to));
-  if (filters.limit !== undefined) params.set("limit", String(filters.limit));
-  if (state.cursor) params.set("cursor", state.cursor);
+  const search = first(filters.search ?? null, 160);
+  if (search) params.set("search", search);
+  if (
+    filters.executionStatus &&
+    EXECUTION_STATUSES.has(filters.executionStatus)
+  )
+    params.set("status", filters.executionStatus);
+  if (filters.profile && PROFILES.has(filters.profile))
+    params.set("profile", filters.profile);
+  const initiatorId = safeId(filters.initiatorId ?? null);
+  if (initiatorId) params.set("initiator", initiatorId);
+  const creatorId = safeId(filters.creatorId ?? null);
+  if (creatorId) params.set("creator", creatorId);
+  const clientFilter = safeId(filters.clientId ?? null);
+  if (clientFilter) params.set("clientFilter", clientFilter);
+  if (
+    Number.isSafeInteger(filters.from) &&
+    filters.from! >= 0 &&
+    filters.from! <= Number.MAX_SAFE_INTEGER
+  )
+    params.set("from", String(filters.from));
+  if (
+    Number.isSafeInteger(filters.to) &&
+    filters.to! >= 0 &&
+    filters.to! <= Number.MAX_SAFE_INTEGER
+  )
+    params.set("to", String(filters.to));
+  if (
+    Number.isSafeInteger(filters.limit) &&
+    filters.limit! >= 1 &&
+    filters.limit! <= 100
+  )
+    params.set("limit", String(filters.limit));
+  const cursor = first(state.cursor, 500);
+  if (cursor) params.set("cursor", cursor);
   return url;
 }
