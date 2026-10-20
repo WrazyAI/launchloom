@@ -1,8 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import {
-  ADMIN_VIEWS,
-  type AdminView,
-} from "./route-state";
+import { ADMIN_VIEWS, type AdminView } from "./route-state";
 
 const VIEW_LABELS: Record<AdminView, string> = {
   generations: "Generations",
@@ -24,21 +21,23 @@ export function WorkspaceNav({
 
   useEffect(() => {
     const nav = navRef.current;
-    const current = nav?.querySelector<HTMLElement>('[aria-current="page"]');
-    if (!nav || !current) return;
-    const left = current.offsetLeft;
-    const right = left + current.offsetWidth;
-    if (left < nav.scrollLeft) nav.scrollLeft = left;
-    else if (right > nav.scrollLeft + nav.clientWidth)
-      nav.scrollLeft = right - nav.clientWidth;
+    if (!nav) return;
+    const alignActive = () => {
+      const current = nav.querySelector<HTMLElement>('[aria-current="page"]');
+      if (!current) return;
+      const left = current.offsetLeft;
+      const right = left + current.offsetWidth;
+      if (left < nav.scrollLeft) nav.scrollLeft = left;
+      else if (right > nav.scrollLeft + nav.clientWidth)
+        nav.scrollLeft = right - nav.clientWidth;
+    };
+    alignActive();
+    window.addEventListener("resize", alignActive);
+    return () => window.removeEventListener("resize", alignActive);
   }, [active]);
 
   return (
-    <nav
-      className="admin-nav"
-      aria-label="Workspace sections"
-      ref={navRef}
-    >
+    <nav className="admin-nav" aria-label="Workspace sections" ref={navRef}>
       {ADMIN_VIEWS.map((view) => (
         <a
           key={view}
@@ -94,15 +93,15 @@ export function WorkspaceShell({
         </div>
         <WorkspaceNav active={active} onNavigate={onNavigate} />
         <p className="admin-sidebar__note">
-          Access-protected workspace. Account profiles and persistent sign-in
-          are not enabled yet.
+          Access-protected workspace. Your account profile and sign-out are in
+          Settings.
         </p>
         <div className="admin-sidebar__identity">
           <span className="admin-sidebar__identity-mark" aria-hidden="true">
             LL
           </span>
           <span>
-            <strong>Shared workspace</strong>
+            <strong>Workspace account</strong>
             <span>All authorized admins see the same records.</span>
           </span>
         </div>

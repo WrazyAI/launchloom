@@ -12,17 +12,12 @@ import {
   it,
   vi,
 } from "vitest";
-import {
-  chromium,
-  type Browser,
-  type Locator,
-  type Page,
-} from "playwright";
+import { chromium, type Browser, type Locator, type Page } from "playwright";
 import { buildAdminWorkspace } from "../scripts/build-admin-workspace.mjs";
 
 vi.setConfig({ testTimeout: 30_000 });
 
-const PRINCIPAL = {
+const ACCESS_PRINCIPAL = {
   id: `access:${"ab".repeat(32)}`,
   email: "admin@example.test",
   displayName: null,
@@ -30,25 +25,81 @@ const PRINCIPAL = {
   authSource: "cloudflare-access",
 } as const;
 
-type RecordedRequest = { method: string; path: string };
+type Member = {
+  id: string;
+  email: string;
+  displayName: string;
+  role: "owner" | "admin";
+  authSource: "neon";
+  active: boolean;
+  createdAt: number;
+  updatedAt: number;
+  initials: string;
+  avatarKey: string | null;
+};
+
+const OWNER: Member = {
+  id: "subject-owner",
+  email: "dev-owner@launchloom.test",
+  displayName: "Dev Owner",
+  role: "owner" as const,
+  authSource: "neon" as const,
+  active: true,
+  createdAt: 1_700_000_000_000,
+  updatedAt: 1_700_000_000_000,
+  initials: "DO",
+  avatarKey: null,
+};
+
+const ADMIN: Member = {
+  id: "subject-admin",
+  email: "admin@launchloom.test",
+  displayName: "Amara Admin",
+  role: "admin" as const,
+  authSource: "neon" as const,
+  active: true,
+  createdAt: 1_700_000_000_000,
+  updatedAt: 1_700_000_000_000,
+  initials: "AA",
+  avatarKey: null,
+};
+
+const ENROLLMENT_TOKEN = "e".repeat(43);
+const RETURN_TO = "/admin/onboarding-invites?view=settings";
+
+type RecordedRequest = {
+  method: string;
+  path: string;
+  body: Record<string, unknown> | null;
+};
 
 let browser: Browser;
 let server: http.Server;
 let origin = "";
 let assetsDirectory = "";
 let requests: RecordedRequest[] = [];
-let meMode: "success" | "unavailable" | "malformed" = "success";
+let neonMode = false;
+let signedIn = false;
+let currentRole: "owner" | "admin" = "owner";
+let members: Member[] = [];
+let meMode: "success" | "unavailable" | "malformed" | "signed_out" = "success";
+let signInMode: "success" | "invalid" | "unavailable" = "success";
+let signInMessage = "Invalid email or password.";
+let acceptMode: "success" | "mismatch" | "unavailable" | "used" = "success";
+let createMode: "success" | "unavailable" = "success";
+let changeMode: "success" | "last_owner" = "success";
+let profileMode: "success" | "invalid" = "success";
 
-function sendJson(
-  response: http.ServerResponse,
-  body: unknown,
-  status = 200,
-) {
+function sendJson(response: http.ServerResponse, body: unknown, status = 200) {
   response.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
   });
   response.end(JSON.stringify(body));
+}
+
+function errorBody(code: string, message: string) {
+  return { error: { code, message } };
 }
 
 function sendText(
@@ -61,7 +112,12 @@ function sendText(
   response.end(body);
 }
 
-const shell = `<!doctype html>
+function shell(mode: "workspace" | "login") {
+  const fallback =
+    mode === "login"
+      ? `<main class="admin-fallback"><h1>LaunchLoom admin</h1><p>Sign in with your approved admin account.</p></main>`
+      : `<main class="admin-fallback"><h1>Operations workspace</h1><p>Loading the workspace shell...</p></main>`;
+  return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -69,11 +125,12 @@ const shell = `<!doctype html>
 <title>LaunchLoom operations</title>
 <link rel="stylesheet" href="/admin-assets/app.css">
 </head>
-<body class="admin-page" data-admin-view="workspace">
-<div id="admin-root"><main class="admin-fallback"><h1>Operations workspace</h1><p>Loading the workspace shell...</p></main></div>
+<body class="admin-page" data-admin-view="${mode}">
+<div id="admin-root">${fallback}</div>
 <script type="module" src="/admin-assets/app.js"></script>
 </body>
 </html>`;
+}
 
 function assetContentType(file: string) {
   if (file.endsWith(".js")) return "text/javascript; charset=utf-8";
@@ -81,6 +138,22 @@ function assetContentType(file: string) {
   if (file.endsWith(".woff2")) return "font/woff2";
   if (file.endsWith(".txt")) return "text/plain; charset=utf-8";
   return "application/octet-stream";
+}
+
+function currentMember(): Member {
+  return currentRole === "owner" ? OWNER : ADMIN;
+}
+
+async function readBody(request: http.IncomingMessage) {
+  const chunks: Buffer[] = [];
+  for await (const chunk of request) chunks.push(chunk as Buffer);
+  const text = Buffer.concat(chunks).toString("utf8");
+  if (!text) return null;
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
 }
 
 async function serve(
@@ -97,7 +170,11 @@ async function serve(
   }
 
   if (pathname === "/admin/onboarding-invites") {
-    sendText(response, shell, 200, "text/html; charset=utf-8");
+    sendText(response, shell("workspace"), 200, "text/html; charset=utf-8");
+    return;
+  }
+  if (pathname === "/admin/login") {
+    sendText(response, shell("login"), 200, "text/html; charset=utf-8");
     return;
   }
 
@@ -127,34 +204,252 @@ async function serve(
     return;
   }
 
-  if (pathname !== "/api/admin/onboarding-invites/workspace/me") {
+  if (!pathname.startsWith("/api/admin/onboarding-invites/")) {
     sendText(response, "Not found", 404);
     return;
   }
 
-  requests.push({ method: request.method || "GET", path: pathname });
-  if (request.method !== "GET") {
-    sendText(response, "Method not allowed", 405);
+  const body = await readBody(request);
+  requests.push({ method: request.method || "GET", path: pathname, body });
+
+  if (pathname.startsWith("/api/admin/onboarding-invites/auth/")) {
+    const route = pathname.slice("/api/admin/onboarding-invites/auth/".length);
+    if (request.method !== "POST" && route !== "verify-email") {
+      sendText(response, "Method not allowed", 405);
+      return;
+    }
+    if (route === "sign-in/email") {
+      if (signInMode === "invalid") {
+        sendJson(response, errorBody("auth_failed", signInMessage), 401);
+        return;
+      }
+      if (signInMode === "unavailable") {
+        sendJson(
+          response,
+          errorBody(
+            "dependency_unavailable",
+            "Sign-in is temporarily unavailable.",
+          ),
+          503,
+        );
+        return;
+      }
+      signedIn = true;
+      sendJson(response, {
+        ok: true,
+        user: {
+          id: currentMember().id,
+          email: currentMember().email,
+          emailVerified: true,
+          name: currentMember().displayName,
+        },
+        session: { expiresAt: Date.now() + 3_600_000 },
+      });
+      return;
+    }
+    if (route === "sign-out") {
+      signedIn = false;
+      sendJson(response, { ok: true, user: null, session: null });
+      return;
+    }
+    if (route === "forget-password") {
+      sendJson(response, { ok: true, user: null, session: null });
+      return;
+    }
+    if (route === "reset-password") {
+      sendJson(response, { ok: true });
+      return;
+    }
+    if (route === "verify-email") {
+      sendJson(response, { ok: true, user: null, session: null });
+      return;
+    }
+    sendJson(response, errorBody("not_found", "Not found."), 404);
     return;
   }
-  if (meMode === "unavailable") {
+
+  if (pathname.endsWith("/workspace/me")) {
+    if (!neonMode) {
+      if (meMode === "unavailable") {
+        sendJson(
+          response,
+          errorBody(
+            "not_enabled",
+            "Persistent account profiles are not enabled.",
+          ),
+          503,
+        );
+        return;
+      }
+      if (meMode === "malformed") {
+        sendJson(response, { principal: { id: "forged", email: "forged@x" } });
+        return;
+      }
+      if (request.method !== "GET") {
+        sendText(response, "Method not allowed", 405);
+        return;
+      }
+      sendJson(response, { principal: ACCESS_PRINCIPAL });
+      return;
+    }
+    if (meMode === "signed_out" || !signedIn) {
+      sendJson(response, errorBody("signed_out", "Sign in required."), 401);
+      return;
+    }
+    if (meMode === "unavailable") {
+      sendJson(
+        response,
+        errorBody(
+          "dependency_unavailable",
+          "Account profile is temporarily unavailable.",
+        ),
+        503,
+      );
+      return;
+    }
+    if (request.method === "PATCH") {
+      if (profileMode === "invalid") {
+        sendJson(
+          response,
+          errorBody("invalid", "Display name must be 1 to 100 characters."),
+          400,
+        );
+        return;
+      }
+      const displayName =
+        typeof body?.displayName === "string"
+          ? body.displayName.trim()
+          : currentMember().displayName;
+      const avatarKey =
+        typeof body?.avatarKey === "string" && body.avatarKey.trim()
+          ? body.avatarKey.trim()
+          : null;
+      members = members.map((member) =>
+        member.id === currentMember().id
+          ? {
+              ...member,
+              displayName,
+              avatarKey,
+              initials: displayName.slice(0, 2).toUpperCase(),
+            }
+          : member,
+      );
+      sendJson(response, {
+        principal: members.find((m) => m.id === currentMember().id),
+      });
+      return;
+    }
+    sendJson(response, { principal: currentMember() });
+    return;
+  }
+
+  if (pathname.endsWith("/workspace/team")) {
+    if (!neonMode || meMode === "signed_out" || !signedIn) {
+      sendJson(response, errorBody("signed_out", "Sign in required."), 401);
+      return;
+    }
+    sendJson(response, { members: members.filter((member) => member.active) });
+    return;
+  }
+
+  if (pathname.endsWith("/workspace/team/enrollments")) {
+    if (request.method !== "POST") {
+      sendText(response, "Method not allowed", 405);
+      return;
+    }
+    if (createMode === "unavailable") {
+      sendJson(
+        response,
+        errorBody(
+          "dependency_unavailable",
+          "Enrollment is temporarily unavailable.",
+        ),
+        503,
+      );
+      return;
+    }
     sendJson(
       response,
       {
-        error: {
-          code: "not_enabled",
-          message: "Persistent account profiles are not enabled.",
+        enrollment: {
+          id: "enrollment-1",
+          url: `/admin/login?enrollment=${ENROLLMENT_TOKEN}`,
+          expiresAt: Date.now() + 72 * 60 * 60 * 1000,
         },
       },
-      503,
+      201,
     );
     return;
   }
-  if (meMode === "malformed") {
-    sendJson(response, { principal: { id: "forged", email: "forged@x" } });
+
+  const change = /\/workspace\/team\/([^/]+)$/u.exec(pathname);
+  if (change && request.method === "PATCH") {
+    if (changeMode === "last_owner") {
+      sendJson(
+        response,
+        errorBody("last_owner", "At least one active owner is required."),
+        409,
+      );
+      return;
+    }
+    const target = decodeURIComponent(change[1]);
+    members = members.map((member) => {
+      if (member.id !== target) return member;
+      if (body?.active === false) return { ...member, active: false };
+      if (body?.role === "owner" || body?.role === "admin")
+        return { ...member, role: body.role };
+      return member;
+    });
+    const updated = members.find((member) => member.id === target);
+    sendJson(response, { member: updated });
     return;
   }
-  sendJson(response, { principal: PRINCIPAL });
+
+  if (pathname.endsWith("/workspace/enrollments/accept")) {
+    if (acceptMode === "mismatch") {
+      sendJson(
+        response,
+        errorBody(
+          "email_mismatch",
+          "This invitation belongs to a different verified email.",
+        ),
+        403,
+      );
+      return;
+    }
+    if (acceptMode === "used") {
+      sendJson(
+        response,
+        errorBody("enrollment_used", "This invitation has already been used."),
+        409,
+      );
+      return;
+    }
+    if (acceptMode === "unavailable") {
+      sendJson(
+        response,
+        errorBody(
+          "dependency_unavailable",
+          "Enrollment acceptance is temporarily unavailable.",
+        ),
+        503,
+      );
+      return;
+    }
+    signedIn = true;
+    sendJson(response, {
+      principal: {
+        id: "subject-invitee",
+        email: "invitee@launchloom.test",
+        displayName: "Invited Admin",
+        role: "admin",
+        authSource: "neon",
+      },
+    });
+    return;
+  }
+
+  sendText(response, "Not found", 404);
 }
 
 beforeAll(async () => {
@@ -165,9 +460,7 @@ beforeAll(async () => {
   server = http.createServer((request, response) => {
     void serve(request, response);
   });
-  await new Promise<void>((resolve) =>
-    server.listen(0, "127.0.0.1", resolve),
-  );
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   browser = await chromium.launch({ headless: true });
 }, 120_000);
@@ -180,16 +473,31 @@ afterAll(async () => {
 
 beforeEach(() => {
   requests = [];
+  neonMode = false;
+  signedIn = false;
+  currentRole = "owner";
+  members = [{ ...OWNER }, { ...ADMIN }];
   meMode = "success";
+  signInMode = "success";
+  signInMessage = "Invalid email or password.";
+  acceptMode = "success";
+  createMode = "success";
+  changeMode = "success";
+  profileMode = "success";
 });
 
 async function openPage(options: {
   path: string;
   viewport?: { width: number; height: number };
+  permissions?: boolean;
 }) {
   const page = await browser.newPage({
     viewport: options.viewport || { width: 1512, height: 960 },
   });
+  if (options.permissions)
+    await page
+      .context()
+      .grantPermissions(["clipboard-read", "clipboard-write"], { origin });
   const errors: string[] = [];
   const pageRequests: string[] = [];
   const context = page.context();
@@ -211,11 +519,17 @@ async function visible(locator: Locator, timeout = 8_000) {
 }
 
 function unexpectedErrors(errors: string[], allow503 = false) {
-  const unexpected = allow503
-    ? errors.filter(
-        (error) => !/Failed to load resource: .*503 \(Service Unavailable\)/u.test(error),
-      )
-    : errors;
+  const unexpected = errors.filter((error) => {
+    const resource = /Failed to load resource: .*status of (\d{3})/u.exec(
+      error,
+    );
+    if (!resource) return true;
+    const status = Number(resource[1]);
+    if (status === 400 || status === 401 || status === 403 || status === 409)
+      return false;
+    if (status === 503) return !allow503;
+    return true;
+  });
   expect(unexpected).toEqual([]);
 }
 
@@ -227,6 +541,24 @@ async function bodyOverflow(page: Page) {
   }));
 }
 
+function bodyFor(method: string, suffix: string) {
+  return requests.find(
+    (request) => request.method === method && request.path.endsWith(suffix),
+  )?.body;
+}
+
+function lastBodyFor(method: string, suffix: string) {
+  return requests
+    .filter(
+      (request) => request.method === method && request.path.endsWith(suffix),
+    )
+    .at(-1)?.body;
+}
+
+function countRequests(suffix: string) {
+  return requests.filter((request) => request.path.endsWith(suffix)).length;
+}
+
 describe("interim Access identity and unavailable account surfaces", () => {
   it("shows the real verified Access identity as a read-only interim profile", async () => {
     const { page, errors } = await openPage({
@@ -235,12 +567,14 @@ describe("interim Access identity and unavailable account surfaces", () => {
     try {
       const email = page.getByLabel("Verified email address (read-only)");
       await visible(email);
-      await expect(email.inputValue()).resolves.toBe(PRINCIPAL.email);
+      await expect(email.inputValue()).resolves.toBe(ACCESS_PRINCIPAL.email);
       await expect(email.isEditable()).resolves.toBe(false);
       await expect(
-        page.getByText("Persistent account profiles are not enabled yet.", {
-          exact: true,
-        }).count(),
+        page
+          .getByText("Persistent account profiles are not enabled yet.", {
+            exact: true,
+          })
+          .count(),
       ).resolves.toBe(1);
       await expect(
         page.getByText("Name not recorded", { exact: true }).count(),
@@ -252,13 +586,15 @@ describe("interim Access identity and unavailable account surfaces", () => {
         page.getByText("Cloudflare Access", { exact: true }).count(),
       ).resolves.toBe(1);
       const rendered = await page.content();
-      expect(rendered).not.toContain(PRINCIPAL.id);
-      const fullHash = PRINCIPAL.id.slice("access:".length);
+      expect(rendered).not.toContain(ACCESS_PRINCIPAL.id);
+      const fullHash = ACCESS_PRINCIPAL.id.slice("access:".length);
       expect(rendered).not.toContain(fullHash);
       expect(
         await page.getByText("Stable identity", { exact: true }).count(),
       ).toBe(0);
-      const details = page.locator("details", { hasText: "Technical reference" });
+      const details = page.locator("details", {
+        hasText: "Technical reference",
+      });
       await expect(details.getAttribute("open")).resolves.toBeNull();
       await details.locator("summary").click();
       const reference = details.locator("[data-identity-reference]");
@@ -268,6 +604,7 @@ describe("interim Access identity and unavailable account surfaces", () => {
         {
           method: "GET",
           path: "/api/admin/onboarding-invites/workspace/me",
+          body: null,
         },
       ]);
       expect(
@@ -276,8 +613,9 @@ describe("interim Access identity and unavailable account surfaces", () => {
           session: Object.keys(sessionStorage),
         })),
       ).toEqual({ local: [], session: [] });
-      expect(await page.getByText("Browser Admin", { exact: false }).count())
-        .toBe(0);
+      expect(
+        await page.getByText("Browser Admin", { exact: false }).count(),
+      ).toBe(0);
       unexpectedErrors(errors);
     } finally {
       await page.close();
@@ -291,17 +629,19 @@ describe("interim Access identity and unavailable account surfaces", () => {
     });
     try {
       await visible(
-        page.getByText(
-          "The verified Access identity could not be loaded.",
-          { exact: true },
-        ),
+        page.getByText("The verified account could not be loaded.", {
+          exact: true,
+        }),
       );
-      expect(await page.getByText(PRINCIPAL.email, { exact: false }).count())
-        .toBe(0);
-      expect(await page.getByText("Name not recorded", { exact: true }).count())
-        .toBe(0);
-      expect(await page.getByText("Administrator", { exact: true }).count())
-        .toBe(0);
+      expect(
+        await page.getByText(ACCESS_PRINCIPAL.email, { exact: false }).count(),
+      ).toBe(0);
+      expect(
+        await page.getByText("Name not recorded", { exact: true }).count(),
+      ).toBe(0);
+      expect(
+        await page.getByText("Administrator", { exact: true }).count(),
+      ).toBe(0);
       expect(await page.locator("#profile-email").count()).toBe(0);
       meMode = "success";
       await page.getByRole("button", { name: "Retry identity" }).click();
@@ -319,14 +659,16 @@ describe("interim Access identity and unavailable account surfaces", () => {
     });
     try {
       await visible(
-        page.getByText(
-          "The verified Access identity could not be loaded.",
-          { exact: true },
-        ),
+        page.getByText("The verified account could not be loaded.", {
+          exact: true,
+        }),
       );
-      expect(await page.getByText("forged@x", { exact: false }).count()).toBe(0);
-      expect(await page.getByText("Name not recorded", { exact: true }).count())
-        .toBe(0);
+      expect(await page.getByText("forged@x", { exact: false }).count()).toBe(
+        0,
+      );
+      expect(
+        await page.getByText("Name not recorded", { exact: true }).count(),
+      ).toBe(0);
       unexpectedErrors(errors);
     } finally {
       await page.close();
@@ -343,17 +685,24 @@ describe("interim Access identity and unavailable account surfaces", () => {
           exact: true,
         }),
       );
-      expect(await page.getByText("No administrator members", { exact: false })
-        .count()).toBe(1);
-      expect(await page.getByText("No owner controls", { exact: false }).count())
-        .toBe(1);
+      expect(
+        await page
+          .getByText("No administrator members", { exact: false })
+          .count(),
+      ).toBe(1);
+      expect(
+        await page.getByText("No owner controls", { exact: false }).count(),
+      ).toBe(1);
       expect(await page.getByRole("button").count()).toBe(0);
       expect(
         await page.getByText("Invite administrator", { exact: false }).count(),
       ).toBe(0);
-      expect(await page.getByText(PRINCIPAL.email, { exact: false }).count())
-        .toBe(0);
-      expect(requests).toEqual([]);
+      expect(
+        await page.getByText(ACCESS_PRINCIPAL.email, { exact: false }).count(),
+      ).toBe(0);
+      expect(requests.map((request) => request.path)).toEqual([
+        "/api/admin/onboarding-invites/workspace/me",
+      ]);
       unexpectedErrors(errors);
     } finally {
       await page.close();
@@ -438,12 +787,496 @@ describe("interim Access identity and unavailable account surfaces", () => {
         teamMetrics.viewport,
       );
 
-      await page.getByRole("link", { name: "Integrations", exact: true }).click();
+      await page
+        .getByRole("link", { name: "Integrations", exact: true })
+        .click();
       await visible(page.getByText("Not connected", { exact: true }));
       await page.setViewportSize({ width: 320, height: 720 });
       const compact = await bodyOverflow(page);
       expect(compact.documentWidth).toBeLessThanOrEqual(compact.viewport);
       expect(compact.bodyWidth).toBeLessThanOrEqual(compact.viewport);
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+});
+
+describe("Neon account flows", () => {
+  it("signs in with a real password contract and returns to the requested view", async () => {
+    neonMode = true;
+    const { page, errors } = await openPage({
+      path: `/admin/login?returnTo=${encodeURIComponent(RETURN_TO)}`,
+    });
+    try {
+      await visible(
+        page.getByRole("heading", { name: "Sign in to operations" }),
+      );
+      await page.getByLabel("Email address").fill(OWNER.email);
+      await page.getByLabel("Password").fill("correct horse battery");
+      await page.getByRole("button", { name: "Sign in", exact: true }).click();
+      await page.waitForURL(
+        (url) => url.pathname === "/admin/onboarding-invites",
+      );
+      await visible(page.getByLabel("Verified email address (read-only)"));
+      await expect(
+        page.getByLabel("Verified email address (read-only)").inputValue(),
+      ).resolves.toBe(OWNER.email);
+      expect(bodyFor("POST", "/auth/sign-in/email")).toEqual({
+        email: OWNER.email,
+        password: "correct horse battery",
+      });
+      expect(
+        await page.evaluate(() => ({
+          local: Object.keys(localStorage),
+          session: Object.keys(sessionStorage),
+        })),
+      ).toEqual({ local: [], session: [] });
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("shows safe sign-in errors without navigating offsite", async () => {
+    neonMode = true;
+    signInMode = "invalid";
+    signInMessage = "Continue at https://evil.test/steal";
+    const { page, errors } = await openPage({ path: "/admin/login" });
+    try {
+      await visible(
+        page.getByRole("heading", { name: "Sign in to operations" }),
+      );
+      await page.getByLabel("Email address").fill("wrong@example.test");
+      await page.getByLabel("Password").fill("wrong-password");
+      await page.getByRole("button", { name: "Sign in", exact: true }).click();
+      await visible(
+        page.getByText("Continue at https://evil.test/steal", { exact: true }),
+      );
+      expect(new URL(page.url()).pathname).toBe("/admin/login");
+      expect(await page.locator('a[href*="evil.test"]').count()).toBe(0);
+      expect(await page.getByLabel("Email address").inputValue()).toBe(
+        "wrong@example.test",
+      );
+      expect(countRequests("/auth/sign-in/email")).toBe(1);
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("requests a password reset without revealing whether the account exists", async () => {
+    neonMode = true;
+    const { page, errors } = await openPage({ path: "/admin/login" });
+    try {
+      await visible(
+        page.getByRole("heading", { name: "Sign in to operations" }),
+      );
+      await page.getByRole("button", { name: "Forgot your password?" }).click();
+      await page.getByLabel("Email address").fill(OWNER.email);
+      await page.getByRole("button", { name: "Send reset link" }).click();
+      await visible(
+        page.getByText("If that email has an account", { exact: false }),
+      );
+      expect(bodyFor("POST", "/auth/forget-password")).toEqual({
+        email: OWNER.email,
+      });
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("accepts an enrollment once, scrubs the token and stores nothing", async () => {
+    neonMode = true;
+    const { page, errors } = await openPage({
+      path: `/admin/login?enrollment=${ENROLLMENT_TOKEN}&returnTo=${encodeURIComponent(RETURN_TO)}`,
+    });
+    try {
+      await visible(
+        page.getByRole("heading", { name: "Sign in to operations" }),
+      );
+      expect(page.url()).not.toContain(ENROLLMENT_TOKEN);
+      expect(page.url()).not.toContain("enrollment=");
+      await page.getByLabel("Email address").fill(OWNER.email);
+      await page.getByLabel("Password").fill("correct horse battery");
+      await page.getByRole("button", { name: "Sign in", exact: true }).click();
+      await page.waitForURL(
+        (url) => url.pathname === "/admin/onboarding-invites",
+      );
+      await visible(page.getByLabel("Verified email address (read-only)"));
+      expect(bodyFor("POST", "/workspace/enrollments/accept")).toEqual({
+        token: ENROLLMENT_TOKEN,
+      });
+      const state = await page.evaluate(() => ({
+        href: window.location.href,
+        local: Object.keys(localStorage),
+        session: Object.keys(sessionStorage),
+        history: JSON.stringify(window.history.state || {}),
+        content: document.documentElement.innerHTML,
+      }));
+      expect(state.href).not.toContain(ENROLLMENT_TOKEN);
+      expect(state.local).toEqual([]);
+      expect(state.session).toEqual([]);
+      expect(state.history).not.toContain(ENROLLMENT_TOKEN);
+      expect(state.content).not.toContain(ENROLLMENT_TOKEN);
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("accepts directly when a workspace session already exists", async () => {
+    neonMode = true;
+    signedIn = true;
+    const { page, errors } = await openPage({
+      path: `/admin/login?enrollment=${ENROLLMENT_TOKEN}&returnTo=${encodeURIComponent(RETURN_TO)}`,
+    });
+    try {
+      await page.waitForURL(
+        (url) => url.pathname === "/admin/onboarding-invites",
+      );
+      await visible(page.getByLabel("Verified email address (read-only)"));
+      expect(countRequests("/auth/sign-in/email")).toBe(0);
+      expect(bodyFor("POST", "/workspace/enrollments/accept")).toEqual({
+        token: ENROLLMENT_TOKEN,
+      });
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("does not retry an ambiguous enrollment claim", async () => {
+    neonMode = true;
+    signedIn = true;
+    acceptMode = "unavailable";
+    const { page, errors } = await openPage({
+      path: `/admin/login?enrollment=${ENROLLMENT_TOKEN}&returnTo=${encodeURIComponent(RETURN_TO)}`,
+      viewport: { width: 390, height: 844 },
+    });
+    try {
+      await visible(
+        page.getByText("Invitation not confirmed", { exact: true }),
+      );
+      expect(countRequests("/workspace/enrollments/accept")).toBe(1);
+      expect(
+        await page.getByRole("button", { name: /retry|try again/iu }).count(),
+      ).toBe(0);
+      await page.waitForTimeout(300);
+      expect(countRequests("/workspace/enrollments/accept")).toBe(1);
+      expect(page.url()).not.toContain(ENROLLMENT_TOKEN);
+      const metrics = await bodyOverflow(page);
+      expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewport);
+      unexpectedErrors(errors, true);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("explains an invitation email mismatch and offers a different account", async () => {
+    neonMode = true;
+    signedIn = true;
+    acceptMode = "mismatch";
+    const { page, errors } = await openPage({
+      path: `/admin/login?enrollment=${ENROLLMENT_TOKEN}&returnTo=${encodeURIComponent(RETURN_TO)}`,
+    });
+    try {
+      await visible(page.getByText("Different email address", { exact: true }));
+      await visible(
+        page.getByText("belongs to a different verified email", {
+          exact: false,
+        }),
+      );
+      await visible(
+        page.getByRole("button", { name: "Try a different account" }),
+      );
+      expect(countRequests("/workspace/enrollments/accept")).toBe(1);
+      expect(page.url()).not.toContain(ENROLLMENT_TOKEN);
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("lets an owner create, copy and dismiss a one-time enrollment link", async () => {
+    neonMode = true;
+    signedIn = true;
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=team",
+      permissions: true,
+    });
+    try {
+      await visible(page.getByText("2 active members", { exact: true }));
+      await page
+        .getByLabel("Invitation email")
+        .fill("new-admin@launchloom.test");
+      await page
+        .getByRole("button", { name: "Create enrollment link" })
+        .click();
+      const link = page.getByLabel("One-time enrollment link");
+      await visible(link);
+      await expect(link.inputValue()).resolves.toContain(
+        `/admin/login?enrollment=${ENROLLMENT_TOKEN}`,
+      );
+      expect(bodyFor("POST", "/team/enrollments")).toEqual({
+        email: "new-admin@launchloom.test",
+      });
+      await page
+        .getByRole("button", { name: "Copy link", exact: true })
+        .click();
+      await visible(page.getByText("Copied to clipboard", { exact: false }));
+      await page.getByRole("button", { name: "Create another link" }).click();
+      await expect(
+        page.getByLabel("One-time enrollment link").count(),
+      ).resolves.toBe(0);
+      await expect(
+        page
+          .getByRole("button", { name: "Create enrollment link" })
+          .isEnabled(),
+      ).resolves.toBe(true);
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("lets an owner change roles and deactivate a non-last owner", async () => {
+    neonMode = true;
+    signedIn = true;
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=team",
+    });
+    try {
+      await visible(page.getByText("2 active members", { exact: true }));
+      await page.getByLabel("Role for Amara Admin").selectOption("owner");
+      await visible(
+        page.getByText("Change Amara Admin to Owner?", { exact: true }),
+      );
+      await page.getByRole("button", { name: "Confirm change" }).click();
+      await visible(
+        page.getByText("Amara Admin is now owner.", { exact: true }),
+      );
+      expect(bodyFor("PATCH", "/team/subject-admin")).toEqual({
+        role: "owner",
+      });
+
+      await page
+        .getByRole("button", { name: "Deactivate Amara Admin" })
+        .click();
+      await visible(
+        page.getByText(
+          "Deactivate Amara Admin? They lose workspace access immediately.",
+          {
+            exact: true,
+          },
+        ),
+      );
+      await page.getByRole("button", { name: "Confirm change" }).click();
+      await visible(
+        page.getByText("Amara Admin was deactivated", { exact: false }),
+      );
+      await expect(
+        page.getByText("Amara Admin", { exact: true }).count(),
+      ).resolves.toBe(0);
+      expect(lastBodyFor("PATCH", "/team/subject-admin")).toEqual({
+        active: false,
+      });
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("shows the server last-owner protection instead of pretending success", async () => {
+    neonMode = true;
+    signedIn = true;
+    changeMode = "last_owner";
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=team",
+    });
+    try {
+      await visible(page.getByText("2 active members", { exact: true }));
+      await page.getByRole("button", { name: "Deactivate Dev Owner" }).click();
+      await page.getByRole("button", { name: "Confirm change" }).click();
+      await visible(
+        page.getByText("At least one active owner is required.", {
+          exact: true,
+        }),
+      );
+      await visible(page.getByRole("button", { name: "Confirm change" }));
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps team controls read-only for an admin", async () => {
+    neonMode = true;
+    signedIn = true;
+    currentRole = "admin";
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=team",
+    });
+    try {
+      await visible(
+        page.getByText("Only an owner can change membership", { exact: false }),
+      );
+      await expect(
+        page.getByText("2 active members", { exact: true }).count(),
+      ).resolves.toBe(1);
+      await expect(page.getByLabel("Invitation email").count()).resolves.toBe(
+        0,
+      );
+      await expect(
+        page.getByRole("button", { name: "Create enrollment link" }).count(),
+      ).resolves.toBe(0);
+      await expect(
+        page.getByRole("button", { name: /^Deactivate/ }).count(),
+      ).resolves.toBe(0);
+      await expect(
+        page.locator('select[id^="member-role-"]').count(),
+      ).resolves.toBe(0);
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("saves the real display name and shows server errors", async () => {
+    neonMode = true;
+    signedIn = true;
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=settings",
+    });
+    try {
+      const name = page.getByLabel("Display name");
+      await visible(name);
+      await expect(name.inputValue()).resolves.toBe(OWNER.displayName);
+      await expect(
+        page.getByLabel("Verified email address (read-only)").inputValue(),
+      ).resolves.toBe(OWNER.email);
+      await expect(
+        page.getByText("Neon account", { exact: true }).count(),
+      ).resolves.toBe(1);
+      await expect(
+        page.getByText("Owner", { exact: true }).count(),
+      ).resolves.toBe(1);
+      await name.fill("Avery Owner");
+      await page.getByLabel("Avatar key (optional)").fill("sage-circle");
+      await page.getByRole("button", { name: "Save profile" }).click();
+      await visible(page.getByText("Profile saved.", { exact: false }));
+      expect(bodyFor("PATCH", "/workspace/me")).toEqual({
+        displayName: "Avery Owner",
+        avatarKey: "sage-circle",
+      });
+
+      profileMode = "invalid";
+      await name.fill("Bad");
+      await page.getByRole("button", { name: "Save profile" }).click();
+      await visible(
+        page.getByText("Display name must be 1 to 100 characters.", {
+          exact: true,
+        }),
+      );
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("signs out through the provider proxy and returns to the login view", async () => {
+    neonMode = true;
+    signedIn = true;
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=settings",
+    });
+    try {
+      await page.getByRole("button", { name: "Sign out" }).click();
+      await page.waitForURL((url) => url.pathname === "/admin/login");
+      await visible(
+        page.getByRole("heading", { name: "Sign in to operations" }),
+      );
+      expect(countRequests("/auth/sign-out")).toBe(1);
+      expect(signedIn).toBe(false);
+      expect(
+        await page.evaluate(() => ({
+          local: Object.keys(localStorage),
+          session: Object.keys(sessionStorage),
+        })),
+      ).toEqual({ local: [], session: [] });
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("routes an expired protected session to the login view", async () => {
+    neonMode = true;
+    signedIn = false;
+    meMode = "signed_out";
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=settings",
+    });
+    try {
+      await page.waitForURL((url) => url.pathname === "/admin/login");
+      await visible(
+        page.getByRole("heading", { name: "Sign in to operations" }),
+      );
+      const target = new URL(page.url());
+      expect(target.searchParams.get("returnTo")).toBe(
+        "/admin/onboarding-invites?view=settings",
+      );
+      unexpectedErrors(errors, true);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("stays usable and free of overflow for Neon team, profile and login at mobile widths", async () => {
+    neonMode = true;
+    signedIn = true;
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=team",
+      viewport: { width: 390, height: 844 },
+    });
+    try {
+      await visible(page.getByText("2 active members", { exact: true }));
+      const metrics = await bodyOverflow(page);
+      expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewport);
+      await page.getByRole("link", { name: "Settings", exact: true }).click();
+      await visible(page.getByLabel("Display name"));
+      await page.setViewportSize({ width: 320, height: 720 });
+      const compact = await bodyOverflow(page);
+      expect(compact.documentWidth).toBeLessThanOrEqual(compact.viewport);
+      await expect
+        .poll(
+          () =>
+            page.evaluate(() => {
+              const nav = document.querySelector(".admin-nav");
+              const current = nav?.querySelector<HTMLElement>(
+                '[aria-current="page"]',
+              );
+              if (!nav || !current) return false;
+              const navBox = nav.getBoundingClientRect();
+              const activeBox = current.getBoundingClientRect();
+              return (
+                activeBox.left >= navBox.left - 1 &&
+                activeBox.right <= navBox.right + 1
+              );
+            }),
+          { timeout: 3_000 },
+        )
+        .toBe(true);
+      signedIn = false;
+      await page.goto(`${origin}/admin/login`, {
+        waitUntil: "domcontentloaded",
+      });
+      await visible(
+        page.getByRole("heading", { name: "Sign in to operations" }),
+      );
+      const login = await bodyOverflow(page);
+      expect(login.documentWidth).toBeLessThanOrEqual(login.viewport);
       unexpectedErrors(errors);
     } finally {
       await page.close();

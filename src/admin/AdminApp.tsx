@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createAdminApi } from "./api";
+import { ADMIN_UNAUTHORIZED_EVENT, createAdminApi } from "./api";
 import { ClientsView } from "./ClientsView";
 import { GenerationsView } from "./GenerationsView";
 import { IntegrationsView } from "./IntegrationsView";
@@ -62,7 +62,7 @@ const VIEW_COPY: Record<
     label: "Team",
     title: "Team and profiles",
     description:
-      "Owner and admin membership will be managed here after the account flow is verified.",
+      "Owners manage workspace membership and roles. Admins can review the same shared records and edit their own profile.",
   },
   integrations: {
     label: "Integrations",
@@ -74,7 +74,7 @@ const VIEW_COPY: Record<
     label: "Settings",
     title: "Workspace settings",
     description:
-      "The current verified Access identity and workspace visibility in this interim mode.",
+      "Your verified account profile, role and sign-in controls for this workspace.",
   },
 };
 
@@ -106,6 +106,21 @@ export function AdminApp() {
   const [state, setState, cursorTrail, setCursorTrail] = useRouteState();
   const [api] = useState(createAdminApi);
   const copy = VIEW_COPY[state.view];
+
+  useEffect(() => {
+    const onUnauthorized = () => {
+      if (window.location.pathname.startsWith("/admin/login")) return;
+      const login = new URL("/admin/login", window.location.origin);
+      login.searchParams.set(
+        "returnTo",
+        `${window.location.pathname}${window.location.search}`,
+      );
+      window.location.assign(`${login.pathname}${login.search}`);
+    };
+    window.addEventListener(ADMIN_UNAUTHORIZED_EVENT, onUnauthorized);
+    return () =>
+      window.removeEventListener(ADMIN_UNAUTHORIZED_EVENT, onUnauthorized);
+  }, []);
 
   function commit(next: AdminRouteState, options: NavigateOptions = {}) {
     const trail = options.cursorTrail ?? cursorTrail;
@@ -155,32 +170,12 @@ export function AdminApp() {
       ) : state.view === "invitations" ? (
         <InvitationsView api={api} />
       ) : state.view === "team" ? (
-        <TeamView />
+        <TeamView api={api} />
       ) : state.view === "integrations" ? (
         <IntegrationsView />
       ) : (
         <ProfileView api={api} />
       )}
     </WorkspaceShell>
-  );
-}
-
-export function AdminLoginPlaceholder() {
-  useEffect(() => {
-    document.title = "Sign in | LaunchLoom";
-  }, []);
-
-  return (
-    <main className="admin-auth">
-      <div className="admin-auth__card">
-        <p className="admin-eyebrow">LaunchLoom</p>
-        <h1>LaunchLoom admin</h1>
-        <p>Sign in with your approved admin account.</p>
-        <p className="admin-auth__note">
-          Account sign-in is not enabled in this shell preview. The public admin
-          assets contain no account or client data.
-        </p>
-      </div>
-    </main>
   );
 }

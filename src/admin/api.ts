@@ -11,10 +11,17 @@ import type {
 } from "../lib/admin-contracts";
 
 const ADMIN_API_PREFIX = "/api/admin/";
-const WORKSPACE_PREFIX =
-  "/api/admin/onboarding-invites/workspace";
+const WORKSPACE_PREFIX = "/api/admin/onboarding-invites/workspace";
+const AUTH_PREFIX = "/api/admin/onboarding-invites/auth";
 const LEGACY_INVITES_PATH = "/api/admin/onboarding-invites";
 const MAX_ERROR_MESSAGE = 300;
+
+/**
+ * Same-window signal for an expired/lost workspace session. The workspace
+ * owner listens and routes back to the login shell; the login page never
+ * dispatches it.
+ */
+export const ADMIN_UNAUTHORIZED_EVENT = "launchloom:admin-unauthorized";
 
 type ErrorEnvelope = {
   error?: {
@@ -126,6 +133,15 @@ export async function fetchAdmin<T>(
 
   if (!response.ok) {
     const envelope = errorEnvelope(text);
+    if (
+      response.status === 401 &&
+      !path.startsWith(`${AUTH_PREFIX}/`) &&
+      typeof window !== "undefined" &&
+      typeof document !== "undefined" &&
+      document.body?.dataset.adminView === "workspace"
+    ) {
+      window.dispatchEvent(new CustomEvent(ADMIN_UNAUTHORIZED_EVENT));
+    }
     throw new ApiRequestError(
       response.status,
       safeCode(envelope.error?.code),
@@ -182,6 +198,57 @@ export type AccessModePrincipal = {
   authSource: "cloudflare-access";
 };
 
+/** Verified persistent identity. `displayName` is the stored profile name. */
+export type NeonIdentity = {
+  id: string;
+  email: string;
+  displayName: string;
+  role: "owner" | "admin";
+  authSource: "neon";
+};
+
+/** Active membership row returned by `/workspace/me` and `/workspace/team`. */
+export type NeonMember = NeonIdentity & {
+  active: boolean;
+  createdAt: number;
+  updatedAt: number;
+  initials: string;
+  avatarKey: string | null;
+};
+
+/** The principal shape differs by the server's configured auth mode. */
+export type WorkspacePrincipal = AccessModePrincipal | NeonMember;
+
+export type EnrollmentLink = {
+  id: string;
+  url: string;
+  expiresAt: number;
+};
+
+export type TeamMember = NeonMember;
+
+export type AuthUser = {
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  name: string;
+};
+
+export type AuthResult = {
+  user: AuthUser | null;
+  session: { expiresAt: number } | null;
+};
+
+export type MemberChange = {
+  role?: "owner" | "admin";
+  active?: boolean;
+};
+
+export type ProfileUpdate = {
+  displayName?: string;
+  avatarKey?: string | null;
+};
+
 /** Legacy invitation list row. Creator is absent unless the server recorded it. */
 export type LegacyInvite = {
   inviteId: string;
@@ -209,34 +276,66 @@ export type BackfillResult = { backfilled: number; remaining: number };
 export type RecoveryResult = { issue: number; duplicate: boolean };
 
 /**
- * Workspace API used by the implemented views. Membership, enrollment and
- * sign-in are deliberately absent while persistent accounts are blocked.
+ * Workspace API used by the implemented views. Account calls are same-origin
+ * cookie flows only; no provider token is read, stored or returned here.
  */
 export type AdminApi = {
-  getMe(options?: AdminRequestOptions): Promise<AccessModePrincipal>;
+  getMe(options?: AdminRequestOptions): Promise<WorkspacePrincipal>;
   listInvites(options?: AdminRequestOptions): Promise<LegacyInvite[]>;
   createInvite(
     clientEmail: string | null,
     options?: AdminRequestOptions,
   ): Promise<CreatedInvite>;
-  revokeInvite(
-    inviteId: string,
-    options?: AdminRequestOptions,
-  ): Promise<void>;
+  revokeInvite(inviteId: string, options?: AdminRequestOptions): Promise<void>;
   backfillInvites(options?: AdminRequestOptions): Promise<BackfillResult>;
   recoverInviteIntake(
     inviteId: string,
     issueNumber: number,
     options?: AdminRequestOptions,
   ): Promise<RecoveryResult>;
+  getTeam(options?: AdminRequestOptions): Promise<TeamMember[]>;
+  createEnrollment(
+    email: string,
+    options?: AdminRequestOptions,
+  ): Promise<EnrollmentLink>;
+  changeMember(
+    id: string,
+    change: MemberChange,
+    options?: AdminRequestOptions,
+  ): Promise<TeamMember>;
+  updateProfile(
+    update: ProfileUpdate,
+    options?: AdminRequestOptions,
+  ): Promise<NeonMember>;
+  updateOwnProfile(
+    update: ProfileUpdate,
+    options?: AdminRequestOptions,
+  ): Promise<NeonMember>;
+  acceptEnrollment(
+    token: string,
+    options?: AdminRequestOptions,
+  ): Promise<NeonIdentity>;
+  signIn(
+    email: string,
+    password: string,
+    options?: AdminRequestOptions,
+  ): Promise<AuthResult>;
+  signOut(options?: AdminRequestOptions): Promise<void>;
+  requestPasswordReset(
+    email: string,
+    options?: AdminRequestOptions,
+  ): Promise<void>;
+  resetPassword(
+    token: string,
+    newPassword: string,
+    options?: AdminRequestOptions,
+  ): Promise<void>;
+  verifyEmail(token: string, options?: AdminRequestOptions): Promise<void>;
   listAttempts(
     filters: AttemptFilters,
     options?: AdminRequestOptions,
   ): Promise<Page<AttemptSummary>>;
-  getAttempt(
-    id: string,
-    options?: AdminRequestOptions,
-  ): Promise<AttemptDetail>;
+  getAttempt(id: string, options?: AdminRequestOptions): Promise<AttemptDetail>;
   getAttemptEvents(
     id: string,
     cursor?: string | null,
@@ -247,10 +346,7 @@ export type AdminApi = {
     filters: ClientFilters,
     options?: AdminRequestOptions,
   ): Promise<ClientPage>;
-  getClient(
-    id: string,
-    options?: AdminRequestOptions,
-  ): Promise<ClientRecord>;
+  getClient(id: string, options?: AdminRequestOptions): Promise<ClientRecord>;
   getHealth(options?: AdminRequestOptions): Promise<Health>;
 };
 
@@ -273,8 +369,7 @@ function isHealth(value: unknown): value is Health {
   return (
     isRecord(value) &&
     (value.lastSyncAt === null || typeof value.lastSyncAt === "number") &&
-    (value.coverageStart === null ||
-      typeof value.coverageStart === "number") &&
+    (value.coverageStart === null || typeof value.coverageStart === "number") &&
     typeof value.partial === "boolean" &&
     (value.lastError === null || typeof value.lastError === "string") &&
     typeof value.pendingProjectionCount === "number" &&
@@ -292,9 +387,7 @@ function isAttemptEnvelope(
   );
 }
 
-function isClientEnvelope(
-  value: unknown,
-): value is { client: ClientRecord } {
+function isClientEnvelope(value: unknown): value is { client: ClientRecord } {
   return (
     isRecord(value) &&
     isRecord(value.client) &&
@@ -303,10 +396,7 @@ function isClientEnvelope(
 }
 
 function isClientPage(value: unknown): value is ClientPage {
-  return (
-    isPageShape(value) &&
-    isHealth((value as { health?: unknown }).health)
-  );
+  return isPageShape(value) && isHealth((value as { health?: unknown }).health);
 }
 
 function isAccessModePrincipal(value: unknown): value is AccessModePrincipal {
@@ -322,10 +412,113 @@ function isAccessModePrincipal(value: unknown): value is AccessModePrincipal {
   );
 }
 
+function isSiteId(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 200 &&
+    !/[\u0000-\u001f\u007f]/u.test(value)
+  );
+}
+
+function isRole(value: unknown): value is "owner" | "admin" {
+  return value === "owner" || value === "admin";
+}
+
+function isNeonIdentity(value: unknown): value is NeonIdentity {
+  return (
+    isRecord(value) &&
+    isSiteId(value.id) &&
+    isSiteId(value.email) &&
+    value.email.includes("@") &&
+    typeof value.displayName === "string" &&
+    value.displayName.trim().length > 0 &&
+    isRole(value.role) &&
+    value.authSource === "neon"
+  );
+}
+
+function isNeonMember(value: unknown): value is NeonMember {
+  if (!isRecord(value) || !isNeonIdentity(value)) return false;
+  const member = value as Record<string, unknown>;
+  return (
+    typeof member.active === "boolean" &&
+    typeof member.createdAt === "number" &&
+    Number.isFinite(member.createdAt) &&
+    typeof member.updatedAt === "number" &&
+    Number.isFinite(member.updatedAt) &&
+    typeof member.initials === "string" &&
+    (member.avatarKey === null || typeof member.avatarKey === "string")
+  );
+}
+
+function isWorkspacePrincipal(value: unknown): value is WorkspacePrincipal {
+  return isAccessModePrincipal(value) || isNeonMember(value);
+}
+
 function isPrincipalEnvelope(
   value: unknown,
-): value is { principal: AccessModePrincipal } {
-  return isRecord(value) && isAccessModePrincipal(value.principal);
+): value is { principal: WorkspacePrincipal } {
+  return isRecord(value) && isWorkspacePrincipal(value.principal);
+}
+
+function isNeonPrincipalEnvelope(
+  value: unknown,
+): value is { principal: NeonIdentity } {
+  return isRecord(value) && isNeonIdentity(value.principal);
+}
+
+function isMemberEnvelope(value: unknown): value is { member: TeamMember } {
+  return isRecord(value) && isNeonMember(value.member);
+}
+
+function isTeamPayload(value: unknown): value is { members: TeamMember[] } {
+  return (
+    isRecord(value) &&
+    Array.isArray(value.members) &&
+    value.members.every(isNeonMember)
+  );
+}
+
+function isEnrollmentLink(value: unknown): value is EnrollmentLink {
+  return (
+    isRecord(value) &&
+    isSiteId(value.id) &&
+    typeof value.url === "string" &&
+    value.url.length > 0 &&
+    value.url.length <= 2_048 &&
+    typeof value.expiresAt === "number" &&
+    Number.isFinite(value.expiresAt)
+  );
+}
+
+function isEnrollmentPayload(
+  value: unknown,
+): value is { enrollment: EnrollmentLink } {
+  return isRecord(value) && isEnrollmentLink(value.enrollment);
+}
+
+function isAuthResult(value: unknown): value is AuthResult {
+  if (!isRecord(value)) return false;
+  const user = value.user;
+  const session = value.session;
+  const userOk =
+    user === null ||
+    (isRecord(user) &&
+      isSiteId(user.id) &&
+      isSiteId(user.email) &&
+      typeof user.emailVerified === "boolean" &&
+      typeof user.name === "string");
+  const sessionOk =
+    session === null ||
+    (isRecord(session) &&
+      typeof session.expiresAt === "number" &&
+      Number.isFinite(session.expiresAt));
+  return userOk && sessionOk;
+}
+
+function isOkBody(value: unknown): value is { ok: true } {
+  return isRecord(value) && value.ok === true;
 }
 
 function isActor(value: unknown): value is ActorSnapshot {
@@ -505,9 +698,58 @@ export function createAdminApi(
       validate,
     });
 
+  const send = <T>(
+    path: string,
+    method: "GET" | "POST" | "PATCH",
+    body: Record<string, unknown> | undefined,
+    options: AdminRequestOptions | undefined,
+    validate: (value: unknown) => value is T,
+  ) =>
+    fetcher<T>(path, {
+      method,
+      ...(body === undefined
+        ? {}
+        : {
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }),
+      signal: options?.signal,
+      validate,
+    });
+
+  const authPost = <T>(
+    route: string,
+    body: Record<string, unknown>,
+    options: AdminRequestOptions | undefined,
+    validate: (value: unknown) => value is T,
+  ) => send<T>(`${AUTH_PREFIX}/${route}`, "POST", body, options, validate);
+
+  const updateProfileRequest = async (
+    update: ProfileUpdate,
+    options: AdminRequestOptions | undefined,
+  ) => {
+    const body: Record<string, unknown> = {};
+    if (update.displayName !== undefined) body.displayName = update.displayName;
+    if (update.avatarKey !== undefined) body.avatarKey = update.avatarKey;
+    const payload = await send<{ principal: WorkspacePrincipal }>(
+      `${WORKSPACE_PREFIX}/me`,
+      "PATCH",
+      body,
+      options,
+      isPrincipalEnvelope,
+    );
+    if (!isNeonMember(payload.principal))
+      throw new ApiRequestError(
+        200,
+        "invalid_response",
+        "The profile response had an unexpected shape.",
+      );
+    return payload.principal;
+  };
+
   return {
     async getMe(options) {
-      const payload = await fetcher<{ principal: AccessModePrincipal }>(
+      const payload = await fetcher<{ principal: WorkspacePrincipal }>(
         `${WORKSPACE_PREFIX}/me`,
         { signal: options?.signal, validate: isPrincipalEnvelope },
       );
@@ -531,8 +773,7 @@ export function createAdminApi(
       await post<{ ok: true }>(
         { action: "revoke", inviteId },
         options,
-        (value): value is { ok: true } =>
-          isRecord(value) && value.ok === true,
+        (value): value is { ok: true } => isRecord(value) && value.ok === true,
       );
     },
     backfillInvites(options) {
@@ -552,6 +793,98 @@ export function createAdminApi(
         },
         options,
         isRecoveryResult,
+      );
+    },
+    async getTeam(options) {
+      const payload = await send<{ members: TeamMember[] }>(
+        `${WORKSPACE_PREFIX}/team`,
+        "GET",
+        undefined,
+        options,
+        isTeamPayload,
+      );
+      return payload.members;
+    },
+    async createEnrollment(email, options) {
+      const payload = await send<{ enrollment: EnrollmentLink }>(
+        `${WORKSPACE_PREFIX}/team/enrollments`,
+        "POST",
+        { email: email.trim().toLowerCase() },
+        options,
+        isEnrollmentPayload,
+      );
+      return payload.enrollment;
+    },
+    async changeMember(id, change, options) {
+      const body: Record<string, unknown> = {};
+      if (change.role !== undefined) body.role = change.role;
+      if (change.active !== undefined) body.active = change.active;
+      const payload = await send<{ member: TeamMember }>(
+        `${WORKSPACE_PREFIX}/team/${encodeURIComponent(id)}`,
+        "PATCH",
+        body,
+        options,
+        isMemberEnvelope,
+      );
+      return payload.member;
+    },
+    async updateProfile(update, options) {
+      return updateProfileRequest(update, options);
+    },
+    updateOwnProfile(update, options) {
+      return updateProfileRequest(update, options);
+    },
+    async acceptEnrollment(token, options) {
+      const payload = await send<{ principal: NeonIdentity }>(
+        `${WORKSPACE_PREFIX}/enrollments/accept`,
+        "POST",
+        { token },
+        options,
+        isNeonPrincipalEnvelope,
+      );
+      return payload.principal;
+    },
+    async signIn(email, password, options) {
+      const payload = await authPost<AuthResult>(
+        "sign-in/email",
+        { email: email.trim().toLowerCase(), password },
+        options,
+        isAuthResult,
+      );
+      if (!payload.user)
+        throw new ApiRequestError(
+          200,
+          "auth_failed",
+          "Sign-in did not return an account.",
+        );
+      return payload;
+    },
+    async signOut(options) {
+      await authPost<{ ok: true }>("sign-out", {}, options, isOkBody);
+    },
+    async requestPasswordReset(email, options) {
+      await authPost<{ ok: true }>(
+        "forget-password",
+        { email: email.trim().toLowerCase() },
+        options,
+        isOkBody,
+      );
+    },
+    async resetPassword(token, newPassword, options) {
+      await authPost<{ ok: true }>(
+        "reset-password",
+        { token, newPassword },
+        options,
+        isOkBody,
+      );
+    },
+    async verifyEmail(token, options) {
+      await send<{ ok: true }>(
+        `${AUTH_PREFIX}/verify-email?token=${encodeURIComponent(token)}`,
+        "GET",
+        undefined,
+        options,
+        isOkBody,
       );
     },
     listAttempts(filters, options) {
