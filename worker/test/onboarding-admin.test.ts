@@ -334,6 +334,87 @@ function recoveryAdminRequest(inviteId: string, issueNumber: number, confirmed =
   return new Request(`${apiOrigin}/api/admin/onboarding-invites`, {method: "POST",headers:{Origin:apiOrigin,"Content-Type":"application/json"},body:JSON.stringify({action:"recover-intake",inviteId,issueNumber,confirmed})});
 }
 
+describe("interim Access principal", () => {
+  const meUrl = `${apiOrigin}/api/admin/onboarding-invites/workspace/me`;
+
+  async function expectedId(email: string) {
+    const bytes = new Uint8Array(
+      await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(email),
+      ),
+    );
+    return `access:${[...bytes]
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("")}`;
+  }
+
+  it("returns only the verified Access principal and ignores browser identity", async () => {
+    const response = await worker.fetch(
+      new Request(`${meUrl}?email=forged@example.test`, {
+        headers: {
+          Origin: apiOrigin,
+          "X-Admin-Email": "forged@example.test",
+          "X-Access-Email": "forged@example.test",
+        },
+      }),
+      testEnv,
+      accessContext(" Admin@Example.test "),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(response.headers.get("Content-Type")).toBe("application/json");
+    const payload = (await response.json()) as {
+      principal: Record<string, unknown>;
+    };
+    expect(payload).toEqual({
+      principal: {
+        id: await expectedId("admin@example.test"),
+        email: "admin@example.test",
+        displayName: null,
+        role: "admin",
+        authSource: "cloudflare-access",
+      },
+    });
+    expect(JSON.stringify(payload)).not.toContain("forged");
+    expect(payload.principal).not.toHaveProperty("owner");
+
+    const denied = await worker.fetch(
+      new Request(meUrl, { headers: { Origin: apiOrigin } }),
+      testEnv,
+      accessContext("other@example.test"),
+    );
+    expect(denied.status).toBe(403);
+    const wrongAudience = await worker.fetch(
+      new Request(meUrl),
+      testEnv,
+      accessContext("admin@example.test", "wrong-audience"),
+    );
+    expect(wrongAudience.status).toBe(403);
+    const signedOut = await worker.fetch(
+      new Request(meUrl),
+      testEnv,
+      {} as ExecutionContext,
+    );
+    expect(signedOut.status).toBe(401);
+  });
+
+  it("does not fabricate a principal when Neon mode is selected", async () => {
+    const response = await worker.fetch(
+      new Request(meUrl),
+      { ...testEnv, ADMIN_AUTH_MODE: "neon" } as Env,
+      accessContext("admin@example.test"),
+    );
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "not_enabled",
+        message: "Persistent account profiles are not enabled.",
+      },
+    });
+  });
+});
+
 describe("operator-confirmed intake reconciliation", () => {
   it("binds a verified legacy issue with an audit receipt and delivers its outbox once", async () => {
     const inviteId = "invite-admin-recovery-001";

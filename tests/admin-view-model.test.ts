@@ -272,11 +272,13 @@ describe("admin API contracts", () => {
         if (url.endsWith("/health")) return json(fixtureHealth());
         if (url.endsWith("/me"))
           return json({
-            id: "admin:1",
-            email: "admin@example.test",
-            displayName: "Admin",
-            role: "admin",
-            authSource: "cloudflare-access",
+            principal: {
+              id: `access:${"a".repeat(64)}`,
+              email: "admin@example.test",
+              displayName: null,
+              role: "admin",
+              authSource: "cloudflare-access",
+            },
           });
         return json({
           items: [{ attemptId: "attempt-1" }],
@@ -302,7 +304,11 @@ describe("admin API contracts", () => {
       clientId: "submission:client-a",
     });
     await expect(api.getHealth()).resolves.toMatchObject({ partial: false });
-    await expect(api.getMe()).resolves.toMatchObject({ id: "admin:1" });
+    await expect(api.getMe()).resolves.toMatchObject({
+      email: "admin@example.test",
+      displayName: null,
+      role: "admin",
+    });
     expect(requested).toEqual(
       expect.arrayContaining([
         "/api/admin/onboarding-invites/workspace/attempts?executionStatus=failed&limit=25",

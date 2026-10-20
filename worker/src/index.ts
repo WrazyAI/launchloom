@@ -303,12 +303,14 @@ async function authenticatedWorkspace(request: Request, env: Env, ctx: Execution
   const origin = request.headers.get("Origin");
   if (origin && origin !== new URL(request.url).origin) return workspaceError("forbidden","Invalid request origin.",403);
   if (!ctx.access) return workspaceError("signed_out","Sign in required.",401);
+  let verifiedEmail = "";
   try {
-    if (!(await accessAdminEmail(ctx,env))) return workspaceError("forbidden","Access denied.",403);
+    verifiedEmail = await accessAdminEmail(ctx,env);
   } catch {
     return workspaceError("unavailable","Workspace authorization is temporarily unavailable.",503);
   }
-  return workspaceApi(request,env);
+  if (!verifiedEmail) return workspaceError("forbidden","Access denied.",403);
+  return workspaceApi(request,env,verifiedEmail);
 }
 
 async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
@@ -3665,6 +3667,15 @@ export default {
     if (path === "/api/onboarding-invites/validate")
       return inviteValidation(request, env);
     if (path.startsWith("/api/admin/onboarding-invites/workspace/")) {
+      if (
+        path === "/api/admin/onboarding-invites/workspace/me" &&
+        env.ADMIN_AUTH_MODE === "neon"
+      )
+        return workspaceError(
+          "not_enabled",
+          "Persistent account profiles are not enabled.",
+          503,
+        );
       return authenticatedWorkspace(request,env,ctx);
     }
     if (path === "/api/admin/onboarding-invites")

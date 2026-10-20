@@ -1,5 +1,5 @@
 import type {
-  AdminPrincipal,
+  ActorSnapshot,
   AttemptDetail,
   AttemptEventRecord,
   AttemptFilters,
@@ -13,6 +13,7 @@ import type {
 const ADMIN_API_PREFIX = "/api/admin/";
 const WORKSPACE_PREFIX =
   "/api/admin/onboarding-invites/workspace";
+const LEGACY_INVITES_PATH = "/api/admin/onboarding-invites";
 const MAX_ERROR_MESSAGE = 300;
 
 type ErrorEnvelope = {
@@ -169,12 +170,65 @@ export type AdminRequestOptions = {
 export type ClientPage = Page<ClientRecord> & { health: Health };
 
 /**
- * Read-only workspace API used by the implemented views. `getMe` is part of
- * the shared contract for the accounts rollout; the Access-mode shell keeps
- * its neutral identity and does not call it or invent a profile.
+ * Interim Access-mode identity. The stable id is server-derived; no browser
+ * field can choose it. `displayName` remains null until persistent profiles
+ * are enabled, so the UI never invents a name.
+ */
+export type AccessModePrincipal = {
+  id: string;
+  email: string;
+  displayName: string | null;
+  role: "admin";
+  authSource: "cloudflare-access";
+};
+
+/** Legacy invitation list row. Creator is absent unless the server recorded it. */
+export type LegacyInvite = {
+  inviteId: string;
+  clientEmail: string | null;
+  submitterEmail: string | null;
+  expiresAt: number;
+  status: string;
+  createdAt: number;
+  updatedAt: number;
+  submissionId: string | null;
+  issueNumber: number | null;
+  recoveryRequired: boolean;
+  recoveryAttempts: number | null;
+  creator: ActorSnapshot | null;
+};
+
+export type CreatedInvite = {
+  inviteId: string;
+  clientEmail: string | null;
+  expiresAt: number;
+  url: string;
+};
+
+export type BackfillResult = { backfilled: number; remaining: number };
+export type RecoveryResult = { issue: number; duplicate: boolean };
+
+/**
+ * Workspace API used by the implemented views. Membership, enrollment and
+ * sign-in are deliberately absent while persistent accounts are blocked.
  */
 export type AdminApi = {
-  getMe(options?: AdminRequestOptions): Promise<AdminPrincipal>;
+  getMe(options?: AdminRequestOptions): Promise<AccessModePrincipal>;
+  listInvites(options?: AdminRequestOptions): Promise<LegacyInvite[]>;
+  createInvite(
+    clientEmail: string | null,
+    options?: AdminRequestOptions,
+  ): Promise<CreatedInvite>;
+  revokeInvite(
+    inviteId: string,
+    options?: AdminRequestOptions,
+  ): Promise<void>;
+  backfillInvites(options?: AdminRequestOptions): Promise<BackfillResult>;
+  recoverInviteIntake(
+    inviteId: string,
+    issueNumber: number,
+    options?: AdminRequestOptions,
+  ): Promise<RecoveryResult>;
   listAttempts(
     filters: AttemptFilters,
     options?: AdminRequestOptions,
@@ -255,14 +309,131 @@ function isClientPage(value: unknown): value is ClientPage {
   );
 }
 
-function isPrincipal(value: unknown): value is AdminPrincipal {
+function isAccessModePrincipal(value: unknown): value is AccessModePrincipal {
   return (
     isRecord(value) &&
     typeof value.id === "string" &&
+    /^access:[a-f0-9]{64}$/u.test(value.id) &&
     typeof value.email === "string" &&
-    typeof value.displayName === "string" &&
-    (value.role === "owner" || value.role === "admin") &&
-    (value.authSource === "neon" || value.authSource === "cloudflare-access")
+    value.email.length > 0 &&
+    (value.displayName === null || typeof value.displayName === "string") &&
+    value.role === "admin" &&
+    value.authSource === "cloudflare-access"
+  );
+}
+
+function isPrincipalEnvelope(
+  value: unknown,
+): value is { principal: AccessModePrincipal } {
+  return isRecord(value) && isAccessModePrincipal(value.principal);
+}
+
+function isActor(value: unknown): value is ActorSnapshot {
+  return (
+    isRecord(value) &&
+    (value.kind === "admin" ||
+      value.kind === "client" ||
+      value.kind === "github" ||
+      value.kind === "system" ||
+      value.kind === "unknown") &&
+    (value.id === null || typeof value.id === "string") &&
+    (value.name === null || typeof value.name === "string") &&
+    (value.email === null || typeof value.email === "string") &&
+    (value.source === "neon" ||
+      value.source === "cloudflare-access" ||
+      value.source === "intake" ||
+      value.source === "github" ||
+      value.source === "system" ||
+      value.source === "legacy")
+  );
+}
+
+function isLegacyInvite(value: unknown): value is LegacyInvite {
+  return (
+    isRecord(value) &&
+    typeof value.inviteId === "string" &&
+    value.inviteId.length > 0 &&
+    (value.clientEmail === null || typeof value.clientEmail === "string") &&
+    (value.submitterEmail === null ||
+      typeof value.submitterEmail === "string") &&
+    typeof value.expiresAt === "number" &&
+    Number.isSafeInteger(value.expiresAt) &&
+    typeof value.status === "string" &&
+    typeof value.createdAt === "number" &&
+    typeof value.updatedAt === "number" &&
+    (value.submissionId === null ||
+      value.submissionId === undefined ||
+      typeof value.submissionId === "string") &&
+    (value.issueNumber === null ||
+      value.issueNumber === undefined ||
+      typeof value.issueNumber === "number") &&
+    (value.recoveryRequired === undefined ||
+      typeof value.recoveryRequired === "boolean") &&
+    (value.recoveryAttempts === undefined ||
+      value.recoveryAttempts === null ||
+      typeof value.recoveryAttempts === "number") &&
+    (value.creator === undefined ||
+      value.creator === null ||
+      isActor(value.creator))
+  );
+}
+
+function inviteListFromPayload(payload: unknown): LegacyInvite[] {
+  if (!isRecord(payload) || !Array.isArray(payload.invites))
+    throw new ApiRequestError(
+      200,
+      "invalid_response",
+      "The invitation list had an unexpected shape.",
+    );
+  return payload.invites.map((item) => {
+    if (!isLegacyInvite(item))
+      throw new ApiRequestError(
+        200,
+        "invalid_response",
+        "The invitation list contained an unexpected record.",
+      );
+    return {
+      ...item,
+      submissionId: item.submissionId ?? null,
+      issueNumber: item.issueNumber ?? null,
+      recoveryRequired: item.recoveryRequired ?? false,
+      recoveryAttempts: item.recoveryAttempts ?? null,
+      creator: item.creator ?? null,
+    };
+  });
+}
+
+function isCreatedInvite(value: unknown): value is CreatedInvite {
+  return (
+    isRecord(value) &&
+    typeof value.inviteId === "string" &&
+    value.inviteId.length > 0 &&
+    (value.clientEmail === null || typeof value.clientEmail === "string") &&
+    typeof value.expiresAt === "number" &&
+    typeof value.url === "string" &&
+    value.url.length > 0
+  );
+}
+
+function isBackfillResult(value: unknown): value is BackfillResult {
+  return (
+    isRecord(value) &&
+    typeof value.backfilled === "number" &&
+    Number.isSafeInteger(value.backfilled) &&
+    value.backfilled >= 0 &&
+    typeof value.remaining === "number" &&
+    Number.isSafeInteger(value.remaining) &&
+    value.remaining >= 0
+  );
+}
+
+function isRecoveryResult(value: unknown): value is RecoveryResult {
+  return (
+    isRecord(value) &&
+    typeof value.issue === "number" &&
+    Number.isSafeInteger(value.issue) &&
+    value.issue > 0 &&
+    typeof value.duplicate === "boolean"
   );
 }
 
@@ -321,12 +492,67 @@ function querySuffix(params: URLSearchParams) {
 export function createAdminApi(
   fetcher: typeof fetchAdmin = fetchAdmin,
 ): AdminApi {
+  const post = <T>(
+    body: Record<string, unknown>,
+    options: AdminRequestOptions | undefined,
+    validate: (value: unknown) => value is T,
+  ) =>
+    fetcher<T>(LEGACY_INVITES_PATH, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: options?.signal,
+      validate,
+    });
+
   return {
-    getMe(options) {
-      return fetcher<AdminPrincipal>(`${WORKSPACE_PREFIX}/me`, {
+    async getMe(options) {
+      const payload = await fetcher<{ principal: AccessModePrincipal }>(
+        `${WORKSPACE_PREFIX}/me`,
+        { signal: options?.signal, validate: isPrincipalEnvelope },
+      );
+      return payload.principal;
+    },
+    async listInvites(options) {
+      const payload = await fetcher<unknown>(LEGACY_INVITES_PATH, {
         signal: options?.signal,
-        validate: isPrincipal,
       });
+      return inviteListFromPayload(payload);
+    },
+    createInvite(clientEmail, options) {
+      const email = clientEmail?.trim().toLowerCase() || null;
+      return post<CreatedInvite>(
+        { action: "create", ...(email ? { clientEmail: email } : {}) },
+        options,
+        isCreatedInvite,
+      );
+    },
+    async revokeInvite(inviteId, options) {
+      await post<{ ok: true }>(
+        { action: "revoke", inviteId },
+        options,
+        (value): value is { ok: true } =>
+          isRecord(value) && value.ok === true,
+      );
+    },
+    backfillInvites(options) {
+      return post<BackfillResult>(
+        { action: "backfill" },
+        options,
+        isBackfillResult,
+      );
+    },
+    recoverInviteIntake(inviteId, issueNumber, options) {
+      return post<RecoveryResult>(
+        {
+          action: "recover-intake",
+          inviteId,
+          issueNumber,
+          confirmed: true,
+        },
+        options,
+        isRecoveryResult,
+      );
     },
     listAttempts(filters, options) {
       return fetcher<Page<AttemptSummary>>(

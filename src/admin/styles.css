@@ -299,6 +299,195 @@
   font-size: 0.88rem;
 }
 
+.admin-stack {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.admin-panel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: clamp(16px, 2.5vw, 24px);
+  border: 1px solid var(--admin-line);
+  border-radius: 12px;
+  background: var(--admin-ivory);
+}
+
+.admin-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: start;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.admin-panel__head h3 {
+  font-size: 1.1rem;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.admin-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 12px;
+  align-items: end;
+  min-width: 0;
+}
+
+.admin-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  grid-column: 1 / -1;
+}
+
+.admin-check {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  color: var(--admin-forest);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.admin-check input {
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.2rem;
+  accent-color: var(--admin-forest);
+}
+
+.admin-invite-result {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--admin-sage);
+  border-radius: 12px;
+  background: var(--admin-paper);
+}
+
+.admin-invite-result input[type="text"] {
+  background: #f8f7f0;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono",
+    monospace;
+  font-size: 0.82rem;
+}
+
+.admin-copy-warning {
+  padding: 10px 12px;
+  border-left: 3px solid #a1392b;
+  border-radius: 4px;
+  background: #fbece9;
+  color: #6f241a;
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-recovery-flag {
+  display: block;
+  margin-top: 4px;
+  color: #6f4a00;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.admin-confirm {
+  display: grid;
+  gap: 6px;
+  min-width: 12rem;
+}
+
+.admin-confirm > span {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.admin-table--invites {
+  min-width: 58rem;
+}
+
+.admin-table--invites th:nth-child(3),
+.admin-table--invites td:nth-child(3) {
+  min-width: 10rem;
+}
+
+.admin-field--issue {
+  max-width: 11rem;
+}
+
+.admin-profile {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.admin-profile__avatar {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--admin-forest);
+  color: var(--admin-paper);
+  font-family: "Manrope", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.admin-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 14px;
+  margin: 0;
+}
+
+.admin-facts > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.admin-facts dt {
+  color: var(--admin-muted);
+  font-family: "Manrope", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.admin-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.admin-facts__code {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono",
+    monospace;
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+.admin-readonly {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  background: var(--admin-ivory);
+  color: var(--admin-forest);
+  font: inherit;
+}
+
 .admin-auth {
   display: grid;
   place-items: center;

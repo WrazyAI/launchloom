@@ -28,6 +28,32 @@ export async function legacyAccessPrincipal(
     authSource: "cloudflare-access",
   };
 }
+
+/**
+ * Interim read-only identity for the Settings surface. The browser cannot
+ * supply any field. A null display name is deliberate: no profile store exists
+ * yet, so inventing a person's name would misrepresent this identity.
+ */
+export type AccessModePrincipal = {
+  id: string;
+  email: string;
+  displayName: string | null;
+  role: "admin";
+  authSource: "cloudflare-access";
+};
+
+export async function accessModePrincipal(
+  verifiedEmail: string,
+): Promise<AccessModePrincipal> {
+  const legacy = await legacyAccessPrincipal(verifiedEmail);
+  return {
+    id: legacy.id,
+    email: legacy.email,
+    displayName: null,
+    role: "admin",
+    authSource: "cloudflare-access",
+  };
+}
 export function principalActor(principal: AdminPrincipal): ActorSnapshot {
   return {
     kind: "admin",
@@ -184,13 +210,28 @@ export const workspaceError = (code: string, message: string, status: number) =>
   json({ error: { code, message } }, status);
 
 /** Read-only operational APIs. No issue reads/creation, projection writes, dispatch or mail. */
-export async function workspaceApi(request: Request, env: Env) {
+export async function workspaceApi(
+  request: Request,
+  env: Env,
+  verifiedEmail = "",
+) {
   if (request.method !== "GET")
     return workspaceError("method_not_allowed", "Use GET.", 405);
   const url = new URL(request.url);
   const suffix = url.pathname.slice(
     "/api/admin/onboarding-invites/workspace".length,
   );
+  if (suffix === "/me") {
+    if (env.ADMIN_AUTH_MODE === "neon")
+      return workspaceError(
+        "not_enabled",
+        "Persistent account profiles are not enabled.",
+        503,
+      );
+    if (!verifiedEmail)
+      return workspaceError("signed_out", "Sign in required.", 401);
+    return json({ principal: await accessModePrincipal(verifiedEmail) });
+  }
   try {
     const ledger = env.GENERATION_LEDGER.getByName("launchloom-generations");
     const coordinator = env.ONBOARDING_INVITES.getByName(

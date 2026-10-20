@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import {
   ADMIN_VIEWS,
   type AdminView,
@@ -20,8 +20,25 @@ export function WorkspaceNav({
   active: AdminView;
   onNavigate: (view: AdminView) => void;
 }) {
+  const navRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    const current = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!nav || !current) return;
+    const left = current.offsetLeft;
+    const right = left + current.offsetWidth;
+    if (left < nav.scrollLeft) nav.scrollLeft = left;
+    else if (right > nav.scrollLeft + nav.clientWidth)
+      nav.scrollLeft = right - nav.clientWidth;
+  }, [active]);
+
   return (
-    <nav className="admin-nav" aria-label="Workspace sections">
+    <nav
+      className="admin-nav"
+      aria-label="Workspace sections"
+      ref={navRef}
+    >
       {ADMIN_VIEWS.map((view) => (
         <a
           key={view}
