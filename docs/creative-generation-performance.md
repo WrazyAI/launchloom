@@ -56,9 +56,11 @@ rendered technical gates.
 | `CREATIVE_EVIDENCE_REUSE` | `true` | `false` disables evidence reuse entirely (pre-optimization path) without changing anything else. |
 | `CREATIVE_JUDGE_CONCURRENCY` | `2` | Judge worker bound, clamped to 1-3. `1` restores fully serial judges. |
 | `CREATIVE_REPAIR_STAGNATION` | `true` | `false` restores the pre-optimization repair loop (no stagnation guard). |
-| `CREATIVE_REFERENCE_JUDGE_MODEL` | `openai/gpt-6-luna` | Judge model; part of the evidence cache key, so changing it re-judges. |
+| `CREATIVE_REFERENCE_JUDGE_MODEL` | `opencode-go/deepseek-v4.1-flash` (Go) / `openai/gpt-6-luna` (OpenRouter) | Judge model; part of the evidence cache key, so changing it re-judges. |
 | `CREATIVE_EXPERIENCE_PROVIDER` | `openrouter` | `opencode-go` runs the whole creative lane (authoring, reference analysis, rendered judge, visual quality gate, repairs) on the OpenCode Go transport; OpenRouter-only models substitute to `CREATIVE_EXPERIENCE_GO_MODEL` with a log line. |
-| `CREATIVE_EXPERIENCE_GO_MODEL` | `openai/gpt-6-luna` | Reviewed Go model used when the configured component model is not served by the Go slice (for example the visual gate's legacy OpenRouter model). |
+| `CREATIVE_EXPERIENCE_GO_MODEL` | `opencode-go/deepseek-v4.1-flash` | Reviewed Go model used when the configured component model is not served by the Go slice (for example the visual gate's legacy OpenRouter model). |
+| `CREATIVE_EXPERIENCE_MODEL` | `opencode-go/deepseek-v4.1-flash` (Go) / `openai/gpt-6-luna` (OpenRouter) | Authoring/repair model; the workflows set it from this repository variable. |
+| `CREATIVE_EXPERIENCE_REASONING_EFFORT` | `max` (Go) / `xhigh` (OpenRouter) | Shared creative-lane reasoning effort; per-lane overrides: `CREATIVE_REFERENCE_JUDGE_EFFORT`, `CREATIVE_REFERENCE_ANALYZER_EFFORT`, `VISUAL_GATE_EFFORT`. |
 | `CREATIVE_NEAR_MISS_PREVIEW` | `true` | `false` refuses open-findings preview delivery; runs fail as before when the strict conjunction is unmet. |
 | `CREATIVE_PIXEL_CONTRAST` | `true` | `false` restores the DOM-only contrast contract; structural bail classes stay unresolved. |
 

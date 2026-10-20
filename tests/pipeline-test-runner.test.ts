@@ -705,6 +705,117 @@ describe("focused pipeline orchestration", () => {
     expect(calls).not.toContain("notify");
     expect(calls.at(-1)).toBe("persist");
   });
+  it("concludes a creative-only near-miss delivery as a successful run", async () => {
+    const { calls, dependencies } = adapter();
+    dependencies.creative = async () => {
+      calls.push("creative");
+      return {
+        artifact: ".launchloom/creative-repair/final/creative-bakeoff.json",
+        nearMiss: {
+          candidateId: "candidate-b",
+          overall: 55,
+          openFindings: 24,
+        },
+      };
+    };
+    dependencies.technical = async () => {
+      calls.push("technical");
+      const error: any = new Error("Rendered quality checks did not pass.");
+      error.code = "PIPELINE_QUALITY_GATE";
+      error.gates = [{ name: "contrast", passed: false }];
+      throw error;
+    };
+
+    const report = await runPipelineTest(
+      { ...input, profile: "creative-only" },
+      dependencies,
+    );
+
+    expect(report.verdict).toBe("passed");
+    expect(report.deliveryMode).toBe("creative-near-miss");
+    expect(report.previewDelivered).toBe(true);
+    expect(report.stages.technical.status).toBe("passed");
+    expect((report.stages.technical as any).openFindings).toBe(true);
+    expect((report.stages.technical as any).deliveryMode).toBe(
+      "creative-near-miss",
+    );
+    expect((report.stages.technical as any).gates).toEqual([
+      { name: "contrast", passed: false },
+    ]);
+    expect(calls).toContain("deploy");
+  });
+
+  it("still fails a near-miss delivery when a structural gate failed", async () => {
+    const { calls, dependencies } = adapter();
+    dependencies.creative = async () => {
+      calls.push("creative");
+      return { nearMiss: { candidateId: "candidate-b", overall: 55 } };
+    };
+    dependencies.technical = async () => {
+      calls.push("technical");
+      const error: any = new Error("Rendered quality checks did not pass.");
+      error.code = "PIPELINE_QUALITY_GATE";
+      error.gates = [
+        { name: "rendered", passed: false },
+        { name: "contrast", passed: false },
+      ];
+      throw error;
+    };
+
+    const report = await runPipelineTest(
+      { ...input, profile: "creative-only" },
+      dependencies,
+    );
+
+    expect(report.verdict).toBe("failed");
+    expect(report.stages.technical.status).toBe("failed");
+    expect(report.deliveryMode).toBeNull();
+  });
+
+  it("keeps a creative-only contrast failure failing without a near-miss delivery", async () => {
+    const { calls, dependencies } = adapter();
+    dependencies.technical = async () => {
+      calls.push("technical");
+      const error: any = new Error("Rendered quality checks did not pass.");
+      error.code = "PIPELINE_QUALITY_GATE";
+      error.gates = [{ name: "contrast", passed: false }];
+      throw error;
+    };
+
+    const report = await runPipelineTest(
+      { ...input, profile: "creative-only" },
+      dependencies,
+    );
+
+    expect(report.verdict).toBe("failed");
+    expect(report.stages.technical.status).toBe("failed");
+  });
+
+  it("never softens the production canary for a near-miss delivery", async () => {
+    const { calls, dependencies } = adapter();
+    dependencies.creative = async () => {
+      calls.push("creative");
+      return { nearMiss: { candidateId: "candidate-b", overall: 62 } };
+    };
+    dependencies.technical = async () => {
+      calls.push("technical");
+      const error: any = new Error("Rendered quality checks did not pass.");
+      error.code = "PIPELINE_QUALITY_GATE";
+      error.gates = [{ name: "contrast", passed: false }];
+      throw error;
+    };
+
+    const report = await runPipelineTest(
+      { ...input, profile: "full-preview" },
+      dependencies,
+    );
+
+    expect(report.verdict).toBe("failed");
+    expect(report.stages.technical.status).toBe("failed");
+    expect(report.previewDelivered).toBe(false);
+    expect(calls).not.toContain("deploy");
+  });
+
   it("delivers an isolated SEO preview after rendered quality gates fail without claiming a pass", async () => {
     const { calls, dependencies } = adapter();
     dependencies.technical = async () => {

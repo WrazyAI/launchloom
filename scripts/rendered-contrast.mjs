@@ -230,7 +230,12 @@ export async function resolveRenderedBackdrop(
         target.rect.height <= 0
       )
         return false;
-      if (target.kind !== "text" && target.kind !== "focus") return false;
+      if (
+        target.kind !== "text" &&
+        target.kind !== "focus" &&
+        target.kind !== "icon"
+      )
+        return false;
       if (
         (target.issues || []).some((issue) =>
           RENDERED_UNPROVABLE_ISSUES.includes(issue),
@@ -238,12 +243,19 @@ export async function resolveRenderedBackdrop(
       )
         return false;
       // Unresolved targets are resolved from pixels. Failing outline targets
-      // additionally gather band evidence even when the DOM proved a fail: a
-      // ring crosses every surface along its perimeter, and its repair must
-      // be proven against all of them, not one DOM-computed background.
+      // gather band evidence even when the DOM proved a fail (a ring crosses
+      // every surface along its perimeter, and its repair must be proven
+      // against all of them). Failing text and icon targets whose backdrop
+      // the DOM could not prove (variable paint, image media, no solid
+      // background) are measured from the rendered pixels too: the endpoint
+      // estimate that produced the fail is a conservative bound, and the real
+      // composite either proves readable or feeds a bounded repair.
       return (
         target.status === "unresolved" ||
-        (target.status === "fail" && outlineTargetOf(target))
+        (target.status === "fail" &&
+          (outlineTargetOf(target) ||
+            target.kind === "icon" ||
+            (target.kind === "text" && !target.background)))
       );
     })
     .slice(0, maximumResolutions);
@@ -298,8 +310,21 @@ export async function resolveRenderedBackdrop(
       const effect = await locator.evaluate(
         (element) => {
           const style = getComputedStyle(element);
+          // Group and ancestor opacity multiplies into the foreground alpha;
+          // capturing only the element's own opacity false-passed a black
+          // icon inside an opacity:0.1 group.
+          let opacity = 1;
+          for (
+            let node = element;
+            node && node !== document.documentElement;
+            node = node.parentElement
+          ) {
+            const nodeStyle = getComputedStyle(node);
+            const value = Number(nodeStyle.opacity);
+            opacity *= Number.isFinite(value) ? value : 1;
+          }
           return {
-            opacity: Number(style.opacity),
+            opacity,
             filter:
               style.filter && style.filter !== "none" ? style.filter : "",
           };
@@ -330,7 +355,7 @@ export async function resolveRenderedBackdrop(
           const previous = element.getAttribute("style") || "";
           element.setAttribute(
             "style",
-            `${previous};color:transparent !important;-webkit-text-fill-color:transparent !important;text-shadow:none !important;outline-color:transparent !important;`,
+            `${previous};color:transparent !important;-webkit-text-fill-color:transparent !important;text-shadow:none !important;outline-color:transparent !important;fill-opacity:0 !important;stroke-opacity:0 !important;`,
           );
           element.setAttribute("data-ll-contrast-hide-children", "1");
           return previous;
@@ -387,9 +412,9 @@ export async function resolveRenderedBackdrop(
           light: rgbHex(analysis.lightPixel),
           ...(analysis.provable ? { provable: analysis.provable } : {}),
         };
-      if (target.status === "fail") {
-        // DOM-proven failure: the capture only enriches the repair evidence;
-        // the verdict stays exactly as the DOM audit reported it.
+      if (target.status === "fail" && outlineTargetOf(target)) {
+        // DOM-proven outline failure: the capture only enriches the repair
+        // evidence; the verdict stays exactly as the DOM audit reported it.
         evidenceOnly += 1;
         continue;
       }

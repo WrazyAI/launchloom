@@ -15,6 +15,8 @@ import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 import {
   buildGoCreativeRequest,
   completeGoCreative,
+  creativeLaneDefaultModel,
+  creativeLaneEffort,
   creativeLaneProvider,
   goCreativeUsageMetrics,
   parseGoCreativeOutput,
@@ -26,7 +28,8 @@ import {
 import { interactionPromptParts, validateInteractionEvidence } from "./rendered-interaction-evidence.mjs";
 
 export const RENDERED_REFERENCE_MODEL =
-  process.env.CREATIVE_REFERENCE_JUDGE_MODEL || "openai/gpt-6-luna";
+  process.env.CREATIVE_REFERENCE_JUDGE_MODEL ||
+  creativeLaneDefaultModel(creativeLaneProvider());
 
 const RENDERED_JUDGE_SYSTEM_PROMPT =
   "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. overallScore must measure assigned-reference mechanics only; do not lower it for client-only palette or art-direction misses. Score paletteAdherence and artDirection separately, and still return blocking findings for client-brief failures. Return JSON only.";
@@ -262,8 +265,13 @@ async function requestJson({
   label,
   sessionId,
   promptCacheKey,
-  maxTokens = 7000,
-  reasoningEffort = "medium",
+  // Reasoning at the creative-lane effort counts against this ceiling; the
+  // audit JSON itself is small, so the headroom only prevents truncation.
+  maxTokens = 24_000,
+  reasoningEffort = creativeLaneEffort(process.env, {
+    lane: "CREATIVE_REFERENCE_JUDGE_EFFORT",
+    openrouterDefault: "medium",
+  }),
   fetchImpl = fetch,
 }) {
   const creativeProvider = creativeLaneProvider();

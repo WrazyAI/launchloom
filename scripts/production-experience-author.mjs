@@ -5,6 +5,7 @@ import { routeLinkedContent } from "../templates/client-site/src/lib/route-inven
 import { resolvePalette } from "./palette-policy.mjs";
 import { fontFamilyById, resolveFontPairing } from "./font-catalog.mjs";
 import crypto from "node:crypto";
+import { creativeLaneDefaultModel } from "./creative-lane-inference.mjs";
 import { redactPromptValue } from "./author-prompt-budget.mjs";
 import { safeAuthorFailureText } from "./author-failure-evidence.mjs";
 import { resolvePipelineTestPolicy } from "./pipeline-test-policy.mjs";
@@ -3885,7 +3886,7 @@ export async function authorExperienceCandidates({
   site,
   inspirationPack,
   generate,
-  model = "openai/gpt-6-luna",
+  model = creativeLaneDefaultModel(),
   creativeSession = null,
   testProfile = "full",
 }) {

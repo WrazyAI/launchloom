@@ -581,6 +581,46 @@ describe("persisted bounded contrast sweep", () => {
     ).toEqual([]);
   });
 
+  it("repairs a pixel-proven icon fill", async () => {
+    const module = await modulePromise;
+    const { contrast } = await import("../scripts/color-contrast.mjs");
+    const icon = {
+      selector: "body > nav:nth-of-type(1) > a:nth-of-type(1) > svg:nth-of-type(1) > path:nth-of-type(1)",
+      kind: "icon",
+      state: "default",
+      status: "fail",
+      pixelResolved: true,
+      color: "#ced6d2",
+      background: null,
+      foreground: [206, 214, 210, 1],
+      backgrounds: [[23, 33, 43, 1]],
+      pixelBackdrop: { dark: "#17212b", light: "#1d2a35" },
+      minimum: 3,
+      ratio: 1.4,
+      issues: ["resolved from rendered pixels"],
+      paintProperty: "fill",
+      text: "Search",
+    };
+    const pages = [
+      {
+        route: "/",
+        viewport: module.CONTRAST_VIEWPORTS[0],
+        repairScopeVerified: true,
+        mediaConditions: null,
+        targets: [icon],
+        findings: [icon],
+      },
+    ];
+    const repairs = module.planContrastRepairs({ pages });
+    expect(repairs).toHaveLength(1);
+    expect(repairs[0].paintProperty).toBe("fill");
+    expect(module.contrastRepairCss(repairs)).toContain(
+      "fill:var(--ll-creative-auto-text)!important",
+    );
+    expect(contrast(repairs[0].color, "#17212b")).toBeGreaterThanOrEqual(3);
+    expect(contrast(repairs[0].color, "#1d2a35")).toBeGreaterThanOrEqual(3);
+  });
+
   it("scopes pixel-resolved hover repairs to the hover state", async () => {
     const module = await modulePromise;
     const { contrast } = await import("../scripts/color-contrast.mjs");
