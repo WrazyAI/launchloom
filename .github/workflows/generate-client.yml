@@ -58,6 +58,7 @@ concurrency:
 
 jobs:
   profile_policy:
+    name: '00 · Route execution profile'
     runs-on: ubuntu-24.04
     outputs:
       profile: ${{ steps.policy.outputs.profile }}
@@ -83,6 +84,7 @@ jobs:
           NODE
 
   focused_test:
+    name: 'Canary · Focused generation'
     needs: profile_policy
     if: ${{ needs.profile_policy.outputs.profile == 'full-preview' || needs.profile_policy.outputs.profile == 'seo-only' || needs.profile_policy.outputs.profile == 'creative-only' }}
     uses: ./.github/workflows/test-generation.yml
@@ -94,6 +96,7 @@ jobs:
     secrets: inherit
 
   private_preview_access_smoke:
+    name: 'Canary · Access protection'
     needs: profile_policy
     if: ${{ needs.profile_policy.outputs.profile == 'access-only' }}
     runs-on: ubuntu-24.04
@@ -126,6 +129,7 @@ jobs:
             --branch "$BRANCH"
 
   intake_handoff_check:
+    name: '00 · Intake handoff check'
     needs: profile_policy
     if: ${{ needs.profile_policy.outputs.profile == 'full' }}
     runs-on: ubuntu-24.04
@@ -148,7 +152,8 @@ jobs:
             echo "completed=false" >> "$GITHUB_OUTPUT"
           fi
 
-  generate:
+  prepare:
+    name: '01 · Intake, SEO & setup'
     needs: [profile_policy, intake_handoff_check]
     if: ${{ needs.profile_policy.outputs.profile == 'full' && (needs.intake_handoff_check.outputs.completed != 'true' || (github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates)) }}
     runs-on: ubuntu-24.04
@@ -215,6 +220,13 @@ jobs:
       REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
       REUSABLE_CANDIDATE_REPO: ${{ inputs.candidate_repository || '' }}
       PREVIEW_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.preview_only || false }}
+    outputs:
+      issue: ${{ steps.intake.outputs.issue }}
+      repo: ${{ steps.client.outputs.repo }}
+      project: ${{ steps.client.outputs.project }}
+      feedback_issue: ${{ steps.client.outputs.feedback_issue }}
+      pr: ${{ steps.branch.outputs.pr }}
+      sha: ${{ steps.branch.outputs.sha }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -546,6 +558,27 @@ jobs:
           cp /tmp/business-enrichment.json .launchloom/business-enrichment.json
           cp /tmp/canonical-site-brief.json .launchloom/canonical-site-brief.json
           cp /tmp/inspiration-pack.json .launchloom/inspiration-pack.json
+          # Private per-client repo is the durable handoff between runners.
+          for artifact in reasoning-preflight.json site-config-usage.json reference-dna-usage.json seo-research-email.txt; do
+            if [ -f "/tmp/$artifact" ]; then cp "/tmp/$artifact" ".launchloom/$artifact"; fi
+          done
+          # Candidate reuse must checkpoint its frozen private inputs before
+          # moving to fresh Actions runners.
+          if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then
+            test -d "$RUNNER_TEMP/reusable-authored-candidates" || {
+              echo "Reusable authored candidates are missing." >&2; exit 1;
+            }
+            rm -rf .launchloom/generated-experiences
+            mkdir -p .launchloom/generated-experiences
+            cp -R "$RUNNER_TEMP/reusable-authored-candidates/." .launchloom/generated-experiences/
+            if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
+              test -f "$RUNNER_TEMP/frozen-qa-assets/manifest.json"
+              test -d "$RUNNER_TEMP/frozen-qa-assets/images"
+              mkdir -p public/images/generated
+              cp "$RUNNER_TEMP/frozen-qa-assets/manifest.json" .launchloom/generated-assets.json
+              cp -R "$RUNNER_TEMP/frozen-qa-assets/images/." public/images/generated/
+            fi
+          fi
           git add .
           if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi
           if [ "$BOOTSTRAP" = "review" ]; then
@@ -559,11 +592,53 @@ jobs:
           fi
           echo "dir=$CLIENT_DIR" >> "$GITHUB_OUTPUT"
           echo "pr=${PR##*/}" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Summarize stage
+        if: always()
+        run: |
+          echo '### 01 · Intake + SEO' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Status: ${{ job.status }}' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Verified business/SEO brief and private client repository prepared.' >> "$GITHUB_STEP_SUMMARY"
+
+  image_assets:
+    name: '02 · Generate imagery'
+    needs: [prepare]
+    if: ${{ needs.prepare.result == 'success' }}
+    runs-on: ubuntu-24.04
+    outputs:
+      sha: ${{ steps.image_checkpoint.outputs.sha }}
+    env:
+      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
+      QA_REPAIR_EXPERIMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.qa_repair_experiment || false }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+      FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}
+      FAL_IMAGE_MAX_IMAGES: ${{ vars.FAL_IMAGE_MAX_IMAGES || '3' }}
+      FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '6' }}
+      FAL_IMAGE_USD_PER_IMAGE: ${{ vars.FAL_IMAGE_USD_PER_IMAGE }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Restore private client checkpoint
+        id: workspace
+        env:
+          CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
+          CLIENT_PROJECT: ${{ needs.prepare.outputs.project }}
+          EXPECTED_SHA: ${{ needs.prepare.outputs.sha }}
+        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT" "$EXPECTED_SHA"
       - name: Generate or reuse contextual imagery
         id: assets
         timeout-minutes: 12
         run: |
-          cd "${{ steps.branch.outputs.dir }}"
+          cd "${{ steps.workspace.outputs.dir }}"
           mkdir -p public/images/generated
           if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
             test -f "$RUNNER_TEMP/frozen-qa-assets/manifest.json" || { echo "Frozen QA asset snapshot missing"; exit 1; }
@@ -585,6 +660,52 @@ jobs:
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
           node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
+      - name: Capture private checkpoint SHA
+        id: image_checkpoint
+        run: |
+          CLIENT_DIR="${{ steps.workspace.outputs.dir }}"
+          CHECKPOINT_SHA=$(git -C "$CLIENT_DIR" rev-parse HEAD)
+          echo "sha=$CHECKPOINT_SHA" >> "$GITHUB_OUTPUT"
+      - name: Summarize stage
+        if: always()
+        run: |
+          echo '### 02 · Contextual imagery' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Status: ${{ job.status }}' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Asset evidence committed to private client review branch.' >> "$GITHUB_STEP_SUMMARY"
+
+
+  creative_authoring:
+    name: '03 · AI creative candidates'
+    needs: [prepare, image_assets]
+    if: ${{ needs.image_assets.result == 'success' }}
+    runs-on: ubuntu-24.04
+    outputs:
+      sha: ${{ steps.authored_evidence.outputs.sha || steps.partial_authored_evidence.outputs.sha }}
+    env:
+      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
+      QA_REPAIR_EXPERIMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.qa_repair_experiment || false }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL == 'openai/gpt-5.6-luna' && 'openai/gpt-6-luna' || vars.CREATIVE_EXPERIENCE_MODEL || 'openai/gpt-6-luna' }}
+      CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'xhigh' }}
+      REUSABLE_CANDIDATE_REPO: ${{ inputs.candidate_repository || '' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Restore private client checkpoint
+        id: workspace
+        env:
+          CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
+          CLIENT_PROJECT: ${{ needs.prepare.outputs.project }}
+          EXPECTED_SHA: ${{ needs.image_assets.outputs.sha }}
+        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT" "$EXPECTED_SHA"
       - name: Author independent experience candidates
         id: authoring
         # Luna authors three independent candidates in separate stages, now
@@ -619,7 +740,7 @@ jobs:
       - name: Commit authored experience evidence
         id: authored_evidence
         run: |
-          cd "${{ steps.branch.outputs.dir }}"
+          cd "${{ steps.workspace.outputs.dir }}"
           mkdir -p .launchloom
           rm -rf .launchloom/generated-experiences
           cp -R /tmp/generated-experiences .launchloom/generated-experiences
@@ -632,10 +753,90 @@ jobs:
             git commit -m "Record authored experience candidates"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Preserve partial candidate evidence in private repo
+        if: failure() && steps.workspace.outputs.dir != ''
+        continue-on-error: true
+        run: |
+          cd "${{ steps.workspace.outputs.dir }}"
+          if [ -d /tmp/generated-experiences ]; then
+            mkdir -p .launchloom/generated-experiences
+            cp -R /tmp/generated-experiences/. .launchloom/generated-experiences/
+            git add .launchloom/generated-experiences
+            if ! git diff --cached --quiet; then
+              git commit -m "Preserve partial creative evidence"
+              node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
+            fi
+          fi
+      - name: Export failed authoring checkpoint
+        id: partial_authored_evidence
+        if: ${{ always() && steps.workspace.outcome == 'success' && steps.authored_evidence.outcome != 'success' }}
+        run: |
+          CLIENT_DIR="${{ steps.workspace.outputs.dir }}"
+          LOCAL_SHA=$(git -C "$CLIENT_DIR" rev-parse HEAD)
+          REMOTE_SHA=$(git -C "$CLIENT_DIR" ls-remote origin refs/heads/review/initial | cut -f1)
+          test "$LOCAL_SHA" = "$REMOTE_SHA" || {
+            echo "Partial authoring checkpoint was not published privately." >&2; exit 1;
+          }
+          echo "sha=$LOCAL_SHA" >> "$GITHUB_OUTPUT"
+      - name: Summarize stage
+        if: always()
+        run: |
+          echo '### 03 · AI authoring' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Status: ${{ job.status }}' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Each authored candidate and model evidence checkpointed privately.' >> "$GITHUB_STEP_SUMMARY"
+
+
+  rendered_quality:
+    name: '04 · Render, repair & QA'
+    needs: [prepare, creative_authoring]
+    if: ${{ always() && needs.prepare.result == 'success' && (needs.creative_authoring.result == 'success' || needs.creative_authoring.result == 'failure') }}
+    runs-on: ubuntu-24.04
+    outputs:
+      recovery_notified: ${{ steps.recovery_notification.outputs.notified }}
+      evidence_branch: ${{ steps.creative_recovery.outputs.evidence_branch }}
+      sha: ${{ steps.creative_render.outputs.sha }}
+    env:
+      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
+      QA_REPAIR_EXPERIMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.qa_repair_experiment || false }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+      CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL == 'openai/gpt-5.6-luna' && 'openai/gpt-6-luna' || vars.CREATIVE_EXPERIENCE_MODEL || 'openai/gpt-6-luna' }}
+      CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'xhigh' }}
+      CREATIVE_EXPERIENCE_MODE: ${{ vars.CREATIVE_EXPERIENCE_MODE == 'promote' && 'promote' || 'preview' }}
+      REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
+      REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+      LAUNCHLOOM_DEVELOPER_EMAIL: ${{ (github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery && secrets.LAUNCHLOOM_INTERNAL_QA_RECIPIENT) || (!(github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery) && vars.LAUNCHLOOM_DEVELOPER_EMAIL) || '' }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium on the stage runner
+        run: npx playwright install --with-deps chromium
+      - name: Restore private client checkpoint
+        id: workspace
+        env:
+          CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
+          CLIENT_PROJECT: ${{ needs.prepare.outputs.project }}
+          EXPECTED_SHA: ${{ needs.creative_authoring.outputs.sha }}
+        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT" "$EXPECTED_SHA"
       - name: Render and repair creative candidates in the production shell
         id: creative_render
+        if: ${{ needs.creative_authoring.result == 'success' }}
         run: |
-          cd "${{ steps.branch.outputs.dir }}"
+          cd "${{ steps.workspace.outputs.dir }}"
           npm ci
           SESSION_ARGS=()
           if [ -f "$PWD/.launchloom/reasoning-preflight.json" ]; then
@@ -657,6 +858,9 @@ jobs:
           rm -rf .launchloom/generated-experiences
           cp -R /tmp/generated-experiences .launchloom/generated-experiences
           git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
+          # Private JSON receipts are enough for the downstream gates and cost
+          # ledger. Do not bloat client git history with bulky render screenshots.
+          while IFS= read -r -d '' report; do git add "$report"; done < <(find .launchloom/creative-repair -type f -name '*.json' -print0)
           if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
             test -f .launchloom/creative-repair/qa-provider-calls.json || { echo "Private QA call receipt missing"; exit 1; }
             git add .launchloom/creative-repair/qa-provider-calls.json
@@ -665,12 +869,13 @@ jobs:
             git commit -m "Render and repair creative experience candidates"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Prepare private creative-recovery report
         id: creative_recovery
-        if: failure() && steps.branch.outputs.dir != '' && (steps.authoring.outcome == 'failure' || steps.creative_render.outcome == 'failure' || steps.authored_evidence.outcome == 'failure')
+        if: ${{ always() && steps.workspace.outputs.dir != '' && (needs.creative_authoring.result == 'failure' || steps.creative_render.outcome == 'failure') }}
         continue-on-error: true
         run: |
-          cd "${{ steps.branch.outputs.dir }}"
+          cd "${{ steps.workspace.outputs.dir }}"
           git config user.name "LaunchLoom"
           git config user.email "automation@launchloom.app"
           # Keep source, screenshots, and findings in the client's private repo.
@@ -724,7 +929,7 @@ jobs:
           CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
           CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
         run: |
-          cd "${{ steps.branch.outputs.dir }}"
+          cd "${{ steps.workspace.outputs.dir }}"
           PUBLIC_REVIEW_MODE=true PUBLIC_CREATIVE_DIAGNOSTIC=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
           node "$GITHUB_WORKSPACE/scripts/verify-creative-diagnostic.mjs" \
             --dist dist \
@@ -751,15 +956,15 @@ jobs:
         id: creative_repair_link
         if: always() && steps.creative_recovery.outputs.repair_available == 'true'
         env:
-          CLIENT_REPO: ${{ steps.client.outputs.repo }}
-          CLIENT_PR: ${{ steps.branch.outputs.pr }}
-          CLIENT_SITE: ${{ steps.client.outputs.project }}
-          CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
-          FEEDBACK_ISSUE: ${{ steps.client.outputs.feedback_issue }}
+          CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
+          CLIENT_PR: ${{ needs.prepare.outputs.pr }}
+          CLIENT_SITE: ${{ needs.prepare.outputs.project }}
+          FEEDBACK_ISSUE: ${{ needs.prepare.outputs.feedback_issue }}
           DIAGNOSTIC_PREVIEW_URL: ${{ steps.diagnostic_preview.outputs.preview }}
         run: |
           test -n "$REVISION_COORDINATOR_SECRET" || { echo "Missing recovery coordinator credential" >&2; exit 1; }
-          CLIENT_DIR="${{ steps.branch.outputs.dir }}"
+          CLIENT_EMAIL=$(jq -r '.business.email // ""' /tmp/site.config.json)
+          CLIENT_DIR="${{ steps.workspace.outputs.dir }}"
           HEAD_SHA=$(git -C "$CLIENT_DIR" rev-parse HEAD)
           CANDIDATE="${{ steps.creative_recovery.outputs.candidate }}"
           SESSION_ID=$(printf '%s' "$CLIENT_REPO:$CLIENT_PR:$HEAD_SHA:$CANDIDATE" | sha256sum | cut -c1-32)
@@ -803,10 +1008,75 @@ jobs:
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-creative-recovery -->' '## Creative preview needs another pass' 'The authored candidate did not clear all quality checks. Review the rendered findings and request the single final repair here:' "$REVIEW_LINK")"
           echo "link=$REVIEW_LINK" >> "$GITHUB_OUTPUT"
           echo "preview=$DIAGNOSTIC_PREVIEW_URL" >> "$GITHUB_OUTPUT"
+      # Never carry masked signed recovery URLs across public Actions jobs.
+      - name: Send private creative recovery notice
+        id: recovery_notification
+        if: ${{ always() && steps.creative_repair_link.outputs.link != '' }}
+        env:
+          ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
+          REPAIR_LINK: ${{ steps.creative_repair_link.outputs.link }}
+          DIAGNOSTIC_PREVIEW: ${{ steps.creative_repair_link.outputs.preview }}
+          SEND_ANYWAY_URL: ${{ steps.creative_repair_link.outputs.send_anyway_url }}
+        run: |
+          NAME=$(gh issue view "$ISSUE" --repo WrazyAI/launchloom --json title --jq '.title | sub("^Intake: "; "")')
+          printf 'The authored design missed quality checks. Request its one-shot repair here:\n%s\n' "$REPAIR_LINK" > "$RUNNER_TEMP/generation-failure-feedback.txt"
+          if [ -n "$DIAGNOSTIC_PREVIEW" ]; then printf 'Diagnostic-only preview: %s\n' "$DIAGNOSTIC_PREVIEW" >> "$RUNNER_TEMP/generation-failure-feedback.txt"; fi
+          printf 'No production promotion occurred. A final repair requires renewed verification.\n' > "$RUNNER_TEMP/generation-failure-outcome.txt"
+          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "${DIAGNOSTIC_PREVIEW:-https://github.com/WrazyAI/launchloom/issues/$ISSUE}" --review "$REPAIR_LINK" --send-anyway-url "$SEND_ANYWAY_URL" --kind revision --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-repair-ready-$ISSUE-${{ github.run_id }}"
+          echo "notified=true" >> "$GITHUB_OUTPUT"
+      - name: Fail job if AI creative gate was blocked
+        if: ${{ always() && (needs.creative_authoring.result != 'success' || steps.creative_render.outcome != 'success') }}
+        run: |
+          echo '::error title=Creative gate blocked::Authored/rendered checks did not pass; publishing is blocked.'
+          exit 1
+      - name: Summarize stage
+        if: always()
+        run: |
+          echo '### 04 · Visual QA' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Status: ${{ job.status }}' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Failed candidates blocked. One-shot repair evidence stored privately.' >> "$GITHUB_STEP_SUMMARY"
+
+
+  private_preview:
+    name: '05 · Deploy verified preview'
+    needs: [prepare, rendered_quality]
+    if: ${{ needs.rendered_quality.result == 'success' }}
+    runs-on: ubuntu-24.04
+    outputs:
+      preview: ${{ steps.deploy.outputs.preview }}
+      sha: ${{ steps.deploy.outputs.sha }}
+    env:
+      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
+      QA_REPAIR_EXPERIMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.qa_repair_experiment || false }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+      GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
+      FAL_IMAGE_USD_PER_IMAGE: ${{ vars.FAL_IMAGE_USD_PER_IMAGE }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium on the stage runner
+        run: npx playwright install --with-deps chromium
+      - name: Restore private client checkpoint
+        id: workspace
+        env:
+          CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
+          CLIENT_PROJECT: ${{ needs.prepare.outputs.project }}
+          EXPECTED_SHA: ${{ needs.rendered_quality.outputs.sha }}
+        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT" "$EXPECTED_SHA"
       - name: Build and direct-upload public preview
         id: deploy
         run: |
-          cd "${{ steps.branch.outputs.dir }}"
+          cd "${{ steps.workspace.outputs.dir }}"
           npm ci
           test -f .launchloom/creative-bakeoff.json || { echo "Creative promotion report missing"; exit 1; }
           jq -e '(.design.experience.renderer == "creative-candidate") and (.design.experience.candidateId != null) and (.design.experience.selectionMode == "creative-preview" or .design.experience.selectionMode == "creative-bakeoff")' src/site.config.json >/dev/null || { echo "Authored creative renderer was not selected"; exit 1; }
@@ -848,11 +1118,18 @@ jobs:
             echo "Review source changed during the final build; refusing to deploy stale preview output from $FINAL_BUILD_SHA." >&2
             exit 1
           fi
+          # Release metadata may be committed after the build. It cannot change
+          # runtime source (checked above); bind deployment and approval to the
+          # *current* exact private review branch head.
+          LOCAL_REVIEW_SHA=$(git rev-parse HEAD)
+          REMOTE_REVIEW_SHA=$(git rev-parse origin/review/initial)
+          test "$LOCAL_REVIEW_SHA" = "$REMOTE_REVIEW_SHA" || { echo "Review branch moved during verified preview build" >&2; exit 1; }
+          FINAL_BUILD_SHA="$LOCAL_REVIEW_SHA"
           # Scan rendered text assets only. Binary generated imagery can contain
           # the UTF-8 byte sequence by coincidence and is not page copy.
           if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
-          npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$FINAL_BUILD_SHA" --commit-message "Initial LaunchLoom preview"
-          echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
+          npx wrangler pages deploy dist --project-name "${{ needs.prepare.outputs.project }}" --branch review-initial --commit-hash "$FINAL_BUILD_SHA" --commit-message "Initial LaunchLoom preview"
+          echo "preview=https://review-initial.${{ needs.prepare.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
           echo "sha=$FINAL_BUILD_SHA" >> "$GITHUB_OUTPUT"
       # Recording previews keeps rotation useful during internal testing. A
       # failure here must not block generation, preview deployment, or handoff.
@@ -865,8 +1142,8 @@ jobs:
           git config user.name "LaunchLoom"
           git config user.email "automation@launchloom.app"
           node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
-            --config "${{ steps.branch.outputs.dir }}/src/site.config.json" \
-            --inspiration "${{ steps.branch.outputs.dir }}/.launchloom/inspiration-pack.json" \
+            --config "${{ steps.workspace.outputs.dir }}/src/site.config.json" \
+            --inspiration "${{ steps.workspace.outputs.dir }}/.launchloom/inspiration-pack.json" \
             --stage preview \
             --record-key "$LAUNCHLOOM_INTAKE_ID-run-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"
           if git diff --quiet -- data/recent-launch-signatures.json; then
@@ -880,77 +1157,118 @@ jobs:
           git push origin HEAD:main
       - name: Track pending developer delivery
         run: |
-          gh label create launchloom-delivery-pending --repo "${{ steps.client.outputs.repo }}" --color e4e669 --force
-          gh pr edit "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --add-label launchloom-delivery-pending
+          gh label create launchloom-delivery-pending --repo "${{ needs.prepare.outputs.repo }}" --color e4e669 --force
+          gh pr edit "${{ needs.prepare.outputs.pr }}" --repo "${{ needs.prepare.outputs.repo }}" --add-label launchloom-delivery-pending
       - name: Wait for secure preview URL
         run: node scripts/wait-for-pages-preview.mjs --url "${{ steps.deploy.outputs.preview }}"
       - name: Record preview ready
         continue-on-error: true
         env:
           SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
-          CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
         run: |
           STATUS=preview_ready
-          if [ "${{ steps.creative_recovery.outputs.repair_available }}" = "true" ]; then STATUS=attention; fi
+          CLIENT_EMAIL=$(jq -r '.business.email // ""' /tmp/site.config.json)
+          CLIENT_NAME=$(jq -r '.business.name // ""' /tmp/site.config.json)
+          CLIENT_SLUG=$(node -e 'const x=require("/tmp/site.config.json");console.log(String(x.business?.name||"client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45)||"client-site")')
           node scripts/generation-cost-summary.mjs \
             --seo /tmp/seo-research.json \
             --site-config-usage /tmp/site-config-usage.json \
             --reference-dna-usage /tmp/reference-dna-usage.json \
             --preflight /tmp/reasoning-preflight.json \
-            --assets "${{ steps.branch.outputs.dir }}/.launchloom/generated-assets.json" \
-            --creative-run "${{ steps.branch.outputs.dir }}/.launchloom/generated-experiences/creative-run.json" \
-            --repair-dir "${{ steps.branch.outputs.dir }}/.launchloom/creative-repair" \
+            --assets "${{ steps.workspace.outputs.dir }}/.launchloom/generated-assets.json" \
+            --creative-run "${{ steps.workspace.outputs.dir }}/.launchloom/generated-experiences/creative-run.json" \
+            --repair-dir "${{ steps.workspace.outputs.dir }}/.launchloom/creative-repair" \
             --output /tmp/generation-cost.json
           node scripts/record-generation-event.mjs \
             --action complete \
-            --issue "${{ steps.intake.outputs.issue }}" \
+            --issue "${{ needs.prepare.outputs.issue }}" \
             --submission-id "$SUBMISSION_ID" \
             --client-email "$CLIENT_EMAIL" \
-            --business "${{ steps.intake.outputs.business_name }}" \
-            --slug "${{ steps.intake.outputs.slug }}" \
-            --site "${{ steps.client.outputs.project }}" \
-            --repo "${{ steps.client.outputs.repo }}" \
-            --pr "${{ steps.branch.outputs.pr }}" \
+            --business "$CLIENT_NAME" \
+            --slug "$CLIENT_SLUG" \
+            --site "${{ needs.prepare.outputs.project }}" \
+            --repo "${{ needs.prepare.outputs.repo }}" \
+            --pr "${{ needs.prepare.outputs.pr }}" \
             --sha "${{ steps.deploy.outputs.sha }}" \
             --preview-url "${{ steps.deploy.outputs.preview }}" \
             --status "$STATUS" \
             --cost-summary /tmp/generation-cost.json \
             --hero "$RUNNER_TEMP/initial-screenshots/desktop.png" \
             --completed-at "$(date +%s%3N)"
+      - name: Summarize stage
+        if: always()
+        run: |
+          echo '### 05 · Preview deployment' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Status: ${{ job.status }}' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Verified output deployed to review branch on Cloudflare Pages.' >> "$GITHUB_STEP_SUMMARY"
+
+
+  developer_handoff:
+    name: '06 · Developer review handoff'
+    needs: [prepare, image_assets, private_preview]
+    if: ${{ needs.private_preview.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
+      QA_REPAIR_EXPERIMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.qa_repair_experiment || false }}
+      REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
+      LAUNCHLOOM_DEVELOPER_EMAIL: ${{ (github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery && secrets.LAUNCHLOOM_INTERNAL_QA_RECIPIENT) || (!(github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery) && vars.LAUNCHLOOM_DEVELOPER_EMAIL) || '' }}
+      LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Restore private client checkpoint
+        id: workspace
+        env:
+          CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
+          CLIENT_PROJECT: ${{ needs.prepare.outputs.project }}
+          EXPECTED_SHA: ${{ needs.private_preview.outputs.sha }}
+        run: bash scripts/restore-generation-stage.sh "$CLIENT_REPO" "$CLIENT_PROJECT" "$EXPECTED_SHA"
       - name: Create secure review link
         id: review
         run: |
-          PREVIEW="${{ steps.deploy.outputs.preview }}"
-          ORIGINS="$PREVIEW,https://${{ steps.client.outputs.project }}.pages.dev"
-          TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "${{ steps.client.outputs.repo }}" --pr "${{ steps.branch.outputs.pr }}" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.client.outputs.project }}" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "${{ steps.intake.outputs.email }}" --feedback-issue "${{ steps.client.outputs.feedback_issue }}" --origins "$ORIGINS" --token-only true)
+          PREVIEW="${{ needs.private_preview.outputs.preview }}"
+          ORIGINS="$PREVIEW,https://${{ needs.prepare.outputs.project }}.pages.dev"
+          CLIENT_EMAIL=$(jq -r '.business.email // ""' /tmp/site.config.json)
+          TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "${{ needs.prepare.outputs.repo }}" --pr "${{ needs.prepare.outputs.pr }}" --sha "${{ needs.private_preview.outputs.sha }}" --site "${{ needs.prepare.outputs.project }}" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "${{ needs.prepare.outputs.feedback_issue }}" --origins "$ORIGINS" --token-only true)
           echo "::add-mask::$TOKEN"
           echo "link=$PREVIEW?review=$TOKEN" >> "$GITHUB_OUTPUT"
       - name: Post handoff links
         env:
-          CLIENT_ASSET_SUMMARY: ${{ steps.assets.outputs.summary || steps.intake.outputs.asset_summary }}
-          CLIENT_PROJECT: ${{ steps.client.outputs.project }}
-          CLIENT_REPO: ${{ steps.client.outputs.repo }}
+          CLIENT_PROJECT: ${{ needs.prepare.outputs.project }}
+          CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
           DEVELOPER_REVIEW_LINK: ${{ steps.review.outputs.link }}
-          INTAKE_ISSUE: ${{ steps.intake.outputs.issue }}
-          LAYOUT: ${{ steps.intake.outputs.layout }}
-          PREVIEW_URL: ${{ steps.deploy.outputs.preview }}
-          RESEARCH_COST: ${{ steps.intake.outputs.research_cost }}
-          RESEARCH_MODE: ${{ steps.intake.outputs.research_mode }}
-          RESEARCH_QUERIES: ${{ steps.intake.outputs.research_queries }}
-          REVIEW_PR: ${{ steps.branch.outputs.pr }}
+          INTAKE_ISSUE: ${{ needs.prepare.outputs.issue }}
+          PREVIEW_URL: ${{ needs.private_preview.outputs.preview }}
+          REVIEW_PR: ${{ needs.prepare.outputs.pr }}
         run: |
+          LAYOUT=$(jq -r '.conversion.layout // "editorial-authority"' /tmp/site.config.json)
+          CLIENT_ASSET_SUMMARY=$(node -e 'const x=require("/tmp/site.config.json");console.log((x.assetReport?.used||[]).map(a=>a.asset+" → "+a.placement).join(", ")||"No supplied image used; approved contextual fallback or brand art selected.")')
+          RESEARCH_MODE=$(jq -r '.mode // "unavailable"' /tmp/seo-research.json)
+          RESEARCH_COST=$(jq -r '(.cost.usd // 0) | tostring' /tmp/seo-research.json)
+          RESEARCH_QUERIES=$(jq -r '[.validatedQueries[]? | (.keyword // .query)] | .[:6] | join(", ")' /tmp/seo-research.json)
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nLayout: %s\nClient assets used: %s\nSEO research mode: %s\nValidated queries: %s\nRecorded research cost: $%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Initial developer preview' "$LAYOUT" "$CLIENT_ASSET_SUMMARY" "$RESEARCH_MODE" "$RESEARCH_QUERIES" "$RESEARCH_COST" "$PREVIEW_URL" "$DEVELOPER_REVIEW_LINK")"
           gh issue comment "$INTAKE_ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s' '<!-- launchloom-developer-review-ready -->' '## Awaiting developer approval' "$CLIENT_REPO" "$CLIENT_PROJECT" "$PREVIEW_URL")"
       - name: Send developer preview email
         env:
-          BUSINESS_NAME: ${{ steps.intake.outputs.business_name }}
-          CLIENT_PROJECT: ${{ steps.client.outputs.project }}
-          CLIENT_REPO: ${{ steps.client.outputs.repo }}
-          DEPLOY_SHA: ${{ steps.deploy.outputs.sha }}
+          CLIENT_PROJECT: ${{ needs.prepare.outputs.project }}
+          CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
+          DEPLOY_SHA: ${{ needs.private_preview.outputs.sha }}
           DEVELOPER_REVIEW_LINK: ${{ steps.review.outputs.link }}
-          PREVIEW_URL: ${{ steps.deploy.outputs.preview }}
-          REVIEW_PR: ${{ steps.branch.outputs.pr }}
+          PREVIEW_URL: ${{ needs.private_preview.outputs.preview }}
+          REVIEW_PR: ${{ needs.prepare.outputs.pr }}
         run: |
+          BUSINESS_NAME=$(jq -r '.business.name // "Client"' /tmp/site.config.json)
           node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-initial-email:$DEPLOY_SHA -->"
           gh pr edit "$REVIEW_PR" --repo "$CLIENT_REPO" --remove-label launchloom-delivery-pending
@@ -959,15 +1277,47 @@ jobs:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
         run: |
           gh issue comment "$ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s' '<!-- launchloom-generation-handoff:complete -->' 'Initial developer preview handoff completed.')"
+      - name: Summarize stage
+        if: always()
+        run: |
+          echo '### 06 · Developer review' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Status: ${{ job.status }}' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Signed approval link sent for an exact reviewed commit.' >> "$GITHUB_STEP_SUMMARY"
+
+
+  report_failure:
+    name: 'Recovery · Notify on failure'
+    needs: [prepare, image_assets, creative_authoring, rendered_quality, private_preview, developer_handoff]
+    if: ${{ always() && (needs.prepare.result == 'failure' || needs.image_assets.result == 'failure' || needs.creative_authoring.result == 'failure' || needs.rendered_quality.result == 'failure' || needs.private_preview.result == 'failure' || needs.developer_handoff.result == 'failure') }}
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
+      QA_REPAIR_EXPERIMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.qa_repair_experiment || false }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
+      LAUNCHLOOM_DEVELOPER_EMAIL: ${{ (github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery && secrets.LAUNCHLOOM_INTERNAL_QA_RECIPIENT) || (!(github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery) && vars.LAUNCHLOOM_DEVELOPER_EMAIL) || '' }}
+      GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
+      LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
       - name: Notify developer when generation stops
-        if: failure()
+        if: ${{ needs.rendered_quality.outputs.recovery_notified != 'true' }}
         env:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
-          REPAIR_LINK: ${{ steps.creative_repair_link.outputs.link }}
-          DIAGNOSTIC_PREVIEW: ${{ steps.creative_repair_link.outputs.preview }}
-          SEND_ANYWAY_URL: ${{ steps.creative_repair_link.outputs.send_anyway_url }}
-          CLIENT_REPO: ${{ steps.client.outputs.repo }}
-          EVIDENCE_BRANCH: ${{ steps.creative_recovery.outputs.evidence_branch }}
+          REPAIR_LINK: ''
+          DIAGNOSTIC_PREVIEW: ''
+          SEND_ANYWAY_URL: ''
+          CLIENT_REPO: ${{ needs.prepare.outputs.repo }}
+          EVIDENCE_BRANCH: ${{ needs.rendered_quality.outputs.evidence_branch }}
         run: |
           NAME=$(gh issue view "$ISSUE" --repo WrazyAI/launchloom --json title --jq '.title | sub("^Intake: "; "")')
           if [ -n "$REPAIR_LINK" ]; then
@@ -982,13 +1332,12 @@ jobs:
             node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/WrazyAI/launchloom/issues/$ISSUE" --review "https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}" --kind generation-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-failed-$ISSUE-${{ github.run_id }}"
           fi
       - name: Record generation failure
-        if: failure()
         continue-on-error: true
         env:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
           SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
-          REPAIR_AVAILABLE: ${{ steps.creative_repair_link.outputs.link != '' }}
-          CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
+          REPAIR_AVAILABLE: ${{ needs.rendered_quality.outputs.recovery_notified == 'true' }}
+          CLIENT_EMAIL: ""
         run: |
           STATUS=failed
           FAILURE="Generation workflow ${{ github.run_id }} stopped before a preview was ready. Inspect the Actions run and the intake issue."
@@ -1004,3 +1353,10 @@ jobs:
             --status "$STATUS" \
             --failure "$FAILURE" \
             --completed-at "$(date +%s%3N)"
+      - name: Summarize stage
+        if: always()
+        run: |
+          echo '### Recovery' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Status: ${{ job.status }}' >> "$GITHUB_STEP_SUMMARY"
+          echo 'One developer failure notification for any blocked stage.' >> "$GITHUB_STEP_SUMMARY"
+

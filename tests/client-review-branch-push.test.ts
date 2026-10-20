@@ -171,6 +171,7 @@ describe("safe client review-branch pushes", () => {
     expect(workflow).toContain("FINAL_BUILD_SHA=$(git rev-parse HEAD)");
     expect(workflow).toContain('git diff --quiet "$FINAL_BUILD_SHA" origin/review/initial');
     expect(workflow).toContain('--commit-hash "$FINAL_BUILD_SHA"');
-    expect(workflow).toContain("steps.authored_evidence.outcome == 'failure'");
+    expect(workflow).toContain("needs.creative_authoring.result == 'failure'");
+    expect(workflow).toContain("Fail job if AI creative gate was blocked");
   });
 });
