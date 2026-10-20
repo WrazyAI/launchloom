@@ -250,17 +250,28 @@ psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/admin/001-membership.sql
 
 The schema is `launchloom_admin`; it contains `workspace_guard`, `members`,
 `enrollments`, `membership_audit` and `legacy_identity_links`, plus the
-application functions. The migration grants no privileges and creates no RLS
-policies or Data API exposure. The Worker must connect as the dedicated
-server-side role; `ADMIN_DATABASE_URL` is a private Worker binding and must never
-be a `PUBLIC_*` variable or client asset.
+application functions. Every function is `SECURITY DEFINER` with
+`SET search_path = launchloom_admin, pg_temp`; the migration revokes PUBLIC
+access and conditionally grants only schema `USAGE` plus function `EXECUTE` to
+`launchloom_worker` when that role exists. No table or sequence grants, RLS
+policies or Data API exposure are created. A fresh apply therefore supports a
+worker role that can call the functions but has no direct table privileges. The
+function-owning migration role remains the privileged boundary, so apply this
+with the controlled migration credential, not the Worker credential.
 
-**Least-privilege finding (open operator action).** The provisioned development
-role `launchloom_admin` is not least privilege: it currently has `CREATEDB`,
-`CREATEROLE`, `BYPASSRLS` and `REPLICATION`. It is not a superuser. Task 5 does
-not alter roles; an operator must reduce those attributes (or provision a
-dedicated app role with login and only the schema/table/function privileges it
-needs) before production use.
+`ADMIN_DATABASE_URL` is a private Worker binding and must never be a `PUBLIC_*`
+variable or client asset.
+
+**Least-privilege finding (open operator blocker; not solved).** The provisioned
+development roles are not least privilege. `launchloom_admin` has `CREATEDB`,
+`CREATEROLE`, `BYPASSRLS` and `REPLICATION` and is a member of
+`neon_superuser`; `launchloom_worker` has the same attributes and inheritance.
+Neither is a superuser, but both inherit `pg_read_all_data`/`pg_write_all_data`
+and are unsuitable as production Worker credentials. Task 5 deliberately does
+not alter roles or rotate credentials. Production must use an operator-created
+role with login, no role attributes, schema `USAGE` and function `EXECUTE` only,
+with DDL on a separate migration role. Keep the development URL out of
+production.
 
 ### First-owner bootstrap
 
@@ -279,10 +290,37 @@ node scripts/bootstrap-admin-owner.mjs ... --confirm
 ```
 
 The script reads `ADMIN_DATABASE_URL` first, otherwise the private
-`--database-url-file`. It prints the subject, email, name, mode and active-owner
-count, but never the URL or an invitation token. It writes one audited
-`owner_bootstrapped` membership. Existing allowlisted admins are enrolled through
-invitations, not guessed or bootstrapped.
+`--database-url-file`. `--dry-run` is accepted explicitly and remains the
+default. It prints the subject, email, name, mode and active-owner count, but
+never the URL or an invitation token. It writes one audited `owner_bootstrapped`
+membership. Existing allowlisted admins are enrolled through invitations, not
+guessed or bootstrapped.
+
+### Allowlisted-admin invitations
+
+Create one bounded one-use invitation per invocation with the operator CLI. It
+requires an explicit active owner subject, refuses an active-owner mismatch,
+sends no mail, and writes the copy-once link to a new private file instead of
+printing it:
+
+```bash
+# Dry run is the default and writes nothing.
+node scripts/invite-admin.mjs \
+  --owner-subject <active-owner-subject> \
+  --email <verified-allowlisted-email> \
+  --out /path/to/private/invite-link \
+  --database-url-file /path/to/private/url-file
+
+# Explicit write; refuses to overwrite an existing output file.
+node scripts/invite-admin.mjs ... --confirm
+```
+
+The confirmed command writes the URL with mode `0600` using create-exclusive
+semantics, prints only the enrollment ID, email, expiry and output path, and
+never prints the token, hash or database URL. The link expires after 72 hours
+and is claimed once by the matching verified email. If the database write fails,
+the script removes the just-written file. Do not place this file in the
+repository, logs or a shared drive.
 
 ### Enrollment and profile operations
 
@@ -301,9 +339,12 @@ invitations, not guessed or bootstrapped.
   because the existing SQL function uses `coalesce`; clearing an avatar needs a
   separately reviewed additive migration.
 - Membership changes are owner-only. The database locks the singleton
-  `workspace_guard` row before counting owners; concurrent last-owner
-  deactivation/demotion leaves at least one active owner and returns a safe
-  conflict. Deactivation retains the member row and audit attribution.
+  `workspace_guard` row before re-reading the actor and counting owners, so a
+  simultaneously deactivated owner cannot finish an invite or membership change
+  with a stale authorization. Concurrent last-owner deactivation/demotion leaves
+  at least one active owner and returns a safe conflict. Deactivation retains the
+  member row and audit attribution. The real two-owner proof runs in the isolated
+  `launchloom_admin_test` database, not against the development owner.
 - Typed store errors (`forbidden`, `last_owner`, `not_found`, `conflict`,
   `invalid`, `email_mismatch`, `enrollment_used`, `expired`,
   `dependency_unavailable`) map to safe JSON statuses. Raw SQL, constraint names
@@ -321,14 +362,18 @@ session but no existing membership.
 ```bash
 npx vitest run --config vitest.worker.config.ts worker/test/admin-membership.test.ts
 npx vitest run tests/admin-membership-migration.test.ts tests/admin-membership-db.test.ts
+npx vitest run tests/admin-membership-owner-safety.test.ts tests/admin-invite.test.ts
 ADMIN_DATABASE_URL="$(cat /path/to/private/url-file)" \
-  npx vitest run tests/admin-membership-db.test.ts
+  npx vitest run tests/admin-membership-db.test.ts tests/admin-membership-owner-safety.test.ts
 npm run check:worker
 npm run test:worker -- --maxWorkers=1
 ```
 
 The live database suite creates `test-` members, enrollments and audit rows,
 cleans them in `afterAll`, and asserts the existing development owner
-(`4b4f068f-728c-468f-8247-ad3d4cbf7dbb`) is unchanged. It skips when
-`ADMIN_DATABASE_URL` is absent. No live email, provider or production call is
-made.
+(`4b4f068f-728c-468f-8247-ad3d4cbf7dbb`) is unchanged. It is a proper skipped
+suite when `ADMIN_DATABASE_URL` is absent, so `npm test` does not fail in CI.
+The owner-safety suite derives the sibling `launchloom_admin_test` database
+(override with `ADMIN_TEST_DATABASE_URL`), clears any interrupted `test-`
+leftovers, and refuses to run if that isolated database is not empty. No live
+email, provider or production call is made.

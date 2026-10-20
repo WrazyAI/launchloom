@@ -255,6 +255,11 @@ const DB_TOKENS: Array<[RegExp, MembershipErrorCode, string]> = [
     "invalid",
     "The request is not valid.",
   ],
+  [
+    /\bworkspace_guard_missing\b/u,
+    "dependency_unavailable",
+    "Membership data is temporarily unavailable.",
+  ],
 ];
 
 /** Never exposes raw database text, SQL, constraints or connection details. */

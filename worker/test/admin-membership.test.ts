@@ -152,6 +152,7 @@ describe("membership store token and error handling", () => {
     ["invalid_display_name", "invalid", 400],
     ["no_change", "invalid", 400],
     ["owner_exists", "conflict", 409],
+    ["workspace_guard_missing", "dependency_unavailable", 503],
   ])("maps database rejection %s to safe code %s/%i", (message, code, status) => {
     const mapped = toMembershipError(new Error(message));
     expect(mapped).toBeInstanceOf(MembershipError);

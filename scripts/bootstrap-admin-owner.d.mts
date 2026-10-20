@@ -8,6 +8,7 @@ export declare type BootstrapArgs = {
   email: string;
   name: string;
   confirm: boolean;
+  dryRun: boolean;
   databaseUrlFile: string;
   help: boolean;
 };

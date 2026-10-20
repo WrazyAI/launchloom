@@ -11,7 +11,7 @@ import type { VerifiedSession } from "../worker/src/admin/neon-auth";
 
 const connectionString = process.env.ADMIN_DATABASE_URL || "";
 
-if (connectionString) describe("durable membership against the isolated development database", () => {
+describe.skipIf(!connectionString)("durable membership against the isolated development database", () => {
   const prefix = `test-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   const subjects = new Set<string>();
   const subject = (name: string) => `${prefix}-${name}`;
@@ -299,6 +299,39 @@ if (connectionString) describe("durable membership against the isolated developm
     expect(audit.filter((row) => row.action === "member_changed").every((row) => row.actor_subject === owner.subject)).toBe(true);
     expect(audit.at(-1)?.detail).toMatchObject({ role: null, active: false });
   });
+
+  it("rechecks owner authorization after acquiring the serialization lock", async () => {
+    const actor = await seedMember(`stale-actor-${tokenSequence++}`, "owner");
+    const target = await seedMember(`stale-target-${tokenSequence++}`, "admin");
+    // Hold the workspace guard so the action blocks before authorizing its
+    // actor. The direct deactivation simulates a competing committed request.
+    const hold = sql.transaction([
+      sql`select 1 from launchloom_admin.workspace_guard where id for update`,
+      sql`select pg_sleep(2)`,
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const action = store
+      .changeMember(actor.subject, target.subject, { role: "owner" })
+      .then(
+        (value) => ({ status: "fulfilled" as const, value }),
+        (reason: MembershipError) => ({ status: "rejected" as const, reason }),
+      );
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await sql.query(
+      `update launchloom_admin.members set active = false where subject = $1`,
+      [actor.subject],
+    );
+    await hold;
+    const outcome = await action;
+    expect(outcome.status).toBe("rejected");
+    if (outcome.status === "rejected")
+      expect(outcome.reason).toMatchObject({ code: "forbidden", status: 403 });
+    const targetRow = (await sql.query(
+      `select role from launchloom_admin.members where subject = $1`,
+      [target.subject],
+    )) as Array<{ role: string }>;
+    expect(targetRow[0].role).toBe("admin");
+  }, 30_000);
 
   it("serializes concurrent deactivation of the last two test owners", async () => {
     const pair = await Promise.all([

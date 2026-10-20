@@ -46,6 +46,17 @@ describe("bootstrap-admin-owner script", () => {
         "owner@example.test",
         "--name",
         "Owner",
+        "--dry-run",
+      ]),
+    ).toMatchObject({ confirm: false, dryRun: true });
+    expect(
+      parseBootstrapArgs([
+        "--subject",
+        "test-subject",
+        "--email",
+        "owner@example.test",
+        "--name",
+        "Owner",
         "--confirm",
         "--database-url-file",
         "/tmp/opencode/example",

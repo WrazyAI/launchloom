@@ -61,7 +61,8 @@ CREATE TABLE IF NOT EXISTS launchloom_admin.legacy_identity_links (
 CREATE OR REPLACE FUNCTION launchloom_admin.get_member(p_subject text)
 RETURNS SETOF launchloom_admin.members
 LANGUAGE sql STABLE
-SET search_path = launchloom_admin, public
+SECURITY DEFINER
+SET search_path = launchloom_admin, pg_temp
 AS $$
   SELECT * FROM launchloom_admin.members WHERE subject = p_subject;
 $$;
@@ -69,7 +70,8 @@ $$;
 CREATE OR REPLACE FUNCTION launchloom_admin.find_active_member(p_subject text)
 RETURNS SETOF launchloom_admin.members
 LANGUAGE sql STABLE
-SET search_path = launchloom_admin, public
+SECURITY DEFINER
+SET search_path = launchloom_admin, pg_temp
 AS $$
   SELECT * FROM launchloom_admin.members WHERE subject = p_subject AND active;
 $$;
@@ -77,7 +79,8 @@ $$;
 CREATE OR REPLACE FUNCTION launchloom_admin.list_members()
 RETURNS SETOF launchloom_admin.members
 LANGUAGE sql STABLE
-SET search_path = launchloom_admin, public
+SECURITY DEFINER
+SET search_path = launchloom_admin, pg_temp
 AS $$
   SELECT * FROM launchloom_admin.members
   ORDER BY active DESC, (role = 'owner') DESC, lower(coalesce(display_name, email));
@@ -90,12 +93,19 @@ CREATE OR REPLACE FUNCTION launchloom_admin.create_enrollment(
   p_expires_at timestamptz
 ) RETURNS uuid
 LANGUAGE plpgsql
-SET search_path = launchloom_admin, public
+SECURITY DEFINER
+SET search_path = launchloom_admin, pg_temp
 AS $$
 DECLARE
   v_actor launchloom_admin.members%ROWTYPE;
   v_id uuid;
 BEGIN
+  -- Serialize membership writes before authorizing the actor. Otherwise an
+  -- owner could be deactivated while this call waits, then still mint invites.
+  PERFORM 1 FROM launchloom_admin.workspace_guard WHERE id FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'workspace_guard_missing';
+  END IF;
   SELECT * INTO v_actor FROM launchloom_admin.members
     WHERE subject = p_created_by AND active AND role = 'owner';
   IF NOT FOUND THEN
@@ -126,7 +136,8 @@ CREATE OR REPLACE FUNCTION launchloom_admin.accept_enrollment(
   p_display_name text DEFAULT NULL
 ) RETURNS launchloom_admin.members
 LANGUAGE plpgsql
-SET search_path = launchloom_admin, public
+SECURITY DEFINER
+SET search_path = launchloom_admin, pg_temp
 AS $$
 DECLARE
   v_enrollment launchloom_admin.enrollments%ROWTYPE;
@@ -178,12 +189,16 @@ CREATE OR REPLACE FUNCTION launchloom_admin.bootstrap_owner(
   p_display_name text DEFAULT NULL
 ) RETURNS launchloom_admin.members
 LANGUAGE plpgsql
-SET search_path = launchloom_admin, public
+SECURITY DEFINER
+SET search_path = launchloom_admin, pg_temp
 AS $$
 DECLARE
   v_member launchloom_admin.members%ROWTYPE;
 BEGIN
   PERFORM 1 FROM launchloom_admin.workspace_guard WHERE id FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'workspace_guard_missing';
+  END IF;
   IF EXISTS (SELECT 1 FROM launchloom_admin.members WHERE active AND role = 'owner') THEN
     RAISE EXCEPTION 'owner_exists';
   END IF;
@@ -203,13 +218,20 @@ CREATE OR REPLACE FUNCTION launchloom_admin.change_member(
   p_active boolean DEFAULT NULL
 ) RETURNS launchloom_admin.members
 LANGUAGE plpgsql
-SET search_path = launchloom_admin, public
+SECURITY DEFINER
+SET search_path = launchloom_admin, pg_temp
 AS $$
 DECLARE
   v_actor launchloom_admin.members%ROWTYPE;
   v_target launchloom_admin.members%ROWTYPE;
   v_owner_count integer;
 BEGIN
+  -- Lock the singleton guard before reading the actor so a concurrent
+  -- deactivation cannot leave a stale owner able to mutate the team.
+  PERFORM 1 FROM launchloom_admin.workspace_guard WHERE id FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'workspace_guard_missing';
+  END IF;
   SELECT * INTO v_actor FROM launchloom_admin.members
     WHERE subject = p_actor AND active AND role = 'owner';
   IF NOT FOUND THEN
@@ -221,7 +243,6 @@ BEGIN
   IF p_role IS NULL AND p_active IS NULL THEN
     RAISE EXCEPTION 'no_change';
   END IF;
-  PERFORM 1 FROM launchloom_admin.workspace_guard WHERE id FOR UPDATE;
   SELECT * INTO v_target FROM launchloom_admin.members WHERE subject = p_target FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'not_found';
@@ -251,7 +272,8 @@ CREATE OR REPLACE FUNCTION launchloom_admin.update_profile(
   p_avatar_key text DEFAULT NULL
 ) RETURNS launchloom_admin.members
 LANGUAGE plpgsql
-SET search_path = launchloom_admin, public
+SECURITY DEFINER
+SET search_path = launchloom_admin, pg_temp
 AS $$
 DECLARE
   v_member launchloom_admin.members%ROWTYPE;
@@ -271,5 +293,24 @@ BEGIN
   INSERT INTO launchloom_admin.membership_audit (actor_subject, action, target_subject)
     VALUES (p_subject, 'profile_updated', p_subject);
   RETURN v_member;
+END;
+$$;
+
+-- Execute-only access for the server-side Worker role. Functions are SECURITY
+-- DEFINER, so the Worker needs EXECUTE and schema USAGE but no direct table or
+-- sequence privileges. The conditional block keeps this migration applicable to
+-- a fresh database before the operator has created that role.
+REVOKE ALL ON SCHEMA launchloom_admin FROM PUBLIC;
+REVOKE ALL ON ALL TABLES IN SCHEMA launchloom_admin FROM PUBLIC;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA launchloom_admin FROM PUBLIC;
+REVOKE ALL ON ALL FUNCTIONS IN SCHEMA launchloom_admin FROM PUBLIC;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'launchloom_worker') THEN
+    EXECUTE 'GRANT USAGE ON SCHEMA launchloom_admin TO launchloom_worker';
+    EXECUTE 'GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA launchloom_admin TO launchloom_worker';
+    EXECUTE 'ALTER DEFAULT PRIVILEGES IN SCHEMA launchloom_admin GRANT EXECUTE ON FUNCTIONS TO launchloom_worker';
+  END IF;
 END;
 $$;

@@ -27,9 +27,10 @@ export class BootstrapError extends Error {
 const USAGE = `Usage:
   node scripts/bootstrap-admin-owner.mjs --subject <auth-subject> --email <verified-email> --name <name> [--confirm] [--database-url-file <path>]
 
-Dry run is the default. --confirm performs the write and refuses if an active
-owner already exists. The database URL is read from ADMIN_DATABASE_URL first,
-then --database-url-file. No URL or token is printed.`;
+Dry run is the default (--dry-run is accepted explicitly). --confirm performs
+the write and refuses if an active owner already exists. The database URL is
+read from ADMIN_DATABASE_URL first, then --database-url-file. No URL or token is
+printed.`;
 
 function takeValue(argv, index, flag) {
   const value = argv[index + 1];
@@ -44,6 +45,7 @@ export function parseBootstrapArgs(argv = []) {
     email: "",
     name: "",
     confirm: false,
+    dryRun: false,
     databaseUrlFile: "",
     help: false,
   };
@@ -55,6 +57,10 @@ export function parseBootstrapArgs(argv = []) {
     }
     if (arg === "--confirm") {
       parsed.confirm = true;
+      continue;
+    }
+    if (arg === "--dry-run") {
+      parsed.dryRun = true;
       continue;
     }
     if (arg === "--subject") {
@@ -80,6 +86,11 @@ export function parseBootstrapArgs(argv = []) {
     throw new BootstrapError("invalid_argument", `Unknown argument: ${arg}`);
   }
   if (parsed.help) return parsed;
+  if (parsed.confirm && parsed.dryRun)
+    throw new BootstrapError(
+      "invalid_argument",
+      "--confirm and --dry-run cannot be combined.",
+    );
 
   const subject = parsed.subject.trim();
   const email = parsed.email.trim().toLowerCase();
@@ -96,11 +107,11 @@ export function parseBootstrapArgs(argv = []) {
   return { ...parsed, subject, email, name };
 }
 
-async function connect(argv, env, sql) {
+async function connect(args, env, sql) {
   if (sql) return sql;
   let connectionString = String(env.ADMIN_DATABASE_URL || "").trim();
   if (!connectionString) {
-    const file = parseBootstrapArgs(argv).databaseUrlFile;
+    const file = args.databaseUrlFile;
     if (!file)
       throw new BootstrapError(
         "missing_database_url",
@@ -131,7 +142,7 @@ export async function runBootstrap({
     stdout(USAGE);
     return 0;
   }
-  const sql = await connect(argv, env, suppliedSql);
+  const sql = await connect(args, env, suppliedSql);
   const owners = await sql.query(
     "select count(*)::int as count from launchloom_admin.members where active and role = 'owner'",
   );
