@@ -503,16 +503,20 @@ export function AttemptInspector({
         if (!focusable.length) return;
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
-        const active = document.activeElement;
+        const active = document.activeElement as HTMLElement | null;
         if (!dialog.contains(active)) {
           event.preventDefault();
           first.focus();
           return;
         }
-        if (event.shiftKey && active === first) {
+        const index = active ? focusable.indexOf(active) : -1;
+        if (index === -1) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        } else if (event.shiftKey && index === 0) {
           event.preventDefault();
           last.focus();
-        } else if (!event.shiftKey && active === last) {
+        } else if (!event.shiftKey && index === focusable.length - 1) {
           event.preventDefault();
           first.focus();
         }

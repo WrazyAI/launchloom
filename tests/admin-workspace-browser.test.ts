@@ -903,6 +903,16 @@ describe("real admin workspace browser behavior", () => {
         );
         expect(openMetrics.bodyWidth).toBeLessThanOrEqual(openMetrics.viewport);
 
+        await page.keyboard.press("Shift+Tab");
+        await expect
+          .poll(() =>
+            page.evaluate(() => {
+              const open = document.querySelector("dialog[open]");
+              return Boolean(open && open.contains(document.activeElement));
+            }),
+          )
+          .toBe(true);
+
         for (let step = 0; step < 12; step += 1) {
           await page.keyboard.press("Tab");
           await expect
