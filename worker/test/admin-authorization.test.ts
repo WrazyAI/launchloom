@@ -5,11 +5,13 @@ import worker, { type Env } from "../src/index";
 import {
   AdminAuthError,
   actorFromPrincipal,
+  guardedAdminRoute,
   requireAdmin,
   requireAdminContext,
   requireVerifiedSession,
   withAdminCookies,
 } from "../src/admin/auth";
+import { proxyAdminAuth } from "../src/admin/neon-auth";
 import {
   accountsApi,
   acceptEnrollmentApi,
@@ -91,6 +93,7 @@ function fakeStore(
   options: { failFindActive?: unknown; failGet?: unknown } = {},
 ) {
   let members = initial.map((item) => ({ ...item }));
+  const usedTokens = new Set<string>();
   const calls: CallCounts = { findActive: 0, session: 0, get: 0, list: 0 };
   const store: MembershipStore = {
     async findActive(subject) {
@@ -130,6 +133,9 @@ function fakeStore(
         throw new MembershipError("forbidden", "Verify your email before accepting the invitation.");
       if (token !== "t".repeat(43))
         throw new MembershipError("invalid", "This invitation is not valid.");
+      if (usedTokens.has(token))
+        throw new MembershipError("enrollment_used", "This invitation has already been used.");
+      usedTokens.add(token);
       const accepted = member({
         id: verified.subject,
         email: verified.email,
@@ -448,6 +454,84 @@ describe("central admin authorization matrix", () => {
     expect(withAdminCookies(response, [])).toBe(response);
   });
 
+  it("propagates provider cookies on successful legacy admin responses", async () => {
+    const { store } = fakeStore();
+    const readSession = sessionReader(session(), ["renewed=1", "cleared=2"]);
+    const successResponses: Array<{
+      name: string;
+      handler: () => Promise<Response>;
+      check: (response: Response) => Promise<void>;
+    }> = [
+      {
+        name: "invite list",
+        handler: async () =>
+          new Response(JSON.stringify({ invites: [] }), { status: 200 }),
+        check: async (response) => {
+          expect(response.status).toBe(200);
+          await expect(response.json()).resolves.toEqual({ invites: [] });
+        },
+      },
+      {
+        name: "generation list",
+        handler: async () =>
+          new Response(JSON.stringify({ generations: [] }), { status: 200 }),
+        check: async (response) => {
+          expect(response.status).toBe(200);
+          await expect(response.json()).resolves.toEqual({ generations: [] });
+        },
+      },
+      {
+        name: "private hero",
+        handler: async () =>
+          new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]), {
+            status: 200,
+            headers: { "Content-Type": "image/png" },
+          }),
+        check: async (response) => {
+          expect(response.status).toBe(200);
+          expect(response.headers.get("Content-Type")).toBe("image/png");
+          expect((await response.arrayBuffer()).byteLength).toBe(4);
+        },
+      },
+    ];
+
+    for (const { name, handler, check } of successResponses) {
+      const response = await guardedAdminRoute(
+        request(),
+        neonEnv(),
+        accessContext(),
+        handler,
+        { store, readSession },
+      );
+      expect(response.headers.getSetCookie(), name).toEqual([
+        "renewed=1",
+        "cleared=2",
+      ]);
+      await check(response);
+    }
+  });
+
+  it("fails closed for an unknown admin auth mode", async () => {
+    const unknown = {
+      ...accessEnv(),
+      ADMIN_AUTH_MODE: "typo" as never,
+    };
+    const denied = await denial(requireAdmin(request(), unknown, accessContext()));
+    expect(denied).toMatchObject({
+      status: 503,
+      code: "auth_not_configured",
+    });
+    expect(
+      await denial(requireVerifiedSession(request(), unknown)),
+    ).toMatchObject({ status: 503, code: "auth_not_configured" });
+
+    const proxy = await proxyAdminAuth(
+      request("/api/admin/onboarding-invites/auth/get-session"),
+      unknown,
+    );
+    expect(proxy.status).toBe(503);
+  });
+
   it("creates an event-time actor snapshot from the server principal only", () => {
     const principal: AdminPrincipal = {
       id: "neon-owner",
@@ -592,6 +676,32 @@ describe("accounts handlers behind the central guard", () => {
       { store, session: session({ subject: "invitee", email: "invitee@example.test" }) },
     );
     expect(accepted.status).toBe(400);
+
+    const valid = await acceptEnrollmentApi(
+      request("/api/admin/onboarding-invites/workspace/enrollments/accept", {
+        method: "POST",
+        headers: { Origin: apiOrigin, "Content-Type": "application/json" },
+        body: JSON.stringify({ token: "t".repeat(43) }),
+      }),
+      { store, session: session({ subject: "invitee", email: "invitee@example.test" }) },
+    );
+    expect(valid.status).toBe(200);
+    await expect(valid.json()).resolves.toMatchObject({
+      principal: { id: "invitee", email: "invitee@example.test", role: "admin" },
+    });
+
+    const reused = await acceptEnrollmentApi(
+      request("/api/admin/onboarding-invites/workspace/enrollments/accept", {
+        method: "POST",
+        headers: { Origin: apiOrigin, "Content-Type": "application/json" },
+        body: JSON.stringify({ token: "t".repeat(43) }),
+      }),
+      { store, session: session({ subject: "invitee", email: "invitee@example.test" }) },
+    );
+    expect(reused.status).toBe(409);
+    await expect(reused.json()).resolves.toMatchObject({
+      error: { code: "enrollment_used" },
+    });
   });
 });
 
@@ -686,6 +796,37 @@ describe("existing admin routes keep access-mode behavior and never fall back in
         accessContext(),
       );
       expect(denied.status).toBe(401);
+    }
+  });
+
+  it("restricts the login shell to GET/HEAD and fails closed on unknown modes", async () => {
+    const posted = await worker.fetch(
+      new Request(`${apiOrigin}/admin/login`, { method: "POST" }),
+      neonEnv(),
+      accessContext(),
+    );
+    expect(posted.status).toBe(405);
+    expect(posted.headers.get("Allow")).toBe("GET, HEAD");
+
+    const unknown = { ...neonEnv(), ADMIN_AUTH_MODE: "typo" as never };
+    const login = await worker.fetch(
+      new Request(`${apiOrigin}/admin/login`),
+      unknown,
+      accessContext(),
+    );
+    expect(login.status).toBe(503);
+    for (const path of [
+      `${workspace}/me`,
+      `${workspace}/team`,
+      `${apiOrigin}/api/admin/generations`,
+      `${apiOrigin}/api/admin/onboarding-invites`,
+    ]) {
+      const response = await worker.fetch(
+        new Request(path),
+        unknown,
+        accessContext(),
+      );
+      expect(response.status).toBe(503);
     }
   });
 

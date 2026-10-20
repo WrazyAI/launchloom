@@ -5,6 +5,7 @@ import { serveAdminAsset } from "./asset-handler";
 import {
   accessAdminEmail,
   requireAdminContext,
+  resolveAdminAuthMode,
   toAdminAuthError,
   withAdminCookies,
 } from "./auth";
@@ -28,6 +29,16 @@ function shellHeaders() {
 function notFound() {
   return new Response("Not found", {
     status: 404,
+    headers: {
+      ...NO_STORE_HEADERS,
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  });
+}
+
+function authMisconfigured() {
+  return new Response("Admin authentication is misconfigured.", {
+    status: 503,
     headers: {
       ...NO_STORE_HEADERS,
       "Content-Type": "text/plain; charset=utf-8",
@@ -74,8 +85,28 @@ export async function routeAdminRequest(
     return serveAdminAsset(request, env);
 
   if (path === "/admin/login") {
-    if (env.ADMIN_AUTH_MODE !== "neon") return notFound();
+    if (request.method !== "GET" && request.method !== "HEAD")
+      return new Response("Method not allowed", {
+        status: 405,
+        headers: { ...NO_STORE_HEADERS, Allow: "GET, HEAD" },
+      });
+    let mode: "access" | "neon";
+    try {
+      mode = resolveAdminAuthMode(env);
+    } catch {
+      return authMisconfigured();
+    }
+    if (mode !== "neon") return notFound();
     return renderAdminLoginShell();
+  }
+
+  let mode: "access" | "neon";
+  try {
+    mode = resolveAdminAuthMode(env);
+  } catch {
+    if (path === WORKSPACE_PATH) return authMisconfigured();
+    if (path === "/admin" || path.startsWith("/admin/")) return notFound();
+    return null;
   }
 
   if (path === WORKSPACE_PATH) {
@@ -85,7 +116,7 @@ export async function routeAdminRequest(
         headers: { ...NO_STORE_HEADERS, Allow: "GET, HEAD" },
       });
 
-    if (env.ADMIN_AUTH_MODE === "neon") {
+    if (mode === "neon") {
       try {
         const guard = await requireAdminContext(request, env, ctx);
         return withAdminCookies(

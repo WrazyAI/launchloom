@@ -90,7 +90,7 @@ type AuthRoute = {
 const AUTH_ROUTES: ReadonlyMap<string, AuthRoute> = new Map([
   ["sign-up/email", { method: "POST", json: true, sensitive: true, callbackField: "callbackURL" }],
   ["sign-in/email", { method: "POST", json: true, sensitive: true, callbackField: "callbackURL" }],
-  ["sign-out", { method: "POST", json: false, sensitive: false, callbackField: null }],
+  ["sign-out", { method: "POST", json: true, sensitive: false, callbackField: null }],
   ["get-session", { method: "GET", json: false, sensitive: false, callbackField: null }],
   ["request-password-reset", { method: "POST", json: true, sensitive: true, callbackField: "redirectTo" }],
   // Better Auth has used both names; keep the legacy alias explicit instead of
@@ -567,7 +567,9 @@ function parseUpstreamJson(text: string): unknown {
  * response excludes provider credential fields.
  */
 export async function proxyAdminAuth(request: Request, env: AdminAuthEnv): Promise<Response> {
-  if (env.ADMIN_AUTH_MODE !== "neon") return notFound();
+  const mode = env.ADMIN_AUTH_MODE ?? "access";
+  if (mode === "access") return notFound();
+  if (mode !== "neon") return dependencyUnavailable();
 
   let config: NeonConfig;
   try {

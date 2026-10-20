@@ -1,6 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import type { AdminPrincipal } from "../../../src/lib/admin-contracts";
 import type { VerifiedSession } from "./neon-auth";
+import { legacyAccessId } from "./workspace-api";
 
 /**
  * Server-only membership persistence. Every write goes through the SQL
@@ -260,6 +261,16 @@ const DB_TOKENS: Array<[RegExp, MembershipErrorCode, string]> = [
     "dependency_unavailable",
     "Membership data is temporarily unavailable.",
   ],
+  [
+    /\blegacy_identity_conflict\b/u,
+    "conflict",
+    "This legacy identity is already linked to another account.",
+  ],
+  [
+    /\b(?:invalid_legacy_id|invalid_subject)\b/u,
+    "invalid",
+    "The legacy identity link is not valid.",
+  ],
 ];
 
 /** Never exposes raw database text, SQL, constraints or connection details. */
@@ -394,7 +405,15 @@ export function createMembershipStore(
       const member = memberFromRow(rows[0]);
       if (!member.active)
         throw new MembershipError("forbidden", "This membership is inactive.");
-      return principalFromMember(member);
+      const principal = principalFromMember(member);
+      // The legacy ID is derived only from the already-verified session email.
+      // The database function is idempotent for the same subject and refuses
+      // to overwrite a link owned by a different subject.
+      await query("select launchloom_admin.link_legacy_identity($1, $2)", [
+        await legacyAccessId(email),
+        principal.id,
+      ]);
+      return principal;
     },
 
     async updateOwnProfile(subject, input) {

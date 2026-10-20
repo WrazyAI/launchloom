@@ -43,9 +43,9 @@ import {
   accessAdminEmail,
   actorFromPrincipal,
   adminAuthErrorResponse,
-  requireAdmin,
-  requireAdminContext,
+  guardedAdminRoute,
   requireVerifiedSession,
+  resolveAdminAuthMode,
   withAdminCookies,
 } from "./admin/auth";
 import {
@@ -358,23 +358,23 @@ async function authenticatedWorkspace(
   if (origin && origin !== new URL(request.url).origin)
     return workspaceError("forbidden", "Invalid request origin.", 403);
   const suffix = workspaceSuffix(request);
+  let mode: "access" | "neon";
+  try {
+    mode = resolveAdminAuthMode(env);
+  } catch (error) {
+    return adminAuthErrorResponse(error);
+  }
 
-  if (env.ADMIN_AUTH_MODE === "neon") {
+  if (mode === "neon") {
     if (suffix === "/enrollments/accept") return enrollmentAccept(request, env);
-    let guard;
-    try {
-      guard = await requireAdminContext(request, env, ctx);
-    } catch (error) {
-      return adminAuthErrorResponse(error);
-    }
-    const response =
+    return guardedAdminRoute(request, env, ctx, async (guard) =>
       suffix === "/me" || suffix === "/team" || suffix.startsWith("/team/")
-        ? await accountsApi(request, {
+        ? accountsApi(request, {
             store: guard.store!,
             principal: guard.principal,
           })
-        : await workspaceApi(request, env, guard.principal.email);
-    return withAdminCookies(response, guard.setCookies);
+        : workspaceApi(request, env, guard.principal.email),
+    );
   }
 
   if (!ctx.access) return workspaceError("signed_out", "Sign in required.", 401);
@@ -436,133 +436,130 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
   if (request.method === "POST") {
     if (!origin) return json({ error: "Invalid request origin." }, 403, headers);
   }
-  let principal;
-  try {
-    principal = await requireAdmin(request, env, ctx);
-  } catch (error) {
-    return adminAuthErrorResponse(error);
-  }
-  const administratorEmail = principal.email;
-  const actor = actorFromPrincipal(principal);
-  if (!env.ONBOARDING_INVITE_SIGNING_SECRET || !env.ONBOARDING_ORIGIN)
-    return json({ error: "Invite management is not configured." }, 503, headers);
-  if (request.method === "GET")
-    return json({ invites: await inviteCoordinator(env).list(Date.now()) }, 200, {
-      ...headers,
-      "Cache-Control": "no-store",
-    });
-  if (request.method !== "POST")
-    return new Response("Method not allowed", { status: 405 });
-  try {
-    const body = (await request.json()) as Record<string, unknown>;
-    const action = clean(body.action, 20);
-    const inviteId = clean(body.inviteId, 100);
-    if (action === "recover-intake") {
-      if (body.confirmed !== true)
-        return json({ error: "Confirm that you reviewed the original issue and its intake details.", code: "recovery_confirmation_required" }, 400, headers);
-      const issueNumber = body.issueNumber;
-      if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId) || typeof issueNumber !== "number" || !Number.isSafeInteger(issueNumber) || issueNumber <= 0)
-        return json({ error: "Choose a valid invitation and original issue number." }, 400, headers);
-      const coordinator = inviteCoordinator(env);
-      const reservation = await coordinator.recoveryReservation(inviteId);
-      if (!reservation || (reservation.duplicate && reservation.issueNumber !== issueNumber))
-        return json({ error: "This invitation cannot be reconciled with that issue.", code: "recovery_mismatch" }, 409, headers);
-      let recipient = reservation.recipient;
-      let businessName = reservation.businessName;
-      if (!reservation.duplicate) {
-        const issue = await github(env, `/repos/WrazyAI/launchloom/issues/${issueNumber}`).then(response => response.json() as Promise<IntakeIssue>);
-        const content = await readIntakeIssuePayload(issue);
-        if (issue.number !== issueNumber || !content || content.hash !== reservation.submissionHash ||
-            (reservation.operationId && !(await verifyIntakeIssueOwnership(issue, reservation.operationId, reservation.submissionHash))))
-          return json({ error: "The selected issue does not match the original operation and submitted details.", code: "recovery_mismatch" }, 409, headers);
-        recipient = clean(content.payload.email, 240);
-        businessName = clean(content.payload.businessName, 200);
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(recipient) || !businessName)
-          return json({ error: "The original intake is missing valid contact details.", code: "recovery_mismatch" }, 409, headers);
-        const reconciled = await coordinator.reconcileIssue({inviteId, submissionId: reservation.submissionId,
-          submissionHash: reservation.submissionHash, operationId: reservation.operationId, issueNumber,
-          reviewerEmail: administratorEmail, recipient, businessName, actor});
-        if (!reconciled) return json({ error: "The invitation changed during recovery. Refresh and review it again.", code: "recovery_mismatch" }, 409, headers);
-      }
-      await coordinator.queueWorkflowDispatch(inviteId, reservation.submissionId, issueNumber);
-      await coordinator.queueIntakeReceipt(inviteId, reservation.submissionId, recipient!, businessName!);
-      return json({ ok: true, issue: issueNumber, duplicate: reservation.duplicate }, 200, headers);
-    }
-    if (action === "revoke") {
-      if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId))
-        return json({ error: "Invalid invitation." }, 400, headers);
-      const revoked = await inviteCoordinator(env).revoke(inviteId, Date.now());
-      return revoked
-        ? json({ ok: true }, 200, headers)
-        : json({ error: "Invitation cannot be revoked." }, 409, headers);
-    }
-    if (action === "backfill") {
-      // Link-only invites predate intake-email attribution. Read the stored
-      // intake issues and bind the submitted client email to the invite and
-      // the matching generation record.
-      const coordinator = inviteCoordinator(env);
-      const missing = await coordinator.listMissingAttribution(25);
-      const ledger = generationLedger(env);
-      const generationByIssue = new Map<number, string>();
-      if (missing.length) {
-        for (const record of await ledger.list(200)) {
-          if (record.issueNumber && !generationByIssue.has(record.issueNumber))
-            generationByIssue.set(record.issueNumber, record.generationId);
+  return guardedAdminRoute(request, env, ctx, async (guard) => {
+    const principal = guard.principal;
+    const administratorEmail = principal.email;
+    const actor = actorFromPrincipal(principal);
+    if (!env.ONBOARDING_INVITE_SIGNING_SECRET || !env.ONBOARDING_ORIGIN)
+      return json({ error: "Invite management is not configured." }, 503, headers);
+    if (request.method === "GET")
+      return json({ invites: await inviteCoordinator(env).list(Date.now()) }, 200, {
+        ...headers,
+        "Cache-Control": "no-store",
+      });
+    if (request.method !== "POST")
+      return new Response("Method not allowed", { status: 405 });
+    try {
+      const body = (await request.json()) as Record<string, unknown>;
+      const action = clean(body.action, 20);
+      const inviteId = clean(body.inviteId, 100);
+      if (action === "recover-intake") {
+        if (body.confirmed !== true)
+          return json({ error: "Confirm that you reviewed the original issue and its intake details.", code: "recovery_confirmation_required" }, 400, headers);
+        const issueNumber = body.issueNumber;
+        if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId) || typeof issueNumber !== "number" || !Number.isSafeInteger(issueNumber) || issueNumber <= 0)
+          return json({ error: "Choose a valid invitation and original issue number." }, 400, headers);
+        const coordinator = inviteCoordinator(env);
+        const reservation = await coordinator.recoveryReservation(inviteId);
+        if (!reservation || (reservation.duplicate && reservation.issueNumber !== issueNumber))
+          return json({ error: "This invitation cannot be reconciled with that issue.", code: "recovery_mismatch" }, 409, headers);
+        let recipient = reservation.recipient;
+        let businessName = reservation.businessName;
+        if (!reservation.duplicate) {
+          const issue = await github(env, `/repos/WrazyAI/launchloom/issues/${issueNumber}`).then(response => response.json() as Promise<IntakeIssue>);
+          const content = await readIntakeIssuePayload(issue);
+          if (issue.number !== issueNumber || !content || content.hash !== reservation.submissionHash ||
+              (reservation.operationId && !(await verifyIntakeIssueOwnership(issue, reservation.operationId, reservation.submissionHash))))
+            return json({ error: "The selected issue does not match the original operation and submitted details.", code: "recovery_mismatch" }, 409, headers);
+          recipient = clean(content.payload.email, 240);
+          businessName = clean(content.payload.businessName, 200);
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(recipient) || !businessName)
+            return json({ error: "The original intake is missing valid contact details.", code: "recovery_mismatch" }, 409, headers);
+          const reconciled = await coordinator.reconcileIssue({inviteId, submissionId: reservation.submissionId,
+            submissionHash: reservation.submissionHash, operationId: reservation.operationId, issueNumber,
+            reviewerEmail: administratorEmail, recipient, businessName, actor});
+          if (!reconciled) return json({ error: "The invitation changed during recovery. Refresh and review it again.", code: "recovery_mismatch" }, 409, headers);
         }
+        await coordinator.queueWorkflowDispatch(inviteId, reservation.submissionId, issueNumber);
+        await coordinator.queueIntakeReceipt(inviteId, reservation.submissionId, recipient!, businessName!);
+        return json({ ok: true, issue: issueNumber, duplicate: reservation.duplicate }, 200, headers);
       }
-      let backfilled = 0;
-      for (const item of missing) {
-        const email = await intakeIssueEmail(env, item.issueNumber);
-        if (!email) continue;
-        if (!(await coordinator.recordSubmitterEmail(item.inviteId, email))) continue;
-        backfilled += 1;
-        const generationId = generationByIssue.get(item.issueNumber);
-        if (generationId) {
-          try {
-            await ledger.upsertGeneration({ generationId, clientEmail: email });
-          } catch {
-            // The invite attribution succeeded; the ledger row is best-effort.
+      if (action === "revoke") {
+        if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId))
+          return json({ error: "Invalid invitation." }, 400, headers);
+        const revoked = await inviteCoordinator(env).revoke(inviteId, Date.now());
+        return revoked
+          ? json({ ok: true }, 200, headers)
+          : json({ error: "Invitation cannot be revoked." }, 409, headers);
+      }
+      if (action === "backfill") {
+        // Link-only invites predate intake-email attribution. Read the stored
+        // intake issues and bind the submitted client email to the invite and
+        // the matching generation record.
+        const coordinator = inviteCoordinator(env);
+        const missing = await coordinator.listMissingAttribution(25);
+        const ledger = generationLedger(env);
+        const generationByIssue = new Map<number, string>();
+        if (missing.length) {
+          for (const record of await ledger.list(200)) {
+            if (record.issueNumber && !generationByIssue.has(record.issueNumber))
+              generationByIssue.set(record.issueNumber, record.generationId);
           }
         }
+        let backfilled = 0;
+        for (const item of missing) {
+          const email = await intakeIssueEmail(env, item.issueNumber);
+          if (!email) continue;
+          if (!(await coordinator.recordSubmitterEmail(item.inviteId, email))) continue;
+          backfilled += 1;
+          const generationId = generationByIssue.get(item.issueNumber);
+          if (generationId) {
+            try {
+              await ledger.upsertGeneration({ generationId, clientEmail: email });
+            } catch {
+              // The invite attribution succeeded; the ledger row is best-effort.
+            }
+          }
+        }
+        const remaining = (await coordinator.listMissingAttribution(100)).length;
+        return json({ ok: true, backfilled, remaining }, 200, headers);
       }
-      const remaining = (await coordinator.listMissingAttribution(100)).length;
-      return json({ ok: true, backfilled, remaining }, 200, headers);
+      if (action !== "create") return json({ error: "Choose create, revoke, or backfill." }, 400, headers);
+      const clientEmail = clean(body.clientEmail, 240).toLowerCase();
+      if (clientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(clientEmail))
+        return json({ error: "Enter a valid client email." }, 400, headers);
+      const expiresAt = Date.now() + 14 * 24 * 60 * 60 * 1000;
+      const claims: OnboardingInviteClaims = {
+        inviteId: crypto.randomUUID(),
+        ...(clientEmail ? { clientEmail } : {}),
+        expiresAt,
+        allowedOrigins: [env.ONBOARDING_ORIGIN.replace(/\/$/u, "")],
+      };
+      const encoded = btoa(String.fromCharCode(...encoder.encode(JSON.stringify(claims))))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/u, "");
+      const token = `${encoded}.${await signHmac(encoded, env.ONBOARDING_INVITE_SIGNING_SECRET)}`;
+      const tokenHash = await digest(token);
+      await inviteCoordinator(env).register({
+        inviteId: claims.inviteId,
+        clientEmail: claims.clientEmail || null,
+        expiresAt,
+        allowedOrigin: claims.allowedOrigins[0],
+        tokenHash,
+        now: Date.now(),
+        creator: actor,
+      });
+      return json({
+        inviteId: claims.inviteId,
+        clientEmail: claims.clientEmail || null,
+        expiresAt,
+        url: `${claims.allowedOrigins[0]}/onboard/#invite=${encodeURIComponent(token)}`,
+      }, 201, { ...headers, "Cache-Control": "no-store" });
+    } catch {
+      return json({ error: "Could not create the invitation." }, 400, headers);
     }
-    if (action !== "create") return json({ error: "Choose create, revoke, or backfill." }, 400, headers);
-    const clientEmail = clean(body.clientEmail, 240).toLowerCase();
-    if (clientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(clientEmail))
-      return json({ error: "Enter a valid client email." }, 400, headers);
-    const expiresAt = Date.now() + 14 * 24 * 60 * 60 * 1000;
-    const claims: OnboardingInviteClaims = {
-      inviteId: crypto.randomUUID(),
-      ...(clientEmail ? { clientEmail } : {}),
-      expiresAt,
-      allowedOrigins: [env.ONBOARDING_ORIGIN.replace(/\/$/u, "")],
-    };
-    const encoded = btoa(String.fromCharCode(...encoder.encode(JSON.stringify(claims))))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/u, "");
-    const token = `${encoded}.${await signHmac(encoded, env.ONBOARDING_INVITE_SIGNING_SECRET)}`;
-    const tokenHash = await digest(token);
-    await inviteCoordinator(env).register({
-      inviteId: claims.inviteId,
-      clientEmail: claims.clientEmail || null,
-      expiresAt,
-      allowedOrigin: claims.allowedOrigins[0],
-      tokenHash,
-      now: Date.now(),
-      creator: actor,
-    });
-    return json({
-      inviteId: claims.inviteId,
-      clientEmail: claims.clientEmail || null,
-      expiresAt,
-      url: `${claims.allowedOrigins[0]}/onboard/#invite=${encodeURIComponent(token)}`,
-    }, 201, { ...headers, "Cache-Control": "no-store" });
-  } catch {
-    return json({ error: "Could not create the invitation." }, 400, headers);
-  }
+  });
 }
 
 const GENERATION_STATUSES = new Set([
@@ -840,20 +837,17 @@ async function adminGenerations(
     return json({ error: "Invalid request origin." }, 403, headers);
   if (request.method !== "GET")
     return json({ error: "Method not allowed." }, 405, headers);
-  try {
-    await requireAdmin(request, env, ctx);
-  } catch (error) {
-    return adminAuthErrorResponse(error);
-  }
-  const id = clean(new URL(request.url).searchParams.get("id"), 120).toLowerCase();
-  if (id) {
-    if (!GENERATION_ID_PATTERN.test(id))
-      return json({ error: "Invalid generation." }, 400, headers);
-    const detail = await generationLedger(env).get(id);
-    if (!detail) return json({ error: "Generation not found." }, 404, headers);
-    return json(detail, 200, headers);
-  }
-  return json({ generations: await generationLedger(env).list(200) }, 200, headers);
+  return guardedAdminRoute(request, env, ctx, async () => {
+    const id = clean(new URL(request.url).searchParams.get("id"), 120).toLowerCase();
+    if (id) {
+      if (!GENERATION_ID_PATTERN.test(id))
+        return json({ error: "Invalid generation." }, 400, headers);
+      const detail = await generationLedger(env).get(id);
+      if (!detail) return json({ error: "Generation not found." }, 404, headers);
+      return json(detail, 200, headers);
+    }
+    return json({ generations: await generationLedger(env).list(200) }, 200, headers);
+  });
 }
 
 async function adminGenerationHero(
@@ -867,24 +861,21 @@ async function adminGenerationHero(
     return new Response("Forbidden", { status: 403, headers: { "Cache-Control": "no-store" } });
   if (request.method !== "GET")
     return new Response("Method not allowed", { status: 405 });
-  try {
-    await requireAdmin(request, env, ctx);
-  } catch (error) {
-    return adminAuthErrorResponse(error);
-  }
-  const id = clean(new URL(request.url).searchParams.get("id"), 120).toLowerCase();
-  if (!GENERATION_ID_PATTERN.test(id))
-    return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
-  const hero = await generationLedger(env).getHero(id);
-  if (!hero)
-    return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
-  return new Response(hero.bytes, {
-    status: 200,
-    headers: {
-      "Content-Type": hero.contentType,
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-    },
+  return guardedAdminRoute(request, env, ctx, async () => {
+    const id = clean(new URL(request.url).searchParams.get("id"), 120).toLowerCase();
+    if (!GENERATION_ID_PATTERN.test(id))
+      return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
+    const hero = await generationLedger(env).getHero(id);
+    if (!hero)
+      return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
+    return new Response(hero.bytes, {
+      status: 200,
+      headers: {
+        "Content-Type": hero.contentType,
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
   });
 }
 

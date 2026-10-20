@@ -13,7 +13,7 @@ import {
   membershipStoreFromEnv,
   type MembershipStore,
 } from "./membership-store";
-import { legacyAccessPrincipal } from "./workspace-api";
+import { legacyAccessPrincipal, principalActor } from "./workspace-api";
 
 /**
  * Central admin authorization for every shared administration boundary.
@@ -123,9 +123,24 @@ export function withAdminCookies(
   });
 }
 
+/**
+ * Unknown modes fail closed rather than silently using the legacy Access path.
+ * An unset mode keeps the existing access default.
+ */
+export function resolveAdminAuthMode(env: {
+  ADMIN_AUTH_MODE?: string | null;
+}): "access" | "neon" {
+  const value = env.ADMIN_AUTH_MODE ?? "access";
+  if (value !== "access" && value !== "neon")
+    throw new AdminAuthError(
+      "auth_not_configured",
+      "Admin authentication is misconfigured.",
+    );
+  return value;
+}
+
 /** Existing Access audience and allowlist verification for the legacy path. */
-export async function accessAdminEmail(
-  ctx: ExecutionContext,
+export async function accessAdminEmail(  ctx: ExecutionContext,
   env: Env,
 ): Promise<string> {
   if (!ctx.access || !env.ONBOARDING_ACCESS_AUD || !env.ONBOARDING_ADMIN_EMAILS)
@@ -219,7 +234,8 @@ export async function requireAdminContext(
   ctx: ExecutionContext,
   options: AdminGuardOptions = {},
 ): Promise<AdminGuardContext> {
-  if (env.ADMIN_AUTH_MODE !== "neon") {
+  const mode = resolveAdminAuthMode(env);
+  if (mode !== "neon") {
     // Legacy Access denies an unauthenticated caller as 403 (Access itself
     // terminates the sign-in flow before the Worker in a real deployment).
     if (!ctx.access) throw new AdminAuthError("forbidden");
@@ -279,6 +295,32 @@ export async function requireAdmin(
 }
 
 /**
+ * Run one admin handler behind the central guard and attach any provider
+ * renewal/clearing cookies to both the handler response and a typed denial.
+ * Every legacy admin route uses this wrapper so a success path cannot drop
+ * `setCookies` by returning a bare `Response`.
+ */
+export async function guardedAdminRoute(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+  handler: (guard: AdminGuardContext) => Promise<Response>,
+  options: AdminGuardOptions = {},
+): Promise<Response> {
+  let guard: AdminGuardContext;
+  try {
+    guard = await requireAdminContext(request, env, ctx, options);
+  } catch (error) {
+    return adminAuthErrorResponse(error);
+  }
+  try {
+    return withAdminCookies(await handler(guard), guard.setCookies);
+  } catch (error) {
+    return withAdminCookies(adminAuthErrorResponse(error), guard.setCookies);
+  }
+}
+
+/**
  * Session-only verification for the one pre-membership action (enrollment
  * acceptance). It still requires a verified email and the configured store.
  */
@@ -287,7 +329,7 @@ export async function requireVerifiedSession(
   env: Env,
   options: AdminGuardOptions = {},
 ): Promise<VerifiedSessionContext> {
-  if (env.ADMIN_AUTH_MODE !== "neon")
+  if (resolveAdminAuthMode(env) !== "neon")
     throw new AdminAuthError("not_enabled");
   if (adminAuthReadiness(env).length > 0)
     throw new AdminAuthError("auth_not_configured");
@@ -314,11 +356,5 @@ export function requireMemberRole(
 
 /** Immutable event-time provenance copy; body-supplied actor fields are never used. */
 export function actorFromPrincipal(principal: AdminPrincipal): ActorSnapshot {
-  return {
-    kind: "admin",
-    id: principal.id,
-    name: principal.displayName,
-    email: principal.email,
-    source: principal.authSource,
-  };
+  return principalActor(principal);
 }

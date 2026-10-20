@@ -4,6 +4,7 @@ import { neon } from "@neondatabase/serverless";
 import { splitSqlStatements } from "./admin-sql";
 
 const migrationPath = "db/admin/001-membership.sql";
+const linkMigrationPath = "db/admin/002-legacy-identity-link.sql";
 const connectionString = process.env.ADMIN_DATABASE_URL || "";
 
 const FUNCTIONS = [
@@ -108,6 +109,27 @@ describe("admin membership migration", () => {
     expect(migration).not.toContain("pg_graphql");
     expect(migration).not.toContain("supabase");
   });
+
+  it("adds an idempotent, no-overwrite legacy identity link function", async () => {
+    const migration = await readFile(linkMigrationPath, "utf8");
+    expect(migration).toContain(
+      "CREATE OR REPLACE FUNCTION launchloom_admin.link_legacy_identity",
+    );
+    expect(migration).toContain("SECURITY DEFINER");
+    expect(migration).toContain("SET search_path = launchloom_admin, pg_temp");
+    expect(migration).toContain("ON CONFLICT (legacy_id) DO NOTHING");
+    expect(migration).toContain("legacy_identity_conflict");
+    expect(migration).toContain("invalid_legacy_id");
+    expect(migration).toContain("legacy_identity_linked");
+    expect(migration).toContain(
+      "REVOKE ALL ON FUNCTION launchloom_admin.link_legacy_identity(text, text) FROM PUBLIC",
+    );
+    expect(migration).toContain(
+      "GRANT EXECUTE ON FUNCTION launchloom_admin.link_legacy_identity(text, text) TO launchloom_worker",
+    );
+    expect(migration).not.toMatch(/\b(?:DROP|TRUNCATE|DELETE)\b/u);
+    expect(migration).not.toMatch(/GRANT[^;]*\bTO\s+(?:PUBLIC|anon|authenticated|service_role)\b/u);
+  });
 });
 
 if (connectionString) {
@@ -120,6 +142,11 @@ if (connectionString) {
       // rewrite membership history.
       for (const statement of statements) await sql.query(statement);
       for (const statement of statements) await sql.query(statement);
+
+      const linkMigration = await readFile(linkMigrationPath, "utf8");
+      const linkStatements = splitSqlStatements(linkMigration);
+      for (const statement of linkStatements) await sql.query(statement);
+      for (const statement of linkStatements) await sql.query(statement);
 
       const tables = (await sql.query(
         `select table_name from information_schema.tables

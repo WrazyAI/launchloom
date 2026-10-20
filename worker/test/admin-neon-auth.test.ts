@@ -392,9 +392,11 @@ describe("Neon same-origin session adapter", () => {
         headers: {
           Origin: publicOrigin,
           Authorization: "Bearer forged-admin-token",
+          "Content-Type": "application/json",
           Cookie: `${sessionCookieName}=one; ${sessionDataCookieName}=two`,
           "CF-Connecting-IP": syntheticAddress(),
         },
+        body: "{}",
       }),
       neonEnv(),
     );

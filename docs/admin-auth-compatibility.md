@@ -504,3 +504,87 @@ There is no automatic fallback from neon to access inside a request.
 - Deactivation is proven in the Worker authorization matrix and Task 5 live
   database suite; a second live provider session for the same local Worker was
   not available to repeat the two-account live deactivation scenario.
+
+## Task 6 fix round 1: cookie propagation, legacy links and live two-session proof
+
+Status: the three review findings were addressed and re-verified locally. No
+deployment, staging/production, Access-policy or role change was made.
+
+### Central response wrapper for provider cookies
+
+`guardedAdminRoute(request, env, ctx, handler)` in
+`worker/src/admin/auth.ts` now owns the protected-route flow: it resolves the
+central guard, runs the handler, and applies the sanitized provider
+`setCookies` to the handler response, including successful invite list/create,
+generation list/detail and private hero responses. Denials and handler
+exceptions also keep the cookies. Legacy handlers no longer call
+`requireAdmin` directly, so a success path cannot return a bare `Response` and
+silently drop a renewal or clearing cookie.
+
+`sign-out` is now forwarded as a JSON request. The live provider returns HTTP
+415 for a bodyless sign-out and 200 with `{}`; the adapter route table and its
+focused test were updated accordingly.
+
+### Legacy identity association
+
+`db/admin/002-legacy-identity-link.sql` adds
+`launchloom_admin.link_legacy_identity(p_legacy_id, p_subject)`, a
+`SECURITY DEFINER` function with `search_path = launchloom_admin, pg_temp`.
+It accepts only `access:<64 lowercase hex>`, requires an active member, inserts
+the link once, is idempotent for the same subject, refuses to overwrite a link
+owned by another subject, and audits only the first association. PUBLIC execute
+is revoked; `launchloom_worker` receives execute only when that role exists.
+
+Apply it after the membership migration:
+
+```bash
+psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/admin/002-legacy-identity-link.sql
+```
+
+The Worker computes the legacy ID only from the already-verified normalized
+session email after `accept_enrollment` succeeds. It never accepts a legacy ID,
+subject or actor from the browser. A database without this function fails the
+acceptance call as a safe dependency error rather than creating an unlinked
+account.
+
+### Live two-session deactivation and logout proof
+
+Local `wrangler dev` on `127.0.0.1:8787` used a temporary mode-0600 `.dev.vars`
+with the isolated development DB, Neon Auth base URL, cookie secret, JSON
+origin and `ADMIN_AUTH_MODE=neon`. `--local-upstream localhost:8787
+--upstream-protocol http` kept the request origin aligned with the trusted dev
+origin. The `.dev.vars` file was removed and the server stopped after the run.
+
+Observed with a saved owner session plus a second synthetic user
+`dev-admin@launchloom.test` (cookies and secrets never printed):
+
+- owner `/me` 200 owner; admin sign-up/sign-in 200
+- owner-created invitation accepted by the admin 200 role `admin`
+- `legacy_identity_links` contained exactly the `access:<sha256>` ID for the
+  verified admin email and the admin subject
+- owner deactivated the admin 200, `active: false`
+- admin `/me` on the next request 403 `forbidden`; owner `/me` 200 owner
+- provider sign-out 200, then the same owner cookie `/me` 401 `signed_out`
+- cleanup removed the test membership, enrollments, links and audit rows;
+  readback `members=0`, `enrollments=0`, `links=0`, `active owners=1`
+- the synthetic auth user `dev-admin@launchloom.test` remains in the provider
+  for repeat tests and is documented; no client or production user was touched
+
+The development auth project did not have sign-up verification disabled: the
+new provider user initially reported `emailVerified: false`. For this synthetic
+test only, the dev provider row for `dev-admin@launchloom.test` was marked
+verified directly in `neon_auth."user"` before acceptance. The dev owner row was
+not modified. This is local test setup, not an application bypass.
+
+Password reset and session expiry against a real mailbox were not exercised:
+the dev project has no approved test mailbox. That remains an explicit
+verification blocker, not a pass.
+
+### Fail-closed mode and login method handling
+
+`resolveAdminAuthMode` accepts only `access` and `neon`; an unset mode keeps the
+Access default, while any other value produces a safe 503
+`auth_not_configured` from the guard, workspace routes, page route and auth
+proxy. `/admin/login` now accepts only GET and HEAD; other methods return 405
+with `Allow: GET, HEAD`. Access mode remains unchanged and there is still no
+online fallback from Neon to Access.

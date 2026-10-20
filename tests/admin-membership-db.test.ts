@@ -8,6 +8,7 @@ import {
   type MembershipStore,
 } from "../worker/src/admin/membership-store";
 import type { VerifiedSession } from "../worker/src/admin/neon-auth";
+import { legacyAccessId } from "../worker/src/admin/workspace-api";
 
 const connectionString = process.env.ADMIN_DATABASE_URL || "";
 
@@ -137,6 +138,13 @@ describe.skipIf(!connectionString)("durable membership against the isolated deve
       role: "admin",
       authSource: "neon",
     });
+    const linked = (await sql.query(
+      `select legacy_id, subject from launchloom_admin.legacy_identity_links where subject = $1`,
+      [invitee.subject],
+    )) as Array<{ legacy_id: string; subject: string }>;
+    expect(linked).toEqual([
+      { legacy_id: await legacyAccessId(invitee.email), subject: invitee.subject },
+    ]);
 
     // A second active membership cannot claim the same verified email.
     const duplicateSubject = subject("duplicate-email");
@@ -158,6 +166,60 @@ describe.skipIf(!connectionString)("durable membership against the isolated deve
     // A non-owner active admin cannot mint invitations.
     const forbidden = await rejection(store.createEnrollment(invitee.subject, email("another")));
     expect(forbidden).toMatchObject({ code: "forbidden", status: 403 });
+  });
+
+  it("links the verified legacy identity once and refuses cross-account overwrite", async () => {
+    const invitee = { subject: subject("legacy-invitee"), email: email("legacy-invitee") };
+    const other = { subject: subject("legacy-other"), email: email("legacy-other") };
+    subjects.add(invitee.subject);
+    subjects.add(other.subject);
+    await sql.query(
+      `insert into launchloom_admin.members(subject, email, display_name, role, active)
+       values ($1, $2, $3, 'admin', true), ($4, $5, $6, 'admin', true)`,
+      [
+        invitee.subject,
+        invitee.email,
+        "Legacy Invitee",
+        other.subject,
+        other.email,
+        "Legacy Other",
+      ],
+    );
+    const legacyId = await legacyAccessId(invitee.email.toUpperCase());
+
+    await expect(
+      sql.query("select * from launchloom_admin.link_legacy_identity($1, $2)", [
+        legacyId,
+        invitee.subject,
+      ]),
+    ).resolves.toMatchObject([{ legacy_id: legacyId, subject: invitee.subject }]);
+    // Repeating the same association is idempotent and does not rewrite it.
+    await expect(
+      sql.query("select * from launchloom_admin.link_legacy_identity($1, $2)", [
+        legacyId,
+        invitee.subject,
+      ]),
+    ).resolves.toMatchObject([{ legacy_id: legacyId, subject: invitee.subject }]);
+    const count = (await sql.query(
+      `select count(*)::int as count from launchloom_admin.legacy_identity_links
+       where legacy_id = $1 and subject = $2`,
+      [legacyId, invitee.subject],
+    )) as Array<{ count: number }>;
+    expect(count[0].count).toBe(1);
+
+    // A different account cannot take over an existing legacy ID.
+    const conflict = await rejection(
+      sql.query("select * from launchloom_admin.link_legacy_identity($1, $2)", [
+        legacyId,
+        other.subject,
+      ]) as unknown as Promise<unknown>,
+    );
+    expect(String(conflict.message)).toContain("legacy_identity_conflict");
+    const retained = (await sql.query(
+      `select subject from launchloom_admin.legacy_identity_links where legacy_id = $1`,
+      [legacyId],
+    )) as Array<{ subject: string }>;
+    expect(retained).toEqual([{ subject: invitee.subject }]);
   });
 
   it("rejects an expired invitation", async () => {

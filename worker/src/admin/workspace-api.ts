@@ -11,17 +11,24 @@ import type {
   AttemptFilters,
 } from "../../../src/lib/admin-contracts";
 
+/** Deterministic legacy ID derived only from a verified, normalized email. */
+export async function legacyAccessId(verifiedEmail: string): Promise<string> {
+  const email = verifiedEmail.trim().toLowerCase();
+  if (!email) throw new Error("verified email required");
+  const bytes = new Uint8Array(
+    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email)),
+  );
+  return `access:${[...bytes].map((b) => b.toString(16).padStart(2, "0")).join("")}`;
+}
+
 /** Called only after Access audience + allowlist verification, never with browser identity. */
 export async function legacyAccessPrincipal(
   verifiedEmail: string,
 ): Promise<AdminPrincipal> {
   const email = verifiedEmail.trim().toLowerCase();
   if (!email) throw new Error("verified email required");
-  const bytes = new Uint8Array(
-    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email)),
-  );
   return {
-    id: `access:${[...bytes].map((b) => b.toString(16).padStart(2, "0")).join("")}`,
+    id: await legacyAccessId(email),
     email,
     displayName: email,
     role: "admin",
