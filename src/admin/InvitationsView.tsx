@@ -51,6 +51,7 @@ export function InvitationsView({ api }: { api: AdminApi }) {
   const [createUncertain, setCreateUncertain] = useState(false);
   const [copyState, setCopyState] = useState<CopyState>("idle");
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
@@ -79,6 +80,17 @@ export function InvitationsView({ api }: { api: AdminApi }) {
   const recoveryInFlight = useRef(false);
   const clearCreateUncertainOnLoad = useRef(false);
   const clearRecoveryUncertainOnLoad = useRef(false);
+  const createButtonRef = useRef<HTMLButtonElement | null>(null);
+  const dismissResultRef = useRef<HTMLButtonElement | null>(null);
+  const keepLinkRef = useRef<HTMLButtonElement | null>(null);
+  const revokeTriggerRefs = useRef(new Map<string, HTMLButtonElement>());
+  const confirmRevokeRef = useRef<HTMLButtonElement | null>(null);
+  const revokeNoticeRef = useRef<HTMLDivElement | null>(null);
+  const revokeErrorRef = useRef<HTMLDivElement | null>(null);
+  const focusConfirmRevoke = useRef(false);
+  const focusRevokeTriggerId = useRef<string | null>(null);
+  const focusRevokeNotice = useRef(false);
+  const focusRevokeError = useRef(false);
 
   useEffect(() => {
     const requestId = ++listRequest.current;
@@ -123,9 +135,39 @@ export function InvitationsView({ api }: { api: AdminApi }) {
     [],
   );
 
+  useEffect(() => {
+    if (confirmRevokeId && focusConfirmRevoke.current) {
+      focusConfirmRevoke.current = false;
+      confirmRevokeRef.current?.focus();
+    }
+  }, [confirmRevokeId]);
+
+  useEffect(() => {
+    if (confirmRevokeId || !focusRevokeTriggerId.current) return;
+    const inviteId = focusRevokeTriggerId.current;
+    focusRevokeTriggerId.current = null;
+    revokeTriggerRefs.current.get(inviteId)?.focus();
+  }, [confirmRevokeId]);
+
+  useEffect(() => {
+    if (!revokeNotice || !focusRevokeNotice.current) return;
+    focusRevokeNotice.current = false;
+    revokeNoticeRef.current?.focus();
+  }, [revokeNotice]);
+
+  useEffect(() => {
+    if (!revokeError || !focusRevokeError.current) return;
+    focusRevokeError.current = false;
+    revokeErrorRef.current?.focus();
+  }, [revokeError]);
+
+  const createBlockedByResult =
+    Boolean(created) && copyState !== "copied";
+
   async function submitCreate(event: { preventDefault(): void }) {
     event.preventDefault();
-    if (createInFlight.current || createUncertain) return;
+    if (createInFlight.current || createUncertain || createBlockedByResult)
+      return;
     createInFlight.current = true;
     setCreating(true);
     setCreateError(null);
@@ -167,6 +209,28 @@ export function InvitationsView({ api }: { api: AdminApi }) {
     }
   }
 
+  function dismissCreated() {
+    setCreated(null);
+    setCopyState("idle");
+    setCopyMessage(null);
+    setConfirmDiscard(false);
+    window.requestAnimationFrame(() => createButtonRef.current?.focus());
+  }
+
+  function requestDismissResult() {
+    if (copyState !== "copied") {
+      setConfirmDiscard(true);
+      window.requestAnimationFrame(() => keepLinkRef.current?.focus());
+      return;
+    }
+    dismissCreated();
+  }
+
+  function cancelDiscard() {
+    setConfirmDiscard(false);
+    window.requestAnimationFrame(() => dismissResultRef.current?.focus());
+  }
+
   async function confirmRevoke(inviteId: string) {
     if (revokeInFlight.current) return;
     revokeInFlight.current = true;
@@ -176,16 +240,19 @@ export function InvitationsView({ api }: { api: AdminApi }) {
     try {
       await api.revokeInvite(inviteId);
       setConfirmRevokeId(null);
+      focusRevokeNotice.current = true;
       setRevokeNotice("Invitation revoked. Unused links can no longer be used.");
       refresh();
     } catch (failure) {
       if (isAmbiguousFailure(failure)) {
         setConfirmRevokeId(null);
+        focusRevokeError.current = true;
         setRevokeError(
           "Revocation was not confirmed. The list was refreshed so you can check the actual status before trying again.",
         );
         refresh();
       } else {
+        focusRevokeError.current = true;
         setRevokeError(requestErrorMessage(failure));
       }
     } finally {
@@ -309,16 +376,21 @@ export function InvitationsView({ api }: { api: AdminApi }) {
             <button
               className="admin-button"
               type="submit"
-              disabled={creating || createUncertain}
+              ref={createButtonRef}
+              disabled={creating || createUncertain || createBlockedByResult}
             >
               {creating
                 ? "Creating invitation..."
                 : createUncertain
                   ? "Creation unconfirmed"
-                  : "Create invitation"}
+                  : createBlockedByResult
+                    ? "Copy or discard current link first"
+                    : "Create invitation"}
             </button>
             <span className="admin-muted">
-              Expires 14 days after creation. The link is shown once.
+              {createBlockedByResult
+                ? "The one-time link above must be copied or explicitly discarded before another invitation can be created."
+                : "Expires 14 days after creation. The link is shown once."}
             </span>
           </div>
         </form>
@@ -366,32 +438,73 @@ export function InvitationsView({ api }: { api: AdminApi }) {
                 spellCheck={false}
               />
             </label>
-            <div className="admin-form__actions">
-              <button
-                className="admin-button"
-                type="button"
-                onClick={() => void copyCreatedLink()}
+            {confirmDiscard ? (
+              <div
+                className="admin-confirm"
+                role="group"
+                aria-label="Confirm discard of un-copied invitation link"
               >
-                {copyState === "copied" ? "Copied" : "Copy link"}
-              </button>
-              <button
-                className="admin-button admin-button--quiet"
-                type="button"
-                onClick={() => {
-                  setCreated(null);
-                  setCopyState("idle");
-                  setCopyMessage(null);
-                }}
-              >
-                Create another invitation
-              </button>
-              <span className="admin-muted">
-                {created.clientEmail
-                  ? `Bound to ${created.clientEmail}. `
-                  : "Not bound to a client email. "}
-                Expires {formatTimestamp(created.expiresAt)}.
-              </span>
-            </div>
+                <span>
+                  This un-copied link will be lost permanently if you discard
+                  it.
+                </span>
+                <div className="admin-form__actions">
+                  <button
+                    className="admin-button"
+                    type="button"
+                    onClick={dismissCreated}
+                  >
+                    Discard link
+                  </button>
+                  <button
+                    className="admin-button admin-button--quiet"
+                    type="button"
+                    ref={keepLinkRef}
+                    onClick={cancelDiscard}
+                  >
+                    Keep link
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="admin-form__actions">
+                <button
+                  className="admin-button"
+                  type="button"
+                  onClick={() => void copyCreatedLink()}
+                >
+                  {copyState === "copied" ? "Copied" : "Copy link"}
+                </button>
+                {copyState === "manual" ? (
+                  <button
+                    className="admin-button admin-button--quiet"
+                    type="button"
+                    onClick={() => {
+                      setCopyState("copied");
+                      setCopyMessage(
+                        "Marked as copied. This link is still not stored anywhere.",
+                      );
+                    }}
+                  >
+                    I copied this link
+                  </button>
+                ) : null}
+                <button
+                  className="admin-button admin-button--quiet"
+                  type="button"
+                  ref={dismissResultRef}
+                  onClick={requestDismissResult}
+                >
+                  Create another invitation
+                </button>
+                <span className="admin-muted">
+                  {created.clientEmail
+                    ? `Bound to ${created.clientEmail}. `
+                    : "Not bound to a client email. "}
+                  Expires {formatTimestamp(created.expiresAt)}.
+                </span>
+              </div>
+            )}
             {copyMessage ? (
               <p
                 className={
@@ -456,12 +569,22 @@ export function InvitationsView({ api }: { api: AdminApi }) {
           </div>
         ) : null}
         {revokeNotice ? (
-          <div className="admin-notice" role="status">
+          <div
+            className="admin-notice"
+            role="status"
+            tabIndex={-1}
+            ref={revokeNoticeRef}
+          >
             {revokeNotice}
           </div>
         ) : null}
         {revokeError ? (
-          <div className="admin-inline-error" role="alert">
+          <div
+            className="admin-inline-error"
+            role="alert"
+            tabIndex={-1}
+            ref={revokeErrorRef}
+          >
             {revokeError}
           </div>
         ) : null}
@@ -553,6 +676,7 @@ export function InvitationsView({ api }: { api: AdminApi }) {
                                 <button
                                   className="admin-button"
                                   type="button"
+                                  ref={confirmRevokeRef}
                                   onClick={() => void confirmRevoke(invite.inviteId)}
                                   disabled={revokingId === invite.inviteId}
                                 >
@@ -563,7 +687,11 @@ export function InvitationsView({ api }: { api: AdminApi }) {
                                 <button
                                   className="admin-button admin-button--quiet"
                                   type="button"
-                                  onClick={() => setConfirmRevokeId(null)}
+                                  onClick={() => {
+                                    focusRevokeTriggerId.current =
+                                      invite.inviteId;
+                                    setConfirmRevokeId(null);
+                                  }}
                                   disabled={revokingId === invite.inviteId}
                                 >
                                   Keep invitation
@@ -574,8 +702,20 @@ export function InvitationsView({ api }: { api: AdminApi }) {
                             <button
                               className="admin-button admin-button--quiet"
                               type="button"
+                              ref={(node) => {
+                                if (node)
+                                  revokeTriggerRefs.current.set(
+                                    invite.inviteId,
+                                    node,
+                                  );
+                                else
+                                  revokeTriggerRefs.current.delete(
+                                    invite.inviteId,
+                                  );
+                              }}
                               onClick={() => {
                                 setRevokeError(null);
+                                focusConfirmRevoke.current = true;
                                 setConfirmRevokeId(invite.inviteId);
                               }}
                             >

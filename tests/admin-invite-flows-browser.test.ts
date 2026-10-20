@@ -102,6 +102,10 @@ let requests: RecordedRequest[] = [];
 let createMode: "success" | "unavailable" = "success";
 let createDelay = 0;
 let createCount = 0;
+let revokeMode: "success" | "unavailable" = "success";
+let recoveryMode: "success" | "unavailable" = "success";
+let listDelay = 0;
+let listFailOnce = false;
 let backfilled = 0;
 
 function sendJson(
@@ -222,6 +226,16 @@ async function serve(
   });
 
   if (request.method === "GET") {
+    if (listDelay) await new Promise((resolve) => setTimeout(resolve, listDelay));
+    if (listFailOnce) {
+      listFailOnce = false;
+      sendJson(
+        response,
+        { error: { code: "unavailable", message: "Invitations unavailable." } },
+        503,
+      );
+      return;
+    }
     sendJson(response, { invites });
     return;
   }
@@ -280,6 +294,14 @@ async function serve(
   }
 
   if (action === "revoke") {
+    if (revokeMode === "unavailable") {
+      sendJson(
+        response,
+        { error: { code: "unavailable", message: "Revocation unavailable." } },
+        503,
+      );
+      return;
+    }
     const invite = invites.find((item) => item.inviteId === body?.inviteId);
     if (!invite || invite.status !== "unused") {
       sendJson(
@@ -304,6 +326,14 @@ async function serve(
   }
 
   if (action === "recover-intake") {
+    if (recoveryMode === "unavailable") {
+      sendJson(
+        response,
+        { error: { code: "unavailable", message: "Recovery unavailable." } },
+        503,
+      );
+      return;
+    }
     if (body?.confirmed !== true) {
       sendJson(
         response,
@@ -354,6 +384,10 @@ beforeEach(() => {
   createMode = "success";
   createDelay = 0;
   createCount = 0;
+  revokeMode = "success";
+  recoveryMode = "success";
+  listDelay = 0;
+  listFailOnce = false;
   backfilled = 0;
 });
 
@@ -400,6 +434,16 @@ function rowFor(page: Page, inviteId: string) {
 function posts(action: string) {
   return requests.filter(
     (entry) => entry.method === "POST" && entry.body?.action === action,
+  );
+}
+
+function listReads() {
+  return requests.filter((entry) => entry.method === "GET");
+}
+
+function activeText(page: Page) {
+  return page.evaluate(
+    () => document.activeElement?.textContent?.trim() || "",
   );
 }
 
@@ -477,6 +521,11 @@ describe("real invitation flows against the built admin bundle", () => {
       expect(posts("create")[0].body).not.toHaveProperty("creator");
       expect(posts("create")[0].body).not.toHaveProperty("actor");
       expect(posts("create")[0].origin).toBe(origin);
+      await expect(
+        page
+          .getByRole("button", { name: "Copy or discard current link first" })
+          .isDisabled(),
+      ).resolves.toBe(true);
 
       await result.getByRole("button", { name: "Copy link" }).click();
       await visible(page.getByText("Copied to clipboard.", { exact: false }));
@@ -485,6 +534,11 @@ describe("real invitation flows against the built admin bundle", () => {
         .toBe(
           "https://onboard.example.test/onboard/#invite=secret-token-1",
         );
+      await expect
+        .poll(() =>
+          page.getByRole("button", { name: "Create invitation" }).isEnabled(),
+        )
+        .toBe(true);
 
       expect(await storedKeys(page)).toEqual({
         local: [],
@@ -556,7 +610,7 @@ describe("real invitation flows against the built admin bundle", () => {
     }
   });
 
-  it("does not silently create a second invitation after an ambiguous failure", async () => {
+  it("keeps creation gated until a successful list readback after an ambiguous failure", async () => {
     const { page, errors } = await openPage();
     try {
       await waitForInvitations(page);
@@ -569,16 +623,38 @@ describe("real invitation flows against the built admin bundle", () => {
         ),
       );
       expect(posts("create")).toHaveLength(1);
-      const button = page.getByRole("button", {
-        name: "Creation unconfirmed",
-      });
-      await expect(button.isDisabled()).resolves.toBe(true);
+      await expect(
+        page
+          .getByRole("button", { name: "Creation unconfirmed" })
+          .isDisabled(),
+      ).resolves.toBe(true);
+
+      const readsBefore = listReads().length;
+      listFailOnce = true;
       await page.getByRole("button", {
         name: "Check invitation list before retrying",
       }).click();
-      await waitForInvitations(page);
+      await expect.poll(() => listReads().length).toBe(readsBefore + 1);
+      await visible(
+        page.getByText("Invitations could not be loaded.", { exact: true }),
+      );
+      await expect(
+        page
+          .getByRole("button", { name: "Creation unconfirmed" })
+          .isDisabled(),
+      ).resolves.toBe(true);
       expect(posts("create")).toHaveLength(1);
-      expect(posts("create").length).toBe(1);
+
+      await page.getByRole("button", {
+        name: "Check invitation list before retrying",
+      }).click();
+      await expect.poll(() => listReads().length).toBe(readsBefore + 2);
+      await expect
+        .poll(() =>
+          page.getByRole("button", { name: "Create invitation" }).isEnabled(),
+        )
+        .toBe(true);
+      expect(posts("create")).toHaveLength(1);
       unexpectedErrors(errors, true);
     } finally {
       await page.close();
@@ -641,6 +717,40 @@ describe("real invitation flows against the built admin bundle", () => {
     }
   });
 
+  it("does not silently repeat a revoke after an ambiguous failure and reads the list back", async () => {
+    const { page, errors } = await openPage();
+    try {
+      await waitForInvitations(page);
+      revokeMode = "unavailable";
+      const row = rowFor(page, UNKNOWN_CREATOR);
+      await row.getByRole("button", { name: "Revoke" }).click();
+      const readsBefore = listReads().length;
+      await row.getByRole("button", { name: "Confirm revoke" }).click();
+      await visible(
+        page.getByText(
+          "Revocation was not confirmed. The list was refreshed so you can check the actual status",
+          { exact: false },
+        ),
+      );
+      expect(posts("revoke")).toHaveLength(1);
+      await expect.poll(() => listReads().length).toBe(readsBefore + 1);
+      await expect(
+        rowFor(page, UNKNOWN_CREATOR)
+          .getByText("Unused", { exact: true })
+          .count(),
+      ).resolves.toBe(1);
+      await expect(
+        rowFor(page, UNKNOWN_CREATOR)
+          .getByRole("button", { name: "Confirm revoke" })
+          .count(),
+      ).resolves.toBe(0);
+      expect(posts("revoke")).toHaveLength(1);
+      unexpectedErrors(errors, true);
+    } finally {
+      await page.close();
+    }
+  });
+
   it("backfills client emails and reports what remains", async () => {
     const { page, errors } = await openPage();
     try {
@@ -687,6 +797,122 @@ describe("real invitation flows against the built admin bundle", () => {
         issueNumber: 12001,
         confirmed: true,
       });
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps recovery gated through an ambiguous failure and a list readback", async () => {
+    const { page, errors } = await openPage();
+    try {
+      await waitForInvitations(page);
+      await page.getByLabel("Invitation requiring recovery").selectOption(
+        RECOVERY_INVITE,
+      );
+      await page.getByLabel("Reviewed issue number").fill("12001");
+      await page.getByLabel(/I reviewed the original issue/u).check();
+      recoveryMode = "unavailable";
+      listDelay = 300;
+      const readsBefore = listReads().length;
+      await page.getByRole("button", { name: "Record recovery" }).click();
+      await visible(
+        page.getByText(
+          "Recovery was not confirmed. The list is refreshing so you can review",
+          { exact: false },
+        ),
+      );
+      expect(posts("recover-intake")).toHaveLength(1);
+      await expect(
+        page.getByRole("button", { name: "Record recovery" }).isDisabled(),
+      ).resolves.toBe(true);
+      await expect.poll(() => listReads().length).toBe(readsBefore + 1);
+      await expect
+        .poll(() =>
+          page.getByRole("button", { name: "Record recovery" }).isEnabled(),
+        )
+        .toBe(true);
+      expect(posts("recover-intake")).toHaveLength(1);
+      unexpectedErrors(errors, true);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("retains and returns keyboard focus through revoke confirmation", async () => {
+    const { page, errors } = await openPage();
+    try {
+      await waitForInvitations(page);
+      const row = rowFor(page, UNKNOWN_CREATOR);
+      const trigger = row.getByRole("button", { name: "Revoke" });
+      await trigger.focus();
+      await trigger.click();
+      await expect
+        .poll(() => activeText(page))
+        .toBe("Confirm revoke");
+      await row.getByRole("button", { name: "Keep invitation" }).click();
+      await expect.poll(() => activeText(page)).toBe("Revoke");
+      await expect
+        .poll(() =>
+          trigger.evaluate((element) => element === document.activeElement),
+        )
+        .toBe(true);
+
+      await trigger.click();
+      await row.getByRole("button", { name: "Confirm revoke" }).click();
+      await visible(
+        page.getByText(
+          "Invitation revoked. Unused links can no longer be used.",
+          { exact: true },
+        ),
+      );
+      await expect
+        .poll(() => activeText(page))
+        .toContain("Invitation revoked. Unused links can no longer be used.");
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("never discards an un-copied link without consent and restores focus on dismissal", async () => {
+    const { page, errors } = await openPage();
+    try {
+      await waitForInvitations(page);
+      await page.getByRole("button", { name: "Create invitation" }).click();
+      const result = page.locator(".admin-invite-result");
+      await visible(result);
+      expect(posts("create")).toHaveLength(1);
+      await expect(
+        page
+          .getByRole("button", { name: "Copy or discard current link first" })
+          .isDisabled(),
+      ).resolves.toBe(true);
+
+      const dismiss = result.getByRole("button", {
+        name: "Create another invitation",
+      });
+      await dismiss.focus();
+      await dismiss.click();
+      await visible(
+        result.getByText(
+          "This un-copied link will be lost permanently if you discard it.",
+          { exact: true },
+        ),
+      );
+      await expect.poll(() => activeText(page)).toBe("Keep link");
+      await result.getByRole("button", { name: "Keep link" }).click();
+      await expect.poll(() => activeText(page)).toBe("Create another invitation");
+      await expect(result.getByLabel("New invitation link").inputValue())
+        .resolves.toContain("#invite=secret-token-1");
+
+      await dismiss.click();
+      await result.getByRole("button", { name: "Discard link" }).click();
+      await expect
+        .poll(() => page.locator(".admin-invite-result").count())
+        .toBe(0);
+      await expect.poll(() => activeText(page)).toBe("Create invitation");
+      expect(posts("create")).toHaveLength(1);
       unexpectedErrors(errors);
     } finally {
       await page.close();
