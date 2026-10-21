@@ -515,25 +515,24 @@ Rollback is an explicit operator action, not an online bypass:
 
 There is no automatic fallback from neon to access inside a request.
 
-### Remaining limits
+### Limits at the time of the local compatibility pass
 
-- The provisioned development database roles remain over-privileged; production
-  needs the least-privilege operator role described above. Task 6 did not alter
-  or rotate credentials.
+- The provisioned development database roles were over-privileged at that time.
+  The production Worker now uses `launchloom_worker_prod` as recorded above.
 - No deployed/staging/production, browser cookie matrix, email delivery or
-  Access-policy cutover was tested.
-- Provider account-existence error normalization for reset/sign-in remains
+  Access-policy cutover was tested in that local pass.
+- Provider account-existence error normalization for reset/sign-in remained
   unproven from Task 4.
-- Password reset and real session-expiry verification remain blocked on an
-  approved test mailbox. Deactivation and logout are proven by the live
+- Password reset and real session-expiry verification were blocked on an
+  approved test mailbox. Deactivation and logout were proven by the live
   two-session proof in the fix sections below.
 
 ## Task 6 fix round 1: cookie propagation, legacy links and live two-session proof
 
 Status: review findings 1-5 were addressed for their scoped criteria and
-re-verified locally. Password reset and real session expiry remain blocked on
-the missing approved test mailbox. No deployment, staging/production,
-Access-policy or role change was made.
+re-verified locally. At that time, password reset and real session expiry were
+blocked on the missing approved test mailbox; no deployment,
+staging/production, Access-policy or role change was made in that round.
 
 ### Central response wrapper for provider cookies
 
@@ -604,9 +603,9 @@ test only, the dev provider row for `dev-admin@launchloom.test` was marked
 verified directly in `neon_auth."user"` before acceptance. The dev owner row was
 not modified. This is local test setup, not an application bypass.
 
-Password reset and session expiry against a real mailbox were not exercised:
-the dev project has no approved test mailbox. That remains an explicit
-verification blocker, not a pass.
+Password reset and session expiry against a real mailbox were not exercised in
+that dev pass: the dev project has no approved test mailbox. That remained an
+explicit verification blocker, not a pass.
 
 ### Fail-closed mode and login method handling
 
@@ -670,11 +669,13 @@ showed: admin accepted and linked, owner deactivated the admin (next `/me` 403),
 owner remained 200, provider sign-out then owner 401, and cleanup readback
 `members=0`, `enrollments=0`, `links=0`, one active owner.
 
-### Remaining limits
+### Limits after the local fix rounds
 
-- Least-privilege DB roles remain an operator blocker.
+- Least-privilege DB roles were still an operator blocker at that time. The
+  production Worker role is now in place as recorded above.
 - No deployed/staging/production, Access-policy cutover/rollback, browser cookie
-  matrix or email delivery test.
+  matrix or email delivery test existed in those local rounds. Production
+  Chromium sign-in is now recorded above; WebKit and live mailbox proof remain.
 - Password reset and real session expiry still require an approved test mailbox.
 - Deferred minors remain deferred: synthetic-wrapper cookie test instead of
   routed handlers, trace-ID logging, durable limiter, job-wide secret scoping,
