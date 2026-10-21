@@ -40,12 +40,18 @@ dist/
 .astro/
 artifacts/
 .testsprite/runs/
+worker/admin-dist/
 
 # credentials and machine-specific files
 .env
 .env.*
 !.env.example
+.dev.vars
+.dev.vars.*
 .netlify/
 
 # Local execution notes for this reliability plan
 .superpowers/reliability/
+
+# Local design companion (includes session access keys)
+.superpowers/brainstorm/

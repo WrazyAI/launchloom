@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "build:admin": "node scripts/build-admin-workspace.mjs",
     "build:onboarding-pages": "node scripts/prepare-onboarding-pages.mjs",
     "preview": "astro preview",
     "check": "astro check",
     "check:worker": "tsc -p worker/tsconfig.json && tsc -p worker/test/tsconfig.json",
     "test": "vitest run --dir tests",
+    "pretest:worker": "npm run build:admin",
     "test:worker": "vitest run --config vitest.worker.config.ts",
     "evaluate:models": "node scripts/evaluate-models.mjs",
     "evaluate:visual-models": "node scripts/evaluate-visual-models.mjs",
@@ -48,6 +50,8 @@
   "dependencies": {
     "@astrojs/react": "latest",
     "@fal-ai/client": "1.10.1",
+    "@neondatabase/auth": "0.6.0-beta",
+    "@neondatabase/serverless": "1.2.0",
     "@sentry/astro": "^11.6.0",
     "astro": "latest",
     "openai": "latest",
@@ -57,7 +61,8 @@
     "zod": "latest"
   },
   "overrides": {
-    "sharp": "$sharp"
+    "sharp": "$sharp",
+    "typescript": "6.0.3"
   },
   "devDependencies": {
     "@astrojs/check": "latest",
@@ -68,12 +73,13 @@
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "esbuild": "0.28.2",
     "msw": "^2.15.0",
     "playwright": "^1.63.0",
     "postcss": "^8.5.26",
     "prettier": "latest",
     "tailwindcss": "latest",
-    "typescript": "latest",
+    "typescript": "6.0.3",
     "vitest": "latest",
     "wrangler": "^4.130.0"
   }

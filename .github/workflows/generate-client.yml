@@ -1,4 +1,6 @@
 name: Generate client site
+run-name: >-
+  LLGEN issue=${{ (toJSON(github.event.client_payload.issue || inputs.issue) == format('{0}', github.event.client_payload.issue || inputs.issue) && (github.event.client_payload.issue || inputs.issue) > 0) && (github.event.client_payload.issue || inputs.issue) || 0 }} profile=${{ github.event_name == 'repository_dispatch' && 'full' || (contains(fromJSON('["full","full-preview","creative-only","seo-only"]'), inputs.test_profile) && inputs.test_profile) || 'excluded' }} request=none
 
 on:
   repository_dispatch:
@@ -8,7 +10,7 @@ on:
       issue:
         description: Intake issue number (not needed for access-only)
         required: false
-        type: string
+        type: number
       test_profile:
         description: Full generation, isolated test preview, or no-intake Access smoke
         required: false
@@ -57,6 +59,44 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Producer observations are best effort. Independent GitHub reconciliation
+  # captures failures before checkout/setup and workflow-level cancellations.
+  track_execution:
+    continue-on-error: true
+    needs: [profile_policy, generate, focused_test, intake_handoff_check]
+    if: ${{ always() && (github.event_name == 'repository_dispatch' || inputs.test_profile != 'access-only') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22 }
+      - run: npm ci
+      - name: Record terminal generation observation
+        continue-on-error: true
+        env:
+          GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
+          TRACK_ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
+          TRACK_PROFILE: ${{ needs.profile_policy.outputs.profile || inputs.test_profile || 'full' }}
+          TRACK_REQUEST: ${{ github.event.client_payload.request_id }}
+          TRACK_ATTEMPT: ${{ github.event.client_payload.attempt_id }}
+          TRACK_ACTOR: ${{ github.triggering_actor }}
+          TRACK_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { buildAttemptObservation } from './scripts/generation-tracking-contract.mjs';
+          import { postAttemptTracking } from './scripts/record-generation-event.mjs';
+          try {
+            const needs=JSON.parse(process.env.TRACK_RESULTS);
+            const results=Object.values(needs).map(v=>v.result);
+            const work=[needs.generate?.result,needs.focused_test?.result].filter(result=>result && result!=='skipped');
+            const status=results.includes('cancelled')?'cancelled':results.includes('failure')||work.includes('failure')?'failed':work.includes('success')?'succeeded':'skipped';
+            const observation=buildAttemptObservation({repository:process.env.GITHUB_REPOSITORY,runId:process.env.GITHUB_RUN_ID,runAttempt:Number(process.env.GITHUB_RUN_ATTEMPT),requestId:process.env.TRACK_REQUEST || null,attemptId:Number(process.env.GITHUB_RUN_ATTEMPT)===1?process.env.TRACK_ATTEMPT || null:null,issueNumber:Number(process.env.TRACK_ISSUE) || null,profile:process.env.TRACK_PROFILE,triggeringActor:process.env.TRACK_ACTOR,executionStatus:status,deliveryStatus:'none',observedAt:Date.now()});
+            await postAttemptTracking({observation,events:[]});
+          } catch { console.warn('attempt_tracking=skipped reason=unavailable'); }
+          NODE
+
   profile_policy:
     runs-on: ubuntu-24.04
     outputs:
@@ -210,6 +250,9 @@ jobs:
       QA_REPAIR_EXPERIMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.qa_repair_experiment || false }}
       INTERNAL_QA_DELIVERY: ${{ github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery || false }}
       GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
+      TRACK_REQUEST: ${{ github.event.client_payload.request_id }}
+      TRACK_ATTEMPT: ${{ github.run_attempt == 1 && github.event.client_payload.attempt_id || '' }}
+      TRACK_ACTOR: ${{ github.triggering_actor }}
       FAL_IMAGE_USD_PER_IMAGE: ${{ vars.FAL_IMAGE_USD_PER_IMAGE }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
       REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
@@ -238,6 +281,9 @@ jobs:
         run: |
           node scripts/record-generation-event.mjs \
             --action start \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --profile full \
+            --request-id "$TRACK_REQUEST" --attempt-id "$TRACK_ATTEMPT" --triggering-actor "$TRACK_ACTOR" \
+            --execution-status running --delivery-status none --observed-at "$(date +%s%3N)" \
             --issue "${{ github.event.client_payload.issue || inputs.issue }}" \
             --submission-id "$SUBMISSION_ID" \
             --client-email "$CLIENT_EMAIL" \
@@ -324,6 +370,9 @@ jobs:
             --output /tmp/seo-cost.json
           node scripts/record-generation-event.mjs \
             --action event \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --profile full \
+            --request-id "$TRACK_REQUEST" --attempt-id "$TRACK_ATTEMPT" --triggering-actor "$TRACK_ACTOR" \
+            --execution-status running --delivery-status none --observed-at "$(date +%s%3N)" \
             --issue "${{ steps.intake.outputs.issue }}" \
             --submission-id "$SUBMISSION_ID" \
             --client-email "$CLIENT_EMAIL" \
@@ -903,6 +952,9 @@ jobs:
             --output /tmp/generation-cost.json
           node scripts/record-generation-event.mjs \
             --action complete \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --profile full \
+            --request-id "$TRACK_REQUEST" --attempt-id "$TRACK_ATTEMPT" --triggering-actor "$TRACK_ACTOR" \
+            --execution-status running --delivery-status "$STATUS" --observed-at "$(date +%s%3N)" \
             --issue "${{ steps.intake.outputs.issue }}" \
             --submission-id "$SUBMISSION_ID" \
             --client-email "$CLIENT_EMAIL" \
@@ -991,13 +1043,18 @@ jobs:
           CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
         run: |
           STATUS=failed
+          DELIVERY=none
           FAILURE="Generation workflow ${{ github.run_id }} stopped before a preview was ready. Inspect the Actions run and the intake issue."
           if [ "$REPAIR_AVAILABLE" = "true" ]; then
             STATUS=attention
+            DELIVERY=diagnostic
             FAILURE="The authored candidate needs its one-shot repair. A diagnostic preview and review link were issued to the developer."
           fi
           node scripts/record-generation-event.mjs \
             --action complete \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --profile full \
+            --request-id "$TRACK_REQUEST" --attempt-id "$TRACK_ATTEMPT" --triggering-actor "$TRACK_ACTOR" \
+            --execution-status failed --delivery-status "$DELIVERY" --observed-at "$(date +%s%3N)" \
             --issue "$ISSUE" \
             --submission-id "$SUBMISSION_ID" \
             --client-email "$CLIENT_EMAIL" \

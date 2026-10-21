@@ -33,6 +33,25 @@ import {
 } from "./seo-readiness";
 import type { PublicationCommand } from "./publication";
 import { OnboardingInvites } from "./onboarding-invites";
+import { workspaceApi, workspaceError, attemptIngest } from "./admin/workspace-api";
+import {
+  authAttemptRateLimit,
+  proxyAdminAuth,
+} from "./admin/neon-auth";
+import { routeAdminRequest } from "./admin/router";
+import {
+  accessAdminEmail,
+  actorFromPrincipal,
+  adminAuthErrorResponse,
+  guardedAdminRoute,
+  requireVerifiedSession,
+  resolveAdminAuthMode,
+  withAdminCookies,
+} from "./admin/auth";
+import {
+  accountsApi,
+  acceptEnrollmentApi,
+} from "./admin/accounts-api";
 import { IntakeRecoveryError, intakeOperationMarker, recoverIntakeIssue, readIntakeIssuePayload, verifyIntakeIssueOwnership, type IntakeIssue } from "./intake-recovery";
 import {
   GenerationLedger,
@@ -40,7 +59,6 @@ import {
   type GenerationEventInput,
   type GenerationRecordInput,
 } from "./generation-ledger";
-import { renderAdminDashboardHtml } from "./admin-dashboard";
 import {
   CLIENT_INTAKE_V2_ISSUE_FIELDS,
   normalizeClientIntake,
@@ -69,6 +87,9 @@ export interface Env {
       httpMetadata?: { contentType?: string };
     } | null>;
   };
+  ADMIN_STATIC: {
+    fetch(request: Request): Promise<Response>;
+  };
   ASSET_BASE_URL: string;
   PLATFORM_ORIGINS: string;
   GITHUB_ORG_TOKEN: string;
@@ -81,6 +102,11 @@ export interface Env {
   LAUNCHLOOM_FEEDBACK_EMAIL?: string;
   REVISION_COORDINATOR_SECRET: string;
   REVISION_COORDINATOR: DurableObjectNamespace<RevisionCoordinator>;
+  ADMIN_AUTH_MODE?: "access" | "neon";
+  NEON_AUTH_BASE_URL?: string;
+  NEON_AUTH_COOKIE_SECRET?: string;
+  ADMIN_PUBLIC_ORIGIN?: string;
+  ADMIN_DATABASE_URL?: string;
   ONBOARDING_INVITE_SIGNING_SECRET?: string;
   ONBOARDING_ORIGIN?: string;
   ONBOARDING_ADMIN_EMAILS?: string;
@@ -290,33 +316,101 @@ async function verifiedInvite(
   return { claims, tokenHash, origin, clientEmail: status.clientEmail || "", status };
 }
 
-async function accessAdminEmail(ctx: ExecutionContext, env: Env) {
-  if (!ctx.access || !env.ONBOARDING_ACCESS_AUD || !env.ONBOARDING_ADMIN_EMAILS)
-    return "";
-  if (ctx.access.aud !== env.ONBOARDING_ACCESS_AUD) return "";
-  const identity = await ctx.access.getIdentity();
-  const email = clean(identity?.email, 240).toLowerCase();
-  const permitted = env.ONBOARDING_ADMIN_EMAILS.split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
-  return email && permitted.includes(email) ? email : "";
+const WORKSPACE_API_PREFIX = "/api/admin/onboarding-invites/workspace";
+
+function workspaceSuffix(request: Request) {
+  const path = new URL(request.url).pathname;
+  if (!path.startsWith(WORKSPACE_API_PREFIX)) return "/";
+  return path.slice(WORKSPACE_API_PREFIX.length) || "/";
 }
 
+/**
+ * One-use enrollment acceptance is the only account action available before a
+ * membership exists. It is session-only, same-origin, bounded by the shared
+ * auth limiter, and never accepts an actor, role or email from the browser.
+ */
+async function enrollmentAccept(request: Request, env: Env) {
+  const retryAfter = authAttemptRateLimit("admin-enrollment-accept", request);
+  if (retryAfter !== null)
+    return json(
+      { error: { code: "rate_limited", message: "Too many enrollment attempts." } },
+      429,
+      { "Retry-After": String(retryAfter), "Cache-Control": "no-store" },
+    );
+  try {
+    const verified = await requireVerifiedSession(request, env);
+    const response = await acceptEnrollmentApi(request, {
+      store: verified.store,
+      session: verified.session,
+    });
+    return withAdminCookies(response, verified.setCookies);
+  } catch (error) {
+    return adminAuthErrorResponse(error);
+  }
+}
 
-async function onboardingAdminPage(request: Request, env: Env, ctx: ExecutionContext) {
-  if (request.method !== "GET") return new Response("Method not allowed", { status: 405 });
-  if (!(await accessAdminEmail(ctx, env)))
-    return new Response("Access denied.", { status: 403, headers: { "Cache-Control": "no-store" } });
-  return new Response(renderAdminDashboardHtml(), {
-    status: 200,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-      "Referrer-Policy": "no-referrer",
-      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
-    },
-  });
+async function authenticatedWorkspace(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+) {
+  const origin = request.headers.get("Origin");
+  if (origin && origin !== new URL(request.url).origin)
+    return workspaceError("forbidden", "Invalid request origin.", 403);
+  const suffix = workspaceSuffix(request);
+  let mode: "access" | "neon";
+  try {
+    mode = resolveAdminAuthMode(env);
+  } catch (error) {
+    return adminAuthErrorResponse(error);
+  }
+
+  if (mode === "neon") {
+    if (suffix === "/enrollments/accept") return enrollmentAccept(request, env);
+    return guardedAdminRoute(request, env, ctx, async (guard) =>
+      suffix === "/me" || suffix === "/team" || suffix.startsWith("/team/")
+        ? accountsApi(request, {
+            store: guard.store!,
+            principal: guard.principal,
+          })
+        : workspaceApi(request, env, guard.principal.email),
+    );
+  }
+
+  if (!ctx.access) return workspaceError("signed_out", "Sign in required.", 401);
+  let verifiedEmail = "";
+  try {
+    verifiedEmail = await accessAdminEmail(ctx, env);
+  } catch {
+    return workspaceError(
+      "unavailable",
+      "Workspace authorization is temporarily unavailable.",
+      503,
+    );
+  }
+  if (!verifiedEmail) return workspaceError("forbidden", "Access denied.", 403);
+
+  // Access mode keeps the verified legacy /me and operational reads, but has no
+  // provider account identity for profile or membership administration.
+  if (suffix === "/enrollments/accept")
+    return workspaceError(
+      "not_enabled",
+      "Workspace enrollment is not enabled.",
+      403,
+    );
+  if (suffix === "/me" && request.method !== "GET")
+    return workspaceError(
+      "forbidden",
+      "Profile changes require a Neon account.",
+      403,
+    );
+  if (suffix === "/team" || suffix.startsWith("/team/"))
+    return workspaceError(
+      "forbidden",
+      "Membership management requires a Neon account.",
+      403,
+    );
+  return workspaceApi(request, env, verifiedEmail);
 }
 
 async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
@@ -342,127 +436,130 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
   if (request.method === "POST") {
     if (!origin) return json({ error: "Invalid request origin." }, 403, headers);
   }
-  const administratorEmail = await accessAdminEmail(ctx, env);
-  if (!administratorEmail)
-    return json({ error: "Access denied." }, 403, headers);
-  if (!env.ONBOARDING_INVITE_SIGNING_SECRET || !env.ONBOARDING_ORIGIN)
-    return json({ error: "Invite management is not configured." }, 503, headers);
-  if (request.method === "GET")
-    return json({ invites: await inviteCoordinator(env).list(Date.now()) }, 200, {
-      ...headers,
-      "Cache-Control": "no-store",
-    });
-  if (request.method !== "POST")
-    return new Response("Method not allowed", { status: 405 });
-  try {
-    const body = (await request.json()) as Record<string, unknown>;
-    const action = clean(body.action, 20);
-    const inviteId = clean(body.inviteId, 100);
-    if (action === "recover-intake") {
-      if (body.confirmed !== true)
-        return json({ error: "Confirm that you reviewed the original issue and its intake details.", code: "recovery_confirmation_required" }, 400, headers);
-      const issueNumber = body.issueNumber;
-      if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId) || typeof issueNumber !== "number" || !Number.isSafeInteger(issueNumber) || issueNumber <= 0)
-        return json({ error: "Choose a valid invitation and original issue number." }, 400, headers);
-      const coordinator = inviteCoordinator(env);
-      const reservation = await coordinator.recoveryReservation(inviteId);
-      if (!reservation || (reservation.duplicate && reservation.issueNumber !== issueNumber))
-        return json({ error: "This invitation cannot be reconciled with that issue.", code: "recovery_mismatch" }, 409, headers);
-      let recipient = reservation.recipient;
-      let businessName = reservation.businessName;
-      if (!reservation.duplicate) {
-        const issue = await github(env, `/repos/WrazyAI/launchloom/issues/${issueNumber}`).then(response => response.json() as Promise<IntakeIssue>);
-        const content = await readIntakeIssuePayload(issue);
-        if (issue.number !== issueNumber || !content || content.hash !== reservation.submissionHash ||
-            (reservation.operationId && !(await verifyIntakeIssueOwnership(issue, reservation.operationId, reservation.submissionHash))))
-          return json({ error: "The selected issue does not match the original operation and submitted details.", code: "recovery_mismatch" }, 409, headers);
-        recipient = clean(content.payload.email, 240);
-        businessName = clean(content.payload.businessName, 200);
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(recipient) || !businessName)
-          return json({ error: "The original intake is missing valid contact details.", code: "recovery_mismatch" }, 409, headers);
-        const reconciled = await coordinator.reconcileIssue({inviteId, submissionId: reservation.submissionId,
-          submissionHash: reservation.submissionHash, operationId: reservation.operationId, issueNumber,
-          reviewerEmail: administratorEmail, recipient, businessName});
-        if (!reconciled) return json({ error: "The invitation changed during recovery. Refresh and review it again.", code: "recovery_mismatch" }, 409, headers);
-      }
-      await coordinator.queueWorkflowDispatch(inviteId, reservation.submissionId, issueNumber);
-      await coordinator.queueIntakeReceipt(inviteId, reservation.submissionId, recipient!, businessName!);
-      return json({ ok: true, issue: issueNumber, duplicate: reservation.duplicate }, 200, headers);
-    }
-    if (action === "revoke") {
-      if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId))
-        return json({ error: "Invalid invitation." }, 400, headers);
-      const revoked = await inviteCoordinator(env).revoke(inviteId, Date.now());
-      return revoked
-        ? json({ ok: true }, 200, headers)
-        : json({ error: "Invitation cannot be revoked." }, 409, headers);
-    }
-    if (action === "backfill") {
-      // Link-only invites predate intake-email attribution. Read the stored
-      // intake issues and bind the submitted client email to the invite and
-      // the matching generation record.
-      const coordinator = inviteCoordinator(env);
-      const missing = await coordinator.listMissingAttribution(25);
-      const ledger = generationLedger(env);
-      const generationByIssue = new Map<number, string>();
-      if (missing.length) {
-        for (const record of await ledger.list(200)) {
-          if (record.issueNumber && !generationByIssue.has(record.issueNumber))
-            generationByIssue.set(record.issueNumber, record.generationId);
+  return guardedAdminRoute(request, env, ctx, async (guard) => {
+    const principal = guard.principal;
+    const administratorEmail = principal.email;
+    const actor = actorFromPrincipal(principal);
+    if (!env.ONBOARDING_INVITE_SIGNING_SECRET || !env.ONBOARDING_ORIGIN)
+      return json({ error: "Invite management is not configured." }, 503, headers);
+    if (request.method === "GET")
+      return json({ invites: await inviteCoordinator(env).list(Date.now()) }, 200, {
+        ...headers,
+        "Cache-Control": "no-store",
+      });
+    if (request.method !== "POST")
+      return new Response("Method not allowed", { status: 405 });
+    try {
+      const body = (await request.json()) as Record<string, unknown>;
+      const action = clean(body.action, 20);
+      const inviteId = clean(body.inviteId, 100);
+      if (action === "recover-intake") {
+        if (body.confirmed !== true)
+          return json({ error: "Confirm that you reviewed the original issue and its intake details.", code: "recovery_confirmation_required" }, 400, headers);
+        const issueNumber = body.issueNumber;
+        if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId) || typeof issueNumber !== "number" || !Number.isSafeInteger(issueNumber) || issueNumber <= 0)
+          return json({ error: "Choose a valid invitation and original issue number." }, 400, headers);
+        const coordinator = inviteCoordinator(env);
+        const reservation = await coordinator.recoveryReservation(inviteId);
+        if (!reservation || (reservation.duplicate && reservation.issueNumber !== issueNumber))
+          return json({ error: "This invitation cannot be reconciled with that issue.", code: "recovery_mismatch" }, 409, headers);
+        let recipient = reservation.recipient;
+        let businessName = reservation.businessName;
+        if (!reservation.duplicate) {
+          const issue = await github(env, `/repos/WrazyAI/launchloom/issues/${issueNumber}`).then(response => response.json() as Promise<IntakeIssue>);
+          const content = await readIntakeIssuePayload(issue);
+          if (issue.number !== issueNumber || !content || content.hash !== reservation.submissionHash ||
+              (reservation.operationId && !(await verifyIntakeIssueOwnership(issue, reservation.operationId, reservation.submissionHash))))
+            return json({ error: "The selected issue does not match the original operation and submitted details.", code: "recovery_mismatch" }, 409, headers);
+          recipient = clean(content.payload.email, 240);
+          businessName = clean(content.payload.businessName, 200);
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(recipient) || !businessName)
+            return json({ error: "The original intake is missing valid contact details.", code: "recovery_mismatch" }, 409, headers);
+          const reconciled = await coordinator.reconcileIssue({inviteId, submissionId: reservation.submissionId,
+            submissionHash: reservation.submissionHash, operationId: reservation.operationId, issueNumber,
+            reviewerEmail: administratorEmail, recipient, businessName, actor});
+          if (!reconciled) return json({ error: "The invitation changed during recovery. Refresh and review it again.", code: "recovery_mismatch" }, 409, headers);
         }
+        await coordinator.queueWorkflowDispatch(inviteId, reservation.submissionId, issueNumber);
+        await coordinator.queueIntakeReceipt(inviteId, reservation.submissionId, recipient!, businessName!);
+        return json({ ok: true, issue: issueNumber, duplicate: reservation.duplicate }, 200, headers);
       }
-      let backfilled = 0;
-      for (const item of missing) {
-        const email = await intakeIssueEmail(env, item.issueNumber);
-        if (!email) continue;
-        if (!(await coordinator.recordSubmitterEmail(item.inviteId, email))) continue;
-        backfilled += 1;
-        const generationId = generationByIssue.get(item.issueNumber);
-        if (generationId) {
-          try {
-            await ledger.upsertGeneration({ generationId, clientEmail: email });
-          } catch {
-            // The invite attribution succeeded; the ledger row is best-effort.
+      if (action === "revoke") {
+        if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId))
+          return json({ error: "Invalid invitation." }, 400, headers);
+        const revoked = await inviteCoordinator(env).revoke(inviteId, Date.now());
+        return revoked
+          ? json({ ok: true }, 200, headers)
+          : json({ error: "Invitation cannot be revoked." }, 409, headers);
+      }
+      if (action === "backfill") {
+        // Link-only invites predate intake-email attribution. Read the stored
+        // intake issues and bind the submitted client email to the invite and
+        // the matching generation record.
+        const coordinator = inviteCoordinator(env);
+        const missing = await coordinator.listMissingAttribution(25);
+        const ledger = generationLedger(env);
+        const generationByIssue = new Map<number, string>();
+        if (missing.length) {
+          for (const record of await ledger.list(200)) {
+            if (record.issueNumber && !generationByIssue.has(record.issueNumber))
+              generationByIssue.set(record.issueNumber, record.generationId);
           }
         }
+        let backfilled = 0;
+        for (const item of missing) {
+          const email = await intakeIssueEmail(env, item.issueNumber);
+          if (!email) continue;
+          if (!(await coordinator.recordSubmitterEmail(item.inviteId, email))) continue;
+          backfilled += 1;
+          const generationId = generationByIssue.get(item.issueNumber);
+          if (generationId) {
+            try {
+              await ledger.upsertGeneration({ generationId, clientEmail: email });
+            } catch {
+              // The invite attribution succeeded; the ledger row is best-effort.
+            }
+          }
+        }
+        const remaining = (await coordinator.listMissingAttribution(100)).length;
+        return json({ ok: true, backfilled, remaining }, 200, headers);
       }
-      const remaining = (await coordinator.listMissingAttribution(100)).length;
-      return json({ ok: true, backfilled, remaining }, 200, headers);
+      if (action !== "create") return json({ error: "Choose create, revoke, or backfill." }, 400, headers);
+      const clientEmail = clean(body.clientEmail, 240).toLowerCase();
+      if (clientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(clientEmail))
+        return json({ error: "Enter a valid client email." }, 400, headers);
+      const expiresAt = Date.now() + 14 * 24 * 60 * 60 * 1000;
+      const claims: OnboardingInviteClaims = {
+        inviteId: crypto.randomUUID(),
+        ...(clientEmail ? { clientEmail } : {}),
+        expiresAt,
+        allowedOrigins: [env.ONBOARDING_ORIGIN.replace(/\/$/u, "")],
+      };
+      const encoded = btoa(String.fromCharCode(...encoder.encode(JSON.stringify(claims))))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/u, "");
+      const token = `${encoded}.${await signHmac(encoded, env.ONBOARDING_INVITE_SIGNING_SECRET)}`;
+      const tokenHash = await digest(token);
+      await inviteCoordinator(env).register({
+        inviteId: claims.inviteId,
+        clientEmail: claims.clientEmail || null,
+        expiresAt,
+        allowedOrigin: claims.allowedOrigins[0],
+        tokenHash,
+        now: Date.now(),
+        creator: actor,
+      });
+      return json({
+        inviteId: claims.inviteId,
+        clientEmail: claims.clientEmail || null,
+        expiresAt,
+        url: `${claims.allowedOrigins[0]}/onboard/#invite=${encodeURIComponent(token)}`,
+      }, 201, { ...headers, "Cache-Control": "no-store" });
+    } catch {
+      return json({ error: "Could not create the invitation." }, 400, headers);
     }
-    if (action !== "create") return json({ error: "Choose create, revoke, or backfill." }, 400, headers);
-    const clientEmail = clean(body.clientEmail, 240).toLowerCase();
-    if (clientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(clientEmail))
-      return json({ error: "Enter a valid client email." }, 400, headers);
-    const expiresAt = Date.now() + 14 * 24 * 60 * 60 * 1000;
-    const claims: OnboardingInviteClaims = {
-      inviteId: crypto.randomUUID(),
-      ...(clientEmail ? { clientEmail } : {}),
-      expiresAt,
-      allowedOrigins: [env.ONBOARDING_ORIGIN.replace(/\/$/u, "")],
-    };
-    const encoded = btoa(String.fromCharCode(...encoder.encode(JSON.stringify(claims))))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/u, "");
-    const token = `${encoded}.${await signHmac(encoded, env.ONBOARDING_INVITE_SIGNING_SECRET)}`;
-    const tokenHash = await digest(token);
-    await inviteCoordinator(env).register({
-      inviteId: claims.inviteId,
-      clientEmail: claims.clientEmail || null,
-      expiresAt,
-      allowedOrigin: claims.allowedOrigins[0],
-      tokenHash,
-      now: Date.now(),
-    });
-    return json({
-      inviteId: claims.inviteId,
-      clientEmail: claims.clientEmail || null,
-      expiresAt,
-      url: `${claims.allowedOrigins[0]}/onboard/#invite=${encodeURIComponent(token)}`,
-    }, 201, { ...headers, "Cache-Control": "no-store" });
-  } catch {
-    return json({ error: "Could not create the invitation." }, 400, headers);
-  }
+  });
 }
 
 const GENERATION_STATUSES = new Set([
@@ -740,17 +837,17 @@ async function adminGenerations(
     return json({ error: "Invalid request origin." }, 403, headers);
   if (request.method !== "GET")
     return json({ error: "Method not allowed." }, 405, headers);
-  if (!(await accessAdminEmail(ctx, env)))
-    return json({ error: "Access denied." }, 403, headers);
-  const id = clean(new URL(request.url).searchParams.get("id"), 120).toLowerCase();
-  if (id) {
-    if (!GENERATION_ID_PATTERN.test(id))
-      return json({ error: "Invalid generation." }, 400, headers);
-    const detail = await generationLedger(env).get(id);
-    if (!detail) return json({ error: "Generation not found." }, 404, headers);
-    return json(detail, 200, headers);
-  }
-  return json({ generations: await generationLedger(env).list(200) }, 200, headers);
+  return guardedAdminRoute(request, env, ctx, async () => {
+    const id = clean(new URL(request.url).searchParams.get("id"), 120).toLowerCase();
+    if (id) {
+      if (!GENERATION_ID_PATTERN.test(id))
+        return json({ error: "Invalid generation." }, 400, headers);
+      const detail = await generationLedger(env).get(id);
+      if (!detail) return json({ error: "Generation not found." }, 404, headers);
+      return json(detail, 200, headers);
+    }
+    return json({ generations: await generationLedger(env).list(200) }, 200, headers);
+  });
 }
 
 async function adminGenerationHero(
@@ -764,24 +861,21 @@ async function adminGenerationHero(
     return new Response("Forbidden", { status: 403, headers: { "Cache-Control": "no-store" } });
   if (request.method !== "GET")
     return new Response("Method not allowed", { status: 405 });
-  if (!(await accessAdminEmail(ctx, env)))
-    return new Response("Access denied.", {
-      status: 403,
-      headers: { "Cache-Control": "no-store" },
+  return guardedAdminRoute(request, env, ctx, async () => {
+    const id = clean(new URL(request.url).searchParams.get("id"), 120).toLowerCase();
+    if (!GENERATION_ID_PATTERN.test(id))
+      return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
+    const hero = await generationLedger(env).getHero(id);
+    if (!hero)
+      return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
+    return new Response(hero.bytes, {
+      status: 200,
+      headers: {
+        "Content-Type": hero.contentType,
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
     });
-  const id = clean(new URL(request.url).searchParams.get("id"), 120).toLowerCase();
-  if (!GENERATION_ID_PATTERN.test(id))
-    return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
-  const hero = await generationLedger(env).getHero(id);
-  if (!hero)
-    return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
-  return new Response(hero.bytes, {
-    status: 200,
-    headers: {
-      "Content-Type": hero.contentType,
-      "Cache-Control": "private, max-age=60",
-      "X-Content-Type-Options": "nosniff",
-    },
   });
 }
 
@@ -1237,6 +1331,7 @@ async function intake(request: Request, env: Env) {
       if (!reservation.duplicate) {
         const recorded = await inviteCoordinator(env).recordIssue(
           invite.claims.inviteId, normalized.submissionId, submissionHash, issueNumber,
+          Date.now(), {businessName:normalized.businessName,contactName:normalized.contactName,email:normalized.email,phone:normalized.phone},
         );
         if (!recorded) throw new Error("Intake acceptance could not be recorded.");
       }
@@ -3662,14 +3757,19 @@ async function aiChat(request: Request, env: Env) {
 }
 
 export default {
-  fetch(request: Request, env: Env, ctx: ExecutionContext) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    const adminResponse = await routeAdminRequest(request, env, ctx);
+    if (adminResponse) return adminResponse;
     const path = new URL(request.url).pathname;
+    if (path.startsWith("/api/admin/onboarding-invites/auth/"))
+      return proxyAdminAuth(request, env);
     if (path === "/api/onboarding-invites/validate")
       return inviteValidation(request, env);
+    if (path.startsWith("/api/admin/onboarding-invites/workspace/")) {
+      return authenticatedWorkspace(request,env,ctx);
+    }
     if (path === "/api/admin/onboarding-invites")
       return adminInvites(request, env, ctx);
-    if (path === "/admin/onboarding-invites")
-      return onboardingAdminPage(request, env, ctx);
     if (path === "/api/intake") return intake(request, env);
     if (path === "/api/upload") return upload(request, env);
     if (path === "/api/places") return places(request, env);
@@ -3686,6 +3786,11 @@ export default {
       return creativeRepairCoordinator(request, env);
     if (path === "/api/internal/generations")
       return generationIngest(request, env);
+    if (path === '/api/internal/generation-attempts' || path === '/api/internal/generation-reconciliation') {
+      if (!env.GENERATION_TRACKING_SECRET) return workspaceError('unavailable','Generation tracking is not configured.',503);
+      if (!internalSecretAuthorized(request,env.GENERATION_TRACKING_SECRET)) return workspaceError('unauthorized','Unauthorized.',401);
+      return attemptIngest(request,env,path.endsWith('generation-reconciliation'));
+    }
     if (path === "/api/internal/generations/hero")
       return generationHeroUpload(request, env);
     if (path === "/api/admin/generations")

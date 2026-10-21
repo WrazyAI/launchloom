@@ -192,4 +192,5 @@ jobs:
           )
           if [ -n "$PRODUCTION" ]; then ARGS+=(--production-url "$PRODUCTION"); fi
           if [ -n "$FAILURE" ]; then ARGS+=(--failure "$FAILURE"); fi
+          # Client lifecycle only. Publishing must not rewrite an execution attempt.
           node scripts/record-generation-event.mjs "${ARGS[@]}"

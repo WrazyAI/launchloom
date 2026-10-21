@@ -56,14 +56,15 @@ describe("Access-protected invite administration", () => {
     expect(adminPage.headers.get("Cache-Control")).toBe("no-store");
     expect(adminPage.headers.get("Content-Security-Policy")).toContain("frame-ancestors 'none'");
     const adminPageHtml = await adminPage.text();
-    expect(adminPageHtml).toContain("Create private link");
-    expect(adminPageHtml).toContain("Bind missing client emails");
+    expect(adminPageHtml).toContain("Operations workspace");
+    expect(adminPageHtml).toContain('src="/admin-assets/app.js"');
+    expect(adminPageHtml).not.toContain("client@example.test");
 
     const created = await worker.fetch(
       new Request(`${apiOrigin}/api/admin/onboarding-invites`, {
         method: "POST",
         headers: { Origin: apiOrigin, "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "create", clientEmail: "owner@example.test" }),
+        body: JSON.stringify({ action: "create", clientEmail: "owner@example.test", creator: { id: "forged", role: "owner" } }),
       }),
       testEnv,
       accessContext("admin@example.test"),
@@ -71,6 +72,11 @@ describe("Access-protected invite administration", () => {
     expect(created.status).toBe(201);
     const result = await created.json() as { inviteId: string; clientEmail: string; url: string };
     expect(result).toMatchObject({ clientEmail: "owner@example.test" });
+    const shared = await inviteNamespace.getByName("launchloom-onboarding-invites").listPage({});
+    const saved = shared.items.find(item => item.inviteId === result.inviteId);
+    expect(saved?.creator).toMatchObject({ kind: "admin", source: "cloudflare-access", email: "admin@example.test" });
+    expect(saved?.creator.id).toMatch(/^access:[a-f0-9]{64}$/);
+    expect(saved?.creator.id).not.toBe("forged");
     expect(result.url).toMatch(/^https:\/\/onboard\.example\.test\/onboard\/#invite=/u);
     const token = new URL(result.url).hash.slice("#invite=".length);
     const validated = await SELF.fetch("https://api.launchloom.test/api/onboarding-invites/validate", {
@@ -328,6 +334,84 @@ function recoveryAdminRequest(inviteId: string, issueNumber: number, confirmed =
   return new Request(`${apiOrigin}/api/admin/onboarding-invites`, {method: "POST",headers:{Origin:apiOrigin,"Content-Type":"application/json"},body:JSON.stringify({action:"recover-intake",inviteId,issueNumber,confirmed})});
 }
 
+describe("interim Access principal", () => {
+  const meUrl = `${apiOrigin}/api/admin/onboarding-invites/workspace/me`;
+
+  async function expectedId(email: string) {
+    const bytes = new Uint8Array(
+      await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(email),
+      ),
+    );
+    return `access:${[...bytes]
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("")}`;
+  }
+
+  it("returns only the verified Access principal and ignores browser identity", async () => {
+    const response = await worker.fetch(
+      new Request(`${meUrl}?email=forged@example.test`, {
+        headers: {
+          Origin: apiOrigin,
+          "X-Admin-Email": "forged@example.test",
+          "X-Access-Email": "forged@example.test",
+        },
+      }),
+      testEnv,
+      accessContext(" Admin@Example.test "),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(response.headers.get("Content-Type")).toBe("application/json");
+    const payload = (await response.json()) as {
+      principal: Record<string, unknown>;
+    };
+    expect(payload).toEqual({
+      principal: {
+        id: await expectedId("admin@example.test"),
+        email: "admin@example.test",
+        displayName: null,
+        role: "admin",
+        authSource: "cloudflare-access",
+      },
+    });
+    expect(JSON.stringify(payload)).not.toContain("forged");
+    expect(payload.principal).not.toHaveProperty("owner");
+
+    const denied = await worker.fetch(
+      new Request(meUrl, { headers: { Origin: apiOrigin } }),
+      testEnv,
+      accessContext("other@example.test"),
+    );
+    expect(denied.status).toBe(403);
+    const wrongAudience = await worker.fetch(
+      new Request(meUrl),
+      testEnv,
+      accessContext("admin@example.test", "wrong-audience"),
+    );
+    expect(wrongAudience.status).toBe(403);
+    const signedOut = await worker.fetch(
+      new Request(meUrl),
+      testEnv,
+      {} as ExecutionContext,
+    );
+    expect(signedOut.status).toBe(401);
+  });
+
+  it("does not fabricate an Access principal in Neon mode", async () => {
+    const response = await worker.fetch(
+      new Request(meUrl),
+      { ...testEnv, ADMIN_AUTH_MODE: "neon" } as Env,
+      accessContext("admin@example.test"),
+    );
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: "signed_out", traceId: expect.any(String) },
+    });
+  });
+});
+
 describe("operator-confirmed intake reconciliation", () => {
   it("binds a verified legacy issue with an audit receipt and delivers its outbox once", async () => {
     const inviteId = "invite-admin-recovery-001";
@@ -345,6 +429,11 @@ describe("operator-confirmed intake reconciliation", () => {
     const repeated=await worker.fetch(recoveryAdminRequest(inviteId,12001),testEnv,accessContext("admin@example.test"));
     expect(repeated.status).toBe(200);
     expect(dispatches).toBe(1);expect(receipts).toBe(1);
+    const attempts = await testEnv.GENERATION_LEDGER.getByName("launchloom-generations").listAttempts({clientId:`submission:${payload.submissionId}`});
+    expect(attempts.items).toHaveLength(1);
+    expect(attempts.items[0].initiator).toMatchObject({kind:"admin",email:"admin@example.test",source:"cloudflare-access"});
+    const accepted = (await coordinator.acceptedPage({})).items.find(item=>item.submissionId===payload.submissionId);
+    expect(accepted).toMatchObject({businessName:"Synthetic Recovery",email:"owner@example.test"});
     expect((await coordinator.list()).find(row=>row.inviteId===inviteId)).toMatchObject({status:"consumed",issueNumber:12001,recoveryRequired:false});
     await runInDurableObject(coordinator,(_,state)=>{
       expect(state.storage.sql.exec<{issue_number:number;reviewer_email:string}>("SELECT issue_number, reviewer_email FROM intake_reconciliations WHERE invite_id = ?",inviteId).toArray()[0]).toEqual({issue_number:12001,reviewer_email:"admin@example.test"});

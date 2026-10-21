@@ -308,6 +308,7 @@ jobs:
           )
           if [ -n "$REVISION_PREVIEW" ]; then ARGS+=(--preview-url "$REVISION_PREVIEW"); fi
           if [ -n "$FAILURE" ]; then ARGS+=(--failure "$FAILURE"); fi
+          # Client lifecycle only, not a new initial-generation execution outcome.
           node scripts/record-generation-event.mjs "${ARGS[@]}"
       - name: Preserve failed revision evidence
         if: failure() && steps.claim.outputs.run == 'true'

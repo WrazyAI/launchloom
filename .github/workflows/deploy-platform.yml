@@ -29,6 +29,11 @@ jobs:
       ONBOARDING_ORIGIN: ${{ vars.ONBOARDING_ORIGIN }}
       ONBOARDING_ADMIN_EMAILS: ${{ vars.ONBOARDING_ADMIN_EMAILS }}
       ONBOARDING_ACCESS_AUD: ${{ vars.ONBOARDING_ACCESS_AUD }}
+      ADMIN_AUTH_MODE: ${{ vars.ADMIN_AUTH_MODE }}
+      ADMIN_PUBLIC_ORIGIN: ${{ vars.ADMIN_PUBLIC_ORIGIN }}
+      NEON_AUTH_BASE_URL: ${{ vars.NEON_AUTH_BASE_URL }}
+      NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET }}
+      ADMIN_DATABASE_URL: ${{ secrets.ADMIN_DATABASE_URL }}
       PUBLIC_SENTRY_DSN: ${{ vars.PUBLIC_SENTRY_DSN }}
       PUBLIC_SENTRY_ENVIRONMENT: production
       PUBLIC_SENTRY_RELEASE: ${{ github.sha }}
@@ -48,11 +53,44 @@ jobs:
           for key in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID GITHUB_ORG_TOKEN REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET OPENROUTER_API_KEY GOOGLE_PLACES_API_KEY RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_FEEDBACK_EMAIL REVISION_COORDINATOR_SECRET ONBOARDING_INVITE_SIGNING_SECRET ONBOARDING_ORIGIN ONBOARDING_ADMIN_EMAILS ONBOARDING_ACCESS_AUD PUBLIC_SENTRY_DSN SENTRY_AUTH_TOKEN SENTRY_ORG SENTRY_PROJECT; do
             test -n "${!key}" || { echo "Missing required secret or variable: $key"; exit 1; }
           done
+      - name: Validate admin auth configuration
+        run: |
+          mode="${ADMIN_AUTH_MODE:-access}"
+          case "$mode" in
+            access)
+              echo "Admin auth mode: access (Cloudflare Access guard). Neon resources are not required."
+              ;;
+            neon)
+              for key in ADMIN_PUBLIC_ORIGIN NEON_AUTH_BASE_URL NEON_AUTH_COOKIE_SECRET ADMIN_DATABASE_URL; do
+                test -n "${!key}" || { echo "Missing required secret or variable for neon admin auth: $key"; exit 1; }
+              done
+              case "$ADMIN_PUBLIC_ORIGIN" in
+                https://*) ;;
+                *) echo "ADMIN_PUBLIC_ORIGIN must be an https origin in deployment"; exit 1 ;;
+              esac
+              case "$NEON_AUTH_BASE_URL" in
+                https://*) ;;
+                *) echo "NEON_AUTH_BASE_URL must be https in deployment"; exit 1 ;;
+              esac
+              test "${#NEON_AUTH_COOKIE_SECRET}" -ge 32 || { echo "NEON_AUTH_COOKIE_SECRET must be at least 32 characters"; exit 1; }
+              echo "Admin auth mode: neon (verified session plus active membership)."
+              ;;
+            *)
+              echo "Unsupported ADMIN_AUTH_MODE (expected access or neon)"; exit 1
+              ;;
+          esac
       - name: Configure Worker secrets
         run: |
           for key in GITHUB_ORG_TOKEN REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET OPENROUTER_API_KEY GOOGLE_PLACES_API_KEY RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_FEEDBACK_EMAIL REVISION_COORDINATOR_SECRET ONBOARDING_INVITE_SIGNING_SECRET; do
             printf '%s' "${!key}" | npx wrangler secret put "$key"
           done
+          # Neon mode secrets are written only when the deployment is explicitly
+          # switched to neon. Access-mode deployments keep working without any
+          # Neon Auth project, membership database or cookie secret.
+          if [ "${ADMIN_AUTH_MODE:-access}" = "neon" ]; then
+            printf '%s' "$NEON_AUTH_COOKIE_SECRET" | npx wrangler secret put NEON_AUTH_COOKIE_SECRET
+            printf '%s' "$ADMIN_DATABASE_URL" | npx wrangler secret put ADMIN_DATABASE_URL
+          fi
           # Optional generation tracking. Keep it out of the required list so a
           # missing repository secret cannot break platform deployment; the
           # tracking API reports itself unconfigured until this is set.
@@ -66,6 +104,8 @@ jobs:
           fi
       - name: Build platform
         run: npm run build
+      - name: Build admin workspace assets
+        run: npm run build:admin
       - name: Prepare invite-only onboarding Pages bundle
         run: npm run build:onboarding-pages -- "$RUNNER_TEMP/launchloom-onboarding"
       - name: Deploy invite-only onboarding Pages project
@@ -73,4 +113,17 @@ jobs:
       - name: Direct-upload platform files to Cloudflare Pages
         run: npx wrangler pages deploy dist --project-name launchloom --commit-hash "$GITHUB_SHA" --commit-message "LaunchLoom platform $GITHUB_SHA"
       - name: Deploy the LaunchLoom API Worker
-        run: npx wrangler deploy --var "ONBOARDING_ORIGIN:$ONBOARDING_ORIGIN" "ONBOARDING_ADMIN_EMAILS:$ONBOARDING_ADMIN_EMAILS" "ONBOARDING_ACCESS_AUD:$ONBOARDING_ACCESS_AUD"
+        run: |
+          deploy_vars=(
+            --var "ONBOARDING_ORIGIN:$ONBOARDING_ORIGIN"
+            --var "ONBOARDING_ADMIN_EMAILS:$ONBOARDING_ADMIN_EMAILS"
+            --var "ONBOARDING_ACCESS_AUD:$ONBOARDING_ACCESS_AUD"
+            --var "ADMIN_AUTH_MODE:${ADMIN_AUTH_MODE:-access}"
+          )
+          if [ "${ADMIN_AUTH_MODE:-access}" = "neon" ]; then
+            deploy_vars+=(
+              --var "ADMIN_PUBLIC_ORIGIN:$ADMIN_PUBLIC_ORIGIN"
+              --var "NEON_AUTH_BASE_URL:$NEON_AUTH_BASE_URL"
+            )
+          fi
+          npx wrangler deploy "${deploy_vars[@]}"
