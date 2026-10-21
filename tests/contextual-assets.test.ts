@@ -115,6 +115,7 @@ describe("contextual image generation", () => {
                   containsWebsiteOrInterface: false,
                   containsVisibleTextOrTextLikeMarks: false,
                   containsLogoOrWatermark: false,
+                  containsPeople: false,
                   isRelevantToBusiness: true,
                 }),
               },
@@ -1392,6 +1393,91 @@ describe("contextual image generation", () => {
   });
 });
 
+describe("generated asset review integrity policy", () => {
+  const checks = (overrides: Record<string, any> = {}) => ({
+    isStandaloneImage: true,
+    containsWebsiteOrInterface: false,
+    containsVisibleTextOrTextLikeMarks: false,
+    containsLogoOrWatermark: false,
+    containsPeople: false,
+    isRelevantToBusiness: true,
+    ...overrides,
+  });
+  const completedResponse = (text: string) =>
+    new Response(
+      JSON.stringify({
+        id: "resp_policy",
+        status: "completed",
+        output: [
+          {
+            type: "message",
+            role: "assistant",
+            status: "completed",
+            content: [{ type: "output_text", text }],
+          },
+        ],
+        usage: { input_tokens: 100, output_tokens: 20 },
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+
+  it("re-reviews once when the review output is malformed", async () => {
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    const image = await sharp({
+      create: { width: 16, height: 16, channels: 3, background: { r: 10, g: 60, b: 40 } },
+    })
+      .webp()
+      .toBuffer();
+    let calls = 0;
+    vi.stubGlobal("fetch", async () => {
+      calls += 1;
+      return completedResponse(
+        JSON.stringify(calls === 1 ? { isStandaloneImage: true } : checks()),
+      );
+    });
+    try {
+      const review = await reviewGeneratedAsset({
+        imageData: image,
+        placement: "hero",
+        businessKind: "bicycle workshop",
+      });
+      expect(review.available).toBe(true);
+      expect(review.approved).toBe(true);
+      expect(calls).toBe(2);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  }, 20000);
+
+  it("rejects generated imagery that contains people", async () => {
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    const image = await sharp({
+      create: { width: 16, height: 16, channels: 3, background: { r: 30, g: 30, b: 30 } },
+    })
+      .webp()
+      .toBuffer();
+    vi.stubGlobal("fetch", async () =>
+      completedResponse(JSON.stringify(checks({ containsPeople: true }))),
+    );
+    try {
+      const review = await reviewGeneratedAsset({
+        imageData: image,
+        placement: "hero",
+        businessKind: "bicycle workshop",
+      });
+      expect(review.available).toBe(true);
+      expect(review.approved).toBe(false);
+      expect(review.reasonCodes).toContain("people_or_faces");
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  }, 20000);
+});
+
 describe("generated asset review on OpenCode Go", () => {
   it("reviews the bitmap through the Go transport with the GLM wire model", async () => {
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
@@ -1426,6 +1512,7 @@ describe("generated asset review on OpenCode Go", () => {
                     containsWebsiteOrInterface: false,
                     containsVisibleTextOrTextLikeMarks: false,
                     containsLogoOrWatermark: false,
+                    containsPeople: false,
                     isRelevantToBusiness: true,
                   }),
                 },

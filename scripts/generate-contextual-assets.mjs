@@ -22,7 +22,7 @@ import { VISUAL_GATE_MODEL } from "./visual-quality-gate-lib.mjs";
 
 export const DEFAULT_FAL_MODEL = "fal-ai/minimax/image-01";
 export const DEFAULT_MAX_IMAGES = 3;
-export const DEFAULT_MAX_REQUESTS = 6;
+export const DEFAULT_MAX_REQUESTS = 9;
 export const DEFAULT_MAX_PROMPT_LENGTH = 1500;
 export const GENERATED_ASSET_REVIEW_POLICY_VERSION = "visual-review-v1";
 
@@ -68,6 +68,7 @@ const GENERATED_ASSET_REVIEW_SCHEMA = {
       "containsWebsiteOrInterface",
       "containsVisibleTextOrTextLikeMarks",
       "containsLogoOrWatermark",
+      "containsPeople",
       "isRelevantToBusiness",
     ],
     properties: {
@@ -75,10 +76,23 @@ const GENERATED_ASSET_REVIEW_SCHEMA = {
       containsWebsiteOrInterface: { type: "boolean" },
       containsVisibleTextOrTextLikeMarks: { type: "boolean" },
       containsLogoOrWatermark: { type: "boolean" },
+      containsPeople: { type: "boolean" },
       isRelevantToBusiness: { type: "boolean" },
     },
   },
 };
+
+const GENERATED_ASSET_REVIEW_REQUIRED_CHECKS = [
+  "isStandaloneImage",
+  "containsWebsiteOrInterface",
+  "containsVisibleTextOrTextLikeMarks",
+  "containsLogoOrWatermark",
+  "containsPeople",
+  "isRelevantToBusiness",
+];
+
+const GENERATED_ASSET_REVIEW_SYSTEM_PROMPT =
+  "You are a strict visual asset integrity reviewer. Evaluate only what is visible in the supplied pixels. A fake website screenshot with nonsense text is still a website screenshot and must be rejected. Do not infer that a design mockup is acceptable because its text is unreadable. Reject any person, face, human figure, hands, or body parts: generated imagery must never imply staff or customers. Return only the required structured fields.";
 
 function configuredNumber(value, fallback) {
   if (value === undefined || value === null || value === "") return fallback;
@@ -335,6 +349,7 @@ function assetReviewReasonCodes(checks) {
     reasons.push("visible_text");
   if (checks.containsLogoOrWatermark === true)
     reasons.push("logo_or_watermark");
+  if (checks.containsPeople === true) reasons.push("people_or_faces");
   if (checks.isRelevantToBusiness !== true) reasons.push("irrelevant_subject");
   return reasons;
 }
@@ -381,7 +396,8 @@ export async function reviewGeneratedAsset({
           }.`,
           `Reference family: ${safePromptPart(familyId || "unspecified", 80) || "unspecified"}.`,
           "Judge visible pixels, not the prompt or filename. Reject a fake website/page screenshot, browser or UI layout, collage of interface panels, gibberish or readable text, text-like marks, logos, watermarks, or an unrelated subject.",
-          "Approve only one standalone image asset with a relevant subject, no visible text-like marks, and no interface or branding.",
+          "Reject any image containing people, faces, hands, or body parts; generated imagery must never imply staff or customers.",
+          "Approve only one standalone image asset with a relevant subject, no visible text-like marks, no interface, no branding, and no people.",
         ].join(" "),
       },
       {
@@ -393,64 +409,66 @@ export async function reviewGeneratedAsset({
       },
     ];
     if (creativeProvider === "opencode-go") {
-      const result = await completeGoCreative({
-        logicalModel: model,
-        signal: controller.signal,
-        env: process.env,
-        maxAttempts: 2,
-        request: buildGoCreativeRequest({
-          systemPrompt:
-            "You are a strict visual asset integrity reviewer. Evaluate only what is visible in the supplied pixels. A fake website screenshot with nonsense text is still a website screenshot and must be rejected. Do not infer that a design mockup is acceptable because its text is unreadable. Return only the required structured fields.",
-          userContent: content,
-          schemaName: GENERATED_ASSET_REVIEW_SCHEMA.name,
-          schema: GENERATED_ASSET_REVIEW_SCHEMA.schema,
-          maxOutputTokens: 1000,
-          sessionId: openRouterSessionId(
-            "generated-asset-review",
-            model,
-            sha256(imageData),
-          ),
-        }),
-      });
-      const diagnostics = {
-        model,
-        usage: reviewUsageSummary(goReviewUsage(result.usage)),
-        imageBytes: imageData?.byteLength,
-      };
-      let checks;
-      try {
-        checks = parseGoCreativeOutput(result, {
-          invalidJsonCode: "GENERATED_ASSET_REVIEW_INVALID_JSON",
-          label: "Generated asset review",
+      // A review model can occasionally return malformed checks; re-review the
+      // same pixels once before reporting the review as unavailable. This
+      // costs no FAL request and keeps a good image from being skipped by a
+      // single bad structured response.
+      let diagnostics = { model, imageBytes: imageData?.byteLength };
+      for (let reviewAttempt = 1; reviewAttempt <= 2; reviewAttempt += 1) {
+        const result = await completeGoCreative({
+          logicalModel: model,
+          signal: controller.signal,
+          env: process.env,
+          maxAttempts: 2,
+          request: buildGoCreativeRequest({
+            systemPrompt: GENERATED_ASSET_REVIEW_SYSTEM_PROMPT,
+            userContent: content,
+            schemaName: GENERATED_ASSET_REVIEW_SCHEMA.name,
+            schema: GENERATED_ASSET_REVIEW_SCHEMA.schema,
+            maxOutputTokens: 1000,
+            sessionId: openRouterSessionId(
+              "generated-asset-review",
+              model,
+              sha256(imageData),
+            ),
+          }),
         });
-      } catch {
-        return unavailableAssetReview("invalid_checks", diagnostics);
+        diagnostics = {
+          model,
+          usage: reviewUsageSummary(goReviewUsage(result.usage)),
+          imageBytes: imageData?.byteLength,
+        };
+        let checks;
+        try {
+          checks = parseGoCreativeOutput(result, {
+            invalidJsonCode: "GENERATED_ASSET_REVIEW_INVALID_JSON",
+            label: "Generated asset review",
+          });
+        } catch {
+          checks = null;
+        }
+        if (
+          !checks ||
+          typeof checks !== "object" ||
+          GENERATED_ASSET_REVIEW_REQUIRED_CHECKS.some(
+            (key) => typeof checks[key] !== "boolean",
+          )
+        )
+          continue;
+        const reasonCodes = assetReviewReasonCodes(checks);
+        return {
+          available: true,
+          approved: reasonCodes.length === 0,
+          reasonCodes,
+          model,
+          usage: reviewUsageSummary(goReviewUsage(result.usage)),
+          cache: {
+            provider: "opencode-go",
+            ...opencodeGoUsageMetrics(result.usage),
+          },
+        };
       }
-      const requiredChecks = [
-        "isStandaloneImage",
-        "containsWebsiteOrInterface",
-        "containsVisibleTextOrTextLikeMarks",
-        "containsLogoOrWatermark",
-        "isRelevantToBusiness",
-      ];
-      if (
-        !checks ||
-        typeof checks !== "object" ||
-        requiredChecks.some((key) => typeof checks[key] !== "boolean")
-      )
-        return unavailableAssetReview("invalid_checks", diagnostics);
-      const reasonCodes = assetReviewReasonCodes(checks);
-      return {
-        available: true,
-        approved: reasonCodes.length === 0,
-        reasonCodes,
-        model,
-        usage: reviewUsageSummary(goReviewUsage(result.usage)),
-        cache: {
-          provider: "opencode-go",
-          ...opencodeGoUsageMetrics(result.usage),
-        },
-      };
+      return unavailableAssetReview("invalid_checks", diagnostics);
     }
     const response = await openRouterChatCompletion({
       title: "LaunchLoom generated asset review",
@@ -472,11 +490,7 @@ export async function reviewGeneratedAsset({
           json_schema: GENERATED_ASSET_REVIEW_SCHEMA,
         },
         messages: [
-          {
-            role: "system",
-            content:
-              "You are a strict visual asset integrity reviewer. Evaluate only what is visible in the supplied pixels. A fake website screenshot with nonsense text is still a website screenshot and must be rejected. Do not infer that a design mockup is acceptable because its text is unreadable. Return only the required structured fields.",
-          },
+          { role: "system", content: GENERATED_ASSET_REVIEW_SYSTEM_PROMPT },
           { role: "user", content },
         ],
       },
@@ -506,17 +520,12 @@ export async function reviewGeneratedAsset({
     } catch {
       return unavailableAssetReview("invalid_checks", diagnostics);
     }
-    const requiredChecks = [
-      "isStandaloneImage",
-      "containsWebsiteOrInterface",
-      "containsVisibleTextOrTextLikeMarks",
-      "containsLogoOrWatermark",
-      "isRelevantToBusiness",
-    ];
     if (
       !checks ||
       typeof checks !== "object" ||
-      requiredChecks.some((key) => typeof checks[key] !== "boolean")
+      GENERATED_ASSET_REVIEW_REQUIRED_CHECKS.some(
+        (key) => typeof checks[key] !== "boolean",
+      )
     )
       return unavailableAssetReview("invalid_checks", diagnostics);
     const reasonCodes = assetReviewReasonCodes(checks);
@@ -836,7 +845,7 @@ function promptFor(site, route, placement) {
   const prompt = [
     `Visual medium: ${familyBrief.medium}.`,
     `Asset type: one standalone visual image asset, specifically a ${placement.id} photo or illustration.`,
-    "Hard rule: output only a single image, never a website or webpage screenshot, browser frame, UI, interface, wireframe, mockup, poster, brochure, menu, book cover, sign, or text collage. No readable text or text-like marks, words, letters, glyphs, logos, watermarks, branded products, people, faces, credentials, medical claims, or copied campaign. Reference is visual mood only, not image content.",
+    "Hard rule: output only a single image, never a website or webpage screenshot, browser frame, UI, interface, wireframe, mockup, poster, brochure, menu, book cover, sign, or text collage. The scene must be empty of people: no workers, faces, hands, body parts, or silhouettes of people. No clothing, uniforms, patches, embroidery, name tags, labels, signage, or writing of any kind. No readable text or text-like marks, words, letters, glyphs, logos, watermarks, branded products, credentials, medical claims, or copied campaign. Prefer clean equipment, materials, tools, or interiors shown without any labels. Reference is visual mood only, not image content.",
     `Primary request: ${placementBrief}.`,
     `Business context: ${subject}.`,
     referenceSceneContext,
