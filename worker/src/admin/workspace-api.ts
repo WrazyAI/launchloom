@@ -218,8 +218,14 @@ export async function attemptIngest(
         result.code,
         result.code === "conflict"
           ? "Record evidence conflicts."
-          : "Tracking data temporarily unavailable.",
-        result.code === "conflict" ? 409 : 503,
+          : result.code === "invalid_input"
+            ? "Invalid tracking evidence."
+            : "Tracking data temporarily unavailable.",
+        result.code === "conflict"
+          ? 409
+          : result.code === "invalid_input"
+            ? 400
+            : 503,
       );
     return json(result);
   } catch (error) {

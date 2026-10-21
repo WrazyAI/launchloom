@@ -1,10 +1,10 @@
 # Admin auth compatibility (Neon same-origin sessions)
 
-**Status: implementation and synthetic Worker proof complete. LIVE PROVIDER/BROWSER COMPATIBILITY IS BLOCKED and is not claimed.**
+**Status: implementation complete; verified locally against the isolated Neon development project with real sessions, membership, Worker `/me`/team and Chromium sign-in. Production cutover is not enabled.** Remaining blockers are deployed staging/WebKit proof, mailbox reset/expiry redemption, a least-privilege production database role, and the Access policy transition.
 
-This record covers Accounts Task 4 only. It does not authorize or claim Neon
-resource provisioning, an Access policy change, `ADMIN_AUTH_MODE=neon` in a
-deployed environment, membership authorization, or production login.
+This record covers the Neon auth/membership work. It does not authorize or
+claim `ADMIN_AUTH_MODE=neon` in production, an Access policy change, production
+login, or the use of development credentials in production.
 
 ## Installed SDK and export evidence
 
@@ -179,35 +179,34 @@ This proves the adapter against synthetic provider responses on the Worker
 runtime. It does **not** prove a real Neon Auth project, real browser cookie
 behavior, email delivery, or deployed staging behavior.
 
-## LIVE GATE: still pending
+## DEV GATE: passed locally; production gate still pending
 
-Step 4 of the brief is **BLOCKED**. The controller verified that no Neon CLI or
-Neon/DATABASE configuration exists locally and that no Neon project, branch,
-trusted domain, test mailbox set, or owner/resource authorization has been
-approved. A local read-only check also reports:
+The isolated development project is provisioned (project `launchloom-admin`,
+branch `main`, managed Better Auth) and the following were verified against the
+real provider and database:
 
-```text
-neon CLI: absent
-NEON_AUTH_BASE_URL: unset
-NEON_AUTH_COOKIE_SECRET: unset
-ADMIN_DATABASE_URL: unset
-DATABASE_URL: unset
-NEON_PROJECT_ID: unset
-```
+- email/password sign-up and `get-session` with a secure HttpOnly cookie;
+- Worker `/workspace/me` and `/workspace/team` with the real owner membership;
+- two-session deactivation (admin 403, owner 200) and provider sign-out (401);
+- Chromium sign-in, profile/team rendering, and sign-out;
+- real database enrollment, owner-safety, and atomic legacy-link tests.
 
-Required operator inputs before the live gate can run:
+Still pending before production cutover:
 
-1. Intended Neon project ID and an authorized synthetic development branch.
-2. The branch's Neon Auth base URL (HTTPS).
-3. The trusted staging Worker/admin origin (HTTPS, exact origin, no path).
-4. A fresh `NEON_AUTH_COOKIE_SECRET` of at least 32 random characters, delivered
-   as a deployment secret and never printed.
-5. Operator-approved test mailboxes and the provider sender/verification/reset
-   mail configuration. Production mailboxes and client data are out of scope.
-6. A production-independent staging deployment target/commit and explicit
-   authorization to set `ADMIN_AUTH_MODE=neon` there only.
-7. Available Chromium and Safari/WebKit test environments, or an explicit record
-   that WebKit is unavailable and therefore a release blocker.
+1. Deployed staging proof for the chosen production origin, with Chromium and
+   WebKit.
+2. Operator-approved mailboxes for verification/reset redemption, including
+   expiry.
+3. An operator-created least-privilege production database role (see below).
+4. The Access policy transition and rollback rehearsal, with `ADMIN_AUTH_MODE=neon`
+   enabled only after the replacement path is proven.
+5. A fresh production `NEON_AUTH_COOKIE_SECRET` delivered as a deployment
+   secret and never printed.
+
+Production mailboxes and client data remain out of scope. A
+production-independent staging target and an explicit authorization to set
+`ADMIN_AUTH_MODE=neon` there are also required. WebKit must pass, or be recorded
+as a release blocker.
 
 Exact live evidence still required:
 
@@ -226,9 +225,9 @@ Exact live evidence still required:
 - Chromium plus WebKit results. If WebKit is unavailable, compatibility remains a
   release blocker, not a pass.
 
-No live compatibility, staging, browser, or production claim is made until the
-above evidence exists. Normal-route Access cutover and membership authorization
-remain master Tasks 10/11 and Accounts Task 6.
+No deployed/staging/production compatibility claim is made until the above
+evidence exists. The local provider, database, Worker and Chromium proof is
+already recorded. Normal-route Access cutover remains master Tasks 10/11.
 
 ## Membership store and migration runbook (Accounts Task 5)
 

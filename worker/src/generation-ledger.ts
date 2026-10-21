@@ -286,7 +286,9 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
         code:
           error instanceof Error && error.message.startsWith("conflict:")
             ? ("conflict" as const)
-            : ("unavailable" as const),
+            : error instanceof Error && error.message.startsWith("invalid ")
+              ? ("invalid_input" as const)
+              : ("unavailable" as const),
       };
     }
   }

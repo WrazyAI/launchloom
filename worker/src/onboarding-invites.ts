@@ -232,7 +232,17 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       now,
       now,
     );
-    this.correlatePendingWorkflow(inviteId, submissionId);
+    if (this.correlatePendingWorkflow(inviteId, submissionId)) {
+      // A projection may have been delivered before this workflow operation
+      // existed, carrying no dispatch. Re-open it so the idempotent ledger
+      // registration runs with the durable correlation.
+      this.ctx.storage.sql.exec(
+        "UPDATE intake_projection_outbox SET status='pending',last_error=NULL,next_attempt_at=? WHERE invite_id=? AND submission_id=?",
+        now,
+        inviteId,
+        submissionId,
+      );
+    }
     await this.deliverProjection(inviteId, submissionId, now);
     await this.scheduleOutboxAlarm();
     await this.deliverOutboxTask(inviteId, submissionId, "workflow", now);

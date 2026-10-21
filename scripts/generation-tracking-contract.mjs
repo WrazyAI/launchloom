@@ -199,7 +199,9 @@ export function buildAttemptEvents(events, observation) {
       provider: redactTrackingText(e.provider, 120),
       model: redactTrackingText(e.model, 120),
       detail: redactTrackingText(
-        typeof e.detail === "object" ? JSON.stringify(e.detail) : e.detail,
+        e.detail !== null && typeof e.detail === "object"
+          ? JSON.stringify(e.detail)
+          : e.detail,
         2000,
       ),
       createdAt: time(e.createdAt ?? observation.observedAt),
