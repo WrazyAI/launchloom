@@ -1,6 +1,6 @@
 name: Generate client site
 run-name: >-
-  LLGEN issue=${{ (toJSON(github.event.client_payload.issue || inputs.issue) == format('{0}', github.event.client_payload.issue || inputs.issue) && (github.event.client_payload.issue || inputs.issue) > 0) && (github.event.client_payload.issue || inputs.issue) || 0 }} profile=${{ github.event_name == 'repository_dispatch' && 'full' || (contains(fromJSON('["full","full-preview","creative-only","seo-only"]'), inputs.test_profile) && inputs.test_profile) || 'excluded' }} request=none
+  LLGEN issue=${{ github.event.client_payload.issue || inputs.issue || 0 }} profile=${{ github.event_name == 'repository_dispatch' && 'full' || (contains(fromJSON('["full","full-preview","creative-only","seo-only"]'), inputs.test_profile) && inputs.test_profile) || 'excluded' }} request=none
 
 on:
   repository_dispatch:
