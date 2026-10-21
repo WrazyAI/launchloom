@@ -1,4 +1,14 @@
 import { DurableObject } from "cloudflare:workers";
+import { GenerationAttempts } from "./generation-attempts";
+import type {
+  AttemptInput,
+  AttemptEventInput,
+  AttemptFilters,
+  InitialDispatchRegistration,
+  ClientInput,
+  ClientFilters,
+  DispatchRequest,
+} from "../../src/lib/admin-contracts";
 
 export type GenerationCostKind = "actual" | "estimated" | "unreported";
 
@@ -193,9 +203,13 @@ function eventFromRow(row: GenerationEventRow): GenerationEventRecord {
 type GenerationLedgerEnvironment = Record<string, never>;
 
 export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment> {
+  private attempts: GenerationAttempts;
+
   constructor(ctx: DurableObjectState, env: GenerationLedgerEnvironment) {
     super(ctx, env);
+    this.attempts = new GenerationAttempts(ctx.storage);
     ctx.blockConcurrencyWhile(async () => {
+      this.attempts.initialize();
       ctx.storage.sql.exec(`
         CREATE TABLE IF NOT EXISTS generations (
           generation_id TEXT PRIMARY KEY,
@@ -253,6 +267,81 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
         generationId,
       )
       .toArray()[0];
+  }
+
+  async upsertAttempt(input: AttemptInput) {
+    return this.attempts.upsertAttempt(input);
+  }
+  async ingestObservations(
+    ...args: Parameters<GenerationAttempts["ingestObservations"]>
+  ) {
+    try {
+      return {
+        ok: true as const,
+        ...this.attempts.ingestObservations(...args),
+      };
+    } catch (error) {
+      return {
+        ok: false as const,
+        code:
+          error instanceof Error && error.message.startsWith("conflict:")
+            ? ("conflict" as const)
+            : error instanceof Error && error.message.startsWith("invalid ")
+              ? ("invalid_input" as const)
+              : ("unavailable" as const),
+      };
+    }
+  }
+  async upsertClient(input: ClientInput) {
+    return this.attempts.upsertClient(input);
+  }
+  async listClients(query: ClientFilters) {
+    return this.attempts.listClients(query);
+  }
+  async getClient(id: string) {
+    return this.attempts.getClient(id);
+  }
+  async registerDispatch(input: DispatchRequest) {
+    return this.attempts.registerDispatch(input);
+  }
+  /** Projection failures are retryable data, not failures of accepted client work. */
+  async projectAcceptedIntake(
+    client: ClientInput,
+    dispatch: DispatchRequest | null,
+  ) {
+    try {
+      this.attempts.upsertClient(client);
+      const binding = dispatch
+        ? this.attempts.registerDispatch(dispatch)
+        : null;
+      return { ok: true as const, binding };
+    } catch {
+      return { ok: false as const, binding: null };
+    }
+  }
+
+  async registerInitialDispatch(input: InitialDispatchRegistration) {
+    return this.attempts.registerInitialDispatch(input);
+  }
+
+  async getAttempt(id: string) {
+    return this.attempts.getAttempt(id);
+  }
+
+  async listAttempts(filters: AttemptFilters) {
+    return this.attempts.listAttempts(filters);
+  }
+
+  async recordAttemptEvents(id: string, events: AttemptEventInput[]) {
+    return this.attempts.recordAttemptEvents(id, events);
+  }
+
+  async getAttemptEvents(id: string, cursor?: string, limit?: number) {
+    return this.attempts.getAttemptEvents(id, cursor, limit);
+  }
+
+  async getHealth() {
+    return this.attempts.getHealth();
   }
 
   async upsertGeneration(input: GenerationRecordInput) {
@@ -375,7 +464,11 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
     return { ok: true, recorded: events.length };
   }
 
-  async storeHero(generationId: string, contentType: string, bytes: ArrayBuffer) {
+  async storeHero(
+    generationId: string,
+    contentType: string,
+    bytes: ArrayBuffer,
+  ) {
     const now = Date.now();
     this.ctx.storage.sql.exec(
       `INSERT INTO generation_heroes (generation_id, content_type, bytes, updated_at)
@@ -406,7 +499,11 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
       )
       .toArray()[0];
     return row
-      ? { contentType: row.content_type, bytes: row.bytes, updatedAt: row.updated_at }
+      ? {
+          contentType: row.content_type,
+          bytes: row.bytes,
+          updatedAt: row.updated_at,
+        }
       : null;
   }
 
@@ -474,9 +571,10 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
       estimatedCostUsd: Number(row.estimated_cost_usd) || 0,
       unreportedCount: Number(row.unreported_count) || 0,
       eventCount: Number(row.event_count) || 0,
-      lastEventAt: row.last_event_at === null ? null : Number(row.last_event_at),
-      stages: (stagesByGeneration.get(row.generation_id) || []).sort((left, right) =>
-        left.stage.localeCompare(right.stage),
+      lastEventAt:
+        row.last_event_at === null ? null : Number(row.last_event_at),
+      stages: (stagesByGeneration.get(row.generation_id) || []).sort(
+        (left, right) => left.stage.localeCompare(right.stage),
       ),
     }));
     return generations;

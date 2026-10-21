@@ -22,6 +22,7 @@ async function registeredInvite(inviteId: string, clientEmail: string | null = n
   const tokenHash = [...bytes].map((part) => part.toString(16).padStart(2, "0")).join("");
   await inviteNamespace.getByName("launchloom-onboarding-invites").register({
     inviteId, clientEmail, expiresAt, allowedOrigin: onboardingOrigin, tokenHash, now: Date.now(),
+    creator: {kind:"admin",id:"verified-inviter",name:"Verified inviter",email:"inviter@example.test",source:"cloudflare-access"},
   });
   return token;
 }
@@ -136,6 +137,11 @@ describe("private onboarding invitations", () => {
 
     const accepted = await submit();
     expect(accepted.status).toBe(200);
+    const acceptedClients = await (env as unknown as Env).GENERATION_LEDGER.getByName("launchloom-generations").listClients({});
+    const acceptedClient = acceptedClients.items.find(item => item.submissionId === submissionId);
+    expect(acceptedClient).toMatchObject({ businessName: "Harbor Plumbing", previewUrl: null });
+    const queued = await (env as unknown as Env).GENERATION_LEDGER.getByName("launchloom-generations").listAttempts({ clientId: acceptedClient!.clientId });
+    expect(queued.items[0]).toMatchObject({ initiator: { kind: "client" }, invitationCreator:{id:"verified-inviter"}, deliveryStatus: "none", executionStatus: "queued", startedAt: null });
     expect(savedIssueBody).toContain('"addressVisibility": "private"');
     expect(savedIssueBody).toContain('"researchLanguageCode": "es"');
     expect(savedIssueBody).toContain('"hours": "Monday to Friday, 9 to 5"');

@@ -1,0 +1,58 @@
+name: Reconcile generation history
+
+# Task 11 rollout gate: no scheduled or workflow_run write path is enabled.
+# Operator-authorized retained-history read/backfill is separate from generation.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Read metadata only; do not persist attempts, health or cursor
+        type: boolean
+        default: true
+      mode:
+        type: choice
+        options: [incremental, backfill]
+        default: incremental
+      from:
+        description: Operator-confirmed retention start (ISO time, backfill only)
+        type: string
+        required: false
+      checkpoint:
+        description: Resume cursor from the previous bounded report
+        type: string
+        required: false
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: launchloom-generation-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: ${{ github.repository == 'WrazyAI/launchloom' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with: { node-version: 22 }
+      - name: Bounded metadata reconciliation with trusted default-branch code
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GENERATION_TRACKING_SECRET: ${{ !inputs.dry_run && secrets.GENERATION_TRACKING_SECRET || '' }}
+          RECONCILE_DRY_RUN: ${{ inputs.dry_run }}
+          RECONCILE_MODE: ${{ inputs.mode }}
+          RECONCILE_FROM: ${{ inputs.from }}
+          RECONCILE_CHECKPOINT: ${{ inputs.checkpoint }}
+        run: |
+          ARGS=(--mode "$RECONCILE_MODE" --page-budget 10)
+          if [ "$RECONCILE_DRY_RUN" = "true" ]; then ARGS+=(--dry-run); else ARGS+=(--write); fi
+          if [ -n "$RECONCILE_FROM" ]; then ARGS+=(--from "$RECONCILE_FROM"); fi
+          if [ -n "$RECONCILE_CHECKPOINT" ]; then ARGS+=(--checkpoint "$RECONCILE_CHECKPOINT"); fi
+          node scripts/reconcile-generation-history.mjs "${ARGS[@]}"

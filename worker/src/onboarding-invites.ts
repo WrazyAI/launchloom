@@ -1,6 +1,13 @@
 import { DurableObject } from "cloudflare:workers";
 import { renderIntakeReceivedEmail } from "../../emails/render-email.mjs";
 import { sendEmail, type TransactionalEmailEnvironment } from "./transactional-email";
+import type { ActorSnapshot, AcceptedIntake, InviteFilters, InviteSummary, Page } from "../../src/lib/admin-contracts";
+import type { GenerationLedger } from "./generation-ledger";
+import { pageRecords } from "./admin/pagination";
+
+const unknownActor: ActorSnapshot = {kind:"unknown",id:null,name:null,email:null,source:"legacy"};
+type Snapshot = { businessName: string; contactName?: string | null; email: string; phone?: string | null };
+type ProjectionRow = { invite_id:string; submission_id:string; data:string; status:string; attempts:number; next_attempt_at:number; last_error:string|null };
 
 const OUTBOX_DELIVERY_LEASE_MS = 2 * 60_000;
 const OUTBOX_RETRY_BASE_MS = 30_000;
@@ -13,6 +20,7 @@ export type InviteRegistration = {
   allowedOrigin: string;
   tokenHash: string;
   now: number;
+  creator?: ActorSnapshot;
 };
 
 export type InviteValidation = {
@@ -53,6 +61,10 @@ type InviteRow = {
   recovery_lease_until: number;
   created_at: number;
   updated_at: number;
+  creator: string | null;
+  accepted_snapshot: string | null;
+  submitted_at: number | null;
+  recovery_actor: string | null;
 };
 
 type OutboxTaskType = "workflow" | "receipt";
@@ -69,10 +81,14 @@ type OutboxRow = {
   attempts: number;
   next_attempt_at: number;
   updated_at: number;
+  request_id: string | null;
+  attempt_id: string | null;
+  created_at: number;
 };
 
 type OnboardingInvitesEnvironment = TransactionalEmailEnvironment & {
   GITHUB_ORG_TOKEN: string;
+  GENERATION_LEDGER: DurableObjectNamespace<GenerationLedger>;
 };
 
 export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironment> {
@@ -126,10 +142,25 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         );
         CREATE INDEX IF NOT EXISTS coverage_lookup_events_invite_at ON coverage_lookup_events (invite_id, at);
         CREATE INDEX IF NOT EXISTS coverage_lookup_events_at ON coverage_lookup_events (at);
+        CREATE TABLE IF NOT EXISTS intake_projection_outbox (
+          invite_id TEXT NOT NULL, submission_id TEXT NOT NULL, data TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0,
+          next_attempt_at INTEGER NOT NULL, last_error TEXT,
+          PRIMARY KEY(invite_id,submission_id)
+        );
       `);
-      const outboxColumns = ctx.storage.sql.exec<{name: string}>("PRAGMA table_info(intake_outbox)").toArray();
-      if (!outboxColumns.some(column => column.name === "idempotency_key"))
-        ctx.storage.sql.exec("ALTER TABLE intake_outbox ADD COLUMN idempotency_key TEXT");
+      const outboxColumns = ctx.storage.sql
+        .exec<{ name: string }>("PRAGMA table_info(intake_outbox)")
+        .toArray();
+      if (!outboxColumns.some((column) => column.name === "idempotency_key"))
+        ctx.storage.sql.exec(
+          "ALTER TABLE intake_outbox ADD COLUMN idempotency_key TEXT",
+        );
+      for (const name of ["request_id", "attempt_id"])
+        if (!outboxColumns.some((c) => c.name === name))
+          ctx.storage.sql.exec(
+            `ALTER TABLE intake_outbox ADD COLUMN ${name} TEXT`,
+          );
       const columns = ctx.storage.sql
         .exec<{ name: string }>("PRAGMA table_info(onboarding_invites)")
         .toArray();
@@ -139,12 +170,20 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         );
       }
       for (const [name, declaration] of [
-        ["operation_id", "TEXT"], ["recovery_page", "INTEGER NOT NULL DEFAULT 1"],
-        ["recovery_sweeps", "INTEGER NOT NULL DEFAULT 0"], ["recovery_lease", "TEXT"],
+        ["operation_id", "TEXT"],
+        ["recovery_page", "INTEGER NOT NULL DEFAULT 1"],
+        ["recovery_sweeps", "INTEGER NOT NULL DEFAULT 0"],
+        ["recovery_lease", "TEXT"],
         ["recovery_lease_until", "INTEGER NOT NULL DEFAULT 0"],
+        ["creator", "TEXT"],
+        ["accepted_snapshot", "TEXT"],
+        ["submitted_at", "INTEGER"],
+        ["recovery_actor", "TEXT"],
       ]) {
         if (!columns.some((column) => column.name === name))
-          ctx.storage.sql.exec(`ALTER TABLE onboarding_invites ADD COLUMN ${name} ${declaration}`);
+          ctx.storage.sql.exec(
+            `ALTER TABLE onboarding_invites ADD COLUMN ${name} ${declaration}`,
+          );
       }
       if (!columns.some((column) => column.name === "submitter_email")) {
         // Link-only invites have no configured client email. The intake email
@@ -154,10 +193,34 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
           "ALTER TABLE onboarding_invites ADD COLUMN submitter_email TEXT",
         );
       }
+      // Restart/migration must also recover gaps when no new client submits.
+      if ((await ctx.storage.getAlarm()) === null)
+        await this.scheduleOutboxAlarm();
     });
   }
 
-  async queueWorkflowDispatch(inviteId: string, submissionId: string, issueNumber: number, now = Date.now()) {
+  async queueWorkflowDispatch(
+    inviteId: string,
+    submissionId: string,
+    issueNumber: number,
+    now = Date.now(),
+  ) {
+    const accepted = this.row(inviteId);
+    const existing = this.ctx.storage.sql
+      .exec<OutboxRow>(
+        "SELECT * FROM intake_outbox WHERE invite_id=? AND submission_id=? AND task_type='workflow'",
+        inviteId,
+        submissionId,
+      )
+      .toArray()[0];
+    if (
+      !accepted ||
+      accepted.status !== "consumed" ||
+      accepted.submission_id !== submissionId ||
+      accepted.issue_number !== issueNumber ||
+      (existing && existing.issue_number !== issueNumber)
+    )
+      throw new Error("conflict: immutable dispatch evidence");
     this.ctx.storage.sql.exec(
       `INSERT OR IGNORE INTO intake_outbox
        (invite_id, submission_id, task_type, issue_number, status, attempts, next_attempt_at, created_at, updated_at)
@@ -169,11 +232,29 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       now,
       now,
     );
+    if (this.correlatePendingWorkflow(inviteId, submissionId)) {
+      // A projection may have been delivered before this workflow operation
+      // existed, carrying no dispatch. Re-open it so the idempotent ledger
+      // registration runs with the durable correlation.
+      this.ctx.storage.sql.exec(
+        "UPDATE intake_projection_outbox SET status='pending',last_error=NULL,next_attempt_at=? WHERE invite_id=? AND submission_id=?",
+        now,
+        inviteId,
+        submissionId,
+      );
+    }
+    await this.deliverProjection(inviteId, submissionId, now);
     await this.scheduleOutboxAlarm();
     await this.deliverOutboxTask(inviteId, submissionId, "workflow", now);
   }
 
-  async queueIntakeReceipt(inviteId: string, submissionId: string, recipient: string, businessName: string, now = Date.now()) {
+  async queueIntakeReceipt(
+    inviteId: string,
+    submissionId: string,
+    recipient: string,
+    businessName: string,
+    now = Date.now(),
+  ) {
     const operationId = this.row(inviteId)?.operation_id;
     const receiptKey = `client-intake-received-${operationId || submissionId}`;
     this.ctx.storage.sql.exec(
@@ -204,12 +285,44 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       )
       .toArray();
     for (const task of dueTasks) {
-      await this.deliverOutboxTask(task.invite_id, task.submission_id, task.task_type, Date.now());
+      await this.deliverOutboxTask(
+        task.invite_id,
+        task.submission_id,
+        task.task_type,
+        Date.now(),
+      );
     }
+    // Independent bounded source scan repairs gaps, including old accepted rows.
+    const missing = this.ctx.storage.sql
+      .exec<InviteRow>(
+        `SELECT i.* FROM onboarding_invites i
+      LEFT JOIN intake_projection_outbox p ON p.invite_id=i.invite_id AND p.submission_id=i.submission_id
+      WHERE i.status='consumed' AND i.submission_id IS NOT NULL AND i.issue_number IS NOT NULL AND p.invite_id IS NULL LIMIT 20`,
+      )
+      .toArray();
+    for (const row of missing) this.enqueueProjection(row, now);
+    const projections = this.ctx.storage.sql
+      .exec<ProjectionRow>(
+        `SELECT * FROM intake_projection_outbox
+      WHERE status='pending' AND next_attempt_at<=? ORDER BY next_attempt_at LIMIT 20`,
+        now,
+      )
+      .toArray();
+    for (const row of projections)
+      await this.deliverProjection(
+        row.invite_id,
+        row.submission_id,
+        Date.now(),
+      );
     await this.scheduleOutboxAlarm();
   }
 
-  private async deliverOutboxTask(inviteId: string, submissionId: string, taskType: OutboxTaskType, now: number) {
+  private async deliverOutboxTask(
+    inviteId: string,
+    submissionId: string,
+    taskType: OutboxTaskType,
+    now: number,
+  ) {
     const claimed = this.ctx.storage.sql
       .exec<OutboxRow>(
         `UPDATE intake_outbox
@@ -232,12 +345,16 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       if (claimed.task_type === "workflow") {
         await this.sendIntakeDispatch(claimed);
       } else {
-        const receipt = renderIntakeReceivedEmail({ businessName: claimed.business_name || "your business" });
+        const receipt = renderIntakeReceivedEmail({
+          businessName: claimed.business_name || "your business",
+        });
         await sendEmail(this.env, {
           to: claimed.recipient || "",
           ...receipt,
           tag: "client-intake-received",
-          idempotencyKey: claimed.idempotency_key || `client-intake-received-${claimed.submission_id}`,
+          idempotencyKey:
+            claimed.idempotency_key ||
+            `client-intake-received-${claimed.submission_id}`,
           required: true,
         });
       }
@@ -268,51 +385,102 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         taskType,
         submissionId,
         attempt: claimed.attempts,
-        error: error instanceof Error ? error.message.slice(0, 160) : "Unknown delivery error",
+        error:
+          error instanceof Error
+            ? error.message.slice(0, 160)
+            : "Unknown delivery error",
       });
     }
     await this.scheduleOutboxAlarm();
   }
 
+  /** Only an undelivered operation can acquire correlation. Preserve partial
+   * assignments and preallocated legacy projection IDs, but never rewrite them. */
+  private correlatePendingWorkflow(inviteId: string, submissionId: string) {
+    const projection = this.projection(inviteId, submissionId);
+    return this.ctx.storage.sql
+      .exec<OutboxRow>(
+        `UPDATE intake_outbox SET request_id=COALESCE(request_id,?), attempt_id=COALESCE(attempt_id,?)
+       WHERE invite_id=? AND submission_id=? AND task_type='workflow'
+         AND status IN ('pending','delivering') RETURNING *`,
+        projection?.requestId ?? crypto.randomUUID(),
+        projection?.attemptId ?? crypto.randomUUID(),
+        inviteId,
+        submissionId,
+      )
+      .toArray()[0];
+  }
+
   private async sendIntakeDispatch(task: OutboxRow) {
+    // The send boundary is shared by immediate queue delivery and alarm/lease
+    // recovery. Persist correlation on the existing operation before network I/O.
+    const correlated = this.correlatePendingWorkflow(
+      task.invite_id,
+      task.submission_id,
+    );
+    if (!correlated) throw new Error("Workflow operation is not pending");
+    task = correlated;
     const invite = this.row(task.invite_id);
+    if (
+      invite?.status === "consumed" &&
+      invite.submission_id === task.submission_id &&
+      invite.issue_number === task.issue_number
+    ) {
+      this.enqueueProjection(invite, Date.now());
+      await this.deliverProjection(
+        task.invite_id,
+        task.submission_id,
+        Date.now(),
+      );
+    }
     // Prefer the inviter-configured email; fall back to the email the client
     // submitted with the intake so link-only invites are still attributed.
     const attributedEmail = invite?.client_email || invite?.submitter_email;
-    const response = await fetch("https://api.github.com/repos/WrazyAI/launchloom/dispatches", {
-      method: "POST",
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${this.env.GITHUB_ORG_TOKEN}`,
-        "User-Agent": "LaunchLoom-Cloudflare-Worker",
-        "X-GitHub-Api-Version": "2022-11-28",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        event_type: "intake-submitted",
-        client_payload: {
-          issue: task.issue_number,
-          submission_id: task.submission_id,
-          // The lifecycle email address lets the generation ledger attribute a
-          // run to the invited client without storing a second copy of it.
-          ...(attributedEmail ? { client_email: attributedEmail } : {}),
+    const response = await fetch(
+      "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${this.env.GITHUB_ORG_TOKEN}`,
+          "User-Agent": "LaunchLoom-Cloudflare-Worker",
+          "X-GitHub-Api-Version": "2022-11-28",
+          "Content-Type": "application/json",
         },
-      }),
-    });
-    if (!response.ok) throw new Error(`GitHub dispatch failed: ${response.status}`);
+        body: JSON.stringify({
+          event_type: "intake-submitted",
+          client_payload: {
+            issue: task.issue_number,
+            submission_id: task.submission_id,
+            invite_id: task.invite_id,
+            request_id: task.request_id,
+            attempt_id: task.attempt_id,
+            // The lifecycle email address lets the generation ledger attribute a
+            // run to the invited client without storing a second copy of it.
+            ...(attributedEmail ? { client_email: attributedEmail } : {}),
+          },
+        }),
+      },
+    );
+    if (!response.ok)
+      throw new Error(`GitHub dispatch failed: ${response.status}`);
   }
 
   private async scheduleOutboxAlarm() {
     const next = this.ctx.storage.sql
       .exec<{ next_attempt_at: number | null }>(
-        `SELECT MIN(next_attempt_at) AS next_attempt_at FROM intake_outbox
-         WHERE status IN ('pending','delivering')`,
+        `SELECT MIN(next_attempt_at) AS next_attempt_at FROM (
+          SELECT next_attempt_at FROM intake_outbox WHERE status IN ('pending','delivering')
+          UNION ALL SELECT next_attempt_at FROM intake_projection_outbox WHERE status='pending'
+          UNION ALL SELECT 0 FROM onboarding_invites i WHERE status='consumed' AND submission_id IS NOT NULL
+            AND issue_number IS NOT NULL AND NOT EXISTS (SELECT 1 FROM intake_projection_outbox p WHERE p.invite_id=i.invite_id AND p.submission_id=i.submission_id)
+        )`,
       )
       .toArray()[0]?.next_attempt_at;
     if (next === null || next === undefined) {
       await this.ctx.storage.deleteAlarm();
     } else {
-      await this.ctx.storage.setAlarm(next);
+      await this.ctx.storage.setAlarm(Math.max(Date.now() + 1000, next));
     }
   }
 
@@ -328,8 +496,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
   async register(input: InviteRegistration) {
     this.ctx.storage.sql.exec(
       `INSERT INTO onboarding_invites
-       (invite_id, client_email, expires_at, allowed_origin, token_hash, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, 'unused', ?, ?)`,
+       (invite_id, client_email, expires_at, allowed_origin, token_hash, status, created_at, updated_at, creator)
+       VALUES (?, ?, ?, ?, ?, 'unused', ?, ?, ?)`,
       input.inviteId,
       input.clientEmail,
       input.expiresAt,
@@ -337,6 +505,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       input.tokenHash,
       input.now,
       input.now,
+      JSON.stringify(input.creator ?? unknownActor),
     );
     return { ok: true };
   }
@@ -363,7 +532,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       row.expires_at === tokenExpiresAt &&
       row.token_hash === tokenHash &&
       row.allowed_origin === origin;
-    const accepted = row.status === "consumed" &&
+    const accepted =
+      row.status === "consumed" &&
       Boolean(submissionId) &&
       row.submission_id === submissionId &&
       Boolean(row.issue_number);
@@ -399,23 +569,40 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       row.token_hash !== tokenHash ||
       row.expires_at !== tokenExpiresAt ||
       row.allowed_origin !== origin ||
-      (row.client_email && row.client_email.toLowerCase() !== clientEmail.toLowerCase())
+      (row.client_email &&
+        row.client_email.toLowerCase() !== clientEmail.toLowerCase())
     )
       return { accepted: false as const, reason: "invalid" as const };
     if (row.status === "consumed") {
-      return row.submission_id === submissionId && row.submission_hash === submissionHash && row.issue_number
-        ? { accepted: true as const, duplicate: true as const, issue: row.issue_number }
-        : { accepted: false as const, reason: row.submission_id === submissionId ? "submission_mismatch" as const : "consumed" as const };
+      return row.submission_id === submissionId &&
+        row.submission_hash === submissionHash &&
+        row.issue_number
+        ? {
+            accepted: true as const,
+            duplicate: true as const,
+            issue: row.issue_number,
+          }
+        : {
+            accepted: false as const,
+            reason:
+              row.submission_id === submissionId
+                ? ("submission_mismatch" as const)
+                : ("consumed" as const),
+          };
     }
     if (row.status !== "unused")
       return { accepted: false as const, reason: row.status };
     if (row.reserved_submission_id) {
       // Never retroactively assign an owner to a pre-migration ambiguous operation.
       if (!row.operation_id || row.recovery_sweeps >= 3)
-        return { accepted: false as const, reason: "recovery_required" as const };
+        return {
+          accepted: false as const,
+          reason: "recovery_required" as const,
+        };
       if (row.reserved_submission_id !== submissionId)
         return { accepted: false as const, reason: "in_progress" as const };
-      const stale = row.reserved_at !== null && now - row.reserved_at >= 2 * 60_000;
+      const stale =
+        row.reserved_at !== null && now - row.reserved_at >= 2 * 60_000;
       if (row.reserved_submission_hash !== submissionHash) {
         if (stale && row.reservation_phase === "reserved") {
           return {
@@ -424,7 +611,10 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
             reservedSubmissionHash: row.reserved_submission_hash,
           };
         }
-        return { accepted: false as const, reason: "submission_mismatch" as const };
+        return {
+          accepted: false as const,
+          reason: "submission_mismatch" as const,
+        };
       }
       if (stale && row.reservation_phase === "reserved") {
         this.ctx.storage.sql.exec(
@@ -437,10 +627,18 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
           submissionId,
           submissionHash,
         );
-        return { accepted: true as const, duplicate: false as const, issue: null };
+        return {
+          accepted: true as const,
+          duplicate: false as const,
+          issue: null,
+        };
       }
       if (stale && row.reservation_phase === "creating_issue")
-        return { accepted: true as const, duplicate: false as const, issue: null };
+        return {
+          accepted: true as const,
+          duplicate: false as const,
+          issue: null,
+        };
       return { accepted: false as const, reason: "in_progress" as const };
     }
     this.ctx.storage.sql.exec(
@@ -484,89 +682,203 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
   }
 
   async recoveryReservation(inviteId: string) {
-    const audit = this.ctx.storage.sql.exec<{
-      submission_id: string; payload_hash: string; issue_number: number; recipient: string; business_name: string;
-    }>("SELECT * FROM intake_reconciliations WHERE invite_id = ?", inviteId).toArray()[0];
+    const audit = this.ctx.storage.sql
+      .exec<{
+        submission_id: string;
+        payload_hash: string;
+        issue_number: number;
+        recipient: string;
+        business_name: string;
+      }>("SELECT * FROM intake_reconciliations WHERE invite_id = ?", inviteId)
+      .toArray()[0];
     const row = this.row(inviteId);
-    if (audit) return { duplicate: true as const, submissionId: audit.submission_id, submissionHash: audit.payload_hash,
-      issueNumber: audit.issue_number, recipient: audit.recipient, businessName: audit.business_name, operationId: row?.operation_id || null };
-    if (!row || !["unused", "expired"].includes(row.status) || !row.reserved_submission_id || !row.reserved_submission_hash ||
-        (row.operation_id && row.recovery_sweeps < 3) || row.recovery_lease_until > Date.now()) return null;
-    return { duplicate: false as const, submissionId: row.reserved_submission_id, submissionHash: row.reserved_submission_hash,
-      operationId: row.operation_id, issueNumber: null, recipient: null, businessName: null };
+    if (audit)
+      return {
+        duplicate: true as const,
+        submissionId: audit.submission_id,
+        submissionHash: audit.payload_hash,
+        issueNumber: audit.issue_number,
+        recipient: audit.recipient,
+        businessName: audit.business_name,
+        operationId: row?.operation_id || null,
+      };
+    if (
+      !row ||
+      !["unused", "expired"].includes(row.status) ||
+      !row.reserved_submission_id ||
+      !row.reserved_submission_hash ||
+      (row.operation_id && row.recovery_sweeps < 3) ||
+      row.recovery_lease_until > Date.now()
+    )
+      return null;
+    return {
+      duplicate: false as const,
+      submissionId: row.reserved_submission_id,
+      submissionHash: row.reserved_submission_hash,
+      operationId: row.operation_id,
+      issueNumber: null,
+      recipient: null,
+      businessName: null,
+    };
   }
 
-  async reconcileIssue(input: {
-    inviteId: string; submissionId: string; submissionHash: string; operationId: string | null;
-    issueNumber: number; reviewerEmail: string; recipient: string; businessName: string;
-  }, now = Date.now()) {
-    return this.ctx.storage.transactionSync(() => {
-      const audit = this.ctx.storage.sql.exec<{issue_number: number; payload_hash: string}>(
-        "SELECT issue_number, payload_hash FROM intake_reconciliations WHERE invite_id = ?", input.inviteId,
-      ).toArray()[0];
-      if (audit) return audit.issue_number === input.issueNumber && audit.payload_hash === input.submissionHash;
-      const updated = this.ctx.storage.sql.exec<{invite_id: string}>(
-        `UPDATE onboarding_invites SET status = 'consumed', submission_id = reserved_submission_id,
+  async reconcileIssue(
+    input: {
+      inviteId: string;
+      submissionId: string;
+      submissionHash: string;
+      operationId: string | null;
+      issueNumber: number;
+      reviewerEmail: string;
+      recipient: string;
+      businessName: string;
+      actor?: ActorSnapshot;
+    },
+    now = Date.now(),
+  ) {
+    const result = this.ctx.storage.transactionSync(() => {
+      const audit = this.ctx.storage.sql
+        .exec<{ issue_number: number; payload_hash: string }>(
+          "SELECT issue_number, payload_hash FROM intake_reconciliations WHERE invite_id = ?",
+          input.inviteId,
+        )
+        .toArray()[0];
+      if (audit)
+        return (
+          audit.issue_number === input.issueNumber &&
+          audit.payload_hash === input.submissionHash
+        );
+      const updated = this.ctx.storage.sql
+        .exec<{ invite_id: string }>(
+          `UPDATE onboarding_invites SET status = 'consumed', submission_id = reserved_submission_id,
            submission_hash = reserved_submission_hash, issue_number = ?, operation_id = COALESCE(operation_id, ?),
            reserved_submission_id = NULL, reserved_submission_hash = NULL, reserved_at = NULL,
            reservation_phase = 'reserved', recovery_lease = NULL, recovery_lease_until = 0, updated_at = ?
          WHERE invite_id = ? AND status IN ('unused','expired') AND reserved_submission_id = ?
            AND reserved_submission_hash = ? AND operation_id IS ? AND reserved_at <= ?
            AND recovery_lease_until <= ? AND (operation_id IS NULL OR recovery_sweeps >= 3) RETURNING invite_id`,
-        input.issueNumber, crypto.randomUUID(), now, input.inviteId, input.submissionId,
-        input.submissionHash, input.operationId, now - 120_000, now,
-      ).toArray()[0];
+          input.issueNumber,
+          crypto.randomUUID(),
+          now,
+          input.inviteId,
+          input.submissionId,
+          input.submissionHash,
+          input.operationId,
+          now - 120_000,
+          now,
+        )
+        .toArray()[0];
       if (!updated) return false;
       this.ctx.storage.sql.exec(
         `INSERT INTO intake_reconciliations (invite_id, submission_id, payload_hash, issue_number, reviewer_email, recovered_at, recipient, business_name)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        input.inviteId, input.submissionId, input.submissionHash, input.issueNumber,
-        input.reviewerEmail, now, input.recipient, input.businessName,
+        input.inviteId,
+        input.submissionId,
+        input.submissionHash,
+        input.issueNumber,
+        input.reviewerEmail,
+        now,
+        input.recipient,
+        input.businessName,
       );
+      this.ctx.storage.sql.exec(
+        `UPDATE onboarding_invites SET accepted_snapshot=?, recovery_actor=? WHERE invite_id=?`,
+        JSON.stringify({
+          businessName: input.businessName,
+          email: input.recipient,
+        }),
+        JSON.stringify(input.actor ?? unknownActor),
+        input.inviteId,
+      );
+      this.enqueueProjection(this.row(input.inviteId)!, now);
       return true;
     });
+    await this.scheduleOutboxAlarm();
+    return result;
   }
 
-  async intakeOperation(inviteId: string, submissionId: string): Promise<IntakeOperation | null> {
+  async intakeOperation(
+    inviteId: string,
+    submissionId: string,
+  ): Promise<IntakeOperation | null> {
     const row = this.row(inviteId);
-    if (!row || row.status !== "unused" || row.reserved_submission_id !== submissionId) return null;
+    if (
+      !row ||
+      row.status !== "unused" ||
+      row.reserved_submission_id !== submissionId
+    )
+      return null;
     return {
-      operationId: row.operation_id || "", submissionHash: row.reserved_submission_hash || "",
-      phase: row.reservation_phase, page: row.recovery_page, sweeps: row.recovery_sweeps,
+      operationId: row.operation_id || "",
+      submissionHash: row.reserved_submission_hash || "",
+      phase: row.reservation_phase,
+      page: row.recovery_page,
+      sweeps: row.recovery_sweeps,
       recoveryRequired: !row.operation_id || row.recovery_sweeps >= 3,
     };
   }
 
   async claimRecovery(inviteId: string, operationId: string, now = Date.now()) {
     const lease = crypto.randomUUID();
-    const row = this.ctx.storage.sql.exec<InviteRow>(
-      `UPDATE onboarding_invites SET recovery_lease = ?, recovery_lease_until = ?
+    const row = this.ctx.storage.sql
+      .exec<InviteRow>(
+        `UPDATE onboarding_invites SET recovery_lease = ?, recovery_lease_until = ?
        WHERE invite_id = ? AND operation_id = ? AND status = 'unused'
          AND recovery_sweeps < 3 AND recovery_lease_until <= ? RETURNING *`,
-      lease, now + 120_000, inviteId, operationId, now,
-    ).toArray()[0];
+        lease,
+        now + 120_000,
+        inviteId,
+        operationId,
+        now,
+      )
+      .toArray()[0];
     return row ? { lease, page: row.recovery_page } : null;
   }
 
-  async advanceRecovery(inviteId: string, operationId: string, lease: string, page: number) {
+  async advanceRecovery(
+    inviteId: string,
+    operationId: string,
+    lease: string,
+    page: number,
+  ) {
     this.ctx.storage.sql.exec(
       `UPDATE onboarding_invites SET recovery_page = ?
        WHERE invite_id = ? AND operation_id = ? AND recovery_lease = ? AND status = 'unused'`,
-      page, inviteId, operationId, lease,
+      page,
+      inviteId,
+      operationId,
+      lease,
     );
   }
 
-  async checkpointRecovery(inviteId: string, operationId: string, lease: string, page: number, sweepComplete: boolean) {
-    const updated = this.ctx.storage.sql.exec<{invite_id: string}>(
-      `UPDATE onboarding_invites SET recovery_page = ?, recovery_sweeps = recovery_sweeps + ?,
+  async checkpointRecovery(
+    inviteId: string,
+    operationId: string,
+    lease: string,
+    page: number,
+    sweepComplete: boolean,
+  ) {
+    const updated = this.ctx.storage.sql
+      .exec<{ invite_id: string }>(
+        `UPDATE onboarding_invites SET recovery_page = ?, recovery_sweeps = recovery_sweeps + ?,
          recovery_lease = NULL, recovery_lease_until = 0
        WHERE invite_id = ? AND operation_id = ? AND recovery_lease = ? AND status = 'unused' RETURNING invite_id`,
-      page, sweepComplete ? 1 : 0, inviteId, operationId, lease,
-    ).toArray();
+        page,
+        sweepComplete ? 1 : 0,
+        inviteId,
+        operationId,
+        lease,
+      )
+      .toArray();
     return updated.length === 1;
   }
 
-  async claimIssueCreation(inviteId: string, submissionId: string, submissionHash: string, now = Date.now()) {
+  async claimIssueCreation(
+    inviteId: string,
+    submissionId: string,
+    submissionHash: string,
+    now = Date.now(),
+  ) {
     const updated = this.ctx.storage.sql.exec<{ invite_id: string }>(
       `UPDATE onboarding_invites SET reservation_phase = 'creating_issue', updated_at = ?
        WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id = ?
@@ -580,27 +892,321 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     return updated.toArray().length === 1;
   }
 
-  async recordIssue(inviteId: string, submissionId: string, submissionHash: string, issue: number, now = Date.now()) {
-    this.ctx.storage.sql.exec(
-      `UPDATE onboarding_invites
+  async recordIssue(
+    inviteId: string,
+    submissionId: string,
+    submissionHash: string,
+    issue: number,
+    now = Date.now(),
+    snapshot?: Snapshot,
+  ) {
+    const result = this.ctx.storage.transactionSync(() => {
+      this.ctx.storage.sql.exec(
+        `UPDATE onboarding_invites
        SET status = 'consumed', submission_id = ?, submission_hash = reserved_submission_hash,
            reserved_submission_id = NULL, reserved_submission_hash = NULL, reserved_at = NULL, reservation_phase = 'reserved',
            issue_number = ?, updated_at = ?
        WHERE invite_id = ? AND reserved_submission_id = ? AND reserved_submission_hash = ? AND status = 'unused'`,
-      submissionId,
-      issue,
-      now,
-      inviteId,
-      submissionId,
-      submissionHash,
-    );
-    const row = this.row(inviteId);
-    return row?.submission_id === submissionId && row.issue_number === issue;
+        submissionId,
+        issue,
+        now,
+        inviteId,
+        submissionId,
+        submissionHash,
+      );
+      const row = this.row(inviteId);
+      const accepted =
+        row?.submission_id === submissionId && row.issue_number === issue;
+      if (accepted) {
+        this.ctx.storage.sql.exec(
+          `UPDATE onboarding_invites SET accepted_snapshot=COALESCE(accepted_snapshot,?), submitted_at=COALESCE(submitted_at,?) WHERE invite_id=?`,
+          snapshot ? JSON.stringify(snapshot) : null,
+          now,
+          inviteId,
+        );
+        this.enqueueProjection(this.row(inviteId)!, now);
+      }
+      return accepted;
+    });
+    await this.scheduleOutboxAlarm();
+    return result;
   }
 
-  async reopenFailedSubmission(inviteId: string, submissionId: string, submissionHash: string, now = Date.now()) {
+  private projection(
+    inviteId: string,
+    submissionId: string,
+  ): AcceptedIntake | null {
+    const row = this.ctx.storage.sql
+      .exec<ProjectionRow>(
+        "SELECT * FROM intake_projection_outbox WHERE invite_id=? AND submission_id=?",
+        inviteId,
+        submissionId,
+      )
+      .toArray()[0];
+    return row ? JSON.parse(row.data) : null;
+  }
+  private accepted(row: InviteRow): AcceptedIntake {
+    const snapshot: Partial<Snapshot> = row.accepted_snapshot
+      ? JSON.parse(row.accepted_snapshot)
+      : {};
+    const workflow = this.ctx.storage.sql
+      .exec<OutboxRow>(
+        "SELECT * FROM intake_outbox WHERE invite_id=? AND submission_id=? AND task_type='workflow'",
+        row.invite_id,
+        row.submission_id,
+      )
+      .toArray()[0];
+    const clientId = `submission:${row.submission_id}`;
+    return {
+      clientId,
+      inviteId: row.invite_id,
+      submissionId: row.submission_id!,
+      issueNumber: row.issue_number!,
+      creator: row.creator ? JSON.parse(row.creator) : unknownActor,
+      businessName: snapshot.businessName ?? null,
+      contactName: snapshot.contactName ?? null,
+      email: snapshot.email ?? row.submitter_email ?? row.client_email,
+      phone: snapshot.phone ?? null,
+      submittedAt: row.submitted_at,
+      initiator: row.recovery_actor
+        ? JSON.parse(row.recovery_actor)
+        : row.submitted_at !== null
+          ? {
+              kind: "client",
+              id: clientId,
+              name: snapshot.contactName ?? null,
+              email: row.submitter_email ?? snapshot.email ?? null,
+              source: "intake",
+            }
+          : unknownActor,
+      dispatchCreatedAt: workflow?.created_at ?? null,
+      requestId: workflow?.request_id ?? null,
+      attemptId: workflow?.attempt_id ?? null,
+      outboxState: workflow
+        ? workflow.status === "delivered"
+          ? "delivered"
+          : "pending"
+        : "missing",
+    };
+  }
+  private enqueueProjection(row: InviteRow, now: number) {
+    const evidence = this.accepted(row);
+    this.ctx.storage.sql.exec(
+      `INSERT OR IGNORE INTO intake_projection_outbox(invite_id,submission_id,data,next_attempt_at) VALUES(?,?,?,?)`,
+      row.invite_id,
+      row.submission_id,
+      JSON.stringify(evidence),
+      now,
+    );
+  }
+  private async deliverProjection(
+    inviteId: string,
+    submissionId: string,
+    now: number,
+  ) {
+    // A persisted lease prevents overlapping alarm/request deliveries from hot-looping.
+    const row = this.ctx.storage.sql
+      .exec<ProjectionRow>(
+        `UPDATE intake_projection_outbox SET attempts=attempts+1,next_attempt_at=?
+      WHERE invite_id=? AND submission_id=? AND status='pending' AND next_attempt_at<=? RETURNING *`,
+        now + OUTBOX_DELIVERY_LEASE_MS,
+        inviteId,
+        submissionId,
+        now,
+      )
+      .toArray()[0];
+    if (!row) return;
+    await this.scheduleOutboxAlarm();
+    try {
+      const evidence: AcceptedIntake = JSON.parse(row.data);
+      const ledger = this.env.GENERATION_LEDGER.getByName(
+        "launchloom-generations",
+      );
+      const {
+        clientId,
+        inviteId: verifiedInvite,
+        submissionId: verifiedSubmission,
+        issueNumber,
+        creator,
+        businessName,
+        contactName,
+        email,
+        phone,
+        submittedAt,
+      } = evidence;
+      // Only a real initial workflow outbox operation is dispatch evidence.
+      const workflow = this.ctx.storage.sql
+        .exec<OutboxRow>(
+          "SELECT * FROM intake_outbox WHERE invite_id=? AND submission_id=? AND task_type='workflow'",
+          inviteId,
+          submissionId,
+        )
+        .toArray()[0];
+      const projected = await ledger.projectAcceptedIntake(
+        {
+          clientId,
+          inviteId: verifiedInvite,
+          submissionId: verifiedSubmission,
+          issueNumber,
+          creator,
+          businessName,
+          contactName,
+          email,
+          phone,
+          submittedAt,
+        },
+        workflow?.request_id && workflow.attempt_id
+          ? {
+              requestId: workflow.request_id,
+              attemptId: workflow.attempt_id,
+              clientId,
+              inviteId: verifiedInvite,
+              submissionId: verifiedSubmission,
+              issueNumber,
+              initiator: evidence.initiator,
+              invitationCreator: creator,
+              createdAt: workflow.created_at,
+            }
+          : null,
+      );
+      const awaitingCorrelation = Boolean(
+        workflow &&
+          workflow.status !== "delivered" &&
+          (!workflow.request_id || !workflow.attempt_id),
+      );
+      if (!projected.ok || awaitingCorrelation)
+        throw new Error("projection pending");
+      this.ctx.storage.sql.exec(
+        "UPDATE intake_projection_outbox SET status='delivered',last_error=NULL WHERE invite_id=? AND submission_id=?",
+        inviteId,
+        submissionId,
+      );
+    } catch {
+      this.ctx.storage.sql.exec(
+        "UPDATE intake_projection_outbox SET last_error='Client projection pending',next_attempt_at=? WHERE invite_id=? AND submission_id=?",
+        now +
+          Math.min(
+            OUTBOX_RETRY_MAX_MS,
+            OUTBOX_RETRY_BASE_MS * 2 ** Math.min(row.attempts - 1, 6),
+          ),
+        inviteId,
+        submissionId,
+      );
+    }
+    await this.scheduleOutboxAlarm();
+  }
+  async projectionHealth() {
+    const pending = this.ctx.storage.sql
+      .exec<{ total: number }>(
+        `SELECT COUNT(*) AS total FROM onboarding_invites i
+      LEFT JOIN intake_projection_outbox p ON p.invite_id=i.invite_id AND p.submission_id=i.submission_id
+      WHERE i.status='consumed' AND (p.status IS NULL OR p.status<>'delivered')`,
+      )
+      .one().total;
+    const error = this.ctx.storage.sql
+      .exec<{ last_error: string }>(
+        "SELECT last_error FROM intake_projection_outbox WHERE status='pending' AND last_error IS NOT NULL LIMIT 1",
+      )
+      .toArray()[0];
+    return {
+      pendingProjectionCount: pending,
+      partial: pending > 0,
+      lastError: error?.last_error ?? null,
+    };
+  }
+  async listPage(query: InviteFilters): Promise<Page<InviteSummary>> {
+    const filter = {
+      search: query.search?.trim().toLowerCase() || null,
+      status: query.status ?? null,
+      creatorId: query.creatorId ?? null,
+    };
+    if (
+      filter.status &&
+      !["unused", "consumed", "expired", "revoked"].includes(filter.status)
+    )
+      throw new Error("invalid status");
+    const rows = this.ctx.storage.sql
+      .exec<InviteRow>("SELECT * FROM onboarding_invites")
+      .toArray()
+      .map((row) => ({
+        inviteId: row.invite_id,
+        clientEmail: row.client_email,
+        submitterEmail: row.submitter_email,
+        expiresAt: row.expires_at,
+        status:
+          row.status === "unused" && row.expires_at <= Date.now()
+            ? "expired"
+            : row.status,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        creator: row.creator
+          ? (JSON.parse(row.creator) as ActorSnapshot)
+          : unknownActor,
+        submissionId: row.submission_id,
+        issueNumber: row.issue_number,
+        clientId:
+          row.status === "consumed" && row.submission_id
+            ? `submission:${row.submission_id}`
+            : null,
+      }))
+      .filter(
+        (row) =>
+          (!filter.status || row.status === filter.status) &&
+          (!filter.creatorId || row.creator.id === filter.creatorId) &&
+          (!filter.search ||
+            [
+              row.inviteId,
+              row.clientEmail,
+              row.submitterEmail,
+              row.issueNumber,
+            ].some((v) =>
+              String(v ?? "")
+                .toLowerCase()
+                .includes(filter.search!),
+            )),
+      );
+    return pageRecords(
+      rows,
+      query,
+      JSON.stringify(["invites", filter]),
+      (r) => r.inviteId,
+      (r) => r.createdAt,
+    );
+  }
+  async acceptedPage(query: {
+    cursor?: string;
+    limit?: number;
+  }): Promise<Page<AcceptedIntake>> {
+    const rows = this.ctx.storage.sql
+      .exec<InviteRow>(
+        "SELECT * FROM onboarding_invites WHERE status='consumed' AND submission_id IS NOT NULL AND issue_number IS NOT NULL",
+      )
+      .toArray()
+      .map((row) => ({ ...this.accepted(row), orderTime: row.created_at }));
+    const page = pageRecords(
+      rows,
+      query,
+      "accepted",
+      (r) => r.inviteId,
+      (r) => r.orderTime,
+    );
+    return { ...page, items: page.items.map(({ orderTime, ...item }) => item) };
+  }
+
+  async reopenFailedSubmission(
+    inviteId: string,
+    submissionId: string,
+    submissionHash: string,
+    now = Date.now(),
+  ) {
     const row = this.row(inviteId);
-    if (!row || row.reserved_submission_id !== submissionId || row.reserved_submission_hash !== submissionHash || row.issue_number) return false;
+    if (
+      !row ||
+      row.reserved_submission_id !== submissionId ||
+      row.reserved_submission_hash !== submissionHash ||
+      row.issue_number
+    )
+      return false;
     this.ctx.storage.sql.exec(
       `UPDATE onboarding_invites SET reserved_submission_id = NULL, reserved_submission_hash = NULL, reserved_at = NULL, reservation_phase = 'reserved', operation_id = NULL, recovery_page = 1, recovery_sweeps = 0, recovery_lease = NULL, recovery_lease_until = 0, updated_at = ?
        WHERE invite_id = ? AND reserved_submission_id = ? AND reserved_submission_hash = ? AND status = 'unused' AND issue_number IS NULL`,
@@ -634,7 +1240,23 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       now,
     );
     return this.ctx.storage.sql
-      .exec<Pick<InviteRow, "invite_id" | "client_email" | "submitter_email" | "expires_at" | "status" | "created_at" | "updated_at" | "submission_id" | "issue_number" | "operation_id" | "reserved_submission_id" | "recovery_sweeps">>(
+      .exec<
+        Pick<
+          InviteRow,
+          | "invite_id"
+          | "client_email"
+          | "submitter_email"
+          | "expires_at"
+          | "status"
+          | "created_at"
+          | "updated_at"
+          | "submission_id"
+          | "issue_number"
+          | "operation_id"
+          | "reserved_submission_id"
+          | "recovery_sweeps"
+        >
+      >(
         `SELECT invite_id, client_email, submitter_email, expires_at, status, created_at, updated_at, submission_id, issue_number, operation_id, reserved_submission_id, recovery_sweeps
          FROM onboarding_invites ORDER BY created_at DESC LIMIT 100`,
       )
@@ -649,7 +1271,9 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         updatedAt: row.updated_at,
         submissionId: row.submission_id,
         issueNumber: row.issue_number,
-        recoveryRequired: Boolean(row.reserved_submission_id) && (!row.operation_id || row.recovery_sweeps >= 3),
+        recoveryRequired:
+          Boolean(row.reserved_submission_id) &&
+          (!row.operation_id || row.recovery_sweeps >= 3),
         recoveryAttempts: row.recovery_sweeps,
       }));
   }
@@ -665,10 +1289,17 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         Math.max(1, Math.min(100, Math.floor(limit))),
       )
       .toArray()
-      .map((row) => ({ inviteId: row.invite_id, issueNumber: row.issue_number }));
+      .map((row) => ({
+        inviteId: row.invite_id,
+        issueNumber: row.issue_number,
+      }));
   }
 
-  async recordSubmitterEmail(inviteId: string, email: string, now = Date.now()) {
+  async recordSubmitterEmail(
+    inviteId: string,
+    email: string,
+    now = Date.now(),
+  ) {
     const normalized = email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalized)) return false;
     this.ctx.storage.sql.exec(
@@ -693,7 +1324,10 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     const limit = 40;
     const id = inviteId.slice(0, 160);
     const sql = this.ctx.storage.sql;
-    sql.exec("DELETE FROM coverage_lookup_events WHERE at <= ?", now - windowMs);
+    sql.exec(
+      "DELETE FROM coverage_lookup_events WHERE at <= ?",
+      now - windowMs,
+    );
     const rows = sql
       .exec<{ at: number }>(
         "SELECT at FROM coverage_lookup_events WHERE invite_id = ? ORDER BY at ASC LIMIT ?",
