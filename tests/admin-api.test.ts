@@ -225,6 +225,7 @@ describe("admin account API contracts", () => {
       { ok: true, user: null, session: null },
       { ok: true },
       { ok: true },
+      { ok: true },
       { ok: true, user: null, session: null },
     ]);
 
@@ -255,6 +256,7 @@ describe("admin account API contracts", () => {
     await api.signOut();
     await api.requestPasswordReset("Owner@Example.test");
     await api.resetPassword("reset-token", "new-secret");
+    await api.changePassword("old-secret", "new-secret");
     await api.verifyEmail("verify-token");
 
     expect(calls.map((call) => call.path)).toEqual([
@@ -266,8 +268,9 @@ describe("admin account API contracts", () => {
       "/api/admin/onboarding-invites/workspace/enrollments/accept",
       "/api/admin/onboarding-invites/auth/sign-in/email",
       "/api/admin/onboarding-invites/auth/sign-out",
-      "/api/admin/onboarding-invites/auth/forget-password",
+      "/api/admin/onboarding-invites/auth/request-password-reset",
       "/api/admin/onboarding-invites/auth/reset-password",
+      "/api/admin/onboarding-invites/auth/change-password",
       "/api/admin/onboarding-invites/auth/verify-email?token=verify-token",
     ]);
     expect(bodyOf(calls[2])).toEqual({ email: "invitee@example.test" });
@@ -282,10 +285,18 @@ describe("admin account API contracts", () => {
       password: "secret",
     });
     expect(bodyOf(calls[7])).toEqual({});
-    expect(bodyOf(calls[8])).toEqual({ email: "owner@example.test" });
+    expect(bodyOf(calls[8])).toEqual({
+      email: "owner@example.test",
+      redirectTo: "/admin/login",
+    });
     expect(bodyOf(calls[9])).toEqual({
       token: "reset-token",
       newPassword: "new-secret",
+    });
+    expect(bodyOf(calls[10])).toEqual({
+      currentPassword: "old-secret",
+      newPassword: "new-secret",
+      revokeOtherSessions: true,
     });
     expect(JSON.stringify(calls)).not.toContain("localStorage");
   });

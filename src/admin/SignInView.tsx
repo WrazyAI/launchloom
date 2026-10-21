@@ -5,6 +5,7 @@ import { requestErrorMessage } from "./format";
 const DEFAULT_RETURN_PATH = "/admin/onboarding-invites";
 const MAX_RETURN_LENGTH = 2_048;
 const MAX_TOKEN_LENGTH = 200;
+const MIN_PASSWORD_LENGTH = 12;
 const ENROLLMENT_TOKEN = /^[A-Za-z0-9_-]{20,200}$/u;
 
 type Stage =
@@ -64,6 +65,27 @@ function readAndScrubEnrollment(): { token: string | null; returnTo: string } {
   return { token, returnTo };
 }
 
+/**
+ * Read and scrub an emailed password-reset token once. The token is held only
+ * in component memory and is never written to storage or retained in history.
+ */
+function readAndScrubResetToken() {
+  const url = new URL(window.location.href);
+  const token =
+    safeToken(url.searchParams.get("token")) ||
+    safeToken(url.searchParams.get("resetToken"));
+  if (url.searchParams.has("token") || url.searchParams.has("resetToken")) {
+    url.searchParams.delete("token");
+    url.searchParams.delete("resetToken");
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+  }
+  return token;
+}
+
 function isAmbiguous(error: unknown) {
   if (typeof error !== "object" || error === null) return true;
   const status = (error as { status?: unknown }).status;
@@ -103,6 +125,9 @@ export function SignInView({ api }: { api: AdminApi }) {
   const [returnTo, setReturnTo] = useState(DEFAULT_RETURN_PATH);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [resetToken, setResetToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [resetMode, setResetMode] = useState(false);
@@ -115,6 +140,7 @@ export function SignInView({ api }: { api: AdminApi }) {
   const capturedRef = useRef<{ token: string | null; returnTo: string } | null>(
     null,
   );
+  const resetTokenRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     document.title = "Sign in | LaunchLoom";
@@ -216,8 +242,15 @@ export function SignInView({ api }: { api: AdminApi }) {
     returnToRef.current = captured.returnTo;
     setToken(captured.token);
     setReturnTo(captured.returnTo);
+    const reset = resetTokenRef.current ?? readAndScrubResetToken();
+    resetTokenRef.current = reset;
+    setResetToken(reset);
+    if (reset) {
+      setStage("form");
+      return;
+    }
     void checkExistingSession(captured.token);
-    // The enrollment bearer is read exactly once for this page load.
+    // The enrollment and reset bearers are read exactly once per page load.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -268,6 +301,49 @@ export function SignInView({ api }: { api: AdminApi }) {
     } catch (failure) {
       setResetSent(false);
       setError(requestErrorMessage(failure));
+    } finally {
+      inFlight.current = false;
+      setSubmitting(false);
+    }
+  }
+
+  async function submitNewPassword(event: { preventDefault(): void }) {
+    event.preventDefault();
+    if (inFlight.current || !resetToken) return;
+    setError(null);
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      setError(
+        `Use at least ${MIN_PASSWORD_LENGTH} characters for the new password.`,
+      );
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("The new passwords do not match.");
+      return;
+    }
+
+    inFlight.current = true;
+    setSubmitting(true);
+    try {
+      await api.resetPassword(resetToken, newPassword);
+      setResetToken(null);
+      setNewPassword("");
+      setConfirmPassword("");
+      setPassword("");
+      setStage("form");
+      setNotice("Password reset. Sign in with your new password.");
+    } catch (failure) {
+      if (
+        errorCode(failure) === "auth_failed" ||
+        errorStatus(failure) === 400 ||
+        errorStatus(failure) === 401
+      ) {
+        setError(
+          "The reset link is invalid or expired. Request a new password reset.",
+        );
+      } else {
+        setError(requestErrorMessage(failure));
+      }
     } finally {
       inFlight.current = false;
       setSubmitting(false);
@@ -377,7 +453,9 @@ export function SignInView({ api }: { api: AdminApi }) {
                       ? "Invitation expired"
                       : stage === "unverified"
                         ? "Email not verified"
-                        : "Sign-in failed"}
+                        : resetToken
+                          ? "Password reset failed"
+                          : "Sign-in failed"}
             </strong>
             <span>{error}</span>
           </div>
@@ -434,7 +512,66 @@ export function SignInView({ api }: { api: AdminApi }) {
         !blocked &&
         stage !== "checking" &&
         stage !== "mismatch" ? (
-          resetMode ? (
+          resetToken ? (
+            <form className="admin-form" onSubmit={submitNewPassword}>
+              <p className="admin-muted">
+                Choose a new password for your account. The reset link was
+                removed from the browser address before this form was shown.
+              </p>
+              <label className="admin-field" htmlFor="reset-new-password">
+                New password
+                <input
+                  id="reset-new-password"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={MIN_PASSWORD_LENGTH}
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  required
+                  disabled={submitting}
+                />
+              </label>
+              <label className="admin-field" htmlFor="reset-confirm-password">
+                Confirm new password
+                <input
+                  id="reset-confirm-password"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={MIN_PASSWORD_LENGTH}
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  required
+                  disabled={submitting}
+                />
+              </label>
+              <div className="admin-form__actions">
+                <button
+                  className="admin-button"
+                  type="submit"
+                  disabled={submitting}
+                >
+                  {submitting ? "Saving password..." : "Save new password"}
+                </button>
+                <button
+                  className="admin-link-button"
+                  type="button"
+                  onClick={() => {
+                    setResetToken(null);
+                    setNewPassword("");
+                    setConfirmPassword("");
+                    setNotice(null);
+                    setError(null);
+                  }}
+                  disabled={submitting}
+                >
+                  Back to sign in
+                </button>
+              </div>
+              <p className="admin-muted">
+                Use at least {MIN_PASSWORD_LENGTH} characters.
+              </p>
+            </form>
+          ) : resetMode ? (
             <form className="admin-form" onSubmit={submitReset}>
               <label
                 className="admin-field admin-field--wide"

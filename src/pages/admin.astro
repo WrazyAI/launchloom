@@ -1,0 +1,30 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const configuredOrigin = import.meta.env.PUBLIC_ADMIN_ORIGIN;
+const adminOrigin = (
+  configuredOrigin || "https://launchloom-api.dark-sound-e4eb.workers.dev"
+).replace(/\/+$/u, "");
+const adminLogin = `${adminOrigin}/admin/login`;
+---
+
+<BaseLayout
+  title="Admin sign-in | LaunchLoom"
+  description="Open the private LaunchLoom operations workspace."
+  robots="noindex, nofollow"
+>
+  <main class="admin-entry">
+    <section class="admin-entry__card" aria-labelledby="admin-entry-title">
+      <p class="eyebrow">LaunchLoom operations</p>
+      <h1 id="admin-entry-title">Opening admin sign-in</h1>
+      <p>
+        You are being redirected to the secure operations workspace. If the
+        redirect does not start, use the link below.
+      </p>
+      <a class="button" href={adminLogin}>Continue to admin sign-in</a>
+    </section>
+  </main>
+  <script is:inline define:vars={{ adminLogin }}>
+    window.location.replace(adminLogin);
+  </script>
+</BaseLayout>
