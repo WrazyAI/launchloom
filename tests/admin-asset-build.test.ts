@@ -222,7 +222,7 @@ describe("admin workspace asset build", () => {
       "utf8",
     );
     expect(entry).toContain("window.location.replace(adminLogin)");
-    expect(entry).toContain("launchloom-api.dark-sound-e4eb.workers.dev");
+    expect(entry).toContain("api.launchloom.wrazyos.com");
     expect(entry).toContain('robots="noindex, nofollow"');
     expect(entry).not.toContain("/admin-assets/app.js");
     expect(entry).not.toContain("client@example.test");

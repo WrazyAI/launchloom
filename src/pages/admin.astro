@@ -3,7 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
 const configuredOrigin = import.meta.env.PUBLIC_ADMIN_ORIGIN;
 const adminOrigin = (
-  configuredOrigin || "https://launchloom-api.dark-sound-e4eb.workers.dev"
+  configuredOrigin || "https://api.launchloom.wrazyos.com"
 ).replace(/\/+$/u, "");
 const adminLogin = `${adminOrigin}/admin/login`;
 ---
