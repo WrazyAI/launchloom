@@ -85,6 +85,8 @@ type AuthRoute = {
   json: boolean;
   sensitive: boolean;
   callbackField: "callbackURL" | "redirectTo" | null;
+  /** Email reset links require an absolute same-origin callback. */
+  callbackOrigin?: boolean;
 };
 
 const AUTH_ROUTES: ReadonlyMap<string, AuthRoute> = new Map([
@@ -92,10 +94,10 @@ const AUTH_ROUTES: ReadonlyMap<string, AuthRoute> = new Map([
   ["sign-in/email", { method: "POST", json: true, sensitive: true, callbackField: "callbackURL" }],
   ["sign-out", { method: "POST", json: true, sensitive: false, callbackField: null }],
   ["get-session", { method: "GET", json: false, sensitive: false, callbackField: null }],
-  ["request-password-reset", { method: "POST", json: true, sensitive: true, callbackField: "redirectTo" }],
+  ["request-password-reset", { method: "POST", json: true, sensitive: true, callbackField: "redirectTo", callbackOrigin: true }],
   // Better Auth has used both names; keep the legacy alias explicit instead of
   // proxying an arbitrary slash-delimited path.
-  ["forget-password", { method: "POST", json: true, sensitive: true, callbackField: "redirectTo" }],
+  ["forget-password", { method: "POST", json: true, sensitive: true, callbackField: "redirectTo", callbackOrigin: true }],
   ["reset-password", { method: "POST", json: true, sensitive: true, callbackField: null }],
   ["send-verification-email", { method: "POST", json: true, sensitive: true, callbackField: "callbackURL" }],
   ["verify-email", { method: "GET", json: false, sensitive: false, callbackField: "callbackURL" }],
@@ -252,6 +254,7 @@ function readCallback(value: unknown) {
 function rewriteJsonCallbacks(
   route: AuthRoute,
   text: string,
+  publicOrigin: string,
 ): { text: string } | { error: "invalid_body" | "invalid_callback" } {
   let body: unknown;
   try {
@@ -276,7 +279,9 @@ function rewriteJsonCallbacks(
   }
 
   for (const key of acceptedKeys) if (key !== route.callbackField) delete body[key];
-  body[route.callbackField] = callback;
+  body[route.callbackField] = route.callbackOrigin
+    ? `${publicOrigin}${callback}`
+    : callback;
   return { text: JSON.stringify(body) };
 }
 
@@ -620,7 +625,7 @@ export async function proxyAdminAuth(request: Request, env: AdminAuthEnv): Promi
           { error: { code: "unsupported_media_type", message: "JSON request body required." } },
           415,
         );
-      const rewritten = rewriteJsonCallbacks(route, raw);
+      const rewritten = rewriteJsonCallbacks(route, raw, config.publicOrigin);
       if ("error" in rewritten)
         return responseJson({ error: { code: rewritten.error, message: "Invalid request." } }, 400);
       body = rewritten.text;

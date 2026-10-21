@@ -548,11 +548,13 @@ describe("Neon same-origin session adapter", () => {
     expect(statuses[10]).toBe(429);
   });
 
-  it("passes through identical canonical password-reset responses without a local member lookup", async () => {
+  it("passes through identical canonical password-reset responses with an absolute callback", async () => {
+    const forwarded: unknown[] = [];
     network.use(
-      http.post(`${authOrigin}/request-password-reset`, () =>
-        HttpResponse.json({ status: true }),
-      ),
+      http.post(`${authOrigin}/request-password-reset`, async ({ request: providerRequest }) => {
+        forwarded.push(await providerRequest.json());
+        return HttpResponse.json({ status: true });
+      }),
     );
 
     const admin = await proxyAdminAuth(
@@ -560,12 +562,19 @@ describe("Neon same-origin session adapter", () => {
       neonEnv(),
     );
     const stranger = await proxyAdminAuth(
-      request(`${sessionPath}/request-password-reset`, jsonBody({ email: "stranger@example.test" })),
+      request(
+        `${sessionPath}/request-password-reset`,
+        jsonBody({ email: "stranger@example.test", redirectTo: "/admin/login" }),
+      ),
       neonEnv(),
     );
 
     expect(admin.status).toBe(stranger.status);
     expect(await admin.text()).toBe(await stranger.text());
+    expect(forwarded).toEqual([
+      { email: "owner@example.test", redirectTo: `${publicOrigin}/admin/onboarding-invites` },
+      { email: "stranger@example.test", redirectTo: `${publicOrigin}/admin/login` },
+    ]);
   });
 
   it("proxies an authenticated password change and forwards the revoke flag", async () => {
