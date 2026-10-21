@@ -37,9 +37,14 @@ const ANALYZER_SYSTEM_PROMPT =
 // enriched inspiration pack output is unchanged.
 const modelUsageRecords = [];
 
-function recordModelUsage(label, usage) {
+function recordModelUsage(label, usage, attemptModel = model) {
   if (!usage || typeof usage !== "object") return;
-  modelUsageRecords.push({ label, model, usage, provider: creativeProvider });
+  modelUsageRecords.push({
+    label,
+    model: attemptModel,
+    usage,
+    provider: creativeProvider,
+  });
 }
 
 export function getReferenceDnaUsageRecords() {
@@ -67,7 +72,7 @@ const schema = {
       "prohibitedPatterns",
       "requiredSignatureElements",
       "acceptanceChecks",
-      "measurements"
+      "measurements",
     ],
     properties: {
       annotatedDescription: { type: "string", maxLength: 1400 },
@@ -78,8 +83,8 @@ const schema = {
         properties: {
           mode: { type: "string" },
           alignment: { type: "string" },
-          viewport: { type: "string" }
-        }
+          viewport: { type: "string" },
+        },
       },
       navigationGeometry: {
         type: "object",
@@ -88,8 +93,8 @@ const schema = {
         properties: {
           mode: { type: "string" },
           placement: { type: "string" },
-          mobile: { type: "string" }
-        }
+          mobile: { type: "string" },
+        },
       },
       typography: {
         type: "object",
@@ -98,8 +103,8 @@ const schema = {
         properties: {
           display: { type: "string" },
           body: { type: "string" },
-          scale: { type: "string" }
-        }
+          scale: { type: "string" },
+        },
       },
       palette: {
         type: "object",
@@ -109,8 +114,8 @@ const schema = {
           surfaces: { type: "array", maxItems: 6, items: { type: "string" } },
           ink: { type: "string" },
           accents: { type: "array", maxItems: 5, items: { type: "string" } },
-          contrastIntent: { type: "string" }
-        }
+          contrastIntent: { type: "string" },
+        },
       },
       imageTreatment: {
         type: "object",
@@ -119,18 +124,23 @@ const schema = {
         properties: {
           mode: { type: "string" },
           crop: { type: "string" },
-          focalPoint: { type: "string" }
-        }
+          focalPoint: { type: "string" },
+        },
       },
-      sectionSequence: { type: "array", minItems: 4, maxItems: 16, items: { type: "string" } },
+      sectionSequence: {
+        type: "array",
+        minItems: 4,
+        maxItems: 16,
+        items: { type: "string" },
+      },
       servicePresentation: {
         type: "object",
         additionalProperties: false,
         required: ["pattern", "interaction"],
         properties: {
           pattern: { type: "string" },
-          interaction: { type: "string" }
-        }
+          interaction: { type: "string" },
+        },
       },
       ctaPlacement: {
         type: "object",
@@ -139,8 +149,8 @@ const schema = {
         properties: {
           primary: { type: "string" },
           secondary: { type: "string" },
-          early: { type: "string" }
-        }
+          early: { type: "string" },
+        },
       },
       motion: {
         type: "object",
@@ -149,8 +159,8 @@ const schema = {
         properties: {
           primitive: { type: "string" },
           library: { type: "string" },
-          reducedMotion: { type: "string" }
-        }
+          reducedMotion: { type: "string" },
+        },
       },
       mobileRecomposition: {
         type: "object",
@@ -158,10 +168,20 @@ const schema = {
         required: ["strategy", "rules"],
         properties: {
           strategy: { type: "string" },
-          rules: { type: "array", minItems: 2, maxItems: 8, items: { type: "string" } }
-        }
+          rules: {
+            type: "array",
+            minItems: 2,
+            maxItems: 8,
+            items: { type: "string" },
+          },
+        },
       },
-      prohibitedPatterns: { type: "array", minItems: 3, maxItems: 12, items: { type: "string" } },
+      prohibitedPatterns: {
+        type: "array",
+        minItems: 3,
+        maxItems: 12,
+        items: { type: "string" },
+      },
       requiredSignatureElements: {
         type: "array",
         minItems: 2,
@@ -173,11 +193,16 @@ const schema = {
           properties: {
             id: { type: "string" },
             selector: { type: "string" },
-            description: { type: "string" }
-          }
-        }
+            description: { type: "string" },
+          },
+        },
       },
-      acceptanceChecks: { type: "array", minItems: 4, maxItems: 12, items: { type: "string" } },
+      acceptanceChecks: {
+        type: "array",
+        minItems: 4,
+        maxItems: 12,
+        items: { type: "string" },
+      },
       measurements: {
         type: "object",
         additionalProperties: false,
@@ -193,7 +218,7 @@ const schema = {
           "imageAspectRatios",
           "overlapRelationships",
           "surfaceTransitions",
-          "mobile"
+          "mobile",
         ],
         properties: {
           headlineWidthRatio: { type: "number", minimum: 0, maximum: 1 },
@@ -203,37 +228,71 @@ const schema = {
           navTopRatio: { type: "number", minimum: 0, maximum: 1 },
           navSideInsetRatio: { type: "number", minimum: 0, maximum: 0.5 },
           ctaTopRatio: { type: "number", minimum: 0, maximum: 4 },
-          dominantSectionHeightRatios: { type: "array", minItems: 3, maxItems: 12, items: { type: "number", minimum: 0.1, maximum: 4 } },
-          imageAspectRatios: { type: "array", minItems: 1, maxItems: 8, items: { type: "number", minimum: 0.2, maximum: 5 } },
-          overlapRelationships: { type: "array", maxItems: 8, items: { type: "string" } },
-          surfaceTransitions: { type: "array", maxItems: 10, items: { type: "string" } },
+          dominantSectionHeightRatios: {
+            type: "array",
+            minItems: 3,
+            maxItems: 12,
+            items: { type: "number", minimum: 0.1, maximum: 4 },
+          },
+          imageAspectRatios: {
+            type: "array",
+            minItems: 1,
+            maxItems: 8,
+            items: { type: "number", minimum: 0.2, maximum: 5 },
+          },
+          overlapRelationships: {
+            type: "array",
+            maxItems: 8,
+            items: { type: "string" },
+          },
+          surfaceTransitions: {
+            type: "array",
+            maxItems: 10,
+            items: { type: "string" },
+          },
           mobile: {
             type: "object",
             additionalProperties: false,
-            required: ["headlineWidthRatio", "imageOccupancyRatio", "ctaTopRatio", "contentInsetRatio"],
+            required: [
+              "headlineWidthRatio",
+              "imageOccupancyRatio",
+              "ctaTopRatio",
+              "contentInsetRatio",
+            ],
             properties: {
               headlineWidthRatio: { type: "number", minimum: 0, maximum: 1 },
               imageOccupancyRatio: { type: "number", minimum: 0, maximum: 1 },
               ctaTopRatio: { type: "number", minimum: 0, maximum: 4 },
-              contentInsetRatio: { type: "number", minimum: 0, maximum: 0.5 }
-            }
-          }
-        }
-      }
-    }
-  }
+              contentInsetRatio: { type: "number", minimum: 0, maximum: 0.5 },
+            },
+          },
+        },
+      },
+    },
+  },
 };
 
 function argsFrom(argv) {
-  return Object.fromEntries(argv.slice(2).reduce((pairs, value, index, all) =>
-    index % 2 === 0 ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]] : pairs, []));
+  return Object.fromEntries(
+    argv
+      .slice(2)
+      .reduce(
+        (pairs, value, index, all) =>
+          index % 2 === 0
+            ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]]
+            : pairs,
+        [],
+      ),
+  );
 }
 
 function parseChoice(payload) {
   const raw = String(payload?.choices?.[0]?.message?.content || "").trim();
   if (!raw) throw new Error("Reference analyzer returned no content.");
   try {
-    return JSON.parse(raw.replace(/^```(?:json)?\s*/iu, "").replace(/\s*```$/u, ""));
+    return JSON.parse(
+      raw.replace(/^```(?:json)?\s*/iu, "").replace(/\s*```$/u, ""),
+    );
   } catch (error) {
     const parseError = new Error(
       `Reference analyzer returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`,
@@ -256,8 +315,11 @@ const ANALYZER_TIMEOUT_MS = 300_000;
 async function analyzeRoute(route, { fetchImpl = fetch, sleep } = {}) {
   const dna = route.referenceDna || {};
   const desktop = dna.evidence?.desktopScreenshot?.path;
-  const mobile = dna.evidence?.mobileScreenshot?.available ? dna.evidence.mobileScreenshot.path : "";
-  if (!desktop) throw new Error(`Reference route ${route.id} has no desktop screenshot.`);
+  const mobile = dna.evidence?.mobileScreenshot?.available
+    ? dna.evidence.mobileScreenshot.path
+    : "";
+  if (!desktop)
+    throw new Error(`Reference route ${route.id} has no desktop screenshot.`);
   const captureDimensions = {
     desktop: await promptImageDimensions(desktop),
     mobile: mobile ? await promptImageDimensions(mobile) : null,
@@ -274,43 +336,51 @@ async function analyzeRoute(route, { fetchImpl = fetch, sleep } = {}) {
       captureDimensions,
     };
   }
-  const content = [
+  const buildContent = async (includeMobile = true) => [
     {
       type: "text",
       text: `Analyze this design reference as implementation mechanics, not as brand identity. Measure Reference DNA from the screenshots for an independent implementation.
 
 ROUTE HINTS
-${JSON.stringify({
-  familyId: dna.familyId,
-  referenceName: dna.referenceName,
-  heroGeometry: route.heroGeometry,
-  navigation: route.navigation,
-  servicePresentation: route.servicePresentation,
-  sectionRhythm: route.sectionRhythm,
-  typographyCategory: route.typographyCategory,
-  imageStrategy: route.imageStrategy,
-  motionOpportunity: route.motionOpportunity
-}, null, 2)}
+${JSON.stringify(
+  {
+    familyId: dna.familyId,
+    referenceName: dna.referenceName,
+    heroGeometry: route.heroGeometry,
+    navigation: route.navigation,
+    servicePresentation: route.servicePresentation,
+    sectionRhythm: route.sectionRhythm,
+    typographyCategory: route.typographyCategory,
+    imageStrategy: route.imageStrategy,
+    motionOpportunity: route.motionOpportunity,
+  },
+  null,
+  2,
+)}
 
 CURATED REFERENCE DOSSIER
 ${referenceDossierPromptBlock(route.referenceDossier) || "No dossier was attached. Do not infer missing evidence from prose."}
 
 IMMUTABLE CURATED DESIGN CONTRACT
-${JSON.stringify({
-  heroGeometry: dna.heroGeometry,
-  navigationGeometry: dna.navigationGeometry,
-  typography: dna.typography,
-  palette: dna.palette,
-  imageTreatment: dna.imageTreatment,
-  sectionSequence: dna.sectionSequence,
-  servicePresentation: dna.servicePresentation,
-  ctaPlacement: dna.ctaPlacement,
-  motion: dna.motion,
-  mobileRecomposition: dna.mobileRecomposition,
-  prohibitedPatterns: dna.prohibitedPatterns,
-  requiredSignatureElements: dna.requiredSignatureElements,
-  acceptanceChecks: dna.acceptanceChecks,
-}, null, 2)}
+${JSON.stringify(
+  {
+    heroGeometry: dna.heroGeometry,
+    navigationGeometry: dna.navigationGeometry,
+    typography: dna.typography,
+    palette: dna.palette,
+    imageTreatment: dna.imageTreatment,
+    sectionSequence: dna.sectionSequence,
+    servicePresentation: dna.servicePresentation,
+    ctaPlacement: dna.ctaPlacement,
+    motion: dna.motion,
+    mobileRecomposition: dna.mobileRecomposition,
+    prohibitedPatterns: dna.prohibitedPatterns,
+    requiredSignatureElements: dna.requiredSignatureElements,
+    acceptanceChecks: dna.acceptanceChecks,
+  },
+  null,
+  2,
+)}
 These curated qualitative mechanics were reviewed against the paired captures and dossier prompt. Repeat them exactly in your structured response. Do not replace or reorder the section sequence, service presentation, CTA position, motion concept, signatures, or mobile strategy. Use screenshots to measure visual ratios, crop and overlap behavior, section-height fractions, and desktop/mobile geometry only.
 
 SOURCE CAPTURE DIMENSIONS
@@ -327,17 +397,19 @@ Rules:
 - infer only motion that is visually supported by the screenshots or the route's documented motion opportunity
 - required signatures must be design mechanics that can be independently implemented
 - prohibited patterns should name generic fallbacks that would visibly break this reference family
-- do not copy branding, copy, proprietary fonts, logos, or trade dress`
+- do not copy branding, copy, proprietary fonts, logos, or trade dress`,
     },
     { type: "text", text: "Desktop reference:" },
     await promptImagePart(desktop, { detail: "high" }),
-    ...(mobile
+    ...(includeMobile && mobile
       ? [
           { type: "text", text: "Mobile reference:" },
           await promptImagePart(mobile, { detail: "high" }),
         ]
-      : [])
+      : []),
   ];
+  const content = await buildContent(true);
+  // prettier-ignore
   const sessionId = openRouterSessionId(
     "reference-dna",
     model,
@@ -346,124 +418,202 @@ Rules:
       referenceName: dna.referenceName || route.label || "",
     },
   );
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), ANALYZER_TIMEOUT_MS);
-  const requestAnalysis = async (responseCache) => {
-    if (creativeProvider === "opencode-go") {
-      let result;
-      try {
-        result = await completeGoCreative({
-          logicalModel: model,
-          signal: controller.signal,
-          fetchImpl,
-          sleep,
-          maxAttempts: ANALYZER_GO_MAX_ATTEMPTS,
-          retryDelayMs: ANALYZER_GO_RETRY_DELAY_MS,
-          logger: (line) => console.warn(`reference_dna_${line}`),
-          request: buildGoCreativeRequest({
-            systemPrompt: ANALYZER_SYSTEM_PROMPT,
-            userContent: content,
-            schemaName: schema.name,
-            schema: schema.schema,
-            // DeepSeek at max effort spends a large reasoning budget before
-            // the answer; the analyzer answer itself is a few thousand tokens.
-            maxOutputTokens: 48_000,
-            effort: analyzerEffort,
-            sessionId,
-          }),
+  // Each attempt owns its timeout so an evidence/model fallback is not
+  // aborted by time the failed attempts already consumed.
+  const requestAnalysis = async (
+    responseCache,
+    { content: attemptContent = content, model: attemptModel = model } = {},
+  ) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), ANALYZER_TIMEOUT_MS);
+    try {
+      if (creativeProvider === "opencode-go") {
+        let result;
+        try {
+          result = await completeGoCreative({
+            logicalModel: attemptModel,
+            signal: controller.signal,
+            fetchImpl,
+            sleep,
+            maxAttempts: ANALYZER_GO_MAX_ATTEMPTS,
+            retryDelayMs: ANALYZER_GO_RETRY_DELAY_MS,
+            logger: (line) => console.warn(`reference_dna_${line}`),
+            request: buildGoCreativeRequest({
+              systemPrompt: ANALYZER_SYSTEM_PROMPT,
+              userContent: attemptContent,
+              schemaName: schema.name,
+              schema: schema.schema,
+              // DeepSeek at max effort spends a large reasoning budget before
+              // the answer; the analyzer answer itself is a few thousand tokens.
+              maxOutputTokens: 48_000,
+              effort: analyzerEffort,
+              sessionId,
+            }),
+          });
+        } catch (error) {
+          if (error?.code !== "CREATIVE_GO_INCOMPLETE") throw error;
+          // Preserve the transport-independent retry contract: an incomplete
+          // response is retried once, exactly like invalid JSON. Carry the
+          // provider status and machine-readable code into the retry log and the
+          // terminal error instead of collapsing both to a bare `error`.
+          const providerStatus = error.providerStatus || "error";
+          const providerErrorCode = error.providerErrorCode || "unknown";
+          const incomplete = new Error(
+            `Reference analyzer did not complete for ${route.id} (${providerStatus}/${providerErrorCode}${error.providerHttpStatus == null ? "" : `, http ${error.providerHttpStatus}`}).`,
+          );
+          incomplete.code = "REFERENCE_ANALYZER_INVALID_JSON";
+          incomplete.finishReason = `${providerStatus}/${providerErrorCode}`;
+          incomplete.providerStatus = providerStatus;
+          incomplete.providerErrorCode = providerErrorCode;
+          incomplete.providerHttpStatus = error.providerHttpStatus ?? null;
+          incomplete.providerType = error.providerType ?? null;
+          incomplete.providerParam = error.providerParam ?? null;
+          incomplete.providerHints = error.providerHints || [];
+          incomplete.providerMessageLength =
+            error.providerMessageLength ?? null;
+          incomplete.attempts = error.attempts ?? null;
+          throw incomplete;
+        }
+        const usage = result.usage || null;
+        recordModelUsage("reference-dna", usage, attemptModel);
+        goCreativeUsageMetrics(result, {
+          label: "reference-dna",
+          logger: (line) => console.warn(line),
         });
-      } catch (error) {
-        if (error?.code !== "CREATIVE_GO_INCOMPLETE") throw error;
-        // Preserve the transport-independent retry contract: an incomplete
-        // response is retried once, exactly like invalid JSON. Carry the
-        // provider status and machine-readable code into the retry log and the
-        // terminal error instead of collapsing both to a bare `error`.
-        const providerStatus = error.providerStatus || "error";
-        const providerErrorCode = error.providerErrorCode || "unknown";
-        const incomplete = new Error(
-          `Reference analyzer did not complete for ${route.id} (${providerStatus}/${providerErrorCode}${error.providerHttpStatus == null ? "" : `, http ${error.providerHttpStatus}`}).`,
-        );
-        incomplete.code = "REFERENCE_ANALYZER_INVALID_JSON";
-        incomplete.finishReason = `${providerStatus}/${providerErrorCode}`;
-        incomplete.providerStatus = providerStatus;
-        incomplete.providerErrorCode = providerErrorCode;
-        incomplete.providerHttpStatus = error.providerHttpStatus ?? null;
-        incomplete.attempts = error.attempts ?? null;
-        throw incomplete;
+        try {
+          return parseGoCreativeOutput(result, {
+            invalidJsonCode: "REFERENCE_ANALYZER_INVALID_JSON",
+            label: `Reference analyzer for ${route.id}`,
+          });
+        } catch (error) {
+          error.finishReason = error.finishReason || "go-parse";
+          throw error;
+        }
       }
-      const usage = result.usage || null;
-      recordModelUsage("reference-dna", usage);
-      goCreativeUsageMetrics(result, {
-        label: "reference-dna",
-        logger: (line) => console.warn(line),
+      const response = await openRouterChatCompletion({
+        title: "LaunchLoom Reference DNA Analyzer",
+        signal: controller.signal,
+        sessionId,
+        responseCache,
+        responseCacheTtlSeconds: 86_400,
+        fetchImpl,
+        body: {
+          model: attemptModel,
+          temperature: 0,
+          reasoning: { effort: "medium", exclude: true },
+          max_tokens: 9000,
+          response_format: { type: "json_schema", json_schema: schema },
+          messages: [
+            { role: "system", content: ANALYZER_SYSTEM_PROMPT },
+            { role: "user", content: attemptContent },
+          ],
+        },
       });
-      try {
-        return parseGoCreativeOutput(result, {
-          invalidJsonCode: "REFERENCE_ANALYZER_INVALID_JSON",
-          label: `Reference analyzer for ${route.id}`,
-        });
-      } catch (error) {
-        error.finishReason = error.finishReason || "go-parse";
-        throw error;
-      }
+      logOpenRouterResponseCacheUsage("reference-dna", response);
+      const payload = await response.json().catch((error) => {
+        if (response.ok || !(error instanceof SyntaxError)) throw error;
+        return {};
+      });
+      if (!response.ok)
+        throw new Error(
+          `Reference analyzer failed for ${route.id} (${response.status}): ${payload?.error?.message || "unknown error"}`,
+        );
+      logOpenRouterCacheUsage("reference-dna", payload.usage);
+      recordModelUsage("reference-dna", payload.usage, attemptModel);
+      return parseChoice(payload);
+    } finally {
+      clearTimeout(timeout);
     }
-    const response = await openRouterChatCompletion({
-      title: "LaunchLoom Reference DNA Analyzer",
-      signal: controller.signal,
-      sessionId,
-      responseCache,
-      responseCacheTtlSeconds: 86_400,
-      fetchImpl,
-      body: {
-        model,
-        temperature: 0,
-        reasoning: { effort: "medium", exclude: true },
-        max_tokens: 9000,
-        response_format: { type: "json_schema", json_schema: schema },
-        messages: [
-          { role: "system", content: ANALYZER_SYSTEM_PROMPT },
-          { role: "user", content }
-        ]
-      },
-    });
-    logOpenRouterResponseCacheUsage("reference-dna", response);
-    const payload = await response.json().catch((error) => {
-      if (response.ok || !(error instanceof SyntaxError)) throw error;
-      return {};
-    });
-    if (!response.ok)
-      throw new Error(`Reference analyzer failed for ${route.id} (${response.status}): ${payload?.error?.message || "unknown error"}`);
-    logOpenRouterCacheUsage("reference-dna", payload.usage);
-    recordModelUsage("reference-dna", payload.usage);
-    return parseChoice(payload);
+  };
+  const diagnostics = (error) => {
+    const parts = [];
+    if (error?.finishReason) parts.push(`finish_reason=${error.finishReason}`);
+    if (error?.providerHttpStatus != null)
+      parts.push(`http_status=${error.providerHttpStatus}`);
+    if (error?.providerErrorCode)
+      parts.push(`provider_code=${error.providerErrorCode}`);
+    if (error?.providerType) parts.push(`provider_type=${error.providerType}`);
+    if (error?.providerParam) parts.push(`param=${error.providerParam}`);
+    if (Array.isArray(error?.providerHints) && error.providerHints.length)
+      parts.push(`hints=${error.providerHints.join("+")}`);
+    if (error?.providerMessageLength != null)
+      parts.push(`message_length=${error.providerMessageLength}`);
+    return parts.join(" ");
   };
   try {
+    return { ...(await requestAnalysis(true)), captureDimensions };
+  } catch (error) {
+    if (error?.code !== "REFERENCE_ANALYZER_INVALID_JSON") throw error;
+    console.warn(
+      `reference_dna_retry route=${route.id} ${diagnostics(error)} cache=bypassed`,
+    );
     try {
-      return { ...await requestAnalysis(true), captureDimensions };
-    } catch (error) {
-      if (error?.code !== "REFERENCE_ANALYZER_INVALID_JSON") throw error;
-      const httpStatus =
-        error.providerHttpStatus == null
+      return { ...(await requestAnalysis(false)), captureDimensions };
+    } catch (retryError) {
+      if (retryError?.code !== "REFERENCE_ANALYZER_INVALID_JSON")
+        throw retryError;
+      const httpSuffix = (failure) =>
+        failure.providerHttpStatus == null
           ? ""
-          : ` http_status=${error.providerHttpStatus}`;
-      console.warn(
-        `reference_dna_retry route=${route.id} finish_reason=${error.finishReason}${httpStatus} cache=bypassed`,
-      );
-      try {
-        return { ...await requestAnalysis(false), captureDimensions };
-      } catch (retryError) {
-        if (retryError?.code !== "REFERENCE_ANALYZER_INVALID_JSON") throw retryError;
-        const retryHttpStatus =
-          retryError.providerHttpStatus == null
-            ? ""
-            : `, http ${retryError.providerHttpStatus}`;
+          : `, http ${failure.providerHttpStatus}`;
+      const nonTransient = new Set(["quota", "authentication"]);
+      if (
+        creativeProvider !== "opencode-go" ||
+        nonTransient.has(String(retryError.providerErrorCode || ""))
+      )
         throw new Error(
-          `Reference analyzer returned invalid JSON after one uncached retry (finish_reason=${retryError.finishReason}${retryHttpStatus}).`,
+          `Reference analyzer returned invalid JSON after one uncached retry (finish_reason=${retryError.finishReason}${httpSuffix(retryError)}).`,
         );
+      // A persistent provider fault tied to one piece of evidence must not
+      // kill an otherwise valid run. The analyzer treats mobile captures as
+      // optional, so retry with desktop evidence only; if the provider still
+      // fails, one bounded attempt on the configured fallback analyst model
+      // keeps the strict schema and accepts only validated JSON.
+      let failure = retryError;
+      if (mobile) {
+        console.warn(
+          `reference_dna_fallback route=${route.id} evidence=desktop-only ${diagnostics(retryError)}`,
+        );
+        try {
+          return {
+            ...(await requestAnalysis(false, {
+              content: await buildContent(false),
+            })),
+            captureDimensions,
+          };
+        } catch (desktopError) {
+          if (desktopError?.code !== "REFERENCE_ANALYZER_INVALID_JSON")
+            throw desktopError;
+          failure = desktopError;
+        }
       }
+      const fallbackModel =
+        process.env.CREATIVE_REFERENCE_ANALYZER_FALLBACK_MODEL ||
+        (creativeProvider === "opencode-go" ? "z-ai/glm-5.3-flash" : "");
+      if (fallbackModel && fallbackModel !== model) {
+        console.warn(
+          `reference_dna_fallback route=${route.id} model=${fallbackModel} evidence=desktop-only ${diagnostics(failure)}`,
+        );
+        try {
+          return {
+            ...(await requestAnalysis(false, {
+              content: await buildContent(false),
+              model: fallbackModel,
+            })),
+            captureDimensions,
+          };
+        } catch (fallbackError) {
+          if (fallbackError?.code !== "REFERENCE_ANALYZER_INVALID_JSON")
+            throw fallbackError;
+          throw new Error(
+            `Reference analyzer did not produce valid JSON after evidence and model fallbacks (${diagnostics(fallbackError)}).`,
+          );
+        }
+      }
+      throw new Error(
+        `Reference analyzer did not produce valid JSON after evidence fallback (${diagnostics(failure)}).`,
+      );
     }
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
@@ -517,9 +667,16 @@ export async function enrichInspirationPack(
 
 /** Add screenshot-derived measurements without replacing the curated design contract. */
 export function applyMeasuredReferenceAnalysis(route, analysis) {
-  const { captureDimensions, canonicalVerification, annotatedDescription, measurements } = analysis;
+  const {
+    captureDimensions,
+    canonicalVerification,
+    annotatedDescription,
+    measurements,
+  } = analysis;
   if (!measurements || typeof measurements !== "object")
-    throw new Error(`Reference analysis for ${route?.id || "route"} is missing measurements.`);
+    throw new Error(
+      `Reference analysis for ${route?.id || "route"} is missing measurements.`,
+    );
   return {
     ...route,
     referenceDna: {
@@ -533,7 +690,8 @@ export function applyMeasuredReferenceAnalysis(route, analysis) {
           : {}),
       },
       analyzedFromEvidence: true,
-      analyzerModel: canonicalVerification === true ? "canonical-dossier" : model,
+      analyzerModel:
+        canonicalVerification === true ? "canonical-dossier" : model,
       analyzedAt: new Date().toISOString(),
     },
   };
@@ -552,7 +710,9 @@ async function main() {
       path.resolve(args["usage-out"]),
       `${JSON.stringify({ version: 1, records: getReferenceDnaUsageRecords() }, null, 2)}\n`,
     );
-  console.log(JSON.stringify({ routes: enriched.routes.length, model, output }));
+  console.log(
+    JSON.stringify({ routes: enriched.routes.length, model, output }),
+  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) await main();

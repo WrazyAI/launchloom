@@ -52,7 +52,9 @@ export function creativeLaneEffort(
   if (laneValue) return laneValue;
   const shared = String(env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "").trim();
   if (shared) return shared;
-  return creativeLaneProvider(env) === "opencode-go" ? "max" : openrouterDefault;
+  return creativeLaneProvider(env) === "opencode-go"
+    ? "max"
+    : openrouterDefault;
 }
 
 /**
@@ -61,8 +63,9 @@ export function creativeLaneEffort(
  * @param {Record<string, string | undefined>} [env]
  */
 export function creativeLaneProvider(env = process.env) {
-  const provider = String(env.CREATIVE_EXPERIENCE_PROVIDER || "openrouter")
-    .trim();
+  const provider = String(
+    env.CREATIVE_EXPERIENCE_PROVIDER || "openrouter",
+  ).trim();
   if (!CREATIVE_LANE_PROVIDERS.includes(provider))
     throw new Error(`Unsupported CREATIVE_EXPERIENCE_PROVIDER: ${provider}`);
   return provider;
@@ -132,9 +135,7 @@ export function buildGoCreativeRequest({
       continue;
     }
     if (part?.type === "image_url") {
-      content.push(
-        responsesImagePart(part, part.image_url?.detail || "high"),
-      );
+      content.push(responsesImagePart(part, part.image_url?.detail || "high"));
       continue;
     }
     if (part?.type === "image" && typeof part.url === "string") {
@@ -229,7 +230,7 @@ export async function completeGoCreative({
     const delayMs = retryDelayMs * attempt;
     if (logger)
       logger(
-        `opencode_go_retry status=${result.status || "error"} code=${errorCode} http_status=${result?.error?.httpStatus ?? "none"} attempt=${attempt}/${maxAttempts} retry_in_ms=${delayMs}`,
+        `opencode_go_retry status=${result.status || "error"} code=${errorCode} http_status=${result?.error?.httpStatus ?? "none"} provider_type=${result?.error?.providerType ?? "none"} hints=${(result?.error?.hints || []).join("+") || "none"} message_length=${result?.error?.messageLength ?? "none"} attempt=${attempt}/${maxAttempts} retry_in_ms=${delayMs}`,
       );
     await sleep(delayMs);
   }
@@ -243,6 +244,12 @@ export async function completeGoCreative({
   // re-parsing provider prose.
   error.providerErrorCode = String(result?.error?.code || "unknown");
   error.providerHttpStatus = result?.error?.httpStatus ?? null;
+  error.providerType = result?.error?.providerType ?? null;
+  error.providerParam = result?.error?.param ?? null;
+  error.providerHints = Array.isArray(result?.error?.hints)
+    ? result.error.hints
+    : [];
+  error.providerMessageLength = result?.error?.messageLength ?? null;
   error.attempts = attempts;
   throw error;
 }
@@ -256,7 +263,10 @@ export async function completeGoCreative({
  */
 export function parseGoCreativeOutput(
   result,
-  { invalidJsonCode = "CREATIVE_GO_INVALID_JSON", label = "creative-lane" } = {},
+  {
+    invalidJsonCode = "CREATIVE_GO_INVALID_JSON",
+    label = "creative-lane",
+  } = {},
 ) {
   try {
     return parseGenerationOutput({ result });

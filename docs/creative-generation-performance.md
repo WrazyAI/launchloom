@@ -61,8 +61,18 @@ rendered technical gates.
 | `CREATIVE_EXPERIENCE_GO_MODEL` | `opencode-go/deepseek-v4.1-flash` | Reviewed Go model used when the configured component model is not served by the Go slice (for example the visual gate's legacy OpenRouter model). |
 | `CREATIVE_EXPERIENCE_MODEL` | `opencode-go/deepseek-v4.1-flash` (Go) / `openai/gpt-6-luna` (OpenRouter) | Authoring/repair model; the workflows set it from this repository variable. |
 | `CREATIVE_EXPERIENCE_REASONING_EFFORT` | `max` (Go) / `xhigh` (OpenRouter) | Shared creative-lane reasoning effort; per-lane overrides: `CREATIVE_REFERENCE_JUDGE_EFFORT`, `CREATIVE_REFERENCE_ANALYZER_EFFORT`, `VISUAL_GATE_EFFORT`. |
+| `CREATIVE_REFERENCE_ANALYZER_FALLBACK_MODEL` | `z-ai/glm-5.3-flash` (Go) | Analyst model tried once when Reference DNA keeps failing on OpenCode Go after the normal and desktop-only retries. The strict schema still validates the result. |
+| `CREATIVE_REFERENCE_ANALYZER_MODEL` | creative-lane default | Analyst model override; changing it changes the reference-analysis contract and should be intentional. |
 | `CREATIVE_NEAR_MISS_PREVIEW` | `true` | `false` refuses open-findings preview delivery; runs fail as before when the strict conjunction is unmet. |
 | `CREATIVE_PIXEL_CONTRAST` | `true` | `false` restores the DOM-only contrast contract; structural bail classes stay unresolved. |
+
+When OpenCode Go returns a persistent provider fault for a reference, the
+analyzer retries the same request uncached, then once with desktop evidence
+only (mobile captures are optional in the analyzer contract), and finally once
+with `CREATIVE_REFERENCE_ANALYZER_FALLBACK_MODEL`. Diagnostics log machine
+codes and keyword hints, never raw provider prose or prompt payloads. The
+fallback does not relax the schema or any acceptance gate; if every attempt
+fails, the run still fails closed.
 
 Repair budget and stagnation policy live in
 `scripts/run-rendered-creative-repair.mjs` (`maxCycles`, `MAX_GATE_REPAIRS`,

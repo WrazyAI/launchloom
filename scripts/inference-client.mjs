@@ -554,11 +554,41 @@ export function normalizeInferenceResponse(
     error: null,
     retryAfterSeconds: retryAfter(headers, now),
   };
+  const providerError = payload?.error;
+  const safeIdentifier = (value) => {
+    const text = String(value ?? "").trim();
+    return /^[a-z0-9_.:-]{1,80}$/iu.test(text) ? text : null;
+  };
+  const providerType = safeIdentifier(providerError?.type);
+  const providerParam = safeIdentifier(providerError?.param);
+  const providerMessage =
+    typeof providerError?.message === "string" ? providerError.message : "";
+  // Never expose raw provider prose in the normalized result. Machine-readable
+  // identifiers plus keyword hints are enough to route a failure to the right
+  // fallback without echoing prompts or private payloads into logs.
+  const providerHints = [
+    ["image", /image|vision|multimodal/iu],
+    ["context", /context|too many tokens|token limit|maximum.{0,20}token/iu],
+    ["schema", /json|schema|response_format|structured/iu],
+    ["content", /safety|content|policy|moderation|refus/iu],
+    ["rate", /rate limit|quota|too many requests|credit|billing/iu],
+    ["server", /server|internal|upstream|overload/iu],
+  ]
+    .filter(([, pattern]) => pattern.test(providerMessage))
+    .map(([hint]) => hint)
+    .slice(0, 4);
   const error = (code) => ({
     ...result,
     status: "error",
     text: "",
-    error: { code, httpStatus },
+    error: {
+      code,
+      httpStatus,
+      ...(providerType ? { providerType } : {}),
+      ...(providerParam ? { param: providerParam } : {}),
+      ...(providerMessage ? { messageLength: providerMessage.length } : {}),
+      ...(providerHints.length ? { hints: providerHints } : {}),
+    },
   });
   const choiceError =
     Array.isArray(payload?.choices) &&
@@ -573,14 +603,17 @@ export function normalizeInferenceResponse(
     const providerCode = String(
       payload?.error?.code || payload?.error?.type || "",
     );
-    const quota = /quota|credit|balance|billing|usage_limit/iu.test(providerCode);
+    const quota = /quota|credit|balance|billing|usage_limit/iu.test(
+      providerCode,
+    );
     // Some gateways report their own upstream fault as HTTP 400 with
     // `server_error` rather than a 5xx. Trust the provider's machine-readable
     // code so the creative lane retries a transient gateway fault instead of
     // treating it as a permanent invalid request.
-    const upstream = /server_error|internal_error|upstream_error|overloaded/iu.test(
-      providerCode,
-    );
+    const upstream =
+      /server_error|internal_error|upstream_error|overloaded/iu.test(
+        providerCode,
+      );
     return error(
       httpStatus === 401 || httpStatus === 403
         ? "authentication"
