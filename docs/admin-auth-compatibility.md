@@ -1,16 +1,16 @@
 # Admin auth compatibility (Neon same-origin sessions)
 
-**Status: production Neon cutover is enabled on the public Worker origin
-`https://launchloom-api.dark-sound-e4eb.workers.dev`.** The Worker uses a
-dedicated least-privilege production database role; David's verified owner
-account reached `/workspace/me` and `/workspace/team` in a real production
-Chromium sign-in. The public `https://launchloom.wrazyos.com/admin/` entry is
-live and redirects to the Worker login; production WebKit sign-in and
-password-settings proof passed. The old branded `api.launchloom.wrazyos.com`
-admin path is still behind Cloudflare Access and is not the Neon entry point.
-Remaining release work is live mailbox delivery/expiry proof and the Access
-policy transition with rollback. Retained-history reconciliation completed with
-no parseable run routing, so no historical attempts were fabricated.
+**Status: production Neon cutover is enabled on the branded origin
+`https://api.launchloom.wrazyos.com`.** The Worker uses a dedicated
+least-privilege production database role; David's verified owner account reached
+`/workspace/me` and `/workspace/team` in a real production Chromium sign-in. The
+public `https://launchloom.wrazyos.com/admin/` entry is live and redirects to the
+branded Worker login; production WebKit sign-in and password-settings proof
+passed. The obsolete Cloudflare Access application on the old admin path was
+removed after backing up its app and policy configuration. Remaining release
+work is live mailbox delivery/expiry proof; Access rollback is documented and can
+restore the backed-up app if needed. Retained-history reconciliation completed
+with no parseable run routing, so no historical attempts were fabricated.
 
 This record documents the authorized Worker-origin cutover. It does not
 authorize an Access policy change, Neon access through the old branded API host,
@@ -223,16 +223,16 @@ Completed before and during the Worker-origin cutover:
     active `admin` memberships and legacy links. One-hour reset tokens were
     issued for their onboarding.
 
-Still pending after the Worker-origin cutover:
+Still pending after the branded-origin cutover:
 
 1. Live mailbox reset delivery, token redemption, and expiry proof against the
    production accounts.
-2. The Access policy transition and rollback rehearsal for the old branded API
-   host.
 
-The old branded API host remains Access-protected and must not be presented as
-the Neon entry point until its policy transition is completed. Production
-desktop WebKit has passed; mobile remains covered by the Chromium browser suite.
+The branded API host is now the Neon entry point. The obsolete Access
+application was removed after its app and policy JSON were backed up; the
+rollback procedure can restore that app and set `ADMIN_AUTH_MODE=access`.
+Production desktop WebKit has passed; mobile remains covered by the Chromium
+browser suite.
 
 Exact live evidence still required:
 
