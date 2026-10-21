@@ -336,7 +336,7 @@ async function analyzeRoute(route, { fetchImpl = fetch, sleep } = {}) {
       captureDimensions,
     };
   }
-  const buildContent = async (includeMobile = true) => [
+  const buildContent = async ({ mobileDetail = "high" } = {}) => [
     {
       type: "text",
       text: `Analyze this design reference as implementation mechanics, not as brand identity. Measure Reference DNA from the screenshots for an independent implementation.
@@ -401,14 +401,14 @@ Rules:
     },
     { type: "text", text: "Desktop reference:" },
     await promptImagePart(desktop, { detail: "high" }),
-    ...(includeMobile && mobile
+    ...(mobile
       ? [
           { type: "text", text: "Mobile reference:" },
-          await promptImagePart(mobile, { detail: "high" }),
+          await promptImagePart(mobile, { detail: mobileDetail }),
         ]
       : []),
   ];
-  const content = await buildContent(true);
+  const content = await buildContent();
   // prettier-ignore
   const sessionId = openRouterSessionId(
     "reference-dna",
@@ -481,10 +481,12 @@ Rules:
           logger: (line) => console.warn(line),
         });
         try {
-          return parseGoCreativeOutput(result, {
-            invalidJsonCode: "REFERENCE_ANALYZER_INVALID_JSON",
-            label: `Reference analyzer for ${route.id}`,
-          });
+          return assertAnalyzerAnalysis(
+            parseGoCreativeOutput(result, {
+              invalidJsonCode: "REFERENCE_ANALYZER_INVALID_JSON",
+              label: `Reference analyzer for ${route.id}`,
+            }),
+          );
         } catch (error) {
           error.finishReason = error.finishReason || "go-parse";
           throw error;
@@ -520,7 +522,7 @@ Rules:
         );
       logOpenRouterCacheUsage("reference-dna", payload.usage);
       recordModelUsage("reference-dna", payload.usage, attemptModel);
-      return parseChoice(payload);
+      return assertAnalyzerAnalysis(parseChoice(payload));
     } finally {
       clearTimeout(timeout);
     }
@@ -538,6 +540,8 @@ Rules:
       parts.push(`hints=${error.providerHints.join("+")}`);
     if (error?.providerMessageLength != null)
       parts.push(`message_length=${error.providerMessageLength}`);
+    if (Array.isArray(error?.missingFields) && error.missingFields.length)
+      parts.push(`missing=${error.missingFields.join("+")}`);
     return parts.join(" ");
   };
   try {
@@ -564,54 +568,53 @@ Rules:
         throw new Error(
           `Reference analyzer returned invalid JSON after one uncached retry (finish_reason=${retryError.finishReason}${httpSuffix(retryError)}).`,
         );
-      // A persistent provider fault tied to one piece of evidence must not
-      // kill an otherwise valid run. The analyzer treats mobile captures as
-      // optional, so retry with desktop evidence only; if the provider still
-      // fails, one bounded attempt on the configured fallback analyst model
-      // keeps the strict schema and accepts only validated JSON.
-      let failure = retryError;
-      if (mobile) {
-        console.warn(
-          `reference_dna_fallback route=${route.id} evidence=desktop-only ${diagnostics(retryError)}`,
-        );
-        try {
-          return {
-            ...(await requestAnalysis(false, {
-              content: await buildContent(false),
-            })),
-            captureDimensions,
-          };
-        } catch (desktopError) {
-          if (desktopError?.code !== "REFERENCE_ANALYZER_INVALID_JSON")
-            throw desktopError;
-          failure = desktopError;
-        }
-      }
+      // A persistent provider fault must not kill an otherwise valid run. Try
+      // the configured fallback analyst model with the full evidence first:
+      // the schema requires mobile measurements, so a desktop-only attempt can
+      // never produce a complete analysis. If the media itself is the trigger,
+      // retry once with low-detail mobile evidence.
       const fallbackModel =
         process.env.CREATIVE_REFERENCE_ANALYZER_FALLBACK_MODEL ||
         (creativeProvider === "opencode-go" ? "z-ai/glm-5.3-flash" : "");
       if (fallbackModel && fallbackModel !== model) {
         console.warn(
-          `reference_dna_fallback route=${route.id} model=${fallbackModel} evidence=desktop-only ${diagnostics(failure)}`,
+          `reference_dna_fallback route=${route.id} model=${fallbackModel} evidence=full ${diagnostics(retryError)}`,
         );
         try {
           return {
-            ...(await requestAnalysis(false, {
-              content: await buildContent(false),
-              model: fallbackModel,
-            })),
+            ...(await requestAnalysis(false, { model: fallbackModel })),
             captureDimensions,
           };
         } catch (fallbackError) {
           if (fallbackError?.code !== "REFERENCE_ANALYZER_INVALID_JSON")
             throw fallbackError;
+          if (mobile) {
+            console.warn(
+              `reference_dna_fallback route=${route.id} model=${fallbackModel} evidence=mobile-low ${diagnostics(fallbackError)}`,
+            );
+            try {
+              return {
+                ...(await requestAnalysis(false, {
+                  model: fallbackModel,
+                  content: await buildContent({ mobileDetail: "low" }),
+                })),
+                captureDimensions,
+              };
+            } catch (lowDetailError) {
+              if (lowDetailError?.code !== "REFERENCE_ANALYZER_INVALID_JSON")
+                throw lowDetailError;
+              throw new Error(
+                `Reference analyzer did not produce a complete analysis after model and evidence fallbacks (${diagnostics(lowDetailError)}).`,
+              );
+            }
+          }
           throw new Error(
-            `Reference analyzer did not produce valid JSON after evidence and model fallbacks (${diagnostics(fallbackError)}).`,
+            `Reference analyzer did not produce a complete analysis after the fallback model (${diagnostics(fallbackError)}).`,
           );
         }
       }
       throw new Error(
-        `Reference analyzer did not produce valid JSON after evidence fallback (${diagnostics(failure)}).`,
+        `Reference analyzer did not produce valid JSON after one uncached retry (${diagnostics(retryError)}).`,
       );
     }
   }
@@ -666,6 +669,32 @@ export async function enrichInspirationPack(
 }
 
 /** Add screenshot-derived measurements without replacing the curated design contract. */
+/**
+ * The provider's strict schema is not enough: a fallback model can return a
+ * syntactically valid object that omits required evidence. Treat that as a
+ * retryable analysis failure so the fallback ladder advances instead of
+ * failing later with a less actionable error.
+ */
+function assertAnalyzerAnalysis(analysis) {
+  const required = Array.isArray(schema.schema?.required)
+    ? schema.schema.required
+    : [];
+  const missing = required.filter((key) => !(key in (analysis || {})));
+  if (
+    !missing.length &&
+    analysis?.measurements &&
+    typeof analysis.measurements === "object"
+  )
+    return analysis;
+  const error = new Error(
+    `Reference analyzer returned an incomplete analysis (missing ${missing.join(", ") || "measurements"}).`,
+  );
+  error.code = "REFERENCE_ANALYZER_INVALID_JSON";
+  error.finishReason = "incomplete-analysis";
+  error.missingFields = missing.length ? missing : ["measurements"];
+  throw error;
+}
+
 export function applyMeasuredReferenceAnalysis(route, analysis) {
   const {
     captureDimensions,

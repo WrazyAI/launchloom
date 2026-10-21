@@ -639,7 +639,7 @@ describe("Reference DNA", () => {
           sleep: async () => {},
         }),
       ).rejects.toThrow(
-        /Reference analyzer did not produce valid JSON after evidence and model fallbacks \(finish_reason=error\/upstream http_status=503/u,
+        /Reference analyzer did not produce a complete analysis after model and evidence fallbacks \(finish_reason=error\/upstream http_status=503/u,
       );
       // Initial attempts, the uncached retry, desktop-only evidence, and the
       // fallback analyst model: four bounded transport rounds.
@@ -653,14 +653,14 @@ describe("Reference DNA", () => {
       ).toBe(true);
       expect(
         warnings.some((line) =>
-          /reference_dna_fallback route=route-\d+ evidence=desktop-only/u.test(
+          /reference_dna_fallback route=route-\d+ model=z-ai\/glm-5\.3-flash evidence=full/u.test(
             line,
           ),
         ),
       ).toBe(true);
       expect(
         warnings.some((line) =>
-          /reference_dna_fallback route=route-\d+ model=z-ai\/glm-5\.3-flash/u.test(
+          /reference_dna_fallback route=route-\d+ model=z-ai\/glm-5\.3-flash evidence=mobile-low/u.test(
             line,
           ),
         ),
@@ -679,7 +679,7 @@ describe("Reference DNA", () => {
     }
   }, 20_000);
 
-  it("recovers with desktop-only evidence after a persistent Go provider fault", async () => {
+  it("recovers with the fallback model after a persistent Go provider fault", async () => {
     vi.resetModules();
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
     vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
@@ -717,20 +717,102 @@ describe("Reference DNA", () => {
         sleep: async () => {},
       });
       // Route 1: four failed attempts, four failed uncached attempts, then the
-      // desktop-only retry succeeds; routes 2 and 3 analyze on their first try.
+      // fallback model succeeds with full evidence; routes 2 and 3 analyze on
+      // their first try.
       expect(calls).toBe(11);
       expect(
         warnings.some((line) =>
-          /reference_dna_fallback route=route-01 evidence=desktop-only/u.test(
+          /reference_dna_fallback route=route-01 model=z-ai\/glm-5\.3-flash evidence=full/u.test(
             line,
           ),
         ),
       ).toBe(true);
       expect(
         warnings.some((line) =>
-          /reference_dna_fallback route=route-01 model=/u.test(line),
+          /reference_dna_fallback route=route-01 .*evidence=mobile-low/u.test(
+            line,
+          ),
         ),
       ).toBe(false);
+    } finally {
+      warn.mockRestore();
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
+  }, 20_000);
+
+  it("rejects an incomplete fallback analysis and retries the evidence", async () => {
+    vi.resetModules();
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    const warnings: string[] = [];
+    const warn = vi.spyOn(console, "warn").mockImplementation((line) => {
+      warnings.push(String(line));
+    });
+    let calls = 0;
+    const fetchImpl = vi.fn(async () => {
+      calls += 1;
+      if (calls <= 8)
+        return new Response(
+          JSON.stringify({
+            error: { message: "server error", type: "server_error" },
+          }),
+          { status: 400, headers: { "content-type": "application/json" } },
+        );
+      if (calls === 9)
+        return new Response(
+          JSON.stringify({
+            id: "resp_partial",
+            status: "completed",
+            output: [
+              {
+                type: "message",
+                role: "assistant",
+                status: "completed",
+                content: [
+                  {
+                    type: "output_text",
+                    text: JSON.stringify({
+                      annotatedDescription: "partial analysis",
+                    }),
+                  },
+                ],
+              },
+            ],
+            usage: { input_tokens: 200, output_tokens: 20 },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      return completedGoResponse();
+    });
+    const pack = buildInspirationPack(
+      {
+        seed: "reference-analyzer-go-incomplete-fallback",
+        industry: "legal-services",
+        styleTerms: [],
+        recentReferenceIds: [],
+        recentRouteSignatures: [],
+      },
+      productionRegistry,
+    );
+    try {
+      const { enrichInspirationPack: enrichGo } =
+        await import("../scripts/analyze-reference-dna.mjs");
+      await enrichGo(pack, {
+        fetchImpl: fetchImpl as typeof fetch,
+        sleep: async () => {},
+      });
+      // Initial and uncached rounds fail, the full-evidence fallback returns a
+      // syntactically valid but incomplete object, and the low-detail mobile
+      // retry completes; routes 2 and 3 analyze on their first try.
+      expect(calls).toBe(12);
+      expect(
+        warnings.some((line) =>
+          /reference_dna_fallback route=route-01 model=z-ai\/glm-5\.3-flash evidence=mobile-low .*missing=/u.test(
+            line,
+          ),
+        ),
+      ).toBe(true);
     } finally {
       warn.mockRestore();
       vi.unstubAllEnvs();

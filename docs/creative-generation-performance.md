@@ -67,12 +67,14 @@ rendered technical gates.
 | `CREATIVE_PIXEL_CONTRAST` | `true` | `false` restores the DOM-only contrast contract; structural bail classes stay unresolved. |
 
 When OpenCode Go returns a persistent provider fault for a reference, the
-analyzer retries the same request uncached, then once with desktop evidence
-only (mobile captures are optional in the analyzer contract), and finally once
-with `CREATIVE_REFERENCE_ANALYZER_FALLBACK_MODEL`. Diagnostics log machine
-codes and keyword hints, never raw provider prose or prompt payloads. The
-fallback does not relax the schema or any acceptance gate; if every attempt
-fails, the run still fails closed.
+analyzer retries the same request uncached, then once with
+`CREATIVE_REFERENCE_ANALYZER_FALLBACK_MODEL` on the full evidence, and finally
+once more with low-detail mobile evidence if the media itself is the trigger.
+The analyzer validates the required schema fields client-side before accepting
+a fallback result; diagnostics log machine codes, keyword hints and missing
+field names, never raw provider prose or prompt payloads. The fallback does
+not relax the schema or any acceptance gate; if every attempt fails, the run
+still fails closed.
 
 Repair budget and stagnation policy live in
 `scripts/run-rendered-creative-repair.mjs` (`maxCycles`, `MAX_GATE_REPAIRS`,
