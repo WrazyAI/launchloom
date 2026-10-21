@@ -637,8 +637,26 @@ async function requestStage(request) {
           usage.push(goUsageRecord);
           if (goCompletion?.result?.status !== "completed") {
             goUsageRecord.parseStatus = "inference-error";
+            const providerError = goCompletion?.result?.error || {};
+            const providerDiagnostic = [
+              String(providerError.code || "request failed"),
+              providerError.httpStatus != null
+                ? `http_status=${providerError.httpStatus}`
+                : "",
+              providerError.providerType
+                ? `provider_type=${providerError.providerType}`
+                : "",
+              Array.isArray(providerError.hints) && providerError.hints.length
+                ? `hints=${providerError.hints.join("+")}`
+                : "",
+              providerError.messageLength != null
+                ? `message_length=${providerError.messageLength}`
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
             throw new Error(
-              `OpenCode Go ${goCompletion?.result?.status || "error"} for route ${request.route.id} stage ${request.stage}: ${goCompletion?.result?.error?.code || "request failed"}.`,
+              `OpenCode Go ${goCompletion?.result?.status || "error"} for route ${request.route.id} stage ${request.stage}: ${providerDiagnostic}.`,
             );
           }
           let goParsed;
