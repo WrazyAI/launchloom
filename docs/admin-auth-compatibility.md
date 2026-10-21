@@ -219,11 +219,14 @@ Completed before and during the Worker-origin cutover:
 8. Production WebKit sign-in and password-settings proof on the deployed Worker.
 9. Bounded retained-history reconciliation dry run and authorized write. Both
    completed with 0 eligible attempts and no fabricated routing or actor data.
+10. Three approved production admins added with verified Neon Auth credentials,
+    active `admin` memberships and legacy links. One-hour reset tokens were
+    issued for their onboarding.
 
 Still pending after the Worker-origin cutover:
 
 1. Live mailbox reset delivery, token redemption, and expiry proof against the
-   production account.
+   production accounts.
 2. The Access policy transition and rollback rehearsal for the old branded API
    host.
 
