@@ -4,11 +4,13 @@
 `https://launchloom-api.dark-sound-e4eb.workers.dev`.** The Worker uses a
 dedicated least-privilege production database role; David's verified owner
 account reached `/workspace/me` and `/workspace/team` in a real production
-Chromium sign-in. The old branded `api.launchloom.wrazyos.com` admin path is
-still behind Cloudflare Access and is not the Neon entry point. Remaining
-release work is WebKit proof, live mailbox delivery/expiry proof, the public
-branded redirect deployment, history backfill, and the Access policy transition
-with rollback.
+Chromium sign-in. The public `https://launchloom.wrazyos.com/admin/` entry is
+live and redirects to the Worker login; production WebKit sign-in and
+password-settings proof passed. The old branded `api.launchloom.wrazyos.com`
+admin path is still behind Cloudflare Access and is not the Neon entry point.
+Remaining release work is live mailbox delivery/expiry proof and the Access
+policy transition with rollback. Retained-history reconciliation completed with
+no parseable run routing, so no historical attempts were fabricated.
 
 This record documents the authorized Worker-origin cutover. It does not
 authorize an Access policy change, Neon access through the old branded API host,
@@ -212,19 +214,22 @@ Completed before and during the Worker-origin cutover:
    `david@maigreeks.com`.
 6. A canonical password-reset request accepted by the provider on the deployed
    Worker origin.
+7. Public branded `/admin` redirect live at
+   `https://launchloom.wrazyos.com/admin/`.
+8. Production WebKit sign-in and password-settings proof on the deployed Worker.
+9. Bounded retained-history reconciliation dry run and authorized write. Both
+   completed with 0 eligible attempts and no fabricated routing or actor data.
 
 Still pending after the Worker-origin cutover:
 
-1. Public branded `/admin` redirect deployment and WebKit proof.
-2. Live mailbox reset delivery, token redemption, and expiry proof against the
+1. Live mailbox reset delivery, token redemption, and expiry proof against the
    production account.
-3. The Access policy transition and rollback rehearsal for the old branded API
+2. The Access policy transition and rollback rehearsal for the old branded API
    host.
-4. Authorized retained-history backfill and reconciliation evidence.
 
 The old branded API host remains Access-protected and must not be presented as
-the Neon entry point until its policy transition is completed. WebKit must pass,
-or compatibility remains a release blocker.
+the Neon entry point until its policy transition is completed. Production
+desktop WebKit has passed; mobile remains covered by the Chromium browser suite.
 
 Exact live evidence still required:
 
@@ -239,8 +244,8 @@ Exact live evidence still required:
 - Expired/revoked session rejection and provider-outage behavior against the real
   provider.
 - A rehearsed restricted Access rollback without deleting profiles or auth data.
-- Chromium plus WebKit results. Chromium production sign-in is recorded; WebKit
-  remains a release blocker.
+- Chromium and production WebKit results are recorded. Mobile remains covered by
+  Chromium browser tests.
 
 The local provider, database, Worker and production Chromium proof is recorded.
 Normal-route Access cutover remains master Tasks 10/11.
