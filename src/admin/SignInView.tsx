@@ -15,6 +15,7 @@ type Stage =
   | "mismatch"
   | "used"
   | "expired"
+  | "unverified"
   | "failed";
 
 function safeReturnPath(value: string | null): string {
@@ -87,6 +88,15 @@ function errorStatus(error: unknown) {
     : undefined;
 }
 
+function authErrorMessage(error: unknown) {
+  const code = errorCode(error);
+  if (code === "auth_failed" || errorStatus(error) === 401)
+    return "The email or password did not match. Check both and try again.";
+  if (code === "rate_limited")
+    return "Too many sign-in attempts. Wait a moment and try again.";
+  return requestErrorMessage(error);
+}
+
 export function SignInView({ api }: { api: AdminApi }) {
   const [stage, setStage] = useState<Stage>("checking");
   const [token, setToken] = useState<string | null>(null);
@@ -114,6 +124,45 @@ export function SignInView({ api }: { api: AdminApi }) {
     window.location.assign(returnToRef.current);
   }
 
+  function handleClaimFailure(failure: unknown) {
+    if (isAmbiguous(failure)) {
+      setStage("uncertain");
+      setError(
+        "The invitation could not be confirmed. It may already be claimed. Do not retry blindly: open the workspace or ask an owner to check membership.",
+      );
+      return;
+    }
+    const code = errorCode(failure);
+    if (code === "email_unverified") {
+      setStage("unverified");
+      setError(
+        "Verify your email with the account provider, then check again. This invitation is still held in this tab only.",
+      );
+      return;
+    }
+    if (code === "email_mismatch") {
+      setStage("mismatch");
+      setError(
+        "This invitation belongs to a different verified email. Sign in with the address that received it.",
+      );
+      return;
+    }
+    if (code === "enrollment_used" || errorStatus(failure) === 409) {
+      setStage("used");
+      setError(
+        "This invitation has already been used. Ask an owner for a new one.",
+      );
+      return;
+    }
+    if (code === "expired" || errorStatus(failure) === 410) {
+      setStage("expired");
+      setError("This invitation has expired. Ask an owner for a new one.");
+      return;
+    }
+    setStage("failed");
+    setError(requestErrorMessage(failure));
+  }
+
   async function claimEnrollment(value: string) {
     setStage("accepting");
     setError(null);
@@ -121,47 +170,36 @@ export function SignInView({ api }: { api: AdminApi }) {
       await api.acceptEnrollment(value);
       goToWorkspace();
     } catch (failure) {
-      if (isAmbiguous(failure)) {
-        setStage("uncertain");
-        setError(
-          "The invitation could not be confirmed. It may already be claimed. Do not retry blindly: open the workspace or ask an owner to check membership.",
-        );
-        return;
-      }
-      const code = errorCode(failure);
-      if (code === "email_mismatch") {
-        setStage("mismatch");
-        setError(
-          "This invitation belongs to a different verified email. Sign in with the address that received it.",
-        );
-        return;
-      }
-      if (code === "enrollment_used" || errorStatus(failure) === 409) {
-        setStage("used");
-        setError(
-          "This invitation has already been used. Ask an owner for a new one.",
-        );
-        return;
-      }
-      if (code === "expired" || errorStatus(failure) === 410) {
-        setStage("expired");
-        setError("This invitation has expired. Ask an owner for a new one.");
-        return;
-      }
-      setStage("failed");
-      setError(requestErrorMessage(failure));
+      handleClaimFailure(failure);
     }
   }
 
   async function checkExistingSession(value: string | null) {
     const requestId = ++loginRequest.current;
-    setStage("checking");
     setError(null);
+    if (value) {
+      // Do not gate acceptance on /workspace/me: a verified invitee who is not
+      // yet a member receives 403 there, but can still claim this invitation.
+      setStage("accepting");
+      try {
+        await api.acceptEnrollment(value);
+        if (loginRequest.current !== requestId) return;
+        goToWorkspace();
+      } catch (failure) {
+        if (loginRequest.current !== requestId) return;
+        if (errorStatus(failure) === 401) {
+          setStage("form");
+          return;
+        }
+        handleClaimFailure(failure);
+      }
+      return;
+    }
+    setStage("checking");
     try {
       await api.getMe();
       if (loginRequest.current !== requestId) return;
-      if (value) await claimEnrollment(value);
-      else goToWorkspace();
+      goToWorkspace();
     } catch (failure) {
       if (loginRequest.current !== requestId) return;
       setStage("form");
@@ -207,7 +245,7 @@ export function SignInView({ api }: { api: AdminApi }) {
           "Sign-in could not be confirmed. Your entries were kept. Check the connection before trying again.",
         );
       } else {
-        setError(requestErrorMessage(failure));
+        setError(authErrorMessage(failure));
       }
     } finally {
       inFlight.current = false;
@@ -264,9 +302,23 @@ export function SignInView({ api }: { api: AdminApi }) {
     void checkExistingSession(token).finally(() => setCheckingAgain(false));
   }
 
+  async function retryEnrollment() {
+    if (!token || checkingAgain) return;
+    setCheckingAgain(true);
+    setError(null);
+    try {
+      await claimEnrollment(token);
+    } finally {
+      setCheckingAgain(false);
+    }
+  }
+
   const accepting = stage === "accepting";
   const blocked =
-    stage === "uncertain" || stage === "used" || stage === "expired";
+    stage === "uncertain" ||
+    stage === "used" ||
+    stage === "expired" ||
+    stage === "unverified";
 
   return (
     <main className="admin-auth">
@@ -323,7 +375,9 @@ export function SignInView({ api }: { api: AdminApi }) {
                     ? "Invitation already used"
                     : stage === "expired"
                       ? "Invitation expired"
-                      : "Sign-in failed"}
+                      : stage === "unverified"
+                        ? "Email not verified"
+                        : "Sign-in failed"}
             </strong>
             <span>{error}</span>
           </div>
@@ -354,6 +408,25 @@ export function SignInView({ api }: { api: AdminApi }) {
             <a className="admin-link-button" href={returnTo}>
               Continue to workspace
             </a>
+          </div>
+        ) : null}
+
+        {stage === "unverified" ? (
+          <div className="admin-form__actions">
+            <button
+              className="admin-button"
+              type="button"
+              onClick={() => void retryEnrollment()}
+              disabled={checkingAgain}
+            >
+              {checkingAgain
+                ? "Checking verification..."
+                : "Check verification again"}
+            </button>
+            <span className="admin-muted">
+              Complete email verification with the account provider, then retry
+              this invitation.
+            </span>
           </div>
         ) : null}
 

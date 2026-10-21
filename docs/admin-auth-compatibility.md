@@ -326,8 +326,10 @@ repository, logs or a shared drive.
 
 - An owner creates an invitation (`create_enrollment`). The store generates 32
   random bytes, returns the base64url token once in
-  `/admin/login?enrollment=<token>`, stores only its SHA-256 hex digest, and sets
-  a 72-hour expiry. The UI route that consumes the link is wired with the account
+  `/admin/login#enroll=<token>`, stores only its SHA-256 hex digest, and sets
+  a 72-hour expiry. The fragment is not sent in the request path or logs; the
+  sign-in route also accepts the legacy `?enrollment=` form but never generates
+  it. The UI route that consumes the link is wired with the account
   UI/authorization task; the handler itself is implemented.
 - Acceptance requires a verified provider session whose normalized email matches
   the invitation exactly. The token is claimed atomically once; repeated, expired

@@ -169,7 +169,7 @@ export async function runInvite({
   const token = randomBytes(32).toString("base64url");
   const tokenHash = createHash("sha256").update(token).digest("hex");
   const expiresAt = new Date(Date.now() + TTL_MS);
-  const url = `/admin/login?enrollment=${encodeURIComponent(token)}`;
+  const url = `/admin/login#enroll=${encodeURIComponent(token)}`;
   try {
     await writeFile(args.out, `${url}\n`, { mode: 0o600, flag: "wx" });
   } catch (error) {

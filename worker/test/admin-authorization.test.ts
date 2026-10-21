@@ -124,7 +124,7 @@ function fakeStore(
         throw new MembershipError("forbidden", "Only an owner can manage workspace membership.");
       return {
         enrollmentId: "enrollment-1",
-        url: `/admin/login?enrollment=${"t".repeat(43)}`,
+        url: `/admin/login#enroll=${"t".repeat(43)}`,
         expiresAt: Date.now() + 60_000,
       };
     },
@@ -622,7 +622,7 @@ describe("accounts handlers behind the central guard", () => {
     await expect(created.json()).resolves.toMatchObject({
       enrollment: {
         id: "enrollment-1",
-        url: `/admin/login?enrollment=${"t".repeat(43)}`,
+        url: `/admin/login#enroll=${"t".repeat(43)}`,
       },
     });
 

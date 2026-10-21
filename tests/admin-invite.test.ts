@@ -132,9 +132,10 @@ describe("invite-admin script", () => {
     expect(output).not.toContain("private-password");
 
     const file = await readFile(out, "utf8");
-    const token = new URL(file.trim(), "https://api.example.test").searchParams.get(
-      "enrollment",
-    );
+    const link = new URL(file.trim(), "https://api.example.test");
+    expect(link.search).toBe("");
+    expect(link.hash.startsWith("#enroll=")).toBe(true);
+    const token = new URLSearchParams(link.hash.slice(1)).get("enroll");
     expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/u);
     expect(output).not.toContain(token);
     expect((await stat(out)).mode & 0o777).toBe(0o600);

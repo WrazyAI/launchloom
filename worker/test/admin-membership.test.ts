@@ -54,7 +54,7 @@ function fakeStore(overrides: Partial<MembershipStore> = {}): MembershipStore {
     list: vi.fn(async () => [member()]),
     createEnrollment: vi.fn(async () => ({
       enrollmentId: "enrollment-1",
-      url: "/admin/login?enrollment=token",
+      url: "/admin/login#enroll=token",
       expiresAt: Date.now() + 72 * 60 * 60 * 1000,
     })),
     acceptEnrollment: vi.fn(async () => owner),
@@ -125,7 +125,10 @@ describe("membership store token and error handling", () => {
       now: () => 1_000_000,
     });
     const created = await store.createEnrollment(owner.id, "  New.Admin@Example.Test ");
-    const token = new URL(created.url, origin).searchParams.get("enrollment") || "";
+    const link = new URL(created.url, origin);
+    expect(link.search).toBe("");
+    expect(link.hash.startsWith("#enroll=")).toBe(true);
+    const token = new URLSearchParams(link.hash.slice(1)).get("enroll") || "";
     expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/u);
     expect(created.enrollmentId).toBe("enrollment-1");
     expect(created.expiresAt).toBe(1_000_000 + 72 * 60 * 60 * 1000);

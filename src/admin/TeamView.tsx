@@ -30,6 +30,16 @@ function isAmbiguous(error: unknown) {
   );
 }
 
+function absoluteEnrollmentLink(value: string): string | null {
+  try {
+    const url = new URL(value, window.location.origin);
+    if (url.origin !== window.location.origin) return null;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
+
 function AccessUnavailable() {
   return (
     <div className="admin-stack" id="team-view">
@@ -128,7 +138,15 @@ export function TeamView({ api }: { api: AdminApi }) {
     setCopyMessage(null);
     try {
       const enrollment = await api.createEnrollment(email);
-      setCreated(enrollment);
+      const url = absoluteEnrollmentLink(enrollment.url);
+      if (!url) {
+        setCreateUncertain(true);
+        setCreateError(
+          "The enrollment link was not returned in a usable form, so it was not displayed. Do not issue another blindly; ask an owner to check before retrying.",
+        );
+        return;
+      }
+      setCreated({ ...enrollment, url });
       setEmail("");
     } catch (failure) {
       if (isAmbiguous(failure)) {

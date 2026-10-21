@@ -195,7 +195,7 @@ describe("admin account API contracts", () => {
       {
         enrollment: {
           id: "enrollment-1",
-          url: "/admin/login?enrollment=token",
+          url: "/admin/login#enroll=token",
           expiresAt: 1_700_000_200_000,
         },
       },

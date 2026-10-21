@@ -80,12 +80,15 @@ let assetsDirectory = "";
 let requests: RecordedRequest[] = [];
 let neonMode = false;
 let signedIn = false;
+let nonmemberSession = false;
 let currentRole: "owner" | "admin" = "owner";
 let members: Member[] = [];
 let meMode: "success" | "unavailable" | "malformed" | "signed_out" = "success";
-let signInMode: "success" | "invalid" | "unavailable" = "success";
+let signInMode: "success" | "invalid" | "unavailable" | "unverified" =
+  "success";
 let signInMessage = "Invalid email or password.";
-let acceptMode: "success" | "mismatch" | "unavailable" | "used" = "success";
+let acceptMode: "success" | "mismatch" | "unavailable" | "used" | "unverified" =
+  "success";
 let createMode: "success" | "unavailable" = "success";
 let changeMode: "success" | "last_owner" = "success";
 let profileMode: "success" | "invalid" = "success";
@@ -240,7 +243,7 @@ async function serve(
         user: {
           id: currentMember().id,
           email: currentMember().email,
-          emailVerified: true,
+          emailVerified: signInMode !== "unverified",
           name: currentMember().displayName,
         },
         session: { expiresAt: Date.now() + 3_600_000 },
@@ -265,6 +268,22 @@ async function serve(
       return;
     }
     sendJson(response, errorBody("not_found", "Not found."), 404);
+    return;
+  }
+
+  if (pathname.endsWith("/workspace/attempts")) {
+    sendJson(response, { items: [], nextCursor: null, total: 0 });
+    return;
+  }
+
+  if (pathname.endsWith("/workspace/health")) {
+    sendJson(response, {
+      lastSyncAt: null,
+      coverageStart: null,
+      partial: false,
+      lastError: null,
+      pendingProjectionCount: 0,
+    });
     return;
   }
 
@@ -294,6 +313,10 @@ async function serve(
     }
     if (meMode === "signed_out" || !signedIn) {
       sendJson(response, errorBody("signed_out", "Sign in required."), 401);
+      return;
+    }
+    if (nonmemberSession) {
+      sendJson(response, errorBody("forbidden", "Access denied."), 403);
       return;
     }
     if (meMode === "unavailable") {
@@ -373,7 +396,7 @@ async function serve(
       {
         enrollment: {
           id: "enrollment-1",
-          url: `/admin/login?enrollment=${ENROLLMENT_TOKEN}`,
+          url: `/admin/login#enroll=${ENROLLMENT_TOKEN}`,
           expiresAt: Date.now() + 72 * 60 * 60 * 1000,
         },
       },
@@ -406,6 +429,10 @@ async function serve(
   }
 
   if (pathname.endsWith("/workspace/enrollments/accept")) {
+    if (!signedIn) {
+      sendJson(response, errorBody("signed_out", "Sign in required."), 401);
+      return;
+    }
     if (acceptMode === "mismatch") {
       sendJson(
         response,
@@ -425,6 +452,14 @@ async function serve(
       );
       return;
     }
+    if (acceptMode === "unverified") {
+      sendJson(
+        response,
+        errorBody("email_unverified", "Verify your email before continuing."),
+        403,
+      );
+      return;
+    }
     if (acceptMode === "unavailable") {
       sendJson(
         response,
@@ -437,6 +472,7 @@ async function serve(
       return;
     }
     signedIn = true;
+    nonmemberSession = false;
     sendJson(response, {
       principal: {
         id: "subject-invitee",
@@ -475,6 +511,7 @@ beforeEach(() => {
   requests = [];
   neonMode = false;
   signedIn = false;
+  nonmemberSession = false;
   currentRole = "owner";
   members = [{ ...OWNER }, { ...ADMIN }];
   meMode = "success";
@@ -851,14 +888,74 @@ describe("Neon account flows", () => {
       await page.getByLabel("Password").fill("wrong-password");
       await page.getByRole("button", { name: "Sign in", exact: true }).click();
       await visible(
-        page.getByText("Continue at https://evil.test/steal", { exact: true }),
+        page.getByText("The email or password did not match", {
+          exact: false,
+        }),
       );
+      expect(
+        await page
+          .getByText("Continue at https://evil.test/steal", { exact: true })
+          .count(),
+      ).toBe(0);
       expect(new URL(page.url()).pathname).toBe("/admin/login");
       expect(await page.locator('a[href*="evil.test"]').count()).toBe(0);
       expect(await page.getByLabel("Email address").inputValue()).toBe(
         "wrong@example.test",
       );
       expect(countRequests("/auth/sign-in/email")).toBe(1);
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("does not follow a malicious returnTo after sign-in", async () => {
+    neonMode = true;
+    for (const returnTo of [
+      "https://evil.test/steal",
+      "//evil.test/path",
+      "/%5Cevil.test",
+    ]) {
+      signedIn = false;
+      const { page, errors } = await openPage({
+        path: `/admin/login?returnTo=${encodeURIComponent(returnTo)}`,
+      });
+      try {
+        await page.getByLabel("Email address").fill(OWNER.email);
+        await page.getByLabel("Password").fill("correct horse battery");
+        await page
+          .getByRole("button", { name: "Sign in", exact: true })
+          .click();
+        await page.waitForURL(
+          (url) => url.pathname === "/admin/onboarding-invites",
+        );
+        const target = new URL(page.url());
+        expect(target.origin).toBe(origin);
+        expect(target.pathname).toBe("/admin/onboarding-invites");
+        await visible(
+          page.getByRole("heading", { name: "Generation history" }),
+        );
+        unexpectedErrors(errors);
+      } finally {
+        await page.close();
+      }
+    }
+  }, 60_000);
+
+  it("asks an unverified account to verify before continuing", async () => {
+    neonMode = true;
+    signInMode = "unverified";
+    const { page, errors } = await openPage({ path: "/admin/login" });
+    try {
+      await page.getByLabel("Email address").fill(OWNER.email);
+      await page.getByLabel("Password").fill("correct horse battery");
+      await page.getByRole("button", { name: "Sign in", exact: true }).click();
+      await visible(
+        page.getByText("Verify your email before signing in.", {
+          exact: false,
+        }),
+      );
+      expect(new URL(page.url()).pathname).toBe("/admin/login");
       unexpectedErrors(errors);
     } finally {
       await page.close();
@@ -887,10 +984,10 @@ describe("Neon account flows", () => {
     }
   });
 
-  it("accepts an enrollment once, scrubs the token and stores nothing", async () => {
+  it("accepts a fragment enrollment once, scrubs it and stores nothing", async () => {
     neonMode = true;
-    const { page, errors } = await openPage({
-      path: `/admin/login?enrollment=${ENROLLMENT_TOKEN}&returnTo=${encodeURIComponent(RETURN_TO)}`,
+    const { page, errors, pageRequests } = await openPage({
+      path: `/admin/login?returnTo=${encodeURIComponent(RETURN_TO)}#enroll=${ENROLLMENT_TOKEN}`,
     });
     try {
       await visible(
@@ -898,6 +995,9 @@ describe("Neon account flows", () => {
       );
       expect(page.url()).not.toContain(ENROLLMENT_TOKEN);
       expect(page.url()).not.toContain("enrollment=");
+      expect(pageRequests.some((url) => url.includes(ENROLLMENT_TOKEN))).toBe(
+        false,
+      );
       await page.getByLabel("Email address").fill(OWNER.email);
       await page.getByLabel("Password").fill("correct horse battery");
       await page.getByRole("button", { name: "Sign in", exact: true }).click();
@@ -908,6 +1008,9 @@ describe("Neon account flows", () => {
       expect(bodyFor("POST", "/workspace/enrollments/accept")).toEqual({
         token: ENROLLMENT_TOKEN,
       });
+      expect(
+        requests.every((request) => !request.path.includes(ENROLLMENT_TOKEN)),
+      ).toBe(true);
       const state = await page.evaluate(() => ({
         href: window.location.href,
         local: Object.keys(localStorage),
@@ -926,11 +1029,92 @@ describe("Neon account flows", () => {
     }
   });
 
+  it("still accepts a legacy query enrollment and scrubs it", async () => {
+    neonMode = true;
+    const { page, errors } = await openPage({
+      path: `/admin/login?enrollment=${ENROLLMENT_TOKEN}&returnTo=${encodeURIComponent(RETURN_TO)}`,
+    });
+    try {
+      await visible(
+        page.getByRole("heading", { name: "Sign in to operations" }),
+      );
+      expect(page.url()).not.toContain(ENROLLMENT_TOKEN);
+      await page.getByLabel("Email address").fill(OWNER.email);
+      await page.getByLabel("Password").fill("correct horse battery");
+      await page.getByRole("button", { name: "Sign in", exact: true }).click();
+      await page.waitForURL(
+        (url) => url.pathname === "/admin/onboarding-invites",
+      );
+      expect(bodyFor("POST", "/workspace/enrollments/accept")).toEqual({
+        token: ENROLLMENT_TOKEN,
+      });
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("accepts directly for a verified nonmember session", async () => {
+    neonMode = true;
+    signedIn = true;
+    nonmemberSession = true;
+    const { page, errors } = await openPage({
+      path: `/admin/login?returnTo=${encodeURIComponent(RETURN_TO)}#enroll=${ENROLLMENT_TOKEN}`,
+    });
+    try {
+      await page.waitForURL(
+        (url) => url.pathname === "/admin/onboarding-invites",
+      );
+      await visible(page.getByLabel("Verified email address (read-only)"));
+      expect(countRequests("/auth/sign-in/email")).toBe(0);
+      const acceptIndex = requests.findIndex((request) =>
+        request.path.endsWith("/workspace/enrollments/accept"),
+      );
+      const meIndex = requests.findIndex((request) =>
+        request.path.endsWith("/workspace/me"),
+      );
+      expect(acceptIndex).toBeGreaterThanOrEqual(0);
+      expect(meIndex).toBeGreaterThan(acceptIndex);
+      expect(bodyFor("POST", "/workspace/enrollments/accept")).toEqual({
+        token: ENROLLMENT_TOKEN,
+      });
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("offers an unverified email retry without gating on workspace membership", async () => {
+    neonMode = true;
+    signedIn = true;
+    nonmemberSession = true;
+    acceptMode = "unverified";
+    const { page, errors } = await openPage({
+      path: `/admin/login?returnTo=${encodeURIComponent(RETURN_TO)}#enroll=${ENROLLMENT_TOKEN}`,
+    });
+    try {
+      await visible(page.getByText("Email not verified", { exact: true }));
+      expect(countRequests("/workspace/me")).toBe(0);
+      expect(countRequests("/workspace/enrollments/accept")).toBe(1);
+      acceptMode = "success";
+      await page
+        .getByRole("button", { name: "Check verification again" })
+        .click();
+      await page.waitForURL(
+        (url) => url.pathname === "/admin/onboarding-invites",
+      );
+      expect(countRequests("/workspace/enrollments/accept")).toBe(2);
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
   it("accepts directly when a workspace session already exists", async () => {
     neonMode = true;
     signedIn = true;
     const { page, errors } = await openPage({
-      path: `/admin/login?enrollment=${ENROLLMENT_TOKEN}&returnTo=${encodeURIComponent(RETURN_TO)}`,
+      path: `/admin/login?returnTo=${encodeURIComponent(RETURN_TO)}#enroll=${ENROLLMENT_TOKEN}`,
     });
     try {
       await page.waitForURL(
@@ -952,7 +1136,7 @@ describe("Neon account flows", () => {
     signedIn = true;
     acceptMode = "unavailable";
     const { page, errors } = await openPage({
-      path: `/admin/login?enrollment=${ENROLLMENT_TOKEN}&returnTo=${encodeURIComponent(RETURN_TO)}`,
+      path: `/admin/login?returnTo=${encodeURIComponent(RETURN_TO)}#enroll=${ENROLLMENT_TOKEN}`,
       viewport: { width: 390, height: 844 },
     });
     try {
@@ -979,7 +1163,7 @@ describe("Neon account flows", () => {
     signedIn = true;
     acceptMode = "mismatch";
     const { page, errors } = await openPage({
-      path: `/admin/login?enrollment=${ENROLLMENT_TOKEN}&returnTo=${encodeURIComponent(RETURN_TO)}`,
+      path: `/admin/login?returnTo=${encodeURIComponent(RETURN_TO)}#enroll=${ENROLLMENT_TOKEN}`,
     });
     try {
       await visible(page.getByText("Different email address", { exact: true }));
@@ -1002,7 +1186,8 @@ describe("Neon account flows", () => {
   it("lets an owner create, copy and dismiss a one-time enrollment link", async () => {
     neonMode = true;
     signedIn = true;
-    const { page, errors } = await openPage({
+    const expectedLink = `${origin}/admin/login#enroll=${ENROLLMENT_TOKEN}`;
+    const { page, errors, pageRequests } = await openPage({
       path: "/admin/onboarding-invites?view=team",
       permissions: true,
     });
@@ -1016,9 +1201,7 @@ describe("Neon account flows", () => {
         .click();
       const link = page.getByLabel("One-time enrollment link");
       await visible(link);
-      await expect(link.inputValue()).resolves.toContain(
-        `/admin/login?enrollment=${ENROLLMENT_TOKEN}`,
-      );
+      await expect(link.inputValue()).resolves.toBe(expectedLink);
       expect(bodyFor("POST", "/team/enrollments")).toEqual({
         email: "new-admin@launchloom.test",
       });
@@ -1026,6 +1209,15 @@ describe("Neon account flows", () => {
         .getByRole("button", { name: "Copy link", exact: true })
         .click();
       await visible(page.getByText("Copied to clipboard", { exact: false }));
+      await expect(
+        page.evaluate(() => navigator.clipboard.readText()),
+      ).resolves.toBe(expectedLink);
+      expect(pageRequests.some((url) => url.includes(ENROLLMENT_TOKEN))).toBe(
+        false,
+      );
+      expect(
+        requests.every((request) => !request.path.includes(ENROLLMENT_TOKEN)),
+      ).toBe(true);
       await page.getByRole("button", { name: "Create another link" }).click();
       await expect(
         page.getByLabel("One-time enrollment link").count(),
@@ -1036,6 +1228,82 @@ describe("Neon account flows", () => {
           .isEnabled(),
       ).resolves.toBe(true);
       unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps the one-time link when clipboard copy fails and requires manual acknowledgement", async () => {
+    neonMode = true;
+    signedIn = true;
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=team",
+    });
+    try {
+      await visible(page.getByText("2 active members", { exact: true }));
+      await page
+        .getByLabel("Invitation email")
+        .fill("new-admin@launchloom.test");
+      await page
+        .getByRole("button", { name: "Create enrollment link" })
+        .click();
+      const link = page.getByLabel("One-time enrollment link");
+      await visible(link);
+      await page.evaluate(() => {
+        Object.defineProperty(navigator, "clipboard", {
+          configurable: true,
+          value: {
+            writeText: () => Promise.reject(new Error("clipboard denied")),
+          },
+        });
+      });
+      await page
+        .getByRole("button", { name: "Copy link", exact: true })
+        .click();
+      await visible(page.getByText("Copy failed.", { exact: false }));
+      await expect(link.isVisible()).resolves.toBe(true);
+      await page.getByRole("button", { name: "I copied this link" }).click();
+      await visible(page.getByText("Marked as copied.", { exact: false }));
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("blocks another enrollment attempt after an ambiguous create", async () => {
+    neonMode = true;
+    signedIn = true;
+    createMode = "unavailable";
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=team",
+    });
+    try {
+      await visible(page.getByText("2 active members", { exact: true }));
+      await page
+        .getByLabel("Invitation email")
+        .fill("new-admin@launchloom.test");
+      await page
+        .getByRole("button", { name: "Create enrollment link" })
+        .click();
+      await visible(
+        page.getByText("Enrollment not confirmed", { exact: true }),
+      );
+      expect(countRequests("/team/enrollments")).toBe(1);
+      await expect(
+        page
+          .getByRole("button", { name: "Create enrollment link" })
+          .isDisabled(),
+      ).resolves.toBe(true);
+      await page
+        .getByRole("button", { name: "I understand, allow another attempt" })
+        .click();
+      await expect(
+        page
+          .getByRole("button", { name: "Create enrollment link" })
+          .isEnabled(),
+      ).resolves.toBe(true);
+      expect(countRequests("/team/enrollments")).toBe(1);
+      unexpectedErrors(errors, true);
     } finally {
       await page.close();
     }

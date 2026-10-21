@@ -366,10 +366,9 @@ export function createMembershipStore(
           "dependency_unavailable",
           "Membership data is temporarily unavailable.",
         );
-      const separator = enrollmentPath.includes("?") ? "&" : "?";
       return {
         enrollmentId,
-        url: `${enrollmentPath}${separator}enrollment=${encodeURIComponent(token)}`,
+        url: `${enrollmentPath}#enroll=${encodeURIComponent(token)}`,
         expiresAt,
       };
     },
