@@ -10,7 +10,7 @@ on:
       issue:
         description: Intake issue number (not needed for access-only)
         required: false
-        type: number
+        type: string
       test_profile:
         description: Full generation, isolated test preview, or no-intake Access smoke
         required: false
