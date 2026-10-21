@@ -36,7 +36,7 @@ Current defaults in the workflow and script:
 | `FAL_KEY` | unset/optional | Server-only credential. Without it, the stage skips generation and keeps the existing fallback. |
 | `FAL_IMAGE_MODEL` | `fal-ai/minimax/image-01` | FAL model used for image requests. |
 | `FAL_IMAGE_MAX_IMAGES` | `3` | Global cap on retained generated images across routes. |
-| `FAL_IMAGE_MAX_REQUESTS` | `6` | Global request budget, allowing one retry per image at the default image cap. |
+| `FAL_IMAGE_MAX_REQUESTS` | `9` | Global request budget. Coverage-first allocation gives every placement a fair share of the budget, so a rejected hero (or its retry) cannot starve secondary/tertiary; retries are taken from surplus only. |
 | `FAL_IMAGE_TIMEOUT_MS` | `120000` | Per-generation and image-download timeout budget. |
 
 The model and image/request budgets are set from LaunchLoom repository

@@ -258,7 +258,9 @@ describe("contextual image generation", () => {
       manifestPath,
       key: "test-fal-key",
       maxImages: 1,
-      maxRequests: 2,
+      // Coverage-first allocation gives each of the three placements a fair
+      // share; six requests allow one retry per placement.
+      maxRequests: 6,
       falClient: {
         config() {},
         async subscribe(
@@ -288,15 +290,15 @@ describe("contextual image generation", () => {
       },
     });
 
-    expect(falRequests).toBe(2);
-    expect(result.requests).toBe(2);
-    expect(reviewAttempts).toEqual([1, 2]);
+    expect(falRequests).toBe(6);
+    expect(result.requests).toBe(6);
+    expect(reviewAttempts).toEqual([1, 2, 1, 2, 1, 2]);
     expect(prompts[1]).toContain(
       "Do not create a webpage, interface, or any visible text",
     );
     expect(result.site.images.hero).toBe("/images/reviewed-roofing-hero.webp");
     expect(result.manifest.placements).toEqual([]);
-    expect(result.manifest.generationRequests).toBe(2);
+    expect(result.manifest.generationRequests).toBe(6);
     expect(result.manifest.skipped[0]).toEqual(
       expect.objectContaining({
         placement: "hero",
@@ -371,7 +373,7 @@ describe("contextual image generation", () => {
       outputDir,
       key: "test-fal-key",
       maxImages: 1,
-      maxRequests: 2,
+      maxRequests: 6,
       falClient: {
         config() {},
         async subscribe(
@@ -1165,7 +1167,7 @@ describe("contextual image generation", () => {
       );
   });
 
-  it.each([6, 7])(
+  it.each([12, 13])(
     "reserves requests for later routes despite retries with a cap of %i",
     async (maxRequests) => {
       const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
@@ -1197,6 +1199,8 @@ describe("contextual image generation", () => {
         fetchImpl: async () => fakeImageResponse(),
       });
 
+      // Each route retries its hero once (first attempt fails, retry
+      // succeeds) and still receives its own share of the budget.
       expect(calls).toBe(6);
       expect(result.requests).toBe(6);
       expect(result.requests).toBeLessThanOrEqual(maxRequests);
@@ -1258,6 +1262,63 @@ describe("contextual image generation", () => {
         );
     },
   );
+
+  it("gives every placement an attempt before a rejected hero can retry", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-coverage-first-"),
+    );
+    let calls = 0;
+    const prompts: string[] = [];
+    const result = await generate({
+      site: fixture(),
+      inspiration: {
+        routes: [{ id: "coverage-route", familyId: "utility-diagnostic" }],
+      },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 3,
+      maxRequests: 3,
+      falClient: {
+        config() {},
+        async subscribe(
+          _model: string,
+          options: { input: { prompt: string } },
+        ) {
+          calls += 1;
+          prompts.push(options.input.prompt);
+          return {
+            data: {
+              images: [
+                { url: `https://fal.example/coverage-${calls}.jpg` },
+              ],
+            },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+      imageReviewer: async ({ placement }: { placement: string }) => ({
+        approved: placement === "secondary",
+        reasonCodes: placement === "secondary" ? [] : ["visible_text"],
+        model: "test-reviewer",
+      }),
+    });
+
+    // Three requests, one per placement: the rejected hero does not consume a
+    // retry (or the budget) that secondary/tertiary still need.
+    expect(calls).toBe(3);
+    expect(result.requests).toBe(3);
+    expect(
+      result.manifest.placements.map((entry: any) => entry.placement),
+    ).toEqual(["secondary"]);
+    expect(
+      result.manifest.skipped.map((entry: any) => entry.reason),
+    ).toEqual(["image-review-rejected", "image-review-rejected"]);
+    expect(
+      result.manifest.skipped.some(
+        (entry: any) => entry.reason === "request-budget-exhausted",
+      ),
+    ).toBe(false);
+  });
 
   it("counts reused route assets against the global three-image cap", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));

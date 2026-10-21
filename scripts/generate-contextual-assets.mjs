@@ -1073,7 +1073,18 @@ async function generateContextualAssetsForRoute({
   const canGenerate = Boolean(key && !force && hasReviewProvider);
   if (canGenerate) falClient.config({ credentials: key });
 
-  for (const placement of placements) {
+  for (const [placementIndex, placement] of placements.entries()) {
+    // Coverage-first allocation: every placement gets a fair share of the
+    // request budget (cumulative share by position), so a stubborn hero or its
+    // retry cannot consume the whole budget and starve secondary/tertiary. The
+    // per-placement attempt cap still bounds retries.
+    const placementRequestLimit = Math.min(
+      maxRequests,
+      Math.max(
+        1,
+        Math.ceil(((placementIndex + 1) * maxRequests) / Math.max(1, placements.length)),
+      ),
+    );
     const prompt = promptFor(site, route, placement);
     // Bump this contract whenever image acceptance policy changes so a stale
     // unreviewed (or rejected) bitmap cannot be reused by its old prompt hash.
@@ -1121,7 +1132,7 @@ async function generateContextualAssetsForRoute({
       }
     }
 
-    if (!canGenerate || requests >= maxRequests) {
+    if (!canGenerate || requests >= placementRequestLimit) {
       const fallback = applyFallbackImage(site, placement);
       manifest.skipped.push({
         placement: placement.id,
@@ -1142,7 +1153,11 @@ async function generateContextualAssetsForRoute({
     let finalReview;
     let providerFailure;
     const imageReviews = [];
-    for (let attempt = 0; attempt < 2 && requests < maxRequests; attempt += 1) {
+    for (
+      let attempt = 0;
+      attempt < 2 && requests < placementRequestLimit;
+      attempt += 1
+    ) {
       requests += 1;
       let requested;
       try {
@@ -1205,7 +1220,7 @@ async function generateContextualAssetsForRoute({
         }
         if (reviewSummary.status !== "approved") {
           failure = "image-review-rejected";
-          if (attempt === 0 && requests < maxRequests) continue;
+          if (attempt === 0 && requests < placementRequestLimit) continue;
           break;
         }
         const fileName = `${placement.id}-${promptHash.slice(0, 12)}.webp`;
