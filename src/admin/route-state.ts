@@ -79,6 +79,7 @@ export function readRouteState(input: URL | string): AdminRouteState {
   const executionStatus = params.get("status");
   if (executionStatus && EXECUTION_STATUSES.has(executionStatus as ExecutionStatus))
     filters.executionStatus = executionStatus as ExecutionStatus;
+  if (params.get("attention") === "true") filters.attention = true;
   const profile = params.get("profile");
   if (profile && PROFILES.has(profile as GenerationProfile))
     filters.profile = profile as GenerationProfile;
@@ -122,6 +123,7 @@ export function writeRouteState(state: AdminRouteState): URL {
     EXECUTION_STATUSES.has(filters.executionStatus)
   )
     params.set("status", filters.executionStatus);
+  if (filters.attention) params.set("attention", "true");
   if (filters.profile && PROFILES.has(filters.profile))
     params.set("profile", filters.profile);
   const initiatorId = safeId(filters.initiatorId ?? null);

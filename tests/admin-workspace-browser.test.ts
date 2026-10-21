@@ -31,11 +31,13 @@ import {
 
 const ATTEMPTS = syntheticAttempts();
 const CLIENTS = syntheticClients();
-const FAILED_ATTEMPTS = ATTEMPTS.filter(
-  (attempt) => attempt.executionStatus === "failed",
-).length;
-const UNKNOWN_ATTEMPTS = ATTEMPTS.filter(
-  (attempt) => attempt.executionStatus === "unknown",
+const ATTENTION_ATTEMPTS = ATTEMPTS.filter(
+  (attempt) =>
+    attempt.executionStatus === "failed" ||
+    attempt.executionStatus === "unknown" ||
+    attempt.stale ||
+    attempt.deliveryStatus === "attention" ||
+    attempt.deliveryStatus === "diagnostic",
 ).length;
 const adminPrincipal = {
   id: "admin:browser",
@@ -107,9 +109,7 @@ function attentionRequests(pathname = "/attempts") {
   return requests.filter(
     (entry) =>
       entry.path === pathname &&
-      entry.params.limit === "1" &&
-      (entry.params.executionStatus === "failed" ||
-        entry.params.executionStatus === "unknown"),
+      entry.params.limit === "1" && entry.params.attention === "true",
   );
 }
 
@@ -122,6 +122,7 @@ function attemptPage(params: URLSearchParams) {
   const clientId = params.get("clientId");
   const from = Number(params.get("from") || 0);
   const to = Number(params.get("to") || 0);
+  const attention = params.get("attention") === "true";
   const filtered = ATTEMPTS.filter((attempt) => {
     const client = CLIENTS.find((entry) => entry.clientId === attempt.clientId);
     const haystack = [
@@ -145,6 +146,12 @@ function attemptPage(params: URLSearchParams) {
       (!creator || attempt.invitationCreator.id === creator) &&
       (!profile || attempt.profile === profile) &&
       (!clientId || attempt.clientId === clientId) &&
+      (!attention ||
+        attempt.executionStatus === "failed" ||
+        attempt.executionStatus === "unknown" ||
+        attempt.stale ||
+        attempt.deliveryStatus === "attention" ||
+        attempt.deliveryStatus === "diagnostic") &&
       (!from || attempt.createdAt >= from) &&
       (!to || attempt.createdAt <= to)
     );
@@ -221,6 +228,17 @@ async function serve(request: http.IncomingMessage, response: http.ServerRespons
   if (pathname === "/favicon.ico") {
     response.writeHead(204);
     response.end();
+    return;
+  }
+
+  if (pathname.endsWith("/generation-hero")) {
+    response.writeHead(200, {
+      "Content-Type": "image/svg+xml",
+      "Cache-Control": "no-store",
+    });
+    response.end(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200"><rect width="320" height="200" fill="#e5e8df"/><rect x="24" y="28" width="272" height="144" rx="8" fill="#fffefa"/><rect x="46" y="54" width="130" height="12" rx="6" fill="#10251f"/><rect x="46" y="78" width="200" height="7" rx="3.5" fill="#bad8c8"/><rect x="46" y="94" width="168" height="7" rx="3.5" fill="#bad8c8"/><rect x="46" y="124" width="72" height="22" rx="5" fill="#10251f"/></svg>',
+    );
     return;
   }
 
@@ -400,6 +418,13 @@ async function waitForGenerations(page: Page) {
   );
 }
 
+async function openFilters(page: Page) {
+  if ((await page.getByRole("dialog").count()) > 0) return;
+  const details = page.locator("details.admin-filter-disclosure");
+  if (!(await details.evaluate((element) => (element as HTMLDetailsElement).open)))
+    await details.locator("summary").click();
+}
+
 async function waitForClients(page: Page) {
   await visible(page.getByText(new RegExp(`${CLIENTS.length} clients`, "u")));
 }
@@ -462,6 +487,7 @@ describe("real admin workspace browser behavior", () => {
     const { page, errors } = await openPage();
     try {
       await waitForGenerations(page);
+      await openFilters(page);
       expect(await page.locator("#generations-view tbody tr").count()).toBe(50);
 
       await page.getByLabel("Search attempts").fill("Acme");
@@ -501,6 +527,7 @@ describe("real admin workspace browser behavior", () => {
     const { page, errors } = await openPage();
     try {
       await waitForGenerations(page);
+      await openFilters(page);
       await page.getByLabel("Rows per page").selectOption("100");
       await page.getByRole("button", { name: "Apply filters" }).click();
       await expect.poll(() => lastRequest("/attempts")?.params.limit).toBe("100");
@@ -632,6 +659,7 @@ describe("real admin workspace browser behavior", () => {
     const { page, errors } = await openPage();
     try {
       await waitForGenerations(page);
+      await openFilters(page);
       const search = page.getByLabel("Search attempts");
       await search.fill("Zoë");
       await page.getByRole("button", { name: "Apply filters" }).click();
@@ -666,7 +694,7 @@ describe("real admin workspace browser behavior", () => {
       await visible(
         inspector.getByRole("heading", { name: "Attempt attempt-unknown" }),
       );
-      await visible(inspector.getByText("Zoë & Sons, Gardeners"));
+      await visible(inspector.getByText("Zoë & Sons, Gardeners").first());
       expect(
         await inspector.getByText("Not recorded", { exact: true }).count(),
       ).toBeGreaterThanOrEqual(2);
@@ -688,7 +716,7 @@ describe("real admin workspace browser behavior", () => {
         inspector.getByRole("heading", { name: "Attempt attempt-unsafe" }),
       );
       await visible(inspector.getByText(/build failed & review needed/u));
-      expect(await inspector.locator("img").count()).toBe(0);
+      expect(await inspector.locator("img[src^='data:']").count()).toBe(0);
       expect(
         await second.page.evaluate(
           () => (window as unknown as { __adminFxss?: number }).__adminFxss,
@@ -809,6 +837,7 @@ describe("real admin workspace browser behavior", () => {
       });
       try {
         await waitForGenerations(page);
+      await openFilters(page);
         const inspector = page.getByRole("dialog", {
           name: "Attempt attempt-diagnostic",
         });
@@ -830,10 +859,11 @@ describe("real admin workspace browser behavior", () => {
             clientWidth: element.clientWidth,
           }),
         );
-        expect(table.scrollWidth).toBeGreaterThan(table.clientWidth);
+        expect(table.scrollWidth).toBeLessThanOrEqual(table.clientWidth + 1);
 
         await page.keyboard.press("Escape");
         await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
+        await page.getByRole("button", { name: "Open navigation" }).click();
         await page.getByRole("link", { name: "Clients", exact: true }).click();
         await waitForClients(page);
         await page
@@ -869,6 +899,7 @@ describe("real admin workspace browser behavior", () => {
       });
       try {
         await waitForGenerations(page);
+      await openFilters(page);
         const row = page.getByRole("button", {
           name: /Open attempt attempt-0000/u,
         });
@@ -944,6 +975,7 @@ describe("real admin workspace browser behavior", () => {
     });
     try {
       await waitForGenerations(page);
+      await openFilters(page);
       const dialog = page.getByRole("dialog", {
         name: "Attempt attempt-diagnostic",
       });
@@ -976,27 +1008,22 @@ describe("real admin workspace browser behavior", () => {
     }
   });
 
-  it("keeps the desktop inspector in the two-column layout without a dialog", async () => {
+  it("opens the desktop inspector as a side sheet", async () => {
     const { page, errors } = await openPage();
     try {
       await waitForGenerations(page);
       await page
         .getByRole("button", { name: /Open attempt attempt-0000/u })
         .click();
-      const inspector = page.locator("#attempt-inspector");
-      await visible(
-        inspector.getByRole("heading", { name: "Attempt attempt-0000" }),
-      );
-      expect(await page.getByRole("dialog").count()).toBe(0);
-      const columns = await page
-        .locator(".admin-view-layout")
-        .evaluate((element) => getComputedStyle(element).gridTemplateColumns);
-      expect(columns.split(" ")).toHaveLength(2);
-      const ledger = await page.locator(".admin-view__ledger").boundingBox();
-      const panel = await inspector.boundingBox();
-      expect(ledger).not.toBeNull();
-      expect(panel).not.toBeNull();
-      expect(panel!.x).toBeGreaterThanOrEqual(ledger!.x + ledger!.width);
+      const dialog = page.getByRole("dialog", {
+        name: "Attempt attempt-0000",
+      });
+      await visible(dialog);
+      const sheet = await dialog.boundingBox();
+      expect(sheet).not.toBeNull();
+      expect(sheet!.x).toBeGreaterThan(500);
+      expect(sheet!.width).toBeLessThanOrEqual(1440);
+      expect(page.url()).toContain("attempt=attempt-0000");
       autoErrors(errors);
     } finally {
       await page.close();
@@ -1007,6 +1034,7 @@ describe("real admin workspace browser behavior", () => {
     const { page, errors } = await openPage();
     try {
       await waitForGenerations(page);
+      await openFilters(page);
       const nav = page.getByRole("navigation", {
         name: "Workspace sections",
       });
@@ -1029,17 +1057,55 @@ describe("real admin workspace browser behavior", () => {
         4.5,
       );
 
-      await page.keyboard.press("Tab");
-      await page.keyboard.press("Tab");
-      const focus = await page.evaluate(() => {
-        const element = document.activeElement as HTMLElement | null;
-        return {
-          text: element?.textContent?.trim() || "",
-          outline: element ? getComputedStyle(element).outlineColor : "",
-        };
-      });
+      await active.focus();
+      const focus = await active.evaluate((element) => ({
+        text: element.textContent?.trim() || "",
+        outline: getComputedStyle(element).outlineColor,
+      }));
       expect(focus.text).toBe("Generations");
       expect(focus.outline).toBe("rgb(217, 240, 107)");
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("switches between the ledger and gallery and opens a generation preview", async () => {
+    const { page, errors } = await openPage();
+    try {
+      await waitForGenerations(page);
+      await page.getByRole("button", { name: "Gallery" }).click();
+      await expect
+        .poll(() => page.locator(".admin-gallery-card").count())
+        .toBeGreaterThan(0);
+      await page.locator(".admin-gallery-card").first().click();
+      const dialog = page.getByRole("dialog");
+      await visible(dialog);
+      await visible(dialog.getByText("Generation screenshot.", { exact: false }));
+      await visible(dialog.getByRole("button", { name: "Close preview" }));
+      await page.keyboard.press("Escape");
+      await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
+      await page.getByRole("button", { name: "Ledger" }).click();
+      await expect.poll(() => page.locator(".admin-ledger").count()).toBeGreaterThan(0);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("collapses and restores the workspace rail", async () => {
+    const { page, errors } = await openPage();
+    try {
+      await waitForGenerations(page);
+      await page.getByRole("button", { name: "Collapse sidebar" }).click();
+      await expect
+        .poll(() => page.locator(".admin-shell").getAttribute("class"))
+        .toContain("admin-shell--collapsed");
+      await visible(page.getByRole("link", { name: "Generations", exact: true }));
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
+      await expect
+        .poll(() => page.locator(".admin-shell").getAttribute("class"))
+        .not.toContain("admin-shell--collapsed");
       autoErrors(errors);
     } finally {
       await page.close();
@@ -1050,6 +1116,7 @@ describe("real admin workspace browser behavior", () => {
     const { page, errors } = await openPage();
     try {
       await waitForGenerations(page);
+      await openFilters(page);
       const row = page.getByRole("button", {
         name: /Open attempt attempt-0000/u,
       });
@@ -1067,26 +1134,27 @@ describe("real admin workspace browser behavior", () => {
     }
   });
 
-  it("preserves selection and focus through a failed refresh and a successful retry", async () => {
+  it("recovers from a failed refresh and a successful retry", async () => {
     const { page, errors } = await openPage();
     try {
       await waitForGenerations(page);
+      await openFilters(page);
       const row = page.getByRole("button", {
         name: /Open attempt attempt-0000/u,
       });
       await row.click();
-      const heading = page.getByRole("heading", {
-        name: "Attempt attempt-0000",
-      });
-      await visible(heading);
+      await visible(
+        page.getByRole("heading", { name: "Attempt attempt-0000" }),
+      );
+      await page.keyboard.press("Escape");
+      await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
+
       failAttemptListOnce = true;
       const refresh = page.getByRole("button", { name: "Refresh" });
       await refresh.click();
       await visible(
         page.getByText(/The latest refresh failed\. Showing the last loaded/u),
       );
-      await visible(heading);
-      expect(await row.getAttribute("aria-expanded")).toBe("true");
       await focused(refresh);
 
       await refresh.click();
@@ -1097,14 +1165,14 @@ describe("real admin workspace browser behavior", () => {
             .count(),
         )
         .toBe(0);
-      await visible(heading);
+      await visible(page.getByText(/Showing \d+ of \d+ attempts/u));
       autoErrors(errors, { allowResource503: true });
     } finally {
       await page.close();
     }
   });
 
-  it("shows a compact full-dataset attention summary with a real failures action", async () => {
+  it("shows the attention summary and filters by the same predicate", async () => {
     health = fixtureHealth({
       partial: true,
       pendingProjectionCount: 2,
@@ -1116,37 +1184,20 @@ describe("real admin workspace browser behavior", () => {
       const summary = page.locator("[data-attention-summary]");
       await visible(summary);
       await expect
-        .poll(() => summary.getAttribute("data-attention-failed"))
-        .toBe(String(FAILED_ATTEMPTS));
-      await expect
-        .poll(() => summary.getAttribute("data-attention-unknown"))
-        .toBe(String(UNKNOWN_ATTEMPTS));
-      await visible(
-        summary.getByText(/coverage is partial and may omit attempts/iu),
-      );
+        .poll(() => summary.getAttribute("data-attention-total"))
+        .toBe(String(ATTENTION_ATTEMPTS));
+      await visible(summary.getByText(/need attention/iu));
       expect(
         attentionRequests().some(
-          (entry) =>
-            entry.params.executionStatus === "failed" &&
-            entry.params.limit === "1",
-        ),
-      ).toBe(true);
-      expect(
-        attentionRequests().some(
-          (entry) =>
-            entry.params.executionStatus === "unknown" &&
-            entry.params.limit === "1",
+          (entry) => entry.params.attention === "true" && entry.params.limit === "1",
         ),
       ).toBe(true);
 
-      await summary.getByRole("button", { name: "View failures" }).click();
+      await summary.getByRole("button", { name: "Review attention" }).click();
       await expect
-        .poll(() => lastRequest("/attempts")?.params.executionStatus)
-        .toBe("failed");
-      await expect
-        .poll(() => page.locator("#generations-view tbody tr").count())
-        .toBe(FAILED_ATTEMPTS);
-      expect(page.url()).toContain("status=failed");
+        .poll(() => lastRequest("/attempts")?.params.attention)
+        .toBe("true");
+      expect(page.url()).toContain("attention=true");
       autoErrors(errors);
     } finally {
       await page.close();
@@ -1178,6 +1229,7 @@ describe("real admin workspace browser behavior", () => {
     const { page, errors } = await openPage();
     try {
       await waitForGenerations(page);
+      await openFilters(page);
       const previous = page.getByRole("button", { name: "Previous page" });
       const next = page.getByRole("button", { name: "Next page" });
       await page.getByLabel("Rows per page").selectOption("100");
@@ -1247,6 +1299,7 @@ describe("real admin workspace browser behavior", () => {
     const { page, errors } = await openPage();
     try {
       await waitForGenerations(page);
+      await openFilters(page);
       const first = page.getByRole("button", {
         name: /Open attempt attempt-0000/u,
       });
@@ -1273,6 +1326,7 @@ describe("real admin workspace browser behavior", () => {
     try {
       await visible(page.getByText("Loading generation attempts..."));
       await waitForGenerations(page);
+      await openFilters(page);
       await expect
         .poll(() => page.getByText("Loading generation attempts...").count())
         .toBe(0);
@@ -1287,6 +1341,7 @@ describe("real admin workspace browser behavior", () => {
     const { page, errors } = await openPage();
     try {
       await waitForGenerations(page);
+      await openFilters(page);
       await visible(
         page.getByText(/Tracking health could not be loaded\./u),
       );
@@ -1329,6 +1384,7 @@ describe("real admin workspace browser behavior", () => {
     const { page, errors } = await openPage();
     try {
       await waitForGenerations(page);
+      await openFilters(page);
       await page.getByLabel("Search attempts").fill("Business 12");
       await page.getByRole("button", { name: "Apply filters" }).click();
       await expect.poll(() => lastRequest("/attempts")?.params.search).toBe(

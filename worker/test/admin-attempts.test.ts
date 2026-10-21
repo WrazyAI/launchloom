@@ -359,6 +359,46 @@ describe("GenerationLedger attempt history", () => {
     expect((await store.listAttempts({ from: 1001 })).total).toBe(0);
     expect((await store.listAttempts({ limit: 999 })).items).toHaveLength(100);
   });
+  it("filters attention across execution, stale and delivery evidence", async () => {
+    const store = ledger();
+    await store.upsertAttempt(
+      attempt({ attemptId: "attention-failed", executionStatus: "failed" }),
+    );
+    await store.upsertAttempt(
+      attempt({ attemptId: "attention-unknown", executionStatus: "unknown" }),
+    );
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "attention-diagnostic",
+        executionStatus: "succeeded",
+        deliveryStatus: "diagnostic",
+      }),
+    );
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "attention-stale",
+        executionStatus: "running",
+        deliveryStatus: "preview_ready",
+        stale: true,
+      }),
+    );
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "attention-clear",
+        executionStatus: "succeeded",
+        deliveryStatus: "published",
+      }),
+    );
+    const page = await store.listAttempts({ attention: true, limit: 10 });
+    expect(page.total).toBe(4);
+    expect(page.items.map((item) => item.attemptId).sort()).toEqual([
+      "attention-diagnostic",
+      "attention-failed",
+      "attention-stale",
+      "attention-unknown",
+    ]);
+  });
+
   it("rejects cursors reused with different filters or event attempts", async () => {
     const store = ledger();
     for (const id of ["a", "b"])

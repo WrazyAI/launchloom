@@ -1,9 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type MouseEvent,
-} from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   AttemptDetail,
   AttemptEventRecord,
@@ -16,13 +11,12 @@ import type {
 } from "../lib/admin-contracts";
 import type { AdminApi } from "./api";
 import type { AdminRouteState } from "./route-state";
-import { ActorLabel } from "./ActorLabel";
 import { AttemptInspector } from "./AttemptInspector";
-import { DeliveryStatusBadge, ExecutionStatusBadge } from "./StatusBadge";
+import { AttemptGallery, AttemptLedger } from "./AttemptLedger";
+import { AdminIcon } from "./AdminIcon";
 import {
   dateInputValue,
   formatDate,
-  formatProfile,
   formatTimestamp,
   isAbortError,
   parseDateEnd,
@@ -153,7 +147,9 @@ export function GenerationsView({
 }) {
   const filters = state.filters;
   const cursor = state.cursor;
+  const [viewMode, setViewMode] = useState<"ledger" | "gallery">("ledger");
   const limit = filters.limit || DEFAULT_LIMIT;
+  const requestLimit = viewMode === "gallery" ? Math.min(limit, 24) : limit;
   const filterSignature = JSON.stringify(filters);
 
   const [draft, setDraft] = useState<Draft>(() => draftFromState(state));
@@ -166,11 +162,12 @@ export function GenerationsView({
   const [refreshToken, setRefreshToken] = useState(0);
   const [health, setHealth] = useState<Health | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
-  const [attention, setAttention] = useState<{
-    failed: number;
-    unknown: number;
+  const [counts, setCounts] = useState<{
+    succeeded: number;
+    running: number;
+    attention: number;
   } | null>(null);
-  const [attentionError, setAttentionError] = useState<string | null>(null);
+  const [countsError, setCountsError] = useState<string | null>(null);
 
   const [detail, setDetail] = useState<AttemptDetail | null>(null);
   const [detailClient, setDetailClient] = useState<ClientRecord | null>(null);
@@ -197,7 +194,7 @@ export function GenerationsView({
   const focusOnOpenRef = useRef(false);
   const hadSelectionRef = useRef(Boolean(state.attemptId));
 
-  const queryKey = `${filterSignature}|${cursor || ""}|${limit}`;
+  const queryKey = `${filterSignature}|${cursor || ""}|${requestLimit}`;
 
   useEffect(() => {
     setDraft(draftFromState(state));
@@ -219,7 +216,7 @@ export function GenerationsView({
     setError(null);
     api
       .listAttempts(
-        { ...filters, cursor: cursor || undefined, limit },
+        { ...filters, cursor: cursor || undefined, limit: requestLimit },
         { signal: controller.signal },
       )
       .then((page) => {
@@ -243,7 +240,7 @@ export function GenerationsView({
         setRefreshing(false);
       });
     return () => controller.abort();
-  }, [api, filterSignature, cursor, limit, refreshToken]);
+  }, [api, filterSignature, cursor, requestLimit, refreshToken]);
 
   useEffect(() => {
     const requestId = ++healthRequest.current;
@@ -270,20 +267,37 @@ export function GenerationsView({
   useEffect(() => {
     const requestId = ++attentionRequest.current;
     const controller = new AbortController();
-    setAttentionError(null);
+    setCountsError(null);
+    const scope = {
+      search: filters.search,
+      profile: filters.profile,
+      initiatorId: filters.initiatorId,
+      creatorId: filters.creatorId,
+      from: filters.from,
+      to: filters.to,
+      limit: 1,
+    };
     Promise.all([
       api.listAttempts(
-        { executionStatus: "failed", limit: 1 },
+        { ...scope, executionStatus: "succeeded" },
         { signal: controller.signal },
       ),
       api.listAttempts(
-        { executionStatus: "unknown", limit: 1 },
+        { ...scope, executionStatus: "running" },
+        { signal: controller.signal },
+      ),
+      api.listAttempts(
+        { ...scope, attention: true },
         { signal: controller.signal },
       ),
     ])
-      .then(([failed, unknown]) => {
+      .then(([succeeded, running, attention]) => {
         if (attentionRequest.current !== requestId) return;
-        setAttention({ failed: failed.total, unknown: unknown.total });
+        setCounts({
+          succeeded: succeeded.total,
+          running: running.total,
+          attention: attention.total,
+        });
       })
       .catch((failure) => {
         if (
@@ -292,11 +306,20 @@ export function GenerationsView({
           isAbortError(failure)
         )
           return;
-        setAttention(null);
-        setAttentionError(requestErrorMessage(failure));
+        setCounts(null);
+        setCountsError(requestErrorMessage(failure));
       });
     return () => controller.abort();
-  }, [api, refreshToken]);
+  }, [
+    api,
+    refreshToken,
+    filters.search,
+    filters.profile,
+    filters.initiatorId,
+    filters.creatorId,
+    filters.from,
+    filters.to,
+  ]);
 
   const selectedId = state.attemptId;
 
@@ -449,35 +472,39 @@ export function GenerationsView({
     );
   }
 
-  function applyAttentionFilter(status: ExecutionStatus) {
-    const nextLimit = filters.limit || DEFAULT_LIMIT;
-    setDraft({
-      search: "",
-      status,
-      profile: "",
-      initiator: "",
-      creator: "",
-      from: "",
-      to: "",
-      limit: String(nextLimit),
-    });
+  function applyStatusFilter(status?: ExecutionStatus) {
+    const next = {
+      ...filters,
+      executionStatus: status,
+      attention: undefined,
+      clientId: undefined,
+    };
+    setDraft((current) => ({ ...current, status: status || "" }));
     onNavigate(
-      {
-        ...state,
-        filters: { executionStatus: status, limit: nextLimit },
-        cursor: null,
-        attemptId: null,
-        clientId: null,
-      },
+      { ...state, filters: next, cursor: null, attemptId: null, clientId: null },
+      { cursorTrail: [] },
+    );
+  }
+
+  function applyAttentionFilter() {
+    const next = {
+      ...filters,
+      executionStatus: undefined,
+      attention: true,
+      clientId: undefined,
+    };
+    setDraft((current) => ({ ...current, status: "" }));
+    onNavigate(
+      { ...state, filters: next, cursor: null, attemptId: null, clientId: null },
       { cursorTrail: [] },
     );
   }
 
   function selectAttempt(
     attempt: AttemptSummary,
-    event: MouseEvent<HTMLButtonElement>,
+    trigger: HTMLButtonElement,
   ) {
-    triggerRef.current = event.currentTarget;
+    triggerRef.current = trigger;
     focusOnOpenRef.current = true;
     navigate({ ...state, attemptId: attempt.attemptId, clientId: null });
   }
@@ -537,85 +564,185 @@ export function GenerationsView({
       : loading
         ? "Loading attempts"
         : "No attempts to show";
-  const attentionPartial =
-    Boolean(healthError) ||
-    Boolean(
-      health && (health.partial || health.pendingProjectionCount > 0),
-    );
-  const attentionScope = attentionError
-    ? "Attention counts could not be loaded. No estimate is shown."
-    : attentionPartial
-      ? "Server totals for the current ledger. Coverage is partial and may omit attempts."
-      : health
-        ? "Full-dataset server totals for the current ledger."
-        : "Server totals for the current ledger. Coverage is still being checked.";
+  const attentionCount = counts?.attention ?? null;
+  const allActive = !filters.executionStatus && !filters.attention;
+  const succeededActive = filters.executionStatus === "succeeded";
+  const runningActive = filters.executionStatus === "running";
+  const attentionActive = Boolean(filters.attention);
+  const countLabel = (value: number | undefined) =>
+    value === undefined ? "–" : value.toLocaleString("en-GB");
 
   return (
     <div id="generations-view" className="admin-view" data-route="generations">
-      <div className="admin-view__toolbar">
-        <p className="admin-view__count" data-testid="attempt-page-summary">
-          {showing}
-        </p>
-        <button
-          type="button"
-          className="admin-button admin-button--quiet"
-          onClick={refresh}
-          disabled={loading}
-          aria-busy={refreshing}
-        >
-          {refreshing ? "Refreshing..." : "Refresh"}
+      <div className="admin-pulse" aria-label="Workspace summary" data-attention-summary data-attention-total={attentionCount === null ? "loading" : String(attentionCount)}>
+        <span><strong>{attempts.length}</strong> generations in view</span>
+        <span className="admin-pulse__sep" />
+        <span>
+          <strong>{attentionCount === null ? "–" : attentionCount}</strong> need attention
+        </span>
+        <span className="admin-pulse__sep" />
+        <button type="button" onClick={applyAttentionFilter} disabled={loading}>
+          Review attention
         </button>
+        <span className="admin-pulse__sep" />
+        <span>Updated just now</span>
       </div>
 
-      <section
-        className="admin-attention"
-        aria-label="Attention summary"
-        data-attention-summary
-        data-attention-failed={
-          attention ? String(attention.failed) : attentionError ? "unavailable" : "loading"
-        }
-        data-attention-unknown={
-          attention ? String(attention.unknown) : attentionError ? "unavailable" : "loading"
-        }
-      >
-        <div className="admin-attention__metric">
-          <strong>
-            {attention
-              ? attention.failed.toLocaleString("en-GB")
-              : attentionError
-                ? "Unavailable"
-                : "Checking"}
-          </strong>
-          <span>Failed attempts</span>
+      <form onSubmit={applyFilters} aria-label="Generation filters">
+        <div className="admin-generation-toolbar">
+          <div className="admin-generation-toolbar__left">
+            <label className="admin-search">
+              <AdminIcon name="search" />
+              <span className="admin-visually-hidden">Search attempts</span>
+              <input
+                type="search"
+                value={draft.search}
+                maxLength={160}
+                placeholder="Search clients or attempts"
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, search: event.target.value }))
+                }
+              />
+            </label>
+            <div className="admin-status-chips" role="group" aria-label="Filter by status">
+              <button className="admin-chip" type="button" aria-pressed={allActive} onClick={() => applyStatusFilter()}>
+                All <small>{total.toLocaleString("en-GB")}</small>
+              </button>
+              <button className="admin-chip" type="button" aria-pressed={succeededActive} onClick={() => applyStatusFilter("succeeded")}>
+                Succeeded <small>{countLabel(counts?.succeeded)}</small>
+              </button>
+              <button className="admin-chip" type="button" aria-pressed={runningActive} onClick={() => applyStatusFilter("running")}>
+                Running <small>{countLabel(counts?.running)}</small>
+              </button>
+              <button className="admin-chip" type="button" aria-pressed={attentionActive} onClick={applyAttentionFilter}>
+                Needs attention <small>{countLabel(counts?.attention)}</small>
+              </button>
+            </div>
+          </div>
+          <div className="admin-generation-toolbar__right">
+            <button
+              type="button"
+              className="admin-button admin-button--quiet"
+              onClick={refresh}
+              disabled={loading}
+              aria-busy={refreshing}
+            >
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
+            <div className="admin-view-switch" role="group" aria-label="Generation view">
+              <button type="button" aria-pressed={viewMode === "ledger"} onClick={() => setViewMode("ledger")}>
+                <AdminIcon name="generations" />
+                Ledger
+              </button>
+              <button type="button" aria-pressed={viewMode === "gallery"} onClick={() => setViewMode("gallery")}>
+                <AdminIcon name="clients" />
+                Gallery
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="admin-attention__metric">
-          <strong>
-            {attention
-              ? attention.unknown.toLocaleString("en-GB")
-              : attentionError
-                ? "Unavailable"
-                : "Checking"}
-          </strong>
-          <span>Unknown attempts</span>
-        </div>
-        <div className="admin-attention__actions">
-          <button
-            type="button"
-            className="admin-button admin-button--quiet"
-            onClick={() => applyAttentionFilter("failed")}
-          >
-            View failures
-          </button>
-          <button
-            type="button"
-            className="admin-button admin-button--quiet"
-            onClick={() => applyAttentionFilter("unknown")}
-          >
-            View unknown
-          </button>
-        </div>
-        <p className="admin-attention__scope">{attentionScope}</p>
-      </section>
+
+        <details className="admin-filter-disclosure">
+          <summary>More filters</summary>
+          <div className="admin-filters">
+            <label className="admin-field">
+              <span>Execution status</span>
+              <select
+                value={draft.status}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, status: event.target.value }))
+                }
+              >
+                <option value="">All statuses</option>
+                {EXECUTION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="admin-field">
+              <span>Generation profile</span>
+              <select
+                value={draft.profile}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, profile: event.target.value }))
+                }
+              >
+                <option value="">All profiles</option>
+                {PROFILE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="admin-field">
+              <span>Initiator ID</span>
+              <input
+                type="text"
+                value={draft.initiator}
+                maxLength={160}
+                placeholder="admin:stable-id"
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, initiator: event.target.value }))
+                }
+              />
+            </label>
+            <label className="admin-field">
+              <span>Link creator ID</span>
+              <input
+                type="text"
+                value={draft.creator}
+                maxLength={160}
+                placeholder="admin:stable-id"
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, creator: event.target.value }))
+                }
+              />
+            </label>
+            <label className="admin-field">
+              <span>From date</span>
+              <input
+                type="date"
+                value={draft.from}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, from: event.target.value }))
+                }
+              />
+            </label>
+            <label className="admin-field">
+              <span>To date</span>
+              <input
+                type="date"
+                value={draft.to}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, to: event.target.value }))
+                }
+              />
+            </label>
+            <label className="admin-field admin-field--small">
+              <span>Rows per page</span>
+              <select
+                value={draft.limit}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, limit: event.target.value }))
+                }
+              >
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </label>
+            <div className="admin-filter-actions">
+              <button type="submit" className="admin-button">Apply filters</button>
+              <button type="button" className="admin-button admin-button--quiet" onClick={clearFilters}>
+                Clear filters
+              </button>
+            </div>
+          </div>
+        </details>
+      </form>
 
       {filters.clientId ? (
         <div className="admin-notice">
@@ -626,12 +753,7 @@ export function GenerationsView({
             className="admin-link-button"
             onClick={() =>
               onNavigate(
-                {
-                  ...state,
-                  filters: { ...filters, clientId: undefined },
-                  cursor: null,
-                  attemptId: null,
-                },
+                { ...state, filters: { ...filters, clientId: undefined }, cursor: null, attemptId: null },
                 { cursorTrail: [] },
               )
             }
@@ -642,125 +764,11 @@ export function GenerationsView({
       ) : null}
 
       <HealthNotice health={health} error={healthError} />
-
-      <form className="admin-filters" onSubmit={applyFilters} aria-label="Generation filters">
-        <label className="admin-field admin-field--wide">
-          <span>Search attempts</span>
-          <input
-            type="search"
-            value={draft.search}
-            maxLength={160}
-            placeholder="Client, attempt, run or issue"
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, search: event.target.value }))
-            }
-          />
-        </label>
-        <label className="admin-field">
-          <span>Execution status</span>
-          <select
-            value={draft.status}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, status: event.target.value }))
-            }
-          >
-            <option value="">All statuses</option>
-            {EXECUTION_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="admin-field">
-          <span>Generation profile</span>
-          <select
-            value={draft.profile}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, profile: event.target.value }))
-            }
-          >
-            <option value="">All profiles</option>
-            {PROFILE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="admin-field">
-          <span>Initiator ID</span>
-          <input
-            type="text"
-            value={draft.initiator}
-            maxLength={160}
-            placeholder="admin:stable-id"
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                initiator: event.target.value,
-              }))
-            }
-          />
-        </label>
-        <label className="admin-field">
-          <span>Link creator ID</span>
-          <input
-            type="text"
-            value={draft.creator}
-            maxLength={160}
-            placeholder="admin:stable-id"
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, creator: event.target.value }))
-            }
-          />
-        </label>
-        <label className="admin-field">
-          <span>From date</span>
-          <input
-            type="date"
-            value={draft.from}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, from: event.target.value }))
-            }
-          />
-        </label>
-        <label className="admin-field">
-          <span>To date</span>
-          <input
-            type="date"
-            value={draft.to}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, to: event.target.value }))
-            }
-          />
-        </label>
-        <label className="admin-field admin-field--small">
-          <span>Rows per page</span>
-          <select
-            value={draft.limit}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, limit: event.target.value }))
-            }
-          >
-            <option value="25">25</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-          </select>
-        </label>
-        <div className="admin-filter-actions">
-          <button type="submit" className="admin-button">
-            Apply filters
-          </button>
-          <button
-            type="button"
-            className="admin-button admin-button--quiet"
-            onClick={clearFilters}
-          >
-            Clear filters
-          </button>
+      {countsError ? (
+        <div className="admin-notice admin-notice--attention" role="status">
+          Attention counts could not be loaded. No estimate is shown.
         </div>
-      </form>
+      ) : null}
 
       {error && attempts.length > 0 ? (
         <div className="admin-notice admin-notice--error" role="alert">
@@ -777,157 +785,63 @@ export function GenerationsView({
         </div>
       ) : null}
 
-      <div className="admin-view-layout">
-        <div className="admin-view__ledger">
-          {loading ? (
-            <div className="admin-skeleton" role="status">
-              <span />
-              <span />
-              <span />
-              <p>Loading generation attempts...</p>
-            </div>
-          ) : null}
-
-          {!loading && attempts.length === 0 ? (
-            <div className="admin-empty" role="status">
-              <h3>No attempts match these filters</h3>
-              <p>
-                Clear or broaden the filters. Pending intake work may also not
-                have a generation attempt yet.
-              </p>
-            </div>
-          ) : null}
-
-          {attempts.length > 0 ? (
-            <div
-              className="admin-table-wrap"
-              role="region"
-              aria-label="Generation attempts"
-              tabIndex={0}
-            >
-              <table className="admin-table">
-                <caption className="admin-visually-hidden">
-                  Generation attempts across all clients
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Client and attempt</th>
-                    <th scope="col">Execution</th>
-                    <th scope="col">Delivery</th>
-                    <th scope="col">Initiator</th>
-                    <th scope="col">Link creator</th>
-                    <th scope="col">Profile</th>
-                    <th scope="col">Started</th>
-                    <th scope="col">Updated</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {attempts.map((attempt) => (
-                    <tr
-                      key={attempt.attemptId}
-                      data-attempt-id={attempt.attemptId}
-                    >
-                      <td>
-                        <button
-                          type="button"
-                          className="admin-row-button"
-                          aria-label={`Open attempt ${attempt.attemptId} for ${
-                            attempt.clientId || "an unlinked client"
-                          }`}
-                          aria-expanded={selectedId === attempt.attemptId}
-                          aria-controls={
-                            selectedId === attempt.attemptId
-                              ? "attempt-inspector"
-                              : undefined
-                          }
-                          onClick={(event) => selectAttempt(attempt, event)}
-                        >
-                          <span className="admin-row-primary">
-                            {attempt.clientId || "No client linked"}
-                          </span>
-                          <span className="admin-row-secondary admin-mono">
-                            {attempt.attemptId}
-                          </span>
-                        </button>
-                      </td>
-                      <td>
-                        <ExecutionStatusBadge
-                          status={attempt.executionStatus}
-                          stale={attempt.stale}
-                        />
-                      </td>
-                      <td>
-                        <DeliveryStatusBadge status={attempt.deliveryStatus} />
-                      </td>
-                      <td>
-                        <ActorLabel actor={attempt.initiator} showSource={false} />
-                      </td>
-                      <td>
-                        <ActorLabel
-                          actor={attempt.invitationCreator}
-                          showSource={false}
-                        />
-                      </td>
-                      <td>{formatProfile(attempt.profile)}</td>
-                      <td>{formatTimestamp(attempt.startedAt)}</td>
-                      <td>{formatTimestamp(attempt.updatedAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-
-          <div className="admin-pagination">
-            <button
-              type="button"
-              className="admin-button admin-button--quiet"
-              onClick={previousPage}
-              disabled={!cursorTrail.length || loading}
-            >
-              Previous page
-            </button>
-            <button
-              type="button"
-              className="admin-button admin-button--quiet"
-              onClick={nextPage}
-              disabled={!nextCursor || loading}
-            >
-              Next page
-            </button>
-          </div>
+      {loading ? (
+        <div className="admin-skeleton" role="status">
+          <span />
+          <span />
+          <span />
+          <p>Loading generation attempts...</p>
         </div>
+      ) : null}
 
-        {selectedId ? (
-          <AttemptInspector
-            attempt={detail}
-            client={detailClient}
-            loading={detailLoading}
-            error={detailError}
-            events={events}
-            eventsNextCursor={eventsNextCursor}
-            eventCount={eventCount}
-            eventsLoading={eventsLoading}
-            eventsError={eventsError}
-            headingRef={headingRef}
-            onClose={() => navigate({ ...state, attemptId: null })}
-            onRetry={() => setDetailToken((token) => token + 1)}
-            onLoadMoreEvents={loadMoreEvents}
-            onOpenClient={(clientId) =>
-              onNavigate(
-                {
-                  view: "clients",
-                  clientId,
-                  attemptId: null,
-                  filters: {},
-                  cursor: null,
-                },
-                { cursorTrail: [] },
-              )
-            }
-          />
-        ) : null}
+      {!loading && attempts.length === 0 ? (
+        <div className="admin-empty" role="status">
+          <h3>No attempts match these filters</h3>
+          <p>Clear or broaden the filters. Pending intake work may not have a generation attempt yet.</p>
+        </div>
+      ) : null}
+
+      {attempts.length > 0 ? (
+        viewMode === "ledger" ? (
+          <AttemptLedger attempts={attempts} selectedId={selectedId} onSelect={selectAttempt} />
+        ) : (
+          <AttemptGallery attempts={attempts} selectedId={selectedId} onSelect={selectAttempt} />
+        )
+      ) : null}
+
+      <div className="admin-pagination">
+        <button type="button" className="admin-button admin-button--quiet" onClick={previousPage} disabled={!cursorTrail.length || loading}>
+          Previous page
+        </button>
+        <span className="admin-view__count" data-testid="attempt-page-summary">{showing}</span>
+        <button type="button" className="admin-button admin-button--quiet" onClick={nextPage} disabled={!nextCursor || loading}>
+          Next page
+        </button>
       </div>
+
+      {selectedId ? (
+        <AttemptInspector
+          attempt={detail}
+          client={detailClient}
+          loading={detailLoading}
+          error={detailError}
+          events={events}
+          eventsNextCursor={eventsNextCursor}
+          eventCount={eventCount}
+          eventsLoading={eventsLoading}
+          eventsError={eventsError}
+          headingRef={headingRef}
+          onClose={() => navigate({ ...state, attemptId: null })}
+          onRetry={() => setDetailToken((token) => token + 1)}
+          onLoadMoreEvents={loadMoreEvents}
+          onOpenClient={(clientId) =>
+            onNavigate(
+              { view: "clients", clientId, attemptId: null, filters: {}, cursor: null },
+              { cursorTrail: [] },
+            )
+          }
+        />
+      ) : null}
     </div>
   );
 }

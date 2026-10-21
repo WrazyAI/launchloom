@@ -755,7 +755,7 @@ describe("interim Access identity and unavailable account surfaces", () => {
       expect(
         await page.getByText("No owner controls", { exact: false }).count(),
       ).toBe(1);
-      expect(await page.getByRole("button").count()).toBe(0);
+      expect(await page.locator("#admin-main").getByRole("button").count()).toBe(0);
       expect(
         await page.getByText("Invite administrator", { exact: false }).count(),
       ).toBe(0);
@@ -818,25 +818,26 @@ describe("interim Access identity and unavailable account surfaces", () => {
       const metrics = await bodyOverflow(page);
       expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewport);
       expect(metrics.bodyWidth).toBeLessThanOrEqual(metrics.viewport);
+      await page.getByRole("button", { name: "Open navigation" }).click();
+      await expect
+        .poll(async () => {
+          const box = await page
+            .getByRole("link", { name: "Settings", exact: true })
+            .boundingBox();
+          return box ? box.x : -1;
+        })
+        .toBeGreaterThanOrEqual(0);
       const settingsLink = await page
         .getByRole("link", { name: "Settings", exact: true })
         .boundingBox();
       expect(settingsLink).not.toBeNull();
-      expect(settingsLink!.x).toBeGreaterThanOrEqual(0);
       expect(settingsLink!.x + settingsLink!.width).toBeLessThanOrEqual(390);
 
-      await page.keyboard.press("Tab");
+      const activeNav = page.locator('.admin-nav a[aria-current="page"]');
+      await activeNav.focus();
       await expect
-        .poll(() =>
-          page.evaluate(() => document.activeElement?.textContent?.trim()),
-        )
-        .toBe("Skip to main content");
-      await page.keyboard.press("Tab");
-      await expect
-        .poll(() =>
-          page.evaluate(() => document.activeElement?.textContent?.trim()),
-        )
-        .toBe("Generations");
+        .poll(() => activeNav.textContent())
+        .toBe("Settings");
 
       await page.getByRole("link", { name: "Team", exact: true }).click();
       await visible(
@@ -849,6 +850,7 @@ describe("interim Access identity and unavailable account surfaces", () => {
         teamMetrics.viewport,
       );
 
+      await page.getByRole("button", { name: "Open navigation" }).click();
       await page
         .getByRole("link", { name: "Integrations", exact: true })
         .click();
@@ -958,7 +960,7 @@ describe("Neon account flows", () => {
         expect(target.origin).toBe(origin);
         expect(target.pathname).toBe("/admin/onboarding-invites");
         await visible(
-          page.getByRole("heading", { name: "Generation history" }),
+          page.getByRole("heading", { name: "Recent generations" }),
         );
         unexpectedErrors(errors);
       } finally {
@@ -1627,11 +1629,13 @@ describe("Neon account flows", () => {
       await visible(page.getByText("2 active members", { exact: true }));
       const metrics = await bodyOverflow(page);
       expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewport);
+      await page.getByRole("button", { name: "Open navigation" }).click();
       await page.getByRole("link", { name: "Settings", exact: true }).click();
       await visible(page.getByLabel("Display name"));
       await page.setViewportSize({ width: 320, height: 720 });
       const compact = await bodyOverflow(page);
       expect(compact.documentWidth).toBeLessThanOrEqual(compact.viewport);
+      await page.getByRole("button", { name: "Open navigation" }).click();
       await expect
         .poll(
           () =>

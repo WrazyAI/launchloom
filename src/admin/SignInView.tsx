@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { BrandMark } from "./BrandMark";
 import type { AdminApi } from "./api";
 import { requestErrorMessage } from "./format";
 
@@ -397,10 +398,33 @@ export function SignInView({ api }: { api: AdminApi }) {
     stage === "unverified";
 
   return (
-    <main className="admin-auth">
-      <div className="admin-auth__card">
-        <p className="admin-eyebrow">LaunchLoom</p>
-        <h1>Sign in to operations</h1>
+    <div className="admin-auth-shell">
+      <aside className="admin-auth-brand" aria-label="LaunchLoom operations">
+        <a
+          className="admin-brand"
+          href="/admin/onboarding-invites?view=generations"
+          aria-label="LaunchLoom operations home"
+        >
+          <BrandMark />
+        </a>
+        <div className="admin-auth-brand__copy">
+          <h1>Every launch, in one clear view.</h1>
+          <p>
+            See what was built, who moved it forward, and which client needs
+            your attention next.
+          </p>
+        </div>
+        <p className="admin-auth-brand__foot">
+          Private operations workspace · authorized admins only
+        </p>
+      </aside>
+      <main className="admin-auth">
+        <div className="admin-auth__card">
+          <div className="admin-auth-mobile-brand">
+            <BrandMark />
+          </div>
+          <p className="admin-eyebrow">LaunchLoom</p>
+          <h1>Sign in to operations</h1>
         <p>
           Use your approved LaunchLoom admin account. Membership is checked on
           every request.
@@ -695,7 +719,8 @@ export function SignInView({ api }: { api: AdminApi }) {
             </button>
           </p>
         ) : null}
-      </div>
-    </main>
+        </div>
+      </main>
+    </div>
   );
 }
