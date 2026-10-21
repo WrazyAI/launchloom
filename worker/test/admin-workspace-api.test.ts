@@ -624,9 +624,36 @@ describe("shared workspace", () => {
       ).items,
     ).toHaveLength(0);
     expect(await coordinator.projectionHealth()).toMatchObject({
-      partial: true,
-      pendingProjectionCount: 1,
+      pendingProjectionCount: 0,
     });
+  });
+
+  it("preserves approved client site links and redacts unsafe URLs", async () => {
+    const seeded = await ledger().upsertClient(client(902));
+    await runInDurableObject(ledger(), (_instance, state) => {
+      state.storage.sql.exec(
+        "UPDATE admin_clients SET data=? WHERE client_id=?",
+        JSON.stringify({
+          ...seeded,
+          previewUrl: "https://demo.pages.dev/",
+          productionUrl: "https://evil.example/?token=private",
+        }),
+        seeded.clientId,
+      );
+    });
+    const response = await worker.fetch(
+      new Request(`${base}/clients/${encodeURIComponent(seeded.clientId)}`, {
+        headers: { Origin: origin },
+      }),
+      bindings,
+      context(),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      client: { previewUrl: string; productionUrl: string };
+    };
+    expect(body.client.previewUrl).toBe("https://demo.pages.dev/");
+    expect(body.client.productionUrl).toBe("[link redacted]");
   });
 
   it("enforces an enriched invitation binding on later client writes", async () => {

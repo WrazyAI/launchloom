@@ -19,6 +19,7 @@ describe.skipIf(!connectionString)("durable membership against the isolated deve
   const email = (name: string) => `${prefix}-${name}@launchloom.test`;
   let sql!: ReturnType<typeof neon>;
   let store!: MembershipStore;
+  let preexistingMembers: Array<Record<string, unknown>> = [];
   const owner = {
     subject: subject("owner"),
     email: email("owner"),
@@ -66,6 +67,13 @@ describe.skipIf(!connectionString)("durable membership against the isolated deve
   beforeAll(async () => {
     sql = neon(connectionString);
     store = createMembershipStore(sql as unknown as MembershipSql);
+    preexistingMembers = (await sql.query(
+      `select subject, email, role, active, updated_at
+       from launchloom_admin.members
+       where subject not like $1
+       order by subject`,
+      [`${prefix}%`],
+    )) as Array<Record<string, unknown>>;
     subjects.add(owner.subject);
     await sql.query(
       `insert into launchloom_admin.members(subject, email, display_name, role, active)
@@ -475,19 +483,15 @@ describe.skipIf(!connectionString)("durable membership against the isolated deve
     expect(rows.filter((row) => row.active)).toHaveLength(1);
   });
 
-  it("never modified the existing development owner", async () => {
-    const rows = (await sql.query(
-      `select subject, email, role, active from launchloom_admin.members
-       where subject = $1`,
-      ["4b4f068f-728c-468f-8247-ad3d4cbf7dbb"],
-    )) as Array<{ subject: string; email: string; role: string; active: boolean }>;
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({
-      subject: "4b4f068f-728c-468f-8247-ad3d4cbf7dbb",
-      email: "dev-owner@launchloom.test",
-      role: "owner",
-      active: true,
-    });
+  it("never modified members outside the test prefix", async () => {
+    const rows = await sql.query(
+      `select subject, email, role, active, updated_at
+       from launchloom_admin.members
+       where subject not like $1
+       order by subject`,
+      [`${prefix}%`],
+    );
+    expect(rows).toEqual(preexistingMembers);
   });
 });
 

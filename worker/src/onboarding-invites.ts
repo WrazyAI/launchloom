@@ -1059,7 +1059,12 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
             }
           : null,
       );
-      if (!projected.ok || !workflow?.request_id || !workflow.attempt_id)
+      const awaitingCorrelation = Boolean(
+        workflow &&
+          workflow.status !== "delivered" &&
+          (!workflow.request_id || !workflow.attempt_id),
+      );
+      if (!projected.ok || awaitingCorrelation)
         throw new Error("projection pending");
       this.ctx.storage.sql.exec(
         "UPDATE intake_projection_outbox SET status='delivered',last_error=NULL WHERE invite_id=? AND submission_id=?",

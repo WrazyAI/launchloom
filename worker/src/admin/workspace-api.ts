@@ -85,6 +85,33 @@ function safeText(value: unknown): unknown {
   );
 }
 
+// Client site links are operational evidence, not free text. Validate them at
+// the field level instead of passing them through the global URL redactor.
+function safeSiteLink(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  try {
+    const url = new URL(value);
+    const allowedHost =
+      url.hostname === "launchloom.wrazyos.com" ||
+      url.hostname.endsWith(".wrazyos.com") ||
+      url.hostname.endsWith(".pages.dev");
+    if (
+      url.protocol !== "https:" ||
+      !allowedHost ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    )
+      return "[link redacted]";
+    return url.href;
+  } catch {
+    return "[link redacted]";
+  }
+}
+
+const SITE_URL_FIELDS = new Set(["previewUrl", "productionUrl"]);
+
 /** The router authenticates the existing tracking secret before this boundary. */
 export async function attemptIngest(
   request: Request,
@@ -203,7 +230,9 @@ export async function attemptIngest(
 }
 const json = (body: unknown, status = 200) =>
   new Response(
-    JSON.stringify(body, (_key, value) => safeText(value)),
+    JSON.stringify(body, (key, value) =>
+      SITE_URL_FIELDS.has(key) ? safeSiteLink(value) : safeText(value),
+    ),
     {
       status,
       headers: {
