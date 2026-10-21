@@ -1,7 +1,7 @@
 name: Focused generation test
-run-name: >-
-  LLGEN issue=${{ (toJSON(inputs.issue) == format('{0}', inputs.issue) && inputs.issue > 0) && inputs.issue || 0 }} profile=${{ contains(fromJSON('["full","full-preview","creative-only","seo-only"]'), inputs.test_profile) && inputs.test_profile || 'excluded' }} request=none
-
+# `run-name` is only supported on top-level workflows. A workflow_call-only
+# workflow with `run-name` fails to resolve the reusable job, so the caller's
+# Generate client site run-name remains the source of truth.
 on:
   workflow_call:
     inputs:
