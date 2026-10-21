@@ -208,17 +208,25 @@ describe("admin workspace asset build", () => {
     expect(second.sourceDigest).toBe(first.sourceDigest);
   });
 
-  it("does not add a public Astro admin route", async () => {
+  it("provides a redirect-only public admin entry without exposing the private shell", async () => {
     const pages = await readdir(path.join(ROOT, "src", "pages"), {
       withFileTypes: true,
     });
     expect(
       pages.some((entry) => /^admin(?:\.|$)/iu.test(entry.name)),
-    ).toBe(false);
+    ).toBe(true);
     expect(await exists(path.join(ROOT, "src", "pages", "admin"))).toBe(false);
-    expect(await exists(path.join(ROOT, "src", "pages", "admin.astro"))).toBe(
-      false,
+
+    const entry = await readFile(
+      path.join(ROOT, "src", "pages", "admin.astro"),
+      "utf8",
     );
+    expect(entry).toContain("window.location.replace(adminLogin)");
+    expect(entry).toContain("api.launchloom.wrazyos.com");
+    expect(entry).toContain('robots="noindex, nofollow"');
+    expect(entry).not.toContain("/admin-assets/app.js");
+    expect(entry).not.toContain("client@example.test");
+    expect(entry).not.toContain("owner@example.test");
 
     const wrangler = await readFile(path.join(ROOT, "wrangler.jsonc"), "utf8");
     expect(wrangler).toMatch(/"binding":\s*"ADMIN_STATIC"/u);

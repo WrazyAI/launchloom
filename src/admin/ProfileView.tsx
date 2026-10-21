@@ -32,6 +32,150 @@ function initials(principal: AccessModePrincipal | NeonMember) {
 }
 
 const ROLE_LABEL = { owner: "Owner", admin: "Admin" } as const;
+const MIN_PASSWORD_LENGTH = 12;
+
+function accountErrorCode(value: unknown) {
+  return typeof value === "object" && value !== null
+    ? (value as { code?: unknown }).code
+    : undefined;
+}
+
+function accountErrorStatus(value: unknown) {
+  return typeof value === "object" && value !== null
+    ? (value as { status?: unknown }).status
+    : undefined;
+}
+
+function NeonPasswordPanel({ api }: { api: AdminApi }) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const inFlight = useRef(false);
+
+  async function change(event: { preventDefault(): void }) {
+    event.preventDefault();
+    if (inFlight.current) return;
+    setNotice(null);
+    setError(null);
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      setError(
+        `Use at least ${MIN_PASSWORD_LENGTH} characters for the new password.`,
+      );
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("The new passwords do not match.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setError("Choose a new password that is different from the current one.");
+      return;
+    }
+
+    inFlight.current = true;
+    setSaving(true);
+    try {
+      await api.changePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setNotice(
+        "Password changed. Other signed-in browser sessions were signed out.",
+      );
+    } catch (failure) {
+      if (
+        accountErrorCode(failure) === "auth_failed" ||
+        accountErrorCode(failure) === "invalid_password" ||
+        accountErrorStatus(failure) === 400 ||
+        accountErrorStatus(failure) === 401
+      ) {
+        setError("The current password did not match.");
+      } else {
+        setError(requestErrorMessage(failure));
+      }
+    } finally {
+      inFlight.current = false;
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="admin-panel" aria-labelledby="password-title">
+      <div className="admin-panel__head">
+        <div>
+          <p className="admin-eyebrow">Account security</p>
+          <h3 id="password-title">Change password</h3>
+        </div>
+      </div>
+      <p className="admin-muted" id="password-help">
+        Use at least {MIN_PASSWORD_LENGTH} characters. Your current password is
+        required, and other signed-in browser sessions are signed out.
+      </p>
+      <form className="admin-form" onSubmit={change}>
+        <label className="admin-field" htmlFor="current-password">
+          Current password
+          <input
+            id="current-password"
+            type="password"
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(event) => setCurrentPassword(event.target.value)}
+            required
+            disabled={saving}
+            aria-describedby="password-help"
+          />
+        </label>
+        <label className="admin-field" htmlFor="new-password">
+          New password
+          <input
+            id="new-password"
+            type="password"
+            autoComplete="new-password"
+            minLength={MIN_PASSWORD_LENGTH}
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+            required
+            disabled={saving}
+            aria-describedby="password-help"
+          />
+        </label>
+        <label className="admin-field" htmlFor="confirm-password">
+          Confirm new password
+          <input
+            id="confirm-password"
+            type="password"
+            autoComplete="new-password"
+            minLength={MIN_PASSWORD_LENGTH}
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            required
+            disabled={saving}
+            aria-describedby="password-help"
+          />
+        </label>
+        <div className="admin-form__actions">
+          <button className="admin-button" type="submit" disabled={saving}>
+            {saving ? "Changing password..." : "Change password"}
+          </button>
+        </div>
+      </form>
+      {notice ? (
+        <div className="admin-notice" role="status">
+          {notice}
+        </div>
+      ) : null}
+      {error ? (
+        <div className="admin-inline-error" role="alert">
+          <strong>Password not changed</strong>
+          <span>{error}</span>
+        </div>
+      ) : null}
+    </section>
+  );
+}
 
 function NeonProfile({
   api,
@@ -338,11 +482,14 @@ export function ProfileView({ api }: { api: AdminApi }) {
       ) : accessPrincipal ? (
         <AccessProfile principal={accessPrincipal} />
       ) : neonPrincipal ? (
-        <NeonProfile
-          api={api}
-          principal={neonPrincipal}
-          onPrincipal={(value) => setPrincipal(value)}
-        />
+        <>
+          <NeonProfile
+            api={api}
+            principal={neonPrincipal}
+            onPrincipal={(value) => setPrincipal(value)}
+          />
+          <NeonPasswordPanel api={api} />
+        </>
       ) : null}
     </div>
   );

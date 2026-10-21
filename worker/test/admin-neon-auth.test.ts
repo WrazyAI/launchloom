@@ -548,24 +548,66 @@ describe("Neon same-origin session adapter", () => {
     expect(statuses[10]).toBe(429);
   });
 
-  it("passes through identical provider reset responses without a local member lookup", async () => {
+  it("passes through identical canonical password-reset responses with an absolute callback", async () => {
+    const forwarded: unknown[] = [];
     network.use(
-      http.post(`${authOrigin}/forget-password`, () =>
-        HttpResponse.json({ status: true }),
-      ),
+      http.post(`${authOrigin}/request-password-reset`, async ({ request: providerRequest }) => {
+        forwarded.push(await providerRequest.json());
+        return HttpResponse.json({ status: true });
+      }),
     );
 
     const admin = await proxyAdminAuth(
-      request(`${sessionPath}/forget-password`, jsonBody({ email: "owner@example.test" })),
+      request(`${sessionPath}/request-password-reset`, jsonBody({ email: "owner@example.test" })),
       neonEnv(),
     );
     const stranger = await proxyAdminAuth(
-      request(`${sessionPath}/forget-password`, jsonBody({ email: "stranger@example.test" })),
+      request(
+        `${sessionPath}/request-password-reset`,
+        jsonBody({ email: "stranger@example.test", redirectTo: "/admin/login" }),
+      ),
       neonEnv(),
     );
 
     expect(admin.status).toBe(stranger.status);
     expect(await admin.text()).toBe(await stranger.text());
+    expect(forwarded).toEqual([
+      { email: "owner@example.test", redirectTo: `${publicOrigin}/admin/onboarding-invites` },
+      { email: "stranger@example.test", redirectTo: `${publicOrigin}/admin/login` },
+    ]);
+  });
+
+  it("proxies an authenticated password change and forwards the revoke flag", async () => {
+    let forwarded: unknown;
+    network.use(
+      http.post(`${authOrigin}/change-password`, async ({ request: providerRequest }) => {
+        forwarded = await providerRequest.json();
+        return HttpResponse.json({ status: true });
+      }),
+    );
+
+    const response = await proxyAdminAuth(
+      request(
+        `${sessionPath}/change-password`,
+        jsonBody({
+          currentPassword: "current-password-value",
+          newPassword: "new-password-value",
+          revokeOtherSessions: true,
+        }),
+      ),
+      neonEnv(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(forwarded).toEqual({
+      currentPassword: "current-password-value",
+      newPassword: "new-password-value",
+      revokeOtherSessions: true,
+    });
+    const text = await response.text();
+    expect(text).not.toContain("current-password-value");
+    expect(text).not.toContain("new-password-value");
+    expect(JSON.parse(text)).toEqual({ ok: true, user: null, session: null });
   });
 
   it("does not log or return the submitted password", async () => {

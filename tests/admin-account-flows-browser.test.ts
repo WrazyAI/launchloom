@@ -92,6 +92,7 @@ let acceptMode: "success" | "mismatch" | "unavailable" | "used" | "unverified" =
 let createMode: "success" | "unavailable" = "success";
 let changeMode: "success" | "last_owner" = "success";
 let profileMode: "success" | "invalid" = "success";
+let passwordMode: "success" | "invalid" | "unavailable" = "success";
 
 function sendJson(response: http.ServerResponse, body: unknown, status = 200) {
   response.writeHead(status, {
@@ -255,12 +256,35 @@ async function serve(
       sendJson(response, { ok: true, user: null, session: null });
       return;
     }
-    if (route === "forget-password") {
+    if (route === "request-password-reset" || route === "forget-password") {
       sendJson(response, { ok: true, user: null, session: null });
       return;
     }
     if (route === "reset-password") {
       sendJson(response, { ok: true });
+      return;
+    }
+    if (route === "change-password") {
+      if (!signedIn) {
+        sendJson(response, errorBody("signed_out", "Sign in required."), 401);
+        return;
+      }
+      if (passwordMode === "invalid") {
+        sendJson(response, errorBody("auth_failed", "Invalid password."), 401);
+        return;
+      }
+      if (passwordMode === "unavailable") {
+        sendJson(
+          response,
+          errorBody(
+            "dependency_unavailable",
+            "Password change is temporarily unavailable.",
+          ),
+          503,
+        );
+        return;
+      }
+      sendJson(response, { ok: true, user: null, session: null });
       return;
     }
     if (route === "verify-email") {
@@ -521,6 +545,7 @@ beforeEach(() => {
   createMode = "success";
   changeMode = "success";
   profileMode = "success";
+  passwordMode = "success";
 });
 
 async function openPage(options: {
@@ -975,9 +1000,47 @@ describe("Neon account flows", () => {
       await visible(
         page.getByText("If that email has an account", { exact: false }),
       );
-      expect(bodyFor("POST", "/auth/forget-password")).toEqual({
+      expect(bodyFor("POST", "/auth/request-password-reset")).toEqual({
         email: OWNER.email,
+        redirectTo: "/admin/login",
       });
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("redeems an emailed reset token once and scrubs it from the browser", async () => {
+    neonMode = true;
+    const resetToken = "r".repeat(43);
+    const { page, errors } = await openPage({
+      path: `/admin/login?token=${resetToken}`,
+    });
+    try {
+      await visible(page.getByLabel("New password", { exact: true }));
+      expect(page.url()).not.toContain(resetToken);
+      expect(countRequests("/workspace/me")).toBe(0);
+      await page
+        .getByLabel("New password", { exact: true })
+        .fill("brand new password value");
+      await page
+        .getByLabel("Confirm new password")
+        .fill("brand new password value");
+      await page.getByRole("button", { name: "Save new password" }).click();
+      await visible(page.getByText("Password reset.", { exact: false }));
+      expect(bodyFor("POST", "/auth/reset-password")).toEqual({
+        token: resetToken,
+        newPassword: "brand new password value",
+      });
+      expect(page.url()).not.toContain(resetToken);
+      const state = await page.evaluate(() => ({
+        local: Object.keys(localStorage),
+        session: Object.keys(sessionStorage),
+        content: document.documentElement.innerHTML,
+      }));
+      expect(state.local).toEqual([]);
+      expect(state.session).toEqual([]);
+      expect(state.content).not.toContain(resetToken);
       unexpectedErrors(errors);
     } finally {
       await page.close();
@@ -1447,6 +1510,58 @@ describe("Neon account flows", () => {
           exact: true,
         }),
       );
+      unexpectedErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("changes the signed-in account password without retaining it in the page", async () => {
+    neonMode = true;
+    signedIn = true;
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=settings",
+    });
+    try {
+      await visible(page.getByLabel("Current password"));
+      await page.getByLabel("Current password").fill("old password value");
+      await page
+        .getByLabel("New password", { exact: true })
+        .fill("new password value");
+      await page.getByLabel("Confirm new password").fill("new password value");
+      await page.getByRole("button", { name: "Change password" }).click();
+      await visible(page.getByText("Password changed.", { exact: false }));
+      expect(bodyFor("POST", "/auth/change-password")).toEqual({
+        currentPassword: "old password value",
+        newPassword: "new password value",
+        revokeOtherSessions: true,
+      });
+      await expect(
+        page.getByLabel("Current password").inputValue(),
+      ).resolves.toBe("");
+      await expect(
+        page.getByLabel("New password", { exact: true }).inputValue(),
+      ).resolves.toBe("");
+      await expect(
+        page.getByLabel("Confirm new password").inputValue(),
+      ).resolves.toBe("");
+      expect(
+        await page.evaluate(() => ({
+          local: Object.keys(localStorage),
+          session: Object.keys(sessionStorage),
+        })),
+      ).toEqual({ local: [], session: [] });
+
+      passwordMode = "invalid";
+      await page.getByLabel("Current password").fill("wrong current value");
+      await page
+        .getByLabel("New password", { exact: true })
+        .fill("another password value");
+      await page
+        .getByLabel("Confirm new password")
+        .fill("another password value");
+      await page.getByRole("button", { name: "Change password" }).click();
+      await visible(page.getByText("The current password did not match."));
       unexpectedErrors(errors);
     } finally {
       await page.close();
