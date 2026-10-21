@@ -10,6 +10,7 @@ export declare type InviteArgs = {
   confirm: boolean;
   dryRun: boolean;
   databaseUrlFile: string;
+  origin: string;
   help: boolean;
 };
 
@@ -24,7 +25,7 @@ export declare function parseInviteArgs(argv?: string[]): InviteArgs;
 
 export declare function runInvite(options?: {
   argv?: string[];
-  env?: { ADMIN_DATABASE_URL?: string };
+  env?: { ADMIN_DATABASE_URL?: string; ADMIN_PUBLIC_ORIGIN?: string };
   sql?: InviteSql;
   stdout?: (line: string) => void;
 }): Promise<number>;

@@ -3,6 +3,8 @@ import * as history from "../scripts/reconcile-generation-history.mjs";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 
 const repo = { id: 42, full_name: "WrazyAI/launchloom" };
 const run = (id = 9001, extra = {}) => ({
@@ -238,33 +240,37 @@ describe("fixture-only independent history reconciliation", () => {
     expect(b.warnings.length).toBeGreaterThan(0);
   });
   it("runs the real dry-run CLI with a local report and all external fetches forbidden", async () => {
-    const folder = await fs.mkdtemp("/tmp/opencode/task3-cli-");
-    const out = `${folder}/report.json`;
-    const { stdout } = await promisify(execFile)(
-      process.execPath,
-      [
-        "--import",
-        "./tests/fixtures/admin-reconciliation-deny-network.mjs",
-        "scripts/reconcile-generation-history.mjs",
-        "--mode",
-        "backfill",
-        "--dry-run",
-        "--fixture",
-        "tests/fixtures/admin-generation-history.json",
-        "--out",
-        out,
-      ],
-      { env: { PATH: process.env.PATH } },
-    );
-    expect(JSON.parse(stdout)).toMatchObject({
-      complete: true,
-      readCount: 6,
-      upsertCount: 1,
-      errors: [],
-    });
-    expect(JSON.parse(await fs.readFile(out, "utf8"))).toEqual(
-      JSON.parse(stdout),
-    );
+    const folder = await fs.mkdtemp(path.join(os.tmpdir(), "task3-cli-"));
+    try {
+      const out = path.join(folder, "report.json");
+      const { stdout } = await promisify(execFile)(
+        process.execPath,
+        [
+          "--import",
+          "./tests/fixtures/admin-reconciliation-deny-network.mjs",
+          "scripts/reconcile-generation-history.mjs",
+          "--mode",
+          "backfill",
+          "--dry-run",
+          "--fixture",
+          "tests/fixtures/admin-generation-history.json",
+          "--out",
+          out,
+        ],
+        { env: { PATH: process.env.PATH } },
+      );
+      expect(JSON.parse(stdout)).toMatchObject({
+        complete: true,
+        readCount: 6,
+        upsertCount: 1,
+        errors: [],
+      });
+      expect(JSON.parse(await fs.readFile(out, "utf8"))).toEqual(
+        JSON.parse(stdout),
+      );
+    } finally {
+      await fs.rm(folder, { recursive: true, force: true });
+    }
   });
   it("records early setup/prerequisite failures and excludes called workflow duplicates", async () => {
     const f = fixture([

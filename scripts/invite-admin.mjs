@@ -24,13 +24,46 @@ export class InviteError extends Error {
 }
 
 const USAGE = `Usage:
-  node scripts/invite-admin.mjs --owner-subject <owner-subject> --email <verified-email> --out <private-file> [--confirm] [--database-url-file <path>]
+  node scripts/invite-admin.mjs --owner-subject <owner-subject> --email <verified-email> --out <private-file> --origin <https-origin> [--confirm] [--database-url-file <path>]
 
 Dry run is the default (--dry-run is accepted explicitly). --confirm creates one
 72-hour, one-use enrollment and writes the copy-once URL to a new mode-0600 file.
 It refuses to overwrite an existing file. The database URL is read from
-ADMIN_DATABASE_URL first, then --database-url-file. No token, hash or URL is
-printed to stdout. No email is sent.`;
+ADMIN_DATABASE_URL first, then --database-url-file. The origin is read from
+--origin first, then ADMIN_PUBLIC_ORIGIN; it must be an HTTPS origin (localhost
+HTTP is allowed only for local development). No token, hash or URL is printed to
+stdout. No email is sent.`;
+
+function normalizeOrigin(value) {
+  const text = String(value || "").trim().replace(/\/$/u, "");
+  let url;
+  try {
+    url = new URL(text);
+  } catch {
+    throw new InviteError(
+      "missing_origin",
+      "Set --origin or ADMIN_PUBLIC_ORIGIN to the admin workspace origin.",
+    );
+  }
+  const local =
+    url.protocol === "http:" &&
+    (url.hostname === "localhost" || url.hostname === "127.0.0.1");
+  if (!local && url.protocol !== "https:")
+    throw new InviteError("missing_origin", "The admin origin must use HTTPS.");
+  if (
+    url.origin !== text ||
+    url.username ||
+    url.password ||
+    url.pathname !== "/" ||
+    url.search ||
+    url.hash
+  )
+    throw new InviteError(
+      "missing_origin",
+      "The admin origin must be a bare HTTPS origin without a path.",
+    );
+  return url.origin;
+}
 
 function takeValue(argv, index, flag) {
   const value = argv[index + 1];
@@ -47,6 +80,7 @@ export function parseInviteArgs(argv = []) {
     confirm: false,
     dryRun: false,
     databaseUrlFile: "",
+    origin: "",
     help: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -80,6 +114,11 @@ export function parseInviteArgs(argv = []) {
     }
     if (arg === "--database-url-file") {
       parsed.databaseUrlFile = takeValue(argv, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--origin") {
+      parsed.origin = takeValue(argv, index, arg);
       index += 1;
       continue;
     }
@@ -144,6 +183,7 @@ export async function runInvite({
     stdout(USAGE);
     return 0;
   }
+  const origin = normalizeOrigin(args.origin || env.ADMIN_PUBLIC_ORIGIN);
   const sql = await connect(args, env, suppliedSql);
   const owners = await sql.query(
     `select subject from launchloom_admin.members
@@ -160,6 +200,7 @@ export async function runInvite({
   stdout(`Mode: ${args.confirm ? "apply" : "dry run"}`);
   stdout(`Owner: ${args.ownerSubject}`);
   stdout(`Invitee: ${args.email}`);
+  stdout(`Origin: ${origin}`);
   stdout(`Output file: ${args.out || "(not set)"}`);
   if (!args.confirm) {
     stdout("No token generated and no changes written.");
@@ -169,7 +210,7 @@ export async function runInvite({
   const token = randomBytes(32).toString("base64url");
   const tokenHash = createHash("sha256").update(token).digest("hex");
   const expiresAt = new Date(Date.now() + TTL_MS);
-  const url = `/admin/login#enroll=${encodeURIComponent(token)}`;
+  const url = `${origin}/admin/login#enroll=${encodeURIComponent(token)}`;
   try {
     await writeFile(args.out, `${url}\n`, { mode: 0o600, flag: "wx" });
   } catch (error) {

@@ -13,6 +13,7 @@ const FUNCTIONS = [
   "find_active_member",
   "list_members",
   "create_enrollment",
+  "link_legacy_identity",
   "accept_enrollment",
   "bootstrap_owner",
   "change_member",

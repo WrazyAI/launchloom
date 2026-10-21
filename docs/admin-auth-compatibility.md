@@ -239,14 +239,20 @@ changed.
 
 ### Applying the private schema
 
-`db/admin/001-membership.sql` is additive and idempotent (`CREATE ... IF NOT
-EXISTS`, `CREATE OR REPLACE`, guarded singleton insert). Apply it with a
-server-side operator connection, never from the browser and never with the
-connection string in shell history:
+The admin schema is additive and idempotent (`CREATE ... IF NOT EXISTS`,
+`CREATE OR REPLACE`, guarded singleton insert). Apply all three ordered
+migrations with a server-side operator connection, never from the browser and
+never with the connection string in shell history:
 
 ```bash
 psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/admin/001-membership.sql
+psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/admin/002-legacy-identity-link.sql
+psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/admin/003-atomic-legacy-link.sql
 ```
+
+`001` includes the legacy-link function for fresh installs; `002` and `003`
+remain idempotent upgrades for existing databases and carry the latest atomic
+acceptance/bootstrap definitions.
 
 The schema is `launchloom_admin`; it contains `workspace_guard`, `members`,
 `enrollments`, `membership_audit` and `legacy_identity_links`, plus the

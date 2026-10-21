@@ -48,9 +48,8 @@ describe.skipIf(!connectionString)("durable membership against the isolated deve
 
   async function enrollmentFor(ownerSubject: string, emailValue: string) {
     const created = await store.createEnrollment(ownerSubject, emailValue);
-    const token = new URL(created.url, "https://api.launchloom.test").searchParams.get(
-      "enrollment",
-    );
+    const link = new URL(created.url, "https://api.launchloom.test");
+    const token = new URLSearchParams(link.hash.slice(1)).get("enroll");
     if (!token) throw new Error("test token missing");
     return { ...created, token };
   }

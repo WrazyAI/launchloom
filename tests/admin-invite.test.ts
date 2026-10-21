@@ -86,6 +86,19 @@ describe("invite-admin script", () => {
     expect(() => parseInviteArgs(argv as string[])).toThrow(InviteError);
   });
 
+  it("requires an absolute admin origin even for a dry run", async () => {
+    const sql = workingSql();
+    await expect(
+      runInvite({
+        argv: ["--owner-subject", owner, "--email", "new.admin@example.test"],
+        env: { ADMIN_DATABASE_URL: secretUrl },
+        sql,
+        stdout: () => {},
+      }),
+    ).rejects.toMatchObject({ code: "missing_origin" });
+    expect(sql.calls).toHaveLength(0);
+  });
+
   it("writes nothing in dry-run mode and never prints the database URL", async () => {
     const directory = await privateDirectory();
     const out = path.join(directory, "invite-link");
@@ -93,7 +106,7 @@ describe("invite-admin script", () => {
     const lines: string[] = [];
     const code = await runInvite({
       argv: ["--owner-subject", owner, "--email", "new.admin@example.test", "--out", out],
-      env: { ADMIN_DATABASE_URL: secretUrl },
+      env: { ADMIN_DATABASE_URL: secretUrl, ADMIN_PUBLIC_ORIGIN: "https://admin.example.test" },
       sql,
       stdout: (line) => lines.push(line),
     });
@@ -122,7 +135,7 @@ describe("invite-admin script", () => {
         out,
         "--confirm",
       ],
-      env: { ADMIN_DATABASE_URL: secretUrl },
+      env: { ADMIN_DATABASE_URL: secretUrl, ADMIN_PUBLIC_ORIGIN: "https://admin.example.test" },
       sql,
       stdout: (line) => lines.push(line),
     });
@@ -133,6 +146,7 @@ describe("invite-admin script", () => {
 
     const file = await readFile(out, "utf8");
     const link = new URL(file.trim(), "https://api.example.test");
+    expect(link.origin).toBe("https://admin.example.test");
     expect(link.search).toBe("");
     expect(link.hash.startsWith("#enroll=")).toBe(true);
     const token = new URLSearchParams(link.hash.slice(1)).get("enroll");
@@ -156,7 +170,7 @@ describe("invite-admin script", () => {
     await expect(
       runInvite({
         argv: ["--owner-subject", owner, "--email", "new.admin@example.test", "--out", out, "--confirm"],
-        env: { ADMIN_DATABASE_URL: secretUrl },
+        env: { ADMIN_DATABASE_URL: secretUrl, ADMIN_PUBLIC_ORIGIN: "https://admin.example.test" },
         sql,
         stdout: (line) => lines.push(line),
       }),
@@ -173,7 +187,7 @@ describe("invite-admin script", () => {
     await expect(
       runInvite({
         argv: ["--owner-subject", owner, "--email", "new.admin@example.test", "--out", out, "--confirm"],
-        env: { ADMIN_DATABASE_URL: secretUrl },
+        env: { ADMIN_DATABASE_URL: secretUrl, ADMIN_PUBLIC_ORIGIN: "https://admin.example.test" },
         sql,
         stdout: (line) => lines.push(line),
       }),
