@@ -797,7 +797,7 @@ export function createCloudDependencies(
       {
         env: {
           FAL_IMAGE_MAX_IMAGES: input.profile === "seo-only" ? "1" : "3",
-          FAL_IMAGE_MAX_REQUESTS: input.profile === "seo-only" ? "2" : "6",
+          FAL_IMAGE_MAX_REQUESTS: input.profile === "seo-only" ? "2" : "9",
         },
       },
     );

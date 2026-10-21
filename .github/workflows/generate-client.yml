@@ -218,7 +218,7 @@ jobs:
       FAL_KEY: ${{ secrets.FAL_KEY }}
       FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}
       FAL_IMAGE_MAX_IMAGES: ${{ vars.FAL_IMAGE_MAX_IMAGES || '3' }}
-      FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '6' }}
+      FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '9' }}
       MODEL_AUTHORED_EXPERIENCE_MODEL: ${{ vars.MODEL_AUTHORED_EXPERIENCE_MODEL || 'z-ai/glm-5.3-flash' }}
       # Keep truth/configuration generation separate from visual authorship.
       # New creative work uses GPT-6 Luna. Translate an old organization or
