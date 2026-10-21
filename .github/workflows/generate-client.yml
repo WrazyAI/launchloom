@@ -63,7 +63,7 @@ jobs:
   # captures failures before checkout/setup and workflow-level cancellations.
   track_execution:
     continue-on-error: true
-    needs: [profile_policy, generate, intake_handoff_check]
+    needs: [profile_policy, generate, focused_test, intake_handoff_check]
     if: ${{ always() && (github.event_name == 'repository_dispatch' || inputs.test_profile != 'access-only') }}
     runs-on: ubuntu-24.04
     permissions:

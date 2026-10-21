@@ -1,7 +1,7 @@
 name: Focused generation test
-# `run-name` is only supported on top-level workflows. A workflow_call-only
-# workflow with `run-name` fails to resolve the reusable job, so the caller's
-# Generate client site run-name remains the source of truth.
+run-name: >-
+  LLGEN issue=${{ (toJSON(inputs.issue) == format('{0}', inputs.issue) && inputs.issue > 0) && inputs.issue || 0 }} profile=${{ contains(fromJSON('["full","full-preview","creative-only","seo-only"]'), inputs.test_profile) && inputs.test_profile || 'excluded' }} request=none
+
 on:
   workflow_call:
     inputs:
@@ -58,6 +58,8 @@ jobs:
       CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
       LAUNCHLOOM_TEST_PAGES_PROJECT: ${{ vars.LAUNCHLOOM_TEST_PAGES_PROJECT || 'launchloom-pipeline-preview' }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
+      GITHUB_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
       CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL == 'openai/gpt-5.6-luna' && 'opencode-go/deepseek-v4.1-flash' || vars.CREATIVE_EXPERIENCE_MODEL || 'opencode-go/deepseek-v4.1-flash' }}
