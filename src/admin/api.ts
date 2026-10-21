@@ -330,6 +330,11 @@ export type AdminApi = {
     newPassword: string,
     options?: AdminRequestOptions,
   ): Promise<void>;
+  changePassword(
+    currentPassword: string,
+    newPassword: string,
+    options?: AdminRequestOptions,
+  ): Promise<void>;
   verifyEmail(token: string, options?: AdminRequestOptions): Promise<void>;
   listAttempts(
     filters: AttemptFilters,
@@ -864,8 +869,11 @@ export function createAdminApi(
     },
     async requestPasswordReset(email, options) {
       await authPost<{ ok: true }>(
-        "forget-password",
-        { email: email.trim().toLowerCase() },
+        "request-password-reset",
+        {
+          email: email.trim().toLowerCase(),
+          redirectTo: "/admin/login",
+        },
         options,
         isOkBody,
       );
@@ -874,6 +882,14 @@ export function createAdminApi(
       await authPost<{ ok: true }>(
         "reset-password",
         { token, newPassword },
+        options,
+        isOkBody,
+      );
+    },
+    async changePassword(currentPassword, newPassword, options) {
+      await authPost<{ ok: true }>(
+        "change-password",
+        { currentPassword, newPassword, revokeOtherSessions: true },
         options,
         isOkBody,
       );

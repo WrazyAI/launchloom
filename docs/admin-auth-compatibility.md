@@ -1,10 +1,18 @@
 # Admin auth compatibility (Neon same-origin sessions)
 
-**Status: implementation complete; verified locally against the isolated Neon development project with real sessions, membership, Worker `/me`/team and Chromium sign-in. Production cutover is not enabled.** Remaining blockers are deployed staging/WebKit proof, mailbox reset/expiry redemption, a least-privilege production database role, and the Access policy transition.
+**Status: production Neon cutover is enabled on the public Worker origin
+`https://launchloom-api.dark-sound-e4eb.workers.dev`.** The Worker uses a
+dedicated least-privilege production database role; David's verified owner
+account reached `/workspace/me` and `/workspace/team` in a real production
+Chromium sign-in. The old branded `api.launchloom.wrazyos.com` admin path is
+still behind Cloudflare Access and is not the Neon entry point. Remaining
+release work is WebKit proof, live mailbox delivery/expiry proof, the public
+branded redirect deployment, history backfill, and the Access policy transition
+with rollback.
 
-This record covers the Neon auth/membership work. It does not authorize or
-claim `ADMIN_AUTH_MODE=neon` in production, an Access policy change, production
-login, or the use of development credentials in production.
+This record documents the authorized Worker-origin cutover. It does not
+authorize an Access policy change, Neon access through the old branded API host,
+or use of development credentials in production.
 
 ## Installed SDK and export evidence
 
@@ -191,27 +199,37 @@ real provider and database:
 - Chromium sign-in, profile/team rendering, and sign-out;
 - real database enrollment, owner-safety, and atomic legacy-link tests.
 
-Still pending before production cutover:
+Completed before and during the Worker-origin cutover:
 
-1. Deployed staging proof for the chosen production origin, with Chromium and
-   WebKit.
-2. Operator-approved mailboxes for verification/reset redemption, including
-   expiry.
-3. An operator-created least-privilege production database role (see below).
-4. The Access policy transition and rollback rehearsal, with `ADMIN_AUTH_MODE=neon`
-   enabled only after the replacement path is proven.
-5. A fresh production `NEON_AUTH_COOKIE_SECRET` delivered as a deployment
-   secret and never printed.
+1. Real production Chromium sign-in, `/workspace/me` owner/active/neon, and
+   `/workspace/team` with both owners.
+2. A dedicated `launchloom_worker_prod` role with function execute only and
+   direct table access denied.
+3. Production `NEON_AUTH_COOKIE_SECRET` and `ADMIN_DATABASE_URL` stored as GitHub
+   deployment secrets and never printed.
+4. The public Worker admin origin registered as a trusted Neon Auth domain.
+5. A real production owner account and owner membership for
+   `david@maigreeks.com`.
+6. A canonical password-reset request accepted by the provider on the deployed
+   Worker origin.
 
-Production mailboxes and client data remain out of scope. A
-production-independent staging target and an explicit authorization to set
-`ADMIN_AUTH_MODE=neon` there are also required. WebKit must pass, or be recorded
-as a release blocker.
+Still pending after the Worker-origin cutover:
+
+1. Public branded `/admin` redirect deployment and WebKit proof.
+2. Live mailbox reset delivery, token redemption, and expiry proof against the
+   production account.
+3. The Access policy transition and rollback rehearsal for the old branded API
+   host.
+4. Authorized retained-history backfill and reconciliation evidence.
+
+The old branded API host remains Access-protected and must not be presented as
+the Neon entry point until its policy transition is completed. WebKit must pass,
+or compatibility remains a release blocker.
 
 Exact live evidence still required:
 
-- Email signup, verification-email delivery, verified sign-in, logout, and
-  password reset on the deployed Worker.
+- Email verification delivery, verified sign-in, logout, and password reset
+  through a real mailbox on the deployed Worker.
 - Cookie persistence and host scope across reloads and top-level verification and
   reset navigation, including provider cookie renewal/clearing returned by
   `readNeonSession`.
@@ -220,14 +238,12 @@ Exact live evidence still required:
   navigate only the validated admin destination.
 - Expired/revoked session rejection and provider-outage behavior against the real
   provider.
-- No double Access OTP on the tested path, and a rehearsed restricted Access
-  rollback without deleting profiles or auth data.
-- Chromium plus WebKit results. If WebKit is unavailable, compatibility remains a
-  release blocker, not a pass.
+- A rehearsed restricted Access rollback without deleting profiles or auth data.
+- Chromium plus WebKit results. Chromium production sign-in is recorded; WebKit
+  remains a release blocker.
 
-No deployed/staging/production compatibility claim is made until the above
-evidence exists. The local provider, database, Worker and Chromium proof is
-already recorded. Normal-route Access cutover remains master Tasks 10/11.
+The local provider, database, Worker and production Chromium proof is recorded.
+Normal-route Access cutover remains master Tasks 10/11.
 
 ## Membership store and migration runbook (Accounts Task 5)
 

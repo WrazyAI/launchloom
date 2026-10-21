@@ -45,6 +45,7 @@ jobs:
       - name: Bounded metadata reconciliation with trusted default-branch code
         env:
           GH_TOKEN: ${{ github.token }}
+          LAUNCHLOOM_API_URL: ${{ vars.ADMIN_PUBLIC_ORIGIN || 'https://api.launchloom.wrazyos.com' }}
           GENERATION_TRACKING_SECRET: ${{ !inputs.dry_run && secrets.GENERATION_TRACKING_SECRET || '' }}
           RECONCILE_DRY_RUN: ${{ inputs.dry_run }}
           RECONCILE_MODE: ${{ inputs.mode }}
