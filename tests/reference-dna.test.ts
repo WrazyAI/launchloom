@@ -13,6 +13,65 @@ const productionRegistry = {
   records: registry.records.filter((record: any) => coreIds.has(record.id)),
 };
 
+function validReferenceAnalysis() {
+  return {
+    annotatedDescription: "Measured the hierarchy, imagery, and spacing from the paired screenshots.",
+    heroGeometry: { mode: "image-led", alignment: "asymmetric", viewport: "adapted desktop composition" },
+    navigationGeometry: { mode: "compact", placement: "top edge", mobile: "collapsed menu" },
+    typography: { display: "editorial serif", body: "neutral sans", scale: "oversized to compact" },
+    palette: { surfaces: ["warm ivory"], ink: "deep green", accents: ["ochre"], contrastIntent: "high contrast" },
+    imageTreatment: { mode: "full bleed", crop: "wide crop", focalPoint: "center-right" },
+    sectionSequence: ["hero", "services", "studio story", "contact"],
+    servicePresentation: { pattern: "editorial rows", interaction: "static links" },
+    ctaPlacement: { primary: "hero", secondary: "footer", early: "visible in first viewport" },
+    motion: { primitive: "subtle reveal", library: "CSS", reducedMotion: "disable reveal" },
+    mobileRecomposition: { strategy: "single column", rules: ["stack media", "keep CTA above the fold"] },
+    prohibitedPatterns: ["generic card wall", "split hero", "repeated accordion"],
+    requiredSignatureElements: [
+      { id: "oversized-title", selector: "h1", description: "large editorial title" },
+      { id: "archive-rows", selector: "[data-section='archive']", description: "thin ruled archive rows" },
+    ],
+    acceptanceChecks: ["retain title scale", "keep the archive", "use the screenshot crop", "preserve mobile order"],
+    measurements: {
+      headlineWidthRatio: 0.7,
+      headlineHeightRatio: 0.2,
+      heroImageOccupancyRatio: 0.6,
+      contentColumnWidthRatio: 0.5,
+      navTopRatio: 0.03,
+      navSideInsetRatio: 0.04,
+      ctaTopRatio: 0.7,
+      dominantSectionHeightRatios: [0.8, 0.7, 0.9],
+      imageAspectRatios: [1.5],
+      overlapRelationships: [],
+      surfaceTransitions: ["ivory to dark green"],
+      mobile: { headlineWidthRatio: 0.9, imageOccupancyRatio: 0.5, ctaTopRatio: 1.1, contentInsetRatio: 0.05 },
+    },
+  };
+}
+
+function completedGoResponse() {
+  return new Response(
+    JSON.stringify({
+      id: "resp_go_reference",
+      status: "completed",
+      output: [
+        {
+          type: "message",
+          role: "assistant",
+          status: "completed",
+          content: [{ type: "output_text", text: JSON.stringify(validReferenceAnalysis()) }],
+        },
+      ],
+      usage: {
+        input_tokens: 1200,
+        output_tokens: 800,
+        input_tokens_details: { cached_tokens: 0 },
+      },
+    }),
+    { status: 200, headers: { "content-type": "application/json" } },
+  );
+}
+
 describe("Reference DNA", () => {
   it("collapses prose variants with the same screenshot-reviewed split topology", () => {
     const dnaFor = (id: string) => {
@@ -252,6 +311,146 @@ describe("Reference DNA", () => {
       const headers = new Headers(requestCalls[0].init?.headers);
       expect(headers.get("Authorization")).toBe("Bearer test-go-key");
     } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
+  }, 20_000);
+
+  it("retries a transient Go provider error before analyzing the reference", async () => {
+    vi.resetModules();
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    const sleep = vi.fn(async () => {});
+    let calls = 0;
+    const fetchImpl = vi.fn(async () => {
+      calls += 1;
+      if (calls === 1)
+        return new Response(JSON.stringify({ error: { message: "upstream" } }), {
+          status: 503,
+          headers: { "content-type": "application/json" },
+        });
+      return completedGoResponse();
+    });
+    const pack = buildInspirationPack(
+      {
+        seed: "reference-analyzer-go-retry",
+        industry: "legal-services",
+        styleTerms: [],
+        recentReferenceIds: [],
+        recentRouteSignatures: [],
+      },
+      productionRegistry,
+    );
+    try {
+      const { enrichInspirationPack: enrichGo } = await import(
+        "../scripts/analyze-reference-dna.mjs"
+      );
+      const enriched = await enrichGo(pack, {
+        fetchImpl: fetchImpl as typeof fetch,
+        sleep,
+      });
+      // route-01 retries once, then routes 02 and 03 complete first time.
+      expect(calls).toBe(4);
+      expect(enriched.routes).toHaveLength(3);
+      expect(sleep).toHaveBeenCalledTimes(1);
+      expect(sleep).toHaveBeenCalledWith(4_000);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
+  }, 20_000);
+
+  it("reports the Go provider status and code when transient errors keep failing", async () => {
+    vi.resetModules();
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    const warnings: string[] = [];
+    const warn = vi.spyOn(console, "warn").mockImplementation((line) => {
+      warnings.push(String(line));
+    });
+    let calls = 0;
+    const fetchImpl = vi.fn(async () => {
+      calls += 1;
+      return new Response(JSON.stringify({ error: { message: "upstream" } }), {
+        status: 503,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    const pack = buildInspirationPack(
+      {
+        seed: "reference-analyzer-go-exhausted",
+        industry: "legal-services",
+        styleTerms: [],
+        recentReferenceIds: [],
+        recentRouteSignatures: [],
+      },
+      productionRegistry,
+    );
+    try {
+      const { enrichInspirationPack: enrichGo } = await import(
+        "../scripts/analyze-reference-dna.mjs"
+      );
+      await expect(
+        enrichGo(pack, { fetchImpl: fetchImpl as typeof fetch, sleep: async () => {} }),
+      ).rejects.toThrow(
+        /Reference analyzer returned invalid JSON after one uncached retry \(finish_reason=error\/upstream, http 503\)/u,
+      );
+      // Four bounded attempts, then the single uncached invalid-JSON retry.
+      expect(calls).toBe(8);
+      expect(
+        warnings.some((line) =>
+          /reference_dna_retry route=route-\d+ finish_reason=error\/upstream http_status=503 cache=bypassed/u.test(
+            line,
+          ),
+        ),
+      ).toBe(true);
+      expect(
+        warnings.some((line) =>
+          /reference_dna_opencode_go_retry .*code=upstream .*attempt=1\/4/u.test(line),
+        ),
+      ).toBe(true);
+    } finally {
+      warn.mockRestore();
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
+  }, 20_000);
+
+  it("reports a quota failure without burning bounded retries", async () => {
+    vi.resetModules();
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    let calls = 0;
+    const fetchImpl = vi.fn(async () => {
+      calls += 1;
+      return new Response(JSON.stringify({ error: { code: "quota_exhausted" } }), {
+        status: 402,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    const pack = buildInspirationPack(
+      {
+        seed: "reference-analyzer-go-quota",
+        industry: "legal-services",
+        styleTerms: [],
+        recentReferenceIds: [],
+        recentRouteSignatures: [],
+      },
+      productionRegistry,
+    );
+    try {
+      const { enrichInspirationPack: enrichGo } = await import(
+        "../scripts/analyze-reference-dna.mjs"
+      );
+      await expect(
+        enrichGo(pack, { fetchImpl: fetchImpl as typeof fetch, sleep: async () => {} }),
+      ).rejects.toThrow(/finish_reason=error\/quota, http 402/u);
+      // Non-transient provider codes fail on the first response; the analyzer
+      // still performs exactly one uncached retry for the invalid-JSON contract.
+      expect(calls).toBe(2);
+    } finally {
+      warn.mockRestore();
       vi.unstubAllEnvs();
       vi.resetModules();
     }

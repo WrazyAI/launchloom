@@ -570,8 +570,16 @@ export function normalizeInferenceResponse(
     choiceError ||
     payload?.type === "error"
   ) {
-    const quota = /quota|credit|balance|billing|usage_limit/iu.test(
-      String(payload?.error?.code || payload?.error?.type || ""),
+    const providerCode = String(
+      payload?.error?.code || payload?.error?.type || "",
+    );
+    const quota = /quota|credit|balance|billing|usage_limit/iu.test(providerCode);
+    // Some gateways report their own upstream fault as HTTP 400 with
+    // `server_error` rather than a 5xx. Trust the provider's machine-readable
+    // code so the creative lane retries a transient gateway fault instead of
+    // treating it as a permanent invalid request.
+    const upstream = /server_error|internal_error|upstream_error|overloaded/iu.test(
+      providerCode,
     );
     return error(
       httpStatus === 401 || httpStatus === 403
@@ -582,7 +590,7 @@ export function normalizeInferenceResponse(
             ? "rate-limit"
             : httpStatus === 408
               ? "timeout"
-              : httpStatus >= 500
+              : httpStatus >= 500 || upstream
                 ? "upstream"
                 : httpStatus >= 400
                   ? "invalid-request"

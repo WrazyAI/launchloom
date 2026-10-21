@@ -555,6 +555,25 @@ describe("provider-neutral response states", () => {
       expect(JSON.stringify(result)).not.toContain("PRIVATE_PROMPT_SECRET");
     },
   );
+  it.each([
+    ["server_error", "upstream"],
+    ["internal_error", "upstream"],
+    ["upstream_error", "upstream"],
+    ["overloaded", "upstream"],
+  ])(
+    "classifies a 400 provider %s code as a transient %s fault",
+    (providerCode, expected) => {
+      const result = normalizeInferenceResponse(
+        profileFor("responses"),
+        { error: { code: providerCode, type: providerCode } },
+        { httpStatus: 400 },
+      );
+      expect(result).toMatchObject({
+        status: "error",
+        error: { code: expected, httpStatus: 400 },
+      });
+    },
+  );
   it("preserves a quota error even with HTTP 200 and parses date Retry-After", () => {
     const result = normalizeInferenceResponse(
       profileFor("responses"),

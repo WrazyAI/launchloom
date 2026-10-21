@@ -459,22 +459,63 @@ describe("creative lane Go transport retries", () => {
         headers: { "content-type": "application/json" },
       });
     };
-    await expect(
-      module.completeGoCreative({
-        logicalModel: "opencode-go/deepseek-v4.1-flash",
-        request: module.buildGoCreativeRequest({
-          systemPrompt: "Return JSON.",
-          userContent: [{ type: "text", text: "Say ok." }],
-          schemaName: "probe",
-          schema: { type: "object", additionalProperties: false, required: ["ok"], properties: { ok: { type: "boolean" } } },
-          maxOutputTokens: 100,
-          sessionId: "launchloom:test-session",
-        }),
-        fetchImpl: fetchImpl as typeof fetch,
-        env: { OPENCODE_GO_API_KEY: "test-go-key" },
-        retryDelayMs: 0,
+    const failure = module.completeGoCreative({
+      logicalModel: "opencode-go/deepseek-v4.1-flash",
+      request: module.buildGoCreativeRequest({
+        systemPrompt: "Return JSON.",
+        userContent: [{ type: "text", text: "Say ok." }],
+        schemaName: "probe",
+        schema: { type: "object", additionalProperties: false, required: ["ok"], properties: { ok: { type: "boolean" } } },
+        maxOutputTokens: 100,
+        sessionId: "launchloom:test-session",
       }),
-    ).rejects.toThrow(/OpenCode Go error/u);
+      fetchImpl: fetchImpl as typeof fetch,
+      env: { OPENCODE_GO_API_KEY: "test-go-key" },
+      retryDelayMs: 0,
+    });
+    await expect(failure).rejects.toThrow(/OpenCode Go error/u);
+    // The terminal error keeps the provider's machine-readable classification
+    // so the analyzer can report quota/auth versus rate-limit versus upstream.
+    await expect(failure).rejects.toMatchObject({
+      code: "CREATIVE_GO_INCOMPLETE",
+      providerStatus: "error",
+      providerErrorCode: "authentication",
+      providerHttpStatus: 401,
+      attempts: 1,
+    });
     expect(calls).toBe(1);
+  });
+
+  it("classifies a provider error without an HTTP failure as transient and reports its code", async () => {
+    const module = await import("../scripts/creative-lane-inference.mjs");
+    let calls = 0;
+    const fetchImpl = async () => {
+      calls += 1;
+      return new Response(JSON.stringify({ error: { message: "provider failed" } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    };
+    const failure = module.completeGoCreative({
+      logicalModel: "opencode-go/deepseek-v4.1-flash",
+      request: module.buildGoCreativeRequest({
+        systemPrompt: "Return JSON.",
+        userContent: [{ type: "text", text: "Say ok." }],
+        schemaName: "probe",
+        schema: { type: "object", additionalProperties: false, required: ["ok"], properties: { ok: { type: "boolean" } } },
+        maxOutputTokens: 100,
+        sessionId: "launchloom:test-session",
+      }),
+      fetchImpl: fetchImpl as typeof fetch,
+      env: { OPENCODE_GO_API_KEY: "test-go-key" },
+      retryDelayMs: 0,
+    });
+    await expect(failure).rejects.toMatchObject({
+      providerStatus: "error",
+      providerErrorCode: "provider-error",
+      providerHttpStatus: 200,
+      attempts: 3,
+    });
+    expect(calls).toBe(3);
   });
 });

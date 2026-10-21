@@ -182,6 +182,7 @@ const TRANSIENT_GO_ERROR_CODES = new Set([
  *   maxAttempts?: number,
  *   retryDelayMs?: number,
  *   sleep?: (ms: number) => Promise<void>,
+ *   logger?: ((line: string) => void) | null,
  * }} input
  * @returns {Promise<Record<string, any>>}
  */
@@ -194,6 +195,7 @@ export async function completeGoCreative({
   maxAttempts = 3,
   retryDelayMs = 1500,
   sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  logger = null,
 }) {
   if (!env.OPENCODE_GO_API_KEY)
     throw new Error(
@@ -203,7 +205,9 @@ export async function completeGoCreative({
     logicalModel: resolveGoLogicalModel(logicalModel, env),
   });
   let result = {};
+  let attempts = 0;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    attempts = attempt;
     const completion = await completeGeneration({
       inference: {
         profile,
@@ -218,17 +222,28 @@ export async function completeGoCreative({
     // A transient provider error (transport, rate limit, timeout, upstream)
     // is retried with backoff; incomplete/refused/requires-action responses
     // are caller-managed outcomes and are not retried here.
+    const errorCode = String(result?.error?.code || "unknown");
     const transient =
-      result.status === "error" &&
-      TRANSIENT_GO_ERROR_CODES.has(String(result?.error?.code || ""));
+      result.status === "error" && TRANSIENT_GO_ERROR_CODES.has(errorCode);
     if (!transient || attempt === maxAttempts) break;
-    await sleep(retryDelayMs * attempt);
+    const delayMs = retryDelayMs * attempt;
+    if (logger)
+      logger(
+        `opencode_go_retry status=${result.status || "error"} code=${errorCode} http_status=${result?.error?.httpStatus ?? "none"} attempt=${attempt}/${maxAttempts} retry_in_ms=${delayMs}`,
+      );
+    await sleep(delayMs);
   }
   const error = new Error(
-    `OpenCode Go ${result.status || "error"} for the creative lane: ${result?.error?.code || "request failed"}.`,
+    `OpenCode Go ${result.status || "error"} (${result?.error?.code || "request failed"}) for the creative lane after ${attempts} attempt(s).`,
   );
   error.code = "CREATIVE_GO_INCOMPLETE";
   error.providerStatus = result.status || "error";
+  // Preserve the provider's machine-readable classification so callers can
+  // report quota/billing versus rate-limit versus invalid-request without
+  // re-parsing provider prose.
+  error.providerErrorCode = String(result?.error?.code || "unknown");
+  error.providerHttpStatus = result?.error?.httpStatus ?? null;
+  error.attempts = attempts;
   throw error;
 }
 

@@ -244,7 +244,16 @@ function parseChoice(payload) {
   }
 }
 
-async function analyzeRoute(route, fetchImpl = fetch) {
+// The analyzer is a long-running structured-vision request. A provider error
+// on this lane is usually transient (rate limit or upstream) and the answer is
+// expensive to recompute, so it gets one more bounded attempt than the shared
+// creative-lane default. Non-transient provider codes (quota, authentication,
+// invalid request) still fail after the first response and never loop.
+const ANALYZER_GO_MAX_ATTEMPTS = 4;
+const ANALYZER_GO_RETRY_DELAY_MS = 4_000;
+const ANALYZER_TIMEOUT_MS = 300_000;
+
+async function analyzeRoute(route, { fetchImpl = fetch, sleep } = {}) {
   const dna = route.referenceDna || {};
   const desktop = dna.evidence?.desktopScreenshot?.path;
   const mobile = dna.evidence?.mobileScreenshot?.available ? dna.evidence.mobileScreenshot.path : "";
@@ -338,7 +347,7 @@ Rules:
     },
   );
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 180_000);
+  const timeout = setTimeout(() => controller.abort(), ANALYZER_TIMEOUT_MS);
   const requestAnalysis = async (responseCache) => {
     if (creativeProvider === "opencode-go") {
       let result;
@@ -347,6 +356,10 @@ Rules:
           logicalModel: model,
           signal: controller.signal,
           fetchImpl,
+          sleep,
+          maxAttempts: ANALYZER_GO_MAX_ATTEMPTS,
+          retryDelayMs: ANALYZER_GO_RETRY_DELAY_MS,
+          logger: (line) => console.warn(`reference_dna_${line}`),
           request: buildGoCreativeRequest({
             systemPrompt: ANALYZER_SYSTEM_PROMPT,
             userContent: content,
@@ -362,12 +375,20 @@ Rules:
       } catch (error) {
         if (error?.code !== "CREATIVE_GO_INCOMPLETE") throw error;
         // Preserve the transport-independent retry contract: an incomplete
-        // response is retried once, exactly like invalid JSON.
+        // response is retried once, exactly like invalid JSON. Carry the
+        // provider status and machine-readable code into the retry log and the
+        // terminal error instead of collapsing both to a bare `error`.
+        const providerStatus = error.providerStatus || "error";
+        const providerErrorCode = error.providerErrorCode || "unknown";
         const incomplete = new Error(
-          `Reference analyzer did not complete for ${route.id} (${error.providerStatus || "error"}).`,
+          `Reference analyzer did not complete for ${route.id} (${providerStatus}/${providerErrorCode}${error.providerHttpStatus == null ? "" : `, http ${error.providerHttpStatus}`}).`,
         );
         incomplete.code = "REFERENCE_ANALYZER_INVALID_JSON";
-        incomplete.finishReason = error.providerStatus || "go-incomplete";
+        incomplete.finishReason = `${providerStatus}/${providerErrorCode}`;
+        incomplete.providerStatus = providerStatus;
+        incomplete.providerErrorCode = providerErrorCode;
+        incomplete.providerHttpStatus = error.providerHttpStatus ?? null;
+        incomplete.attempts = error.attempts ?? null;
         throw incomplete;
       }
       const usage = result.usage || null;
@@ -421,15 +442,23 @@ Rules:
       return { ...await requestAnalysis(true), captureDimensions };
     } catch (error) {
       if (error?.code !== "REFERENCE_ANALYZER_INVALID_JSON") throw error;
+      const httpStatus =
+        error.providerHttpStatus == null
+          ? ""
+          : ` http_status=${error.providerHttpStatus}`;
       console.warn(
-        `reference_dna_retry route=${route.id} finish_reason=${error.finishReason} cache=bypassed`,
+        `reference_dna_retry route=${route.id} finish_reason=${error.finishReason}${httpStatus} cache=bypassed`,
       );
       try {
         return { ...await requestAnalysis(false), captureDimensions };
       } catch (retryError) {
         if (retryError?.code !== "REFERENCE_ANALYZER_INVALID_JSON") throw retryError;
+        const retryHttpStatus =
+          retryError.providerHttpStatus == null
+            ? ""
+            : `, http ${retryError.providerHttpStatus}`;
         throw new Error(
-          `Reference analyzer returned invalid JSON after one uncached retry (finish_reason=${retryError.finishReason}).`,
+          `Reference analyzer returned invalid JSON after one uncached retry (finish_reason=${retryError.finishReason}${retryHttpStatus}).`,
         );
       }
     }
@@ -438,7 +467,17 @@ Rules:
   }
 }
 
-export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
+/**
+ * @param {Record<string, any>} pack
+ * @param {{
+ *   fetchImpl?: typeof fetch,
+ *   sleep?: (ms: number) => Promise<void>,
+ * }} [options]
+ */
+export async function enrichInspirationPack(
+  pack,
+  { fetchImpl = fetch, sleep } = {},
+) {
   if (!Array.isArray(pack?.routes) || !pack.routes.length)
     throw new Error("Reference DNA analysis requires inspiration routes.");
   assertReferenceDossierPack(pack);
@@ -461,7 +500,7 @@ export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
   }
   const routes = [];
   for (const route of pack.routes) {
-    const analyzed = await analyzeRoute(route, fetchImpl);
+    const analyzed = await analyzeRoute(route, { fetchImpl, sleep });
     routes.push(applyMeasuredReferenceAnalysis(route, analyzed));
   }
   return {
