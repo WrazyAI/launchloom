@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiRequestError, createAdminApi, fetchAdmin } from "../src/admin/api";
+import { ApiRequestError, buildAttemptQuery, createAdminApi, fetchAdmin } from "../src/admin/api";
 
 function respond(response: Response | Promise<Response>) {
   const mock = vi.fn(async () => response);
@@ -299,6 +299,11 @@ describe("admin account API contracts", () => {
       revokeOtherSessions: true,
     });
     expect(JSON.stringify(calls)).not.toContain("localStorage");
+  });
+
+  it("encodes the additive attention filter", () => {
+    expect(buildAttemptQuery({ attention: true }).get("attention")).toBe("true");
+    expect(buildAttemptQuery({ attention: false }).get("attention")).toBeNull();
   });
 
   it("rejects malformed membership and auth responses", async () => {
