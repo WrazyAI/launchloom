@@ -25,7 +25,10 @@ import {
   CLIENT_PALETTE_ROLE_CONTRACT,
   CLIENT_TYPOGRAPHY_CONTRACT,
 } from "./creative-authoring-output.mjs";
-import { interactionPromptParts, validateInteractionEvidence } from "./rendered-interaction-evidence.mjs";
+import {
+  interactionPromptParts,
+  validateInteractionEvidence,
+} from "./rendered-interaction-evidence.mjs";
 
 export const RENDERED_REFERENCE_MODEL =
   process.env.CREATIVE_REFERENCE_JUDGE_MODEL ||
@@ -267,7 +270,7 @@ async function requestJson({
   promptCacheKey,
   // Reasoning at the creative-lane effort counts against this ceiling; the
   // audit JSON itself is small, so the headroom only prevents truncation.
-  maxTokens = 24_000,
+  maxTokens = 48_000,
   reasoningEffort = creativeLaneEffort(process.env, {
     lane: "CREATIVE_REFERENCE_JUDGE_EFFORT",
     openrouterDefault: "medium",
@@ -320,16 +323,32 @@ async function requestJson({
           });
         } catch (error) {
           if (error?.code !== "CREATIVE_GO_INCOMPLETE") throw error;
+          const providerDiagnostic = [
+            `status=${error.providerStatus || "incomplete"}`,
+            `code=${error.providerErrorCode || "unknown"}`,
+            error.providerHttpStatus != null
+              ? `http_status=${error.providerHttpStatus}`
+              : "",
+            error.providerType ? `provider_type=${error.providerType}` : "",
+            Array.isArray(error.providerHints) && error.providerHints.length
+              ? `hints=${error.providerHints.join("+")}`
+              : "",
+            error.providerMessageLength != null
+              ? `message_length=${error.providerMessageLength}`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
           if (!truncatedRetryUsed && activeReasoningEffort !== "low") {
             console.info(
-              `rendered_judge_retry reason=truncated label=${label} provider=opencode-go reasoning_effort=${activeReasoningEffort}->low max_tokens=${maxTokens}`,
+              `rendered_judge_retry reason=${error.providerStatus === "incomplete" ? "truncated" : "provider-error"} label=${label} provider=opencode-go reasoning_effort=${activeReasoningEffort}->low max_tokens=${maxTokens} ${providerDiagnostic}`,
             );
             activeReasoningEffort = "low";
             truncatedRetryUsed = true;
             continue;
           }
           throw new Error(
-            `${label} did not complete on OpenCode Go (${error.providerStatus || "incomplete"}).`,
+            `${label} did not complete on OpenCode Go (${providerDiagnostic}).`,
           );
         }
         const cache = goCreativeUsageMetrics(goResult, {
@@ -533,7 +552,10 @@ export async function evaluateRenderedReferenceFidelity({
   fetchImpl = fetch,
 } = {}) {
   validateReferenceDna(referenceDna, { requireEvidence: true });
-  validateInteractionEvidence(interactionEvidence, { candidateId, sourceDigest });
+  validateInteractionEvidence(interactionEvidence, {
+    candidateId,
+    sourceDigest,
+  });
   const desktopReference = await resolveEvidencePath(
     referenceDna.evidence.desktopScreenshot,
   );
@@ -615,7 +637,13 @@ Treat this as binding client art direction layered onto the reference mechanics.
         ]
       : []),
   ];
-  content.push(...await interactionPromptParts(interactionEvidence, { candidateId, sourceDigest }, imagePart));
+  content.push(
+    ...(await interactionPromptParts(
+      interactionEvidence,
+      { candidateId, sourceDigest },
+      imagePart,
+    )),
+  );
   const sessionId = openRouterSessionId(
     "rendered-reference",
     model,
@@ -639,7 +667,7 @@ Treat this as binding client art direction layered onto the reference mechanics.
   return {
     version: 1,
     model,
-    pass: scorePass(result.audit) && !(interactionEvidence?.failures.length),
+    pass: scorePass(result.audit) && !interactionEvidence?.failures.length,
     score: Number(result.audit.overallScore || 0),
     ...result,
   };
@@ -691,7 +719,9 @@ export async function evaluateRenderedDiversity({
     ),
     // Comparing three responsive candidate families can consume substantially
     // more hidden visual-reasoning tokens than a single-reference fidelity score.
-    maxTokens: 12_000,
+    // The budget is a completion ceiling, not a gate: tokens bill only when used,
+    // and a truncated audit must never be treated as a pass.
+    maxTokens: 32_000,
     fetchImpl,
   });
   const pairs = result.audit.pairs.map((pair) => ({

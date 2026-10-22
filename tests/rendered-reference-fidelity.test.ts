@@ -311,7 +311,7 @@ describe("rendered reference request retries", () => {
     expect(result.pass).toBe(true);
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(requests.map((request) => request.max_tokens)).toEqual([
-      12_000, 5_646,
+      32_000, 5_646,
     ]);
     expect(requests.map((request) => request.reasoning.effort)).toEqual([
       "medium",
@@ -415,7 +415,7 @@ describe("rendered reference request retries", () => {
       JSON.parse(String(call[1]?.body || "{}")),
     );
     expect(requestBodies.map((request) => request.max_tokens)).toEqual([
-      12_000, 5_646, 5_646, 5_646,
+      32_000, 5_646, 5_646, 5_646,
     ]);
   });
 
@@ -607,17 +607,54 @@ describe("rendered reference fidelity", () => {
     const requests: any[] = [];
     await evaluateRenderedReferenceFidelity({
       referenceDna: dna(files),
-      candidateId: "candidate-a", sourceDigest: "a".repeat(64),
-      candidateScreenshots: { desktop: files.candidateDesktop, compact: files.candidateCompact, mobile: files.candidateMobile },
-      interactionEvidence: { version: 1, candidateId: "candidate-a", sourceDigest: "a".repeat(64), observations: [{ viewport: "compact", kind: "disclosure", status: "passed", before: { content: "" }, after: { content: "Service preparation" }, restored: true }], pairs: [{ viewport: "desktop", kind: "disclosure", before: files.candidateDesktop, after: files.secondDesktop }], failures: [] },
+      candidateId: "candidate-a",
+      sourceDigest: "a".repeat(64),
+      candidateScreenshots: {
+        desktop: files.candidateDesktop,
+        compact: files.candidateCompact,
+        mobile: files.candidateMobile,
+      },
+      interactionEvidence: {
+        version: 1,
+        candidateId: "candidate-a",
+        sourceDigest: "a".repeat(64),
+        observations: [
+          {
+            viewport: "compact",
+            kind: "disclosure",
+            status: "passed",
+            before: { content: "" },
+            after: { content: "Service preparation" },
+            restored: true,
+          },
+        ],
+        pairs: [
+          {
+            viewport: "desktop",
+            kind: "disclosure",
+            before: files.candidateDesktop,
+            after: files.secondDesktop,
+          },
+        ],
+        failures: [],
+      },
       fetchImpl: async (_url, options) => {
         requests.push(JSON.parse(String(options?.body || "{}")));
-        return response({ verdict: "pass", overallScore: 89, scores: passingScores, findings: [], summary: "Pass." });
+        return response({
+          verdict: "pass",
+          overallScore: 89,
+          scores: passingScores,
+          findings: [],
+          summary: "Pass.",
+        });
       },
     });
     const parts = requests[0].messages[1].content;
     expect(parts.filter((p: any) => p.type === "image_url")).toHaveLength(7);
-    const text = parts.filter((p: any) => p.type === "text").map((p: any) => p.text).join("\n");
+    const text = parts
+      .filter((p: any) => p.type === "text")
+      .map((p: any) => p.text)
+      .join("\n");
     expect(text).toContain("Service preparation");
     expect(text).toContain("compact");
     expect(text).toContain("before activation");
@@ -702,9 +739,7 @@ describe("rendered reference fidelity", () => {
     expect(textBlocks).toContain("CLIENT PALETTE ROLE CONTRACT");
     expect(textBlocks).toContain("surfaceColor is the dominant page surface");
     expect(textBlocks).toContain("PLATFORM CHROME");
-    expect(textBlocks).toContain(
-      "never report them as candidate findings",
-    );
+    expect(textBlocks).toContain("never report them as candidate findings");
     expect(textBlocks).toContain("INTERACTION EVIDENCE");
     expect(textBlocks).toContain(
       "native FAQ disclosure satisfy the requirement",
@@ -806,7 +841,8 @@ describe("rendered reference fidelity", () => {
               severity: "major",
               category: "palette-adherence",
               viewport: "all",
-              evidence: "The unrequested house palette replaces the client direction.",
+              evidence:
+                "The unrequested house palette replaces the client direction.",
               repair: "Restore the client surface and primary colors.",
             },
             {
@@ -820,7 +856,8 @@ describe("rendered reference fidelity", () => {
               severity: "major",
               category: "palette-adherence",
               viewport: "mobile",
-              evidence: "The mobile surfaces invert the requested light direction.",
+              evidence:
+                "The mobile surfaces invert the requested light direction.",
               repair: "Keep the light surface direction on mobile.",
             },
             {
@@ -878,7 +915,8 @@ describe("rendered reference fidelity", () => {
               severity: "major",
               category: "generic-grammar",
               viewport: "mobile",
-              evidence: "Mobile stacks the desktop layout without recomposition.",
+              evidence:
+                "Mobile stacks the desktop layout without recomposition.",
               repair: "Recompose mobile chapters from the reference strategy.",
             },
             {
@@ -1049,7 +1087,7 @@ describe("rendered reference fidelity", () => {
       },
     });
 
-    expect(requests[0].max_tokens).toBe(12_000);
+    expect(requests[0].max_tokens).toBe(32_000);
     expect(result.pass).toBe(true);
   });
 
@@ -1070,7 +1108,7 @@ describe("rendered reference fidelity", () => {
               },
             ],
             usage: {
-              completion_tokens: 12_000,
+              completion_tokens: 32_000,
               completion_tokens_details: { reasoning_tokens: 11_800 },
             },
           }),
@@ -1113,7 +1151,7 @@ describe("rendered reference fidelity", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(requests[0].reasoning.effort).toBe("medium");
     expect(requests[1].reasoning.effort).toBe("low");
-    expect(requests[1].max_tokens).toBe(12_000);
+    expect(requests[1].max_tokens).toBe(32_000);
     expect(result.pass).toBe(true);
   });
 
@@ -1131,7 +1169,7 @@ describe("rendered reference fidelity", () => {
               },
             ],
             usage: {
-              completion_tokens: 12_000,
+              completion_tokens: 32_000,
               completion_tokens_details: { reasoning_tokens: 11_800 },
             },
           }),
