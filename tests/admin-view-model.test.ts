@@ -9,6 +9,7 @@ import {
 import {
   describeAttempt,
   formatActor,
+  formatClientName,
   formatCost,
   formatElapsed,
   formatProfile,
@@ -144,6 +145,25 @@ describe("admin view model formatting", () => {
     expect(parseDateEnd("")).toBeUndefined();
     expect(parseDateStart("2026-02-31")).toBeUndefined();
     expect(parseDateEnd("2026-10-19")).toBe(Date.UTC(2026, 9, 20) - 1);
+  });
+
+  it("uses real contact identity before an opaque client record id", () => {
+    expect(
+      formatClientName({
+        businessName: null,
+        contactName: null,
+        email: "legacy@example.test",
+        clientId: "submission:9035e03f-dead-beef",
+      }),
+    ).toBe("legacy@example.test");
+    expect(
+      formatClientName({
+        businessName: null,
+        contactName: null,
+        email: null,
+        clientId: "submission:9035e03f-dead-beef",
+      }),
+    ).toBe("Client 9035e03f");
   });
 
   it("shows unknown or invalid dates as not recorded", () => {

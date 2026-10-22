@@ -195,15 +195,20 @@ export function formatElapsed(
 }
 
 export function formatClientName(
-  client: Pick<ClientRecord, "businessName" | "contactName" | "clientId"> | null,
+  client: Pick<
+    ClientRecord,
+    "businessName" | "contactName" | "email" | "clientId"
+  > | null,
 ): string {
   if (!client) return "Not recorded";
-  return (
-    trimmed(client.businessName) ||
-    trimmed(client.contactName) ||
-    trimmed(client.clientId) ||
-    "Not recorded"
-  );
+  const named = trimmed(client.businessName) || trimmed(client.contactName);
+  if (named) return named;
+  const email = trimmed(client.email);
+  if (email) return email;
+  const record = trimmed(client.clientId)
+    .replace(/^submission:/u, "")
+    .slice(0, 8);
+  return record ? `Client ${record}` : "Client record";
 }
 
 function safeHttpUrl(value: string | null | undefined, hostAllowed: (host: string) => boolean) {

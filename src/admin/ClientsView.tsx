@@ -74,6 +74,10 @@ function clientInitials(record: ClientRecord) {
   );
 }
 
+function emailIsPrimary(record: ClientRecord) {
+  return !record.businessName && !record.contactName && Boolean(record.email);
+}
+
 function DirectoryHealth({
   health,
   error,
@@ -703,11 +707,14 @@ export function ClientsView({
                   </td>
                   <td data-label="Contact">
                     <span className="admin-client-contact-name">
-                      {record.contactName || "Not recorded"}
+                      {record.contactName ||
+                        (emailIsPrimary(record) ? "Email only" : "Not recorded")}
                     </span>
-                    <span className="admin-client-contact-email">
-                      {record.email || "Email not recorded"}
-                    </span>
+                    {emailIsPrimary(record) ? null : (
+                      <span className="admin-client-contact-email">
+                        {record.email || "Email not recorded"}
+                      </span>
+                    )}
                   </td>
                   <td data-label="Submitted">
                     <span className="admin-client-date">
