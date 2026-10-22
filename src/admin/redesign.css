@@ -1863,6 +1863,11 @@
   max-height: none;
 }
 
+.admin-page .admin-sheet > .admin-inspector__sheet {
+  height: 100%;
+  max-height: none;
+}
+
 .admin-sheet__header h2:focus,
 .admin-sheet__header h2:focus-visible {
   outline: none;

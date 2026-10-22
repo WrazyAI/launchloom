@@ -1011,6 +1011,12 @@ describe("real admin workspace browser behavior", () => {
           Math.abs(sheet!.x + sheet!.width - width),
         ).toBeLessThanOrEqual(1);
         expect(Math.abs(sheet!.height - 844)).toBeLessThanOrEqual(1);
+        const innerSheet = await dialog
+          .locator(".admin-inspector__sheet")
+          .boundingBox();
+        expect(innerSheet).not.toBeNull();
+        expect(Math.abs(innerSheet!.y)).toBeLessThanOrEqual(1);
+        expect(Math.abs(innerSheet!.height - 844)).toBeLessThanOrEqual(1);
         const heading = dialog.getByRole("heading", {
           name: "Attempt attempt-0000",
         });
