@@ -1,9 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type MouseEvent,
-} from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import type {
   AttemptSummary,
   ClientFilters,
@@ -13,7 +8,8 @@ import type {
 import type { AdminApi } from "./api";
 import type { AdminRouteState } from "./route-state";
 import { ActorLabel } from "./ActorLabel";
-import { DeliveryStatusBadge, ExecutionStatusBadge } from "./StatusBadge";
+import { AdminIcon } from "./AdminIcon";
+import { ClientDossier } from "./ClientDossier";
 import {
   dateInputValue,
   formatClientName,
@@ -23,7 +19,6 @@ import {
   parseDateEnd,
   parseDateStart,
   requestErrorMessage,
-  safeSiteUrl,
 } from "./format";
 
 const DEFAULT_LIMIT = 50;
@@ -58,6 +53,27 @@ function filtersFromDraft(draft: Draft): ClientFilters {
   return filters;
 }
 
+function advancedFilterCount(filters: ClientFilters) {
+  return [
+    filters.from !== undefined,
+    filters.to !== undefined,
+    filters.limit !== undefined && filters.limit !== DEFAULT_LIMIT,
+  ].filter(Boolean).length;
+}
+
+function clientInitials(record: ClientRecord) {
+  return (
+    formatClientName(record)
+      .replace(/[^\p{L}\p{N}]+/gu, " ")
+      .trim()
+      .split(/\s+/u)
+      .slice(0, 2)
+      .map((part) => part[0] || "")
+      .join("")
+      .toUpperCase() || "CL"
+  );
+}
+
 function DirectoryHealth({
   health,
   error,
@@ -74,16 +90,17 @@ function DirectoryHealth({
     );
   if (!health) return null;
   const partial = health.partial || health.pendingProjectionCount > 0;
+  if (!partial && !health.lastError) return null;
   return (
     <div
-      className={`admin-notice${partial ? " admin-notice--attention" : ""}`}
+      className="admin-notice admin-notice--attention"
       role="status"
       data-health-state={partial ? "partial" : "current"}
     >
       <strong>
         {partial
           ? "Client directory may be incomplete"
-          : "Client directory health"}
+          : "Client directory health warning"}
       </strong>
       {partial ? (
         <span>
@@ -91,9 +108,7 @@ function DirectoryHealth({
           {health.partial ? " and partial coverage" : ""}. Counts only include
           records already accepted into the shared ledger.
         </span>
-      ) : (
-        <span>No directory backlog is reported.</span>
-      )}
+      ) : null}
       {health.lastError ? <span>{health.lastError}</span> : null}
       {health.coverageStart !== null ? (
         <span>Coverage starts {formatDate(health.coverageStart)}.</span>
@@ -102,142 +117,6 @@ function DirectoryHealth({
       )}
       <span>Last synchronized {formatTimestamp(health.lastSyncAt)}.</span>
     </div>
-  );
-}
-
-function SiteLinks({ client }: { client: ClientRecord }) {
-  const production = safeSiteUrl(client.productionUrl);
-  const preview = safeSiteUrl(client.previewUrl);
-  const hasUnsafe = Boolean(
-    (client.productionUrl && !production) || (client.previewUrl && !preview),
-  );
-  return (
-    <section className="admin-inspector__block" aria-labelledby="client-sites-title">
-      <h3 id="client-sites-title">Site links</h3>
-      <div className="admin-inspector__links">
-        {production ? (
-          <a href={production} target="_blank" rel="noreferrer">
-            Published site
-          </a>
-        ) : null}
-        {preview ? (
-          <a href={preview} target="_blank" rel="noreferrer">
-            Preview site
-          </a>
-        ) : null}
-        {!production && !preview ? (
-          <span className="admin-muted">No site links recorded.</span>
-        ) : null}
-        {hasUnsafe ? (
-          <span className="admin-muted">
-            A recorded site link was omitted because it is not a token-free
-            approved HTTPS route.
-          </span>
-        ) : null}
-      </div>
-      <p className="admin-muted">
-        Site links are shown independently of individual attempt outcomes. A
-        later failed attempt does not demote an earlier published site.
-      </p>
-    </section>
-  );
-}
-
-function ClientAttempts({
-  attempts,
-  loading,
-  error,
-  nextCursor,
-  total,
-  onOpenAttempt,
-  onLoadMore,
-  onRetry,
-}: {
-  attempts: AttemptSummary[];
-  loading: boolean;
-  error: string | null;
-  nextCursor: string | null;
-  total: number;
-  onOpenAttempt: (attemptId: string) => void;
-  onLoadMore: () => void;
-  onRetry: () => void;
-}) {
-  const hasDiagnostic = attempts.some(
-    (attempt) => attempt.deliveryStatus === "diagnostic",
-  );
-  return (
-    <section
-      className="admin-inspector__block"
-      aria-labelledby="client-attempts-title"
-      data-client-attempts
-    >
-      <div className="admin-inspector__block-head">
-        <h3 id="client-attempts-title">Attempt history</h3>
-        <span className="admin-muted">{total} attempts</span>
-      </div>
-      {hasDiagnostic ? (
-        <p className="admin-notice admin-notice--attention">
-          Diagnostic delivery is for review only, not production approval.
-        </p>
-      ) : null}
-      {loading && attempts.length === 0 ? (
-        <p className="admin-muted" role="status">
-          Loading attempt history...
-        </p>
-      ) : null}
-      {error ? (
-        <div className="admin-inline-error" role="alert">
-          <p>{error}</p>
-          <button type="button" className="admin-link-button" onClick={onRetry}>
-            Retry attempt history
-          </button>
-        </div>
-      ) : null}
-      {!loading && !error && attempts.length === 0 ? (
-        <p className="admin-muted">
-          No generation attempts are recorded for this client.
-        </p>
-      ) : null}
-      {attempts.length ? (
-        <ul className="admin-attempt-list">
-          {attempts.map((attempt) => (
-            <li key={attempt.attemptId} data-attempt-id={attempt.attemptId}>
-              <div className="admin-attempt-list__status">
-                <ExecutionStatusBadge
-                  status={attempt.executionStatus}
-                  stale={attempt.stale}
-                />
-                <DeliveryStatusBadge status={attempt.deliveryStatus} />
-              </div>
-              <div>
-                <p className="admin-mono">{attempt.attemptId}</p>
-                <p className="admin-muted">
-                  {formatTimestamp(attempt.createdAt)}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="admin-link-button"
-                aria-label={`Open attempt ${attempt.attemptId} from client history`}
-                onClick={() => onOpenAttempt(attempt.attemptId)}
-              >
-                Open attempt
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {nextCursor ? (
-        <button
-          type="button"
-          className="admin-button admin-button--quiet"
-          onClick={onLoadMore}
-          disabled={loading}
-        >
-          {loading ? "Loading attempts..." : "Load more attempts"}
-        </button>
-      ) : null}
-    </section>
   );
 }
 
@@ -261,6 +140,9 @@ export function ClientsView({
   const filterSignature = JSON.stringify(filters);
 
   const [draft, setDraft] = useState<Draft>(() => draftFromState(state));
+  const [filtersOpen, setFiltersOpen] = useState(
+    () => advancedFilterCount(state.filters) > 0,
+  );
   const [clients, setClients] = useState<ClientRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -291,13 +173,14 @@ export function ClientsView({
   const attemptsRequest = useRef(0);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const focusOnOpenRef = useRef(false);
+  const focusOnOpenRef = useRef(Boolean(state.clientId));
   const hadSelectionRef = useRef(Boolean(state.clientId));
 
   const queryKey = `${filterSignature}|${cursor || ""}|${limit}`;
 
   useEffect(() => {
     setDraft(draftFromState(state));
+    setFiltersOpen(advancedFilterCount(state.filters) > 0);
   }, [filterSignature]);
 
   useEffect(() => {
@@ -454,10 +337,12 @@ export function ClientsView({
 
   function applyFilters(event: { preventDefault: () => void }) {
     event.preventDefault();
+    const nextFilters = filtersFromDraft(draft);
+    setFiltersOpen(advancedFilterCount(nextFilters) > 0);
     onNavigate(
       {
         ...state,
-        filters: filtersFromDraft(draft),
+        filters: nextFilters,
         cursor: null,
         clientId: null,
         attemptId: null,
@@ -473,6 +358,7 @@ export function ClientsView({
       to: "",
       limit: String(DEFAULT_LIMIT),
     });
+    setFiltersOpen(false);
     onNavigate(
       {
         ...state,
@@ -485,17 +371,27 @@ export function ClientsView({
     );
   }
 
-  function selectClient(
-    record: ClientRecord,
-    event: MouseEvent<HTMLButtonElement>,
-  ) {
-    triggerRef.current = event.currentTarget;
+  function selectClient(record: ClientRecord, trigger: HTMLButtonElement) {
+    triggerRef.current = trigger;
     focusOnOpenRef.current = true;
     onNavigate({
       ...state,
       clientId: record.clientId,
       attemptId: null,
     });
+  }
+
+  function selectClientRow(
+    record: ClientRecord,
+    event: MouseEvent<HTMLTableRowElement>,
+  ) {
+    const target = event.target as HTMLElement;
+    if (target.closest("a,button") && !target.closest("[data-row-action]"))
+      return;
+    const trigger =
+      target.closest<HTMLButtonElement>("[data-row-action]") ||
+      event.currentTarget.querySelector<HTMLButtonElement>("[data-row-action]");
+    if (trigger) selectClient(record, trigger);
   }
 
   function nextPage() {
@@ -522,7 +418,11 @@ export function ClientsView({
     setAttemptsLoading(true);
     setAttemptsError(null);
     api
-      .listAttempts({ clientId: activeId, cursor: attemptsNextCursor, limit: 100 })
+      .listAttempts({
+        clientId: activeId,
+        cursor: attemptsNextCursor,
+        limit: 100,
+      })
       .then((page) => {
         if (
           attemptsRequest.current !== requestId ||
@@ -535,10 +435,7 @@ export function ClientsView({
         setAttemptsLoading(false);
       })
       .catch((failure) => {
-        if (
-          attemptsRequest.current !== requestId ||
-          isAbortError(failure)
-        )
+        if (attemptsRequest.current !== requestId || isAbortError(failure))
           return;
         setAttemptsError(requestErrorMessage(failure));
         setAttemptsLoading(false);
@@ -550,6 +447,14 @@ export function ClientsView({
     if (selectedId) setClientToken((token) => token + 1);
   }
 
+  const activeFilterCount = advancedFilterCount(filters);
+  const directoryState = healthError
+    ? "Coverage unavailable"
+    : health
+      ? health.partial || health.pendingProjectionCount > 0
+        ? "Partial coverage"
+        : "Directory current"
+      : "Checking coverage";
   const showing =
     clients.length > 0
       ? `Showing ${clients.length} of ${total} clients`
@@ -558,83 +463,155 @@ export function ClientsView({
         : "No clients to show";
 
   return (
-    <div id="clients-view" className="admin-view" data-route="clients">
-      <div className="admin-view__toolbar">
-        <p className="admin-view__count" data-testid="client-page-summary">
-          {showing}
-        </p>
-        <button
-          type="button"
-          className="admin-button admin-button--quiet"
-          onClick={refresh}
-          disabled={loading}
-          aria-busy={refreshing}
-        >
-          {refreshing ? "Refreshing..." : "Refresh"}
-        </button>
+    <div
+      id="clients-view"
+      className="admin-view admin-client-view"
+      data-route="clients"
+    >
+      <div
+        className="admin-pulse admin-client-pulse"
+        aria-label="Client directory summary"
+        data-client-coverage={
+          healthError
+            ? "unavailable"
+            : !health
+              ? "loading"
+              : health.partial || health.pendingProjectionCount > 0
+                ? "partial"
+                : "current"
+        }
+      >
+        <span>
+          <strong>{clients.length}</strong> in view
+        </span>
+        <span className="admin-pulse__sep" />
+        <span>
+          <strong>{total}</strong> clients
+        </span>
+        <span className="admin-pulse__sep" />
+        <span>{directoryState}</span>
+        <span className="admin-pulse__sep" />
+        <span>Accepted intake only</span>
       </div>
 
-      <DirectoryHealth health={health} error={healthError} />
-
-      <form className="admin-filters" onSubmit={applyFilters} aria-label="Client filters">
-        <label className="admin-field admin-field--wide">
-          <span>Search clients</span>
-          <input
-            type="search"
-            value={draft.search}
-            maxLength={160}
-            placeholder="Business, contact, email or invitation"
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, search: event.target.value }))
-            }
-          />
-        </label>
-        <label className="admin-field">
-          <span>From date</span>
-          <input
-            type="date"
-            value={draft.from}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, from: event.target.value }))
-            }
-          />
-        </label>
-        <label className="admin-field">
-          <span>To date</span>
-          <input
-            type="date"
-            value={draft.to}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, to: event.target.value }))
-            }
-          />
-        </label>
-        <label className="admin-field admin-field--small">
-          <span>Rows per page</span>
-          <select
-            value={draft.limit}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, limit: event.target.value }))
-            }
-          >
-            <option value="25">25</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-          </select>
-        </label>
-        <div className="admin-filter-actions">
-          <button type="submit" className="admin-button">
-            Apply filters
-          </button>
-          <button
-            type="button"
-            className="admin-button admin-button--quiet"
-            onClick={clearFilters}
-          >
-            Clear filters
-          </button>
+      <form
+        className="admin-client-toolbar-form"
+        onSubmit={applyFilters}
+        aria-label="Client filters"
+      >
+        <div className="admin-client-toolbar">
+          <div className="admin-client-toolbar__search">
+            <label className="admin-search admin-client-search">
+              <AdminIcon name="search" />
+              <span className="admin-visually-hidden">Search clients</span>
+              <input
+                type="search"
+                value={draft.search}
+                maxLength={160}
+                placeholder="Business or email"
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    search: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <button
+              type="submit"
+              className="admin-button admin-client-search__submit"
+            >
+              Search clients
+            </button>
+          </div>
+          <div className="admin-client-toolbar__actions">
+            <button
+              type="button"
+              className="admin-button admin-button--quiet admin-client-filter-toggle"
+              aria-expanded={filtersOpen}
+              aria-controls="client-advanced-filters"
+              onClick={() => setFiltersOpen((open) => !open)}
+            >
+              <AdminIcon name="filters" />
+              {activeFilterCount ? `Filters (${activeFilterCount})` : "Filters"}
+            </button>
+            <button
+              type="button"
+              className="admin-button admin-button--quiet"
+              onClick={refresh}
+              disabled={loading}
+              aria-busy={refreshing}
+            >
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
         </div>
+
+        {filtersOpen ? (
+          <div
+            id="client-advanced-filters"
+            className="admin-client-filters"
+            aria-label="Advanced client filters"
+          >
+            <label className="admin-field">
+              <span>From date</span>
+              <input
+                type="date"
+                value={draft.from}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    from: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <label className="admin-field">
+              <span>To date</span>
+              <input
+                type="date"
+                value={draft.to}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    to: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <label className="admin-field admin-field--small">
+              <span>Rows per page</span>
+              <select
+                value={draft.limit}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    limit: event.target.value,
+                  }))
+                }
+              >
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </label>
+            <div className="admin-filter-actions">
+              <button type="submit" className="admin-button">
+                Apply filters
+              </button>
+              <button
+                type="button"
+                className="admin-button admin-button--quiet"
+                onClick={clearFilters}
+              >
+                Clear filters
+              </button>
+            </div>
+          </div>
+        ) : null}
       </form>
+
+      <DirectoryHealth health={health} error={healthError} />
 
       {error && clients.length > 0 ? (
         <div className="admin-notice admin-notice--error" role="alert">
@@ -651,254 +628,176 @@ export function ClientsView({
         </div>
       ) : null}
 
-      <div className="admin-view-layout">
-        <div className="admin-view__ledger">
-          {loading ? (
-            <div className="admin-skeleton" role="status">
-              <span />
-              <span />
-              <span />
-              <p>Loading client directory...</p>
-            </div>
-          ) : null}
-
-          {!loading && clients.length === 0 ? (
-            <div className="admin-empty" role="status">
-              <h3>No clients match these filters</h3>
-              <p>
-                Pending or unused invitations remain in Invitations. Only
-                accepted submissions appear as clients.
-              </p>
-            </div>
-          ) : null}
-
-          {clients.length > 0 ? (
-            <div
-              className="admin-table-wrap"
-              role="region"
-              aria-label="Client directory"
-              tabIndex={0}
-            >
-              <table className="admin-table admin-table--clients">
-                <caption className="admin-visually-hidden">
-                  Accepted clients across the shared workspace
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Client</th>
-                    <th scope="col">Contact</th>
-                    <th scope="col">Invitation</th>
-                    <th scope="col">Submitted</th>
-                    <th scope="col">Inviting admin</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {clients.map((record) => (
-                    <tr key={record.clientId} data-client-id={record.clientId}>
-                      <td>
-                        <button
-                          type="button"
-                          className="admin-row-button"
-                          aria-label={`Open client ${record.clientId} for ${
-                            record.businessName || "an unnamed business"
-                          }`}
-                          aria-expanded={selectedId === record.clientId}
-                          aria-controls={
-                            selectedId === record.clientId
-                              ? "client-inspector"
-                              : undefined
-                          }
-                          onClick={(event) => selectClient(record, event)}
-                        >
-                          <span className="admin-row-primary">
-                            {formatClientName(record)}
-                          </span>
-                          <span className="admin-row-secondary admin-mono">
-                            {record.clientId}
-                          </span>
-                        </button>
-                      </td>
-                      <td>
-                        <span>{record.contactName || "Not recorded"}</span>
-                        <span className="admin-block admin-muted">
-                          {record.email || "Email not recorded"}
-                        </span>
-                      </td>
-                      <td className="admin-mono">{record.inviteId || "Not recorded"}</td>
-                      <td>{formatTimestamp(record.submittedAt)}</td>
-                      <td>
-                        <ActorLabel actor={record.creator} showSource={false} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-
-          <div className="admin-pagination">
-            <button
-              type="button"
-              className="admin-button admin-button--quiet"
-              onClick={previousPage}
-              disabled={!cursorTrail.length || loading}
-            >
-              Previous page
-            </button>
-            <button
-              type="button"
-              className="admin-button admin-button--quiet"
-              onClick={nextPage}
-              disabled={!nextCursor || loading}
-            >
-              Next page
-            </button>
-          </div>
+      {loading ? (
+        <div className="admin-skeleton" role="status">
+          <span />
+          <span />
+          <span />
+          <p>Loading client directory...</p>
         </div>
+      ) : null}
 
-        {selectedId ? (
-          <section
-            id="client-inspector"
-            className="admin-inspector"
-            aria-labelledby="client-inspector-title"
-            aria-busy={clientLoading || attemptsLoading}
-            onKeyDown={(event) => {
-              const target = event.target;
-              if (
-                event.key === "Escape" &&
-                !(target instanceof HTMLInputElement) &&
-                !(target instanceof HTMLTextAreaElement) &&
-                !(target instanceof HTMLSelectElement)
-              ) {
-                event.preventDefault();
-                onNavigate({ ...state, clientId: null });
-              }
-            }}
-          >
-            <div className="admin-inspector__top">
-              <div>
-                <p className="admin-eyebrow">Client dossier</p>
-                <h2 id="client-inspector-title" ref={headingRef} tabIndex={-1}>
-                  {client
-                    ? `Client dossier: ${formatClientName(client)}`
-                    : "Client dossier"}
-                </h2>
-              </div>
-              <button
-                type="button"
-                className="admin-button admin-button--quiet"
-                onClick={() => onNavigate({ ...state, clientId: null })}
-              >
-                Close client dossier
-              </button>
-            </div>
+      {!loading && clients.length === 0 ? (
+        <div className="admin-empty" role="status">
+          <h3>No clients match these filters</h3>
+          <p>
+            Pending or unused invitations remain in Invitations. Only accepted
+            submissions appear as clients.
+          </p>
+        </div>
+      ) : null}
 
-            {clientLoading ? (
-              <p className="admin-muted" role="status">
-                Loading client detail...
-              </p>
-            ) : null}
-
-            {clientError ? (
-              <div className="admin-error" role="alert">
-                <p>{clientError}</p>
-                <button
-                  type="button"
-                  className="admin-button"
-                  onClick={() => setClientToken((token) => token + 1)}
+      {clients.length > 0 ? (
+        <div className="admin-client-table-wrap">
+          <table className="admin-client-table">
+            <caption className="admin-visually-hidden">
+              Accepted clients across the shared workspace
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Client</th>
+                <th scope="col">Contact</th>
+                <th scope="col">Submitted</th>
+                <th scope="col">Inviting admin</th>
+                <th scope="col">
+                  <span className="admin-visually-hidden">Client dossier</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {clients.map((record) => (
+                <tr
+                  key={record.clientId}
+                  data-client-id={record.clientId}
+                  tabIndex={0}
+                  aria-selected={selectedId === record.clientId || undefined}
+                  onClick={(event) => selectClientRow(record, event)}
+                  onKeyDown={(event) => {
+                    if (event.target !== event.currentTarget) return;
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
+                    const trigger =
+                      event.currentTarget.querySelector<HTMLButtonElement>(
+                        "[data-row-action]",
+                      );
+                    if (trigger) selectClient(record, trigger);
+                  }}
                 >
-                  Retry client detail
-                </button>
-              </div>
-            ) : null}
+                  <td data-label="Client">
+                    <div className="admin-client-cell">
+                      <span
+                        className="admin-client-monogram"
+                        aria-hidden="true"
+                      >
+                        {clientInitials(record)}
+                      </span>
+                      <span className="admin-client-copy">
+                        <span className="admin-client-name">
+                          {formatClientName(record)}
+                        </span>
+                        <span className="admin-client-meta">
+                          Issue #{record.issueNumber}
+                        </span>
+                      </span>
+                    </div>
+                  </td>
+                  <td data-label="Contact">
+                    <span className="admin-client-contact-name">
+                      {record.contactName || "Not recorded"}
+                    </span>
+                    <span className="admin-client-contact-email">
+                      {record.email || "Email not recorded"}
+                    </span>
+                  </td>
+                  <td data-label="Submitted">
+                    <span className="admin-client-date">
+                      {formatDate(record.submittedAt)}
+                    </span>
+                  </td>
+                  <td data-label="Inviting admin">
+                    <ActorLabel actor={record.creator} showSource={false} />
+                  </td>
+                  <td
+                    data-label="Client dossier"
+                    className="admin-client-action"
+                  >
+                    <button
+                      type="button"
+                      className="admin-row-action"
+                      data-row-action
+                      aria-label={`Open client ${record.clientId} for ${formatClientName(record)}`}
+                      aria-haspopup="dialog"
+                      aria-expanded={selectedId === record.clientId}
+                      aria-controls={
+                        selectedId === record.clientId
+                          ? "client-inspector"
+                          : undefined
+                      }
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        selectClient(record, event.currentTarget);
+                      }}
+                    >
+                      Open
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
 
-            {client ? (
-              <>
-                <section
-                  className="admin-inspector__block"
-                  aria-labelledby="client-identity-title"
-                >
-                  <h3 id="client-identity-title">Client identity</h3>
-                  <dl className="admin-detail-grid">
-                    <div>
-                      <dt>Business name</dt>
-                      <dd>{client.businessName || "Not recorded"}</dd>
-                    </div>
-                    <div>
-                      <dt>Contact name</dt>
-                      <dd>{client.contactName || "Not recorded"}</dd>
-                    </div>
-                    <div>
-                      <dt>Email</dt>
-                      <dd>{client.email || "Not recorded"}</dd>
-                    </div>
-                    <div>
-                      <dt>Phone</dt>
-                      <dd>{client.phone || "Not recorded"}</dd>
-                    </div>
-                    <div>
-                      <dt>Client record</dt>
-                      <dd className="admin-mono">{client.clientId}</dd>
-                    </div>
-                    <div>
-                      <dt>Invitation</dt>
-                      <dd className="admin-mono">
-                        {client.inviteId || "Not recorded"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Submission</dt>
-                      <dd className="admin-mono">
-                        {client.submissionId || "Not recorded"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Issue</dt>
-                      <dd>{client.issueNumber}</dd>
-                    </div>
-                    <div>
-                      <dt>Submitted</dt>
-                      <dd data-client-submitted>
-                        {formatTimestamp(client.submittedAt)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Inviting admin</dt>
-                      <dd>
-                        <ActorLabel actor={client.creator} />
-                      </dd>
-                    </div>
-                  </dl>
-                </section>
-
-                <SiteLinks client={client} />
-
-                <ClientAttempts
-                  attempts={attempts}
-                  loading={attemptsLoading}
-                  error={attemptsError}
-                  nextCursor={attemptsNextCursor}
-                  total={attemptTotal}
-                  onOpenAttempt={(attemptId) =>
-                    onNavigate(
-                      {
-                        view: "generations",
-                        attemptId,
-                        clientId: null,
-                        filters: { clientId: client.clientId },
-                        cursor: null,
-                      },
-                      { cursorTrail: [] },
-                    )
-                  }
-                  onLoadMore={loadMoreAttempts}
-                  onRetry={() => setClientToken((token) => token + 1)}
-                />
-              </>
-            ) : null}
-          </section>
-        ) : null}
+      <div className="admin-pagination admin-client-pagination">
+        <button
+          type="button"
+          className="admin-button admin-button--quiet"
+          onClick={previousPage}
+          disabled={!cursorTrail.length || loading}
+        >
+          Previous page
+        </button>
+        <span className="admin-view__count" data-testid="client-page-summary">
+          {showing}
+        </span>
+        <button
+          type="button"
+          className="admin-button admin-button--quiet"
+          onClick={nextPage}
+          disabled={!nextCursor || loading}
+        >
+          Next page
+        </button>
       </div>
+
+      {selectedId ? (
+        <ClientDossier
+          client={client}
+          loading={clientLoading}
+          error={clientError}
+          attempts={attempts}
+          attemptsNextCursor={attemptsNextCursor}
+          attemptsLoading={attemptsLoading}
+          attemptsError={attemptsError}
+          attemptTotal={attemptTotal}
+          headingRef={headingRef}
+          onClose={() => onNavigate({ ...state, clientId: null })}
+          onRetry={() => setClientToken((token) => token + 1)}
+          onLoadMoreAttempts={loadMoreAttempts}
+          onOpenAttempt={(attemptId) =>
+            onNavigate(
+              {
+                view: "generations",
+                attemptId,
+                clientId: null,
+                filters: { clientId: selectedId },
+                cursor: null,
+              },
+              { cursorTrail: [] },
+            )
+          }
+        />
+      ) : null}
     </div>
   );
 }
