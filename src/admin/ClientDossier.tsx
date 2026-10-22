@@ -324,8 +324,9 @@ export function ClientDossier({
           </h2>
           {client ? (
             <p className="admin-client-sheet__subhead">
-              {[client.contactName, client.email].filter(Boolean).join(" · ") ||
-                "Contact details not recorded"}
+              {client.contactName ||
+                (client.businessName && client.email) ||
+                "No contact name recorded"}
             </p>
           ) : null}
         </div>
