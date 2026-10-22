@@ -41,6 +41,7 @@ import {
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
 import {
+  assertCodeAuthoringModel,
   buildGoCreativeRequest,
   completeGoCreative,
   creativeLaneDefaultModel,
@@ -1552,6 +1553,7 @@ async function main() {
     sessionConfig?.creativeModel ||
     process.env.CREATIVE_EXPERIENCE_MODEL ||
     creativeLaneDefaultModel(creativeProvider);
+  assertCodeAuthoringModel(model, { provider: creativeProvider });
   const creativeSession = sessionConfig
     ? validateCreativeSessionConfig(sessionConfig, { creativeModel: model })
     : null;

@@ -47,6 +47,7 @@ import {
   responsesImagePart,
 } from "./opencode-go.mjs";
 import {
+  assertCodeAuthoringModel,
   creativeLaneDefaultModel,
   creativeLaneEffort,
   creativeLaneProvider,
@@ -87,6 +88,7 @@ const model =
   requestedModel ||
   sessionConfig?.creativeModel ||
   creativeLaneDefaultModel(provider);
+assertCodeAuthoringModel(model, { provider });
 const creativeSession = sessionConfig
   ? validateCreativeSessionConfig(sessionConfig, { creativeModel: model })
   : null;

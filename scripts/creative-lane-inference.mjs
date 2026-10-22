@@ -35,6 +35,28 @@ export function creativeLaneDefaultModel(provider = creativeLaneProvider()) {
     : "openai/gpt-6-luna";
 }
 
+/**
+ * Code authoring/repair is a DeepSeek V4.1 Flash lane on OpenCode Go. GLM
+ * models and DeepSeek v4-pro are visual-judge/trial models; refuse them here so
+ * an env or stale session cannot put another model in the code path.
+ */
+export function assertCodeAuthoringModel(
+  logicalModel,
+  { provider = creativeLaneProvider(), lane = "code authoring" } = {},
+) {
+  const model = String(logicalModel || "").trim();
+  if (provider !== "opencode-go") return model;
+  if (
+    model === "opencode-go/deepseek-v4.1-flash" ||
+    model === "deepseek-v4.1-flash"
+  )
+    return model;
+  throw new Error(
+    `${lane} on OpenCode Go must use deepseek-v4.1-flash; refused ${model || "(empty)"}. ` +
+      "GLM and DeepSeek v4-pro are visual-judge/trial models and cannot author code.",
+  );
+}
+
 /** Default reasoning effort for the creative lane. DeepSeek V4.1 Flash runs
  * at `max` unless an explicit environment override selects otherwise. */
 export function creativeLaneDefaultEffort(provider = creativeLaneProvider()) {

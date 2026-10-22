@@ -215,7 +215,7 @@ try {
       cwd: root,
       env: {
         ...process.env,
-        CREATIVE_EXPERIENCE_MODEL: "openai/gpt-6-luna",
+        CREATIVE_EXPERIENCE_MODEL: "opencode-go/deepseek-v4.1-flash",
       },
       maxBuffer: 8 * 1024 * 1024,
     },

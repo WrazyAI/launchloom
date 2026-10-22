@@ -5,6 +5,10 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
 import {
+  assertCodeAuthoringModel,
+  creativeLaneProvider,
+} from "./creative-lane-inference.mjs";
+import {
   applyCreativeRepairEdits,
   requestRepair,
   privateRepairRejectionEvidence,
@@ -1167,6 +1171,7 @@ export async function runRenderedCreativeRepair({
     creativeSession?.creativeModel ||
     process.env.CREATIVE_EXPERIENCE_MODEL ||
     "openai/gpt-6-luna";
+  assertCodeAuthoringModel(resolvedModel, { provider: creativeLaneProvider() });
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
   const evidenceRoot = path.resolve(root, outDir);

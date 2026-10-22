@@ -50,12 +50,6 @@ on:
         options: ["", openrouter, opencode-go]
         default: ""
 
-      creative_model:
-        description: Override the creative authoring model for this dispatch only (Go logical or wire id); leave empty for repository defaults
-        required: false
-        type: string
-        default: ""
-
 permissions:
   contents: write
   issues: write
@@ -137,7 +131,6 @@ jobs:
       test_profile: ${{ needs.profile_policy.outputs.profile }}
       candidate_repository: ${{ inputs.candidate_repository || '' }}
       inference_provider: ${{ inputs.inference_provider || '' }}
-      creative_model: ${{ inputs.creative_model || '' }}
     secrets: inherit
 
   private_preview_access_smoke:
@@ -219,11 +212,9 @@ jobs:
       FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}
       FAL_IMAGE_MAX_IMAGES: ${{ vars.FAL_IMAGE_MAX_IMAGES || '3' }}
       FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '9' }}
-      MODEL_AUTHORED_EXPERIENCE_MODEL: ${{ vars.MODEL_AUTHORED_EXPERIENCE_MODEL || 'z-ai/glm-5.3-flash' }}
-      # Keep truth/configuration generation separate from visual authorship.
-      # New creative work uses GPT-6 Luna. Translate an old organization or
-      # repository override so it cannot silently keep new intakes on 5.6.
-      CREATIVE_EXPERIENCE_MODEL: ${{ inputs.creative_model || (vars.CREATIVE_EXPERIENCE_MODEL == 'openai/gpt-5.6-luna' && 'opencode-go/deepseek-v4.1-flash' || vars.CREATIVE_EXPERIENCE_MODEL || 'opencode-go/deepseek-v4.1-flash') }}
+      # Code authoring and repair are hard-pinned to DeepSeek V4.1 Flash.
+      # GLM and DeepSeek v4-pro are visual-judge/trial models only.
+      CREATIVE_EXPERIENCE_MODEL: opencode-go/deepseek-v4.1-flash
       CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'max' }}
       # Repairs are bounded edits; high effort leaves output headroom for
       # max-effort-adjacent reasoning without truncating the answer.
