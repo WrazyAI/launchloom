@@ -34,6 +34,8 @@ export type AttemptFilters = {
   creatorId?: string;
   profile?: GenerationProfile;
   clientId?: string;
+  /** Failed, unknown, stale, diagnostic or delivery-attention attempts. */
+  attention?: boolean;
   from?: number;
   to?: number;
   cursor?: string;
@@ -89,6 +91,8 @@ export type AttemptSummary = AttemptInput & {
     estimatedUsd: number | null;
     unreportedCount: number;
   };
+  /** Display-only client identity enriched from the attempt's client record. */
+  clientName?: string | null;
 };
 export type AttemptEventSource =
   "callback" | "github-reconcile" | "legacy-import";

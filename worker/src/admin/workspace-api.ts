@@ -287,8 +287,19 @@ export async function workspaceApi(
       if (!Number.isSafeInteger(n)) throw new Error(`invalid ${key}`);
       return n;
     };
+    const attention =
+      query.attention === undefined
+        ? undefined
+        : query.attention === "true"
+          ? true
+          : query.attention === "false"
+            ? false
+            : (() => {
+                throw new Error("invalid attention");
+              })();
     const filters = {
       ...query,
+      attention,
       limit: number("limit"),
       from: number("from"),
       to: number("to"),

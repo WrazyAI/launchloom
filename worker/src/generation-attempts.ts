@@ -803,6 +803,35 @@ export class GenerationAttempts {
   }
 
   private summary(row: AttemptRow): AttemptSummary {
+    const attempt = JSON.parse(row.data) as AttemptInput;
+    const clientRow = attempt.clientId
+      ? this.storage.sql
+          .exec<{ data: string }>(
+            "SELECT data FROM admin_clients WHERE client_id=? LIMIT 1",
+            attempt.clientId,
+          )
+          .toArray()[0]
+      : undefined;
+    let clientName: string | null = null;
+    if (clientRow) {
+      try {
+        const client = JSON.parse(clientRow.data) as {
+          businessName?: string | null;
+          contactName?: string | null;
+        };
+        const business =
+          typeof client.businessName === "string"
+            ? client.businessName.trim()
+            : "";
+        const contact =
+          typeof client.contactName === "string"
+            ? client.contactName.trim()
+            : "";
+        clientName = business || contact || null;
+      } catch {
+        clientName = null;
+      }
+    }
     const costs = this.storage.sql
       .exec<{
         actual: number | null;
@@ -818,7 +847,8 @@ export class GenerationAttempts {
       )
       .one();
     return {
-      ...(JSON.parse(row.data) as AttemptInput),
+      ...attempt,
+      clientName,
       costs: {
         actualUsd: costs.actual,
         estimatedUsd: costs.estimated,
@@ -845,6 +875,7 @@ export class GenerationAttempts {
       creatorId: filters.creatorId ?? null,
       profile: filters.profile ?? null,
       clientId: filters.clientId ?? null,
+      attention: filters.attention === true,
       from: filters.from ?? null,
       to: filters.to ?? null,
     };
@@ -872,6 +903,13 @@ export class GenerationAttempts {
         clauses.push(`${column} = ?`);
         args.push(normalized[key]!);
       }
+    }
+    if (normalized.attention) {
+      clauses.push(
+        `(execution_status IN ('failed','unknown')
+          OR json_extract(data,'$.deliveryStatus') IN ('attention','diagnostic')
+          OR json_extract(data,'$.stale')=1)`,
+      );
     }
     if (normalized.search !== null) {
       clauses.push(

@@ -651,6 +651,7 @@ export function buildAttemptQuery(filters: AttemptFilters = {}) {
   const params = new URLSearchParams();
   add(params, "search", filters.search?.trim());
   add(params, "executionStatus", filters.executionStatus);
+  if (filters.attention === true) add(params, "attention", "true");
   add(params, "initiatorId", filters.initiatorId);
   add(params, "creatorId", filters.creatorId);
   add(params, "profile", filters.profile);

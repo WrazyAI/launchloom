@@ -42,9 +42,9 @@ const VIEW_COPY: Record<
 > = {
   generations: {
     label: "Generations",
-    title: "Generation history",
+    title: "Recent generations",
     description:
-      "Every recorded generation attempt across the shared workspace, including failures, cancellations and reruns.",
+      "Every generation attempt across the shared workspace, newest first. All admins see the same records.",
   },
   clients: {
     label: "Clients",

@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import type {
   AttemptDetail,
   AttemptEventRecord,
   ClientRecord,
 } from "../lib/admin-contracts";
 import { ActorLabel } from "./ActorLabel";
+import { AdminIcon } from "./AdminIcon";
+import { GenerationPreview } from "./GenerationPreview";
 import {
   DeliveryStatusBadge,
   ExecutionStatusBadge,
@@ -16,35 +18,8 @@ import {
   formatProfile,
   formatTimestamp,
   safeEvidenceUrl,
+  safeSiteUrl,
 } from "./format";
-
-function isTextInput(target: EventTarget | null) {
-  return (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    target instanceof HTMLSelectElement
-  );
-}
-
-const WIDE_INSPECTOR_QUERY = "(min-width: 1180px)";
-
-function useWideInspector() {
-  const [wide, setWide] = useState(() =>
-    typeof window === "undefined"
-      ? true
-      : window.matchMedia(WIDE_INSPECTOR_QUERY).matches,
-  );
-
-  useEffect(() => {
-    const query = window.matchMedia(WIDE_INSPECTOR_QUERY);
-    const update = () => setWide(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
-
-  return wide;
-}
 
 export type AttemptInspectorProps = {
   attempt: AttemptDetail | null;
@@ -236,11 +211,11 @@ export function AttemptInspector({
   onLoadMoreEvents,
   onOpenClient,
 }: AttemptInspectorProps) {
-  const wide = useWideInspector();
   const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const siteUrl =
+    safeSiteUrl(client?.previewUrl) || safeSiteUrl(client?.productionUrl);
 
   useEffect(() => {
-    if (wide) return;
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (!dialog.open) dialog.showModal();
@@ -250,26 +225,26 @@ export function AttemptInspector({
       document.body.style.overflow = previousOverflow;
       if (dialog.open) dialog.close();
     };
-  }, [wide]);
+  }, []);
 
   const body = (
     <>
-      <div className="admin-inspector__top">
-        <div>
-          <p className="admin-eyebrow">Selected attempt</p>
+      <div className="admin-sheet__header">
+        <div className="admin-sheet__header-copy">
+          <div className="admin-sheet__kicker">
+            <span>{attempt ? `${attempt.profile} generation` : "Generation detail"}</span>
+            {attempt ? <span>· attempt {attempt.attemptId.slice(0, 12)}</span> : null}
+          </div>
           <h2 id="attempt-inspector-title" ref={headingRef} tabIndex={-1}>
             {attempt ? `Attempt ${attempt.attemptId}` : "Attempt inspector"}
           </h2>
         </div>
-        <button
-          type="button"
-          className="admin-button admin-button--quiet"
-          onClick={onClose}
-        >
-          Close inspector
+        <button className="admin-icon-button" type="button" aria-label="Close preview" onClick={onClose}>
+          <AdminIcon name="close" />
         </button>
       </div>
 
+      <div className="admin-sheet__body">
       {loading ? (
         <p className="admin-muted" role="status">
           Loading attempt detail...
@@ -307,6 +282,31 @@ export function AttemptInspector({
             />
             <DeliveryStatusBadge status={attempt.deliveryStatus} />
           </div>
+
+          <section className="admin-sheet__preview" aria-labelledby="attempt-preview-title">
+            <div className="admin-sheet__preview-toolbar">
+              <span className="admin-sheet__label" id="attempt-preview-title">Site preview</span>
+              {siteUrl ? (
+                <a className="admin-button admin-button--quiet" href={siteUrl} target="_blank" rel="noreferrer">
+                  Visit site
+                </a>
+              ) : null}
+            </div>
+            <div className="admin-browser">
+              <div className="admin-browser__bar">
+                <span className="admin-browser__dots" aria-hidden="true"><i /><i /><i /></span>
+                <span className="admin-browser__url">
+                  {siteUrl ? new URL(siteUrl).hostname : "Preview unavailable"}
+                </span>
+              </div>
+              <div className="admin-browser__media">
+                <GenerationPreview attempt={attempt} large />
+              </div>
+            </div>
+            <p className="admin-sheet__notes">
+              <strong>Generation screenshot.</strong> This is the captured site for this generation issue. It may predate later revisions; use Visit site for the current preview.
+            </p>
+          </section>
 
           <section
             className="admin-inspector__block"
@@ -453,35 +453,17 @@ export function AttemptInspector({
           />
         </>
       ) : null}
+      </div>
     </>
   );
-
-  if (wide) {
-    return (
-      <section
-        id="attempt-inspector"
-        className="admin-inspector"
-        data-inspector-surface="panel"
-        aria-labelledby="attempt-inspector-title"
-        aria-busy={loading || eventsLoading}
-        onKeyDown={(event) => {
-          if (event.key === "Escape" && !isTextInput(event.target)) {
-            event.preventDefault();
-            onClose();
-          }
-        }}
-      >
-        {body}
-      </section>
-    );
-  }
 
   return (
     <dialog
       id="attempt-inspector"
       ref={dialogRef}
-      className="admin-inspector admin-inspector--sheet"
+      className="admin-sheet"
       data-inspector-surface="dialog"
+      aria-modal="true"
       aria-labelledby="attempt-inspector-title"
       aria-busy={loading || eventsLoading}
       onCancel={(event) => {
