@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import type {
   AttemptDetail,
   AttemptEventRecord,
@@ -212,6 +212,7 @@ export function AttemptInspector({
   onOpenClient,
 }: AttemptInspectorProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const [open, setOpen] = useState(false);
   const siteUrl =
     safeSiteUrl(client?.previewUrl) || safeSiteUrl(client?.productionUrl);
 
@@ -219,9 +220,11 @@ export function AttemptInspector({
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (!dialog.open) dialog.showModal();
+    const frame = window.requestAnimationFrame(() => setOpen(true));
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
+      window.cancelAnimationFrame(frame);
       document.body.style.overflow = previousOverflow;
       if (dialog.open) dialog.close();
     };
@@ -461,7 +464,7 @@ export function AttemptInspector({
     <dialog
       id="attempt-inspector"
       ref={dialogRef}
-      className="admin-sheet"
+      className={`admin-sheet${open ? " is-open" : ""}`}
       data-inspector-surface="dialog"
       aria-modal="true"
       aria-labelledby="attempt-inspector-title"

@@ -426,7 +426,11 @@ async function openFilters(page: Page) {
 }
 
 async function waitForClients(page: Page) {
-  await visible(page.getByText(new RegExp(`${CLIENTS.length} clients`, "u")));
+  const summary = page.getByTestId("client-page-summary");
+  await visible(summary);
+  await expect
+    .poll(() => summary.textContent())
+    .toContain(`${CLIENTS.length} clients`);
 }
 
 async function focused(locator: Locator) {
@@ -633,6 +637,10 @@ describe("real admin workspace browser behavior", () => {
         )
         .toBe(true);
       await page
+        .getByRole("button", { name: "Close client dossier" })
+        .click();
+      await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
+      await page
         .getByRole("button", { name: /Open client submission:client-b/u })
         .click();
       const heading = page.getByRole("heading", {
@@ -649,6 +657,72 @@ describe("real admin workspace browser behavior", () => {
             .count(),
         )
         .toBe(0);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("opens the client dossier as a modal sheet and restores focus on escape", async () => {
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=clients",
+    });
+    try {
+      await waitForClients(page);
+      const trigger = page.getByRole("button", {
+        name: /Open client submission:client-a/u,
+      });
+      await trigger.click();
+      const dossier = page.getByRole("dialog", {
+        name: /Client dossier: Acme & Sons/u,
+      });
+      await visible(dossier);
+      await page.waitForTimeout(300);
+      expect(
+        await dossier.evaluate((element) => element.matches(":modal")),
+      ).toBe(true);
+      const dossierBox = await dossier.boundingBox();
+      const viewport = page.viewportSize();
+      expect(dossierBox).not.toBeNull();
+      expect(viewport).not.toBeNull();
+      expect(dossierBox!.x).toBeGreaterThanOrEqual(0);
+      expect(
+        Math.abs(dossierBox!.x + dossierBox!.width - viewport!.width),
+      ).toBeLessThanOrEqual(1);
+      expect(Math.abs(dossierBox!.y)).toBeLessThanOrEqual(1);
+      expect(
+        Math.abs(dossierBox!.height - viewport!.height),
+      ).toBeLessThanOrEqual(1);
+      await expect
+        .poll(() => page.evaluate(() => document.body.style.overflow))
+        .toBe("hidden");
+      await page.keyboard.press("Escape");
+      await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
+      await expect
+        .poll(() => page.evaluate(() => document.body.style.overflow))
+        .not.toBe("hidden");
+      await focused(trigger);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps client search compact and opens advanced filters on demand", async () => {
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=clients",
+    });
+    try {
+      await waitForClients(page);
+      expect(await page.getByLabel("From date").count()).toBe(0);
+      await page.getByRole("button", { name: "Filters", exact: true }).click();
+      await visible(page.getByLabel("From date"));
+      await page.getByLabel("From date").fill("2026-09-01");
+      await page.getByRole("button", { name: "Apply filters" }).click();
+      await expect
+        .poll(() => lastRequest("/clients")?.params.from)
+        .toBeTruthy();
+      expect(page.url()).toContain("from=");
       autoErrors(errors);
     } finally {
       await page.close();
@@ -872,6 +946,17 @@ describe("real admin workspace browser behavior", () => {
         await visible(
           page.getByRole("heading", { name: "Client dossier: Acme & Sons" }),
         );
+        await page.waitForTimeout(300);
+        const dossierBox = await page
+          .locator("#client-inspector")
+          .boundingBox();
+        expect(dossierBox).not.toBeNull();
+        expect(dossierBox!.x).toBeGreaterThanOrEqual(0);
+        expect(dossierBox!.x + dossierBox!.width).toBeLessThanOrEqual(
+          width + 1,
+        );
+        expect(Math.abs(dossierBox!.y)).toBeLessThanOrEqual(1);
+        expect(Math.abs(dossierBox!.height - 844)).toBeLessThanOrEqual(1);
         const afterMetrics = await page.evaluate(() => ({
           documentWidth: document.documentElement.scrollWidth,
           bodyWidth: document.body.scrollWidth,
@@ -913,11 +998,19 @@ describe("real admin workspace browser behavior", () => {
         await visible(dialog.getByText("Attempt summary"));
         await visible(dialog.getByText("Stage timeline"));
 
+        await page.waitForTimeout(300);
         const sheet = await dialog.boundingBox();
         expect(sheet).not.toBeNull();
         expect(sheet!.y).toBeGreaterThanOrEqual(0);
         expect(sheet!.y).toBeLessThan(844);
+        expect(sheet!.height).toBeLessThanOrEqual(844);
         expect(sheet!.width).toBeLessThanOrEqual(width);
+        expect(sheet!.x).toBeGreaterThanOrEqual(0);
+        expect(sheet!.x + sheet!.width).toBeLessThanOrEqual(width + 1);
+        expect(
+          Math.abs(sheet!.x + sheet!.width - width),
+        ).toBeLessThanOrEqual(1);
+        expect(Math.abs(sheet!.height - 844)).toBeLessThanOrEqual(1);
         const heading = dialog.getByRole("heading", {
           name: "Attempt attempt-0000",
         });
@@ -987,7 +1080,7 @@ describe("real admin workspace browser behavior", () => {
       );
       expect(page.url()).toContain("attempt=attempt-diagnostic");
 
-      await page.mouse.click(195, 16);
+      await page.mouse.click(10, 16);
       await expect.poll(() => dialog.count()).toBe(0);
       expect(page.url()).not.toContain("attempt=");
       await focused(page.locator("#admin-view-title"));
@@ -999,7 +1092,7 @@ describe("real admin workspace browser behavior", () => {
       await visible(
         page.getByRole("dialog", { name: "Attempt attempt-0000" }),
       );
-      await page.mouse.click(195, 16);
+      await page.mouse.click(10, 16);
       await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
       await focused(row);
       autoErrors(errors);
@@ -1393,7 +1486,7 @@ describe("real admin workspace browser behavior", () => {
       await page.getByRole("link", { name: "Clients", exact: true }).click();
       await waitForClients(page);
       await page.getByLabel("Search clients").fill("Acme");
-      await page.getByRole("button", { name: "Apply filters" }).click();
+      await page.getByRole("button", { name: "Search clients" }).click();
       await expect.poll(() => lastRequest("/clients")?.params.search).toBe(
         "Acme",
       );
