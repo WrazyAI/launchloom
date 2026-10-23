@@ -38,10 +38,6 @@ const NO_STORE = {
 };
 
 const HTML_CSP = [
-  "sandbox allow-scripts allow-forms allow-popups",
-  "allow-popups-to-escape-sandbox",
-  "allow-top-navigation-by-user-activation",
-  "allow-downloads",
   "default-src 'self' data: blob: https:",
   "script-src 'self' 'unsafe-inline' https:",
   "style-src 'self' 'unsafe-inline' https:",
@@ -465,45 +461,69 @@ async function rewritePreviewResponse(
   return new Response(upstream.body, { status: upstream.status, headers });
 }
 
-export async function handlePreviewProxy(
+function validHttpsOrigin(value: string | undefined): string | null {
+  if (!value || value.length > 2_048) return null;
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash ||
+      url.pathname !== "/"
+    )
+      return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+const PREVIEW_COOKIE = "__ll_preview";
+
+function readCookie(request: Request, name: string): string {
+  const header = request.headers.get("Cookie") || "";
+  for (const part of header.split(";")) {
+    const separator = part.indexOf("=");
+    if (separator === -1) continue;
+    if (part.slice(0, separator).trim() === name)
+      return part.slice(separator + 1).trim();
+  }
+  return "";
+}
+
+function previewCookie(token: string): string {
+  return `${PREVIEW_COOKIE}=${token}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=3600`;
+}
+
+function redirectTo(location: string, setCookies: string[] = []): Response {
+  return withAdminCookies(
+    new Response(null, {
+      status: 303,
+      headers: { ...NO_STORE, Location: location },
+    }),
+    setCookies,
+  );
+}
+
+function previewAuthUrl(
+  env: Env,
+  target: PreviewProxyTarget,
+  search: string,
+): string | null {
+  const origin = validHttpsOrigin(env.ADMIN_PUBLIC_ORIGIN);
+  if (!origin) return null;
+  return `${origin}${PREVIEW_PROXY_PREFIX}${target.host}${target.path}${search}`;
+}
+
+async function fetchPreview(
+  url: URL,
+  target: PreviewProxyTarget,
   request: Request,
   env: Env,
-  ctx: ExecutionContext,
-  deps: PreviewProxyDeps = {},
+  deps: PreviewProxyDeps,
 ): Promise<Response> {
-  if (request.method !== "GET" && request.method !== "HEAD")
-    return methodNotAllowed();
-
-  const url = new URL(request.url);
-  const target = parsePreviewProxyTarget(url, env);
-  if (!target) return notFound();
-
-  const secret = env.REVIEW_SIGNING_SECRET;
-  if (!secret) return textResponse(503, "Preview access is not configured.");
-  const tokenValid = target.token
-    ? await verifyPreviewToken(target.token, target.host, secret)
-    : false;
-  let guard: PreviewProxyGuard;
-  let prefix: string;
-  if (tokenValid) {
-    guard = { setCookies: [] };
-    prefix = `${PREVIEW_PROXY_PREFIX}${target.token}/${target.host}`;
-  } else {
-    const authorize = deps.authorize ?? requireAdminContext;
-    try {
-      guard = await authorize(request, env, ctx);
-    } catch (error) {
-      const mapped = toAdminAuthError(error);
-      if (mapped.status === 401) return loginRedirect(url, mapped.setCookies);
-      return withAdminCookies(
-        textResponse(mapped.status, mapped.message),
-        mapped.setCookies,
-      );
-    }
-    const token = await mintPreviewToken(target.host, secret);
-    prefix = `${PREVIEW_PROXY_PREFIX}${token}/${target.host}`;
-  }
-
   const headers = new Headers({
     Accept:
       "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
@@ -529,28 +549,109 @@ export async function handlePreviewProxy(
       },
     );
   } catch {
-    return withAdminCookies(
-      textResponse(502, "The preview could not be reached."),
-      guard.setCookies,
-    );
+    return textResponse(502, "The preview could not be reached.");
   }
 
   if (isAccessLoginRedirect(upstream))
-    return withAdminCookies(
-      textResponse(
-        502,
-        "The preview proxy could not authenticate with the preview host.",
-      ),
-      guard.setCookies,
+    return textResponse(
+      502,
+      "The preview proxy could not authenticate with the preview host.",
     );
 
-  const response = await rewritePreviewResponse(
+  return rewritePreviewResponse(
     upstream,
     target.host,
-    prefix,
+    `${PREVIEW_PROXY_PREFIX}${target.host}`,
     request.method,
   );
-  return withAdminCookies(response, guard.setCookies);
+}
+
+/**
+ * API-origin entry point. Verifies the Neon session, then hands the browser to
+ * the preview origin with a short-lived token. The preview itself never runs on
+ * the admin origin.
+ */
+export async function handlePreviewProxy(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+  deps: PreviewProxyDeps = {},
+): Promise<Response> {
+  if (request.method !== "GET" && request.method !== "HEAD")
+    return methodNotAllowed();
+
+  const url = new URL(request.url);
+  const target = parsePreviewProxyTarget(url, env);
+  if (!target) return notFound();
+
+  const previewOrigin = validHttpsOrigin(env.PREVIEW_ORIGIN);
+  if (!previewOrigin)
+    return textResponse(503, "Preview origin is not configured.");
+  const secret = env.REVIEW_SIGNING_SECRET;
+  if (!secret) return textResponse(503, "Preview access is not configured.");
+
+  const authorize = deps.authorize ?? requireAdminContext;
+  let guard: PreviewProxyGuard;
+  try {
+    guard = await authorize(request, env, ctx);
+  } catch (error) {
+    const mapped = toAdminAuthError(error);
+    if (mapped.status === 401) return loginRedirect(url, mapped.setCookies);
+    return withAdminCookies(
+      textResponse(mapped.status, mapped.message),
+      mapped.setCookies,
+    );
+  }
+
+  const token = await mintPreviewToken(target.host, secret);
+  return redirectTo(
+    `${previewOrigin}${PREVIEW_PROXY_PREFIX}${token}/${target.host}${target.path}${url.search}`,
+    guard.setCookies,
+  );
+}
+
+/**
+ * Preview-origin entry point. Exchanges the one-time token for an HttpOnly
+ * preview cookie, then serves the preview from a separate origin with the full
+ * site JavaScript. Keeping this origin separate from the admin origin means
+ * generated-site scripts cannot reach admin APIs with the operator's cookies.
+ */
+export async function handlePreviewOrigin(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+  deps: PreviewProxyDeps = {},
+): Promise<Response | null> {
+  if (request.method !== "GET" && request.method !== "HEAD")
+    return methodNotAllowed();
+
+  const url = new URL(request.url);
+  const target = parsePreviewProxyTarget(url, env);
+  if (!target) return null;
+
+  const previewOrigin = validHttpsOrigin(env.PREVIEW_ORIGIN);
+  if (!previewOrigin)
+    return textResponse(503, "Preview origin is not configured.");
+  const secret = env.REVIEW_SIGNING_SECRET;
+  if (!secret) return textResponse(503, "Preview access is not configured.");
+  const authUrl = previewAuthUrl(env, target, url.search);
+  if (!authUrl)
+    return textResponse(503, "Admin origin is not configured.");
+
+  const cleanPath = `${PREVIEW_PROXY_PREFIX}${target.host}${target.path}${url.search}`;
+  if (target.token) {
+    const valid = await verifyPreviewToken(target.token, target.host, secret);
+    if (!valid) return redirectTo(authUrl);
+    return redirectTo(cleanPath, [previewCookie(target.token)]);
+  }
+
+  const cookie = readCookie(request, PREVIEW_COOKIE);
+  const valid = cookie
+    ? await verifyPreviewToken(cookie, target.host, secret)
+    : false;
+  if (!valid) return redirectTo(authUrl);
+
+  return fetchPreview(url, target, request, env, deps);
 }
 
 /** Re-export for tests and callers that need the typed denial. */

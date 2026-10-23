@@ -5,6 +5,7 @@ import worker, { type Env } from "../src/index";
 import { AdminAuthError } from "../src/admin/auth";
 import { network } from "./network";
 import {
+  handlePreviewOrigin,
   handlePreviewProxy,
   mintPreviewToken,
   parsePreviewProxyTarget,
@@ -18,9 +19,11 @@ import {
 
 const previewHost = "63ae786d.launchloom-pipeline-preview.pages.dev";
 const adminOrigin = "https://api.launchloom.wrazyos.com";
+const previewOrigin = "https://preview.example.test";
 const previewSecret = "preview-proxy-test-secret";
 const proxyEnv = {
   ADMIN_PUBLIC_ORIGIN: adminOrigin,
+  PREVIEW_ORIGIN: previewOrigin,
   REVIEW_SIGNING_SECRET: previewSecret,
   CLOUDFLARE_ACCESS_CLIENT_ID: "access-client-id",
   CLOUDFLARE_ACCESS_CLIENT_SECRET: "access-client-secret",
@@ -40,6 +43,17 @@ function accessContext(
 
 function authorized(): PreviewProxyAuthorize {
   return async () => ({ setCookies: [] });
+}
+
+async function servePreview(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+  deps: Parameters<typeof handlePreviewOrigin>[3] = {},
+): Promise<Response> {
+  const response = await handlePreviewOrigin(request, env, ctx, deps);
+  if (!response) throw new Error("Expected a preview response.");
+  return response;
 }
 
 describe("preview proxy links", () => {
@@ -236,56 +250,9 @@ describe("preview tokens", () => {
       false,
     );
   });
-
-  it("accepts a valid token without a session", async () => {
-    const token = await mintPreviewToken(previewHost, previewSecret);
-    const authorize = vi.fn(async () => ({ setCookies: [] }));
-    const fetchUpstream = vi.fn(
-      async () =>
-        new Response('<a href="/about">About</a>', {
-          headers: { "Content-Type": "text/html; charset=utf-8" },
-        }),
-    );
-
-    const response = await handlePreviewProxy(
-      new Request(`${adminOrigin}/admin/preview/${token}/${previewHost}/`),
-      proxyEnv,
-      {} as ExecutionContext,
-      { authorize, fetch: fetchUpstream as unknown as typeof fetch },
-    );
-
-    expect(response.status).toBe(200);
-    expect(authorize).not.toHaveBeenCalled();
-    expect(await response.text()).toContain(
-      `/admin/preview/${token}/${previewHost}/about`,
-    );
-  });
-
-  it("falls back to session auth for an expired token", async () => {
-    const token = await mintPreviewToken(
-      previewHost,
-      previewSecret,
-      Date.now() - 2 * 60 * 60 * 1000,
-    );
-    const authorize = vi.fn(async () => {
-      throw new AdminAuthError("signed_out");
-    });
-    const fetchUpstream = vi.fn();
-
-    const response = await handlePreviewProxy(
-      new Request(`${adminOrigin}/admin/preview/${token}/${previewHost}/`),
-      proxyEnv,
-      {} as ExecutionContext,
-      { authorize, fetch: fetchUpstream as unknown as typeof fetch },
-    );
-
-    expect(authorize).toHaveBeenCalledTimes(1);
-    expect(response.status).toBe(303);
-    expect(fetchUpstream).not.toHaveBeenCalled();
-  });
 });
 
-describe("preview proxy request handling", () => {
+describe("API-origin preview entry", () => {
   it("sends a signed-out visitor to the Neon login with a safe return path", async () => {
     const response = await handlePreviewProxy(
       new Request(`${adminOrigin}/admin/preview/${previewHost}/services/?x=1`),
@@ -306,6 +273,24 @@ describe("preview proxy request handling", () => {
     );
   });
 
+  it("redirects an authorized admin to the preview origin with a token", async () => {
+    const response = await handlePreviewProxy(
+      new Request(`${adminOrigin}/admin/preview/${previewHost}/services/?x=1`),
+      proxyEnv,
+      {} as ExecutionContext,
+      { authorize: authorized() },
+    );
+
+    expect(response.status).toBe(303);
+    const location = response.headers.get("Location") || "";
+    expect(location).toMatch(
+      new RegExp(
+        `^${previewOrigin.replace(/\./gu, "\\.")}/admin/preview/[A-Za-z0-9._-]+/${previewHost.replace(/\./gu, "\\.")}/services/\\?x=1$`,
+        "u",
+      ),
+    );
+  });
+
   it("does not fetch an upstream or reveal a path for a non-pages host", async () => {
     const fetchUpstream = vi.fn();
     const response = await handlePreviewProxy(
@@ -322,7 +307,81 @@ describe("preview proxy request handling", () => {
     expect(fetchUpstream).not.toHaveBeenCalled();
   });
 
-  it("fetches with the Access service token and never forwards browser cookies", async () => {
+  it("rejects methods other than GET and HEAD", async () => {
+    const response = await handlePreviewProxy(
+      new Request(`${adminOrigin}/admin/preview/${previewHost}/`, {
+        method: "POST",
+      }),
+      proxyEnv,
+      {} as ExecutionContext,
+      { authorize: authorized() },
+    );
+
+    expect(response.status).toBe(405);
+    expect(response.headers.get("Allow")).toBe("GET, HEAD");
+  });
+});
+
+describe("preview-origin serving", () => {
+  const cookieFor = (token: string) => `__ll_preview=${token}`;
+
+  it("exchanges a valid token for an HttpOnly preview cookie", async () => {
+    const token = await mintPreviewToken(previewHost, previewSecret);
+    const response = await servePreview(
+      new Request(
+        `${previewOrigin}/admin/preview/${token}/${previewHost}/services/`,
+      ),
+      proxyEnv,
+      {} as ExecutionContext,
+    );
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("Location")).toBe(
+      `/admin/preview/${previewHost}/services/`,
+    );
+    const cookie = response.headers.get("Set-Cookie") || "";
+    expect(cookie).toContain(`__ll_preview=${token}`);
+    expect(cookie).toContain("HttpOnly");
+    expect(cookie).toContain("Secure");
+    expect(cookie).toContain("SameSite=Lax");
+  });
+
+  it("redirects to the admin origin when the preview cookie is missing", async () => {
+    const response = await servePreview(
+      new Request(
+        `${previewOrigin}/admin/preview/${previewHost}/services/?x=1`,
+      ),
+      proxyEnv,
+      {} as ExecutionContext,
+    );
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("Location")).toBe(
+      `${adminOrigin}/admin/preview/${previewHost}/services/?x=1`,
+    );
+  });
+
+  it("redirects to the admin origin for an expired token", async () => {
+    const token = await mintPreviewToken(
+      previewHost,
+      previewSecret,
+      Date.now() - 2 * 60 * 60 * 1000,
+    );
+    const response = await servePreview(
+      new Request(`${previewOrigin}/admin/preview/${token}/${previewHost}/`),
+      proxyEnv,
+      {} as ExecutionContext,
+    );
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("Location")).toBe(
+      `${adminOrigin}/admin/preview/${previewHost}/`,
+    );
+    expect(response.headers.get("Set-Cookie")).toBeNull();
+  });
+
+  it("serves HTML with the Access service token and strips upstream credentials", async () => {
+    const token = await mintPreviewToken(previewHost, previewSecret);
     const fetchUpstream = vi.fn(async (_url: string, init: RequestInit) => {
       return new Response(`<a href="/about">About</a>`, {
         status: 200,
@@ -334,16 +393,15 @@ describe("preview proxy request handling", () => {
       });
     });
 
-    const response = await handlePreviewProxy(
-      new Request(`${adminOrigin}/admin/preview/${previewHost}/`, {
-        headers: { Cookie: "__Secure-neon-auth.session=admin-session" },
+    const response = await servePreview(
+      new Request(`${previewOrigin}/admin/preview/${previewHost}/`, {
+        headers: {
+          Cookie: `${cookieFor(token)}; __Secure-neon-auth.session=admin-session`,
+        },
       }),
       proxyEnv,
       {} as ExecutionContext,
-      {
-        authorize: authorized(),
-        fetch: fetchUpstream as unknown as typeof fetch,
-      },
+      { fetch: fetchUpstream as unknown as typeof fetch },
     );
 
     expect(fetchUpstream).toHaveBeenCalledTimes(1);
@@ -362,15 +420,16 @@ describe("preview proxy request handling", () => {
     expect(response.headers.get("Content-Security-Policy")).toContain(
       "default-src 'self'",
     );
-    expect(await response.text()).toMatch(
-      new RegExp(
-        `href="/admin/preview/[A-Za-z0-9._-]+/${previewHost}/about"`,
-        "u",
-      ),
+    expect(response.headers.get("Content-Security-Policy")).not.toContain(
+      "sandbox",
     );
+    const body = await response.text();
+    expect(body).toContain(`href="/admin/preview/${previewHost}/about"`);
+    expect(body).toContain(`<base href="/admin/preview/${previewHost}/">`);
   });
 
   it("fails closed when the upstream still redirects to Cloudflare Access", async () => {
+    const token = await mintPreviewToken(previewHost, previewSecret);
     const fetchUpstream = vi.fn(async () => {
       return new Response(null, {
         status: 302,
@@ -380,14 +439,13 @@ describe("preview proxy request handling", () => {
       });
     });
 
-    const response = await handlePreviewProxy(
-      new Request(`${adminOrigin}/admin/preview/${previewHost}/`),
+    const response = await servePreview(
+      new Request(`${previewOrigin}/admin/preview/${previewHost}/`, {
+        headers: { Cookie: cookieFor(token) },
+      }),
       proxyEnv,
       {} as ExecutionContext,
-      {
-        authorize: authorized(),
-        fetch: fetchUpstream as unknown as typeof fetch,
-      },
+      { fetch: fetchUpstream as unknown as typeof fetch },
     );
 
     expect(response.status).toBe(502);
@@ -397,26 +455,8 @@ describe("preview proxy request handling", () => {
     expect(body).not.toContain("kid=secret");
   });
 
-  it("rejects methods other than GET and HEAD", async () => {
-    const fetchUpstream = vi.fn();
-    const response = await handlePreviewProxy(
-      new Request(`${adminOrigin}/admin/preview/${previewHost}/`, {
-        method: "POST",
-      }),
-      proxyEnv,
-      {} as ExecutionContext,
-      {
-        authorize: authorized(),
-        fetch: fetchUpstream as unknown as typeof fetch,
-      },
-    );
-
-    expect(response.status).toBe(405);
-    expect(response.headers.get("Allow")).toBe("GET, HEAD");
-    expect(fetchUpstream).not.toHaveBeenCalled();
-  });
-
   it("passes binary assets through without rewriting them", async () => {
+    const token = await mintPreviewToken(previewHost, previewSecret);
     const bytes = new Uint8Array([0, 1, 2, 3]);
     const fetchUpstream = vi.fn(async () => {
       return new Response(bytes, {
@@ -425,14 +465,14 @@ describe("preview proxy request handling", () => {
       });
     });
 
-    const response = await handlePreviewProxy(
-      new Request(`${adminOrigin}/admin/preview/${previewHost}/images/a.png`),
+    const response = await servePreview(
+      new Request(
+        `${previewOrigin}/admin/preview/${previewHost}/images/a.png`,
+        { headers: { Cookie: cookieFor(token) } },
+      ),
       proxyEnv,
       {} as ExecutionContext,
-      {
-        authorize: authorized(),
-        fetch: fetchUpstream as unknown as typeof fetch,
-      },
+      { fetch: fetchUpstream as unknown as typeof fetch },
     );
 
     expect(response.status).toBe(200);
@@ -441,8 +481,8 @@ describe("preview proxy request handling", () => {
   });
 });
 
-describe("preview proxy route wiring", () => {
-  it("returns an authorization denial, not a 404, for an unauthenticated request", async () => {
+describe("preview route wiring", () => {
+  it("returns an authorization denial, not a 404, for an unauthenticated API-origin request", async () => {
     const response = await worker.fetch(
       new Request(`${adminOrigin}/admin/preview/${previewHost}/`),
       workerEnv as unknown as Env,
@@ -453,7 +493,24 @@ describe("preview proxy route wiring", () => {
     expect(await response.text()).toContain("Access denied");
   });
 
-  it("serves a proxied preview for an authorized admin", async () => {
+  it("redirects an authorized API-origin request to the preview origin", async () => {
+    const response = await worker.fetch(
+      new Request(`${adminOrigin}/admin/preview/${previewHost}/`),
+      workerEnv as unknown as Env,
+      accessContext("admin@example.test"),
+    );
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("Location")).toMatch(
+      new RegExp(
+        `^${previewOrigin.replace(/\./gu, "\\.")}/admin/preview/[A-Za-z0-9._-]+/${previewHost.replace(/\./gu, "\\.")}/$`,
+        "u",
+      ),
+    );
+  });
+
+  it("serves a preview-origin request with the signed cookie", async () => {
+    const token = await mintPreviewToken(previewHost, "test-review-secret");
     network.use(
       http.get(`https://${previewHost}/`, () =>
         HttpResponse.html('<a href="/about">About</a>', {
@@ -463,20 +520,30 @@ describe("preview proxy route wiring", () => {
     );
 
     const response = await worker.fetch(
-      new Request(`${adminOrigin}/admin/preview/${previewHost}/`),
+      new Request(`${previewOrigin}/admin/preview/${previewHost}/`, {
+        headers: { Cookie: `__ll_preview=${token}` },
+      }),
       workerEnv as unknown as Env,
-      accessContext("admin@example.test"),
+      {} as ExecutionContext,
     );
 
     expect(response.status).toBe(200);
-    expect(await response.text()).toMatch(
-      new RegExp(
-        `href="/admin/preview/[A-Za-z0-9._-]+/${previewHost}/about"`,
-        "u",
-      ),
+    expect(await response.text()).toContain(
+      `href="/admin/preview/${previewHost}/about"`,
     );
-    expect(response.headers.get("Content-Security-Policy")).toContain(
+    expect(response.headers.get("Content-Security-Policy")).not.toContain(
       "sandbox",
     );
+  });
+
+  it("never exposes admin or API routes on the preview origin", async () => {
+    for (const path of ["/admin/login", "/api/admin/onboarding-invites"]) {
+      const response = await worker.fetch(
+        new Request(`${previewOrigin}${path}`),
+        workerEnv as unknown as Env,
+        {} as ExecutionContext,
+      );
+      expect(response.status).toBe(404);
+    }
   });
 });

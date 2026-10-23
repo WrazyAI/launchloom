@@ -33,6 +33,7 @@ jobs:
       ONBOARDING_ACCESS_AUD: ${{ vars.ONBOARDING_ACCESS_AUD }}
       ADMIN_AUTH_MODE: ${{ vars.ADMIN_AUTH_MODE }}
       ADMIN_PUBLIC_ORIGIN: ${{ vars.ADMIN_PUBLIC_ORIGIN }}
+      PREVIEW_ORIGIN: ${{ vars.PREVIEW_ORIGIN || 'https://launchloom-api.dark-sound-e4eb.workers.dev' }}
       NEON_AUTH_BASE_URL: ${{ vars.NEON_AUTH_BASE_URL }}
       NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET }}
       ADMIN_DATABASE_URL: ${{ secrets.ADMIN_DATABASE_URL }}
@@ -129,6 +130,7 @@ jobs:
             --var "ONBOARDING_ADMIN_EMAILS:$ONBOARDING_ADMIN_EMAILS"
             --var "ONBOARDING_ACCESS_AUD:$ONBOARDING_ACCESS_AUD"
             --var "ADMIN_AUTH_MODE:${ADMIN_AUTH_MODE:-access}"
+            --var "PREVIEW_ORIGIN:$PREVIEW_ORIGIN"
           )
           if [ "${ADMIN_AUTH_MODE:-access}" = "neon" ]; then
             deploy_vars+=(
