@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import {
   candidateDiagnosticSafety,
   chooseRecoveryCandidate,
@@ -123,13 +123,13 @@ describe("creative recovery diagnostics", () => {
 
 describe("developer-triggered creative repair workflow", () => {
   it("masks every generated signed review token before derived links can reach workflow logs", () => {
-    const workflows = [
-      ".github/workflows/generate-client.yml",
-      ".github/workflows/repair-creative-candidate.yml",
-      ".github/workflows/process-feedback.yml",
-      ".github/workflows/process-client-feedback.yml",
-      ".github/workflows/publish-site.yml",
-    ];
+    const workflows = readdirSync(".github/workflows")
+      .filter((name) => name.endsWith(".yml"))
+      .map((name) => `.github/workflows/${name}`)
+      .filter((workflowPath) =>
+        readFileSync(workflowPath, "utf8").includes("create-review-link.mjs"),
+      );
+    expect(workflows.length).toBeGreaterThan(0);
     for (const workflowPath of workflows) {
       const source = readFileSync(workflowPath, "utf8");
       const generatedTokens = [...source.matchAll(

@@ -1,4 +1,17 @@
-/** Read-only Resend evidence. Delivery means receiving mail-server acceptance, not inbox placement. */
+/**
+ * Read-only Resend evidence. Delivery means receiving mail-server acceptance,
+ * not inbox placement.
+ *
+ * Manual readback, formerly the verify-internal-qa-delivery workflow:
+ *   QA_REQUESTS_JSON='[{"project":"launchloom-101-example","testName":"[LaunchLoom QA] launchloom-101-example abcdef12","submittedAt":"2026-10-05T11:59:00.000Z"}]' \
+ *   RESEND_API_KEY=... LAUNCHLOOM_INTERNAL_QA_RECIPIENT=... \
+ *   node scripts/verify-internal-qa-delivery.mjs
+ *
+ * QA_REQUESTS_JSON accepts 1-2 entries with required project, testName and
+ * submittedAt, plus optional repo, commit and origin. Writes
+ * artifacts/internal-qa-delivery/evidence.json and exits nonzero unless every
+ * result is delivered. No email is sent.
+ */
 import { writeFile, mkdir } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
