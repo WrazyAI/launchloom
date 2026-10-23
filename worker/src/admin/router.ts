@@ -9,6 +9,7 @@ import {
   toAdminAuthError,
   withAdminCookies,
 } from "./auth";
+import { handlePreviewProxy } from "../preview-proxy";
 
 const WORKSPACE_PATH = "/admin/onboarding-invites";
 const NO_STORE_HEADERS = {
@@ -83,6 +84,9 @@ export async function routeAdminRequest(
 
   if (path === "/admin-assets" || path.startsWith("/admin-assets/"))
     return serveAdminAsset(request, env);
+
+  if (path === "/admin/preview" || path.startsWith("/admin/preview/"))
+    return handlePreviewProxy(request, env, ctx);
 
   if (path === "/admin/login") {
     if (request.method !== "GET" && request.method !== "HEAD")

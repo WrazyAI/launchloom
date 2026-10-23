@@ -3,7 +3,12 @@ import type { AttemptSummary, ClientRecord } from "../lib/admin-contracts";
 import { ActorLabel } from "./ActorLabel";
 import { AdminIcon } from "./AdminIcon";
 import { DeliveryStatusBadge, ExecutionStatusBadge } from "./StatusBadge";
-import { formatClientName, formatTimestamp, safeSiteUrl } from "./format";
+import {
+  formatClientName,
+  formatTimestamp,
+  safeSiteUrl,
+  previewHref,
+} from "./format";
 
 export type ClientDossierProps = {
   client: ClientRecord | null;
@@ -23,7 +28,7 @@ export type ClientDossierProps = {
 
 function SiteLinks({ client }: { client: ClientRecord }) {
   const production = safeSiteUrl(client.productionUrl);
-  const preview = safeSiteUrl(client.previewUrl);
+  const preview = previewHref(client.previewUrl);
   const hasUnsafe = Boolean(
     (client.productionUrl && !production) || (client.previewUrl && !preview),
   );

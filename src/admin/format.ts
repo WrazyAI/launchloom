@@ -6,6 +6,10 @@ import type {
   ExecutionStatus,
   GenerationProfile,
 } from "../lib/admin-contracts";
+import {
+  isAllowedPreviewHost,
+  previewProxyPath,
+} from "../../src/lib/preview-proxy-contract.mjs";
 
 const MAX_TIMESTAMP = 8.64e15;
 
@@ -246,6 +250,24 @@ export function safeSiteUrl(value: string | null | undefined): string | null {
       host.endsWith(".wrazyos.com") ||
       host.endsWith(".pages.dev"),
   );
+}
+
+/**
+ * Preview links go through the authenticated Worker proxy. Cloudflare Access
+ * still covers diagnostic preview hosts, and the admin's Neon session lives on
+ * this origin; a direct pages.dev link would ask for the retired Access PIN.
+ * Production links stay direct.
+ */
+export function previewHref(value: string | null | undefined): string | null {
+  const safe = safeSiteUrl(value);
+  if (!safe) return null;
+  try {
+    const url = new URL(safe);
+    if (!isAllowedPreviewHost(url.hostname)) return safe;
+    return previewProxyPath(url);
+  } catch {
+    return safe;
+  }
 }
 
 export function isSafeEvidenceUrl(value: string | null | undefined) {

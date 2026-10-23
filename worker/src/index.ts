@@ -39,6 +39,7 @@ import {
   proxyAdminAuth,
 } from "./admin/neon-auth";
 import { routeAdminRequest } from "./admin/router";
+import { handlePreviewOrigin } from "./preview-proxy";
 import {
   accessAdminEmail,
   actorFromPrincipal,
@@ -107,6 +108,10 @@ export interface Env {
   NEON_AUTH_COOKIE_SECRET?: string;
   ADMIN_PUBLIC_ORIGIN?: string;
   ADMIN_DATABASE_URL?: string;
+  CLOUDFLARE_ACCESS_CLIENT_ID?: string;
+  CLOUDFLARE_ACCESS_CLIENT_SECRET?: string;
+  PREVIEW_PROXY_HOSTS?: string;
+  PREVIEW_ORIGIN?: string;
   ONBOARDING_INVITE_SIGNING_SECRET?: string;
   ONBOARDING_ORIGIN?: string;
   ONBOARDING_ADMIN_EMAILS?: string;
@@ -3758,6 +3763,24 @@ async function aiChat(request: Request, env: Env) {
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    const requestUrl = new URL(request.url);
+    const previewOrigin = (env.PREVIEW_ORIGIN || "").replace(/\/$/u, "");
+    if (previewOrigin && requestUrl.origin === previewOrigin) {
+      if (requestUrl.pathname.startsWith("/admin/preview/")) {
+        const previewResponse = await handlePreviewOrigin(request, env, ctx);
+        if (previewResponse) return previewResponse;
+      }
+      // The preview origin exists only for generated-site previews. Never
+      // expose Worker or admin routes there, even if a legacy session cookie
+      // for this host still exists in a browser.
+      return new Response("Not found", {
+        status: 404,
+        headers: {
+          "Cache-Control": "no-store",
+          "Content-Type": "text/plain; charset=utf-8",
+        },
+      });
+    }
     const adminResponse = await routeAdminRequest(request, env, ctx);
     if (adminResponse) return adminResponse;
     const path = new URL(request.url).pathname;

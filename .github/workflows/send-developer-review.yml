@@ -18,6 +18,9 @@ jobs:
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
+      # Developer preview emails route Access-protected previews through the
+      # Neon-authenticated Worker proxy instead of the retired Access PIN.
+      LAUNCHLOOM_ADMIN_ORIGIN: ${{ vars.ADMIN_PUBLIC_ORIGIN || 'https://api.launchloom.wrazyos.com' }}
       CLIENT_REPO: ${{ github.event.client_payload.repo }}
       CLIENT_PR: ${{ github.event.client_payload.pr }}
       CLIENT_EMAIL: ${{ github.event.client_payload.clientEmail }}

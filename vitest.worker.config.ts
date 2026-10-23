@@ -22,6 +22,7 @@ export default defineConfig({
           NEON_AUTH_BASE_URL: "https://auth.example.test",
           NEON_AUTH_COOKIE_SECRET: "test-neon-auth-cookie-secret-at-least-32-chars",
           ADMIN_PUBLIC_ORIGIN: "https://api.example.test",
+          PREVIEW_ORIGIN: "https://preview.example.test",
           GOOGLE_PLACES_API_KEY: "test-google-places-key",
           RESEND_API_KEY: "test-resend-key",
           LAUNCHLOOM_FROM_EMAIL: "LaunchLoom <info@example.com>",

@@ -28,6 +28,9 @@ jobs:
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+      # Developer preview emails route Access-protected previews through the
+      # Neon-authenticated Worker proxy instead of the retired Access PIN.
+      LAUNCHLOOM_ADMIN_ORIGIN: ${{ vars.ADMIN_PUBLIC_ORIGIN || 'https://api.launchloom.wrazyos.com' }}
       ASSET_BASE_URL: https://assets.launchloom.wrazyos.com
       REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
       GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}

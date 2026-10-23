@@ -253,6 +253,9 @@ jobs:
       TRACK_ACTOR: ${{ github.triggering_actor }}
       FAL_IMAGE_USD_PER_IMAGE: ${{ vars.FAL_IMAGE_USD_PER_IMAGE }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+      # Developer preview emails route Access-protected previews through the
+      # Neon-authenticated Worker proxy instead of the retired Access PIN.
+      LAUNCHLOOM_ADMIN_ORIGIN: ${{ vars.ADMIN_PUBLIC_ORIGIN || 'https://api.launchloom.wrazyos.com' }}
       REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
       REUSABLE_CANDIDATE_REPO: ${{ inputs.candidate_repository || '' }}
       PREVIEW_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.preview_only || false }}
