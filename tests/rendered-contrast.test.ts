@@ -164,6 +164,34 @@ describe("rendered contrast independent of authored classes", () => {
     );
   });
 
+  it("still fails a partially clipped partial plate whose backdrop darkens on focus", async () => {
+    const report = await scan(
+      `<style>body{margin:0;background:#fff;color:#000}.wrap:focus-within .plate{background:#000}.plate{position:fixed;left:0;bottom:-8px;width:40px;background:#fff}.overflow{display:block;width:320px;color:#000;background:transparent}button:focus-visible{outline:2px solid #000}</style><div class="wrap"><div class="plate"><span class="overflow">Partially clipped target must stay readable</span></div><button type="button">Continue</button></div>`,
+      1440,
+    );
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Partially clipped target must stay readable",
+          state: "focus",
+          status: "fail",
+        }),
+      ]),
+    );
+  });
+
+  it("leaves a fully offscreen partial plate to the default state", async () => {
+    const report = await scan(
+      `<style>body{margin:0;background:#fff;color:#000}.spacer{height:1200px}.plate{width:40px;background:#fff}.overflow{display:block;width:320px;color:#000;background:transparent}button{background:#fff;color:#000}button:focus-visible{outline:2px solid #000}</style><button type="button">Continue</button><div class="spacer"></div><div class="plate"><span class="overflow">Offscreen text</span></div>`,
+    );
+    expect(
+      report.findings.filter(
+        (finding) =>
+          finding.text === "Offscreen text" && finding.state !== "default",
+      ),
+    ).toEqual([]);
+  });
+
   it("still fails a focused control whose gradient darkens on hover", async () => {
     const report = await scan(
       `<style>body{margin:0;background:#fff}button{background:linear-gradient(#fff,#fff);color:#111;border:0;padding:20px}button:hover{background:linear-gradient(#111,#111)}button:focus-visible{outline:2px solid #000}</style><button type="button">Continue</button>`,
