@@ -1240,6 +1240,12 @@ export function collectContrastTargets({
       minimum,
       ...plate,
       rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+      documentRect: {
+        x: rect.x + scrollX,
+        y: rect.y + scrollY,
+        width: rect.width,
+        height: rect.height,
+      },
       fontSize: parseFloat(s.fontSize),
       fontWeight: s.fontWeight,
     });
@@ -1478,6 +1484,28 @@ export async function inspectContrastPage(
   const targets = [],
     visited = [];
   let pixelResolved = 0;
+  // A non-default state re-measures every visible element, not only the
+  // interacted control. If the paint and backdrop are unchanged from the
+  // default state, the default verdict already covers it; repeating it in a
+  // state where out-of-scope pixel resolution is skipped would turn a proven
+  // backdrop into a false unresolved finding.
+  const stateTargetIdentity = (target) =>
+    JSON.stringify([
+      target.selector,
+      target.kind,
+      target.paintProperty,
+      target.text,
+      target.minimum,
+      target.fontSize,
+      target.fontWeight,
+      target.variable,
+      target.foreground,
+      target.backgrounds,
+      target.documentRect,
+      (target.issues || [])
+        .filter((issue) => issue !== "resolved from rendered pixels")
+        .sort(),
+    ]);
   const settle = async () => {
     await page.evaluate(async () => {
       // Let observers and frame-scheduled widget state react before settling paint.
@@ -1517,9 +1545,20 @@ export async function inspectContrastPage(
   const collect = async (state) => {
     await settle();
     visited.push(state);
-    const stateTargets = (
+    const measured = (
       await page.evaluate(collectContrastTargets, { route, state })
     ).map(measure);
+    const baseline =
+      state === "default"
+        ? null
+        : new Set(
+            targets
+              .filter((target) => target.state === "default")
+              .map(stateTargetIdentity),
+          );
+    const stateTargets = baseline
+      ? measured.filter((target) => !baseline.has(stateTargetIdentity(target)))
+      : measured;
     // Structurally unresolvable backdrops (overlapping paint, filters,
     // partial plates) are resolved from the rendered pixels of this exact
     // state before the findings are finalized. Failures stay failures.

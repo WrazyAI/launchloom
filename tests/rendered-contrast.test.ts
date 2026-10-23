@@ -142,6 +142,13 @@ describe("rendered contrast independent of authored classes", () => {
     },
   );
 
+  it("does not repeat an unchanged partial plate as an unresolved focus finding", async () => {
+    const report = await scan(
+      `<style>body{margin:0;background:#fff;color:#000}.plate{width:40px;background:#fff}.overflow{display:block;width:320px;color:#000;background:transparent}button{margin-top:20px;background:#fff;color:#000}button:focus-visible{outline:2px solid #000}</style><div class="plate"><span class="overflow">Readable text that extends beyond its plate</span></div><button type="button">Continue</button>`,
+    );
+    expect(report.findings).toEqual([]);
+  });
+
   it("audits each exclusive native disclosure and restores its initial state", async () => {
     const page = await browser.newPage();
     try {
