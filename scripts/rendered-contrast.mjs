@@ -297,12 +297,92 @@ export async function resolveRenderedBackdrop(
       )
       .catch(() => false);
   };
+  // A partial plate is the known duplicate case: its rendered backdrop can
+  // change between states even when the computed ancestor chain looks the
+  // same. Re-prove it from state-local pixels instead of carrying the default
+  // verdict into a state where out-of-scope resolution is skipped. Partially
+  // clipped targets are captured from their visible intersection without
+  // scrolling. Fully offscreen targets are captured only in the default state:
+  // scroll to a deterministic position, capture, then restore the previous
+  // scroll. Non-default states omit fully offscreen partial plates. Every
+  // other out-of-scope issue remains fail-closed.
+  const partialPlateOnly = (target) =>
+    target.issues?.length === 1 &&
+    target.issues[0] === "background plate only partially covers text";
+  const visibleIntersection = (rect, viewport) => {
+    if (!viewport || rect.width <= 0 || rect.height <= 0) return null;
+    const left = Math.max(0, rect.x);
+    const top = Math.max(0, rect.y);
+    const right = Math.min(viewport.width, rect.x + rect.width);
+    const bottom = Math.min(viewport.height, rect.y + rect.height);
+    if (right <= left || bottom <= top) return null;
+    return { x: left, y: top, width: right - left, height: bottom - top };
+  };
+  const capturePartialPlate = async (locator, allowScroll) => {
+    const rect = await locator.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return {
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+      };
+    });
+    const clip = visibleIntersection(rect, page.viewportSize());
+    if (clip)
+      return page.screenshot({ type: "png", clip, timeout: 2500 });
+    if (!allowScroll)
+      throw new Error("partial plate is outside the state viewport");
+    // The default state is the authority for fully offscreen plates. Scroll
+    // the target to a deterministic position, capture it there, and restore
+    // the previous scroll. The default state is not hover-sensitive, so this
+    // cannot clear an interaction paint; a fixed background is measured at the
+    // same viewport origin the user would see after scrolling to the target.
+    const previousScroll = await page.evaluate(() => ({
+      x: scrollX,
+      y: scrollY,
+    }));
+    try {
+      await locator.evaluate((element) =>
+        element.scrollIntoView({
+          block: "start",
+          inline: "nearest",
+          behavior: "instant",
+        }),
+      );
+      const scrolledRect = await locator.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        return {
+          x: box.x,
+          y: box.y,
+          width: box.width,
+          height: box.height,
+        };
+      });
+      const scrolledClip = visibleIntersection(
+        scrolledRect,
+        page.viewportSize(),
+      );
+      if (!scrolledClip)
+        throw new Error("partial plate is not visible after scrolling");
+      return await page.screenshot({
+        type: "png",
+        clip: scrolledClip,
+        timeout: 2500,
+      });
+    } finally {
+      await page
+        .evaluate(({ x, y }) => window.scrollTo(x, y), previousScroll)
+        .catch(() => {});
+    }
+  };
   for (const target of candidates) {
     const locator = page.locator(target.selector).first();
+    const partialPlate = partialPlateOnly(target);
     let png = null;
     let effectiveForeground = null;
     try {
-      if (!(await inScope(locator))) continue;
+      if (!partialPlate && !(await inScope(locator))) continue;
       // Element-level filters change how the foreground actually renders.
       // Only opacity-only filters have a provable effect on the foreground
       // alpha; any other filter (blur, brightness, blend, ...) is not
@@ -364,7 +444,9 @@ export async function resolveRenderedBackdrop(
         { timeout: 1500 },
       );
       try {
-        png = await locator.screenshot({ type: "png", timeout: 2500 });
+        png = partialPlate
+          ? await capturePartialPlate(locator, target.state === "default")
+          : await locator.screenshot({ type: "png", timeout: 2500 });
       } finally {
         await locator
           .evaluate(
@@ -389,10 +471,12 @@ export async function resolveRenderedBackdrop(
       // otherwise sample the occluder and false-pass the text.
       let visiblePixels = null;
       try {
-        const visibleCapture = await locator.screenshot({
-          type: "png",
-          timeout: 2500,
-        });
+        const visibleCapture = partialPlate
+          ? await capturePartialPlate(locator, target.state === "default")
+          : await locator.screenshot({
+              type: "png",
+              timeout: 2500,
+            });
         visiblePixels = (await decodeRgbaPixels(visibleCapture)).pixels;
       } catch {
         visiblePixels = null;
@@ -1517,9 +1601,30 @@ export async function inspectContrastPage(
   const collect = async (state) => {
     await settle();
     visited.push(state);
-    const stateTargets = (
+    const measured = (
       await page.evaluate(collectContrastTargets, { route, state })
     ).map(measure);
+    const viewport = page.viewportSize();
+    const stateTargets = measured.filter((target) => {
+      if (
+        state === "default" ||
+        target.issues?.length !== 1 ||
+        target.issues[0] !== "background plate only partially covers text"
+      )
+        return true;
+      // A fully offscreen partial plate is already covered by the default
+      // state and is not part of this state's visible frame. Partially clipped
+      // targets stay and are proven from their visible intersection without
+      // scrolling.
+      const rect = target.rect;
+      return (
+        Boolean(viewport) &&
+        rect.x < viewport.width &&
+        rect.x + rect.width > 0 &&
+        rect.y < viewport.height &&
+        rect.y + rect.height > 0
+      );
+    });
     // Structurally unresolvable backdrops (overlapping paint, filters,
     // partial plates) are resolved from the rendered pixels of this exact
     // state before the findings are finalized. Failures stay failures.
