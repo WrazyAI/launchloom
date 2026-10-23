@@ -46,7 +46,9 @@ test branches. The active business repository and `review/initial` remain
 untouched. Diagnostic previews have `X-Robots-Tag: noindex`, an `Allow: /`
 robots rule so crawlers can observe the noindex directive, and no sitemap.
 Notification goes only to the developer. No signed client approval link is
-created. Single-lane diagnostic previews remain source-safe, compile
+created. The diagnostic email does not expose the raw Access-protected host:
+it links through the authenticated Worker preview proxy so the developer signs
+in with their LaunchLoom account. See `docs/preview-access.md`. Single-lane diagnostic previews remain source-safe, compile
 successfully, and pass the private Access/noindex release checks. Rendered-
 quality or contrast failures are recorded as failed gates and can accompany a
 delivered diagnostic preview; build failures, source-safety failures, or
@@ -89,6 +91,8 @@ Configure these once:
    secrets `CLOUDFLARE_ACCESS_CLIENT_ID` and
    `CLOUDFLARE_ACCESS_CLIENT_SECRET`. The Pages deployment step also needs the
    existing `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` secrets.
+   `deploy-platform.yml` installs the same pair as Worker secrets so developer
+   preview links can be fetched through the authenticated preview proxy.
 4. Run `Generate client site` manually with `test_profile=access-only` and no
    issue number to verify the content-free probe. Generation profiles still
    require an intake issue. The smoke must prove anonymous denial and a

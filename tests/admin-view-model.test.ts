@@ -16,6 +16,7 @@ import {
   formatTimestamp,
   parseDateEnd,
   parseDateStart,
+  previewHref,
   safeEvidenceUrl,
   safeSiteUrl,
 } from "../src/admin/format";
@@ -109,7 +110,11 @@ describe("admin view model formatting", () => {
       unreported: "2 unreported",
     });
     expect(
-      formatCost({ actualUsd: -1, estimatedUsd: Number.NaN, unreportedCount: 0 }),
+      formatCost({
+        actualUsd: -1,
+        estimatedUsd: Number.NaN,
+        unreportedCount: 0,
+      }),
     ).toMatchObject({ actual: "Not reported", estimated: "Not reported" });
   });
 
@@ -203,6 +208,21 @@ describe("admin view model formatting", () => {
     expect(safeSiteUrl("https://acme.pages.dev/?token=secret")).toBeNull();
     expect(safeSiteUrl("javascript:window.alert(1)")).toBeNull();
     expect(safeSiteUrl("https://unapproved.example.test/")).toBeNull();
+
+    expect(previewHref("https://acme.pages.dev/services/")).toBe(
+      "https://acme.pages.dev/services/",
+    );
+    expect(
+      previewHref(
+        "https://abc.launchloom-pipeline-preview.pages.dev/services/",
+      ),
+    ).toBe(
+      "/admin/preview/abc.launchloom-pipeline-preview.pages.dev/services/",
+    );
+    expect(previewHref("https://launchloom.wrazyos.com/about")).toBe(
+      "https://launchloom.wrazyos.com/about",
+    );
+    expect(previewHref("javascript:window.alert(1)")).toBeNull();
   });
 
   it("does not call a terminal attempt in progress when completion is missing", () => {

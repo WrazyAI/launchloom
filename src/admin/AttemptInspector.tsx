@@ -17,6 +17,7 @@ import {
   formatElapsed,
   formatProfile,
   formatTimestamp,
+  previewHref,
   safeEvidenceUrl,
   safeSiteUrl,
 } from "./format";
@@ -213,8 +214,10 @@ export function AttemptInspector({
 }: AttemptInspectorProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const [open, setOpen] = useState(false);
-  const siteUrl =
-    safeSiteUrl(client?.previewUrl) || safeSiteUrl(client?.productionUrl);
+  const previewUrl = safeSiteUrl(client?.previewUrl);
+  const productionUrl = safeSiteUrl(client?.productionUrl);
+  const siteUrl = previewUrl || productionUrl;
+  const siteHref = previewUrl ? previewHref(previewUrl) || previewUrl : productionUrl;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -289,8 +292,8 @@ export function AttemptInspector({
           <section className="admin-sheet__preview" aria-labelledby="attempt-preview-title">
             <div className="admin-sheet__preview-toolbar">
               <span className="admin-sheet__label" id="attempt-preview-title">Site preview</span>
-              {siteUrl ? (
-                <a className="admin-button admin-button--quiet" href={siteUrl} target="_blank" rel="noreferrer">
+              {siteHref ? (
+                <a className="admin-button admin-button--quiet" href={siteHref} target="_blank" rel="noreferrer">
                   Visit site
                 </a>
               ) : null}

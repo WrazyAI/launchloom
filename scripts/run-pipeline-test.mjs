@@ -14,6 +14,8 @@ import {
 } from "./pipeline-test-policy.mjs";
 import { summarizeGenerationCosts } from "./generation-cost-summary.mjs";
 import { collectEvidenceSamples, summarizeGateHealth } from "./gate-health.mjs";
+import { resolvePreviewLink } from "./preview-link.mjs";
+import { previewHostSuffixes } from "../src/lib/preview-proxy-contract.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { businessFactReadiness } from "../templates/client-site/src/lib/business-facts.mjs";
 import { pageBriefReadiness } from "../templates/client-site/src/lib/page-briefs.mjs";
@@ -298,16 +300,31 @@ export async function sendPipelineTestNotification({
   to,
   from,
   key,
+  adminOrigin = "",
   send = fetch,
+  probe = fetch,
 }) {
   if (!to || !from || !key)
     throw new Error("Developer email credentials and recipient are required.");
   const { isPublicHttpsUrl } = await import("../emails/render-email.mjs");
   if (!isPublicHttpsUrl(report.previewUrl))
     throw new Error("Diagnostic email requires a live public HTTPS preview.");
+  // Focused previews are protected by the legacy Cloudflare Access app. Route
+  // developer links through the authenticated Worker proxy when an admin
+  // origin is configured; keep the direct URL for public previews.
+  const previewLink = adminOrigin
+    ? (
+        await resolvePreviewLink({
+          previewUrl: report.previewUrl,
+          adminOrigin,
+          suffixes: previewHostSuffixes(process.env.LAUNCHLOOM_PREVIEW_HOSTS),
+          fetch: probe,
+        })
+      ).url
+    : report.previewUrl;
   const text = [
     `Focused ${report.profile} test: ${report.verdict}`,
-    `Diagnostic preview: ${report.previewUrl}`,
+    `Diagnostic preview: ${previewLink}`,
     `Source SHA: ${report.sourceSha}`,
     `Run/attempt: ${report.runId}`,
     ...Object.entries(report.stages)
@@ -1459,6 +1476,7 @@ export function createCloudDependencies(
         to: process.env.LAUNCHLOOM_DEVELOPER_EMAIL,
         from: process.env.LAUNCHLOOM_FROM_EMAIL,
         key: process.env.RESEND_API_KEY,
+        adminOrigin: process.env.LAUNCHLOOM_ADMIN_ORIGIN,
       });
     },
     async persist({ report }) {

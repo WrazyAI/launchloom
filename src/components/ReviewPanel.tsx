@@ -4,11 +4,31 @@ import type { ClientSubmitResult } from "./ClientFeedbackForm";
 import FeedbackParts from "./FeedbackParts";
 import type { FeedbackSubmitResult } from "./FeedbackParts";
 import { FindingSeverityBadge } from "./FindingSeverityBadge";
+import {
+  isAllowedPreviewHost,
+  previewProxyPath,
+} from "../lib/preview-proxy-contract.mjs";
 
 const apiBase = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || "").replace(
   /\/$/,
   "",
 );
+
+/**
+ * Diagnostic previews are still covered by the legacy Cloudflare Access app.
+ * Open them through the Neon-authenticated Worker proxy on the API origin; the
+ * platform origin does not serve that route.
+ */
+function previewProxyHref(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    if (!isAllowedPreviewHost(url.hostname)) return value;
+    return `${apiBase}${previewProxyPath(url)}`;
+  } catch {
+    return value;
+  }
+}
 const reviewEmailPlaceholder = "your-email@domain.com";
 type ReviewStage = "developer" | "client";
 type ReviewClaims = {
@@ -282,7 +302,7 @@ export default function ReviewPanel() {
                   <p>
                     <a
                       className="diagnostic-preview-link"
-                      href={`${repair.previewUrl}${repair.previewUrl.includes("?") ? "&" : "?"}review=${encodeURIComponent(token)}`}
+                      href={`${previewProxyHref(repair.previewUrl) || repair.previewUrl}${repair.previewUrl.includes("?") ? "&" : "?"}review=${encodeURIComponent(token)}`}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -382,7 +402,10 @@ export default function ReviewPanel() {
                     {repair.resultPreviewUrl && (
                       <p>
                         <a
-                          href={repair.resultPreviewUrl}
+                          href={
+                            previewProxyHref(repair.resultPreviewUrl) ||
+                            repair.resultPreviewUrl
+                          }
                           target="_blank"
                           rel="noreferrer"
                         >
@@ -415,7 +438,11 @@ export default function ReviewPanel() {
         )}
         {claims.previewUrl && !hasCreativeRepair && (
           <p>
-            <a href={claims.previewUrl} target="_blank" rel="noreferrer">
+            <a
+              href={previewProxyHref(claims.previewUrl) || claims.previewUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
               Open the reviewed website preview
             </a>
           </p>

@@ -4,6 +4,8 @@ import {
   isPublicHttpsUrl,
   renderLifecycleEmail,
 } from "../emails/render-email.mjs";
+import { resolvePreviewLink } from "./preview-link.mjs";
+import { previewHostSuffixes } from "../src/lib/preview-proxy-contract.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -67,12 +69,39 @@ for (const [field, value] of [
 }
 
 if (!recipient) throw new Error("--to is required.");
+// Developer-facing links may point at a preview still covered by the legacy
+// Cloudflare Access application. Route those through the authenticated Worker
+// proxy so the recipient uses their LaunchLoom account instead of the retired
+// Access one-time PIN. Client recipients never receive an admin-only link.
+let emailPreviewUrl = previewUrl;
+let emailReviewUrl = reviewUrl;
+if (audience !== "client") {
+  const adminOrigin = String(process.env.LAUNCHLOOM_ADMIN_ORIGIN || "").trim();
+  const suffixes = previewHostSuffixes(process.env.LAUNCHLOOM_PREVIEW_HOSTS);
+  const resolvedPreview = await resolvePreviewLink({
+    previewUrl,
+    adminOrigin,
+    suffixes,
+  });
+  emailPreviewUrl = resolvedPreview.url;
+  emailReviewUrl =
+    reviewUrl === previewUrl
+      ? resolvedPreview.url
+      : (
+          await resolvePreviewLink({
+            previewUrl: reviewUrl,
+            adminOrigin,
+            suffixes,
+          })
+        ).url;
+  console.log(`preview_link=${resolvedPreview.proxied ? "proxied" : "direct"}`);
+}
 const { subject, html, text } = renderLifecycleEmail({
   audience,
   kind,
   clientName,
-  previewUrl,
-  reviewUrl,
+  previewUrl: emailPreviewUrl,
+  reviewUrl: emailReviewUrl,
   sendAnywayUrl: String(args["send-anyway-url"] || ""),
   diagnosticPrUrl: String(args["diagnostic-pr"] || ""),
   diagnosticRunUrl: String(args["diagnostic-run"] || ""),
