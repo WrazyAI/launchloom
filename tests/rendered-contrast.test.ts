@@ -184,12 +184,35 @@ describe("rendered contrast independent of authored classes", () => {
     const report = await scan(
       `<style>body{margin:0;background:#fff;color:#000}.spacer{height:1200px}.plate{width:40px;background:#fff}.overflow{display:block;width:320px;color:#000;background:transparent}button{background:#fff;color:#000}button:focus-visible{outline:2px solid #000}</style><button type="button">Continue</button><div class="spacer"></div><div class="plate"><span class="overflow">Offscreen text</span></div>`,
     );
+    expect(report.targets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Offscreen text",
+          state: "default",
+          status: "pass",
+        }),
+      ]),
+    );
     expect(
       report.findings.filter(
         (finding) =>
           finding.text === "Offscreen text" && finding.state !== "default",
       ),
     ).toEqual([]);
+  });
+
+  it("proves an offscreen fixed background at the target's scroll position", async () => {
+    const report = await scan(
+      `<style>body{margin:0;height:2400px;background:#fff}.plate{width:40px;margin-top:1200px;background-image:linear-gradient(#000 0 200px,#fff 200px 900px);background-attachment:fixed;background-size:100% 900px;background-repeat:no-repeat}.overflow{display:block;width:320px;color:#000;background:transparent}</style><div class="plate"><span class="overflow">Offscreen fixed background partial plate</span></div>`,
+    );
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Offscreen fixed background partial plate",
+          status: "fail",
+        }),
+      ]),
+    );
   });
 
   it("still fails a focused control whose gradient darkens on hover", async () => {
