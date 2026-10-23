@@ -17,6 +17,12 @@ describe("preview link resolution", () => {
     );
   });
 
+  it("rejects a preview outside the Access-covered test project", () => {
+    expect(() =>
+      buildPreviewProxyUrl("https://evil.pages.dev/", adminOrigin),
+    ).toThrow(/allowed Pages host/u);
+  });
+
   it("rejects a non-https or path-bearing admin origin", () => {
     expect(() => normalizeAdminOrigin("http://api.example.test")).toThrow(
       /public https/u,

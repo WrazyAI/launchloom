@@ -66,6 +66,13 @@ describe("preview proxy links", () => {
     expect(
       parsePreviewProxyTarget(
         new URL(
+          "https://api.launchloom.wrazyos.com/admin/preview/evil.pages.dev/about",
+        ),
+      ),
+    ).toBeNull();
+    expect(
+      parsePreviewProxyTarget(
+        new URL(
           "https://api.launchloom.wrazyos.com/admin/preview/evil.pages.dev.evil.example/about",
         ),
       ),
