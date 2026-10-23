@@ -149,6 +149,36 @@ describe("rendered contrast independent of authored classes", () => {
     expect(report.findings).toEqual([]);
   });
 
+  it("still fails an out-of-scope partial plate whose backdrop darkens on focus", async () => {
+    const report = await scan(
+      `<style>body{margin:0;background:#fff;color:#000}.wrap:focus-within .plate{background:#000}.plate{width:40px;background:#fff}.overflow{display:block;width:320px;color:#000;background:transparent}button{margin-top:20px;background:#fff;color:#000}button:focus-visible{outline:2px solid #000}</style><div class="wrap"><div class="plate"><span class="overflow">Out-of-scope text that must stay readable</span></div><button type="button">Continue</button></div>`,
+    );
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Out-of-scope text that must stay readable",
+          state: "focus",
+          status: "fail",
+        }),
+      ]),
+    );
+  });
+
+  it("still fails a focused control whose gradient darkens on hover", async () => {
+    const report = await scan(
+      `<style>body{margin:0;background:#fff}button{background:linear-gradient(#fff,#fff);color:#111;border:0;padding:20px}button:hover{background:linear-gradient(#111,#111)}button:focus-visible{outline:2px solid #000}</style><button type="button">Continue</button>`,
+    );
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Continue",
+          state: "hover",
+          status: "fail",
+        }),
+      ]),
+    );
+  });
+
   it("audits each exclusive native disclosure and restores its initial state", async () => {
     const page = await browser.newPage();
     try {
