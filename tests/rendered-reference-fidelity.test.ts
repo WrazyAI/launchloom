@@ -188,6 +188,91 @@ describe("rendered reference request retries", () => {
     }
   });
 
+  it("falls back to the visual judge model when OpenCode Go keeps failing", async () => {
+    vi.useRealTimers();
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    const requests: Record<string, any>[] = [];
+    const fetchImpl = vi.fn<typeof fetch>(async (_url, options) => {
+      const body = JSON.parse(String(options?.body || "{}"));
+      requests.push(body);
+      if (body.model === "glm-5.3-flash") {
+        return new Response(
+          JSON.stringify({
+            id: "resp_fallback_judge",
+            status: "completed",
+            output: [
+              {
+                type: "message",
+                role: "assistant",
+                status: "completed",
+                content: [
+                  {
+                    type: "output_text",
+                    text: JSON.stringify({
+                      overallDistinctiveness: 88,
+                      genericFallbackDetected: false,
+                      pairs: [
+                        {
+                          left: "candidate-a",
+                          right: "candidate-b",
+                          distance: 84,
+                          reason: "Their rendered compositions differ.",
+                        },
+                      ],
+                      summary: "The two visual systems are distinct.",
+                    }),
+                  },
+                ],
+              },
+            ],
+            usage: {
+              input_tokens: 5000,
+              output_tokens: 900,
+              input_tokens_details: { cached_tokens: 0 },
+            },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      return new Response(
+        JSON.stringify({
+          error: { type: "server_error", message: "schema server error" },
+        }),
+        { status: 400, headers: { "content-type": "application/json" } },
+      );
+    });
+    try {
+      const result = await evaluateRenderedDiversity({
+        candidates: [
+          {
+            candidateId: "candidate-a",
+            desktop: files.candidateDesktop,
+            mobile: files.candidateMobile,
+          },
+          {
+            candidateId: "candidate-b",
+            desktop: files.secondDesktop,
+            mobile: files.secondMobile,
+          },
+        ],
+        fetchImpl,
+      });
+      expect(result.pass).toBe(true);
+      expect(
+        requests.some((request) => request.model === "glm-5.3-flash"),
+      ).toBe(true);
+      expect(
+        requests
+          .filter((request) => request.model === "glm-5.3-flash")
+          .every((request) => request.reasoning?.effort === "low"),
+      ).toBe(true);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.useFakeTimers();
+    }
+  }, 20_000);
+
   it("keeps candidate-specific geometry after the reusable reference cache boundary", async () => {
     const fetchImpl = vi
       .fn<typeof fetch>()
