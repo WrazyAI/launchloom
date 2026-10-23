@@ -56,6 +56,9 @@ jobs:
       CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
       CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
       LAUNCHLOOM_TEST_PAGES_PROJECT: ${{ vars.LAUNCHLOOM_TEST_PAGES_PROJECT || 'launchloom-pipeline-preview' }}
+      # Focused previews are Access-protected. The notification email routes
+      # the developer through the Neon-authenticated Worker proxy.
+      LAUNCHLOOM_ADMIN_ORIGIN: ${{ vars.ADMIN_PUBLIC_ORIGIN || 'https://api.launchloom.wrazyos.com' }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
       GITHUB_TRIGGERING_ACTOR: ${{ github.triggering_actor }}

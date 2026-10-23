@@ -295,6 +295,10 @@ async function requestJson({
   const maxTransientCreditRetries = 2;
   const maxTotalAttempts = maxAttempts + maxTransientCreditRetries;
   let activeReasoningEffort = reasoningEffort;
+  let activeModel = model;
+  const fallbackModel =
+    process.env.CREATIVE_REFERENCE_JUDGE_FALLBACK_MODEL || "z-ai/glm-5.3-flash";
+  let judgeFallbackUsed = false;
   let truncatedRetryUsed = false;
   let affordabilityRetryUsed = false;
   let ordinaryRetryCount = 0;
@@ -308,7 +312,7 @@ async function requestJson({
         let goResult;
         try {
           goResult = await completeGoCreative({
-            logicalModel: model,
+            logicalModel: activeModel,
             signal: controller.signal,
             fetchImpl,
             request: buildGoCreativeRequest({
@@ -347,6 +351,21 @@ async function requestJson({
             truncatedRetryUsed = true;
             continue;
           }
+          const nonTransient = new Set(["quota", "authentication"]);
+          if (
+            !judgeFallbackUsed &&
+            fallbackModel &&
+            fallbackModel !== activeModel &&
+            !nonTransient.has(String(error.providerErrorCode || ""))
+          ) {
+            judgeFallbackUsed = true;
+            console.info(
+              `rendered_judge_retry reason=provider-fallback label=${label} provider=opencode-go model=${fallbackModel} reasoning_effort=low max_tokens=${maxTokens} ${providerDiagnostic}`,
+            );
+            activeModel = fallbackModel;
+            activeReasoningEffort = "low";
+            continue;
+          }
           throw new Error(
             `${label} did not complete on OpenCode Go (${providerDiagnostic}).`,
           );
@@ -376,8 +395,8 @@ async function requestJson({
         responseCacheTtlSeconds: 900,
         fetchImpl,
         body: {
-          model,
-          ...promptCacheRequestFields(model, promptCacheKey),
+          model: activeModel,
+          ...promptCacheRequestFields(activeModel, promptCacheKey),
           temperature: 0,
           reasoning: { effort: activeReasoningEffort, exclude: true },
           max_tokens: maxTokens,

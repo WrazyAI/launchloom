@@ -14,6 +14,8 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+      CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
       LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}
@@ -31,6 +33,7 @@ jobs:
       ONBOARDING_ACCESS_AUD: ${{ vars.ONBOARDING_ACCESS_AUD }}
       ADMIN_AUTH_MODE: ${{ vars.ADMIN_AUTH_MODE }}
       ADMIN_PUBLIC_ORIGIN: ${{ vars.ADMIN_PUBLIC_ORIGIN }}
+      PREVIEW_ORIGIN: ${{ vars.PREVIEW_ORIGIN || 'https://launchloom-api.dark-sound-e4eb.workers.dev' }}
       NEON_AUTH_BASE_URL: ${{ vars.NEON_AUTH_BASE_URL }}
       NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET }}
       ADMIN_DATABASE_URL: ${{ secrets.ADMIN_DATABASE_URL }}
@@ -102,6 +105,14 @@ jobs:
           if [ -n "${FAL_KEY:-}" ]; then
             printf '%s' "$FAL_KEY" | npx wrangler secret put FAL_KEY
           fi
+          # Optional: lets the authenticated preview proxy fetch preview hosts
+          # still covered by the legacy Cloudflare Access application. Without
+          # it, protected preview links fail closed instead of exposing the
+          # Access login page.
+          if [ -n "${CLOUDFLARE_ACCESS_CLIENT_ID:-}" ] && [ -n "${CLOUDFLARE_ACCESS_CLIENT_SECRET:-}" ]; then
+            printf '%s' "$CLOUDFLARE_ACCESS_CLIENT_ID" | npx wrangler secret put CLOUDFLARE_ACCESS_CLIENT_ID
+            printf '%s' "$CLOUDFLARE_ACCESS_CLIENT_SECRET" | npx wrangler secret put CLOUDFLARE_ACCESS_CLIENT_SECRET
+          fi
       - name: Build platform
         run: npm run build
       - name: Build admin workspace assets
@@ -119,6 +130,7 @@ jobs:
             --var "ONBOARDING_ADMIN_EMAILS:$ONBOARDING_ADMIN_EMAILS"
             --var "ONBOARDING_ACCESS_AUD:$ONBOARDING_ACCESS_AUD"
             --var "ADMIN_AUTH_MODE:${ADMIN_AUTH_MODE:-access}"
+            --var "PREVIEW_ORIGIN:$PREVIEW_ORIGIN"
           )
           if [ "${ADMIN_AUTH_MODE:-access}" = "neon" ]; then
             deploy_vars+=(

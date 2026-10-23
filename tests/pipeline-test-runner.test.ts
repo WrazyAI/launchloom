@@ -594,6 +594,49 @@ describe("focused pipeline orchestration", () => {
     expect(payload.text).not.toMatch(/approve|signed|client review/iu);
     expect(receipt.emailId).toBe("mail-123");
   });
+  it("routes an Access-protected focused preview through the authenticated proxy", async () => {
+    let payload: any;
+    const report = {
+      profile: "creative-only",
+      verdict: "failed",
+      previewUrl: "https://63ae786d.launchloom-pipeline-preview.pages.dev",
+      sourceSha: "b".repeat(40),
+      runId: "456-1",
+      repository: "WrazyAI/llqa-179-creative-456-1",
+      branch: "qa/creative-only/456-1",
+      stages: { creative: { status: "failed" } },
+      costs: { totalUsd: 0.3, incomplete: false },
+    };
+    await sendPipelineTestNotification({
+      report,
+      to: "developer@example.com",
+      from: "sender@example.com",
+      key: "test-key",
+      adminOrigin: "https://api.launchloom.wrazyos.com",
+      probe: async () =>
+        new Response(null, {
+          status: 302,
+          headers: {
+            Location:
+              "https://launchloom-maigreeks.cloudflareaccess.com/cdn-cgi/access/login/63ae786d.launchloom-pipeline-preview.pages.dev?kid=secret",
+          },
+        }),
+      send: async (_url: any, options: any) => {
+        payload = JSON.parse(options.body);
+        return new Response(JSON.stringify({ id: "mail-456" }), {
+          status: 200,
+        });
+      },
+    });
+
+    expect(payload.text).toContain(
+      "Diagnostic preview: https://api.launchloom.wrazyos.com/admin/preview/63ae786d.launchloom-pipeline-preview.pages.dev/",
+    );
+    expect(payload.text).not.toContain(
+      "Diagnostic preview: https://63ae786d.launchloom-pipeline-preview.pages.dev",
+    );
+    expect(payload.text).not.toContain("cloudflareaccess.com");
+  });
   it("reuses SEO source and excludes aesthetic author/repair calls", async () => {
     const { calls, dependencies } = adapter();
     const report = await runPipelineTest(input, dependencies);
