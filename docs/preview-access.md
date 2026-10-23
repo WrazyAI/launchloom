@@ -31,10 +31,16 @@ https://api.launchloom.wrazyos.com/admin/preview/<preview-host>/<path>?<query>
 3. The Worker fetches the target Pages URL with the existing Cloudflare Access
    service token (`CF-Access-Client-Id` / `CF-Access-Client-Secret`), so the
    legacy Access application still protects the preview from anonymous access.
-4. Same-site links, assets, styles, `srcset` entries, inline styles and
-   same-host redirects are rewritten back through the proxy. External links,
-   anchors, `mailto:`, `tel:` and data URLs are left alone.
-5. The proxied document is served with a CSP `sandbox` directive that gives it
+4. The authenticated HTML is rewritten to short-lived, host-bound signed URLs
+   (`/admin/preview/<token>/<host>/...`) for every same-site link, asset, style,
+   `srcset`, inline style and same-host redirect. The token is required because
+   a CSP-sandboxed document has an opaque origin and does not send session
+   cookies for subresources. It is signed with `REVIEW_SIGNING_SECRET`, expires
+   after one hour, is bound to the preview host, and cannot access admin APIs.
+   A `<base>` element keeps relative URLs inside the token path. Reload the
+   original email link to mint a fresh token after expiry.
+5. External links, anchors, `mailto:`, `tel:` and data URLs are left alone.
+6. The proxied document is served with a CSP `sandbox` directive that gives it
    an opaque origin. Generated sites are untrusted input; without that
    isolation their scripts would run on the admin origin and could call admin
    APIs with the operator's cookies.

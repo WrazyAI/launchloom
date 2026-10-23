@@ -74,9 +74,100 @@ export interface PreviewProxyDeps {
 export interface PreviewProxyTarget {
   host: string;
   path: string;
+  token?: string;
 }
 
-/** Parse `/admin/preview/<pages-host>/<path>` without accepting userinfo or ports. */
+const TOKEN_TTL_MS = 60 * 60 * 1000;
+const TOKEN_CLOCK_SKEW_MS = 5 * 60 * 1000;
+const MAX_TOKEN_LENGTH = 512;
+const TOKEN_SEGMENT = /^[A-Za-z0-9_-]{20,400}\.[A-Za-z0-9_-]{20,200}$/u;
+
+function base64UrlEncode(value: ArrayBuffer | Uint8Array): string {
+  const bytes = value instanceof Uint8Array ? value : new Uint8Array(value);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary)
+    .replace(/\+/gu, "-")
+    .replace(/\//gu, "_")
+    .replace(/=+$/u, "");
+}
+
+function base64UrlDecode(value: string): Uint8Array {
+  const padded =
+    value.replace(/-/gu, "+").replace(/_/gu, "/") +
+    "=".repeat((4 - (value.length % 4)) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+async function previewTokenKey(secret: string) {
+  return crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"],
+  );
+}
+
+/**
+ * A short-lived, host-bound token carried in proxied URLs. The HTML document is
+ * sandboxed into an opaque origin, so its subresource requests do not send the
+ * admin session cookie. The token authenticates those requests without opening
+ * the preview to anonymous callers, and it cannot be used against admin APIs.
+ */
+export async function mintPreviewToken(
+  host: string,
+  secret: string,
+  now = Date.now(),
+): Promise<string> {
+  if (!secret)
+    throw new Error("Preview token signing secret is not configured.");
+  const payload = JSON.stringify({ h: host, e: now + TOKEN_TTL_MS });
+  const encoded = base64UrlEncode(new TextEncoder().encode(payload));
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    await previewTokenKey(secret),
+    new TextEncoder().encode(encoded),
+  );
+  return `${encoded}.${base64UrlEncode(signature)}`;
+}
+
+export async function verifyPreviewToken(
+  token: string,
+  host: string,
+  secret: string,
+  now = Date.now(),
+): Promise<boolean> {
+  if (!secret || !token || token.length > MAX_TOKEN_LENGTH) return false;
+  const parts = token.split(".");
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return false;
+  let payload: { h?: unknown; e?: unknown };
+  try {
+    payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(parts[0])));
+  } catch {
+    return false;
+  }
+  if (payload.h !== host || typeof payload.e !== "number") return false;
+  if (payload.e <= now || payload.e > now + TOKEN_TTL_MS + TOKEN_CLOCK_SKEW_MS)
+    return false;
+  try {
+    return await crypto.subtle.verify(
+      "HMAC",
+      await previewTokenKey(secret),
+      base64UrlDecode(parts[1]),
+      new TextEncoder().encode(parts[0]),
+    );
+  } catch {
+    return false;
+  }
+}
+
+function defaultPreviewPrefix(host: string) {
+  return `${PREVIEW_PROXY_PREFIX}${host}`;
+}
+
+/** Parse `/admin/preview/[<token>/]<pages-host>/<path>`. */
 export function parsePreviewProxyTarget(
   url: URL,
   env?: Env,
@@ -85,19 +176,25 @@ export function parsePreviewProxyTarget(
   const rest = url.pathname.slice(PREVIEW_PROXY_PREFIX.length);
   if (!rest) return null;
   const slash = rest.indexOf("/");
-  const rawHost = slash === -1 ? rest : rest.slice(0, slash);
+  const first = slash === -1 ? rest : rest.slice(0, slash);
+  const suffixes = previewHostSuffixes(env?.PREVIEW_PROXY_HOSTS);
+  if (isAllowedPreviewHost(first, suffixes)) {
+    const path = slash === -1 ? "/" : rest.slice(slash);
+    return { host: first.toLowerCase(), path };
+  }
+  if (!TOKEN_SEGMENT.test(first)) return null;
+  const afterToken = slash === -1 ? "" : rest.slice(slash + 1);
+  const hostSlash = afterToken.indexOf("/");
+  const rawHost = hostSlash === -1 ? afterToken : afterToken.slice(0, hostSlash);
   let host = "";
   try {
     host = decodeURIComponent(rawHost);
   } catch {
     return null;
   }
-  if (
-    !isAllowedPreviewHost(host, previewHostSuffixes(env?.PREVIEW_PROXY_HOSTS))
-  )
-    return null;
-  const path = slash === -1 ? "/" : rest.slice(slash);
-  return { host: host.toLowerCase(), path };
+  if (!isAllowedPreviewHost(host, suffixes)) return null;
+  const path = hostSlash === -1 ? "/" : afterToken.slice(hostSlash);
+  return { host: host.toLowerCase(), path, token: first };
 }
 
 function isPassthroughUrl(value: string): boolean {
@@ -115,7 +212,7 @@ function isPassthroughUrl(value: string): boolean {
   );
 }
 
-function rewriteUrlValue(value: string, host: string): string {
+function rewriteUrlValue(value: string, host: string, prefix: string): string {
   const trimmed = value.trim();
   if (isPassthroughUrl(trimmed)) return value;
   if (trimmed.startsWith("//")) {
@@ -126,7 +223,7 @@ function rewriteUrlValue(value: string, host: string): string {
         !absolute.username &&
         !absolute.password
       )
-        return `${PREVIEW_PROXY_PREFIX}${host}${absolute.pathname}${absolute.search}${absolute.hash}`;
+        return `${prefix}${absolute.pathname}${absolute.search}${absolute.hash}`;
     } catch {
       return value;
     }
@@ -134,7 +231,7 @@ function rewriteUrlValue(value: string, host: string): string {
   }
   if (trimmed.startsWith("/")) {
     if (trimmed.startsWith(PREVIEW_PROXY_PREFIX)) return value;
-    return `${PREVIEW_PROXY_PREFIX}${host}${trimmed}`;
+    return `${prefix}${trimmed}`;
   }
   try {
     const absolute = new URL(trimmed);
@@ -145,30 +242,34 @@ function rewriteUrlValue(value: string, host: string): string {
       !absolute.username &&
       !absolute.password
     )
-      return `${PREVIEW_PROXY_PREFIX}${host}${absolute.pathname}${absolute.search}${absolute.hash}`;
+      return `${prefix}${absolute.pathname}${absolute.search}${absolute.hash}`;
   } catch {
     return value;
   }
   return value;
 }
 
-function rewriteSrcset(value: string, host: string): string {
+function rewriteSrcset(value: string, host: string, prefix: string): string {
   return value
     .split(",")
     .map((part) => {
       const match = /^(\s*)(\S+)([\s\S]*)$/u.exec(part);
       if (!match) return part;
-      return `${match[1]}${rewriteUrlValue(match[2], host)}${match[3]}`;
+      return `${match[1]}${rewriteUrlValue(match[2], host, prefix)}${match[3]}`;
     })
     .join(",");
 }
 
-export function rewritePreviewCss(css: string, host: string): string {
+export function rewritePreviewCss(
+  css: string,
+  host: string,
+  prefix = defaultPreviewPrefix(host),
+): string {
   return String(css)
     .replace(
       /url\(\s*(['"]?)([^'")]+)\1\s*\)/giu,
       (match, quote: string, value: string) => {
-        const rewritten = rewriteUrlValue(value, host);
+        const rewritten = rewriteUrlValue(value, host, prefix);
         return rewritten === value
           ? match
           : `url(${quote}${rewritten}${quote})`;
@@ -176,53 +277,67 @@ export function rewritePreviewCss(css: string, host: string): string {
     )
     .replace(
       /(@import\s+)(['"])([^'"]+)\2/giu,
-      (match, prefix: string, quote: string, value: string) => {
-        const rewritten = rewriteUrlValue(value, host);
+      (match, directive: string, quote: string, value: string) => {
+        const rewritten = rewriteUrlValue(value, host, prefix);
         return rewritten === value
           ? match
-          : `${prefix}${quote}${rewritten}${quote}`;
+          : `${directive}${quote}${rewritten}${quote}`;
       },
     );
 }
 
-export function rewritePreviewHtml(html: string, host: string): string {
+export function rewritePreviewHtml(
+  html: string,
+  host: string,
+  prefix = defaultPreviewPrefix(host),
+): string {
   let output = String(html).replace(/<base\b[^>]*>/giu, "");
   output = output.replace(
     /(\s(?:href|src|action|poster|formaction|data-src|data-href|xlink:href)\s*=\s*)(["'])([\s\S]*?)\2/giu,
-    (_match, prefix: string, quote: string, value: string) =>
-      `${prefix}${quote}${rewriteUrlValue(value, host)}${quote}`,
+    (_match, attribute: string, quote: string, value: string) =>
+      `${attribute}${quote}${rewriteUrlValue(value, host, prefix)}${quote}`,
   );
   output = output.replace(
     /(\s(?:srcset|data-srcset)\s*=\s*)(["'])([\s\S]*?)\2/giu,
-    (_match, prefix: string, quote: string, value: string) =>
-      `${prefix}${quote}${rewriteSrcset(value, host)}${quote}`,
+    (_match, attribute: string, quote: string, value: string) =>
+      `${attribute}${quote}${rewriteSrcset(value, host, prefix)}${quote}`,
   );
   output = output.replace(
     /(<style\b[^>]*>)([\s\S]*?)(<\/style>)/giu,
     (_match, open: string, css: string, close: string) =>
-      `${open}${rewritePreviewCss(css, host)}${close}`,
+      `${open}${rewritePreviewCss(css, host, prefix)}${close}`,
   );
   output = output.replace(
     /(\sstyle\s*=\s*)(["'])([\s\S]*?)\2/giu,
-    (_match, prefix: string, quote: string, value: string) =>
-      `${prefix}${quote}${rewritePreviewCss(value, host)}${quote}`,
+    (_match, attribute: string, quote: string, value: string) =>
+      `${attribute}${quote}${rewritePreviewCss(value, host, prefix)}${quote}`,
   );
   output = output.replace(
     /(<meta\b[^>]*http-equiv\s*=\s*["']?refresh["']?[^>]*content\s*=\s*)(["'])([^"']*)(["'])/giu,
-    (_match, prefix: string, quote: string, content: string, close: string) => {
+    (_match, attribute: string, quote: string, content: string, close: string) => {
       const rewritten = content.replace(
         /(url\s*=\s*)([^\s"';]+)/giu,
         (_value, label: string, url: string) =>
-          `${label}${rewriteUrlValue(url, host)}`,
+          `${label}${rewriteUrlValue(url, host, prefix)}`,
       );
-      return `${prefix}${quote}${rewritten}${close}`;
+      return `${attribute}${quote}${rewritten}${close}`;
     },
   );
+  // Relative URLs resolve against the document URL, which has no token. The
+  // base element keeps them inside the token-scoped proxy path.
+  const base = `<base href="${prefix}/">`;
+  output = /<head\b[^>]*>/iu.test(output)
+    ? output.replace(/(<head\b[^>]*>)/iu, `$1${base}`)
+    : `${base}${output}`;
   return output;
 }
 
-export function rewritePreviewLocation(location: string, host: string): string {
-  return rewriteUrlValue(location, host);
+export function rewritePreviewLocation(
+  location: string,
+  host: string,
+  prefix = defaultPreviewPrefix(host),
+): string {
+  return rewriteUrlValue(location, host, prefix);
 }
 
 function isAccessLoginRedirect(response: Response): boolean {
@@ -282,6 +397,7 @@ function notFound(): Response {
 async function rewritePreviewResponse(
   upstream: Response,
   host: string,
+  prefix: string,
   method: string,
 ): Promise<Response> {
   const contentType = (
@@ -293,7 +409,8 @@ async function rewritePreviewResponse(
   headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
 
   const location = upstream.headers.get("Location");
-  if (location) headers.set("Location", rewritePreviewLocation(location, host));
+  if (location)
+    headers.set("Location", rewritePreviewLocation(location, host, prefix));
 
   if (isHtml) {
     headers.set("Content-Type", "text/html; charset=utf-8");
@@ -333,8 +450,8 @@ async function rewritePreviewResponse(
         "The preview response is too large to render safely.",
       );
     const body = isHtml
-      ? rewritePreviewHtml(source, host)
-      : rewritePreviewCss(source, host);
+      ? rewritePreviewHtml(source, host, prefix)
+      : rewritePreviewCss(source, host, prefix);
     headers.set(
       "Content-Length",
       String(new TextEncoder().encode(body).byteLength),
@@ -361,17 +478,30 @@ export async function handlePreviewProxy(
   const target = parsePreviewProxyTarget(url, env);
   if (!target) return notFound();
 
-  const authorize = deps.authorize ?? requireAdminContext;
+  const secret = env.REVIEW_SIGNING_SECRET;
+  if (!secret) return textResponse(503, "Preview access is not configured.");
+  const tokenValid = target.token
+    ? await verifyPreviewToken(target.token, target.host, secret)
+    : false;
   let guard: PreviewProxyGuard;
-  try {
-    guard = await authorize(request, env, ctx);
-  } catch (error) {
-    const mapped = toAdminAuthError(error);
-    if (mapped.status === 401) return loginRedirect(url, mapped.setCookies);
-    return withAdminCookies(
-      textResponse(mapped.status, mapped.message),
-      mapped.setCookies,
-    );
+  let prefix: string;
+  if (tokenValid) {
+    guard = { setCookies: [] };
+    prefix = `${PREVIEW_PROXY_PREFIX}${target.token}/${target.host}`;
+  } else {
+    const authorize = deps.authorize ?? requireAdminContext;
+    try {
+      guard = await authorize(request, env, ctx);
+    } catch (error) {
+      const mapped = toAdminAuthError(error);
+      if (mapped.status === 401) return loginRedirect(url, mapped.setCookies);
+      return withAdminCookies(
+        textResponse(mapped.status, mapped.message),
+        mapped.setCookies,
+      );
+    }
+    const token = await mintPreviewToken(target.host, secret);
+    prefix = `${PREVIEW_PROXY_PREFIX}${token}/${target.host}`;
   }
 
   const headers = new Headers({
@@ -417,6 +547,7 @@ export async function handlePreviewProxy(
   const response = await rewritePreviewResponse(
     upstream,
     target.host,
+    prefix,
     request.method,
   );
   return withAdminCookies(response, guard.setCookies);

@@ -6,18 +6,22 @@ import { AdminAuthError } from "../src/admin/auth";
 import { network } from "./network";
 import {
   handlePreviewProxy,
+  mintPreviewToken,
   parsePreviewProxyTarget,
   previewProxyPath,
   rewritePreviewCss,
   rewritePreviewHtml,
   rewritePreviewLocation,
+  verifyPreviewToken,
   type PreviewProxyAuthorize,
 } from "../src/preview-proxy";
 
 const previewHost = "63ae786d.launchloom-pipeline-preview.pages.dev";
 const adminOrigin = "https://api.launchloom.wrazyos.com";
+const previewSecret = "preview-proxy-test-secret";
 const proxyEnv = {
   ADMIN_PUBLIC_ORIGIN: adminOrigin,
+  REVIEW_SIGNING_SECRET: previewSecret,
   CLOUDFLARE_ACCESS_CLIENT_ID: "access-client-id",
   CLOUDFLARE_ACCESS_CLIENT_SECRET: "access-client-secret",
 } as unknown as Env;
@@ -47,7 +51,7 @@ describe("preview proxy links", () => {
     ).toBe(`/admin/preview/${previewHost}/services/?review=token&next=%2Fhome`);
   });
 
-  it("parses only HTTPS pages.dev preview hosts", () => {
+  it("parses only HTTPS pages.dev preview hosts", async () => {
     expect(
       parsePreviewProxyTarget(
         new URL(
@@ -55,6 +59,15 @@ describe("preview proxy links", () => {
         ),
       ),
     ).toEqual({ host: previewHost, path: "/about" });
+
+    const token = await mintPreviewToken(previewHost, previewSecret);
+    expect(
+      parsePreviewProxyTarget(
+        new URL(
+          `https://api.launchloom.wrazyos.com/admin/preview/${token}/${previewHost}/about`,
+        ),
+      ),
+    ).toEqual({ host: previewHost, path: "/about", token });
 
     expect(
       parsePreviewProxyTarget(
@@ -114,7 +127,9 @@ describe("preview HTML rewriting", () => {
 
     const output = rewritePreviewHtml(html, previewHost);
 
-    expect(output).not.toContain("<base");
+    expect(output).toContain(
+      `<base href="/admin/preview/${previewHost}/">`,
+    );
     expect(output).toContain(`href="/admin/preview/${previewHost}/about"`);
     expect(output).toContain(
       `href="/admin/preview/${previewHost}/services/?x=1#top"`,
@@ -190,6 +205,83 @@ describe("preview CSS and redirect rewriting", () => {
     expect(
       rewritePreviewLocation("https://example.com/about", previewHost),
     ).toBe("https://example.com/about");
+  });
+});
+
+describe("preview tokens", () => {
+  it("mints and verifies a host-bound token", async () => {
+    const token = await mintPreviewToken(previewHost, previewSecret);
+    expect(await verifyPreviewToken(token, previewHost, previewSecret)).toBe(
+      true,
+    );
+    expect(
+      await verifyPreviewToken(
+        token,
+        "other.launchloom-pipeline-preview.pages.dev",
+        previewSecret,
+      ),
+    ).toBe(false);
+    expect(await verifyPreviewToken(token, previewHost, "wrong-secret")).toBe(
+      false,
+    );
+  });
+
+  it("rejects an expired token", async () => {
+    const token = await mintPreviewToken(
+      previewHost,
+      previewSecret,
+      Date.now() - 2 * 60 * 60 * 1000,
+    );
+    expect(await verifyPreviewToken(token, previewHost, previewSecret)).toBe(
+      false,
+    );
+  });
+
+  it("accepts a valid token without a session", async () => {
+    const token = await mintPreviewToken(previewHost, previewSecret);
+    const authorize = vi.fn(async () => ({ setCookies: [] }));
+    const fetchUpstream = vi.fn(
+      async () =>
+        new Response('<a href="/about">About</a>', {
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        }),
+    );
+
+    const response = await handlePreviewProxy(
+      new Request(`${adminOrigin}/admin/preview/${token}/${previewHost}/`),
+      proxyEnv,
+      {} as ExecutionContext,
+      { authorize, fetch: fetchUpstream as unknown as typeof fetch },
+    );
+
+    expect(response.status).toBe(200);
+    expect(authorize).not.toHaveBeenCalled();
+    expect(await response.text()).toContain(
+      `/admin/preview/${token}/${previewHost}/about`,
+    );
+  });
+
+  it("falls back to session auth for an expired token", async () => {
+    const token = await mintPreviewToken(
+      previewHost,
+      previewSecret,
+      Date.now() - 2 * 60 * 60 * 1000,
+    );
+    const authorize = vi.fn(async () => {
+      throw new AdminAuthError("signed_out");
+    });
+    const fetchUpstream = vi.fn();
+
+    const response = await handlePreviewProxy(
+      new Request(`${adminOrigin}/admin/preview/${token}/${previewHost}/`),
+      proxyEnv,
+      {} as ExecutionContext,
+      { authorize, fetch: fetchUpstream as unknown as typeof fetch },
+    );
+
+    expect(authorize).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(303);
+    expect(fetchUpstream).not.toHaveBeenCalled();
   });
 });
 
@@ -270,8 +362,11 @@ describe("preview proxy request handling", () => {
     expect(response.headers.get("Content-Security-Policy")).toContain(
       "default-src 'self'",
     );
-    expect(await response.text()).toContain(
-      `href="/admin/preview/${previewHost}/about"`,
+    expect(await response.text()).toMatch(
+      new RegExp(
+        `href="/admin/preview/[A-Za-z0-9._-]+/${previewHost}/about"`,
+        "u",
+      ),
     );
   });
 
@@ -374,8 +469,11 @@ describe("preview proxy route wiring", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(await response.text()).toContain(
-      `href="/admin/preview/${previewHost}/about"`,
+    expect(await response.text()).toMatch(
+      new RegExp(
+        `href="/admin/preview/[A-Za-z0-9._-]+/${previewHost}/about"`,
+        "u",
+      ),
     );
     expect(response.headers.get("Content-Security-Policy")).toContain(
       "sandbox",
