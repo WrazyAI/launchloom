@@ -65,7 +65,7 @@
 
 ## Task 4: One controlled recovery and delivery proof
 
-**Files:** Append `.github/agents/progress-update/UPDATE-<current-UTC-date>.md`; private evidence only in the two client repositories and owned QA artifact directory. Use the shipped `verify-internal-qa-delivery.yml`, not another sending tool.
+**Files:** Append `.github/agents/progress-update/UPDATE-<current-UTC-date>.md`; private evidence only in the two client repositories and owned QA artifact directory. Use the shipped read-only `scripts/verify-internal-qa-delivery.mjs` check (its former workflow wrapper was removed), not another sending tool.
 
 **Consumes:** reviewed deployed repair implementation, same frozen QA sets, approved experiment ceiling and existing authorized client-recipient secret. **Produces:** two gated preview source/deployment records, browser submission evidence and correlated receiving-provider results, or a precise terminal blocker.
 

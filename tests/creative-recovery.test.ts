@@ -126,7 +126,6 @@ describe("developer-triggered creative repair workflow", () => {
     const workflows = [
       ".github/workflows/generate-client.yml",
       ".github/workflows/repair-creative-candidate.yml",
-      ".github/workflows/send-developer-review.yml",
       ".github/workflows/process-feedback.yml",
       ".github/workflows/process-client-feedback.yml",
       ".github/workflows/publish-site.yml",
