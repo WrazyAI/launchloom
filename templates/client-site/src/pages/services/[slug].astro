@@ -5,7 +5,7 @@ import LeadForm from "../../components/LeadForm.astro";
 import Footer from "../../components/Footer.astro";
 import PageBriefSections from "../../components/PageBriefSections";
 import ServiceCandidateHost from "../../components/ServiceCandidateHost";
-import site, { phoneHref, serviceHref, pageHref, homeSectionHref, approvedServices, routePageBrief, type Service } from "../../lib/site";
+import site, { phoneHref, serviceHref, approvedServices, routePageBrief, type Service } from "../../lib/site";
 import { resolvePageRecipe } from "../../lib/page-recipe";
 import { compileExperiencePack } from "../../lib/experience-pack";
 import { hasTestOnlySite } from "../../lib/seo-readiness.mjs";
@@ -110,7 +110,7 @@ const serviceStructuredData = {
     <>
       <Header />
       <main class:list={["inner-page", `recipe-${recipe}`, `type-${treatment.typography}`, experience && `inner-experience-${experience.program.packId}`]} data-experience-pack={experience?.program.packId}>
-        <section class="inner-hero service-hero"><div class="wrap inner-hero-grid"><div><a class="breadcrumb" href="/">Home</a> / <a class="breadcrumb" href={pageHref("/services/", homeSectionHref("services"))}>All services</a><span class="kicker">{care ? "Care option" : "Service details"}</span><h1>{service.name}</h1><p>{introduction}</p><div class="hero-actions"><a class="cta" href="#contact">{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div>{serviceImage && <img src={serviceImage} alt={brief?.media[0]?.alt || `${site.business.name} ${site.assets?.photoOne || site.assets?.photoTwo ? "client-provided service photo" : "service context"}`} />}</div></section>
+        <section class="inner-hero service-hero"><div class="wrap inner-hero-grid"><div><a class="breadcrumb" href="/">Home</a> / <a class="breadcrumb" href="/services/">All services</a><span class="kicker">{care ? "Care option" : "Service details"}</span><h1>{service.name}</h1><p>{introduction}</p><div class="hero-actions"><a class="cta" href="#contact">{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div>{serviceImage && <img src={serviceImage} alt={brief?.media[0]?.alt || `${site.business.name} ${site.assets?.photoOne || site.assets?.photoTwo ? "client-provided service photo" : "service context"}`} />}</div></section>
 
         {supported ? <>
           {brief.sections.filter(section => ["scope","preparation","nextStep"].includes(section.kind)).map(section => <section data-ll-surface="light" class="section wrap" data-page-field={section.kind}><div class="section-heading"><h2>{section.heading}</h2></div>{section.items.map(item => <p>{item.text}</p>)}</section>)}

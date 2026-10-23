@@ -2357,3 +2357,17 @@ h2 {
   outline: 2px solid #14201d;
   outline-offset: -5px;
 }
+
+
+/* Generated service-support copy must have a provable surface. A decorative
+   layer from an adjacent section must never leave the heading unreadable. */
+[data-service-support] {
+  background: var(--ll-creative-paper, var(--paper, #f8f6f0));
+  isolation: isolate;
+}
+
+[data-service-support] > :first-child {
+  position: relative;
+  z-index: 1;
+  background: inherit;
+}
