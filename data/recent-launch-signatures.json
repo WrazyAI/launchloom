@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-10-09T19:42:11.982Z",
+  "updatedAt": "2026-10-23T14:41:48.196Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -578,6 +578,41 @@
         "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce",
         "thin red availability strip over a white service bar with a yellow booking contr|a garage and electrician photograph is interrupted by a red halftone message cir|dark squared tiles with yellow line icons and short task labels|bold compact sans headings and short neutral supporting copy|service navigation -> photo and halftone opening -> black electrical service gri|uniformed electrician photographs in large circular crops plus household electri"
       ]
+    },
+    {
+      "id": "2026-10-23-ridgeline-plumbing-drain-co-attempt-184-run-39971185509-attempt-1",
+      "launchedAt": "2026-10-23T14:41:48.194Z",
+      "stage": "attempt",
+      "reservationKey": "184-run-39971185509-attempt-1",
+      "businessName": "Ridgeline Plumbing & Drain Co.",
+      "businessKind": "home-services",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "colorlib-fixwell-quote-desk",
+        "typographic-poster",
+        "utility-diagnostic",
+        "web-homeservices-morris-jenkins",
+        "web-homeservices-roto-rooter"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form"
+      ],
+      "referenceIds": [
+        "colorlib-fixwell-quote-desk",
+        "web-homeservices-morris-jenkins",
+        "web-homeservices-roto-rooter"
+      ],
+      "routeSignatures": [
+        "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
+        "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
+        "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
+      ]
     }
   ],
   "launchesByBusinessKind": {
@@ -1046,6 +1081,41 @@
           "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations",
           "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce",
           "thin red availability strip over a white service bar with a yellow booking contr|a garage and electrician photograph is interrupted by a red halftone message cir|dark squared tiles with yellow line icons and short task labels|bold compact sans headings and short neutral supporting copy|service navigation -> photo and halftone opening -> black electrical service gri|uniformed electrician photographs in large circular crops plus household electri"
+        ]
+      },
+      {
+        "id": "2026-10-23-ridgeline-plumbing-drain-co-attempt-184-run-39971185509-attempt-1",
+        "launchedAt": "2026-10-23T14:41:48.194Z",
+        "stage": "attempt",
+        "reservationKey": "184-run-39971185509-attempt-1",
+        "businessName": "Ridgeline Plumbing & Drain Co.",
+        "businessKind": "home-services",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "colorlib-fixwell-quote-desk",
+          "typographic-poster",
+          "utility-diagnostic",
+          "web-homeservices-morris-jenkins",
+          "web-homeservices-roto-rooter"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form"
+        ],
+        "referenceIds": [
+          "colorlib-fixwell-quote-desk",
+          "web-homeservices-morris-jenkins",
+          "web-homeservices-roto-rooter"
+        ],
+        "routeSignatures": [
+          "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
+          "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
+          "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
         ]
       }
     ]
