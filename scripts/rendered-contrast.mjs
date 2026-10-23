@@ -297,19 +297,36 @@ export async function resolveRenderedBackdrop(
       )
       .catch(() => false);
   };
-  // A partial plate is the one structural issue whose rendered backdrop can
+  // A partial plate is the known duplicate case: its rendered backdrop can
   // change between states even when the computed ancestor chain looks the
   // same. Re-prove it from state-local pixels instead of carrying the default
-  // verdict into a state where out-of-scope resolution is skipped.
-  const partialPlateOnly = (target) =>
-    target.issues?.length === 1 &&
-    target.issues[0] === "background plate only partially covers text";
+  // verdict into a state where out-of-scope resolution is skipped. Require the
+  // plate to be fully inside the state's viewport so the capture cannot scroll
+  // the page and change hover or fixed-background paint. Every other
+  // out-of-scope issue remains fail-closed.
+  const partialPlateFullyVisible = (target) => {
+    if (
+      target.issues?.length !== 1 ||
+      target.issues[0] !== "background plate only partially covers text"
+    )
+      return false;
+    const viewport = page.viewportSize();
+    const rect = target.rect;
+    return (
+      Boolean(viewport) &&
+      rect.x >= 0 &&
+      rect.y >= 0 &&
+      rect.x + rect.width <= viewport.width &&
+      rect.y + rect.height <= viewport.height
+    );
+  };
   for (const target of candidates) {
     const locator = page.locator(target.selector).first();
     let png = null;
     let effectiveForeground = null;
     try {
-      if (!partialPlateOnly(target) && !(await inScope(locator))) continue;
+      if (!partialPlateFullyVisible(target) && !(await inScope(locator)))
+        continue;
       // Element-level filters change how the foreground actually renders.
       // Only opacity-only filters have a provable effect on the foreground
       // alpha; any other filter (blur, brightness, blend, ...) is not
@@ -1524,9 +1541,29 @@ export async function inspectContrastPage(
   const collect = async (state) => {
     await settle();
     visited.push(state);
-    const stateTargets = (
+    const measured = (
       await page.evaluate(collectContrastTargets, { route, state })
     ).map(measure);
+    const viewport = page.viewportSize();
+    const stateTargets = measured.filter((target) => {
+      if (
+        state === "default" ||
+        target.issues?.length !== 1 ||
+        target.issues[0] !== "background plate only partially covers text"
+      )
+        return true;
+      // A clipped or offscreen partial plate is already covered by the default
+      // state and is not part of this state's visible frame. Re-proving it
+      // would scroll the page and could change hover or fixed-background paint.
+      const rect = target.rect;
+      return (
+        Boolean(viewport) &&
+        rect.x >= 0 &&
+        rect.y >= 0 &&
+        rect.x + rect.width <= viewport.width &&
+        rect.y + rect.height <= viewport.height
+      );
+    });
     // Structurally unresolvable backdrops (overlapping paint, filters,
     // partial plates) are resolved from the rendered pixels of this exact
     // state before the findings are finalized. Failures stay failures.
