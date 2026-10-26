@@ -18,16 +18,17 @@ import {
   creativeLaneProvider,
   parseGoCreativeOutput,
 } from "./creative-lane-inference.mjs";
-import { VISUAL_GATE_MODEL } from "./visual-quality-gate-lib.mjs";
 
 export const DEFAULT_FAL_MODEL = "fal-ai/minimax/image-01";
 export const DEFAULT_MAX_IMAGES = 3;
-export const DEFAULT_MAX_REQUESTS = 9;
+export const DEFAULT_MAX_REQUESTS = 15;
 export const DEFAULT_MAX_PROMPT_LENGTH = 1500;
 export const GENERATED_ASSET_REVIEW_POLICY_VERSION = "visual-review-v1";
 
+// The stronger visual judge is used for structured asset review because the
+// flash model returned too many malformed/unavailable checks on real images.
 const GENERATED_ASSET_REVIEW_MODEL =
-  process.env.FAL_IMAGE_REVIEW_MODEL || VISUAL_GATE_MODEL;
+  process.env.FAL_IMAGE_REVIEW_MODEL || "z-ai/glm-5.3";
 const GENERATED_ASSET_REVIEW_REASONS = new Set([
   "not_standalone_image",
   "website_or_interface",
@@ -56,7 +57,7 @@ const FAL_VALIDATION_FIELDS = new Set([
   "output_format",
 ]);
 const IMAGE_RETRY_DIRECTIVE =
-  "Do not create a webpage, interface, or any visible text. Regenerate only a single standalone image asset.";
+  "Do not create a webpage, interface, readable words, signage, labels, packaging lettering, or logos. Regenerate only a single standalone photographic image asset with no readable text.";
 const GENERATED_ASSET_REVIEW_SCHEMA = {
   name: "launchloom_generated_asset_review",
   strict: true,
@@ -92,7 +93,7 @@ const GENERATED_ASSET_REVIEW_REQUIRED_CHECKS = [
 ];
 
 const GENERATED_ASSET_REVIEW_SYSTEM_PROMPT =
-  "You are a strict visual asset integrity reviewer. Evaluate only what is visible in the supplied pixels. A fake website screenshot with nonsense text is still a website screenshot and must be rejected. Do not infer that a design mockup is acceptable because its text is unreadable. Reject any person, face, human figure, hands, or body parts: generated imagery must never imply staff or customers. Return only the required structured fields.";
+  "You are a strict visual asset integrity reviewer. Evaluate only what is visible in the supplied pixels. Reject fake website screenshots, browser or app interfaces, readable words, fake interface copy, prominent signage, logos, watermarks, and any person, face, human figure, hands, or body parts. Do not reject incidental unreadable texture, blurry background marks, photographic grain, or a photographic still life containing several physical objects; those are normal editorial photography. A collage of interface panels is not a standalone image, but a still-life arrangement of physical objects is. Return only the required structured fields.";
 
 function configuredNumber(value, fallback) {
   if (value === undefined || value === null || value === "") return fallback;
@@ -300,6 +301,19 @@ function retryPromptFor(prompt) {
     .slice(0, DEFAULT_MAX_PROMPT_LENGTH);
 }
 
+function normalizeReviewChecks(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const checks = {};
+  for (const key of GENERATED_ASSET_REVIEW_REQUIRED_CHECKS) {
+    const raw = value[key];
+    if (typeof raw === "boolean") checks[key] = raw;
+    else if (raw === "true" || raw === 1) checks[key] = true;
+    else if (raw === "false" || raw === 0) checks[key] = false;
+    else return null;
+  }
+  return checks;
+}
+
 function normalizeImageReview(
   review,
   fallbackModel = GENERATED_ASSET_REVIEW_MODEL,
@@ -395,9 +409,10 @@ export async function reviewGeneratedAsset({
               .join(", ") || "general business context"
           }.`,
           `Reference family: ${safePromptPart(familyId || "unspecified", 80) || "unspecified"}.`,
-          "Judge visible pixels, not the prompt or filename. Reject a fake website/page screenshot, browser or UI layout, collage of interface panels, gibberish or readable text, text-like marks, logos, watermarks, or an unrelated subject.",
+          "Judge visible pixels, not the prompt or filename. Reject a fake website/page screenshot, browser or UI layout, a collage of interface panels, readable words or fake interface copy, prominent signage, logos, watermarks, or an unrelated subject.",
+          "Allow incidental unreadable texture, blurry background marks, photographic grain, and a photographic still life with several physical objects. Do not treat those as text or as a UI collage.",
           "Reject any image containing people, faces, hands, or body parts; generated imagery must never imply staff or customers.",
-          "Approve only one standalone image asset with a relevant subject, no visible text-like marks, no interface, no branding, and no people.",
+          "Approve only one standalone image asset with a relevant subject, no readable text or fake interface copy, no interface, no branding, and no people.",
         ].join(" "),
       },
       {
@@ -447,14 +462,8 @@ export async function reviewGeneratedAsset({
         } catch {
           checks = null;
         }
-        if (
-          !checks ||
-          typeof checks !== "object" ||
-          GENERATED_ASSET_REVIEW_REQUIRED_CHECKS.some(
-            (key) => typeof checks[key] !== "boolean",
-          )
-        )
-          continue;
+        checks = normalizeReviewChecks(checks);
+        if (!checks) continue;
         const reasonCodes = assetReviewReasonCodes(checks);
         return {
           available: true,
@@ -520,14 +529,8 @@ export async function reviewGeneratedAsset({
     } catch {
       return unavailableAssetReview("invalid_checks", diagnostics);
     }
-    if (
-      !checks ||
-      typeof checks !== "object" ||
-      GENERATED_ASSET_REVIEW_REQUIRED_CHECKS.some(
-        (key) => typeof checks[key] !== "boolean",
-      )
-    )
-      return unavailableAssetReview("invalid_checks", diagnostics);
+    checks = normalizeReviewChecks(checks);
+    if (!checks) return unavailableAssetReview("invalid_checks", diagnostics);
     const reasonCodes = assetReviewReasonCodes(checks);
     return {
       available: true,
@@ -857,6 +860,7 @@ function promptFor(site, route, placement) {
     `Style: follow the assigned family mechanics and crop strategy. Preserve believable materials and production polish appropriate to ${familyBrief.medium}; do not normalize every family into the same editorial photograph.`,
     "Keep the image useful at the requested crop and avoid tiny details that disappear on mobile.",
     placement.focal,
+    "Do not include storefront signage, menus, labels, packaging lettering, logos, watermarks, or readable words.",
   ]
     .filter(Boolean)
     .join(" ");
@@ -1082,7 +1086,9 @@ async function generateContextualAssetsForRoute({
       maxRequests,
       Math.max(
         1,
-        Math.ceil(((placementIndex + 1) * maxRequests) / Math.max(1, placements.length)),
+        Math.ceil(
+          ((placementIndex + 1) * maxRequests) / Math.max(1, placements.length),
+        ),
       ),
     );
     const prompt = promptFor(site, route, placement);
@@ -1216,6 +1222,7 @@ async function generateContextualAssetsForRoute({
         finalReview = reviewSummary;
         if (reviewSummary.status === "unavailable") {
           failure = "image-review-unavailable";
+          if (attempt === 0 && requests < placementRequestLimit) continue;
           break;
         }
         if (reviewSummary.status !== "approved") {

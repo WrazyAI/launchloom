@@ -211,7 +211,7 @@ jobs:
       FAL_KEY: ${{ secrets.FAL_KEY }}
       FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}
       FAL_IMAGE_MAX_IMAGES: ${{ vars.FAL_IMAGE_MAX_IMAGES || '3' }}
-      FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '9' }}
+      FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '15' }}
       # Code authoring and repair are hard-pinned to DeepSeek V4.1 Flash.
       # GLM and DeepSeek v4-pro are visual-judge/trial models only.
       CREATIVE_EXPERIENCE_MODEL: opencode-go/deepseek-v4.1-flash

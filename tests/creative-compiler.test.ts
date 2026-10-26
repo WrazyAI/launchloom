@@ -4,8 +4,12 @@ import {
   assertIndependentRoutes,
   buildCandidateManifest,
   buildRouteContract,
+  creativeImageCoverage,
   diversityReport,
   fingerprintDistance,
+  imageCompletenessScore,
+  rankFallbackCandidates,
+  routeRequiresHeroImage,
   validateCandidateManifest,
 } from "../scripts/creative-compiler.mjs";
 
@@ -174,6 +178,81 @@ describe("creative compiler", () => {
       ...manifest,
       referenceDossier: { ...referenceDossier, source: undefined },
     })).toThrow(/incomplete Reference Dossier binding/iu);
+  });
+
+  it("requires a hero image only for image-dependent hero archetypes", () => {
+    expect(routeRequiresHeroImage("image-overlay")).toBe(true);
+    expect(routeRequiresHeroImage("image-led-editorial")).toBe(true);
+    expect(routeRequiresHeroImage("split-media-copy")).toBe(true);
+    expect(routeRequiresHeroImage("text-led-editorial")).toBe(false);
+    expect(routeRequiresHeroImage("typographic-poster")).toBe(false);
+    expect(
+      routeRequiresHeroImage(
+        "a full-bleed evening exterior photograph above a dark editorial canvas",
+      ),
+    ).toBe(true);
+    expect(
+      routeRequiresHeroImage("a typographic poster on a cream field"),
+    ).toBe(false);
+    expect(routeRequiresHeroImage("")).toBe(false);
+  });
+
+  it("scores a required hero above an empty slot and prefers more placements", () => {
+    const empty = creativeImageCoverage({}, "route-01", "image-overlay");
+    const hero = creativeImageCoverage(
+      { "route-01": { hero: "/hero.webp" } },
+      "route-01",
+      "image-overlay",
+    );
+    const full = creativeImageCoverage(
+      {
+        "route-01": {
+          hero: "/hero.webp",
+          secondary: "/secondary.webp",
+          tertiary: "/tertiary.webp",
+        },
+      },
+      "route-01",
+      "image-overlay",
+    );
+    const textLed = creativeImageCoverage({}, "route-02", "text-led-editorial");
+
+    expect(imageCompletenessScore(empty)).toBe(0);
+    expect(imageCompletenessScore(hero)).toBe(1.01);
+    expect(imageCompletenessScore(full)).toBe(1.03);
+    expect(imageCompletenessScore(full)).toBeGreaterThan(
+      imageCompletenessScore(hero),
+    );
+    expect(imageCompletenessScore(textLed)).toBe(1);
+  });
+
+  it("ranks fallback candidates by image completeness before preference and score", () => {
+    const ranked = rankFallbackCandidates([
+      {
+        candidateId: "candidate-a",
+        imageCompleteness: 0,
+        preferred: true,
+        visualScore: 90,
+      },
+      {
+        candidateId: "candidate-b",
+        imageCompleteness: 1.01,
+        preferred: false,
+        visualScore: 70,
+      },
+      {
+        candidateId: "candidate-c",
+        imageCompleteness: 1.01,
+        preferred: true,
+        visualScore: 60,
+      },
+    ]);
+
+    expect(ranked.map((candidate) => candidate.candidateId)).toEqual([
+      "candidate-c",
+      "candidate-b",
+      "candidate-a",
+    ]);
   });
 
   it("keeps the approved 2026-10-17 promotion calibration", () => {

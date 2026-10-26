@@ -36,7 +36,8 @@ Current defaults in the workflow and script:
 | `FAL_KEY` | unset/optional | Server-only credential. Without it, the stage skips generation and keeps the existing fallback. |
 | `FAL_IMAGE_MODEL` | `fal-ai/minimax/image-01` | FAL model used for image requests. |
 | `FAL_IMAGE_MAX_IMAGES` | `3` | Global cap on retained generated images across routes. |
-| `FAL_IMAGE_MAX_REQUESTS` | `9` | Global request budget. Coverage-first allocation gives every placement a fair share of the budget, so a rejected hero (or its retry) cannot starve secondary/tertiary; retries are taken from surplus only. |
+| `FAL_IMAGE_MAX_REQUESTS` | `15` | Global request budget. Coverage-first allocation gives every placement a fair share of the budget, so a rejected hero (or its retry) cannot starve secondary/tertiary; retries are taken from surplus only. The larger budget gives the hero enough attempts to recover from a rejection. |
+| `FAL_IMAGE_REVIEW_MODEL` | `z-ai/glm-5.3` | Visual judge used for generated-asset review. The stronger model is used because the flash reviewer returned too many malformed or unavailable checks on real images. It remains a visual-judge lane and does not author code. |
 | `FAL_IMAGE_TIMEOUT_MS` | `120000` | Per-generation and image-download timeout budget. |
 
 The model and image/request budgets are set from LaunchLoom repository
@@ -57,10 +58,16 @@ secret, not a repository variable.
    business/service context and the selected route's family, Reference DNA,
    image treatment, crop, and palette intent. Prompts prohibit website
    screenshots, UI, readable text, logos, watermarks, signage, branded
-   products, people, and implied staff or customers.
+   products, people, and implied staff or customers. The reviewer allows
+   incidental unreadable texture, photographic grain, and a still life with
+   several physical objects; readable words, fake interface copy, prominent
+   signage, logos, watermarks, interfaces, and people still fail.
 5. Matching prior assets are reused when their prompt hash and file are still
    valid. Otherwise, FAL is asked for one image per request. Each placement can
-   be retried once, within the global request cap.
+   be retried once, within the global request cap. The 15-request default
+   leaves enough surplus for hero retries instead of consuming every request on
+   the first pass. A reviewer-unavailable result is retried once while budget
+   remains, so a transient reviewer failure does not discard a good image.
 6. The image is downloaded only from HTTPS, checked for an image content type
    and a maximum 8 MB source size, checked for readable dimensions of at least
    640 by 360 pixels, and processed with Sharp into WebP. The final optimized

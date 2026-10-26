@@ -132,6 +132,37 @@ corpus that keeps returning the same archetype.
    silent, then run a gated creative-only candidate and compare rendered
    desktop and mobile output.
 
+## Phase 2 implementation (2026-10-26)
+
+- The asset reviewer now rejects readable words, fake interface copy, prominent
+  signage, logos, watermarks, interfaces, and people. It allows incidental
+  unreadable texture, blurry background marks, photographic grain, and
+  multi-object still lifes. The retry prompt names signage, labels, packaging
+  lettering, and logos.
+- String boolean review checks are normalized instead of being reported as
+  `invalid_checks`. The default request budget rose from 9 to 15 in the script,
+  the workflow, and the pipeline test profile, so a rejected hero can be
+  retried.
+- `scripts/creative-compiler.mjs` now exposes `creativeImageCoverage`,
+  `routeRequiresHeroImage`, `imageCompletenessScore`, and
+  `rankFallbackCandidates`.
+- The creative bakeoff winner sort prefers an image-complete candidate when the
+  assigned hero composition needs an image, before rendered hero distinctiveness
+  and score. The failed-bakeoff fallback ranks source-safe candidates by image
+  completeness, then preference, then visual score.
+- Live single-route café test with `z-ai/glm-5.3` as the asset reviewer:
+  two accepted placements (hero and secondary), one rejected, five requests.
+  The accepted hero is a premium dusk café interior with an incidental small
+  package mark. The same route previously had no accepted hero. The
+  GLM-5.3-Flash reviewer produced 0-1 accepted placements and several
+  malformed or unavailable checks on the same route; the OpenRouter Flash path
+  produced 0 accepted placements. The stronger visual judge is now the default
+  `FAL_IMAGE_REVIEW_MODEL`.
+- Validation so far: 44 contextual/creative-compiler tests and 56
+  pipeline-test-runner tests passed; `npm run check` reported 0 errors and 0
+  warnings across 427 files. A gated creative-only run is still required
+  before claiming a full visual improvement.
+
 ## Evidence limits
 
 This audit inspected two recent creative-only runs and the selection/review

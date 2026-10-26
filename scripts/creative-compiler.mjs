@@ -451,6 +451,83 @@ export function validateCandidateManifest(manifest) {
   return manifest;
 }
 
+const IMAGE_DEPENDENT_HERO_ARCHETYPES = new Set([
+  "image-overlay",
+  "image-led-editorial",
+  "split-media-copy",
+  "image-panel",
+  "collage-mosaic",
+  "object-product-stage",
+]);
+
+/**
+ * Whether the assigned hero composition depends on a real image. Text-led and
+ * optional-image archetypes must not be penalized for an empty image slot.
+ */
+export function routeRequiresHeroImage(heroArchetype = "") {
+  const value = String(heroArchetype || "")
+    .trim()
+    .toLowerCase();
+  if (!value) return false;
+  if (IMAGE_DEPENDENT_HERO_ARCHETYPES.has(value)) return true;
+  return /\b(?:image|photo|photograph|full-bleed|full bleed|cinematic|portrait|interior|dining|collage|mosaic)\b/u.test(
+    value,
+  );
+}
+
+/**
+ * Approved generated/client imagery bound to one candidate route. The site
+ * config's `creativeAssets` map is keyed by route id and is populated before
+ * the creative bakeoff, so selection can prefer a candidate whose composition
+ * has the imagery it needs.
+ */
+export function creativeImageCoverage(
+  creativeAssets = {},
+  routeId = "",
+  heroArchetype = "",
+) {
+  const route = creativeAssets?.[routeId] || {};
+  const placements = ["hero", "secondary", "tertiary"].filter(
+    (placement) =>
+      typeof route[placement] === "string" && route[placement].trim(),
+  );
+  return {
+    hero: placements.includes("hero"),
+    secondary: placements.includes("secondary"),
+    tertiary: placements.includes("tertiary"),
+    count: placements.length,
+    required: routeRequiresHeroImage(heroArchetype),
+  };
+}
+
+/**
+ * A small selection score: a required hero must exist, then more approved
+ * placements win ties. The fractional part only breaks ties, so it cannot
+ * override reference fidelity or visual score.
+ */
+export function imageCompletenessScore(coverage = {}) {
+  if (coverage.required && !coverage.hero) return 0;
+  return 1 + Math.min(3, Number(coverage.count) || 0) * 0.01;
+}
+
+/**
+ * Rank source-safe fallback candidates. Image completeness comes first so an
+ * image-dependent composition is not delivered with an empty hero; preference
+ * and visual score then order candidates with equivalent image coverage.
+ */
+export function rankFallbackCandidates(candidates = []) {
+  return [...candidates].sort(
+    (left, right) =>
+      Number(right.imageCompleteness || 0) -
+        Number(left.imageCompleteness || 0) ||
+      Number(right.preferred) - Number(left.preferred) ||
+      Number(right.visualScore || 0) - Number(left.visualScore || 0) ||
+      String(left.candidateId || "").localeCompare(
+        String(right.candidateId || ""),
+      ),
+  );
+}
+
 export function scoreCreativeCandidate({ hardPass, visual = {}, technical = {}, distinctiveness = 0 }) {
   if (!hardPass) return -1000;
   const value =

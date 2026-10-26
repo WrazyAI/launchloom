@@ -170,12 +170,14 @@ describe("contextual image generation", () => {
             part.image_url.url.startsWith("data:image/webp;base64,"),
         ),
       ).toBe(true);
-      expect(
-        reviewContent
-          .filter((part: any) => part.type === "text")
-          .map((part: any) => part.text)
-          .join(" "),
-      ).not.toContain("data:image/");
+      const reviewText = reviewContent
+        .filter((part: any) => part.type === "text")
+        .map((part: any) => part.text)
+        .join(" ");
+      expect(reviewText).not.toContain("data:image/");
+      expect(reviewText).toContain("incidental unreadable texture");
+      expect(reviewText).toContain("readable words");
+      expect(reviewText).toContain("photographic still life");
       expect(result.manifest.placements[0].imageReview).toMatchObject({
         status: "approved",
         usage: { prompt_tokens: 500, completion_tokens: 30, cost: 0.0004 },
@@ -294,7 +296,7 @@ describe("contextual image generation", () => {
     expect(result.requests).toBe(6);
     expect(reviewAttempts).toEqual([1, 2, 1, 2, 1, 2]);
     expect(prompts[1]).toContain(
-      "Do not create a webpage, interface, or any visible text",
+      "Do not create a webpage, interface, readable words",
     );
     expect(result.site.images.hero).toBe("/images/reviewed-roofing-hero.webp");
     expect(result.manifest.placements).toEqual([]);
@@ -401,7 +403,7 @@ describe("contextual image generation", () => {
     expect(prompts[0]).toHaveLength(DEFAULT_MAX_PROMPT_LENGTH);
     expect(prompts[1].length).toBeLessThanOrEqual(DEFAULT_MAX_PROMPT_LENGTH);
     expect(prompts[1]).toContain(
-      "Do not create a webpage, interface, or any visible text",
+      "Do not create a webpage, interface, readable words",
     );
     expect(result.manifest.placements).toHaveLength(1);
   });
@@ -1189,7 +1191,11 @@ describe("contextual image generation", () => {
             options: { input: { prompt: string } },
           ) {
             calls += 1;
-            if (!options.input.prompt.includes("Do not create a webpage"))
+            if (
+              !options.input.prompt.includes(
+                "Do not create a webpage, interface, readable words",
+              )
+            )
               throw new Error("Retry this placement.");
             return {
               data: { images: [{ url: "https://fal.example/retry.jpg" }] },
@@ -1512,6 +1518,46 @@ describe("generated asset review integrity policy", () => {
     }
   }, 20000);
 
+  it("coerces string boolean review checks instead of reporting unavailable", async () => {
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    const image = await sharp({
+      create: {
+        width: 16,
+        height: 16,
+        channels: 3,
+        background: { r: 10, g: 60, b: 40 },
+      },
+    })
+      .webp()
+      .toBuffer();
+    let calls = 0;
+    vi.stubGlobal("fetch", async () => {
+      calls += 1;
+      return completedResponse(
+        JSON.stringify({
+          ...checks(),
+          isStandaloneImage: "true",
+          containsPeople: "false",
+        }),
+      );
+    });
+    try {
+      const review = await reviewGeneratedAsset({
+        imageData: image,
+        placement: "hero",
+        businessKind: "bicycle workshop",
+      });
+      expect(review.available).toBe(true);
+      expect(review.approved).toBe(true);
+      expect(review.reasonCodes).toEqual([]);
+      expect(calls).toBe(1);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  }, 20000);
+
   it("rejects generated imagery that contains people", async () => {
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
     vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
@@ -1596,10 +1642,10 @@ describe("generated asset review on OpenCode Go", () => {
       expect(review.available).toBe(true);
       expect(review.approved).toBe(true);
       expect(review.reasonCodes).toEqual([]);
-      expect(review.model).toBe("z-ai/glm-5.3-flash");
+      expect(review.model).toBe("z-ai/glm-5.3");
       expect(requests).toHaveLength(1);
       expect(requests[0].url).toContain("opencode.ai/inference/go");
-      expect(requests[0].body.model).toBe("glm-5.3-flash");
+      expect(requests[0].body.model).toBe("glm-5.3");
       expect(requests[0].body.text?.format?.type).toBe("json_schema");
       const imagePart = (requests[0].body.input || [])
         .flatMap((item: any) => item.content || [])

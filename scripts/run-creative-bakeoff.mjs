@@ -17,8 +17,10 @@ import {
 import { chromium } from "playwright";
 import {
   CREATIVE_PROMOTION_THRESHOLDS,
+  creativeImageCoverage,
   diversityReport,
   fingerprintDistance,
+  imageCompletenessScore,
   scoreCreativeCandidate,
   validateCandidateManifest,
 } from "./creative-compiler.mjs";
@@ -798,6 +800,11 @@ export async function runCreativeBakeoff({
         intakeFitScore: Number(candidate.metadata.intakeFitScore || 0),
         explicitReferenceMatch:
           candidate.metadata.explicitReferenceMatch === true,
+        imageCoverage: creativeImageCoverage(
+          bakeoffConfig.creativeAssets,
+          candidate.metadata.routeId,
+          candidate.metadata.heroArchetype || candidate.metadata.heroGeometry,
+        ),
         valid: true,
         score: 0,
         failures: [],
@@ -1860,6 +1867,8 @@ export async function runCreativeBakeoff({
       (left, right) =>
         Number(right.explicitReferenceMatch) -
           Number(left.explicitReferenceMatch) ||
+        imageCompletenessScore(right.imageCoverage) -
+          imageCompletenessScore(left.imageCoverage) ||
         Number(right.renderedHeroDistinctiveness?.minimumDistance || 0) -
           Number(left.renderedHeroDistinctiveness?.minimumDistance || 0) ||
         right.score - left.score ||

@@ -19,6 +19,11 @@ import { previewHostSuffixes } from "../src/lib/preview-proxy-contract.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { businessFactReadiness } from "../templates/client-site/src/lib/business-facts.mjs";
 import { pageBriefReadiness } from "../templates/client-site/src/lib/page-briefs.mjs";
+import {
+  creativeImageCoverage,
+  imageCompletenessScore,
+  rankFallbackCandidates,
+} from "./creative-compiler.mjs";
 export {
   classifyPagesPreviewResponse,
   parseWaitForPagesPreviewArgs,
@@ -435,9 +440,7 @@ export async function runPipelineTest(input, dependencies) {
         error?.code === "PIPELINE_QUALITY_GATE" &&
         Array.isArray(error.gates) &&
         error.gates.length > 0 &&
-        error.gates.every(
-          (gate) => !gate.passed && gate.name === "contrast",
-        );
+        error.gates.every((gate) => !gate.passed && gate.name === "contrast");
       if (nearMissContrastOnly) {
         report.deliveryMode = "creative-near-miss";
         report.stages[name] = {
@@ -814,7 +817,7 @@ export function createCloudDependencies(
       {
         env: {
           FAL_IMAGE_MAX_IMAGES: input.profile === "seo-only" ? "1" : "3",
-          FAL_IMAGE_MAX_REQUESTS: input.profile === "seo-only" ? "2" : "9",
+          FAL_IMAGE_MAX_REQUESTS: input.profile === "seo-only" ? "2" : "15",
         },
       },
     );
@@ -1274,6 +1277,13 @@ export function createCloudDependencies(
             ),
           ),
         ];
+        const visualScoreByCandidate = new Map(
+          (bakeoff?.candidates || []).map((candidate) => [
+            candidate.candidateId,
+            Number(candidate.visualScore) || 0,
+          ]),
+        );
+        const safeCandidates = [];
         for (const name of names) {
           if (!/^candidate-[abc]$/u.test(name)) continue;
           try {
@@ -1292,12 +1302,28 @@ export function createCloudDependencies(
               content: manifest.values,
               visualBrief: manifest.visualBrief,
             });
-            selected = { directory, route, manifest };
-            break;
+            const coverage = creativeImageCoverage(
+              current.creativeAssets,
+              metadata.routeId,
+              metadata.heroArchetype ||
+                route.heroArchetype ||
+                metadata.heroGeometry ||
+                route.heroGeometry,
+            );
+            safeCandidates.push({
+              candidateId: name,
+              directory,
+              route,
+              manifest,
+              preferred: name === preferred,
+              imageCompleteness: imageCompletenessScore(coverage),
+              visualScore: visualScoreByCandidate.get(name) || 0,
+            });
           } catch {
             /* Try the next source-safe candidate; never fall back to legacy. */
           }
         }
+        selected = rankFallbackCandidates(safeCandidates)[0] || null;
       }
       if (!selected)
         throw new Error("No source-safe authored candidate is available.");
