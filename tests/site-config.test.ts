@@ -5,8 +5,10 @@ import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
 import {
   argumentValue,
   evaluateDraft,
+  evaluateNarrativeSpine,
   generateSiteConfigWithModel,
   normalise,
+  normaliseNarrativeSpine,
   prepareGenerationIntake,
 } from "../scripts/generate-site-config.mjs";
 import { pageBriefReadiness } from "../templates/client-site/src/lib/page-briefs.mjs";
@@ -19,6 +21,50 @@ afterEach(() => {
 function repairOutcomeCandidate(heroHeading: string) {
   return {
     preset: "home-services",
+    narrative: {
+      audience:
+        "Portland drivers who need vehicle care without leaving home or work.",
+      offer:
+        "Appointment-based mobile vehicle inspections and repair guidance at the customer's location.",
+      primaryAction: "Request service",
+      secondaryAction: "Review the inspection process",
+      objections: [
+        {
+          objection: "Will I know the cost before approving work?",
+          answer:
+            "The visit begins with a documented inspection and an itemized estimate before any work is approved.",
+          section: "faq",
+        },
+        {
+          objection: "Can the service come to my home or workplace?",
+          answer:
+            "Appointment-based mobile service brings the inspection to Portland drivers at the agreed location.",
+          section: "about",
+        },
+        {
+          objection: "What should I share before the appointment?",
+          answer:
+            "Share the vehicle details, warning light, and preferred appointment time before the team confirms the next step.",
+          section: "contact",
+        },
+      ],
+      proof: [],
+      sectionJobs: {
+        hero: "Promise a documented mobile inspection and a clear next step.",
+        services: "Explain each confirmed service and what the visit covers.",
+        process: "Show the three steps from request to estimate.",
+        about: "Explain the appointment-based mobile model in Portland.",
+        faq: "Answer cost, timing, and preparation questions.",
+        contact: "Invite the visitor to request a service appointment.",
+      },
+      pageArgument: [
+        "Name the mobile service and the Portland driver it helps.",
+        "Explain the documented inspection and itemized estimate.",
+        "Show the confirmed services and what each visit covers.",
+        "Answer the cost, location, and preparation objections.",
+        "Invite the visitor to request an appointment.",
+      ],
+    },
     business: {
       name: "Riverview Mobile Auto Care",
       tagline: "The shop comes to your driveway",
@@ -166,6 +212,39 @@ describe("site configuration", () => {
       "Drain cleaning",
       "Water heater repair",
     ]);
+  });
+
+  it("keeps the narrative spine in the private quality report", async () => {
+    const candidate = repairOutcomeCandidate(
+      "A clearer path to mobile vehicle care",
+    );
+    const fetchMock = stubCopyModelResponses([candidate]);
+    const config = await generateSiteConfigWithModel({
+      businessName: "Riverview Mobile Auto Care",
+      industry: "home-services",
+      services: "Mobile vehicle diagnostics, Brake inspection and repair",
+      serviceAreas: "Portland, OR",
+      primaryCity: "Portland, OR",
+      phone: "(503) 555-0146",
+      primaryCta: "Request service",
+    });
+
+    const request = JSON.parse(
+      String(fetchMock.mock.calls[0]?.[1]?.body || "{}"),
+    );
+    const systemPrompt = request.messages.find(
+      (message: { role: string }) => message.role === "system",
+    )?.content;
+    const userPrompt = request.messages.find(
+      (message: { role: string }) => message.role === "user",
+    )?.content;
+    expect(systemPrompt).toContain("NARRATIVE SPINE");
+    expect(userPrompt).toContain("keys narrative");
+    expect(config.qualityReport.narrative.audience).toContain(
+      "Portland drivers",
+    );
+    expect(config.qualityReport.narrativeAudit.issues).toEqual([]);
+    expect(config.narrative).toBeUndefined();
   });
 
   it("builds evidence-backed service-page content from measured route intent", () => {
@@ -2622,4 +2701,118 @@ it("preserves completed fallback receipts through generation config normalizatio
   const prepared = prepareGenerationIntake({ seoResearch: fallback });
   expect(prepared.seoResearch?.fallbackSearch).toEqual(fallback.fallbackSearch);
   expect(prepared.seoResearch?.externalSearchEvidence).toEqual(fallback.externalSearchEvidence);
+});
+
+describe("narrative spine", () => {
+  function validNarrative() {
+    return {
+      audience:
+        "Portland drivers who need vehicle care without leaving home or work.",
+      offer:
+        "Appointment-based mobile vehicle inspections and repair guidance at the customer's location.",
+      primaryAction: "Request service",
+      secondaryAction: "Review the inspection process",
+      objections: [
+        {
+          objection: "Will I know the cost before approving work?",
+          answer:
+            "The visit begins with a documented inspection and an itemized estimate before any work is approved.",
+          section: "faq",
+        },
+        {
+          objection: "Can the service come to my home or workplace?",
+          answer:
+            "Appointment-based mobile service brings the inspection to Portland drivers at the agreed location.",
+          section: "about",
+        },
+        {
+          objection: "What should I share before the appointment?",
+          answer:
+            "Share the vehicle details, warning light, and preferred appointment time before the team confirms the next step.",
+          section: "contact",
+        },
+      ],
+      proof: [],
+      sectionJobs: {
+        hero: "Promise a documented mobile inspection and a clear next step.",
+        services: "Explain each confirmed service and what the visit covers.",
+        process: "Show the three steps from request to estimate.",
+        about: "Explain the appointment-based mobile model in Portland.",
+        faq: "Answer cost, timing, and preparation questions.",
+        contact: "Invite the visitor to request a service appointment.",
+      },
+      pageArgument: [
+        "Name the mobile service and the Portland driver it helps.",
+        "Explain the documented inspection and itemized estimate.",
+        "Show the confirmed services and what each visit covers.",
+        "Answer the cost, location, and preparation objections.",
+        "Invite the visitor to request an appointment.",
+      ],
+    };
+  }
+
+  it("normalises the strategy artifact and caps its lists", () => {
+    const narrative = normaliseNarrativeSpine({
+      ...validNarrative(),
+      objections: Array.from({ length: 5 }, (_, index) => ({
+        objection: `Objection ${index}`,
+        answer: "A useful answer with enough words to pass the audit.",
+        section: "unknown",
+      })),
+      proof: [{ claim: "Licensed", evidence: "licensed" }],
+    })!;
+
+    expect(narrative.objections).toHaveLength(3);
+    expect(narrative.objections[0].section).toBe("faq");
+    expect(narrative.sectionJobs.hero).toBe(
+      "Promise a documented mobile inspection and a clear next step.",
+    );
+    expect(narrative.pageArgument).toHaveLength(5);
+  });
+
+  it("flags proof that is not in the verified brief and a generic CTA", () => {
+    const audit = evaluateNarrativeSpine(
+      {
+        ...validNarrative(),
+        primaryAction: "Learn more",
+        proof: [{ claim: "Five star rated", evidence: "five star rated" }],
+      },
+      {
+        business: { primaryCta: "Learn more" },
+        copy: {},
+        services: [],
+        conversion: {},
+      },
+      { businessName: "Harbor Plumbing", services: "Drain cleaning" },
+    );
+
+    expect(audit.issues.join(" ")).toContain("too generic");
+    expect(audit.issues.join(" ")).toContain(
+      "not present in the verified brief",
+    );
+  });
+
+  it("flags section jobs that repeat the same claim", () => {
+    const narrative = validNarrative();
+    narrative.sectionJobs.services = narrative.sectionJobs.hero;
+    const audit = evaluateNarrativeSpine(narrative, {}, {});
+
+    expect(audit.issues.join(" ")).toContain("repeat the same claim");
+  });
+
+  it("warns when the page does not answer a stated objection", () => {
+    const audit = evaluateNarrativeSpine(
+      validNarrative(),
+      {
+        business: { primaryCta: "Request service" },
+        copy: { heroBody: "Unrelated copy about scheduling." },
+        services: [],
+        conversion: {},
+      },
+      { businessName: "Harbor Plumbing", services: "Drain cleaning" },
+    );
+
+    expect(audit.issues).toEqual([]);
+    expect(audit.warnings.join(" ")).toContain("may not answer");
+  });
 });

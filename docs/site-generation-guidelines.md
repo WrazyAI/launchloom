@@ -39,6 +39,24 @@ next step. It does not pad the brief with slogans or repeat one differentiator
 through the hero, proof strip, and About section. Preserve submitted service
 names, contact details, areas served, offers, and supplied assets.
 
+### Narrative spine
+
+The copy lane writes a private strategy artifact before the page copy. It
+records the audience, the offer, the primary and secondary actions, three
+visitor objections, the supplied proof inventory, one job per page section, and
+the page argument. The artifact lives in `qualityReport.narrative` and is never
+rendered as visitor copy.
+
+The narrative is a plan, not the copy. Every sentence must be more specific
+than the plan. Service descriptions name a recognizable symptom or situation
+and a concrete next step; they never restate the service name. The
+`evaluateNarrativeSpine` audit checks the artifact for invented proof, a
+generic CTA, missing or duplicate section jobs, and objections the page does
+not answer. It is a soft report until calibration proves it does not reject
+otherwise good sites. The copy lane also rejects a service card that restates
+its service name, so the existing bounded repair loop can fix the regression
+before generation completes.
+
 Use proof only when its source is supplied or verified. Never fabricate
 testimonials, review ratings, credentials, results, guarantees, prices,
 response times, staff, or office locations. Describe an area as served unless

@@ -351,6 +351,25 @@ export type SiteConfig = {
     score: number;
     issues: string[];
     refined: boolean;
+    narrative?: {
+      audience: string;
+      offer: string;
+      primaryAction: string;
+      secondaryAction: string;
+      objections: Array<{
+        objection: string;
+        answer: string;
+        section: string;
+      }>;
+      proof: Array<{ claim: string; evidence: string }>;
+      sectionJobs: Record<string, string>;
+      pageArgument: string[];
+    };
+    narrativeAudit?: {
+      score: number;
+      issues: string[];
+      warnings: string[];
+    };
   };
   seoResearch?: {
     version: number;

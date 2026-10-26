@@ -174,6 +174,32 @@ Keep it as a report, not a hard gate, until it is calibrated against human
 review. Use the pinned DeepSeek Flash model for copy critique. GLM remains a
 visual judge only.
 
+## Phase 1 implementation and first bake-off (2026-10-26)
+
+Implemented the narrative spine in the copy lane:
+
+- `normaliseNarrativeSpine` and `evaluateNarrativeSpine` in
+  `scripts/generate-site-config.mjs`.
+- The copy prompt now asks for the narrative before the page copy and adds a
+  `COPY SPECIFICITY` block.
+- The narrative is stored in `qualityReport.narrative` and
+  `qualityReport.narrativeAudit`; it is not rendered.
+- A service card that restates its service name is now a copy issue and enters
+  the existing bounded repair loop.
+
+Live A/B on the Rainline Plumbing fixture through OpenCode Go, same intake:
+
+| Run | Hero heading | Service cards | Result |
+| --- | --- | --- | --- |
+| Baseline, pre-change prompt | "Clear Answers for Plumbing Problems" | Concrete but generic in places | Quality 100 |
+| Narrative v1, spine without specificity rules | "Plumbing Help, Clearly Explained" | Regressed to "Request [service] for [service] problem" | Narrative audit 100, quality 100 |
+| Narrative v2, spine plus `COPY SPECIFICITY` and the restatement check | "A clearer next step for plumbing" | Named symptoms and next steps | Narrative audit 100, quality 100 |
+
+The deterministic restatement check flags the v1 service cards, so that
+regression would enter repair rather than ship. This is one sample. It shows
+the prompt can improve specificity, not that it always will. The next step is a
+three-intake blind comparison and a rendered review.
+
 ## Phases
 
 ### Phase 1: Content engine (today)
@@ -205,8 +231,8 @@ visual judge only.
 
 ## Evidence limits
 
-- This is a document review, not a measured bake-off. The benefit estimate is
-  a judgment from prompt comparison, not a rendered quality delta.
+- The initial assessment was a document review. The Phase 1 section records a
+  one-sample live A/B; it is not yet a multi-intake measured quality delta.
 - The repository is small and new (two skills, one recent revision). Its
   visual rules are opinions, not measured conversion evidence.
 - The copy lane currently runs on `z-ai/glm-5.3-flash`. If the model policy is

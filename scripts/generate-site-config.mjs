@@ -373,6 +373,7 @@ function copyRefinementDraft(draft = {}) {
       ),
     );
   return {
+    narrative: draft.narrative,
     business: textFields({
       tagline: draft.business?.tagline,
       description: draft.business?.description,
@@ -513,6 +514,8 @@ function mergeCopyRefinementPatch(draft, patch, intake = {}) {
       "OpenRouter copy refinement did not return a JSON copy patch.",
     );
   const merged = { ...draft };
+  if (patch.narrative && typeof patch.narrative === "object")
+    merged.narrative = patch.narrative;
   const currentBusinessCopy = {
     tagline: draft.business?.tagline,
     description: draft.business?.description,
@@ -902,6 +905,326 @@ function wordCount(value) {
     .filter(Boolean).length;
 }
 
+const NARRATIVE_SECTION_KEYS = [
+  "hero",
+  "services",
+  "process",
+  "about",
+  "faq",
+  "contact",
+];
+const NARRATIVE_SECTION_SET = new Set(NARRATIVE_SECTION_KEYS);
+const NARRATIVE_BANNED_CTA =
+  /^(?:learn more|submit|click here|get started|read more|contact us|find out more|see more)$/iu;
+const NARRATIVE_STOPWORDS = new Set([
+  "about",
+  "after",
+  "again",
+  "also",
+  "and",
+  "any",
+  "are",
+  "because",
+  "been",
+  "before",
+  "being",
+  "between",
+  "both",
+  "business",
+  "but",
+  "can",
+  "could",
+  "customer",
+  "customers",
+  "does",
+  "each",
+  "for",
+  "from",
+  "get",
+  "gets",
+  "had",
+  "has",
+  "have",
+  "help",
+  "helps",
+  "how",
+  "into",
+  "its",
+  "just",
+  "like",
+  "made",
+  "make",
+  "makes",
+  "may",
+  "more",
+  "most",
+  "much",
+  "must",
+  "need",
+  "new",
+  "not",
+  "now",
+  "one",
+  "only",
+  "other",
+  "our",
+  "out",
+  "over",
+  "same",
+  "see",
+  "service",
+  "services",
+  "set",
+  "should",
+  "some",
+  "such",
+  "than",
+  "that",
+  "the",
+  "their",
+  "them",
+  "then",
+  "there",
+  "these",
+  "they",
+  "this",
+  "those",
+  "three",
+  "through",
+  "try",
+  "two",
+  "under",
+  "until",
+  "use",
+  "using",
+  "very",
+  "visitor",
+  "visitors",
+  "want",
+  "was",
+  "way",
+  "well",
+  "were",
+  "what",
+  "when",
+  "where",
+  "which",
+  "while",
+  "who",
+  "why",
+  "will",
+  "with",
+  "work",
+  "works",
+  "would",
+  "you",
+  "your",
+]);
+
+function collectNarrativeSourceText(value, depth = 0) {
+  if (depth > 4 || value === null || value === undefined) return "";
+  if (typeof value === "string") return `${value} `;
+  if (typeof value === "number" || typeof value === "boolean")
+    return `${value} `;
+  if (Array.isArray(value))
+    return value
+      .map((item) => collectNarrativeSourceText(item, depth + 1))
+      .join(" ");
+  if (typeof value === "object")
+    return Object.values(value)
+      .map((item) => collectNarrativeSourceText(item, depth + 1))
+      .join(" ");
+  return "";
+}
+
+function normaliseNarrativeMatch(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function narrativeTokens(value) {
+  return new Set(
+    normaliseNarrativeMatch(value)
+      .split(" ")
+      .filter((token) => token.length >= 4 && !NARRATIVE_STOPWORDS.has(token)),
+  );
+}
+
+function narrativeOverlap(left, right) {
+  const leftTokens = narrativeTokens(left);
+  const rightTokens = narrativeTokens(right);
+  if (!leftTokens.size || !rightTokens.size) return 0;
+  let shared = 0;
+  for (const token of leftTokens) if (rightTokens.has(token)) shared += 1;
+  return shared / Math.min(leftTokens.size, rightTokens.size);
+}
+
+/**
+ * Normalise the strategy artifact the copy model writes before the page copy.
+ * It is stored only in `qualityReport` and is never rendered as visitor copy.
+ */
+export function normaliseNarrativeSpine(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const objections = (Array.isArray(value.objections) ? value.objections : [])
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const objection = text(item.objection, 220);
+      const answer = text(item.answer, 360);
+      if (!objection || !answer) return null;
+      const requestedSection = String(item.section || "")
+        .trim()
+        .toLowerCase();
+      const section = NARRATIVE_SECTION_SET.has(requestedSection)
+        ? requestedSection
+        : "faq";
+      return { objection, answer, section };
+    })
+    .filter(Boolean)
+    .slice(0, 3);
+  const proof = (Array.isArray(value.proof) ? value.proof : [])
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const claim = text(item.claim, 220);
+      const evidence = text(item.evidence, 360);
+      if (!claim || !evidence) return null;
+      return { claim, evidence };
+    })
+    .filter(Boolean)
+    .slice(0, 5);
+  /** @type {Record<string, string>} */
+  const sectionJobs = {};
+  for (const key of NARRATIVE_SECTION_KEYS) {
+    const job = text(value.sectionJobs?.[key], 200);
+    if (job) sectionJobs[key] = job;
+  }
+  const pageArgument = compactStringList(value.pageArgument, 8)
+    .map((item) => text(item, 160))
+    .filter(Boolean);
+  const narrative = {
+    audience: text(value.audience, 240),
+    offer: text(value.offer, 240),
+    primaryAction: text(value.primaryAction, 80),
+    secondaryAction: text(value.secondaryAction, 80),
+    objections,
+    proof,
+    sectionJobs,
+    pageArgument,
+  };
+  const hasContent =
+    narrative.audience ||
+    narrative.offer ||
+    narrative.primaryAction ||
+    objections.length ||
+    proof.length ||
+    Object.keys(sectionJobs).length ||
+    pageArgument.length;
+  return hasContent ? narrative : null;
+}
+
+function copyCorpus(config = {}) {
+  return collectNarrativeSourceText({
+    tagline: config.business?.tagline,
+    description: config.business?.description,
+    copy: config.copy,
+    services: (Array.isArray(config.services) ? config.services : []).map(
+      (service) => ({
+        name: service?.name,
+        description: service?.description,
+        decisionSupport: service?.decisionSupport,
+      }),
+    ),
+    process: config.conversion?.process,
+    faqs: config.conversion?.faqs,
+    differentiators: config.differentiators,
+  });
+}
+
+/**
+ * Soft narrative audit. It reports strategy and consistency problems without
+ * adding them to the hard copy issues until the calibration run proves the
+ * checks do not reject otherwise good sites.
+ */
+export function evaluateNarrativeSpine(narrative, config = {}, intake = {}) {
+  const issues = [];
+  const warnings = [];
+  if (!narrative)
+    return {
+      score: 0,
+      issues: ["The narrative spine is missing."],
+      warnings: [],
+    };
+  if (wordCount(narrative.audience) < 6)
+    issues.push("The narrative audience is too vague.");
+  if (wordCount(narrative.offer) < 4)
+    issues.push("The narrative offer is too vague.");
+  if (!narrative.primaryAction)
+    issues.push("The narrative has no primary action.");
+  else if (NARRATIVE_BANNED_CTA.test(narrative.primaryAction))
+    issues.push(
+      `The narrative primary action is too generic: "${narrative.primaryAction}".`,
+    );
+  const configCta = text(config.business?.primaryCta, 80);
+  if (narrative.primaryAction && configCta) {
+    const narrativeAction = normaliseNarrativeMatch(narrative.primaryAction);
+    const siteAction = normaliseNarrativeMatch(configCta);
+    if (
+      !narrativeAction.includes(siteAction) &&
+      !siteAction.includes(narrativeAction)
+    )
+      warnings.push(
+        `The narrative primary action "${narrative.primaryAction}" does not match the site CTA "${configCta}".`,
+      );
+  }
+  if (narrative.objections.length < 2)
+    issues.push("The narrative needs at least two visitor objections.");
+  for (const objection of narrative.objections) {
+    if (wordCount(objection.answer) < 8)
+      issues.push(
+        `The objection answer is too thin: "${objection.objection}".`,
+      );
+  }
+  const verifiedSource = normaliseNarrativeMatch(
+    collectNarrativeSourceText(intake),
+  );
+  for (const item of narrative.proof) {
+    const evidence = normaliseNarrativeMatch(item.evidence);
+    if (!evidence || !verifiedSource.includes(evidence))
+      issues.push(
+        `The narrative proof is not present in the verified brief: "${item.claim}".`,
+      );
+  }
+  for (const key of NARRATIVE_SECTION_KEYS) {
+    if (!narrative.sectionJobs[key])
+      issues.push(`The narrative is missing a job for the ${key} section.`);
+  }
+  const jobs = Object.values(narrative.sectionJobs);
+  for (let left = 0; left < jobs.length; left += 1) {
+    for (let right = left + 1; right < jobs.length; right += 1) {
+      if (narrativeOverlap(jobs[left], jobs[right]) >= 0.8)
+        issues.push(
+          `The narrative section jobs repeat the same claim: "${jobs[left]}" and "${jobs[right]}".`,
+        );
+    }
+  }
+  if (narrative.pageArgument.length < 4)
+    warnings.push("The narrative page argument has fewer than four steps.");
+  const corpus = copyCorpus(config);
+  for (const objection of narrative.objections) {
+    if (narrativeOverlap(objection.answer, corpus) < 0.25)
+      warnings.push(
+        `The page may not answer this objection: "${objection.objection}".`,
+      );
+  }
+  return {
+    score: Math.max(0, 100 - issues.length * 15 - warnings.length * 5),
+    issues,
+    warnings,
+  };
+}
+
 function conciseHeadline(value, fallback = "", charLimit = 72, wordLimit = 10) {
   const cleaned = text(value || fallback, 180).replace(/[.!?]+$/, "");
   if (cleaned.length <= charLimit && wordCount(cleaned) <= wordLimit)
@@ -1007,6 +1330,33 @@ function usefulServiceDescription(value, serviceName) {
     /tailored to your needs|personalized support|quality you can trust|when it matters|next level/i;
   if (candidate.length >= 28 && !generic.test(candidate)) return candidate;
   return `Talk through your needs for ${serviceName} and leave with a clear next step.`;
+}
+
+function serviceDescriptionRestatesName(description, serviceName) {
+  const normalizedDescription = normaliseNarrativeMatch(description);
+  const normalizedName = normaliseNarrativeMatch(serviceName);
+  if (!normalizedDescription || !normalizedName) return false;
+  const nameTokens = new Set(
+    normalizedName.split(" ").filter((token) => token.length >= 4),
+  );
+  if (!nameTokens.size) return false;
+  const descriptionTokens = new Set(normalizedDescription.split(" "));
+  const nameHits = [...nameTokens].filter((token) =>
+    descriptionTokens.has(token),
+  ).length;
+  const opensWithRequest =
+    /^(?:request|discuss|ask about|learn about|choose|book)\b/u.test(
+      normalizedDescription,
+    );
+  const namesSymptom =
+    /(?:slow|blocked|backed|leak|noise|noisy|cold|hot|weak|low|high|stuck|running|drip|clog|smell|discolored|warning|broken|uneven|damaged|worn|burst|flooding|freezing|appointment|estimate|inspection|prepare|preparation|symptom|fixture|when it began)/u.test(
+      normalizedDescription,
+    );
+  return (
+    opensWithRequest &&
+    nameHits >= Math.min(2, nameTokens.size) &&
+    !namesSymptom
+  );
 }
 
 function hasExactLocation(business) {
@@ -1855,7 +2205,7 @@ function violatesExplicitRepairOutcomeProhibition(config) {
   );
 }
 
-export function evaluateDraft(config, { modelOutput, intake } = {}) {
+export function evaluateDraft(config, { modelOutput, intake, narrative } = {}) {
   const issues = [];
   const businessName = text(config.business?.name, 100);
   const services = Array.isArray(config.services) ? config.services : [];
@@ -1879,6 +2229,14 @@ export function evaluateDraft(config, { modelOutput, intake } = {}) {
   )
     issues.push(
       "At least one service card lacks a specific, customer-useful outcome.",
+    );
+  if (
+    services.some((service) =>
+      serviceDescriptionRestatesName(service.description, service.name),
+    )
+  )
+    issues.push(
+      "At least one service card restates the service name instead of naming a recognizable customer symptom and a concrete next step.",
     );
   if (hasRepeatedModelServiceContent(modelOutput))
     issues.push(DUPLICATE_SERVICE_CONTENT_ISSUE);
@@ -1948,7 +2306,11 @@ export function evaluateDraft(config, { modelOutput, intake } = {}) {
       "The hero image is not from an approved contextual asset pack.",
     );
 
-  return { score: Math.max(0, 100 - issues.length * 12), issues };
+  return {
+    score: Math.max(0, 100 - issues.length * 12),
+    issues,
+    narrativeAudit: evaluateNarrativeSpine(narrative, config, intake),
+  };
 }
 
 const DEFAULT_LEAD_CONSENT =
@@ -2836,7 +3198,23 @@ export function removeEmDashes(value) {
 
 async function askModel(intake, effort, model = MODEL) {
   intake = copywriterContext(intake);
-  const systemPrompt = `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-language website copy from verified facts. Use the language and writing system indicated by languageCode in the verified context, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When an seoResearch dossier is present, use each service's matching page-map entry, measured primary intent, supporting keywords, and fan-out questions for its own descriptions, route introduction, page sections, and FAQs. For every measured service route, write a distinct pageIntroduction, pageMetaDescription, pageSections.scope, pageSections.preparation, pageSections.nextStep, and at least two pageFaqs. Each pageFaq question must exactly match a fan-out question for that service; answer with confirmed facts or cautious preparation and next-step guidance only. Do not copy generic service guidance between routes with only the service name changed. If evidence cannot support a useful answer, do not invent one; leave the field absent so the route fails review. For a selected location route, provide pageIntroduction, pageMetaDescription, and pageLocalContext only when routePolicy admission includes supporting localFacts; use those exact local details and distinguish coverage from a physical office. If the research supplies a question but no business-specific answer, frame the response as a cautious question or next-step prompt instead of asserting undocumented business practices. Never add services absent from the confirmed services list. Keep location pages only when the canonical map contains them. Blog opportunities are for future articles; do not generate initial blog posts or filler. Never present search metrics, SERP language, or competitor titles as a business fact, and never include anything listed under prohibitedClaims. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`;
+  const systemPrompt = `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-language website copy from verified facts. Use the language and writing system indicated by languageCode in the verified context, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION}
+
+NARRATIVE SPINE
+Before writing any copy, decide the page narrative and return it in narrative:
+{ audience, offer, primaryAction, secondaryAction, objections: [{ objection, answer, section }], proof: [{ claim, evidence }], sectionJobs: { hero, services, process, about, faq, contact }, pageArgument: [steps] }.
+Use exactly three visitor objections. section must be one of hero, services, process, about, faq, contact. Each answer must use only verified facts or a cautious next step. proof may contain only proof supplied in the brief, and evidence must be a verbatim phrase from the brief; if no proof is supplied, return an empty array. Each section job must be distinct and must not repeat another section's claim. primaryAction must match business.primaryCta. Then write the copy so every section performs its job and every objection is answered somewhere in the page. Do not invent proof, policies, prices, credentials, staff, reviews, or outcomes.
+
+COPY SPECIFICITY
+The narrative is a plan, not the copy. Do not restate the narrative in the page. Every sentence must be more specific than the plan.
+- Hero heading: a memorable 4-10 word promise about the visitor's outcome. Do not use a category label, a service list, or a title-case slogan.
+- Hero body: one sentence that names the audience, the service, and the next step without listing every service.
+- Service description: name one recognizable customer symptom or situation, then one concrete outcome or next step. Never write "Request [service] for [service] problem" or any sentence that could apply to a different business. Bad: "Request drain cleaning for a drain problem you want us to address." Good: "For a slow or backed-up drain, describe the fixture and when it started so the team can confirm the next step."
+- FAQ: each question must answer a different decision, not repeat coverage or service names. Do not ask a question the hero already answers.
+- About: explain how the business works, not a restatement of the differentiators.
+- Use sentence case for headings and buttons unless the reference or client style explicitly requires title case.
+
+Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When an seoResearch dossier is present, use each service's matching page-map entry, measured primary intent, supporting keywords, and fan-out questions for its own descriptions, route introduction, page sections, and FAQs. For every measured service route, write a distinct pageIntroduction, pageMetaDescription, pageSections.scope, pageSections.preparation, pageSections.nextStep, and at least two pageFaqs. Each pageFaq question must exactly match a fan-out question for that service; answer with confirmed facts or cautious preparation and next-step guidance only. Do not copy generic service guidance between routes with only the service name changed. If evidence cannot support a useful answer, do not invent one; leave the field absent so the route fails review. For a selected location route, provide pageIntroduction, pageMetaDescription, and pageLocalContext only when routePolicy admission includes supporting localFacts; use those exact local details and distinguish coverage from a physical office. If the research supplies a question but no business-specific answer, frame the response as a cautious question or next-step prompt instead of asserting undocumented business practices. Never add services absent from the confirmed services list. Keep location pages only when the canonical map contains them. Blog opportunities are for future articles; do not generate initial blog posts or filler. Never present search metrics, SERP language, or competitor titles as a business fact, and never include anything listed under prohibitedClaims. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`;
   const identity = {
     businessName: intake.businessName,
     businessKind: intake.businessKind,
@@ -2849,7 +3227,7 @@ async function askModel(intake, effort, model = MODEL) {
     model,
     systemPrompt,
   );
-  const siteCopyUserPrompt = `Transform this verified client brief into JSON with keys preset, business, style, services, differentiators, locations, copy, conversion. business must include name, tagline, description, phone, email, address, serviceAreas, hours, primaryCta, offer, domain, leadEmail. Each service object must include {name, description, slug, decisionSupport:{scope,nextStep,preparation}, pageIntroduction, pageMetaDescription, pageSections:{scope,preparation,nextStep}, pageFaqs:[{question,answer}]}. Keep every submitted service name exactly as provided. Each service description is one concrete sentence under 22 words. Each decisionSupport field must answer a different practical buying question using only supported facts and cautious next-step language. For each measured service route, the page introduction is 2-3 specific sentences; the three page sections each add distinct, useful route guidance; the metadata description is concise; pageFaqs has at least two answers to that route's exact fan-out questions. Do not answer questions with invented policy, prices, timelines, guarantees, or outcomes. A location object may include {name,description,localNote,pageIntroduction,pageMetaDescription,pageLocalContext}; include only selected service areas and use local facts from its explicit routePolicy admission, never infer an office. If local facts are absent, omit the route copy instead of manufacturing city-specific detail. copy must include heroKicker, heroHeading, heroBody, servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. heroHeading is a catchy 4-10 word customer promise, not a service inventory. heroBody is one sentence under 28 words. servicesHeading is a short, memorable section promise and servicesIntro is one sentence. aboutBody adds useful context instead of repeating the hero description or proof points. conversion must include process (2-4 concise steps) and faqs (2-5 {question, answer} objects). The tagline is a concise, differentiated promise; description is a 2-3 sentence customer-facing introduction. Treat submitted business facts as authoritative.\n\n${JSON.stringify(intake)}`;
+  const siteCopyUserPrompt = `Transform this verified client brief into JSON with keys narrative, preset, business, style, services, differentiators, locations, copy, conversion. Decide narrative first, then write the copy from it. business must include name, tagline, description, phone, email, address, serviceAreas, hours, primaryCta, offer, domain, leadEmail. Each service object must include {name, description, slug, decisionSupport:{scope,nextStep,preparation}, pageIntroduction, pageMetaDescription, pageSections:{scope,preparation,nextStep}, pageFaqs:[{question,answer}]}. Keep every submitted service name exactly as provided. Each service description is one concrete sentence under 22 words. Each decisionSupport field must answer a different practical buying question using only supported facts and cautious next-step language. For each measured service route, the page introduction is 2-3 specific sentences; the three page sections each add distinct, useful route guidance; the metadata description is concise; pageFaqs has at least two answers to that route's exact fan-out questions. Do not answer questions with invented policy, prices, timelines, guarantees, or outcomes. A location object may include {name,description,localNote,pageIntroduction,pageMetaDescription,pageLocalContext}; include only selected service areas and use local facts from its explicit routePolicy admission, never infer an office. If local facts are absent, omit the route copy instead of manufacturing city-specific detail. copy must include heroKicker, heroHeading, heroBody, servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. heroHeading is a catchy 4-10 word customer promise, not a service inventory. heroBody is one sentence under 28 words. servicesHeading is a short, memorable section promise and servicesIntro is one sentence. aboutBody adds useful context instead of repeating the hero description or proof points. conversion must include process (2-4 concise steps) and faqs (2-5 {question, answer} objects). The tagline is a concise, differentiated promise; description is a 2-3 sentence customer-facing introduction. Treat submitted business facts as authoritative.\n\n${JSON.stringify(intake)}`;
   if (siteCopyProvider() === "opencode-go")
     return siteCopyOpencodeGoCompletion({
       label: "site-copy",
@@ -2908,7 +3286,7 @@ async function refineDraft(
     : "";
   const context = copywriterContext(intake);
   const currentCopy = copyRefinementDraft(draft);
-  const systemPrompt = `You are the final conversion copy editor for a local-business website. Return JSON only as a copy patch, not a complete site config. Use the language and writing system indicated by languageCode in the verified context. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} ${retryInstruction} Fix only the listed quality issues. Use the measured primary keyword, supporting terms, intent, and fan-out questions only for the matching route. Every service FAQ question must exactly match one of that service's supplied fan-out questions; return its answer only. Location copy may use only supplied local facts. Never invent business policies, proof, pricing, credentials, outcomes, locations, staff, hours, availability, guarantees, or claims. The patch may contain only these fields: business {tagline,description}; copy (copy strings); services [{name,description,pageIntroduction,pageMetaDescription,decisionSupport:{scope,nextStep,preparation},pageSections:{scope,preparation,nextStep},pageFaqs:[{question,answer}]}]; locations [{name,description,localNote,pageIntroduction,pageMetaDescription,pageLocalContext}]; differentiators (strings); conversion {process (strings),faqs:[{question,answer}]}. Preserve every submitted fact and all unlisted fields. Do not return contact details, SEO evidence/dossiers, route inventory, service names as edits, slugs, assets, styles, layout, HTML, CSS, code, explanations, or markdown. Unknown patch fields are ignored by the deterministic merger.`;
+  const systemPrompt = `You are the final conversion copy editor for a local-business website. Return JSON only as a copy patch, not a complete site config. Use the language and writing system indicated by languageCode in the verified context. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} ${retryInstruction} Fix only the listed quality issues. Use the measured primary keyword, supporting terms, intent, and fan-out questions only for the matching route. Every service FAQ question must exactly match one of that service's supplied fan-out questions; return its answer only. Location copy may use only supplied local facts. Never invent business policies, proof, pricing, credentials, outcomes, locations, staff, hours, availability, guarantees, or claims. Preserve the current narrative unless a quality issue requires changing it. The patch may contain only these fields: narrative {audience,offer,primaryAction,secondaryAction,objections,proof,sectionJobs,pageArgument}; business {tagline,description}; copy (copy strings); services [{name,description,pageIntroduction,pageMetaDescription,decisionSupport:{scope,nextStep,preparation},pageSections:{scope,preparation,nextStep},pageFaqs:[{question,answer}]}]; locations [{name,description,localNote,pageIntroduction,pageMetaDescription,pageLocalContext}]; differentiators (strings); conversion {process (strings),faqs:[{question,answer}]}. Preserve every submitted fact and all unlisted fields. Do not return contact details, SEO evidence/dossiers, route inventory, service names as edits, slugs, assets, styles, layout, HTML, CSS, code, explanations, or markdown. Unknown patch fields are ignored by the deterministic merger.`;
   const identity = {
     businessName: context.businessName,
     businessKind: context.businessKind,
@@ -3008,14 +3386,18 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
     modelOutput = await askModel(groundedIntake, "high", model);
     draft = normalise(modelOutput, groundedIntake);
   }
+  const narrative = normaliseNarrativeSpine(
+    redactPrivateLocation(modelOutput?.narrative, groundedIntake),
+  );
   const initialReport = evaluateDraft(draft, {
     modelOutput,
     intake: groundedIntake,
+    narrative,
   });
   if (!initialReport.issues.length)
     return {
       ...draft,
-      qualityReport: { ...initialReport, refined: false },
+      qualityReport: { ...initialReport, refined: false, narrative },
     };
 
   let refinementAttempts = 0;
@@ -3054,9 +3436,14 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
       groundedIntake,
     );
     const refined = normalise(refinedOutput, groundedIntake);
+    const refinedNarrative =
+      normaliseNarrativeSpine(
+        redactPrivateLocation(refinedOutput?.narrative, groundedIntake),
+      ) || narrative;
     const finalReport = evaluateDraft(refined, {
       modelOutput: refinedOutput,
       intake: groundedIntake,
+      narrative: refinedNarrative,
     });
     const initialHasProhibitedClaim =
       initialReport.issues.includes(REPAIR_OUTCOME_ISSUE);
@@ -3110,6 +3497,7 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
       qualityReport: {
         ...selectedReport,
         refined: selected === refined,
+        narrative: selected === refined ? refinedNarrative : narrative,
       },
     };
   } catch (error) {
@@ -3144,7 +3532,10 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
       "Quality refinement failed; keeping validated initial draft.",
       error instanceof Error ? error.message : error,
     );
-    return { ...draft, qualityReport: { ...initialReport, refined: false } };
+    return {
+      ...draft,
+      qualityReport: { ...initialReport, refined: false, narrative },
+    };
   }
 }
 
