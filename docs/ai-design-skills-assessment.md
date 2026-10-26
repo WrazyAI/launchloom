@@ -191,11 +191,25 @@ Create `scripts/design-craft-contract.mjs` exporting:
 - `DESIGN_CRAFT_PROMPT` for the authoring prompt.
 - `DESIGN_CRAFT_TOKENS` for the audit: type ratios, spacing steps, radius
   steps, motion durations, easing curves.
+- `DESIGN_CRAFT_PROFILES` keyed by page recipe, so care, local trades, and
+  general editorial keep distinct craft languages.
 - `DESIGN_CRAFT_RULES` for the judge and audit: banned filler, required states,
   motion constraints, conflict notes.
 
 The prompt and the audit read the same values. This avoids the common failure
 where the prompt says one thing and the gate checks another.
+
+Suggested profiles:
+
+| Profile             | Type                                                                 | Spacing                                   | Radius                  | Motion                                          | Signature moment                                 |
+| ------------------- | -------------------------------------------------------------------- | ----------------------------------------- | ----------------------- | ----------------------------------------------- | ------------------------------------------------ |
+| `care-editorial`    | Serif display, generous line height, body measure near 65 characters | Spacious, 8-based, long section breathing | Soft, consistent family | Slow reveals, opacity and small rise, no bounce | Optional large-type tagline reveal               |
+| `local-trades`      | Bold sans display, tight tracking, high contrast                     | Compact but stable, 4/8-based             | Small, practical radii  | Minimal, fast, no scroll choreography           | None; the phone and quote actions are the moment |
+| `general-editorial` | Display/body pairing, strong hierarchy                               | Asymmetric rhythm, generous whitespace    | One family, restrained  | One purposeful reveal or interaction            | Optional editorial pull quote or tagline         |
+
+This is the key adaptation. The source skill assumes one universal premium
+look. LaunchLoom needs three coherent languages, so the craft values must be
+selected by recipe rather than applied globally.
 
 ### 3. Compact prompt block, not the full skill
 
@@ -272,9 +286,11 @@ The block should read like a contract, not a tutorial. Example:
 ```text
 DESIGN CRAFT CONTRACT
 The assigned Reference Dossier defines composition, section rhythm, and visual
-mechanics. This contract defines execution quality inside that assignment. If
-they conflict, the dossier wins on composition and this contract wins on craft.
-Business facts and provenance always win over both.
+mechanics. The assigned recipe craft profile defines the type, spacing, radius,
+and motion values. This contract defines execution quality inside that
+assignment. If they conflict, the dossier wins on composition, the recipe
+profile wins on density and motion, and this contract wins on craft. Business
+facts and provenance always win over all three.
 
 TYPE
 - Use the resolved client heading and body families. Never load remote fonts.
@@ -393,8 +409,10 @@ the README says it is not required.
 
 Recommended scope for the first implementation:
 
-1. Write the adapted standard and shared token module.
-2. Add the compact prompt block behind `DESIGN_CRAFT_LAYER`.
+1. Write the adapted standard and shared token module with three recipe
+   profiles.
+2. Add the compact prompt block behind `DESIGN_CRAFT_LAYER`, injecting the
+   assigned recipe profile.
 3. Run the three-recipe bakeoff.
 4. Report paired evidence before changing any default or gate.
 
