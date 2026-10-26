@@ -43,6 +43,16 @@ Providers that do not report a per-run price are marked `unreported` and the
 summary reports `incomplete` rather than inventing a number. Set the repository
 variable `FAL_IMAGE_USD_PER_IMAGE` to show a labeled image estimate.
 
+### Hero screenshot failure
+
+The preview-ready path encodes the desktop screenshot as a bounded WebP and
+retries at smaller widths and lower quality when the first result exceeds the
+1.8 MB ledger limit. If every attempt is still too large, or the upload is
+rejected, the preview remains deliverable but the generation and attempt are
+recorded as `attention` with a bounded failure reason. The tracking step also
+exits nonzero so the Actions run shows a visible warning; the preview handoff
+continues because thumbnail capture is diagnostic, not a release gate.
+
 ## Setup
 
 1. Create the repository secret `GENERATION_TRACKING_SECRET` with a unique

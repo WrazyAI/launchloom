@@ -7,7 +7,89 @@ import {
 } from "./generation-tracking-contract.mjs";
 
 const DEFAULT_API_URL = "https://api.launchloom.wrazyos.com";
-const MAX_HERO_BYTES = 1_800_000;
+export const MAX_HERO_BYTES = 1_800_000;
+
+/**
+ * A full-page screenshot can exceed the ledger's 1.8 MB row bound even after
+ * the first WebP encode. Retry at a smaller width and lower quality before
+ * declaring the thumbnail unusable. The ladder is deliberately bounded so a
+ * pathological page cannot hold the preview step open indefinitely.
+ */
+export const HERO_ENCODE_ATTEMPTS = Object.freeze([
+  Object.freeze({ width: 1280, quality: 72, effort: 4 }),
+  Object.freeze({ width: 1024, quality: 62, effort: 4 }),
+  Object.freeze({ width: 840, quality: 52, effort: 4 }),
+]);
+
+export class HeroImageTooLargeError extends Error {
+  constructor({ maxBytes, attempts }) {
+    const last = attempts.at(-1);
+    super(
+      `Hero thumbnail exceeds ${maxBytes} bytes after ${attempts.length} encode attempt(s)` +
+        (last
+          ? `; last was ${last.bytes} bytes at ${last.width}px/${last.quality}q.`
+          : "."),
+    );
+    this.name = "HeroImageTooLargeError";
+    this.code = "hero_too_large";
+    this.maxBytes = maxBytes;
+    this.attempts = attempts;
+  }
+}
+
+export class HeroImageEncodingError extends Error {
+  constructor(message = "Hero thumbnail encoding produced no usable image.") {
+    super(message);
+    this.name = "HeroImageEncodingError";
+    this.code = "hero_encode_failed";
+  }
+}
+
+export class HeroUploadError extends Error {
+  constructor(status) {
+    super(`Hero upload was rejected (${status}).`);
+    this.name = "HeroUploadError";
+    this.code = "hero_upload_rejected";
+    this.status = status;
+  }
+}
+
+async function encodeWithSharp(input, { width, quality, effort }) {
+  return sharp(input)
+    .rotate()
+    .resize({ width, withoutEnlargement: true })
+    .webp({ quality, effort })
+    .toBuffer();
+}
+
+/**
+ * Encode a screenshot into the largest bounded WebP the ledger accepts.
+ * Exported with injectable encoding so the retry ladder and cap are testable
+ * without generating multi-megabyte image fixtures.
+ */
+export async function encodeGenerationHero(
+  input,
+  {
+    maxBytes = MAX_HERO_BYTES,
+    attempts: ladder = HERO_ENCODE_ATTEMPTS,
+    encode = encodeWithSharp,
+  } = {},
+) {
+  const encodedAttempts = [];
+  for (const attempt of ladder) {
+    const bytes = await encode(input, attempt);
+    if (!bytes?.length) throw new HeroImageEncodingError();
+    encodedAttempts.push({ ...attempt, bytes: bytes.length });
+    if (bytes.length <= maxBytes)
+      return {
+        bytes,
+        width: attempt.width,
+        quality: attempt.quality,
+        attempts: encodedAttempts,
+      };
+  }
+  throw new HeroImageTooLargeError({ maxBytes, attempts: encodedAttempts });
+}
 
 function argsFrom(values) {
   const result = {};
@@ -101,6 +183,55 @@ export function buildGenerationTrackingPayload(args = {}, events = []) {
   return { action, generationId, generation, events };
 }
 
+/**
+ * A missing thumbnail must never be recorded as a clean preview. Keep the
+ * preview deliverable, but surface the diagnostic as delivery attention with a
+ * bounded reason. Failed or already-published states are never demoted.
+ */
+export function applyHeroFailure(args = {}, failure) {
+  const action = clean(args.action, 20).toLowerCase() || "event";
+  const status =
+    clean(args.status, 40).toLowerCase() ||
+    (action === "complete" ? "preview_ready" : "");
+  if (status !== "preview_ready" && status !== "attention") return { ...args };
+  const message = clean(
+    failure instanceof Error ? failure.message : failure,
+    240,
+  );
+  const prior = clean(args.failure, 240);
+  const reason = `Generation thumbnail upload failed: ${message || "unknown error"}`;
+  return {
+    ...args,
+    status: "attention",
+    "delivery-status": "attention",
+    failure: prior ? `${prior} ${reason}` : reason,
+  };
+}
+
+export function safeHeroFailureMessage(error) {
+  if (
+    error instanceof HeroImageTooLargeError ||
+    error instanceof HeroImageEncodingError ||
+    error instanceof HeroUploadError
+  )
+    return error.message;
+  return "Hero image could not be encoded or uploaded.";
+}
+
+async function reportHeroFailure(error) {
+  const message = safeHeroFailureMessage(error);
+  console.error(`generation_thumbnail=failed reason=${message.slice(0, 200)}`);
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    await fs
+      .appendFile(
+        process.env.GITHUB_STEP_SUMMARY,
+        `### Generation thumbnail failed\n\n${message}\n\nThe preview remains available, but the ledger is marked attention.\n\n`,
+      )
+      .catch(() => {});
+  }
+  process.exitCode = 1;
+}
+
 export function buildAttemptTrackingPayload(args = {}, events = []) {
   if (!args["run-id"]) return null; // legacy behavior is opt-in, never inferred from status/action
   const observation = buildAttemptObservation({
@@ -180,15 +311,11 @@ export async function uploadGenerationHero({
   generationId,
   heroFile,
   fetchImpl = fetch,
+  maxBytes = MAX_HERO_BYTES,
+  encode = encodeWithSharp,
 }) {
   const input = await fs.readFile(path.resolve(heroFile));
-  const webp = await sharp(input)
-    .rotate()
-    .resize({ width: 1280, withoutEnlargement: true })
-    .webp({ quality: 72, effort: 4 })
-    .toBuffer();
-  if (!webp.length || webp.length > MAX_HERO_BYTES)
-    throw new Error(`Hero thumbnail exceeds ${MAX_HERO_BYTES} bytes.`);
+  const encoded = await encodeGenerationHero(input, { maxBytes, encode });
   const response = await fetchImpl(
     `${api}/api/internal/generations/hero?id=${encodeURIComponent(generationId)}`,
     {
@@ -197,13 +324,17 @@ export async function uploadGenerationHero({
         Authorization: `Bearer ${secret}`,
         "Content-Type": "image/webp",
       },
-      body: webp,
+      body: encoded.bytes,
       signal: AbortSignal.timeout(30_000),
     },
   );
-  if (!response.ok)
-    throw new Error(`Hero upload was rejected (${response.status}).`);
-  return { bytes: webp.length };
+  if (!response.ok) throw new HeroUploadError(response.status);
+  return {
+    bytes: encoded.bytes.length,
+    width: encoded.width,
+    quality: encoded.quality,
+    attempts: encoded.attempts,
+  };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -222,6 +353,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("generation_tracking=disabled reason=no-secret");
     process.exit(0);
   }
+  let heroFailure = null;
+  let hero = "skipped";
   try {
     const eventFiles = [args.events, args["cost-summary"]].filter(Boolean);
     const events = [];
@@ -240,9 +373,30 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         else events.push(event);
       }
     }
+    // Upload before posting so a missing hero can never be recorded as a
+    // clean preview_ready result. The workflow's preview step is allowed to
+    // continue, but the ledger becomes attention and the step exits nonzero.
+    if (args.hero && args["dry-run"] !== "true") {
+      try {
+        const uploaded = await uploadGenerationHero({
+          api,
+          secret,
+          generationId: resolveGenerationId(args),
+          heroFile: args.hero,
+        });
+        hero = `uploaded:${uploaded.bytes}:attempts=${uploaded.attempts.length}`;
+      } catch (error) {
+        heroFailure = error;
+        hero = "failed";
+        await reportHeroFailure(error);
+      }
+    }
+    const trackingArgs = heroFailure
+      ? applyHeroFailure(args, heroFailure)
+      : args;
     let attemptPayload = null;
     try {
-      attemptPayload = buildAttemptTrackingPayload(args, events);
+      attemptPayload = buildAttemptTrackingPayload(trackingArgs, events);
     } catch (error) {
       if (required) throw error;
       console.warn("attempt_tracking=skipped reason=invalid-evidence");
@@ -250,9 +404,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     // An explicit observation without a legacy action is attempt-only. Existing
     // lifecycle callbacks retain their original payload, hero and status behavior.
     const payload =
-      args["run-id"] && !args.action
+      trackingArgs["run-id"] && !trackingArgs.action
         ? null
-        : buildGenerationTrackingPayload(args, events);
+        : buildGenerationTrackingPayload(trackingArgs, events);
     if (args["dry-run"] === "true") {
       console.log(
         JSON.stringify(
@@ -283,32 +437,20 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         console.warn("attempt_tracking=skipped reason=unavailable");
       }
     }
-    if (!payload) process.exit(0);
-    const result = await postJson(api, secret, payload);
-    if (!result.ok)
-      throw new Error(
-        `Tracking endpoint rejected the payload (${result.status}).`,
-      );
-    let hero = "skipped";
-    if (args.hero) {
-      try {
-        const uploaded = await uploadGenerationHero({
-          api,
-          secret,
-          generationId: payload.generationId,
-          heroFile: args.hero,
-        });
-        hero = `uploaded:${uploaded.bytes}`;
-      } catch (error) {
-        hero = `failed:${error instanceof Error ? error.message.slice(0, 120) : "unknown"}`;
-      }
+    if (payload) {
+      const result = await postJson(api, secret, payload);
+      if (!result.ok)
+        throw new Error(
+          `Tracking endpoint rejected the payload (${result.status}).`,
+        );
     }
     console.log(
-      `generation_tracked action=${payload.action} id=${payload.generationId} events=${payload.events.length} hero=${hero}`,
+      `generation_tracked action=${payload?.action ?? "attempt"} id=${payload?.generationId ?? resolveGenerationId(trackingArgs)} events=${payload?.events.length ?? 0} hero=${hero} status=${payload?.generation.status ?? "attempt-only"}`,
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (required) throw error;
     console.warn(`generation_tracking=skipped reason=${message.slice(0, 200)}`);
+    if (heroFailure) process.exitCode = 1;
   }
 }

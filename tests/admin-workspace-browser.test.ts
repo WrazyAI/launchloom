@@ -18,6 +18,7 @@ import {
   type Locator,
   type Page,
 } from "playwright";
+import sharp from "sharp";
 import { buildAdminWorkspace } from "../scripts/build-admin-workspace.mjs";
 import type { AttemptSummary, Health } from "../src/lib/admin-contracts";
 import {
@@ -64,6 +65,9 @@ let delays = new Map<string, number>();
 let failAttemptListOnce = false;
 let failHealth = false;
 let attemptListDelay = 0;
+type HeroMode = "ok" | "notFound" | "unauthorized";
+let heroMode: HeroMode = "ok";
+let heroPng: Buffer;
 
 function sendJson(
   response: http.ServerResponse,
@@ -232,13 +236,30 @@ async function serve(request: http.IncomingMessage, response: http.ServerRespons
   }
 
   if (pathname.endsWith("/generation-hero")) {
+    record("/generation-hero", url.searchParams);
+    if (heroMode === "notFound") {
+      response.writeHead(404, {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+      });
+      response.end("Not found");
+      return;
+    }
+    if (heroMode === "unauthorized") {
+      response.writeHead(401, {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        "WWW-Authenticate": "Bearer",
+      });
+      response.end("Unauthorized");
+      return;
+    }
     response.writeHead(200, {
-      "Content-Type": "image/svg+xml",
+      "Content-Type": "image/png",
       "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
     });
-    response.end(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200"><rect width="320" height="200" fill="#e5e8df"/><rect x="24" y="28" width="272" height="144" rx="8" fill="#fffefa"/><rect x="46" y="54" width="130" height="12" rx="6" fill="#10251f"/><rect x="46" y="78" width="200" height="7" rx="3.5" fill="#bad8c8"/><rect x="46" y="94" width="168" height="7" rx="3.5" fill="#bad8c8"/><rect x="46" y="124" width="72" height="22" rx="5" fill="#10251f"/></svg>',
-    );
+    response.end(heroPng);
     return;
   }
 
@@ -360,6 +381,16 @@ async function serve(request: http.IncomingMessage, response: http.ServerRespons
 }
 
 beforeAll(async () => {
+  heroPng = await sharp({
+    create: {
+      width: 320,
+      height: 200,
+      channels: 3,
+      background: { r: 229, g: 232, b: 223 },
+    },
+  })
+    .png()
+    .toBuffer();
   assetsDirectory = await mkdtemp(path.join(tmpdir(), "launchloom-admin-browser-"));
   await buildAdminWorkspace({ outDir: assetsDirectory, production: true });
   server = http.createServer((request, response) => {
@@ -385,6 +416,7 @@ beforeEach(() => {
   failAttemptListOnce = false;
   failHealth = false;
   attemptListDelay = 0;
+  heroMode = "ok";
 });
 
 type OpenOptions = {
@@ -473,16 +505,19 @@ function contrastRatio(foreground: string, background: string) {
 
 function autoErrors(
   errors: string[],
-  options: { allowResource503?: boolean } = {},
+  options: {
+    allowResource503?: boolean;
+    allowResourceStatuses?: number[];
+  } = {},
 ) {
-  const unexpected = options.allowResource503
-    ? errors.filter(
-        (error) =>
-          !/Failed to load resource: .*503 \(Service Unavailable\)/u.test(
-            error,
-          ),
-      )
-    : errors;
+  const allowedStatuses = new Set([
+    ...(options.allowResource503 ? [503] : []),
+    ...(options.allowResourceStatuses || []),
+  ]);
+  const unexpected = errors.filter((error) => {
+    const status = /Failed to load resource: .*?(\d{3}) \(/u.exec(error)?.[1];
+    return !(status && allowedStatuses.has(Number(status)));
+  });
   expect(unexpected).toEqual([]);
 }
 
@@ -1191,6 +1226,104 @@ describe("real admin workspace browser behavior", () => {
       await page.close();
     }
   });
+
+  it("loads the authenticated generation screenshot in the ledger, gallery and sheet", async () => {
+    const { page, errors } = await openPage();
+    try {
+      await waitForGenerations(page);
+      const ledgerImage = page.locator(".admin-ledger .admin-preview img").first();
+      await visible(ledgerImage);
+      await expect
+        .poll(() =>
+          ledgerImage.evaluate(
+            (image) => (image as HTMLImageElement).naturalWidth,
+          ),
+        )
+        .toBeGreaterThan(0);
+      expect(await ledgerImage.getAttribute("src")).toContain(
+        "/api/admin/onboarding-invites/generation-hero?id=issue%3A1000",
+      );
+
+      await page.getByRole("button", { name: "Gallery" }).click();
+      const galleryImage = page.locator(".admin-gallery-card__image").first();
+      await visible(galleryImage);
+      await expect
+        .poll(() =>
+          galleryImage.evaluate(
+            (image) => (image as HTMLImageElement).naturalWidth,
+          ),
+        )
+        .toBeGreaterThan(0);
+
+      await page.locator(".admin-gallery-card").first().click();
+      const dialog = page.getByRole("dialog");
+      await visible(dialog);
+      const sheetImage = dialog.locator(".admin-browser__media img");
+      await visible(sheetImage);
+      await expect
+        .poll(() =>
+          sheetImage.evaluate(
+            (image) => (image as HTMLImageElement).naturalWidth,
+          ),
+        )
+        .toBeGreaterThan(0);
+      expect(await sheetImage.getAttribute("src")).toContain(
+        "generation-hero?id=issue%3A1000",
+      );
+      expect(
+        requests.some(
+          (entry) =>
+            entry.path === "/generation-hero" &&
+            entry.params.id === "issue:1000",
+        ),
+      ).toBe(true);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it.each([
+    { label: "404", mode: "notFound" as HeroMode, status: 404 },
+    { label: "401", mode: "unauthorized" as HeroMode, status: 401 },
+  ])(
+    "shows the preview placeholder when the hero request returns $label",
+    async ({ mode, status }) => {
+      heroMode = mode;
+      const { page, errors } = await openPage();
+      try {
+        await waitForGenerations(page);
+        const placeholder = page
+          .locator(".admin-ledger .admin-preview__placeholder")
+          .first();
+        await visible(placeholder);
+        await expect
+          .poll(() => placeholder.textContent())
+          .toContain("Preview not captured");
+        expect(
+          await page
+            .locator(".admin-ledger .admin-preview")
+            .first()
+            .locator("img")
+            .count(),
+        ).toBe(0);
+
+        await page.locator(".admin-row-action").first().click();
+        const dialog = page.getByRole("dialog");
+        await visible(dialog);
+        const largePlaceholder = dialog.locator(
+          ".admin-browser__media .admin-preview__placeholder--large",
+        );
+        await visible(largePlaceholder);
+        await expect
+          .poll(() => largePlaceholder.textContent())
+          .toContain("Preview not captured");
+        autoErrors(errors, { allowResourceStatuses: [status] });
+      } finally {
+        await page.close();
+      }
+    },
+  );
 
   it("collapses and restores the workspace rail", async () => {
     const { page, errors } = await openPage();
