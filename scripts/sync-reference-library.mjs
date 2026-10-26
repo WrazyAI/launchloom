@@ -170,12 +170,12 @@ export function buildSyncedLibraryState({ core, registry, repositoryRoot = root 
   if (!Array.isArray(core?.niches) || core.niches.length !== 16)
     throw new Error("Canonical local SEO core must contain exactly 16 niches.");
   const coreIds = core.niches.flatMap((niche) => {
-    if (!Array.isArray(niche.referenceIds) || niche.referenceIds.length !== 6)
-      throw new Error(`Core niche '${niche.id}' must have exactly six reference IDs.`);
+    if (!Array.isArray(niche.referenceIds) || niche.referenceIds.length < 6)
+      throw new Error(`Core niche '${niche.id}' must have at least six reference IDs.`);
     return niche.referenceIds;
   });
-  if (new Set(coreIds).size !== 96)
-    throw new Error("Canonical core must contain exactly 96 unique dossier IDs.");
+  if (new Set(coreIds).size !== 98)
+    throw new Error("Canonical core must contain exactly 98 unique dossier IDs.");
 
   const existingById = new Map(registry.records.map((record) => [record.id, record]));
   const sourceByUrl = new Map();

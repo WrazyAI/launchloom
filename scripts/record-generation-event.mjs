@@ -234,6 +234,19 @@ async function reportHeroFailure(error) {
 
 export function buildAttemptTrackingPayload(args = {}, events = []) {
   if (!args["run-id"]) return null; // legacy behavior is opt-in, never inferred from status/action
+  const observedAt = Number(args["observed-at"]);
+  const stage = clean(args.stage, 80);
+  const stageStatus = clean(args["stage-status"], 40);
+  const stageEvents = [...events];
+  if (stage && stageStatus) {
+    stageEvents.push({
+      eventKey: `stage:${stage}:${stageStatus}:${observedAt}`,
+      stage,
+      status: stageStatus,
+      detail: clean(args["stage-detail"], 2000) || null,
+      observedAt,
+    });
+  }
   const observation = buildAttemptObservation({
     repository: process.env.GITHUB_REPOSITORY || "WrazyAI/launchloom",
     runId: String(args["run-id"]),
@@ -245,13 +258,20 @@ export function buildAttemptTrackingPayload(args = {}, events = []) {
     triggeringActor: args["triggering-actor"] || null,
     executionStatus: args["execution-status"],
     deliveryStatus: args["delivery-status"],
-    observedAt: Number(args["observed-at"]),
+    observedAt,
     createdAt: numberOrNull(args["created-at"]),
     startedAt: numberOrNull(args["started-at"]),
     completedAt: numberOrNull(args["completed-at"]),
-    failure: args.failure ? { summary: args.failure } : undefined,
+    failure: args.failure
+      ? {
+          summary: args.failure,
+          stage: clean(args["failure-stage"], 80) || null,
+          category: clean(args["failure-category"], 80) || null,
+          nextStep: clean(args["failure-next-step"], 500) || null,
+        }
+      : undefined,
   });
-  return { observation, events: buildAttemptEvents(events, observation) };
+  return { observation, events: buildAttemptEvents(stageEvents, observation) };
 }
 
 async function postJson(

@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "id": "orgarden-gardening-services",
+  "productionEligible": true,
+  "referenceName": "Orgarden split garden services",
+  "familyId": "orgarden-gardening-services",
+  "source": {
+    "name": "Orgarden gardening services HTML template",
+    "url": "https://html.design/download/orgarden-free-gardening-services-html-template/",
+    "rights": "licensed",
+    "rightsEvidence": "Creative Commons 3.0 template license retained locally.",
+    "rightsEvidencePath": "rights/LICENSE.md",
+    "assetEvidencePaths": [
+      "rights/ASSET-PROVENANCE.md"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/SOURCE-README.md",
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "retrievedAt": "2026-10-26",
+    "capture": "Full-page desktop and mobile captures from the publisher demo at 1440x1000 and 390x844.",
+    "attribution": "Orgarden gardening services HTML template, Creative Commons 3.0."
+  },
+  "businessKinds": [
+    "landscaping",
+    "garden-design",
+    "lawn-care",
+    "property-maintenance",
+    "local-trades",
+    "home-services"
+  ],
+  "tags": {
+    "business": [
+      "landscaping",
+      "garden-design",
+      "lawn-care",
+      "property-maintenance",
+      "local-trades",
+      "home-services"
+    ],
+    "style": [
+      "botanical-split-hero",
+      "green-and-white",
+      "clean-sans",
+      "service-led"
+    ],
+    "composition": [
+      "split-photo-opening",
+      "service-card-grid",
+      "team-row",
+      "contact-panel"
+    ],
+    "conversion": [
+      "quote-request",
+      "direct-contact",
+      "service-selection"
+    ],
+    "motion": [
+      "native-menu",
+      "card-hover",
+      "image-reveal"
+    ],
+    "imagery": [
+      "garden-photography",
+      "service-icons",
+      "demo-people-not-client-staff"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "sha256": "2618e9f761ea8bfaf3d37116430f3da741fc4eb984d0d06d3a0ae78827226463"
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sha256": "ba86c02c2c094e1d2badfa5018ba2432b9c69425c3879a2f9d3ce32f7eb50aea"
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A deep green navigation sits over a large garden photograph, with the promise and actions held on the right side of the opening. The next chapter uses a centered editorial about block, followed by a six-card service grid, a four-person team row, a full-width contact form over imagery, testimonial cards and a dark green footer. The visual language is calm and botanical: white and pale surfaces, saturated green actions, simple line icons and generous photographic proof. Demo people, project imagery, phone numbers and claims are source-only and must not be presented as client facts.",
+    "heroGeometry": {
+      "mode": "split-media",
+      "alignment": "garden image with the promise and actions on the right side of the opening",
+      "viewport": "promise, supporting line and primary contact action remain visible in the opening desktop viewport"
+    },
+    "navigationGeometry": {
+      "mode": "deep green wordmark and direct service navigation",
+      "placement": "compact top bar over the opening image",
+      "mobile": "wordmark and menu control remain visible; navigation stacks without covering the promise"
+    },
+    "typography": {
+      "display": "large clean sans heading with a calm local-service voice",
+      "body": "readable neutral sans",
+      "scale": "compact opening statement, clear section labels and readable service metadata"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "pale garden neutral",
+        "deep forest green"
+      ],
+      "ink": "deep evergreen",
+      "accents": [
+        "leaf green"
+      ],
+      "contrastIntent": "dark green actions on light surfaces with legible body copy"
+    },
+    "imageTreatment": {
+      "mode": "split garden photography with contained service imagery",
+      "crop": "split opening image; contained service and team images",
+      "focalPoint": "gardens and planting detail; source people are never client staff"
+    },
+    "sectionSequence": [
+      "navigation",
+      "split-opening",
+      "who-we-are",
+      "service-offerings",
+      "people",
+      "enquiry-form",
+      "client-voices",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "service grid followed by a clear contact close",
+      "interaction": "static service grid; navigation and contact action remain usable without motion"
+    },
+    "ctaPlacement": {
+      "primary": "contact action in the opening and contact close",
+      "secondary": "service navigation in the header",
+      "early": "inside the split opening panel"
+    },
+    "motion": {
+      "primitive": "native menu, hover and image reveal",
+      "library": "static HTML/CSS in the source; no runtime dependency is required",
+      "reducedMotion": "all services, contact details and imagery remain visible without transitions"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the split opening, service offerings and enquiry form while keeping the primary action visible",
+      "rules": [
+        "keep the promise and contact action before long service detail",
+        "collapse the navigation into a readable menu",
+        "stack service cards without horizontal page overflow",
+        "preserve image crops inside their containers"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying source branding, copy, demo people, phone numbers, prices, reviews or project claims",
+      "presenting template people or garden photography as client staff, customers or completed work",
+      "inventing licenses, guarantees, service windows or coverage",
+      "using a generic identical card wall for every chapter"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "split-garden-hero",
+        "selector": "[data-reference-signature=split-garden-hero]",
+        "description": "a garden photograph shares the opening with the promise and actions"
+      },
+      {
+        "id": "service-card-grid",
+        "selector": "[data-reference-signature=service-card-grid]",
+        "description": "services are presented as a clear grid with concise factual descriptions"
+      },
+      {
+        "id": "team-row",
+        "selector": "[data-reference-signature=team-row]",
+        "description": "approved team or owner imagery is shown as a readable row, never as stock clients"
+      }
+    ],
+    "acceptanceChecks": [
+      "the split opening and primary action are visible at desktop and mobile widths",
+      "the service grid follows the opening and is grounded in client services",
+      "template people are never presented as client staff or customers",
+      "the contact action is real and uses only approved client details",
+      "the rendered page has no horizontal overflow at 390px and 320px"
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "medium",
+      "secondaryPatterns": [],
+      "note": null,
+      "mobileTreatmentChanged": true
+    },
+    "complete": true,
+    "incompleteReasons": []
+  }
+}

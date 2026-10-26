@@ -127,8 +127,8 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("provider-free reference prompt integration", () => {
-  it("covers exactly the existing 96 production dossiers", () => {
-    expect(productionIds).toHaveLength(96);
+  it("covers the expanded 98 production dossiers", () => {
+    expect(productionIds).toHaveLength(98);
   });
   it.each(productionIds)(
     "serializes %s exactly through all seven actual author prompt builders",

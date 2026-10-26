@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29",
+  "updatedAt": "2026-10-26",
   "records": [
     {
       "id": "kokoro-spatial-editorial",
@@ -9634,6 +9634,194 @@
           "feline patient photography",
           "cat-focused clinic context",
           "reference evidence only"
+        ]
+      }
+    },
+    {
+      "id": "htmlcodex-gardener-garden-services",
+      "name": "Gardener full-bleed garden services",
+      "referenceName": "Gardener full-bleed garden services",
+      "referenceFamilyId": "htmlcodex-gardener-garden-services",
+      "source": "Gardener gardening website template",
+      "sourceUrl": "https://htmlcodex.com/gardening-website-template/",
+      "rights": "licensed",
+      "industries": [
+        "landscaping",
+        "garden-design",
+        "lawn-care",
+        "property-maintenance",
+        "local-trades",
+        "home-services"
+      ],
+      "moods": [
+        "photographic-service-led",
+        "deep-green-and-leaf",
+        "bold-sans",
+        "project-proof"
+      ],
+      "navigation": "wordmark and direct service navigation",
+      "heroGeometry": "media-overlay",
+      "servicePresentation": "service grid with concise scope and a clear contact close",
+      "sectionRhythm": "navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-gallery -> team -> testimonial -> contact -> footer",
+      "typographyCategory": "bold sans headings with a direct local-service voice",
+      "imageStrategy": "wide garden photography and approved service imagery",
+      "motionOpportunities": [
+        "native menu, simple hover and image reveal",
+        "native-menu",
+        "card-hover",
+        "image-reveal"
+      ],
+      "familyId": "cinematic-stage",
+      "dossierPath": "data/reference-library/dossiers/htmlcodex-gardener-garden-services",
+      "mobileBehavior": "stack the opening, services and contact while keeping the primary action visible",
+      "prohibitedPatterns": [
+        "copying source branding, copy, demo people, phone numbers, prices, reviews or project claims",
+        "presenting template people or garden photography as client staff, customers or completed work",
+        "inventing licenses, guarantees, service windows or coverage",
+        "using a generic identical card wall for every chapter"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/htmlcodex-gardener-garden-services/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/htmlcodex-gardener-garden-services/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Home services and trades. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "photographic-service-led",
+        "deep-green-and-leaf",
+        "bold-sans",
+        "project-proof"
+      ],
+      "sourceFonts": [
+        "bold sans headings with a direct local-service voice"
+      ],
+      "referenceTags": {
+        "business": [
+          "landscaping",
+          "garden-design",
+          "lawn-care",
+          "property-maintenance",
+          "local-trades",
+          "home-services"
+        ],
+        "style": [
+          "photographic-service-led",
+          "deep-green-and-leaf",
+          "bold-sans",
+          "project-proof"
+        ],
+        "composition": [
+          "photo-led-opening",
+          "service-card-grid",
+          "project-or-team-proof",
+          "contact-close"
+        ],
+        "conversion": [
+          "quote-request",
+          "direct-contact",
+          "service-selection"
+        ],
+        "motion": [
+          "native-menu",
+          "card-hover",
+          "image-reveal"
+        ],
+        "imagery": [
+          "garden-photography",
+          "service-icons",
+          "demo-people-not-client-staff"
+        ]
+      }
+    },
+    {
+      "id": "orgarden-gardening-services",
+      "name": "Orgarden split garden services",
+      "referenceName": "Orgarden split garden services",
+      "referenceFamilyId": "orgarden-gardening-services",
+      "source": "Orgarden gardening services HTML template",
+      "sourceUrl": "https://html.design/download/orgarden-free-gardening-services-html-template/",
+      "rights": "licensed",
+      "industries": [
+        "landscaping",
+        "garden-design",
+        "lawn-care",
+        "property-maintenance",
+        "local-trades",
+        "home-services"
+      ],
+      "moods": [
+        "botanical-split-hero",
+        "green-and-white",
+        "clean-sans",
+        "service-led"
+      ],
+      "navigation": "deep green wordmark and direct service navigation",
+      "heroGeometry": "split-media",
+      "servicePresentation": "service grid followed by a clear contact close",
+      "sectionRhythm": "navigation -> split-hero -> about -> service-grid -> team -> contact-form -> testimonial -> footer",
+      "typographyCategory": "large clean sans heading with a calm local-service voice",
+      "imageStrategy": "wide garden photography and approved service imagery",
+      "motionOpportunities": [
+        "native menu, simple hover and image reveal",
+        "native-menu",
+        "card-hover",
+        "image-reveal"
+      ],
+      "familyId": "editorial-monument",
+      "dossierPath": "data/reference-library/dossiers/orgarden-gardening-services",
+      "mobileBehavior": "stack the split opening, services and contact while keeping the primary action visible",
+      "prohibitedPatterns": [
+        "copying source branding, copy, demo people, phone numbers, prices, reviews or project claims",
+        "presenting template people or garden photography as client staff, customers or completed work",
+        "inventing licenses, guarantees, service windows or coverage",
+        "using a generic identical card wall for every chapter"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/orgarden-gardening-services/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/orgarden-gardening-services/screenshots/mobile.png",
+      "notes": "Permission-cleared reference for Home services and trades. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "botanical-split-hero",
+        "green-and-white",
+        "clean-sans",
+        "service-led"
+      ],
+      "sourceFonts": [
+        "large clean sans heading with a calm local-service voice"
+      ],
+      "referenceTags": {
+        "business": [
+          "landscaping",
+          "garden-design",
+          "lawn-care",
+          "property-maintenance",
+          "local-trades",
+          "home-services"
+        ],
+        "style": [
+          "botanical-split-hero",
+          "green-and-white",
+          "clean-sans",
+          "service-led"
+        ],
+        "composition": [
+          "split-photo-opening",
+          "service-card-grid",
+          "team-row",
+          "contact-panel"
+        ],
+        "conversion": [
+          "quote-request",
+          "direct-contact",
+          "service-selection"
+        ],
+        "motion": [
+          "native-menu",
+          "card-hover",
+          "image-reveal"
+        ],
+        "imagery": [
+          "garden-photography",
+          "service-icons",
+          "demo-people-not-client-staff"
         ]
       }
     }

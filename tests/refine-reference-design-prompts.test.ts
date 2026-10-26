@@ -151,11 +151,11 @@ describe("reference design prompt refinements", () => {
     expect(archive).not.toContain("desktop: split-media");
   });
 
-  it("keeps the 131-dossier inventory and 96 production eligibility decisions", () => {
-    expect(dossierIds).toHaveLength(131);
+  it("keeps the 133-dossier inventory and 98 production eligibility decisions", () => {
+    expect(dossierIds).toHaveLength(133);
     expect(
       dossierIds.filter((id) => manifestFor(id).productionEligible),
-    ).toHaveLength(96);
+    ).toHaveLength(98);
   });
   it.each(dossierIds)(
     "loads %s, retains required headings and propagates its exact brief",

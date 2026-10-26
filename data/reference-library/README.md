@@ -2,15 +2,15 @@
 
 This directory stores canonical production and archive-only reference dossiers.
 `core-collection.json` is the source of truth for the curated local
-SEO set: exactly 96 unique references across 16 business niches, six per
-niche. The production selector samples three structurally independent routes
+SEO set: 98 unique references across 16 business niches, with at least six
+per niche and eight in home services. The production selector samples three structurally independent routes
 from the matching niche with seeded recent-exposure balancing. It fails closed
 rather than filling with unrelated businesses. Production compilation keys
 selection from the generated specific
 `businessKind` ahead of broad intake buckets such as wellness or professional
 services.
 
-Preview the 96 opening compositions in
+Preview the production opening compositions in
 [`core-collection-hero-contact-sheet.png`](core-collection-hero-contact-sheet.png).
 It is a thumbnail index only; each dossier's full-page desktop/mobile captures
 and `design-prompt.md` are the authoritative references.
@@ -49,13 +49,13 @@ The original ten niche pools contain 46 direct business-site captures and 14
 licensed sector-specific template demos. Those demos are useful visual
 references, but they are not real operating businesses and their example
 claims, prices, reviews, and locations must never be treated as client facts.
-The licensed-demo slots are: home services (2), dental (1), home care (1),
+The licensed-demo slots are: home services (4), dental (1), home care (1),
 fitness (3), restaurants (1), architecture (1), law (2), beauty (2), and
 accounting (1). Hotels have six direct site captures. The auto-repair, HVAC,
 roofing, and painting pools each contain six direct business-site captures;
 those four pools do not use licensed templates.
 
-The 96 core IDs are enumerated in `core-collection.json`. The core includes
+The 98 core IDs are enumerated in `core-collection.json`. The core includes
 home services, dental, home care, fitness, restaurants, lodging,
 architecture/interior design, law firms, beauty/grooming, accounting, auto
 repair, HVAC, roofing, painting, real estate/property, and veterinary
@@ -223,7 +223,7 @@ rewritten by a Markdown change, and their conversion briefs remain independent.
 4. Add complete Reference DNA, provenance, rights evidence, business kinds, and
    the dossier path to `data/inspiration-registry.json`. Run
    `npm run sync:reference-library -- --write` to register core dossiers and
-   bind business/capture evidence paths. Add a source to the 96-entry
+   bind business/capture evidence paths. Add a source to the 98-entry
    collection only if it genuinely matches a niche; do not fill gaps with
    unrelated business types.
 5. Run the tests and compile a production-style pack:

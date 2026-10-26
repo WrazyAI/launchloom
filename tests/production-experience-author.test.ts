@@ -2366,7 +2366,21 @@ export default function Experience`,
     expect(
       requests.every((request) =>
         request.rules.includes(
-          "For service-page links, use the validator-approved same-origin form href={`/services/${service.slug}/`} only inside a direct map over a sealed service list. Do not search for a selected service, bind its slug into a computed href, concatenate arbitrary path parts, or derive href values from unsealed input.",
+          "For service-page links, the only accepted form is {content.services.map((service) => <a href={`/services/${service.slug}/`}>...</a>)} inside a direct map over a sealed service list. Do not search for a selected service, bind its slug into a computed href, concatenate arbitrary path parts, or derive href values from unsealed input.",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      requests.every((request) =>
+        request.rules.includes(
+          "Never use inline style attributes, style objects, or <style> elements in authored JSX.",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      requests.every((request) =>
+        request.rules.includes(
+          "Every <img> src must be a sealed image token",
         ),
       ),
     ).toBe(true);

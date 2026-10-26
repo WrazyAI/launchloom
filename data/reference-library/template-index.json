@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "launchloom-reference-templates",
-  "updatedAt": "2026-10-08T20:40:57.029Z",
+  "updatedAt": "2026-10-26T16:37:34.983Z",
   "policy": "internal-refinement-only; retained under owned, licensed, or permission-cleared rights",
   "summary": {
     "extracted": 128,
-    "pending": 0,
+    "pending": 2,
     "unavailable": 0,
     "failed": 3
   },
@@ -492,6 +492,19 @@
       "reason": null
     },
     {
+      "id": "htmlcodex-gardener-garden-services",
+      "dossierPath": "data/reference-library/dossiers/htmlcodex-gardener-garden-services",
+      "status": "pending",
+      "method": null,
+      "digest": null,
+      "entrypoint": null,
+      "fileCount": 0,
+      "totalBytes": 0,
+      "rights": "licensed",
+      "retrievedAt": null,
+      "reason": "No template extraction recorded yet."
+    },
+    {
       "id": "independent-retail-beepy-bella-art-world",
       "dossierPath": "data/reference-library/dossiers/independent-retail-beepy-bella-art-world",
       "status": "extracted",
@@ -620,6 +633,19 @@
       "rights": "owned",
       "retrievedAt": "2026-10-08T20:06:09.948Z",
       "reason": null
+    },
+    {
+      "id": "orgarden-gardening-services",
+      "dossierPath": "data/reference-library/dossiers/orgarden-gardening-services",
+      "status": "pending",
+      "method": null,
+      "digest": null,
+      "entrypoint": null,
+      "fileCount": 0,
+      "totalBytes": 0,
+      "rights": "licensed",
+      "retrievedAt": null,
+      "reason": "No template extraction recorded yet."
     },
     {
       "id": "quiet-care-consultation",
