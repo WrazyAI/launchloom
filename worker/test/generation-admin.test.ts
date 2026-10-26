@@ -161,6 +161,8 @@ describe("Access-protected generation tracking administration", () => {
     );
     expect(hero.status).toBe(200);
     expect(hero.headers.get("Content-Type")).toBe("image/png");
+    expect(hero.headers.get("Cache-Control")).toBe("no-store");
+    expect(hero.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect((await hero.arrayBuffer()).byteLength).toBe(8);
 
     const heroAnonymous = await SELF.fetch(
@@ -192,6 +194,8 @@ describe("Access-protected generation tracking administration", () => {
     );
     expect(aliasHero.status).toBe(200);
     expect(aliasHero.headers.get("Content-Type")).toBe("image/png");
+    expect(aliasHero.headers.get("Cache-Control")).toBe("no-store");
+    expect(aliasHero.headers.get("X-Content-Type-Options")).toBe("nosniff");
   });
 
   it("exposes invite issue and submission references for the detail panel", async () => {

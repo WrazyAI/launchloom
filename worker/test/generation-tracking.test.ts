@@ -196,4 +196,39 @@ describe("generation tracking ingestion", () => {
     );
     expect(noAuth.status).toBe(401);
   });
+
+  it("rejects empty and oversized hero uploads before storing them", async () => {
+    const generationId = `submission-${crypto.randomUUID()}`;
+    await track({
+      action: "start",
+      generation: { generationId, status: "preview_ready" },
+    });
+
+    const empty = await SELF.fetch(
+      `${apiBase}/api/internal/generations/hero?id=${generationId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          "Content-Type": "image/webp",
+        },
+        body: new Uint8Array(0),
+      },
+    );
+    expect(empty.status).toBe(413);
+
+    const oversized = await SELF.fetch(
+      `${apiBase}/api/internal/generations/hero?id=${generationId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          "Content-Type": "image/webp",
+        },
+        body: new Uint8Array(1_800_001),
+      },
+    );
+    expect(oversized.status).toBe(413);
+    await expect(ledger().getHero(generationId)).resolves.toBeNull();
+  });
 });
