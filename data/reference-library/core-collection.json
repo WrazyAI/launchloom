@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "local-seo-core-98",
   "title": "LaunchLoom Local SEO Reference Core",
-  "updatedAt": "2026-09-29",
+  "updatedAt": "2026-10-26",
   "selectionContract": "Each niche has at least six unique, production-eligible, business-matched dossiers; the home-services pool has eight to cover landscaping and adjacent trades. The selector chooses three independent routes with seeded exposure balancing. Explicit unsupportedBusinessKinds and uncovered kinds fail closed rather than filling from another niche.",
   "rightsContract": "Every listed dossier has a local rights/provenance record. Direct-site permission status reflects requester attestation and is not represented as independently verified source-owner permission.",
   "sourceDesignRule": "Transfer composition, information hierarchy, service mechanics, responsive behavior, and motion only. Source identities, copy, imagery, facts, claims, prices, credentials, and trade dress do not transfer to client sites.",
