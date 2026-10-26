@@ -234,6 +234,33 @@ describe("trusted attempt producer", () => {
     });
   });
 
+  it("wires explicit stage events and failure context into the production workflow", async () => {
+    const workflow = await fs.readFile(
+      ".github/workflows/generate-client.yml",
+      "utf8",
+    );
+    expect(workflow).toContain("scripts/record-generation-stage.mjs");
+    for (const stage of [
+      "intake",
+      "seo_research",
+      "inspiration_selection",
+      "reference_analysis",
+      "client_repo",
+      "review_branch",
+      "imagery",
+      "authoring",
+      "authored_evidence",
+      "creative_render",
+      "diagnostic_preview",
+      "preview_deploy",
+      "preview_ready",
+    ])
+      expect(workflow).toContain(`--stage ${stage}`);
+    expect(workflow).toContain("--failure-stage");
+    expect(workflow).toContain("--failure-category");
+    expect(workflow).toContain("--stage-status failed");
+  });
+
   it("uses explicit attempt flags without changing legacy action/status semantics", () => {
     const args = {
       "run-id": "9001",
