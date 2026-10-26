@@ -64,7 +64,7 @@ jobs:
       GITHUB_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
-      CREATIVE_EXPERIENCE_MODEL: opencode-go/deepseek-v4.1-flash
+      CREATIVE_EXPERIENCE_MODEL: deepseek/deepseek-v4.1-flash
       CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'max' }}
       # Repairs are bounded edits; high effort leaves output headroom for
       # max-effort-adjacent reasoning without truncating the answer.
@@ -82,7 +82,7 @@ jobs:
       SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.25' }}
       SEO_FALLBACK_MAX_QUERIES: ${{ vars.SEO_FALLBACK_MAX_QUERIES || '3' }}
       SEO_FALLBACK_MAX_USD: ${{ vars.SEO_FALLBACK_MAX_USD || '0.05' }}
-      SEO_FALLBACK_SEARCH_MODEL: ${{ vars.SEO_FALLBACK_SEARCH_MODEL || 'openai/gpt-6-luna' }}
+      SEO_FALLBACK_SEARCH_MODEL: ${{ vars.SEO_FALLBACK_SEARCH_MODEL || 'deepseek/deepseek-v4.1-flash' }}
       RUNNER_USD_PER_MINUTE: ${{ vars.RUNNER_USD_PER_MINUTE }}
       PUBLIC_REVIEW_MODE: "true"
       LAUNCHLOOM_READ_ONLY_HISTORY: "true"

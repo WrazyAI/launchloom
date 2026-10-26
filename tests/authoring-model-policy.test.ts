@@ -43,7 +43,7 @@ describe("authoring model policy", () => {
       const source = fs.readFileSync(`.github/workflows/${file}`, "utf8");
       expect(source, file).not.toContain("creative_model");
       expect(source, file).toContain(
-        "CREATIVE_EXPERIENCE_MODEL: opencode-go/deepseek-v4.1-flash",
+        "CREATIVE_EXPERIENCE_MODEL: deepseek/deepseek-v4.1-flash",
       );
     }
   });

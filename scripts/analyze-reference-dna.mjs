@@ -575,7 +575,9 @@ Rules:
       // retry once with low-detail mobile evidence.
       const fallbackModel =
         process.env.CREATIVE_REFERENCE_ANALYZER_FALLBACK_MODEL ||
-        (creativeProvider === "opencode-go" ? "z-ai/glm-5.3-flash" : "");
+        (creativeProvider === "opencode-go"
+          ? "opencode-go/deepseek-v4.1-flash"
+          : "deepseek/deepseek-v4.1-flash");
       if (fallbackModel && fallbackModel !== model) {
         console.warn(
           `reference_dna_fallback route=${route.id} model=${fallbackModel} evidence=full ${diagnostics(retryError)}`,

@@ -12,6 +12,8 @@ export const DEFAULT_PREFLIGHT_MODE = "shadow";
 // workflow runs normalize to GPT-6 Luna, while these old sessions remain valid
 // for their own repair lifecycle.
 const SUPPORTED_CREATIVE_SESSION_MODELS = new Set([
+  "opencode-go/deepseek-v4.1-flash",
+  "deepseek/deepseek-v4.1-flash",
   "openai/gpt-6-luna",
   "openai/gpt-5.6-luna",
 ]);
@@ -439,7 +441,8 @@ export async function createReasoningPreflight({
   mode = DEFAULT_PREFLIGHT_MODE,
   model = process.env.REASONING_PREFLIGHT_MODEL || DEFAULT_TYPESAFE_MODEL,
   creativeModel =
-    process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-6-luna",
+    process.env.CREATIVE_EXPERIENCE_MODEL ||
+    "opencode-go/deepseek-v4.1-flash",
   sessionKey = "",
   apiKey = process.env.TYPESAFE_API_KEY,
   fetchImpl = fetch,
@@ -448,7 +451,7 @@ export async function createReasoningPreflight({
   const preflightMode = normalizedMode(mode);
   if (!SUPPORTED_CREATIVE_SESSION_MODELS.has(creativeModel))
     throw new Error(
-      `Adaptive reasoning preflight supports openai/gpt-6-luna and existing openai/gpt-5.6-luna sessions, received ${creativeModel}.`,
+      `Adaptive reasoning preflight supports DeepSeek V4.1 Flash and existing GPT-6 Luna/5.6 Luna sessions, received ${creativeModel}.`,
     );
   const state = buildReasoningPreflightState(inspirationPack);
   const stateDigest = digest(state);
@@ -573,7 +576,7 @@ export function validateCreativeSessionConfig(
     );
   if (!SUPPORTED_CREATIVE_SESSION_MODELS.has(value.creativeModel))
     throw new Error(
-      `Creative session model must be openai/gpt-6-luna or an existing openai/gpt-5.6-luna session, received ${value.creativeModel}.`,
+      `Creative session model must be DeepSeek V4.1 Flash or an existing GPT-6 Luna/5.6 Luna session, received ${value.creativeModel}.`,
     );
   if (creativeModel && value.creativeModel !== creativeModel)
     throw new Error(

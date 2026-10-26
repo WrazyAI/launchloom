@@ -32,6 +32,7 @@ const WIRE_MODELS = {
   "openai/gpt-6-luna": "gpt-6-luna",
   "deepseek-v4.1-flash": "deepseek-v4.1-flash",
   "opencode-go/deepseek-v4.1-flash": "deepseek-v4.1-flash",
+  "deepseek/deepseek-v4.1-flash": "deepseek-v4.1-flash",
   "deepseek-v4-pro": "deepseek-v4-pro",
   "opencode-go/deepseek-v4-pro": "deepseek-v4-pro",
   "glm-5.3-flash": "glm-5.3-flash",
@@ -60,7 +61,7 @@ export function opencodeGoWireModel(logicalModel) {
  * and the site-copy efforts.
  */
 export function opencodeGoResponsesProfile({
-  logicalModel = "openai/gpt-6-luna",
+  logicalModel = "opencode-go/deepseek-v4.1-flash",
   maxOutputTokens = 48_000,
 } = {}) {
   return {

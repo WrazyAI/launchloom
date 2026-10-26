@@ -8,7 +8,7 @@ import {
 } from "./openrouter-client.mjs";
 import { parseModelJson } from "./model-json.mjs";
 
-const DEFAULT_MODEL = "z-ai/glm-5.3-flash";
+const DEFAULT_MODEL = "deepseek/deepseek-v4.1-flash";
 const MAX_OUTPUT_TOKENS = 768;
 const MAX_SERVICES = 5;
 const MAX_PHRASES_PER_SERVICE = 5;

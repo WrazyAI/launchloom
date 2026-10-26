@@ -314,7 +314,7 @@ describe("SEO market map", () => {
           ],
         },
         usage: {
-          model: "z-ai/glm-5.3-flash",
+          model: "deepseek/deepseek-v4.1-flash",
           costUsd: 0.002,
           promptTokens: 120,
           completionTokens: 42,
@@ -385,7 +385,7 @@ describe("SEO market map", () => {
     expect(provider.relatedKeywords).not.toHaveBeenCalled();
     expect(dossier.intentPlanning).toMatchObject({
       status: "model",
-      model: "z-ai/glm-5.3-flash",
+      model: "deepseek/deepseek-v4.1-flash",
       acceptedPhraseCount: 3,
       usage: {
         costUsd: 0.002,
@@ -449,7 +449,7 @@ describe("SEO market map", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(request.headers).toMatchObject({ "X-OpenRouter-Cache": "true" });
     expect(body).toMatchObject({
-      model: "z-ai/glm-5.3-flash",
+      model: "deepseek/deepseek-v4.1-flash",
       response_format: { type: "json_object" },
       temperature: 0,
       usage: { include: true },
@@ -483,7 +483,7 @@ describe("SEO market map", () => {
       async (_input: RequestInfo | URL, _init?: RequestInit) =>
         new Response(
           JSON.stringify({
-            model: "z-ai/glm-5.3-flash",
+            model: "deepseek/deepseek-v4.1-flash",
             choices: [
               {
                 finish_reason: "length",

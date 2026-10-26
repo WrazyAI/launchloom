@@ -25,10 +25,10 @@ export const DEFAULT_MAX_REQUESTS = 15;
 export const DEFAULT_MAX_PROMPT_LENGTH = 1500;
 export const GENERATED_ASSET_REVIEW_POLICY_VERSION = "visual-review-v1";
 
-// The stronger visual judge is used for structured asset review because the
-// flash model returned too many malformed/unavailable checks on real images.
+// Production asset review uses the same approved model as the rest of the
+// pipeline. GLM-5.3 is not approved for production use.
 const GENERATED_ASSET_REVIEW_MODEL =
-  process.env.FAL_IMAGE_REVIEW_MODEL || "z-ai/glm-5.3";
+  process.env.FAL_IMAGE_REVIEW_MODEL || "deepseek/deepseek-v4.1-flash";
 const GENERATED_ASSET_REVIEW_REASONS = new Set([
   "not_standalone_image",
   "website_or_interface",

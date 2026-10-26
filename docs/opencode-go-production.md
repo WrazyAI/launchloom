@@ -18,14 +18,26 @@ on OpenRouter-era runs (pre-existing, see the 2026-10-14 progress ledger for
 the baseline). The `CREATIVE_EXPERIENCE_PROVIDER` and `SITE_COPY_PROVIDER`
 repository variables were then set to `opencode-go` at 21:06Z.
 
+## 2026-10-26 production model policy
+
+All non-trivial production lanes use DeepSeek V4.1 Flash:
+
+- OpenCode Go: `opencode-go/deepseek-v4.1-flash` (wire
+  `deepseek-v4.1-flash`).
+- OpenRouter: `deepseek/deepseek-v4.1-flash`.
+
+This covers authoring and repair, site copy, revision operations, SEO query
+planning, SEO fallback search, reference DNA analysis and its fallback,
+rendered reference and diversity judges, the visual quality gate, and generated
+asset review. GLM-5.3 and GLM-5.3-Flash are not approved for production use.
+GPT-6 Luna remains only for frozen legacy sessions. The defaults are guarded by
+`tests/production-model-policy.test.ts`.
+
 ## Scope
 
-- In scope: `scripts/author-production-experiences.mjs` (all seven author
-  stages and their existing bounded repairs) and `scripts/generate-site-config.mjs`
-  (site copy plus its quality refinement).
-- Out of scope and still on OpenRouter: hosted SEO/web search, reference
-  analysis, visual judges, the creative repair loop, the revision engine, and
-  non-coding Worker/visitor-AI paths.
+- In scope: every non-trivial production generation lane listed above.
+- Out of scope: Worker and visitor-AI paths, plus the explicit model-evaluation
+  labs that intentionally compare multiple models.
 
 ## Provider switch
 
@@ -45,10 +57,10 @@ repository variables were then set to `opencode-go` at 21:06Z.
   requires `OPENROUTER_API_KEY`. Both secrets are requested by the workflows;
   `generate-client.yml` fails early when a Go-selected run has no Go key.
 - The default creative-lane logical model is
-  `opencode-go/deepseek-v4.1-flash` (wire `deepseek-v4.1-flash`); the legacy
-  `openai/gpt-6-luna` session model remains supported for frozen luna sessions.
-  Reasoning-preflight allowlists, session provenance and reuse
-  validators are unchanged.
+  `deepseek/deepseek-v4.1-flash`; on OpenCode Go it resolves to the wire model
+  `deepseek-v4.1-flash`. The legacy `openai/gpt-6-luna` session model remains
+  supported only for frozen legacy sessions. Reasoning-preflight allowlists,
+  session provenance and reuse validators accept DeepSeek V4.1 Flash.
 
 ## Verified wire contract
 

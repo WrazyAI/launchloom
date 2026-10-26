@@ -1234,7 +1234,7 @@ function contentTargetsSatisfied(targets, operations) {
 export async function modelOperations(
   feedbackItems,
   config,
-  model = "z-ai/glm-5.3-flash",
+  model = "deepseek/deepseek-v4.1-flash",
 ) {
   if (!process.env.OPENROUTER_API_KEY) return [];
   const items = Array.isArray(feedbackItems) ? feedbackItems : [feedbackItems];

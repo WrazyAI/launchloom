@@ -188,7 +188,7 @@ try {
     inspirationPack,
     mode: process.env.REASONING_PREFLIGHT_MODE || "shadow",
     model: process.env.REASONING_PREFLIGHT_MODEL || "jev-1.13.0",
-    creativeModel: "openai/gpt-6-luna",
+    creativeModel: "opencode-go/deepseek-v4.1-flash",
     sessionKey: "creative-canary-reference-library",
   });
   await fs.writeFile(
@@ -264,7 +264,7 @@ try {
     candidatesDir: isolatedRoot,
     outDir: path.join(out, "creative-repair"),
     mode: "preview",
-    model: "openai/gpt-6-luna",
+    model: "opencode-go/deepseek-v4.1-flash",
     creativeSession,
     requireDiversity: false,
     visualGateScript: path.join(root, "scripts/visual-quality-gate.mjs"),

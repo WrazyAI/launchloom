@@ -1076,7 +1076,7 @@ export function createCloudDependencies(
             model:
               oldSession.creativeModel ||
               process.env.CREATIVE_EXPERIENCE_MODEL ||
-              "openai/gpt-6-luna",
+              "opencode-go/deepseek-v4.1-flash",
             repositoryRoot: root,
           });
           const pack = await readJson(

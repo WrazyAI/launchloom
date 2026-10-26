@@ -297,7 +297,8 @@ async function requestJson({
   let activeReasoningEffort = reasoningEffort;
   let activeModel = model;
   const fallbackModel =
-    process.env.CREATIVE_REFERENCE_JUDGE_FALLBACK_MODEL || "z-ai/glm-5.3-flash";
+    process.env.CREATIVE_REFERENCE_JUDGE_FALLBACK_MODEL ||
+    "deepseek/deepseek-v4.1-flash";
   let judgeFallbackUsed = false;
   let truncatedRetryUsed = false;
   let affordabilityRetryUsed = false;

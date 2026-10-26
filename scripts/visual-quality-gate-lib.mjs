@@ -1,6 +1,8 @@
 import { applyOperation } from "./revision-engine.mjs";
 
-export const VISUAL_GATE_MODEL = "z-ai/glm-5.3-flash";
+// Production visual judging uses the same approved model as the rest of the
+// pipeline. GLM-5.3 is not approved for production use.
+export const VISUAL_GATE_MODEL = "deepseek/deepseek-v4.1-flash";
 
 export function parseVisualAuditContent(value) {
   const content = String(value || "")

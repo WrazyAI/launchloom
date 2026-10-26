@@ -1170,7 +1170,7 @@ export async function runRenderedCreativeRepair({
     model ||
     creativeSession?.creativeModel ||
     process.env.CREATIVE_EXPERIENCE_MODEL ||
-    "openai/gpt-6-luna";
+    "opencode-go/deepseek-v4.1-flash";
   assertCodeAuthoringModel(resolvedModel, { provider: creativeLaneProvider() });
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
@@ -2535,7 +2535,7 @@ async function main() {
       args.model ||
       creativeSession?.creativeModel ||
       process.env.CREATIVE_EXPERIENCE_MODEL ||
-      "openai/gpt-6-luna",
+      "opencode-go/deepseek-v4.1-flash",
     creativeSession,
     maxCycles: args["max-cycles"] || 2,
     qaRepairExperiment: args["qa-repair-experiment"] === "true",

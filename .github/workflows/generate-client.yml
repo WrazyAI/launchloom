@@ -203,7 +203,7 @@ jobs:
       # manual rollback.
       CREATIVE_EXPERIENCE_PROVIDER: ${{ vars.CREATIVE_EXPERIENCE_PROVIDER || 'openrouter' }}
       SITE_COPY_PROVIDER: ${{ vars.SITE_COPY_PROVIDER || 'openrouter' }}
-      SEO_QUERY_PLANNER_MODEL: ${{ vars.SEO_QUERY_PLANNER_MODEL || 'z-ai/glm-5.3-flash' }}
+      SEO_QUERY_PLANNER_MODEL: ${{ vars.SEO_QUERY_PLANNER_MODEL || 'deepseek/deepseek-v4.1-flash' }}
       GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
       TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY || secrets.JEV_API_KEY }}
       REASONING_PREFLIGHT_MODE: ${{ vars.REASONING_PREFLIGHT_MODE || 'shadow' }}
@@ -214,7 +214,7 @@ jobs:
       FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '15' }}
       # Code authoring and repair are hard-pinned to DeepSeek V4.1 Flash.
       # GLM and DeepSeek v4-pro are visual-judge/trial models only.
-      CREATIVE_EXPERIENCE_MODEL: opencode-go/deepseek-v4.1-flash
+      CREATIVE_EXPERIENCE_MODEL: deepseek/deepseek-v4.1-flash
       CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'max' }}
       # Repairs are bounded edits; high effort leaves output headroom for
       # max-effort-adjacent reasoning without truncating the answer.
@@ -235,7 +235,7 @@ jobs:
       SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.25' }}
       SEO_FALLBACK_MAX_QUERIES: ${{ vars.SEO_FALLBACK_MAX_QUERIES || '3' }}
       SEO_FALLBACK_MAX_USD: ${{ vars.SEO_FALLBACK_MAX_USD || '0.05' }}
-      SEO_FALLBACK_SEARCH_MODEL: ${{ vars.SEO_FALLBACK_SEARCH_MODEL || 'openai/gpt-6-luna' }}
+      SEO_FALLBACK_SEARCH_MODEL: ${{ vars.SEO_FALLBACK_SEARCH_MODEL || 'deepseek/deepseek-v4.1-flash' }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
       REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
       LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}

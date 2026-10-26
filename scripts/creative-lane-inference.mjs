@@ -26,13 +26,14 @@ export const CREATIVE_LANE_PROVIDERS = Object.freeze([
   "opencode-go",
 ]);
 
-/** Default logical model per transport. The Go slice serves DeepSeek V4.1
- * Flash (verified live 2026-10-17: structured output, vision, and every
- * effort level); the OpenRouter fallback keeps GPT-6 Luna. */
+/** Default logical model per transport. Both transports use DeepSeek V4.1
+ * Flash. The Go slice serves it directly; OpenRouter exposes the same model as
+ * `deepseek/deepseek-v4.1-flash`. GLM-5.3 and GPT-6 Luna are not approved for
+ * production lanes. */
 export function creativeLaneDefaultModel(provider = creativeLaneProvider()) {
   return provider === "opencode-go"
     ? "opencode-go/deepseek-v4.1-flash"
-    : "openai/gpt-6-luna";
+    : "deepseek/deepseek-v4.1-flash";
 }
 
 /**
@@ -48,7 +49,8 @@ export function assertCodeAuthoringModel(
   if (provider !== "opencode-go") return model;
   if (
     model === "opencode-go/deepseek-v4.1-flash" ||
-    model === "deepseek-v4.1-flash"
+    model === "deepseek-v4.1-flash" ||
+    model === "deepseek/deepseek-v4.1-flash"
   )
     return model;
   throw new Error(

@@ -1642,10 +1642,10 @@ describe("generated asset review on OpenCode Go", () => {
       expect(review.available).toBe(true);
       expect(review.approved).toBe(true);
       expect(review.reasonCodes).toEqual([]);
-      expect(review.model).toBe("z-ai/glm-5.3");
+      expect(review.model).toBe("deepseek/deepseek-v4.1-flash");
       expect(requests).toHaveLength(1);
       expect(requests[0].url).toContain("opencode.ai/inference/go");
-      expect(requests[0].body.model).toBe("glm-5.3");
+      expect(requests[0].body.model).toBe("deepseek-v4.1-flash");
       expect(requests[0].body.text?.format?.type).toBe("json_schema");
       const imagePart = (requests[0].body.input || [])
         .flatMap((item: any) => item.content || [])

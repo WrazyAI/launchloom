@@ -37,7 +37,7 @@ Current defaults in the workflow and script:
 | `FAL_IMAGE_MODEL` | `fal-ai/minimax/image-01` | FAL model used for image requests. |
 | `FAL_IMAGE_MAX_IMAGES` | `3` | Global cap on retained generated images across routes. |
 | `FAL_IMAGE_MAX_REQUESTS` | `15` | Global request budget. Coverage-first allocation gives every placement a fair share of the budget, so a rejected hero (or its retry) cannot starve secondary/tertiary; retries are taken from surplus only. The larger budget gives the hero enough attempts to recover from a rejection. |
-| `FAL_IMAGE_REVIEW_MODEL` | `z-ai/glm-5.3` | Visual judge used for generated-asset review. The stronger model is used because the flash reviewer returned too many malformed or unavailable checks on real images. It remains a visual-judge lane and does not author code. |
+| `FAL_IMAGE_REVIEW_MODEL` | `deepseek/deepseek-v4.1-flash` | Visual judge used for generated-asset review. All production lanes use DeepSeek V4.1 Flash; GLM-5.3 is not approved for production use. |
 | `FAL_IMAGE_TIMEOUT_MS` | `120000` | Per-generation and image-download timeout budget. |
 
 The model and image/request budgets are set from LaunchLoom repository

@@ -324,7 +324,7 @@ describe("experience-pack compiler", () => {
     expect(creativeRender).not.toContain("continue-on-error: true");
     expect(workflow).toContain("Authored creative renderer was not selected");
     expect(workflow).toContain("CANDIDATE_ID=$(jq -r");
-    expect(workflow).toContain("opencode-go/deepseek-v4.1-flash");
+    expect(workflow).toContain("deepseek/deepseek-v4.1-flash");
     expect(workflow).toContain(
       "vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'max'",
     );

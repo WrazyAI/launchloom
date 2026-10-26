@@ -13,6 +13,7 @@ const originalKey = process.env.OPENROUTER_API_KEY;
 
 afterEach(async () => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   vi.useRealTimers();
   if (originalKey === undefined) delete process.env.OPENROUTER_API_KEY;
   else process.env.OPENROUTER_API_KEY = originalKey;
@@ -188,7 +189,7 @@ describe("rendered reference request retries", () => {
     }
   });
 
-  it("falls back to the visual judge model when OpenCode Go keeps failing", async () => {
+  it("retries the DeepSeek visual judge with low effort on persistent OpenCode Go faults", async () => {
     vi.useRealTimers();
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
     vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
@@ -196,50 +197,50 @@ describe("rendered reference request retries", () => {
     const fetchImpl = vi.fn<typeof fetch>(async (_url, options) => {
       const body = JSON.parse(String(options?.body || "{}"));
       requests.push(body);
-      if (body.model === "glm-5.3-flash") {
+      if (requests.length <= 3) {
         return new Response(
           JSON.stringify({
-            id: "resp_fallback_judge",
-            status: "completed",
-            output: [
-              {
-                type: "message",
-                role: "assistant",
-                status: "completed",
-                content: [
-                  {
-                    type: "output_text",
-                    text: JSON.stringify({
-                      overallDistinctiveness: 88,
-                      genericFallbackDetected: false,
-                      pairs: [
-                        {
-                          left: "candidate-a",
-                          right: "candidate-b",
-                          distance: 84,
-                          reason: "Their rendered compositions differ.",
-                        },
-                      ],
-                      summary: "The two visual systems are distinct.",
-                    }),
-                  },
-                ],
-              },
-            ],
-            usage: {
-              input_tokens: 5000,
-              output_tokens: 900,
-              input_tokens_details: { cached_tokens: 0 },
-            },
+            error: { type: "server_error", message: "schema server error" },
           }),
-          { status: 200, headers: { "content-type": "application/json" } },
+          { status: 400, headers: { "content-type": "application/json" } },
         );
       }
       return new Response(
         JSON.stringify({
-          error: { type: "server_error", message: "schema server error" },
+          id: "resp_retry_judge",
+          status: "completed",
+          output: [
+            {
+              type: "message",
+              role: "assistant",
+              status: "completed",
+              content: [
+                {
+                  type: "output_text",
+                  text: JSON.stringify({
+                    overallDistinctiveness: 88,
+                    genericFallbackDetected: false,
+                    pairs: [
+                      {
+                        left: "candidate-a",
+                        right: "candidate-b",
+                        distance: 84,
+                        reason: "Their rendered compositions differ.",
+                      },
+                    ],
+                    summary: "The two visual systems are distinct.",
+                  }),
+                },
+              ],
+            },
+          ],
+          usage: {
+            input_tokens: 5000,
+            output_tokens: 900,
+            input_tokens_details: { cached_tokens: 0 },
+          },
         }),
-        { status: 400, headers: { "content-type": "application/json" } },
+        { status: 200, headers: { "content-type": "application/json" } },
       );
     });
     try {
@@ -259,13 +260,12 @@ describe("rendered reference request retries", () => {
         fetchImpl,
       });
       expect(result.pass).toBe(true);
+      expect(requests.length).toBeGreaterThan(1);
       expect(
-        requests.some((request) => request.model === "glm-5.3-flash"),
+        requests.every((request) => request.model === "deepseek-v4.1-flash"),
       ).toBe(true);
       expect(
-        requests
-          .filter((request) => request.model === "glm-5.3-flash")
-          .every((request) => request.reasoning?.effort === "low"),
+        requests.some((request) => request.reasoning?.effort === "low"),
       ).toBe(true);
     } finally {
       vi.unstubAllEnvs();
@@ -287,6 +287,7 @@ describe("rendered reference request retries", () => {
       },
       renderedGeometry: { desktopHeroProbe: "candidate-specific-geometry" },
       fetchImpl,
+      model: "openai/gpt-6-luna",
     });
 
     const request = JSON.parse(String(fetchImpl.mock.calls[0]?.[1]?.body));
@@ -877,6 +878,7 @@ describe("rendered reference fidelity", () => {
         compact: files.candidateCompact,
         mobile: files.candidateMobile,
       },
+      model: "openai/gpt-6-luna",
       fetchImpl: async (_url, options) => {
         requests.push(JSON.parse(String(options?.body || "{}")));
         return response({

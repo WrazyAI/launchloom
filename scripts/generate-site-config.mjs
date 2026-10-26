@@ -77,10 +77,11 @@ async function siteCopyOpencodeGoCompletion({
   userPrompt,
   sessionId,
   maxOutputTokens,
+  model,
 }) {
   const completion = await completeGeneration({
     inference: {
-      profile: opencodeGoResponsesProfile(),
+      profile: opencodeGoResponsesProfile({ logicalModel: model }),
       apiKey: process.env.OPENCODE_GO_API_KEY,
       request: buildSiteCopyResponsesRequest({
         systemPrompt,
@@ -97,7 +98,7 @@ async function siteCopyOpencodeGoCompletion({
   // cost summary prices Go calls (the provider reports no per-request cost).
   recordModelUsage(
     label,
-    "openai/gpt-6-luna",
+    model,
     usage
       ? {
           ...usage,
@@ -149,7 +150,12 @@ function recentFingerprintsForSelection(businessKind) {
   }
 }
 
-const MODEL = "z-ai/glm-5.3-flash";
+function siteCopyDefaultModel() {
+  return siteCopyProvider() === "opencode-go"
+    ? "opencode-go/deepseek-v4.1-flash"
+    : "deepseek/deepseek-v4.1-flash";
+}
+
 const SITE_COPY_MAX_COMPLETION_TOKENS = 8192;
 const SITE_COPY_REFINEMENT_MAX_COMPLETION_TOKENS = 4096;
 const SITE_COPY_REFINEMENT_RETRY_MAX_COMPLETION_TOKENS = 8192;
@@ -3196,7 +3202,7 @@ export function removeEmDashes(value) {
   return value;
 }
 
-async function askModel(intake, effort, model = MODEL) {
+async function askModel(intake, effort, model = siteCopyDefaultModel()) {
   intake = copywriterContext(intake);
   const systemPrompt = `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-language website copy from verified facts. Use the language and writing system indicated by languageCode in the verified context, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION}
 
@@ -3236,6 +3242,7 @@ Build a credible path from visitor problem to action with a differentiated promi
       userPrompt: siteCopyUserPrompt,
       sessionId,
       maxOutputTokens: SITE_COPY_MAX_COMPLETION_TOKENS,
+      model,
     });
   const response = await openRouterChatCompletion({
     title: "LaunchLoom",
@@ -3275,7 +3282,7 @@ async function refineDraft(
   intake,
   draft,
   report,
-  model = MODEL,
+  model = siteCopyDefaultModel(),
   {
     maxCompletionTokens = SITE_COPY_REFINEMENT_MAX_COMPLETION_TOKENS,
     truncatedRetry = false,
@@ -3308,6 +3315,7 @@ async function refineDraft(
       userPrompt: siteCopyRefinementUserPrompt,
       sessionId,
       maxOutputTokens: maxCompletionTokens,
+      model,
     });
   const response = await openRouterChatCompletion({
     title: "LaunchLoom quality refinement",
@@ -3356,7 +3364,7 @@ async function refineDraft(
   }
 }
 
-export async function generateSiteConfigWithModel(intake, model = MODEL) {
+export async function generateSiteConfigWithModel(intake, model = siteCopyDefaultModel()) {
   const provider = siteCopyProvider();
   if (provider === "opencode-go") {
     if (!process.env.OPENCODE_GO_API_KEY)

@@ -125,7 +125,7 @@ describe("opencode go profile and request contracts", () => {
     });
     expect(headers["x-opencode-session"]).toBe("launchloom:test-session");
     expect(headers["User-Agent"]).toBe("launchloom-production/0.1");
-    expect(body.model).toBe("gpt-6-luna");
+    expect(body.model).toBe("deepseek-v4.1-flash");
     expect(body.store).toBe(false);
     expect(body.max_output_tokens).toBe(48_000);
     expect(body.reasoning).toEqual({ effort: "xhigh" });
@@ -290,7 +290,7 @@ describe("opencode go profile and request contracts", () => {
     expect(headers.Authorization).toBe("Bearer test-go-key");
     expect(headers["x-opencode-session"]).toContain("launchloom:");
     const body = JSON.parse(String(init.body));
-    expect(body.model).toBe("gpt-6-luna");
+    expect(body.model).toBe("deepseek-v4.1-flash");
     expect(body.reasoning).toEqual({ effort: "medium" });
     expect(body.text.format).toEqual({ type: "json_object" });
     expect(body.max_output_tokens).toBe(8192);
@@ -303,7 +303,7 @@ describe("opencode go profile and request contracts", () => {
     );
     expect(usage.length).toBeGreaterThan(0);
     const last = usage.at(-1) as any;
-    expect(last.model).toBe("openai/gpt-6-luna");
+    expect(last.model).toBe("opencode-go/deepseek-v4.1-flash");
     expect(last.usage.inputTokens).toBe(1000);
     expect(last.usage.provider).toBe("opencode-go");
     expect(last.usage.costSource).toBe("computed-from-published-prices");
