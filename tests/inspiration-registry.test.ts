@@ -51,6 +51,26 @@ describe("inspiration registry", () => {
     }
   });
 
+  it("selects three landscaping references after the home-services pool expansion", () => {
+    const pack = buildInspirationPack(
+      {
+        ...baseRequest,
+        seed: "landscaping-expanded-core",
+        industry: "home-services",
+        businessFocusTerms: ["landscaping"],
+        styleTerms: ["botanical", "calm"],
+        recentReferenceIds: [],
+        recentRouteSignatures: [],
+      },
+      registry,
+      { repositoryRoot: path.resolve("."), requireDossiers: true },
+    );
+    expect(pack.routes).toHaveLength(3);
+    for (const route of pack.routes) {
+      expect(route.referenceDossier?.tags.business).toContain("landscaping");
+    }
+  });
+
   it("normalizes semantically similar hero prose into the same composition archetype", () => {
     const technicianOverlay = {
       heroGeometry:
@@ -349,9 +369,12 @@ describe("inspiration registry", () => {
         expect(
           first.request.heroInventory.eligibleReferenceCount,
           niche.id,
-        ).toBe(6);
+        ).toBe(niche.referenceIds.length);
         expect(first.request.heroInventory.shortageToSix, niche.id).toBe(
-          Math.max(0, 6 - first.request.heroInventory.distinctArchetypeCount),
+          Math.max(
+            0,
+            6 - first.request.heroInventory.distinctArchetypeCount,
+          ),
         );
         expect(
           new Set(first.routes.map((route: any) => route.heroArchetype)).size,
@@ -444,10 +467,11 @@ describe("inspiration registry", () => {
       }
 
       const exposures = [...counts.values()];
+      const minimumExposure = niche.referenceIds.length > 6 ? 3 : 5;
       expect(
         Math.min(...exposures),
         `${niche.businessKind} minimum exposure`,
-      ).toBeGreaterThanOrEqual(5);
+      ).toBeGreaterThanOrEqual(minimumExposure);
       expect(
         Math.max(...exposures),
         `${niche.businessKind} maximum exposure`,
@@ -740,12 +764,7 @@ describe("inspiration registry", () => {
       repositoryRoot: path.resolve("."),
       requireDossiers: true,
     };
-    for (const industry of [
-      "home-services",
-      "hospitality",
-      "auto-repair",
-      "roofing",
-    ]) {
+    for (const industry of ["hospitality", "auto-repair", "roofing"]) {
       const pack = buildInspirationPack(
         {
           ...baseRequest,
@@ -1349,7 +1368,7 @@ describe("inspiration registry", () => {
       );
 
       expect(pack.routes).toHaveLength(3);
-      expect(niche.referenceIds).toHaveLength(6);
+      expect(niche.referenceIds.length).toBeGreaterThanOrEqual(6);
       expect(selected.size).toBe(3);
       expect([...selected].every((id) => niche.referenceIds.includes(id))).toBe(
         true,
@@ -1459,21 +1478,21 @@ describe("inspiration registry", () => {
     }
   });
 
-  it("defines an exact 96-dossier core with six verified references per niche and production-randomizer coverage", () => {
+  it("defines an exact 98-dossier core with at least six verified references per niche and production-randomizer coverage", () => {
     const corePath = path.resolve(
       "data/reference-library/core-collection.json",
     );
     const core = JSON.parse(fs.readFileSync(corePath, "utf8"));
     expect(core.schemaVersion).toBe(1);
-    expect(core.id).toBe("local-seo-core-96");
+    expect(core.id).toBe("local-seo-core-98");
     expect(core.niches).toHaveLength(16);
     expect(
-      core.niches.every((niche: any) => niche.referenceIds.length === 6),
+      core.niches.every((niche: any) => niche.referenceIds.length >= 6),
     ).toBe(true);
 
     const allIds = core.niches.flatMap((niche: any) => niche.referenceIds);
-    expect(allIds).toHaveLength(96);
-    expect(new Set(allIds).size).toBe(96);
+    expect(allIds).toHaveLength(98);
+    expect(new Set(allIds).size).toBe(98);
 
     for (const niche of core.niches) {
       const pack = buildInspirationPack(
@@ -1588,7 +1607,7 @@ describe("inspiration registry", () => {
         expect(
           pack.request.selectionHistory.fitReferenceCoverage,
           niche.id,
-        ).toBe(6);
+        ).toBe(niche.referenceIds.length);
         trios.add([...selected].sort().join("|"));
       }
       expect(

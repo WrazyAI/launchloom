@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "id": "htmlcodex-gardener-garden-services",
+  "productionEligible": true,
+  "referenceName": "Gardener full-bleed garden services",
+  "familyId": "htmlcodex-gardener-garden-services",
+  "source": {
+    "name": "Gardener gardening website template",
+    "url": "https://htmlcodex.com/gardening-website-template/",
+    "rights": "licensed",
+    "rightsEvidence": "CC BY 4.0 template license retained locally.",
+    "rightsEvidencePath": "rights/LICENSE.md",
+    "assetEvidencePaths": [
+      "rights/ASSET-PROVENANCE.md"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/SOURCE-README.md",
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "retrievedAt": "2026-10-26",
+    "capture": "Full-page desktop and mobile captures from the publisher demo at 1440x1000 and 390x844.",
+    "attribution": "Gardener gardening website template, CC BY 4.0."
+  },
+  "businessKinds": [
+    "landscaping",
+    "garden-design",
+    "lawn-care",
+    "property-maintenance",
+    "local-trades",
+    "home-services"
+  ],
+  "tags": {
+    "business": [
+      "landscaping",
+      "garden-design",
+      "lawn-care",
+      "property-maintenance",
+      "local-trades",
+      "home-services"
+    ],
+    "style": [
+      "photographic-service-led",
+      "deep-green-and-leaf",
+      "bold-sans",
+      "project-proof"
+    ],
+    "composition": [
+      "photo-led-opening",
+      "service-card-grid",
+      "project-or-team-proof",
+      "contact-close"
+    ],
+    "conversion": [
+      "quote-request",
+      "direct-contact",
+      "service-selection"
+    ],
+    "motion": [
+      "native-menu",
+      "card-hover",
+      "image-reveal"
+    ],
+    "imagery": [
+      "garden-photography",
+      "service-icons",
+      "demo-people-not-client-staff"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "sha256": "9d998ac9ba53cdc26ac77b70d40e404213a3e297401e9e68088fb5fb93f4a9fd"
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sha256": "839dba36052b15b0c429fbbfdcda4b56ebea8967701670bc55f6c04d03689a9b"
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "Gardener gardening website template, CC BY 4.0. Demo content is reference-only.",
+    "heroGeometry": {
+      "mode": "media-overlay",
+      "alignment": "garden image with the promise and primary quote action",
+      "viewport": "promise, supporting line and primary action remain visible in the opening desktop viewport"
+    },
+    "navigationGeometry": {
+      "mode": "wordmark and direct service navigation",
+      "placement": "compact top bar over the opening image",
+      "mobile": "wordmark and menu control remain visible; navigation stacks without covering the promise"
+    },
+    "typography": {
+      "display": "bold sans headings with a direct local-service voice",
+      "body": "readable neutral sans",
+      "scale": "large opening statement, compact section labels and readable service metadata"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "pale garden neutral",
+        "deep forest green"
+      ],
+      "ink": "deep evergreen",
+      "accents": [
+        "leaf green"
+      ],
+      "contrastIntent": "dark green actions on light surfaces with legible body copy"
+    },
+    "imageTreatment": {
+      "mode": "wide garden photography and approved service imagery",
+      "crop": "full-bleed opening; contained project and team images",
+      "focalPoint": "gardens and planting detail; source people are never client staff"
+    },
+    "sectionSequence": [
+      "navigation",
+      "opening",
+      "trust-proof",
+      "story",
+      "service-catalog",
+      "portfolio",
+      "crew",
+      "proof",
+      "contact",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "service grid with concise scope and a clear contact close",
+      "interaction": "static service grid; navigation and quote action remain usable without motion"
+    },
+    "ctaPlacement": {
+      "primary": "quote or contact action in the opening and contact close",
+      "secondary": "service navigation in the header",
+      "early": "below the full-bleed opening promise"
+    },
+    "motion": {
+      "primitive": "native menu, card hover and image reveal",
+      "library": "static HTML/CSS in the source; no runtime dependency is required",
+      "reducedMotion": "all services, contact details and imagery remain visible without transitions"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the opening, services and contact while keeping the primary action visible",
+      "rules": [
+        "keep the promise and quote action before long service detail",
+        "collapse the navigation into a readable menu",
+        "stack service cards without horizontal page overflow",
+        "preserve image crops inside their containers"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying source branding, copy, demo people, phone numbers, prices, reviews or project claims",
+      "presenting template people or garden photography as client staff, customers or completed work",
+      "inventing licenses, guarantees, service windows or coverage",
+      "using a generic identical card wall for every chapter"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "full-bleed-garden-hero",
+        "selector": "[data-reference-signature=full-bleed-garden-hero]",
+        "description": "a full-bleed garden photograph carries the opening promise and primary quote action"
+      },
+      {
+        "id": "service-card-grid",
+        "selector": "[data-reference-signature=service-card-grid]",
+        "description": "core services appear as a clear icon-led grid with short factual descriptions"
+      },
+      {
+        "id": "project-gallery",
+        "selector": "[data-reference-signature=project-gallery]",
+        "description": "completed work or approved garden imagery appears in a project gallery"
+      }
+    ],
+    "acceptanceChecks": [
+      "the opening promise and primary action are visible at desktop and mobile widths",
+      "the service grid follows the opening and is grounded in client services",
+      "template people are never presented as client staff or customers",
+      "the contact action is real and uses only approved client details",
+      "the rendered page has no horizontal overflow at 390px and 320px"
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "medium",
+      "secondaryPatterns": [],
+      "note": null,
+      "mobileTreatmentChanged": false
+    },
+    "complete": true,
+    "incompleteReasons": []
+  }
+}

@@ -188,6 +188,52 @@ describe("trusted attempt producer", () => {
       ),
     ).not.toMatch(/hidden-secret|hidden-key/);
   });
+  it("records explicit stage transitions and failure context", () => {
+    const stagePayload = buildAttemptTrackingPayload({
+      "run-id": "9001",
+      "run-attempt": "2",
+      profile: "full",
+      "execution-status": "running",
+      "delivery-status": "none",
+      "observed-at": "2000",
+      "triggering-actor": "qa-operator",
+      "request-id": "request-123",
+      "attempt-id": "3f2061c4-691a-4d47-ab4d-b90483ea8d9a",
+      issue: "184",
+      stage: "authoring",
+      "stage-status": "started",
+      "stage-detail": "Authoring independent candidates.",
+    });
+    expect(stagePayload?.events).toContainEqual(
+      expect.objectContaining({
+        eventKey: "stage:authoring:started:2000",
+        stage: "authoring",
+        status: "started",
+        detail: "Authoring independent candidates.",
+      }),
+    );
+    const failurePayload = buildAttemptTrackingPayload({
+      "run-id": "9001",
+      "run-attempt": "2",
+      profile: "full",
+      "execution-status": "failed",
+      "delivery-status": "none",
+      "observed-at": "3000",
+      "triggering-actor": "qa-operator",
+      issue: "184",
+      failure: "Generation workflow stopped before a preview was ready.",
+      "failure-stage": "authoring",
+      "failure-category": "creative_authoring",
+      "failure-next-step": "Inspect the rejected candidate source.",
+    });
+    expect(failurePayload?.observation.failure).toMatchObject({
+      summary: "Generation workflow stopped before a preview was ready.",
+      stage: "authoring",
+      category: "creative_authoring",
+      nextStep: "Inspect the rejected candidate source.",
+    });
+  });
+
   it("uses explicit attempt flags without changing legacy action/status semantics", () => {
     const args = {
       "run-id": "9001",

@@ -251,6 +251,7 @@ jobs:
       TRACK_REQUEST: ${{ github.event.client_payload.request_id }}
       TRACK_ATTEMPT: ${{ github.run_attempt == 1 && github.event.client_payload.attempt_id || '' }}
       TRACK_ACTOR: ${{ github.triggering_actor }}
+      TRACK_ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
       FAL_IMAGE_USD_PER_IMAGE: ${{ vars.FAL_IMAGE_USD_PER_IMAGE }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
       # Developer preview emails route Access-protected previews through the
@@ -360,6 +361,9 @@ jobs:
           echo "research_cost=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')" >> "$GITHUB_OUTPUT"
           echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "No measured queries")')" >> "$GITHUB_OUTPUT"
           node -e 'const x=require("/tmp/seo-research.json"); const web=x.fallbackSearch || {}; const observed=(x.externalSearchEvidence || []).length; const state=x.publishReady ? "Measured SEO research is complete. Production approval is available." : observed ? "Cited web observations are available for review, but measured SEO is incomplete. Production approval remains blocked." : "SEO research is incomplete. This preview can be reviewed; production approval remains blocked until measured research completes."; const fallback=web.status && web.status !== "unavailable" ? `\nFallback web search: ${web.status}; ${observed} cited observation(s) from ${web.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(web.costUsd || 0).toFixed(5)} / USD ${Number(web.maxUsd || 0).toFixed(2)} cap${web.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}.` : "\nFallback web search: unavailable."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}${fallback}\nMeasured queries: ${(x.validatedQueries || []).filter(item => item.volume !== null || item.kd !== null || item.intent !== null).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "None"}\nRecorded DataForSEO cost: ${Number(x.cost?.usd || 0).toFixed(5)}`)'
+      - name: Record intake stage
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage intake --status completed --detail "Intake parsed and site configuration prepared."
       - name: Record SEO research result
         continue-on-error: true
         env:
@@ -381,6 +385,9 @@ jobs:
             --slug "${{ steps.intake.outputs.slug }}" \
             --status generating \
             --cost-summary /tmp/seo-cost.json
+      - name: Record seo research stage
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage seo_research --status completed --detail "SEO research and cost summary recorded."
       - name: Reject synthetic demos from the production intake path
         run: node scripts/assert-client-generation-mode.mjs --config /tmp/site.config.json --profile full
       # Reserve visual routes against the latest main history before expensive
@@ -446,6 +453,12 @@ jobs:
             echo "::error title=Inspiration reservation failed::Could not atomically reserve a fresh inspiration pack after three attempts."
             exit 1
           fi
+      - name: Record inspiration selection stage
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage inspiration_selection --status completed --detail "Production reference routes reserved."
+      - name: Record reference analysis started
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage reference_analysis --status started --detail "Analyzing reference evidence and freezing the creative session."
       - name: Analyze reserved inspiration and freeze creative session
         env:
           LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
@@ -484,6 +497,9 @@ jobs:
             echo "reasoning_recommended=static" >> "$GITHUB_OUTPUT"
             echo "reasoning_fallback=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Record reference analysis stage
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage reference_analysis --status completed --detail "Reference DNA analyzed and creative session frozen."
       - name: Create private repository and Cloudflare Pages project
         id: client
         run: |
@@ -516,6 +532,9 @@ jobs:
           echo "project=$PROJECT" >> "$GITHUB_OUTPUT"
           echo "repo=$CLIENT_REPO" >> "$GITHUB_OUTPUT"
           echo "feedback_issue=${INBOX##*/}" >> "$GITHUB_OUTPUT"
+      - name: Record client repo stage
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage client_repo --status completed --detail "Private client repository and Pages project prepared."
       - name: Build private review branch
         id: branch
         run: |
@@ -609,6 +628,9 @@ jobs:
           fi
           echo "dir=$CLIENT_DIR" >> "$GITHUB_OUTPUT"
           echo "pr=${PR##*/}" >> "$GITHUB_OUTPUT"
+      - name: Record review branch stage
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage review_branch --status completed --detail "Private review branch created."
       - name: Generate or reuse contextual imagery
         id: assets
         timeout-minutes: 12
@@ -635,6 +657,12 @@ jobs:
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
           node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
+      - name: Record imagery stage
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage imagery --status completed --detail "Contextual imagery generated or reviewed fallback retained."
+      - name: Record authoring started
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage authoring --status started --detail "Authoring independent experience candidates."
       - name: Author independent experience candidates
         id: authoring
         # Luna authors three independent candidates in separate stages, now
@@ -666,6 +694,9 @@ jobs:
               "${SESSION_ARGS[@]}" \
               --failure-mode throw
           fi
+      - name: Record authoring stage
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage authoring --status completed --detail "Independent experience candidates authored."
       - name: Commit authored experience evidence
         id: authored_evidence
         run: |
@@ -682,6 +713,12 @@ jobs:
             git commit -m "Record authored experience candidates"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
+      - name: Record authored evidence stage
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage authored_evidence --status completed --detail "Authored candidate evidence committed."
+      - name: Record creative render started
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage creative_render --status started --detail "Rendering and repairing creative candidates."
       - name: Render and repair creative candidates in the production shell
         id: creative_render
         run: |
@@ -715,6 +752,9 @@ jobs:
             git commit -m "Render and repair creative experience candidates"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
+      - name: Record creative render stage
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage creative_render --status completed --detail "Creative candidates rendered and repaired."
       - name: Prepare private creative-recovery report
         id: creative_recovery
         if: failure() && steps.branch.outputs.dir != '' && (steps.authoring.outcome == 'failure' || steps.creative_render.outcome == 'failure' || steps.authored_evidence.outcome == 'failure')
@@ -797,6 +837,9 @@ jobs:
             --source-sha "$(git rev-parse HEAD)")
           PREVIEW=$(printf '%s' "$PREVIEW_RESULT" | jq -er '.url')
           echo "preview=$PREVIEW" >> "$GITHUB_OUTPUT"
+      - name: Record diagnostic preview stage
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage diagnostic_preview --status completed --detail "Noindex diagnostic preview deployed."
       - name: Register one-time repair session and create signed review link
         id: creative_repair_link
         if: always() && steps.creative_recovery.outputs.repair_available == 'true'
@@ -853,6 +896,9 @@ jobs:
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-creative-recovery -->' '## Creative preview needs another pass' 'The authored candidate did not clear all quality checks. Review the rendered findings and request the single final repair here:' "$REVIEW_LINK")"
           echo "link=$REVIEW_LINK" >> "$GITHUB_OUTPUT"
           echo "preview=$DIAGNOSTIC_PREVIEW_URL" >> "$GITHUB_OUTPUT"
+      - name: Record preview deploy started
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage preview_deploy --status started --detail "Building and uploading the public preview."
       - name: Build and direct-upload public preview
         id: deploy
         run: |
@@ -906,6 +952,9 @@ jobs:
           echo "sha=$FINAL_BUILD_SHA" >> "$GITHUB_OUTPUT"
       # Recording previews keeps rotation useful during internal testing. A
       # failure here must not block generation, preview deployment, or handoff.
+      - name: Record preview deploy stage
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage preview_deploy --status completed --detail "Public preview deployed."
       - name: Record launch signature for rotation
         if: github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main'
         env:
@@ -970,6 +1019,9 @@ jobs:
             --cost-summary /tmp/generation-cost.json \
             --hero "$RUNNER_TEMP/initial-screenshots/desktop.png" \
             --completed-at "$(date +%s%3N)"
+      - name: Record preview ready stage
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage preview_ready --status completed --detail "Preview ready state recorded."
       - name: Create secure review link
         id: review
         run: |
@@ -1051,6 +1103,12 @@ jobs:
             DELIVERY=diagnostic
             FAILURE="The authored candidate needs its one-shot repair. A diagnostic preview and review link were issued to the developer."
           fi
+          FAILURE_STAGE=workflow
+          FAILURE_CATEGORY=workflow
+          if [ "${{ steps.authoring.outcome }}" = "failure" ]; then
+            FAILURE_STAGE=authoring
+            FAILURE_CATEGORY=creative_authoring
+          fi
           node scripts/record-generation-event.mjs \
             --action complete \
             --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --profile full \
@@ -1060,5 +1118,9 @@ jobs:
             --submission-id "$SUBMISSION_ID" \
             --client-email "$CLIENT_EMAIL" \
             --status "$STATUS" \
+            --stage "$FAILURE_STAGE" --stage-status failed --stage-detail "$FAILURE" \
             --failure "$FAILURE" \
+            --failure-stage "$FAILURE_STAGE" \
+            --failure-category "$FAILURE_CATEGORY" \
+            --failure-next-step "Inspect the Actions run and the private candidate evidence." \
             --completed-at "$(date +%s%3N)"
