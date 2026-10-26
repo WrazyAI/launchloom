@@ -299,7 +299,11 @@ describe("hero failure status", () => {
     try {
       const child = spawn(process.execPath, heroCliArgs(port, heroFile), {
         cwd: process.cwd(),
-        env: { ...process.env, GITHUB_REPOSITORY: "WrazyAI/launchloom" },
+        env: {
+          ...process.env,
+          GITHUB_REPOSITORY: "WrazyAI/launchloom",
+          GITHUB_STEP_SUMMARY: "",
+        },
       });
       let stderr = "";
       child.stderr.on("data", (chunk) => {
@@ -376,7 +380,11 @@ describe("hero failure status", () => {
     try {
       const child = spawn(process.execPath, heroCliArgs(port, heroFile), {
         cwd: process.cwd(),
-        env: { ...process.env, GITHUB_REPOSITORY: "WrazyAI/launchloom" },
+        env: {
+          ...process.env,
+          GITHUB_REPOSITORY: "WrazyAI/launchloom",
+          GITHUB_STEP_SUMMARY: "",
+        },
       });
       let stdout = "";
       child.stdout.on("data", (chunk) => {
