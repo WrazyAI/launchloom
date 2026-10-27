@@ -305,7 +305,13 @@ export type SiteConfig = {
       variantId?: string;
       internal?: boolean;
       blueprintVersion?: 2;
-      renderer?: "reviewed-pack" | "creative-candidate" | "legacy" | string;
+      renderer?:
+        | "reviewed-pack"
+        | "creative-candidate"
+        | "foundation"
+        | "legacy"
+        | string;
+      foundationId?: string;
       candidateId?: string;
       routeId?: string;
       familyId?: string;

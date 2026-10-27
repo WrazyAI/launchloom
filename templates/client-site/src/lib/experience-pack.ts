@@ -1065,6 +1065,10 @@ function contentFor(site: SiteConfig): ExperienceContent {
   };
 }
 
+export function compileFoundationContent(site: SiteConfig): ExperienceContent {
+  return contentFor(site);
+}
+
 function describePack(id: ExperiencePackId) {
   const definition = packs[id];
   return {

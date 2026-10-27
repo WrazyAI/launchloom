@@ -1,0 +1,185 @@
+{
+  "preset": "home-services",
+  "industry": "home-services",
+  "businessKind": "painting",
+  "business": {
+    "name": "Northline Painting Co.",
+    "tagline": "Rooms that feel finished, not rushed.",
+    "description": "Northline Painting helps homeowners plan interior and exterior painting with a clear scope, careful preparation, and a finish that holds up to daily life. Start with the rooms or surfaces you want to change and the timing you have in mind.",
+    "phone": "(555) 010-0188",
+    "email": "hello@northlinepainting.example",
+    "address": "",
+    "serviceAreas": ["Millbrook", "Oakwood", "Cedar Bend"],
+    "hours": "Monday to Friday, 8am to 5pm",
+    "primaryCta": "Request an estimate",
+    "offer": "A site visit and a written scope before work begins",
+    "domain": "northlinepainting.example",
+    "leadEmail": "hello@northlinepainting.example"
+  },
+  "style": {
+    "primaryColor": "#B69A58",
+    "surfaceColor": "#F2F1EC",
+    "heroColor": "#E7E3DA",
+    "inkColor": "#11110F",
+    "mutedColor": "#5F5A50",
+    "lineColor": "#D5D0C4",
+    "tone": "editorial"
+  },
+  "design": {
+    "recipe": "local-trades",
+    "sections": []
+  },
+  "services": [
+    {
+      "name": "Interior painting",
+      "slug": "interior-painting",
+      "description": "Careful preparation and a durable finish for walls, ceilings, trim, and doors.",
+      "decisionSupport": {
+        "scope": "Discuss the rooms, surfaces, current condition, and the finish you want before the scope is set.",
+        "nextStep": "A site visit confirms the preparation and the number of coats the surfaces need.",
+        "preparation": "Clear small items and note any repairs, stains, or areas that need special attention."
+      }
+    },
+    {
+      "name": "Exterior painting",
+      "slug": "exterior-painting",
+      "description": "Surface preparation and exterior coatings planned around the material and the weather.",
+      "decisionSupport": {
+        "scope": "Review the siding, trim, doors, and any areas showing peeling, cracking, or moisture.",
+        "nextStep": "The site visit confirms access, preparation, and the right coating system for the surface.",
+        "preparation": "Note any areas that leak, blister, or have been repaired recently."
+      }
+    },
+    {
+      "name": "Cabinet refinishing",
+      "slug": "cabinet-refinishing",
+      "description": "A refreshed finish for kitchen and built-in cabinets without replacing the boxes.",
+      "decisionSupport": {
+        "scope": "Discuss the cabinet material, current finish, door style, and the color direction.",
+        "nextStep": "The team reviews the boxes, doors, and hardware before confirming the refinishing scope.",
+        "preparation": "Empty the cabinets and remove small hardware if the project is scheduled."
+      }
+    },
+    {
+      "name": "Color consultation",
+      "slug": "color-consultation",
+      "description": "A practical color review for the room, the light, and the finishes already in place.",
+      "decisionSupport": {
+        "scope": "Share the room, the fixed finishes, and the mood you want the space to have.",
+        "nextStep": "The consultation narrows the palette and tests the colors in the actual light.",
+        "preparation": "Bring photos of the room and any fabrics, tiles, or wood samples you want to coordinate."
+      }
+    }
+  ],
+  "differentiators": [
+    "A written scope before work begins",
+    "Preparation treated as part of the job",
+    "One crew from protection to final walkthrough",
+    "Service areas confirmed by address"
+  ],
+  "locations": [
+    {
+      "name": "Millbrook",
+      "slug": "millbrook",
+      "description": "Interior and exterior painting requests are available for Millbrook properties.",
+      "localNote": "Millbrook is a service area. Share the property address so the team can confirm coverage."
+    },
+    {
+      "name": "Oakwood",
+      "slug": "oakwood",
+      "description": "Northline accepts painting and color consultation requests from Oakwood homeowners.",
+      "localNote": "Coverage is confirmed using the Oakwood property address and the work being considered."
+    },
+    {
+      "name": "Cedar Bend",
+      "slug": "cedar-bend",
+      "description": "Cedar Bend properties can request interior, exterior, and cabinet painting consultations.",
+      "localNote": "Cedar Bend is a service area, not an office. Share the address to confirm the visit."
+    }
+  ],
+  "images": {
+    "hero": "https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=1600&q=85",
+    "secondary": "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=1200&q=85",
+    "tertiary": "https://images.unsplash.com/photo-1595814433015-e6f5ce69614e?auto=format&fit=crop&w=1200&q=85"
+  },
+  "copy": {
+    "heroKicker": "Interior and exterior painting in the Millbrook area",
+    "heroHeading": "Rooms that feel finished, not rushed.",
+    "heroBody": "Northline plans the preparation, the finish, and the walkthrough before the first brush touches the wall.",
+    "servicesHeading": "Start with the surface. Then choose the finish.",
+    "servicesIntro": "Every project begins with the condition of the surface and the way the room will be used.",
+    "aboutKicker": "A finish that holds up",
+    "aboutHeading": "Preparation is part of the job.",
+    "aboutBody": "Northline reviews the surfaces, the existing finishes, and the way the space is used before recommending a coating system. The scope names the preparation, the number of coats, and the final walkthrough so the result is not left to interpretation.",
+    "processKicker": "From first visit to final walkthrough",
+    "processHeading": "A clear path from first visit to final walkthrough.",
+    "faqKicker": "Practical answers",
+    "faqHeading": "Questions before the first visit.",
+    "contactKicker": "Tell us about the space",
+    "contactHeading": "Request an estimate",
+    "formIntro": "Share the property address and the rooms or surfaces you are considering so the team can confirm coverage and the next step."
+  },
+  "conversion": {
+    "layout": "local-proof",
+    "qualification": [
+      {
+        "name": "service",
+        "label": "What kind of painting are you considering?",
+        "placeholder": "Select a service",
+        "options": [
+          "Interior painting",
+          "Exterior painting",
+          "Cabinet refinishing",
+          "Color consultation",
+          "Not sure yet"
+        ]
+      },
+      {
+        "name": "timing",
+        "label": "When would you like to start?",
+        "placeholder": "Select timing",
+        "options": ["As soon as possible", "This season", "Planning ahead"]
+      }
+    ],
+    "process": [
+      "Walk the space and review the surfaces",
+      "Agree the preparation and finish",
+      "Schedule the work and the final walkthrough"
+    ],
+    "faqs": [
+      {
+        "question": "What is included in the estimate?",
+        "answer": "The estimate names the surfaces, the preparation, the coating system, and the final walkthrough. Any repair work outside that scope is discussed before it is added."
+      },
+      {
+        "question": "How is service-area coverage confirmed?",
+        "answer": "Share the full property address. The team will confirm current coverage and availability before scheduling a visit."
+      },
+      {
+        "question": "Do I need to move furniture?",
+        "answer": "Small items should be cleared before the work starts. The crew protects the floors and larger furniture as part of the preparation."
+      }
+    ],
+    "guidedQualifier": {
+      "enabled": true,
+      "heading": "Tell us about the space",
+      "intro": "Choose the closest options so the team can understand the work before following up."
+    },
+    "quickAnswers": {
+      "enabled": true,
+      "label": "Quick answers",
+      "greeting": "Welcome to Northline Painting Co. How can we help?",
+      "items": [],
+      "ctaLabel": "Request an estimate",
+      "ctaTarget": "#contact"
+    },
+    "exitOffer": {
+      "enabled": true,
+      "eyebrow": "Before you go",
+      "heading": "Request a site visit and a written scope",
+      "body": "Share the property address and the work you are considering so the team can confirm the next step.",
+      "ctaLabel": "Request an estimate",
+      "ctaTarget": "#contact"
+    }
+  }
+}
