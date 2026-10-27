@@ -4,6 +4,10 @@ import { sendEmail, type TransactionalEmailEnvironment } from "./transactional-e
 import type { ActorSnapshot, AcceptedIntake, InviteFilters, InviteSummary, Page } from "../../src/lib/admin-contracts";
 import type { GenerationLedger } from "./generation-ledger";
 import { pageRecords } from "./admin/pagination";
+import type {
+  AcceptanceRoutingMode,
+  InviteReservation,
+} from "./operations/acceptance";
 
 const unknownActor: ActorSnapshot = {kind:"unknown",id:null,name:null,email:null,source:"legacy"};
 type Snapshot = { businessName: string; contactName?: string | null; email: string; phone?: string | null };
@@ -51,6 +55,12 @@ type InviteRow = {
   reserved_submission_hash: string | null;
   reserved_at: number | null;
   reservation_phase: "reserved" | "creating_issue";
+  routing_mode: AcceptanceRoutingMode;
+  acceptance_state: "legacy" | "unconfirmed" | "confirmed";
+  accepted_intake_id: string | null;
+  accepted_request_id: string | null;
+  accepted_attempt_id: string | null;
+  accepted_operation_id: string | null;
   submission_id: string | null;
   submission_hash: string | null;
   issue_number: number | null;
@@ -107,6 +117,12 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
           reserved_submission_hash TEXT,
           reserved_at INTEGER,
           reservation_phase TEXT NOT NULL DEFAULT 'reserved',
+          routing_mode TEXT NOT NULL DEFAULT 'legacy' CHECK(routing_mode IN ('legacy','postgres')),
+          acceptance_state TEXT NOT NULL DEFAULT 'legacy' CHECK(acceptance_state IN ('legacy','unconfirmed','confirmed')),
+          accepted_intake_id TEXT,
+          accepted_request_id TEXT,
+          accepted_attempt_id TEXT,
+          accepted_operation_id TEXT,
           submission_id TEXT,
           submission_hash TEXT,
           issue_number INTEGER,
@@ -170,6 +186,18 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         );
       }
       for (const [name, declaration] of [
+        [
+          "routing_mode",
+          "TEXT NOT NULL DEFAULT 'legacy' CHECK(routing_mode IN ('legacy','postgres'))",
+        ],
+        [
+          "acceptance_state",
+          "TEXT NOT NULL DEFAULT 'legacy' CHECK(acceptance_state IN ('legacy','unconfirmed','confirmed'))",
+        ],
+        ["accepted_intake_id", "TEXT"],
+        ["accepted_request_id", "TEXT"],
+        ["accepted_attempt_id", "TEXT"],
+        ["accepted_operation_id", "TEXT"],
         ["operation_id", "TEXT"],
         ["recovery_page", "INTEGER NOT NULL DEFAULT 1"],
         ["recovery_sweeps", "INTEGER NOT NULL DEFAULT 0"],
@@ -545,6 +573,24 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     };
   }
 
+  private acceptanceIds(row: InviteRow): InviteReservation["acceptance"] {
+    if (
+      row.acceptance_state !== "confirmed" ||
+      !row.accepted_intake_id ||
+      !row.accepted_request_id ||
+      !row.accepted_attempt_id ||
+      !row.accepted_operation_id
+    )
+      return null;
+    return {
+      intakeId: row.accepted_intake_id,
+      requestId: row.accepted_request_id,
+      attemptId: row.accepted_attempt_id,
+      operationId: row.accepted_operation_id,
+      created: false,
+    };
+  }
+
   async reserveSubmission(
     inviteId: string,
     tokenHash: string,
@@ -554,16 +600,42 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     submissionHash: string,
     clientEmail: string,
     now = Date.now(),
+    routingMode: AcceptanceRoutingMode = "legacy",
   ) {
     const row = this.row(inviteId);
-    if (!row) return { accepted: false as const, reason: "invalid" as const };
-    if (row.status === "unused" && row.expires_at <= now) {
+    if (!row)
+      return {
+        accepted: false as const,
+        reason: "invalid" as const,
+        mode: routingMode,
+        state: routingMode === "postgres" ? ("unconfirmed" as const) : ("legacy" as const),
+        fingerprint: submissionHash,
+        expired: false,
+        acceptance: null,
+      };
+    // A Postgres reservation whose commit may have succeeded is never released
+    // by credential expiry. Expiry only blocks a new legacy reservation.
+    const postgresReservation =
+      row.routing_mode === "postgres" && row.reserved_submission_id !== null;
+    if (
+      row.status === "unused" &&
+      row.expires_at <= now &&
+      !postgresReservation
+    ) {
       this.ctx.storage.sql.exec(
         "UPDATE onboarding_invites SET status = 'expired', updated_at = ? WHERE invite_id = ? AND status = 'unused'",
         now,
         inviteId,
       );
-      return { accepted: false as const, reason: "expired" as const };
+      return {
+        accepted: false as const,
+        reason: "expired" as const,
+        mode: routingMode,
+        state: routingMode === "postgres" ? ("unconfirmed" as const) : ("legacy" as const),
+        fingerprint: submissionHash,
+        expired: true,
+        acceptance: null,
+      };
     }
     if (
       row.token_hash !== tokenHash ||
@@ -572,7 +644,71 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       (row.client_email &&
         row.client_email.toLowerCase() !== clientEmail.toLowerCase())
     )
-      return { accepted: false as const, reason: "invalid" as const };
+      return {
+        accepted: false as const,
+        reason: "invalid" as const,
+        mode: routingMode,
+        state: routingMode === "postgres" ? ("unconfirmed" as const) : ("legacy" as const),
+        fingerprint: submissionHash,
+        expired: false,
+        acceptance: null,
+      };
+    if (postgresReservation) {
+      const expired = row.expires_at <= now;
+      const base = {
+        accepted: true as const,
+        mode: "postgres" as const,
+        fingerprint: row.reserved_submission_hash || "",
+        expired,
+      };
+      if (row.reserved_submission_id !== submissionId)
+        return {
+          accepted: false as const,
+          reason: "in_progress" as const,
+          mode: "postgres" as const,
+          state: row.acceptance_state === "confirmed" ? ("confirmed" as const) : ("unconfirmed" as const),
+          fingerprint: row.reserved_submission_hash || "",
+          expired,
+          acceptance: null,
+        };
+      // Never rebind or release an unconfirmed Postgres reservation. A changed
+      // submission must first be reconciled against the durable commit.
+      if (row.reserved_submission_hash !== submissionHash)
+        return {
+          accepted: false as const,
+          reason: "submission_mismatch" as const,
+          mode: "postgres" as const,
+          state: row.acceptance_state === "confirmed" ? ("confirmed" as const) : ("unconfirmed" as const),
+          fingerprint: row.reserved_submission_hash || "",
+          expired,
+          acceptance: null,
+        };
+      if (row.acceptance_state === "confirmed")
+        return {
+          ...base,
+          duplicate: true as const,
+          state: "confirmed" as const,
+          acceptance: this.acceptanceIds(row),
+        };
+      // Bounded recovery after any lease/credential expiry keeps the same owner.
+      this.ctx.storage.sql.exec(
+        `UPDATE onboarding_invites SET reserved_at = ?, updated_at = ?
+         WHERE invite_id = ? AND status = 'unused' AND routing_mode = 'postgres'
+           AND reserved_submission_id = ? AND reserved_submission_hash = ?
+           AND acceptance_state = 'unconfirmed'`,
+        now,
+        now,
+        inviteId,
+        submissionId,
+        submissionHash,
+      );
+      return {
+        ...base,
+        duplicate: false as const,
+        state: "unconfirmed" as const,
+        acceptance: null,
+      };
+    }
     if (row.status === "consumed") {
       return row.submission_id === submissionId &&
         row.submission_hash === submissionHash &&
@@ -581,6 +717,11 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
             accepted: true as const,
             duplicate: true as const,
             issue: row.issue_number,
+            mode: row.routing_mode,
+            state: row.acceptance_state,
+            fingerprint: row.submission_hash || "",
+            expired: false,
+            acceptance: this.acceptanceIds(row),
           }
         : {
             accepted: false as const,
@@ -588,19 +729,45 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
               row.submission_id === submissionId
                 ? ("submission_mismatch" as const)
                 : ("consumed" as const),
+            mode: row.routing_mode,
+            state: row.acceptance_state,
+            fingerprint: row.submission_hash || "",
+            expired: false,
+            acceptance: null,
           };
     }
     if (row.status !== "unused")
-      return { accepted: false as const, reason: row.status };
+      return {
+        accepted: false as const,
+        reason: row.status,
+        mode: row.routing_mode,
+        state: row.acceptance_state,
+        fingerprint: row.reserved_submission_hash || "",
+        expired: false,
+        acceptance: null,
+      };
     if (row.reserved_submission_id) {
       // Never retroactively assign an owner to a pre-migration ambiguous operation.
       if (!row.operation_id || row.recovery_sweeps >= 3)
         return {
           accepted: false as const,
           reason: "recovery_required" as const,
+          mode: row.routing_mode,
+          state: row.acceptance_state,
+          fingerprint: row.reserved_submission_hash || "",
+          expired: false,
+          acceptance: null,
         };
       if (row.reserved_submission_id !== submissionId)
-        return { accepted: false as const, reason: "in_progress" as const };
+        return {
+          accepted: false as const,
+          reason: "in_progress" as const,
+          mode: row.routing_mode,
+          state: row.acceptance_state,
+          fingerprint: row.reserved_submission_hash || "",
+          expired: false,
+          acceptance: null,
+        };
       const stale =
         row.reserved_at !== null && now - row.reserved_at >= 2 * 60_000;
       if (row.reserved_submission_hash !== submissionHash) {
@@ -609,11 +776,21 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
             accepted: false as const,
             reason: "stale_submission_mismatch" as const,
             reservedSubmissionHash: row.reserved_submission_hash,
+            mode: "legacy" as const,
+            state: "legacy" as const,
+            fingerprint: row.reserved_submission_hash || "",
+            expired: false,
+            acceptance: null,
           };
         }
         return {
           accepted: false as const,
           reason: "submission_mismatch" as const,
+          mode: "legacy" as const,
+          state: "legacy" as const,
+          fingerprint: row.reserved_submission_hash || "",
+          expired: false,
+          acceptance: null,
         };
       }
       if (stale && row.reservation_phase === "reserved") {
@@ -631,6 +808,11 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
           accepted: true as const,
           duplicate: false as const,
           issue: null,
+          mode: "legacy" as const,
+          state: "legacy" as const,
+          fingerprint: row.reserved_submission_hash || "",
+          expired: false,
+          acceptance: null,
         };
       }
       if (stale && row.reservation_phase === "creating_issue")
@@ -638,21 +820,167 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
           accepted: true as const,
           duplicate: false as const,
           issue: null,
+          mode: "legacy" as const,
+          state: "legacy" as const,
+          fingerprint: row.reserved_submission_hash || "",
+          expired: false,
+          acceptance: null,
         };
-      return { accepted: false as const, reason: "in_progress" as const };
+      return {
+        accepted: false as const,
+        reason: "in_progress" as const,
+        mode: "legacy" as const,
+        state: "legacy" as const,
+        fingerprint: row.reserved_submission_hash || "",
+        expired: false,
+        acceptance: null,
+      };
     }
+    const postgres = routingMode === "postgres";
     this.ctx.storage.sql.exec(
-      `UPDATE onboarding_invites SET reserved_submission_id = ?, reserved_submission_hash = ?, reserved_at = ?, reservation_phase = 'reserved', operation_id = ?, recovery_page = 1, recovery_sweeps = 0, recovery_lease = NULL, recovery_lease_until = 0, submitter_email = COALESCE(submitter_email, ?), updated_at = ?
+      `UPDATE onboarding_invites SET reserved_submission_id = ?, reserved_submission_hash = ?, reserved_at = ?, reservation_phase = 'reserved', operation_id = ?, routing_mode = ?, acceptance_state = ?, recovery_page = 1, recovery_sweeps = 0, recovery_lease = NULL, recovery_lease_until = 0, submitter_email = COALESCE(submitter_email, ?), updated_at = ?
        WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id IS NULL`,
       submissionId,
       submissionHash,
       now,
-      crypto.randomUUID(),
+      postgres ? null : crypto.randomUUID(),
+      routingMode,
+      postgres ? "unconfirmed" : "legacy",
       clientEmail.trim().toLowerCase() || null,
       now,
       inviteId,
     );
-    return { accepted: true as const, duplicate: false as const, issue: null };
+    return {
+      accepted: true as const,
+      duplicate: false as const,
+      issue: null,
+      mode: routingMode,
+      state: postgres ? ("unconfirmed" as const) : ("legacy" as const),
+      fingerprint: submissionHash,
+      expired: row.expires_at <= now,
+      acceptance: null,
+    };
+  }
+
+  /** Read-only routing evidence. It never creates or changes a reservation. */
+  async acceptanceRoutingMode(
+    inviteId: string,
+    submissionId: string,
+  ): Promise<AcceptanceRoutingMode | null> {
+    const row = this.row(inviteId);
+    if (!row) return null;
+    if (row.reserved_submission_id === submissionId) return row.routing_mode;
+    if (row.submission_id === submissionId) return row.routing_mode;
+    return null;
+  }
+
+  async acceptanceReservation(
+    inviteId: string,
+    submissionId: string,
+    now = Date.now(),
+  ): Promise<InviteReservation | null> {
+    const row = this.row(inviteId);
+    if (!row) return null;
+    if (row.reserved_submission_id !== submissionId) return null;
+    const expired = row.expires_at <= now;
+    if (row.routing_mode === "legacy")
+      return {
+        accepted: true,
+        duplicate: false,
+        mode: "legacy",
+        state: "legacy",
+        fingerprint: row.reserved_submission_hash || "",
+        expired,
+        acceptance: null,
+      };
+    const acceptance = this.acceptanceIds(row);
+    return {
+      accepted: true,
+      duplicate: row.acceptance_state === "confirmed",
+      mode: "postgres",
+      state: row.acceptance_state === "confirmed" ? "confirmed" : "unconfirmed",
+      fingerprint: row.reserved_submission_hash || "",
+      expired,
+      acceptance,
+    };
+  }
+
+  /**
+   * Durable DO side of the acceptance handshake. It binds the exact stable IDs
+   * and fingerprint and keeps uncertain ownership after credential expiry.
+   */
+  async confirmPostgresAcceptance(input: {
+    inviteId: string;
+    submissionId: string;
+    fingerprint: string;
+    acceptance: {
+      intakeId: string;
+      requestId: string;
+      attemptId: string;
+      operationId: string;
+    };
+    now?: number;
+  }): Promise<
+    | { confirmed: true; duplicate: boolean }
+    | {
+        confirmed: false;
+        reason: "reservation" | "identity" | "state" | "race";
+      }
+  > {
+    const now = input.now ?? Date.now();
+    const result = this.ctx.storage.transactionSync(():
+      | { confirmed: true; duplicate: boolean }
+      | {
+          confirmed: false;
+          reason: "reservation" | "identity" | "state" | "race";
+        } => {
+      const row = this.row(input.inviteId);
+      if (
+        !row ||
+        row.routing_mode !== "postgres" ||
+        row.reserved_submission_id !== input.submissionId ||
+        row.reserved_submission_hash !== input.fingerprint ||
+        row.status === "revoked"
+      )
+        return { confirmed: false, reason: "reservation" };
+      const sameIds =
+        row.accepted_intake_id === input.acceptance.intakeId &&
+        row.accepted_request_id === input.acceptance.requestId &&
+        row.accepted_attempt_id === input.acceptance.attemptId &&
+        row.accepted_operation_id === input.acceptance.operationId;
+      if (row.acceptance_state === "confirmed")
+        return sameIds
+          ? { confirmed: true, duplicate: true }
+          : { confirmed: false, reason: "identity" };
+      if (row.acceptance_state !== "unconfirmed")
+        return { confirmed: false, reason: "state" };
+      const updated = this.ctx.storage.sql
+        .exec<{ invite_id: string }>(
+          `UPDATE onboarding_invites
+           SET acceptance_state = 'confirmed', accepted_intake_id = ?,
+               accepted_request_id = ?, accepted_attempt_id = ?,
+               accepted_operation_id = ?, operation_id = ?,
+               reserved_at = ?, updated_at = ?
+           WHERE invite_id = ? AND status IN ('unused','expired')
+             AND routing_mode = 'postgres' AND reserved_submission_id = ?
+             AND reserved_submission_hash = ? AND acceptance_state = 'unconfirmed'
+           RETURNING invite_id`,
+          input.acceptance.intakeId,
+          input.acceptance.requestId,
+          input.acceptance.attemptId,
+          input.acceptance.operationId,
+          input.acceptance.operationId,
+          now,
+          now,
+          input.inviteId,
+          input.submissionId,
+          input.fingerprint,
+        )
+        .toArray();
+      if (updated.length !== 1) return { confirmed: false, reason: "race" };
+      return { confirmed: true, duplicate: false };
+    });
+    return result;
   }
 
   async rebindStaleReservation(
@@ -1202,6 +1530,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     const row = this.row(inviteId);
     if (
       !row ||
+      row.routing_mode === "postgres" ||
       row.reserved_submission_id !== submissionId ||
       row.reserved_submission_hash !== submissionHash ||
       row.issue_number
@@ -1224,6 +1553,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
        SET status = 'revoked', reserved_submission_id = NULL, reserved_submission_hash = NULL,
            reserved_at = NULL, reservation_phase = 'reserved', updated_at = ?
        WHERE invite_id = ? AND status = 'unused'
+         AND (routing_mode <> 'postgres' OR reserved_submission_id IS NULL)
          AND (reserved_submission_id IS NULL OR (reserved_at IS NOT NULL AND reserved_at <= ?))`,
       now,
       inviteId,

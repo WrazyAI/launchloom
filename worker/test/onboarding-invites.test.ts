@@ -706,6 +706,383 @@ describe("private onboarding invitations", () => {
       .resolves.toMatchObject({ accepted: false, reason: "revoked" });
   });
 
+  it("persists the Postgres routing mode at reservation and never switches on retry", async () => {
+    const inviteId = "invite-postgres-routing-001";
+    const submissionId = "submission-postgres-routing-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({
+      inviteId,
+      expiresAt,
+      allowedOrigins: [origin],
+    });
+    const digest = new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)),
+    );
+    const tokenHash = [...digest]
+      .map((part) => part.toString(16).padStart(2, "0"))
+      .join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-routing-flow");
+    await coordinator.register({
+      inviteId,
+      clientEmail: null,
+      expiresAt,
+      allowedOrigin: origin,
+      tokenHash,
+      now,
+    });
+
+    await expect(
+      coordinator.reserveSubmission(
+        inviteId,
+        tokenHash,
+        expiresAt,
+        origin,
+        submissionId,
+        "payload-hash-a",
+        "owner@example.test",
+        now,
+        "postgres",
+      ),
+    ).resolves.toMatchObject({
+      accepted: true,
+      mode: "postgres",
+      state: "unconfirmed",
+      expired: false,
+    });
+    // A later deployment may default the flag off. The persisted reservation wins.
+    await expect(
+      coordinator.reserveSubmission(
+        inviteId,
+        tokenHash,
+        expiresAt,
+        origin,
+        submissionId,
+        "payload-hash-a",
+        "owner@example.test",
+        now + 1,
+        "legacy",
+      ),
+    ).resolves.toMatchObject({
+      accepted: true,
+      mode: "postgres",
+      state: "unconfirmed",
+    });
+    await expect(
+      coordinator.acceptanceRoutingMode(inviteId, submissionId),
+    ).resolves.toBe("postgres");
+    await expect(
+      coordinator.acceptanceReservation(inviteId, submissionId),
+    ).resolves.toMatchObject({
+      mode: "postgres",
+      state: "unconfirmed",
+      fingerprint: "payload-hash-a",
+    });
+  });
+
+  it("confirms an exact Postgres reservation idempotently without consuming the invite", async () => {
+    const inviteId = "invite-postgres-confirm-001";
+    const submissionId = "submission-postgres-confirm-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({
+      inviteId,
+      expiresAt,
+      allowedOrigins: [origin],
+    });
+    const digest = new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)),
+    );
+    const tokenHash = [...digest]
+      .map((part) => part.toString(16).padStart(2, "0"))
+      .join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-confirm-flow");
+    await coordinator.register({
+      inviteId,
+      clientEmail: null,
+      expiresAt,
+      allowedOrigin: origin,
+      tokenHash,
+      now,
+    });
+    await coordinator.reserveSubmission(
+      inviteId,
+      tokenHash,
+      expiresAt,
+      origin,
+      submissionId,
+      "payload-hash-a",
+      "owner@example.test",
+      now,
+      "postgres",
+    );
+    const acceptance = {
+      intakeId: "11111111-1111-4111-8111-111111111111",
+      requestId: "22222222-2222-4222-8222-222222222222",
+      attemptId: "33333333-3333-4333-8333-333333333333",
+      operationId: "44444444-4444-4444-8444-444444444444",
+    };
+
+    await expect(
+      coordinator.confirmPostgresAcceptance({
+        inviteId,
+        submissionId,
+        fingerprint: "payload-hash-a",
+        acceptance,
+        now,
+      }),
+    ).resolves.toEqual({ confirmed: true, duplicate: false });
+    await expect(
+      coordinator.confirmPostgresAcceptance({
+        inviteId,
+        submissionId,
+        fingerprint: "payload-hash-a",
+        acceptance,
+        now: now + 1,
+      }),
+    ).resolves.toEqual({ confirmed: true, duplicate: true });
+    await expect(
+      coordinator.confirmPostgresAcceptance({
+        inviteId,
+        submissionId,
+        fingerprint: "payload-hash-a",
+        acceptance: {
+          ...acceptance,
+          intakeId: "55555555-5555-4555-8555-555555555555",
+        },
+        now: now + 2,
+      }),
+    ).resolves.toEqual({ confirmed: false, reason: "identity" });
+    await expect(
+      coordinator.confirmPostgresAcceptance({
+        inviteId,
+        submissionId,
+        fingerprint: "payload-hash-b",
+        acceptance,
+        now: now + 3,
+      }),
+    ).resolves.toEqual({ confirmed: false, reason: "reservation" });
+
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      const row = state.storage.sql
+        .exec<{
+          status: string;
+          issue_number: number | null;
+          reservation_phase: string;
+          acceptance_state: string;
+          accepted_intake_id: string;
+          accepted_operation_id: string;
+          operation_id: string;
+        }>(
+          "SELECT status, issue_number, reservation_phase, acceptance_state, accepted_intake_id, accepted_operation_id, operation_id FROM onboarding_invites WHERE invite_id = ?",
+          inviteId,
+        )
+        .toArray()[0];
+      expect(row).toMatchObject({
+        status: "unused",
+        issue_number: null,
+        acceptance_state: "confirmed",
+        accepted_intake_id: acceptance.intakeId,
+        accepted_operation_id: acceptance.operationId,
+        operation_id: acceptance.operationId,
+      });
+    });
+  });
+
+  it("keeps an expired Postgres reservation recoverable and refuses to release it", async () => {
+    const inviteId = "invite-postgres-expired-001";
+    const submissionId = "submission-postgres-expired-001";
+    const now = Date.now();
+    const expiresAt = now + 1_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({
+      inviteId,
+      expiresAt,
+      allowedOrigins: [origin],
+    });
+    const digest = new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)),
+    );
+    const tokenHash = [...digest]
+      .map((part) => part.toString(16).padStart(2, "0"))
+      .join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-expired-flow");
+    await coordinator.register({
+      inviteId,
+      clientEmail: null,
+      expiresAt,
+      allowedOrigin: origin,
+      tokenHash,
+      now,
+    });
+    await coordinator.reserveSubmission(
+      inviteId,
+      tokenHash,
+      expiresAt,
+      origin,
+      submissionId,
+      "payload-hash-a",
+      "owner@example.test",
+      now,
+      "postgres",
+    );
+
+    await expect(
+      coordinator.reserveSubmission(
+        inviteId,
+        tokenHash,
+        expiresAt,
+        origin,
+        submissionId,
+        "payload-hash-a",
+        "owner@example.test",
+        now + 5_000,
+        "legacy",
+      ),
+    ).resolves.toMatchObject({
+      accepted: true,
+      mode: "postgres",
+      state: "unconfirmed",
+      expired: true,
+    });
+    await expect(
+      coordinator.reserveSubmission(
+        inviteId,
+        tokenHash,
+        expiresAt,
+        origin,
+        submissionId,
+        "payload-hash-b",
+        "owner@example.test",
+        now + 5_000,
+        "postgres",
+      ),
+    ).resolves.toMatchObject({
+      accepted: false,
+      reason: "submission_mismatch",
+      mode: "postgres",
+    });
+    await expect(
+      coordinator.reopenFailedSubmission(
+        inviteId,
+        submissionId,
+        "payload-hash-a",
+        now + 5_000,
+      ),
+    ).resolves.toBe(false);
+    await expect(coordinator.revoke(inviteId, now + 5_000)).resolves.toBe(
+      false,
+    );
+    await expect(
+      coordinator.acceptanceReservation(inviteId, submissionId, now + 5_000),
+    ).resolves.toMatchObject({
+      mode: "postgres",
+      state: "unconfirmed",
+      expired: true,
+    });
+  });
+
+  it("queues the idempotent receipt after Postgres confirmation without any workflow dispatch or issue", async () => {
+    const inviteId = "invite-postgres-receipt-001";
+    const submissionId = "submission-postgres-receipt-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({
+      inviteId,
+      expiresAt,
+      allowedOrigins: [origin],
+    });
+    const digest = new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)),
+    );
+    const tokenHash = [...digest]
+      .map((part) => part.toString(16).padStart(2, "0"))
+      .join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-receipt-flow");
+    await coordinator.register({
+      inviteId,
+      clientEmail: null,
+      expiresAt,
+      allowedOrigin: origin,
+      tokenHash,
+      now,
+    });
+    await coordinator.reserveSubmission(
+      inviteId,
+      tokenHash,
+      expiresAt,
+      origin,
+      submissionId,
+      "payload-hash-a",
+      "owner@example.test",
+      now,
+      "postgres",
+    );
+    const acceptance = {
+      intakeId: "11111111-1111-4111-8111-111111111111",
+      requestId: "22222222-2222-4222-8222-222222222222",
+      attemptId: "33333333-3333-4333-8333-333333333333",
+      operationId: "44444444-4444-4444-8444-444444444444",
+    };
+    const receiptKeys: Array<string | null> = [];
+    network.use(
+      http.post("https://api.resend.com/emails", ({ request }) => {
+        receiptKeys.push(request.headers.get("Idempotency-Key"));
+        return HttpResponse.json(
+          { id: "email-postgres-receipt" },
+          { status: 200 },
+        );
+      }),
+    );
+
+    await coordinator.confirmPostgresAcceptance({
+      inviteId,
+      submissionId,
+      fingerprint: "payload-hash-a",
+      acceptance,
+      now,
+    });
+    await coordinator.queueIntakeReceipt(
+      inviteId,
+      submissionId,
+      "sam@example.test",
+      "Harbor Plumbing",
+      now,
+    );
+    await coordinator.queueIntakeReceipt(
+      inviteId,
+      submissionId,
+      "sam@example.test",
+      "Harbor Plumbing",
+      now + 1,
+    );
+
+    expect(receiptKeys).toHaveLength(1);
+    expect(receiptKeys[0]).toBe(
+      `client-intake-received-${acceptance.operationId}`,
+    );
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      const tasks = state.storage.sql
+        .exec<{ task_type: string }>(
+          "SELECT task_type FROM intake_outbox WHERE invite_id = ? AND submission_id = ?",
+          inviteId,
+          submissionId,
+        )
+        .toArray();
+      expect(tasks).toEqual([{ task_type: "receipt" }]);
+      const invite = state.storage.sql
+        .exec<{ issue_number: number | null; status: string }>(
+          "SELECT issue_number, status FROM onboarding_invites WHERE invite_id = ?",
+          inviteId,
+        )
+        .toArray()[0];
+      expect(invite).toEqual({ issue_number: null, status: "unused" });
+    });
+  });
+
   it("attributes a link-only invite to the email submitted with the intake", async () => {
     const inviteId = "invite-attribution-001";
     const submissionId = "submission-attribution-001";

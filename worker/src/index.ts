@@ -55,6 +55,15 @@ import {
 } from "./admin/accounts-api";
 import { IntakeRecoveryError, intakeOperationMarker, recoverIntakeIssue, readIntakeIssuePayload, verifyIntakeIssueOwnership, type IntakeIssue } from "./intake-recovery";
 import {
+  AcceptanceError,
+  INTAKE_CONSENT_VERSION,
+  acceptIntake,
+  acceptanceModeFromEnv,
+  operationsStoreFromEnv,
+  type InviteAcceptanceAdapter,
+} from "./operations/acceptance";
+import type { AcceptanceInput } from "./operations/contracts";
+import {
   GenerationLedger,
   type GenerationCostKind,
   type GenerationEventInput,
@@ -108,6 +117,8 @@ export interface Env {
   NEON_AUTH_COOKIE_SECRET?: string;
   ADMIN_PUBLIC_ORIGIN?: string;
   ADMIN_DATABASE_URL?: string;
+  OPERATIONS_DATABASE_URL?: string;
+  OPERATIONS_INTAKE_MODE?: string;
   CLOUDFLARE_ACCESS_CLIENT_ID?: string;
   CLOUDFLARE_ACCESS_CLIENT_SECRET?: string;
   PREVIEW_PROXY_HOSTS?: string;
@@ -1261,6 +1272,30 @@ async function intake(request: Request, env: Env) {
     );
     const submissionHash = await digest(JSON.stringify(safeData));
     const coordinator = inviteCoordinator(env);
+    // The DO persists this mode with the reservation. A later flag change can
+    // never switch an in-flight submission between legacy and Postgres.
+    const requestedMode = acceptanceModeFromEnv(env);
+    const persistedMode = await coordinator.acceptanceRoutingMode(
+      invite.claims.inviteId,
+      normalized.submissionId,
+    );
+    const routeMode = persistedMode ?? requestedMode;
+    if (routeMode === "postgres" && normalized.confirmRights !== "yes")
+      return json({
+        error: "Confirm that you have the rights to the submitted business details and files.",
+        code: "rights_confirmation_required",
+      }, 400, headers);
+    // Fail before reserving when the configured new route has no storage.
+    let store: ReturnType<typeof operationsStoreFromEnv> | undefined;
+    if (routeMode === "postgres") {
+      try {
+        store = operationsStoreFromEnv(env);
+      } catch (error) {
+        if (error instanceof AcceptanceError)
+          return json({ error: error.message, code: error.code }, error.status, headers);
+        throw error;
+      }
+    }
     let reservation = await coordinator.reserveSubmission(
       invite.claims.inviteId,
       invite.tokenHash,
@@ -1269,8 +1304,14 @@ async function intake(request: Request, env: Env) {
       normalized.submissionId,
       submissionHash,
       normalized.email,
+      Date.now(),
+      requestedMode,
     );
-    if (!reservation.accepted && reservation.reason === "stale_submission_mismatch") {
+    if (
+      !reservation.accepted &&
+      reservation.reason === "stale_submission_mismatch" &&
+      reservation.mode === "legacy"
+    ) {
       const existingIssue = await findIntakeIssue(env, invite.claims.inviteId, normalized.submissionId);
       if (existingIssue) {
         return json({
@@ -1288,7 +1329,16 @@ async function intake(request: Request, env: Env) {
       if (!rebound) {
         return json({ error: "This submission is already being accepted. Retry shortly.", code: "in_progress" }, 409, headers);
       }
-      reservation = { accepted: true, duplicate: false, issue: null };
+      reservation = {
+        accepted: true,
+        duplicate: false,
+        issue: null,
+        mode: "legacy",
+        state: "legacy",
+        fingerprint: submissionHash,
+        expired: false,
+        acceptance: null,
+      };
     }
     if (!reservation.accepted)
       return json({
@@ -1301,6 +1351,102 @@ async function intake(request: Request, env: Env) {
               : "This invitation is no longer available.",
         code: reservation.reason,
       }, ["in_progress", "submission_mismatch", "recovery_required"].includes(reservation.reason) ? 409 : 403, headers);
+    if (reservation.mode === "postgres") {
+      let postgresStore = store;
+      if (!postgresStore) {
+        try {
+          postgresStore = operationsStoreFromEnv(env);
+        } catch (error) {
+          if (error instanceof AcceptanceError)
+            return json({ error: error.message, code: error.code }, error.status, headers);
+          throw error;
+        }
+      }
+      const invites: InviteAcceptanceAdapter = {
+        reserve: async (request) => {
+          if (
+            request.inviteId !== invite.claims.inviteId ||
+            request.submissionId !== normalized.submissionId
+          )
+            return {
+              accepted: false,
+              mode: "postgres",
+              state: "unconfirmed",
+              fingerprint: "",
+              reason: "invalid",
+            };
+          return coordinator.reserveSubmission(
+            invite.claims.inviteId,
+            invite.tokenHash,
+            invite.claims.expiresAt,
+            invite.origin,
+            request.submissionId,
+            request.fingerprint,
+            normalized.email,
+            Date.now(),
+            request.routingMode,
+          );
+        },
+        inspect: (request) =>
+          coordinator.acceptanceReservation(
+            request.inviteId,
+            request.submissionId,
+          ),
+        confirm: async (request) => {
+          const confirmed = await coordinator.confirmPostgresAcceptance({
+            ...request,
+            now: Date.now(),
+          });
+          if (!confirmed.confirmed)
+            throw new AcceptanceError(
+              "recovery_required",
+              "Your intake needs operator recovery. Contact the person who invited you.",
+            );
+          return confirmed;
+        },
+        queueReceipt: (request) =>
+          coordinator.queueIntakeReceipt(
+            request.inviteId,
+            request.submissionId,
+            request.recipient,
+            request.businessName,
+          ),
+      };
+      try {
+        const accepted = await acceptIntake(
+          {
+            inviteId: invite.claims.inviteId,
+            submissionId: normalized.submissionId,
+            fingerprint: submissionHash,
+            payloadVersion: 2,
+            payload: safeData as AcceptanceInput["payload"],
+            consent: {
+              termsVersion: INTAKE_CONSENT_VERSION,
+              rightsConfirmed: true,
+            },
+            profile: String(normalized.industry || "client-intake"),
+          },
+          {
+            store: postgresStore,
+            invites,
+            routingMode: "postgres",
+            receipt: {
+              recipient: normalized.email,
+              businessName: normalized.businessName,
+            },
+          },
+        );
+        return json({
+          ok: true,
+          duplicate: !accepted.created,
+          intakeId: accepted.intakeId,
+        }, 200, headers);
+      } catch (error) {
+        if (error instanceof AcceptanceError)
+          return json({ error: error.message, code: error.code }, error.status, headers);
+        throw error;
+      }
+    }
     let issueNumber = reservation.issue || null;
     let creationAttempted = false;
     try {
