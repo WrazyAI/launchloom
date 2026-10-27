@@ -109,8 +109,13 @@ async function siteCopyOpencodeGoCompletion({
       : null,
   );
   if (completion?.result?.status !== "completed") {
+    const incompleteReason =
+      completion?.result?.incomplete_details?.reason ||
+      completion?.result?.incompleteDetails?.reason ||
+      completion?.result?.error?.code ||
+      "request failed";
     const error = new Error(
-      `OpenCode Go ${label} ${completion?.result?.status || "error"}: ${completion?.result?.error?.code || "request failed"}.`,
+      `OpenCode Go ${label} ${completion?.result?.status || "error"}: ${incompleteReason}.`,
     );
     if (completion?.result?.status === "incomplete")
       error.code = "SITE_COPY_OUTPUT_TRUNCATED";
@@ -156,9 +161,9 @@ function siteCopyDefaultModel() {
     : "deepseek/deepseek-v4.1-flash";
 }
 
-const SITE_COPY_MAX_COMPLETION_TOKENS = 8192;
-const SITE_COPY_REFINEMENT_MAX_COMPLETION_TOKENS = 4096;
-const SITE_COPY_REFINEMENT_RETRY_MAX_COMPLETION_TOKENS = 8192;
+const SITE_COPY_MAX_COMPLETION_TOKENS = 24_576;
+const SITE_COPY_REFINEMENT_MAX_COMPLETION_TOKENS = 12_288;
+const SITE_COPY_REFINEMENT_RETRY_MAX_COMPLETION_TOKENS = 24_576;
 const MAX_CORE_SERVICES = 5;
 
 const SHARED_CREATIVE_DIRECTION =

@@ -1868,7 +1868,7 @@ describe("site configuration", () => {
       JSON.parse(String(init?.body || "{}")),
     );
     expect(requestBodies.map((body) => body.max_completion_tokens)).toEqual([
-      8192, 4096,
+      24576, 12288,
     ]);
     expect(config.qualityReport.issues).not.toContain(
       "Generated copy includes a repair outcome prohibited by the client art direction.",
@@ -1958,7 +1958,7 @@ describe("site configuration", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(bodies.map((body) => body.max_completion_tokens)).toEqual([
-      8192, 4096, 8192,
+      24576, 12288, 24576,
     ]);
     expect(JSON.stringify(bodies[2].messages)).toMatch(/truncated/i);
     expect(config.qualityReport.refined).toBe(true);

@@ -293,7 +293,7 @@ describe("opencode go profile and request contracts", () => {
     expect(body.model).toBe("deepseek-v4.1-flash");
     expect(body.reasoning).toEqual({ effort: "medium" });
     expect(body.text.format).toEqual({ type: "json_object" });
-    expect(body.max_output_tokens).toBe(8192);
+    expect(body.max_output_tokens).toBe(24576);
     expect(body.temperature).toBeUndefined();
     expect(body.store).toBe(false);
     expect(Array.isArray(body.input)).toBe(true);
