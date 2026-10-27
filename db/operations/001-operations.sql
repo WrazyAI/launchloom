@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS launchloom_operations.generation_requests (
   dispatch_state text NOT NULL DEFAULT 'waiting_to_start' CHECK (dispatch_state IN ('waiting_to_start', 'dispatched', 'attention')),
   attribution text NOT NULL DEFAULT 'intake' CHECK (attribution IN ('intake', 'retry', 'diagnostic')),
   created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (intake_id, idempotency_key)
+  UNIQUE (intake_id, idempotency_key),
+  UNIQUE (id, intake_id)
 );
 CREATE TABLE IF NOT EXISTS launchloom_operations.generation_attempts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -53,6 +54,7 @@ CREATE TABLE IF NOT EXISTS launchloom_operations.generation_attempts (
   terminal_reason text CHECK (terminal_reason ~ '^[a-z0-9_]{1,80}$'),
   artifact_references jsonb NOT NULL DEFAULT '[]' CHECK (jsonb_typeof(artifact_references) = 'array'),
   UNIQUE (request_id, attempt_number),
+  UNIQUE (id, request_id),
   UNIQUE (workflow_repository, workflow_run_id, workflow_run_attempt),
   CHECK ((workflow_repository IS NULL AND workflow_run_id IS NULL AND workflow_run_attempt IS NULL)
     OR (workflow_repository IS NOT NULL AND workflow_run_id IS NOT NULL AND workflow_run_attempt IS NOT NULL))
@@ -80,12 +82,29 @@ CREATE TABLE IF NOT EXISTS launchloom_operations.stage_events (
 CREATE TABLE IF NOT EXISTS launchloom_operations.dispatch_outbox (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   attempt_id uuid NOT NULL UNIQUE REFERENCES launchloom_operations.generation_attempts(id),
+  request_id uuid NOT NULL,
+  intake_id uuid NOT NULL,
   operation_key text NOT NULL UNIQUE,
-  payload jsonb NOT NULL CHECK (jsonb_typeof(payload) = 'object'
+  payload jsonb NOT NULL,
+  -- IS TRUE rejects UNKNOWN as well as FALSE: CHECK alone accepts SQL NULL.
+  -- Composite foreign keys bind these row IDs to the attempt's actual ancestry.
+  CONSTRAINT dispatch_outbox_attempt_request_fkey FOREIGN KEY (attempt_id, request_id)
+    REFERENCES launchloom_operations.generation_attempts(id, request_id),
+  CONSTRAINT dispatch_outbox_request_intake_fkey FOREIGN KEY (request_id, intake_id)
+    REFERENCES launchloom_operations.generation_requests(id, intake_id),
+  CONSTRAINT dispatch_outbox_payload_check CHECK ((jsonb_typeof(payload) = 'object'
     AND payload ?& ARRAY['schemaVersion', 'intakeId', 'requestId', 'attemptId', 'operationId']
     AND payload - ARRAY['schemaVersion', 'intakeId', 'requestId', 'attemptId', 'operationId'] = '{}'::jsonb
-    AND payload->>'schemaVersion' = '1' AND payload->>'operationId' = id::text
-    AND payload->>'attemptId' = attempt_id::text),
+    AND jsonb_typeof(payload->'schemaVersion') = 'number'
+    AND payload->'schemaVersion' = '1'::jsonb
+    AND jsonb_typeof(payload->'intakeId') = 'string'
+    AND jsonb_typeof(payload->'requestId') = 'string'
+    AND jsonb_typeof(payload->'attemptId') = 'string'
+    AND jsonb_typeof(payload->'operationId') = 'string'
+    AND payload->>'operationId' = id::text
+    AND payload->>'attemptId' = attempt_id::text
+    AND payload->>'requestId' = request_id::text
+    AND payload->>'intakeId' = intake_id::text) IS TRUE),
   state text NOT NULL DEFAULT 'blocked_unconfirmed' CHECK (state IN ('blocked_unconfirmed', 'pending', 'leased', 'dispatched', 'attention')),
   retry_count integer NOT NULL DEFAULT 0 CHECK (retry_count >= 0),
   next_attempt_at timestamptz NOT NULL DEFAULT now(),
@@ -150,8 +169,8 @@ BEGIN
     VALUES (v_intake.id, p_profile, 'initial') RETURNING id INTO v_request;
   INSERT INTO launchloom_operations.generation_attempts(request_id, attempt_number)
     VALUES (v_request, 1) RETURNING id INTO v_attempt;
-  INSERT INTO launchloom_operations.dispatch_outbox(id, attempt_id, operation_key, payload)
-    VALUES (v_operation, v_attempt, 'initial:' || v_attempt::text, jsonb_build_object(
+  INSERT INTO launchloom_operations.dispatch_outbox(id, attempt_id, request_id, intake_id, operation_key, payload)
+    VALUES (v_operation, v_attempt, v_request, v_intake.id, 'initial:' || v_attempt::text, jsonb_build_object(
       'schemaVersion', 1, 'intakeId', v_intake.id, 'requestId', v_request, 'attemptId', v_attempt, 'operationId', v_operation));
   RETURN QUERY SELECT v_intake.id, v_request, v_attempt, v_operation, true;
 END;
