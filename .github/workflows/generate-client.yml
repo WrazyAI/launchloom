@@ -516,9 +516,11 @@ jobs:
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage inspiration_selection --status completed --detail "Production reference routes reserved."
       - name: Record reference analysis started
+        if: needs.renderer_policy.outputs.renderer == 'creative'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage reference_analysis --status started --detail "Analyzing reference evidence and freezing the creative session."
       - name: Analyze reserved inspiration and freeze creative session
+        if: needs.renderer_policy.outputs.renderer == 'creative'
         env:
           LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
         run: |
@@ -557,6 +559,7 @@ jobs:
             echo "reasoning_fallback=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Record reference analysis stage
+        if: needs.renderer_policy.outputs.renderer == 'creative'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage reference_analysis --status completed --detail "Reference DNA analyzed and creative session frozen."
       - name: Create private repository and Cloudflare Pages project
@@ -1248,12 +1251,30 @@ jobs:
           fi
           FAILURE_STAGE=workflow
           FAILURE_CATEGORY=workflow
-          if [ "$GENERATION_RENDERER" = "foundation" ]; then
-            FAILURE_STAGE=foundation_render
-            FAILURE_CATEGORY=foundation_render
-          elif [ "${{ steps.authoring.outcome }}" = "failure" ]; then
+          # Attribute the failure to the stage that actually stopped. A blanket
+          # foundation label would blame rendering for intake, SEO, imagery, or
+          # repository failures that happened before the foundation was selected.
+          if [ "${{ steps.authoring.outcome }}" = "failure" ]; then
             FAILURE_STAGE=authoring
             FAILURE_CATEGORY=creative_authoring
+          elif [ "${{ steps.creative_render.outcome }}" = "failure" ]; then
+            FAILURE_STAGE=creative_render
+            FAILURE_CATEGORY=creative_render
+          elif [ "$GENERATION_RENDERER" = "foundation" ] && [ "${{ steps.foundation.outcome }}" = "success" ]; then
+            FAILURE_STAGE=foundation_render
+            FAILURE_CATEGORY=foundation_render
+          elif [ "${{ steps.client.outcome }}" = "failure" ]; then
+            FAILURE_STAGE=client_repo
+            FAILURE_CATEGORY=client_repo
+          elif [ "${{ steps.branch.outcome }}" = "failure" ]; then
+            FAILURE_STAGE=review_branch
+            FAILURE_CATEGORY=review_branch
+          elif [ "${{ steps.assets.outcome }}" = "failure" ]; then
+            FAILURE_STAGE=imagery
+            FAILURE_CATEGORY=imagery
+          elif [ "${{ steps.deploy.outcome }}" = "success" ]; then
+            FAILURE_STAGE=preview_ready
+            FAILURE_CATEGORY=preview_delivery
           fi
           node scripts/record-generation-event.mjs \
             --action complete \
