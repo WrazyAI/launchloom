@@ -608,6 +608,10 @@ describe("Reference DNA", () => {
     vi.resetModules();
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
     vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    vi.stubEnv(
+      "CREATIVE_REFERENCE_ANALYZER_FALLBACK_MODEL",
+      "z-ai/glm-5.3-flash",
+    );
     const warnings: string[] = [];
     const warn = vi.spyOn(console, "warn").mockImplementation((line) => {
       warnings.push(String(line));
@@ -683,6 +687,10 @@ describe("Reference DNA", () => {
     vi.resetModules();
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
     vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    vi.stubEnv(
+      "CREATIVE_REFERENCE_ANALYZER_FALLBACK_MODEL",
+      "z-ai/glm-5.3-flash",
+    );
     const warnings: string[] = [];
     const warn = vi.spyOn(console, "warn").mockImplementation((line) => {
       warnings.push(String(line));
@@ -745,6 +753,10 @@ describe("Reference DNA", () => {
     vi.resetModules();
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
     vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    vi.stubEnv(
+      "CREATIVE_REFERENCE_ANALYZER_FALLBACK_MODEL",
+      "z-ai/glm-5.3-flash",
+    );
     const warnings: string[] = [];
     const warn = vi.spyOn(console, "warn").mockImplementation((line) => {
       warnings.push(String(line));
