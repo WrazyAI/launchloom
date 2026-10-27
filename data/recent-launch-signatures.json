@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-10-23T14:41:48.196Z",
+  "updatedAt": "2026-10-27T19:26:03.760Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -613,6 +613,43 @@
         "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
         "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
       ]
+    },
+    {
+      "id": "2026-10-27-harbor-pine-landscape-co-attempt-197-run-40568192231-attempt-1",
+      "launchedAt": "2026-10-27T19:26:03.757Z",
+      "stage": "attempt",
+      "reservationKey": "197-run-40568192231-attempt-1",
+      "businessName": "Harbor & Pine Landscape Co.",
+      "businessKind": "home-services",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "cinematic-stage",
+        "editorial-monument",
+        "htmlcodex-gardener-garden-services",
+        "market-collage",
+        "orgarden-gardening-services",
+        "spicer-landscaping-season-wheel"
+      ],
+      "heroArchetypes": [
+        "collage-mosaic",
+        "image-led-editorial",
+        "split-media-copy"
+      ],
+      "referenceIds": [
+        "htmlcodex-gardener-garden-services",
+        "orgarden-gardening-services",
+        "spicer-landscaping-season-wheel"
+      ],
+      "routeSignatures": [
+        "deep green wordmark and direct service navigation|split-media|service grid followed by a clear contact close|large clean sans heading with a calm local-service voice|navigation -> split-hero -> about -> service-grid -> team -> contact-form -> tes|wide garden photography and approved service imagery",
+        "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations",
+        "wordmark and direct service navigation|media-overlay|service grid with concise scope and a clear contact close|bold sans headings with a direct local-service voice|navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-|wide garden photography and approved service imagery"
+      ]
     }
   ],
   "launchesByBusinessKind": {
@@ -1116,6 +1153,43 @@
           "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
           "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
           "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
+        ]
+      },
+      {
+        "id": "2026-10-27-harbor-pine-landscape-co-attempt-197-run-40568192231-attempt-1",
+        "launchedAt": "2026-10-27T19:26:03.757Z",
+        "stage": "attempt",
+        "reservationKey": "197-run-40568192231-attempt-1",
+        "businessName": "Harbor & Pine Landscape Co.",
+        "businessKind": "home-services",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "cinematic-stage",
+          "editorial-monument",
+          "htmlcodex-gardener-garden-services",
+          "market-collage",
+          "orgarden-gardening-services",
+          "spicer-landscaping-season-wheel"
+        ],
+        "heroArchetypes": [
+          "collage-mosaic",
+          "image-led-editorial",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "htmlcodex-gardener-garden-services",
+          "orgarden-gardening-services",
+          "spicer-landscaping-season-wheel"
+        ],
+        "routeSignatures": [
+          "deep green wordmark and direct service navigation|split-media|service grid followed by a clear contact close|large clean sans heading with a calm local-service voice|navigation -> split-hero -> about -> service-grid -> team -> contact-form -> tes|wide garden photography and approved service imagery",
+          "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations",
+          "wordmark and direct service navigation|media-overlay|service grid with concise scope and a clear contact close|bold sans headings with a direct local-service voice|navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-|wide garden photography and approved service imagery"
         ]
       }
     ]
