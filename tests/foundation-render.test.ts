@@ -155,10 +155,44 @@ const manifest = {
       required: false,
     },
     {
+      id: "contact.kicker",
+      kind: "text",
+      required: false,
+    },
+    {
       id: "contact.heading",
       kind: "text",
       contentPath: "copy.contactHeading",
       required: true,
+    },
+    {
+      id: "contact.body",
+      kind: "text",
+      required: false,
+    },
+    {
+      id: "contact.phone",
+      kind: "text",
+      contentPath: "brand.phone",
+      required: false,
+    },
+    {
+      id: "contact.phoneHref",
+      kind: "href",
+      contentPath: "brand.phoneHref",
+      required: false,
+    },
+    {
+      id: "contact.email",
+      kind: "text",
+      contentPath: "brand.email",
+      required: false,
+    },
+    {
+      id: "contact.emailHref",
+      kind: "href",
+      contentPath: "brand.emailHref",
+      required: false,
     },
     {
       id: "contact.form",
@@ -196,7 +230,7 @@ function html() {
 <!--foundation:each:proof.items--><blockquote>{{proof.item.quote}}</blockquote><figcaption>{{proof.item.attribution}}</figcaption><!--/foundation:each:proof.items--></section>
 <section id="faq"><h2>{{faq.heading}}</h2>
 <!--foundation:each:faq.items--><details><summary>{{faq.item.question}}</summary><p>{{faq.item.answer}}</p></details><!--/foundation:each:faq.items--></section>
-<section id="contact"><h2>{{contact.heading}}</h2><div>{{contact.form}}</div></section>
+<section id="contact"><p>{{contact.kicker}}</p><h2>{{contact.heading}}</h2><p>{{contact.body}}</p><div><a href="{{contact.phoneHref}}">{{contact.phone}}</a><a href="{{contact.emailHref}}">{{contact.email}}</a></div><div>{{contact.form}}</div></section>
 <footer><span>{{footer.brand}}</span><span>{{footer.credit}}</span></footer>
 </body></html>`;
 }
@@ -277,6 +311,13 @@ describe("foundation renderer", () => {
     expect(result.html).toContain("Millbrook");
     expect(result.html).toContain("One crew from plan to planting.");
     expect(result.html).toContain("Template adapted from Spicer Designs");
+    expect(result.html).toContain("Start with the property");
+    expect(result.html).toContain(
+      "Share the property address and the work you are considering.",
+    );
+    expect(result.html).toContain("tel:5550100100");
+    expect(result.html).toContain("mailto:hello@harborpine.example");
+    expect(result.html).toContain("(555) 010-0100");
     expect(result.html).toContain(FOUNDATION_LEAD_FORM_MARKER);
     expect(result.html).toContain("Plan the work around the season.");
     expect(result.html).toContain("A clear scope before the first visit.");

@@ -7,6 +7,9 @@ const FOUNDATION_COPY = Object.freeze({
   "conversion.body":
     "Tell us about the property and the work you are considering.",
   "hero.secondaryLabel": "See the services",
+  "contact.kicker": "Start with the property",
+  "contact.body":
+    "Share the property address and the work you are considering. The team will confirm coverage and the next useful step.",
   "seasons.heading": "Plan the work around the season.",
   "seasons.body":
     "Seasonal timing depends on the property and local conditions. Confirm the right window during the estimate.",
@@ -63,6 +66,14 @@ function resolveValue({ content, manifest, path, slot }) {
   if (path === "contact.form") return FOUNDATION_LEAD_FORM_MARKER;
   const license = resolveLicenseValue(manifest, path);
   if (license !== undefined) return license;
+  if (path === "brand.phoneHref") {
+    const phone = getPath(content, "brand.phone");
+    return phone ? `tel:${String(phone).replace(/[^+\d]/gu, "")}` : "";
+  }
+  if (path === "brand.emailHref") {
+    const email = getPath(content, "brand.email");
+    return email ? `mailto:${email}` : "";
+  }
   const value = getPath(content, path);
   if (value !== undefined) return value;
   return FOUNDATION_COPY[slot.id];

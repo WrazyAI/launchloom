@@ -98,6 +98,26 @@
   ],
   "slots": [
     {
+      "id": "contact.body",
+      "selector": "#contact .xp-season-contact__body",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.email",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "text",
+      "contentPath": "brand.email",
+      "required": false
+    },
+    {
+      "id": "contact.emailHref",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "href",
+      "contentPath": "brand.emailHref",
+      "required": false
+    },
+    {
       "id": "contact.form",
       "selector": "[data-foundation-contact-form]",
       "kind": "html",
@@ -110,6 +130,26 @@
       "kind": "text",
       "contentPath": "copy.contactHeading",
       "required": true
+    },
+    {
+      "id": "contact.kicker",
+      "selector": "#contact .xp-season-contact__kicker",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.phone",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "text",
+      "contentPath": "brand.phone",
+      "required": false
+    },
+    {
+      "id": "contact.phoneHref",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "href",
+      "contentPath": "brand.phoneHref",
+      "required": false
     },
     {
       "id": "conversion.action",
@@ -454,5 +494,5 @@
       "selector": "#seasons"
     }
   ],
-  "fingerprint": "604723f3b7c35c01b41bad9b61fc2f14db81c257c5ac47fb10b3c21001f00ae7"
+  "fingerprint": "7b83c19499368cb3174cfe8dfdb63c064aad78ac4408003cd2d5e610cefffa40"
 }

@@ -26,7 +26,7 @@ publish the source assets as client assets. Do not copy the source verbatim.
 
 - Status: `needs-adaptation`
 - Sections: 12
-- Content slots: 37
+- Content slots: 43
 - Interactions: 4
 
 Blockers:

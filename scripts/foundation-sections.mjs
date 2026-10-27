@@ -333,8 +333,18 @@ function createContactSection(document, sections, slots, usedSectionIds) {
   const section = document.createElement("section");
   section.setAttribute("id", "contact");
   section.setAttribute("data-foundation-contact", "true");
-  section.innerHTML =
-    "<h2>{{contact.heading}}</h2><div data-foundation-contact-form>{{contact.form}}</div>";
+  section.innerHTML = `<div class="xp-season-contact">
+  <div class="xp-season-contact__intro">
+    <p class="xp-season-contact__kicker">{{contact.kicker}}</p>
+    <h2>{{contact.heading}}</h2>
+    <p class="xp-season-contact__body">{{contact.body}}</p>
+    <div class="xp-season-contact__details">
+      <a href="{{contact.phoneHref}}">{{contact.phone}}</a>
+      <a href="{{contact.emailHref}}">{{contact.email}}</a>
+    </div>
+  </div>
+  <div class="xp-season-contact__form" data-foundation-contact-form>{{contact.form}}</div>
+</div>`;
   const footer = document.querySelector("footer");
   if (footer?.parentNode) footer.parentNode.insertBefore(section, footer);
   else document.body.appendChild(section);
@@ -345,11 +355,51 @@ function createContactSection(document, sections, slots, usedSectionIds) {
     required: true,
   });
   slots.push({
+    id: "contact.kicker",
+    selector: "#contact .xp-season-contact__kicker",
+    kind: "text",
+    required: false,
+  });
+  slots.push({
     id: "contact.heading",
     selector: "#contact h2",
     kind: "text",
     contentPath: "copy.contactHeading",
     required: true,
+  });
+  slots.push({
+    id: "contact.body",
+    selector: "#contact .xp-season-contact__body",
+    kind: "text",
+    required: false,
+  });
+  slots.push({
+    id: "contact.phone",
+    selector: "#contact .xp-season-contact__details a:first-child",
+    kind: "text",
+    contentPath: "brand.phone",
+    required: false,
+  });
+  slots.push({
+    id: "contact.phoneHref",
+    selector: "#contact .xp-season-contact__details a:first-child",
+    kind: "href",
+    contentPath: "brand.phoneHref",
+    required: false,
+  });
+  slots.push({
+    id: "contact.email",
+    selector: "#contact .xp-season-contact__details a:last-child",
+    kind: "text",
+    contentPath: "brand.email",
+    required: false,
+  });
+  slots.push({
+    id: "contact.emailHref",
+    selector: "#contact .xp-season-contact__details a:last-child",
+    kind: "href",
+    contentPath: "brand.emailHref",
+    required: false,
   });
   slots.push({
     id: "contact.form",
@@ -562,8 +612,11 @@ function injectConversionRibbon(document, sections, slots, usedSectionIds) {
   const ribbon = document.createElement("aside");
   ribbon.className = "xp-ribbon";
   ribbon.setAttribute("data-early-conversion", "true");
-  ribbon.innerHTML =
-    '<p>{{conversion.body}}</p><a href="#contact">{{conversion.action}}</a>';
+  ribbon.innerHTML = `<div class="xp-ribbon__copy">
+  <span class="xp-ribbon__kicker">Next step</span>
+  <p>{{conversion.body}}</p>
+</div>
+<a class="xp-ribbon__action" href="#contact">{{conversion.action}} <span aria-hidden="true">→</span></a>`;
   hero.parentNode.insertBefore(ribbon, hero.nextSibling);
   addSection(sections, usedSectionIds, {
     element: ribbon,

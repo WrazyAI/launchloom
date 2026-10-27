@@ -7,27 +7,56 @@
   display: block;
 }
 
-.xp-ribbon {
+.xp-season-wheel .xp-ribbon {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px 32px;
-  padding: 18px clamp(20px, 5vw, 48px);
-  background: #16241a;
-  color: #f2f4ef;
+  gap: 20px 40px;
+  padding: clamp(20px, 4vw, 32px) clamp(20px, 5vw, 48px);
+  background: var(--hero-surface);
+  color: var(--ink);
+  border-block: 1px solid var(--line);
 }
 
-.xp-ribbon p {
-  margin: 0;
+.xp-season-wheel .xp-ribbon__copy {
+  display: grid;
+  gap: 6px;
   max-width: 62ch;
-  color: #f2f4ef;
 }
 
-.xp-ribbon a {
-  color: #f2f4ef;
-  font-weight: 700;
-  text-underline-offset: 3px;
+.xp-season-wheel .xp-ribbon__kicker {
+  margin: 0;
+  font: 700 0.68rem/1.2 var(--font-body, Inter, Arial, sans-serif);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brand-ink, var(--brand));
+}
+
+.xp-season-wheel .xp-ribbon p {
+  margin: 0;
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.xp-season-wheel .xp-ribbon__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.9rem 1.4rem;
+  border-radius: 999px;
+  background: var(--brand);
+  color: var(--on-brand, #fff) !important;
+  font: 700 0.875rem/1 var(--font-body, Inter, Arial, sans-serif);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.xp-season-wheel .xp-ribbon__action:hover {
+  background: var(--brand-surface);
 }
 
 .xp-season-wheel [data-foundation-repeat="services.items"] {
@@ -158,18 +187,85 @@
 
 .xp-season-wheel [data-foundation-section="contact"] {
   padding: clamp(3rem, 8vw, 6rem) clamp(1.25rem, 5vw, 3rem);
-  background: var(--cream);
+  background: var(--hero-surface);
+  border-top: 1px solid var(--line);
 }
 
-.xp-season-wheel [data-foundation-section="contact"] > h2 {
-  width: min(1120px, 100%);
-  max-width: 24ch;
-  margin: 0 auto 2rem;
-}
-
-.xp-season-wheel [data-foundation-contact-form] {
-  width: min(760px, 100%);
+.xp-season-wheel .xp-season-contact {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(2rem, 6vw, 5rem);
+  align-items: start;
+  width: min(1180px, 100%);
   margin: 0 auto;
+}
+
+.xp-season-wheel .xp-season-contact__intro {
+  position: sticky;
+  top: 2rem;
+}
+
+.xp-season-wheel .xp-season-contact__kicker {
+  margin: 0 0 0.75rem;
+  font: 700 0.68rem/1.2 var(--font-body, Inter, Arial, sans-serif);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brand-ink, var(--brand));
+}
+
+.xp-season-wheel .xp-season-contact h2 {
+  margin: 0 0 1rem;
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: clamp(2.2rem, 4.6vw, 3.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.xp-season-wheel .xp-season-contact__body {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.xp-season-wheel .xp-season-contact__details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.xp-season-wheel .xp-season-contact__details a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.xp-season-wheel .xp-season-contact__details a:empty {
+  display: none;
+}
+
+.xp-season-wheel .xp-season-contact__form {
+  width: 100%;
+}
+
+.xp-season-wheel .xp-season-contact__form .lead-form {
+  min-height: 0;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+@media (max-width: 900px) {
+  .xp-season-wheel .xp-season-contact {
+    grid-template-columns: 1fr;
+  }
+  .xp-season-wheel .xp-season-contact__intro {
+    position: static;
+  }
 }
 
 .xp-season-wheel footer {
@@ -181,14 +277,6 @@
 
 .xp-season-wheel footer span {
   display: block;
-}
-
-.xp-season-wheel [data-foundation-section="contact"] > h2 {
-  font-family: var(--font-heading, Georgia, serif);
-  font-size: clamp(2rem, 4.5vw, 3.25rem);
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-  color: var(--ink);
 }
 
 .xp-season-wheel footer span:first-child {
