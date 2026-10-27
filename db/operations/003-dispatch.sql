@@ -34,28 +34,35 @@ BEGIN
   IF p_now IS NULL OR NOT isfinite(p_now) OR p_uncertain_retry IS NULL
     THEN RAISE EXCEPTION 'invalid_dispatch'; END IF;
   -- An unowned waiting attempt that already carries effect evidence must never
-  -- be leased. Lock the outbox and attempt rows together so a concurrent stage
-  -- write cannot slip between the check and the send. Surface it as attention.
+  -- be leased. Lock every candidate outbox and attempt row first, then check
+  -- evidence in a separate statement under that lock. A stage-event insert takes
+  -- a foreign-key key-share lock on the attempt row, so it either commits before
+  -- this check (and is seen) or blocks/skips until after this transaction. This
+  -- is a lock-order proof, not an inference from precommitted evidence.
   FOR v IN SELECT o.* FROM launchloom_operations.dispatch_outbox o
     JOIN launchloom_operations.generation_attempts a ON a.id = o.attempt_id
     WHERE o.state IN ('blocked_unconfirmed', 'pending', 'leased')
       AND a.state = 'waiting_to_start' AND a.workflow_run_id IS NULL
-      AND (a.started_at IS NOT NULL OR a.finished_at IS NOT NULL
-        OR a.terminal_reason IS NOT NULL
-        OR a.artifact_references <> '[]'::jsonb
-        OR EXISTS (SELECT 1 FROM launchloom_operations.stage_events e
-          WHERE e.attempt_id = a.id))
     ORDER BY o.next_attempt_at, o.id LIMIT 50
     FOR UPDATE OF o, a SKIP LOCKED
   LOOP
-    UPDATE launchloom_operations.dispatch_outbox SET state = 'attention',
-      lease_until = NULL, fencing_version = fencing_version + 1,
-      last_error_code = 'prior_effects_unexplained' WHERE id = v.id;
-    UPDATE launchloom_operations.generation_requests SET dispatch_state = 'attention'
-      WHERE id = v.request_id;
-    UPDATE launchloom_operations.generation_attempts SET state = 'attention',
-      terminal_reason = coalesce(terminal_reason, 'unexplained_prior_effects')
-      WHERE id = v.attempt_id AND state = 'waiting_to_start';
+    IF EXISTS (SELECT 1 FROM launchloom_operations.generation_attempts a
+      WHERE a.id = v.attempt_id
+        AND (a.started_at IS NOT NULL OR a.finished_at IS NOT NULL
+          OR a.terminal_reason IS NOT NULL
+          OR a.artifact_references <> '[]'::jsonb
+          OR EXISTS (SELECT 1 FROM launchloom_operations.stage_events e
+            WHERE e.attempt_id = a.id)))
+    THEN
+      UPDATE launchloom_operations.dispatch_outbox SET state = 'attention',
+        lease_until = NULL, fencing_version = fencing_version + 1,
+        last_error_code = 'prior_effects_unexplained' WHERE id = v.id;
+      UPDATE launchloom_operations.generation_requests SET dispatch_state = 'attention'
+        WHERE id = v.request_id;
+      UPDATE launchloom_operations.generation_attempts SET state = 'attention',
+        terminal_reason = coalesce(terminal_reason, 'unexplained_prior_effects')
+        WHERE id = v.attempt_id AND state = 'waiting_to_start';
+    END IF;
   END LOOP;
 
   -- Expiry is NOT evidence that GitHub rejected a dispatch. A crashed sender
@@ -107,27 +114,47 @@ BEGIN
     END IF;
   END LOOP;
 
-  SELECT o.* INTO v FROM launchloom_operations.dispatch_outbox o
-    JOIN launchloom_operations.intakes i ON i.id = o.intake_id
-    JOIN launchloom_operations.generation_requests r ON r.id = o.request_id
-    JOIN launchloom_operations.generation_attempts a ON a.id = o.attempt_id
-    WHERE o.state = 'pending' AND o.next_attempt_at <= p_now AND o.retry_count < 8
-      AND i.acceptance_state = 'confirmed' AND r.dispatch_state = 'waiting_to_start'
-      AND a.state = 'waiting_to_start' AND a.workflow_run_id IS NULL
-      AND a.started_at IS NULL AND a.finished_at IS NULL
-      AND a.terminal_reason IS NULL AND a.artifact_references = '[]'::jsonb
-      AND NOT EXISTS (SELECT 1 FROM launchloom_operations.stage_events e
-        WHERE e.attempt_id = a.id)
-    ORDER BY o.next_attempt_at, o.id LIMIT 1
-    FOR UPDATE OF o, a SKIP LOCKED;
-  IF NOT FOUND THEN RETURN; END IF;
-  UPDATE launchloom_operations.dispatch_outbox SET state = 'leased',
-    lease_until = p_now + interval '2 minutes', fencing_version = fencing_version + 1,
-    gate_provenance = coalesce(gate_provenance,
-      CASE WHEN p_uncertain_retry AND v.retry_count = 0
-        AND NOT v.uncertain_replay THEN 'verified-v1' ELSE 'unverified' END)
-    WHERE id = v.id RETURNING * INTO v;
-  RETURN QUERY SELECT v.id, v.fencing_version, v.payload;
+  -- Lock the candidate outbox and attempt rows first, then re-check prior-effect
+  -- evidence under that lock. A concurrent stage insert either committed before
+  -- the lock (and is visible) or is blocked/skipped by the attempt-row lock.
+  LOOP
+    SELECT o.* INTO v FROM launchloom_operations.dispatch_outbox o
+      JOIN launchloom_operations.intakes i ON i.id = o.intake_id
+      JOIN launchloom_operations.generation_requests r ON r.id = o.request_id
+      JOIN launchloom_operations.generation_attempts a ON a.id = o.attempt_id
+      WHERE o.state = 'pending' AND o.next_attempt_at <= p_now AND o.retry_count < 8
+        AND i.acceptance_state = 'confirmed' AND r.dispatch_state = 'waiting_to_start'
+        AND a.state = 'waiting_to_start' AND a.workflow_run_id IS NULL
+      ORDER BY o.next_attempt_at, o.id LIMIT 1
+      FOR UPDATE OF o, a SKIP LOCKED;
+    IF NOT FOUND THEN RETURN; END IF;
+    IF EXISTS (SELECT 1 FROM launchloom_operations.generation_attempts a
+      WHERE a.id = v.attempt_id
+        AND (a.started_at IS NOT NULL OR a.finished_at IS NOT NULL
+          OR a.terminal_reason IS NOT NULL
+          OR a.artifact_references <> '[]'::jsonb
+          OR EXISTS (SELECT 1 FROM launchloom_operations.stage_events e
+            WHERE e.attempt_id = a.id)))
+    THEN
+      UPDATE launchloom_operations.dispatch_outbox SET state = 'attention',
+        lease_until = NULL, fencing_version = fencing_version + 1,
+        last_error_code = 'prior_effects_unexplained' WHERE id = v.id;
+      UPDATE launchloom_operations.generation_requests SET dispatch_state = 'attention'
+        WHERE id = v.request_id;
+      UPDATE launchloom_operations.generation_attempts SET state = 'attention',
+        terminal_reason = coalesce(terminal_reason, 'unexplained_prior_effects')
+        WHERE id = v.attempt_id AND state = 'waiting_to_start';
+      CONTINUE;
+    END IF;
+    UPDATE launchloom_operations.dispatch_outbox SET state = 'leased',
+      lease_until = p_now + interval '2 minutes', fencing_version = fencing_version + 1,
+      gate_provenance = coalesce(gate_provenance,
+        CASE WHEN p_uncertain_retry AND v.retry_count = 0
+          AND NOT v.uncertain_replay THEN 'verified-v1' ELSE 'unverified' END)
+      WHERE id = v.id RETURNING * INTO v;
+    RETURN QUERY SELECT v.id, v.fencing_version, v.payload;
+    RETURN;
+  END LOOP;
 END;
 $$;
 
@@ -208,6 +235,33 @@ BEGIN
       WHERE id = v.request_id;
     UPDATE launchloom_operations.generation_attempts SET state = 'attention',
       terminal_reason = coalesce(terminal_reason, 'unexplained_prior_effects')
+      WHERE id = a.id AND state = 'waiting_to_start';
+    RETURN 'attention';
+  END IF;
+  -- No first claim can be granted for an operation whose first send was not
+  -- made under the verified gate. NULL means no proven provenance (including
+  -- legacy rows); unverified means the gate was off. The absence of recorded
+  -- side effects does not prove safety, so both require evidence-based operator
+  -- reconciliation before any execution permission. This is deliberate even for
+  -- leased/dispatched/unknown-attention rows and for a NULL uncertainty marker.
+  IF v.gate_provenance IS DISTINCT FROM 'verified-v1' THEN
+    -- A never-sent pending row (zero fence, zero attempts, no uncertainty) is
+    -- not a historical send. Deny the premature claim but leave it dispatchable;
+    -- the later lease can capture verified-v1 provenance.
+    IF v.gate_provenance IS NULL AND v.fencing_version = 0
+      AND v.retry_count = 0 AND v.state = 'pending'
+      AND NOT v.uncertain_replay THEN
+      RETURN 'attention';
+    END IF;
+    -- Every other NULL/unverified case is a historical send. Surface attention
+    -- and require evidence-based operator reconciliation before execution.
+    UPDATE launchloom_operations.dispatch_outbox SET state = 'attention',
+      lease_until = NULL, fencing_version = fencing_version + 1,
+      last_error_code = 'gate_provenance_unverified' WHERE id = v.id;
+    UPDATE launchloom_operations.generation_requests SET dispatch_state = 'attention'
+      WHERE id = v.request_id;
+    UPDATE launchloom_operations.generation_attempts SET state = 'attention',
+      terminal_reason = coalesce(terminal_reason, 'unverified_gate_provenance')
       WHERE id = a.id AND state = 'waiting_to_start';
     RETURN 'attention';
   END IF;

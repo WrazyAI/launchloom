@@ -59,7 +59,9 @@ that a missing response means no run exists.
   `github_rate_limited` history.
 - A rate-limited HTTP 403 is recognized only from validated signals: a numeric
   zero `x-ratelimit-remaining` together with a valid `x-ratelimit-reset`, or a
-  valid `retry-after` (seconds or HTTP date, including GitHub secondary limits).
+  valid `retry-after` (seconds or an RFC 7231 HTTP-date, including GitHub
+  secondary limits). An HTTP-date is accepted only in IMF-fixdate, RFC 850 or
+  asctime form; ISO dates and other JavaScript-parseable strings are rejected.
   Empty, zero or malformed `retry-after` establishes nothing. `remaining: 0`
   without a valid reset establishes nothing. A 429 uses any valid retry-after
   or reset because its status already proves the limit; a 403 requires the
@@ -99,15 +101,20 @@ that a missing response means no run exists.
   claim after ten minutes remains `attention` (`run_claim_missing`); that is an
   accepted run with unknown liveness, not an uncertain send, so it is not
   auto-replayed. Each sweep locks at most fifty rows.
-- A response lost after acceptance can still yield a first legitimate claim
-  from those three specific unknown-dispatch attention states. Prior verified
-  `uncertain_replay` evidence also survives later 429 or rejection status, so a
-  real run from the earlier ambiguous send can still be the first owner after a
-  subsequent 429 exhausts. Entries with only a rate-limit history (no
-  uncertain evidence) never become claimable. This is not ownership transfer:
-  the attempt must still be waiting and never owned. Same-run replay and rerun
-  attempts receive `duplicate`; an attempt marked attention for unknown side
-  effects receives `attention`.
+- A first claim is granted only when the first send has persisted
+  `gate_provenance = 'verified-v1'`. This applies to leased, dispatched, unknown
+  attention and `uncertain_replay` rows. `NULL` provenance (including legacy
+  rows) and `unverified` provenance fail closed for every such state, even when
+  `uncertain_replay` is true and even when no side-effect evidence was recorded.
+  The absence of recorded effects is not proof of safety. Those rows surface
+  `attention` (`gate_provenance_unverified`) and require evidence-based operator
+  reconciliation before execution; a never-sent pending row is simply denied and
+  remains dispatchable. A delayed genuine run from an earlier **verified** send
+  can still claim after later 429s, rejections or 429 exhaustion. Entries with
+  only a rate-limit history (no uncertain evidence) never become claimable. This
+  is not ownership transfer: the attempt must still be waiting and never owned.
+  Same-run replay and rerun attempts receive `duplicate`; an attempt marked
+  attention for unknown side effects receives `attention`.
 
 ## Ownership and operator recovery
 
@@ -117,13 +124,22 @@ runs, including a replay of the same run or a GitHub rerun attempt, get
 An attempt marked attention for unknown prior side effects returns `attention`.
 A claimed/running attempt is never taken over: its run ID is already bound, so a
 lease expiry or a late sender cannot replace it. The only additional claimable
-pre-owner state is a gated uncertain replay (`pending`/`attention` plus
-`uncertain_replay`), where a real run from the ambiguous send may still be the
-first owner. Unowned waiting attempts that already carry prior-effect evidence
-(`started_at`, `finished_at`, `terminal_reason`, artifact references or stage
-events) are never leased or claimed: both paths lock the attempt row and surface
-`attention` (`prior_effects_unexplained`). One trusted run identity cannot own
-two operations.
+pre-owner state is a verified-gated uncertain replay (`pending`/`attention` plus
+`uncertain_replay` and `gate_provenance = 'verified-v1'`), where a real run from
+the ambiguous send may still be the first owner. Unowned waiting attempts that
+already carry prior-effect evidence (`started_at`, `finished_at`,
+`terminal_reason`, artifact references or stage events) are never leased or
+claimed: both paths lock the attempt row and surface `attention`
+(`prior_effects_unexplained`). One trusted run identity cannot own two
+operations.
+
+Lease and claim both lock the outbox row and then the attempt row with
+`FOR UPDATE`; the prior-effect check runs in a separate statement under that
+lock, not from a precommitted snapshot. A stage-event insert takes a foreign-key
+key-share lock on the attempt row. An uncommitted insert therefore makes the
+lease skip the candidate (`SKIP LOCKED`, no send) or blocks the claim until the
+insert commits; an insert that starts after the lock is not prior evidence.
+
 
 A lost claim response also fails closed: retrying the election cannot give a
 second permission to execute. The workflow must stop and escalate, not retry
@@ -160,9 +176,13 @@ cover locks/fences, retained confirmed state, fresh scheduled-handler store
 instances after a quiet period, concurrent run claims, unknown outcomes and
 bounded backoff. They also exercise an outage followed by recovery, a lost
 accepted response with a duplicate job, a crashed sender lease, exact retry
-exhaustion, first-send gate provenance that cannot be upgraded, claims after a
-later 429 exhaustion, retry-after floors, prior-effect lease/claim refusal, and
-the rule that a claimed/running attempt is never re-leased or repeated. The restart proof reconstructs application stores on the same
+exhaustion, first-send gate provenance that cannot be upgraded, unverified and
+`NULL` provenance claim denial in every state (including a `NULL` uncertainty
+marker), unverified and verified racing claims, claims after a later 429
+exhaustion, retry-after floors and strict HTTP-date formats, prior-effect
+lease/claim refusal, and a concurrent stage-event insert against lease
+insertion. They also cover the rule that a claimed/running attempt is never
+re-leased or repeated. The restart proof reconstructs application stores on the same
 persistent test database; it is a **simulated Worker restart**, not an actual
 Cloudflare deployment/process eviction. The Neon HTTP transport and GitHub API
 are synthetic in that test. Live OIDC/workflow, browser, deployment and production

@@ -31,6 +31,38 @@ function psql(text: string): Promise<string> {
     child.stdin.end(text);
   });
 }
+function psqlEnv() {
+  const u = new URL(url!);
+  return {
+    ...Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith("PG"))),
+    PGHOST: u.hostname.replace(/^\[|\]$/gu, ""), PGPORT: u.port || "5432",
+    PGDATABASE: decodeURIComponent(u.pathname.slice(1)), PGUSER: decodeURIComponent(u.username),
+    PGPASSWORD: decodeURIComponent(u.password), PGCONNECT_TIMEOUT: "5",
+  };
+}
+function psqlDetached(text: string): { done: Promise<void> } {
+  const child = spawn("psql", ["-X", "-qAt", "-v", "ON_ERROR_STOP=1"], {
+    env: psqlEnv(), stdio: ["pipe", "pipe", "pipe"],
+  });
+  let error = "";
+  child.stderr.on("data", (b) => { error += b; });
+  const done = new Promise<void>((resolve, reject) => {
+    child.on("error", reject);
+    child.on("close", (code) => code === 0 ? resolve() : reject(new Error(error)));
+  });
+  child.stdin.end(text);
+  return { done };
+}
+async function waitForSleepingPsql(): Promise<void> {
+  for (let i = 0; i < 100; i++) {
+    const active = Number(await psql(`SELECT count(*) FROM pg_stat_activity
+      WHERE state='active' AND query LIKE '%pg_sleep%'
+        AND pid <> pg_backend_pid();`));
+    if (active > 0) return;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error("detached PostgreSQL session did not reach pg_sleep");
+}
 function literal(value: unknown) {
   if (value === null || value === undefined) return "NULL";
   if (typeof value === "boolean") return value ? "TRUE" : "FALSE";
@@ -112,12 +144,18 @@ describe.runIf(enabled)("durable dispatch on real disposable Postgres", () => {
     expect(await row(a.operationId)).toMatchObject({ state: "dispatched", workflow_run_id: null, attempt_state: "waiting_to_start" });
   });
 
-  it("does not re-dispatch an accepted response lost in transit, but permits one first claim", async () => {
+  it("does not re-dispatch an accepted response lost in transit and refuses an unverified first claim", async () => {
     const a = await acceptance();
     await dispatchScheduled({ store: store(), dispatch: async () => { throw new Error("response lost after GitHub accepted"); }, now });
     expect(await row(a.operationId)).toMatchObject({ state: "attention", last_error_code: "dispatch_unknown", workflow_run_id: null });
     expect(await store().leaseDispatch(now() + 100_000)).toBeNull();
-    expect(await store().claimRun(a.operationId, { repositoryId: "123", runId: "1001", runAttempt: 1 })).toBe("claimed");
+    expect(await store().claimRun(a.operationId, {
+      repositoryId: "123", runId: "1001", runAttempt: 1,
+    })).toBe("attention");
+    expect(await row(a.operationId)).toMatchObject({
+      state: "attention", last_error_code: "gate_provenance_unverified",
+      attempt_state: "attention", workflow_run_id: null,
+    });
   });
 
   it("automatically resumes an uncertain outage under the verified gate", async () => {
@@ -321,6 +359,99 @@ describe.runIf(enabled)("durable dispatch on real disposable Postgres", () => {
     });
   });
 
+  it("refuses first claims for every unverified or NULL provenance state", async () => {
+    let runSequence = 8101;
+    for (const mode of ["leased", "dispatched", "unknown"] as const) {
+      for (const provenance of ["unverified", null] as const) {
+        const a = await acceptance();
+        const lease = await store().leaseDispatch(now());
+        expect(lease?.operationId).toBe(a.operationId);
+        if (mode === "dispatched") {
+          await store().recordDispatchResult(a.operationId, lease!.fence, {
+            outcome: "accepted", now: now(),
+          });
+        } else if (mode === "unknown") {
+          await store().recordDispatchResult(a.operationId, lease!.fence, {
+            outcome: "unknown", now: now(),
+          });
+        }
+        if (provenance === null) {
+          await psql(`UPDATE launchloom_operations.dispatch_outbox
+            SET gate_provenance=NULL WHERE id='${a.operationId}';`);
+        }
+        expect(await store().claimRun(a.operationId, {
+          repositoryId: "123", runId: String(runSequence++), runAttempt: 1,
+        })).toBe("attention");
+        expect(await row(a.operationId)).toMatchObject({
+          state: "attention", last_error_code: "gate_provenance_unverified",
+          attempt_state: "attention", workflow_run_id: null,
+        });
+      }
+    }
+  });
+
+  it("refuses unverified or NULL uncertainty markers even without recorded effects", async () => {
+    let runSequence = 8201;
+    for (const provenance of ["unverified", null] as const) {
+      const a = await acceptance();
+      await dispatchScheduled({
+        store: gatedStore(),
+        dispatch: async () => { throw new Error("response lost"); },
+        now: () => now(),
+      });
+      expect(await row(a.operationId)).toMatchObject({
+        state: "pending", uncertain_replay: true, gate_provenance: "verified-v1",
+      });
+      await psql(`UPDATE launchloom_operations.dispatch_outbox
+        SET gate_provenance=${provenance === null ? "NULL" : "'unverified'"}
+        WHERE id='${a.operationId}';`);
+      const effects = JSON.parse(await psql(`SELECT json_build_object(
+        'started_at', started_at,
+        'finished_at', finished_at,
+        'terminal_reason', terminal_reason,
+        'artifacts', artifact_references,
+        'events', (SELECT count(*) FROM launchloom_operations.stage_events e
+          WHERE e.attempt_id='${a.attemptId}')
+      ) FROM launchloom_operations.generation_attempts WHERE id='${a.attemptId}';`));
+      expect(effects).toEqual({
+        started_at: null, finished_at: null, terminal_reason: null,
+        artifacts: [], events: 0,
+      });
+      expect(await store().claimRun(a.operationId, {
+        repositoryId: "123", runId: String(runSequence++), runAttempt: 1,
+      })).toBe("attention");
+      expect(await row(a.operationId)).toMatchObject({
+        state: "attention", last_error_code: "gate_provenance_unverified",
+        attempt_state: "attention", workflow_run_id: null,
+      });
+    }
+  });
+
+  it("fails closed for racing claims on unverified or NULL provenance", async () => {
+    let runSequence = 8301;
+    for (const provenance of ["unverified", null] as const) {
+      const a = await acceptance();
+      expect((await store().leaseDispatch(now()))?.operationId).toBe(a.operationId);
+      if (provenance === null) {
+        await psql(`UPDATE launchloom_operations.dispatch_outbox
+          SET gate_provenance=NULL WHERE id='${a.operationId}';`);
+      }
+      const results = await Promise.all([
+        store().claimRun(a.operationId, {
+          repositoryId: "123", runId: String(runSequence++), runAttempt: 1,
+        }),
+        store().claimRun(a.operationId, {
+          repositoryId: "123", runId: String(runSequence++), runAttempt: 1,
+        }),
+      ]);
+      expect(results).toEqual(["attention", "attention"]);
+      expect(await row(a.operationId)).toMatchObject({
+        state: "attention", last_error_code: "gate_provenance_unverified",
+        attempt_state: "attention", workflow_run_id: null,
+      });
+    }
+  });
+
   it("lets prior verified uncertainty claim after a later 429 retry", async () => {
     const a = await acceptance();
     const t = now();
@@ -489,6 +620,30 @@ describe.runIf(enabled)("durable dispatch on real disposable Postgres", () => {
     });
   });
 
+  it("serializes a concurrent stage-event insert against lease insertion", async () => {
+    const a = await acceptance();
+    const inserted = psqlDetached(`BEGIN;
+      INSERT INTO launchloom_operations.stage_events(
+        attempt_id,event_key,stage,transition) VALUES(
+        '${a.attemptId}','concurrent-stage-1','copy','observed');
+      SELECT pg_sleep(1);
+      COMMIT;`);
+    try {
+      await waitForSleepingPsql();
+      // The uncommitted stage row holds the attempt FK key-share lock. The
+      // lease must skip the candidate (no send), not treat it as prior evidence.
+      expect(await gatedStore().leaseDispatch(now())).toBeNull();
+    } finally {
+      await inserted.done;
+    }
+    // Once committed, the same evidence is enforced under the lease lock.
+    expect(await gatedStore().leaseDispatch(now())).toBeNull();
+    expect(await row(a.operationId)).toMatchObject({
+      state: "attention", last_error_code: "prior_effects_unexplained",
+      attempt_state: "attention", workflow_run_id: null,
+    });
+  });
+
   it("serializes lease races, expires a crashed worker to attention, and ignores stale fence results", async () => {
     const a = await acceptance();
     const timestamp = now();
@@ -504,27 +659,27 @@ describe.runIf(enabled)("durable dispatch on real disposable Postgres", () => {
 
   it("elects exactly one duplicate run and never transfers unknown prior side effects", async () => {
     const a = await acceptance();
-    const lease = await store().leaseDispatch(now());
+    const lease = await gatedStore().leaseDispatch(now());
     expect(lease?.operationId).toBe(a.operationId);
     const results = await Promise.all([
-      store().claimRun(a.operationId, { repositoryId: "123", runId: "2001", runAttempt: 1 }),
-      store().claimRun(a.operationId, { repositoryId: "123", runId: "2002", runAttempt: 1 }),
+      gatedStore().claimRun(a.operationId, { repositoryId: "123", runId: "2001", runAttempt: 1 }),
+      gatedStore().claimRun(a.operationId, { repositoryId: "123", runId: "2002", runAttempt: 1 }),
     ]);
     expect(results.sort()).toEqual(["claimed", "duplicate"]);
-    await store().recordDispatchResult(a.operationId, lease!.fence, { outcome: "unknown", now: now() });
+    await gatedStore().recordDispatchResult(a.operationId, lease!.fence, { outcome: "unknown", now: now() });
     expect(await row(a.operationId)).toMatchObject({ state: "dispatched", attempt_state: "running" });
     await psql(`UPDATE launchloom_operations.generation_attempts SET state='attention', terminal_reason='side_effects_unknown' WHERE id='${a.attemptId}';`);
-    expect(await store().claimRun(a.operationId, { repositoryId: "123", runId: "2003", runAttempt: 1 })).toBe("attention");
+    expect(await gatedStore().claimRun(a.operationId, { repositoryId: "123", runId: "2003", runAttempt: 1 })).toBe("attention");
   });
 
   it("rejects claims before dispatch and refuses same-run replay or rerun takeover", async () => {
     const a = await acceptance();
     const run = { repositoryId: "123", runId: "3001", runAttempt: 1 };
-    expect(await store().claimRun(a.operationId, run)).toBe("attention");
-    await store().leaseDispatch(now());
-    expect(await store().claimRun(a.operationId, run)).toBe("claimed");
-    expect(await store().claimRun(a.operationId, run)).toBe("duplicate");
-    expect(await store().claimRun(a.operationId, { ...run, runAttempt: 2 })).toBe("duplicate");
+    expect(await gatedStore().claimRun(a.operationId, run)).toBe("attention");
+    await gatedStore().leaseDispatch(now());
+    expect(await gatedStore().claimRun(a.operationId, run)).toBe("claimed");
+    expect(await gatedStore().claimRun(a.operationId, run)).toBe("duplicate");
+    expect(await gatedStore().claimRun(a.operationId, { ...run, runAttempt: 2 })).toBe("duplicate");
   });
 
   it("does not let a proven non-accepted 429 retry elect a pre-dispatch run", async () => {
@@ -626,12 +781,12 @@ describe.runIf(enabled)("durable dispatch on real disposable Postgres", () => {
 
   it("never shares one trusted run across two operations", async () => {
     const a = await acceptance();
-    await store().leaseDispatch(now());
+    await gatedStore().leaseDispatch(now());
     const identity = { repositoryId: "987", runId: "9001", runAttempt: 1 };
-    expect(await store().claimRun(a.operationId, identity)).toBe("claimed");
+    expect(await gatedStore().claimRun(a.operationId, identity)).toBe("claimed");
     const b = await acceptance();
-    await store().leaseDispatch(now());
-    expect(await store().claimRun(b.operationId, identity)).toBe("attention");
+    await gatedStore().leaseDispatch(now());
+    expect(await gatedStore().claimRun(b.operationId, identity)).toBe("attention");
     expect(await row(b.operationId)).toMatchObject({ attempt_state: "waiting_to_start", workflow_run_id: null });
   });
 });

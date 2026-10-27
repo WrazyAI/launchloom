@@ -67,6 +67,39 @@ export async function dispatchScheduled(deps: {
   }
 }
 
+const HTTP_DATE_MONTHS = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec";
+const HTTP_DATE_DAYS = "Mon|Tue|Wed|Thu|Fri|Sat|Sun";
+const HTTP_DATE_LONG_DAYS =
+  "Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday";
+const IMF_FIXDATE = new RegExp(
+  `^(?:${HTTP_DATE_DAYS}), (?:0[1-9]|[12][0-9]|3[01]) (?:${HTTP_DATE_MONTHS}) [0-9]{4} (?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9] GMT$`,
+  "u",
+);
+const RFC850_DATE = new RegExp(
+  `^(?:${HTTP_DATE_LONG_DAYS}), (?:0[1-9]|[12][0-9]|3[01])-(?:${HTTP_DATE_MONTHS})-[0-9]{2} (?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9] GMT$`,
+  "u",
+);
+const ASCTIME_DATE = new RegExp(
+  `^(?:${HTTP_DATE_DAYS}) (?:${HTTP_DATE_MONTHS}) (?: [0-9]|[0-9]{2}) (?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9] [0-9]{4}$`,
+  "u",
+);
+
+/**
+ * Retry-After dates must be one of the three HTTP-date forms. JavaScript's
+ * Date.parse accepts ISO and prose-like dates that are not HTTP-date, so it is
+ * only consulted after an exact format match.
+ */
+function httpDateMilliseconds(value: string): number | undefined {
+  if (
+    !IMF_FIXDATE.test(value) &&
+    !RFC850_DATE.test(value) &&
+    !ASCTIME_DATE.test(value)
+  )
+    return undefined;
+  const when = Date.parse(value);
+  return Number.isFinite(when) ? when : undefined;
+}
+
 function retryAfterSeconds(
   value: string | null,
   nowMs: number,
@@ -78,8 +111,8 @@ function retryAfterSeconds(
     const seconds = Number(text);
     return seconds >= 1 ? boundedSeconds(seconds) : undefined;
   }
-  const when = Date.parse(text);
-  if (!Number.isFinite(when)) return undefined;
+  const when = httpDateMilliseconds(text);
+  if (when === undefined) return undefined;
   const seconds = Math.ceil((when - nowMs) / 1000);
   return seconds >= 1 ? boundedSeconds(seconds) : undefined;
 }

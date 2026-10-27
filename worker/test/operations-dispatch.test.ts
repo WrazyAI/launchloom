@@ -206,6 +206,51 @@ describe("GitHub dispatch boundary", () => {
     expect(await resetOnly(item)).toEqual({ outcome: "retryable", retryAfterSeconds: 900 });
   });
 
+  it("accepts only HTTP-date syntax for retry-after dates", async () => {
+    const clock = () => Date.parse("Sun, 06 Nov 1994 08:00:00 GMT");
+    const expected = 2_977;
+    for (const date of [
+      "Sun, 06 Nov 1994 08:49:37 GMT",
+      "Sunday, 06-Nov-94 08:49:37 GMT",
+      "Sun Nov  6 08:49:37 1994",
+    ]) {
+      const send = githubDispatcher(target, async () => new Response(null, {
+        status: 429, headers: { "retry-after": date },
+      }), clock);
+      expect(await send(item)).toEqual({
+        outcome: "retryable",
+        retryAfterSeconds: expected,
+      });
+    }
+  });
+
+  it("rejects ISO and other JavaScript-parseable non-HTTP dates", async () => {
+    const clock = () => Date.parse("Sun, 06 Nov 1994 08:00:00 GMT");
+    for (const date of [
+      "1994-11-06T08:49:37.000Z",
+      "1994-11-06 08:49:37",
+      "November 6, 1994 08:49:37 GMT",
+      "Sun, 06 Nov 1994 08:49:37 UTC",
+      "Sun, 06 Nov 1994 08:49:37",
+      "Sun, 31 Feb 1994 08:49:37 GMT",
+      "Sun, 06 Nov 1994 25:49:37 GMT",
+    ]) {
+      const send = githubDispatcher(target, async () => new Response(null, {
+        status: 429, headers: { "retry-after": date },
+      }), clock);
+      expect(await send(item)).toBe("retryable");
+    }
+
+    const forbidden = githubDispatcher(target, async () => new Response(null, {
+      status: 403,
+      headers: {
+        "retry-after": "1994-11-06T08:49:37.000Z",
+        "x-ratelimit-remaining": "0",
+      },
+    }), clock);
+    expect(await forbidden(item)).toBe("rejected");
+  });
+
   it("refuses unsafe target configuration before sending", () => {
     expect(() => githubDispatcher({ ...target, repository: "../../elsewhere" })).toThrow();
     expect(() => githubDispatcher({ ...target, repository: "../elsewhere" })).toThrow();
