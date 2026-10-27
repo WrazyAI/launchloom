@@ -327,7 +327,8 @@ export type SiteConfig = {
         | "requested"
         | "legacy"
         | "creative-bakeoff"
-        | "creative-diagnostic";
+        | "creative-diagnostic"
+        | "foundation-preview";
       fingerprint?: string;
       servicePage?: boolean;
       locationPage?: boolean;

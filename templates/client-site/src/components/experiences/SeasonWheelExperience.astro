@@ -34,7 +34,12 @@ const afterLead = afterLeadParts.join(FOUNDATION_LEAD_FORM_MARKER);
 ---
 
 <div
-  class:list={["xp-foundation", "xp-season-wheel", bodyClass]}
+  class:list={[
+    "xp-foundation",
+    "xp-foundation-shell",
+    "xp-season-wheel",
+    bodyClass,
+  ]}
   data-experience-pack={program.packId}
   data-experience-variant={program.variantId}
   data-layout-fingerprint={program.fingerprint}

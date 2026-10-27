@@ -292,6 +292,34 @@ function safeDesignManifest(config) {
       treatment: null,
     };
   }
+  if (config.design?.experience?.renderer === "foundation") {
+    return {
+      recipe: publicText(config.design?.recipe, 60),
+      renderer: {
+        type: "foundation",
+        foundationId: publicText(config.design?.experience?.foundationId, 120),
+        fingerprint: publicText(config.design?.experience?.fingerprint, 100),
+        compatibility: publicText(
+          config.design?.experience?.foundationCompatibility,
+          40,
+        ),
+      },
+      navigationLinks: ["Services", "FAQs", "Contact"],
+      requiredSections: ["hero", "conversion", "services", "faq", "contact"],
+      optionalSections: ["coverage", "social-proof"],
+      sectionOrder: [
+        "hero",
+        "conversion",
+        "services",
+        "coverage",
+        "social-proof",
+        "faq",
+        "contact",
+      ],
+      allowedVariants: {},
+      treatment: null,
+    };
+  }
   const packId = publicText(config.design?.experience?.packId, 50);
   const contract =
     config.design?.experience?.blueprintVersion === 2

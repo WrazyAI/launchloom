@@ -71,6 +71,17 @@ const demos = [
     renderer: "foundation",
     diagnosticOnly: true,
   },
+  {
+    slug: "spicer-landscaping-season-wheel",
+    fixture: "landscaping.json",
+    packId: "spicer-landscaping-season-wheel",
+    variants: ["standard"],
+    internal: true,
+    lightOnly: true,
+    foundation: "spicer-landscaping-season-wheel",
+    renderer: "foundation",
+    diagnosticOnly: true,
+  },
 ];
 const onlyFlag = process.argv.indexOf("--only");
 const only =
