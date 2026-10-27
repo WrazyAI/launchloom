@@ -40,6 +40,9 @@ describe("generation workflow foundation renderer", () => {
       "Prepare private creative-recovery report",
       "Build and deploy noindex diagnostic preview",
       "Register one-time repair session and create signed review link",
+      "Analyze reserved inspiration and freeze creative session",
+      "Record reference analysis started",
+      "Record reference analysis stage",
     ]) {
       expect(step(name).if).toContain(
         "needs.renderer_policy.outputs.renderer == 'creative'",
@@ -99,6 +102,13 @@ describe("generation workflow foundation renderer", () => {
     );
     expect(failure.run).toContain("FAILURE_STAGE=foundation_render");
     expect(failure.run).toContain("FAILURE_CATEGORY=foundation_render");
+    // A foundation run that stopped before selection must not be labelled as a
+    // rendering failure.
+    expect(failure.run).toContain(
+      '"${{ steps.foundation.outcome }}" = "success"',
+    );
+    expect(failure.run).toContain("FAILURE_STAGE=client_repo");
+    expect(failure.run).toContain("FAILURE_STAGE=imagery");
   });
 
   it("builds a foundation visual manifest instead of a pack or legacy manifest", () => {
