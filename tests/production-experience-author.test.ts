@@ -189,40 +189,95 @@ describe("production experience author", () => {
     expect(source).toContain('data-creative-host="true"');
     expect(source).not.toContain('role="main"');
   });
-  it.each(["chat-completions", "responses", "messages"] as const)("runs the actual author engine through the explicit %s adapter offline", async (protocol) => {
-    const seen: string[] = [];
-    const generate = createInferenceAuthorAdapter({
-      profile: {
-        provider: "offline-fixture", model: "fixture-author", protocol,
-        endpoint: `https://fixture.invalid/v1/${protocol === "chat-completions" ? "chat/completions" : protocol}`,
-        auth: protocol === "messages" ? "api-key" : "bearer",
-        capabilities: { maxOutputTokens: 48000, outputFormats: ["text", "json-schema"], ...(protocol === "chat-completions" ? { completionTokenField: "max_completion_tokens" } : {}) },
-      },
-      apiKey: "fixture-only-no-provider-key",
-      prepareRequest: (request: AuthorStageRequest) => ({
-        maxOutputTokens: AUTHORING_STAGE_BUDGETS[request.stage].maxTokens,
-        messages: [{ role: "user", content: JSON.stringify(request) }],
-        outputFormat: { type: "json-schema", name: "author_stage", schema: { type: "object" } },
-      }),
-      fetchImpl: async (_url, options) => {
-        // Fixture data, not real production prompt preparation or model behavior.
-        const body = JSON.parse(String(options?.body));
-        const messages = body.input || body.messages;
-        const request = JSON.parse(messages[0].content[0].text);
-        seen.push(request.stage);
-        const text = JSON.stringify(safeStage(request));
-        return Response.json(protocol === "chat-completions"
-          ? { choices: [{ finish_reason: "stop", message: { role: "assistant", content: text } }] }
-          : protocol === "responses"
-            ? { status: "completed", output: [{ type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", text }] }] }
-            : { type: "message", role: "assistant", stop_reason: "end_turn", content: [{ type: "text", text }] });
-      },
-    });
-    const result = await authorExperienceCandidates({ site, inspirationPack, model: "fixture-author", generate });
-    expect(result.candidates).toHaveLength(3);
-    expect(seen).toEqual(expect.arrayContaining(["contract", "experience", "service", "service-index", "styles", "motion"]));
-    expect(result.candidates[0].files["Experience.jsx"]).toContain('data-model-experience="route-01"');
-  });
+  it.each(["chat-completions", "responses", "messages"] as const)(
+    "runs the actual author engine through the explicit %s adapter offline",
+    async (protocol) => {
+      const seen: string[] = [];
+      const generate = createInferenceAuthorAdapter({
+        profile: {
+          provider: "offline-fixture",
+          model: "fixture-author",
+          protocol,
+          endpoint: `https://fixture.invalid/v1/${protocol === "chat-completions" ? "chat/completions" : protocol}`,
+          auth: protocol === "messages" ? "api-key" : "bearer",
+          capabilities: {
+            maxOutputTokens: 48000,
+            outputFormats: ["text", "json-schema"],
+            ...(protocol === "chat-completions"
+              ? { completionTokenField: "max_completion_tokens" }
+              : {}),
+          },
+        },
+        apiKey: "fixture-only-no-provider-key",
+        prepareRequest: (request: AuthorStageRequest) => ({
+          maxOutputTokens: AUTHORING_STAGE_BUDGETS[request.stage].maxTokens,
+          messages: [{ role: "user", content: JSON.stringify(request) }],
+          outputFormat: {
+            type: "json-schema",
+            name: "author_stage",
+            schema: { type: "object" },
+          },
+        }),
+        fetchImpl: async (_url, options) => {
+          // Fixture data, not real production prompt preparation or model behavior.
+          const body = JSON.parse(String(options?.body));
+          const messages = body.input || body.messages;
+          const request = JSON.parse(messages[0].content[0].text);
+          seen.push(request.stage);
+          const text = JSON.stringify(safeStage(request));
+          return Response.json(
+            protocol === "chat-completions"
+              ? {
+                  choices: [
+                    {
+                      finish_reason: "stop",
+                      message: { role: "assistant", content: text },
+                    },
+                  ],
+                }
+              : protocol === "responses"
+                ? {
+                    status: "completed",
+                    output: [
+                      {
+                        type: "message",
+                        role: "assistant",
+                        status: "completed",
+                        content: [{ type: "output_text", text }],
+                      },
+                    ],
+                  }
+                : {
+                    type: "message",
+                    role: "assistant",
+                    stop_reason: "end_turn",
+                    content: [{ type: "text", text }],
+                  },
+          );
+        },
+      });
+      const result = await authorExperienceCandidates({
+        site,
+        inspirationPack,
+        model: "fixture-author",
+        generate,
+      });
+      expect(result.candidates).toHaveLength(3);
+      expect(seen).toEqual(
+        expect.arrayContaining([
+          "contract",
+          "experience",
+          "service",
+          "service-index",
+          "styles",
+          "motion",
+        ]),
+      );
+      expect(result.candidates[0].files["Experience.jsx"]).toContain(
+        'data-model-experience="route-01"',
+      );
+    },
+  );
 
   it("rejects unsealed or non-navigation URL attributes", () => {
     const route = { id: "route-url-safety" };
@@ -863,7 +918,9 @@ export default function Experience`,
         const safe = safeStage(request);
         if (request.stage !== "experience" || request.route.id !== "route-01")
           return safe;
-        if (request.validationError?.includes("Reference fidelity repair cycle"))
+        if (
+          request.validationError?.includes("Reference fidelity repair cycle")
+        )
           return {
             content: String(safe.content).replace(
               "<section data-hero>",
@@ -2379,9 +2436,7 @@ export default function Experience`,
     ).toBe(true);
     expect(
       requests.every((request) =>
-        request.rules.includes(
-          "Every <img> src must be a sealed image token",
-        ),
+        request.rules.includes("Every <img> src must be a sealed image token"),
       ),
     ).toBe(true);
   });
@@ -2533,20 +2588,19 @@ export default function Experience`,
       routes: inspirationPack.routes.map((route, index) => {
         if (route.id === "route-02")
           return {
-              ...route,
-              referenceId: "morris-jenkins-home-services",
-              label: "Morris-Jenkins home-services reference",
-              signature:
-                "technician campaign poster and person-led reassurance",
-              referenceDossier: {
-                id: "morris-jenkins-home-services",
-                familyId: "home-services",
-                referenceName: "Morris-Jenkins",
-                source: { rights: "licensed" },
-                designPrompt:
-                  "A uniformed technician beside a promise, technician campaign poster, and people-led explanation.",
-              },
-            };
+            ...route,
+            referenceId: "morris-jenkins-home-services",
+            label: "Morris-Jenkins home-services reference",
+            signature: "technician campaign poster and person-led reassurance",
+            referenceDossier: {
+              id: "morris-jenkins-home-services",
+              familyId: "home-services",
+              referenceName: "Morris-Jenkins",
+              source: { rights: "licensed" },
+              designPrompt:
+                "A uniformed technician beside a promise, technician campaign poster, and people-led explanation.",
+            },
+          };
         return { ...route, referenceId: `test-reference-${index + 1}` };
       }),
     };
@@ -3345,7 +3399,7 @@ export default function Experience`,
       workflow.match(
         /PUBLIC_REVIEW_MODE=true node "\$GITHUB_WORKSPACE\/scripts\/verify-rendered-revision\.mjs"/g,
       ),
-    ).toHaveLength(1);
+    ).toHaveLength(2);
   });
 
   it("emits route-specific content manifests with independently reproducible digests", async () => {
@@ -3762,7 +3816,10 @@ export default function ServicePage({ content, runtime, service: { name, slug, d
     const valid = String(
       safeStage({ ...request, stage: "service" }).content || "",
     );
-    const marked = valid.replace("<main", '<main className="licensed technician"');
+    const marked = valid.replace(
+      "<main",
+      '<main className="licensed technician"',
+    );
     expect(() =>
       validateServicePage(marked, route, { claimEvidence: {} }),
     ).not.toThrow();
