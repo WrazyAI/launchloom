@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{page.title}}</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="assets/vendor/bootstrap6/css/bootstrap.min.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-bs-spy="scroll" data-bs-target="#navScroll" data-bs-top-margin="110px" data-bs-smooth-scroll="true">
+
+<a class="visually-hidden-focusable btn-solid theme-primary m-2" href="#main">Skip to main content</a>
+
+<div class="top-note">
+  Kitchen open until 22:30 tonight · <a href="#book">Book a table</a>
+</div>
+
+<header data-foundation-needs-adaptation="true" data-experience-hero="true" data-foundation-section="hero" class="site-header">
+  <nav class="navbar lg:navbar-expand" aria-label="Main">
+    <div class="container">
+      <a data-foundation-slot="navigation.brand" class="wordmark" href="index.html">{{navigation.brand}}</a>
+
+      <dialog class="drawer drawer-end" tabindex="-1" id="navDrawer" aria-labelledby="navDrawerLabel">
+        <div class="drawer-header">
+          <h5 class="drawer-title" id="navDrawerLabel"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="drawer" aria-label="Close"></button>
+        </div>
+        <div class="drawer-body mb-2 lg:mb-0">
+          <ul class="nav navbar-nav ms-auto lg:gap-3" id="navScroll">
+            <li class="nav-item"><nav class="nav-item" aria-label="Main navigation"><a class="nav-link" href="#services">Services</a><a class="nav-link" href="#faqs">FAQs</a><a class="nav-link" href="#contact">Contact</a></nav></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+          </ul>
+        </div>
+      </dialog>
+
+      <div class="d-flex align-items-center gap-2 ms-auto">
+        <button class="btn-icon" type="button" id="themeToggle" aria-label="Toggle color mode">
+          
+          
+        </button>
+        
+        <button class="btn-icon navbar-toggler" type="button" data-bs-toggle="drawer" data-bs-target="#navDrawer" aria-controls="navDrawer" aria-label="Open navigation">
+          <span class="navbar-toggler-icon" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+</header><aside data-foundation-section="conversion" data-early-conversion="true" class="xp-ribbon"><div class="xp-ribbon__copy">
+  <span class="xp-ribbon__kicker">Next step</span>
+  <p>{{conversion.body}}</p>
+</div>
+<a class="xp-ribbon__action" href="#contact">{{conversion.action}} <span aria-hidden="true">→</span></a></aside>
+
+<section data-foundation-section="contact" class="hero">
+  <img data-foundation-image="contact.image" class="hero-bg" src="{{contact.image}}" alt="" width="1800" height="1000" loading="eager">
+  <div class="container">
+    <div class="row">
+      <div class="lg:col-7">
+        <p data-foundation-slot="contact.body" class="eyebrow-rule mb-4">{{contact.body}}</p>
+        <h1 data-foundation-slot="contact.heading" class="display-serif hero-title mb-4">{{contact.heading}}</h1>
+        <p class="fs-lg fg-2 mb-5" style="max-width:34rem"></p>
+        <div class="d-flex flex-wrap gap-3">
+          <a class="btn-solid theme-primary btn-lg" href="#book"></a>
+          <a class="btn-outline theme-secondary btn-lg" href="#menu"></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main id="main">
+
+  <!-- Menu — tabbed by service -->
+  <section data-foundation-section="menu" class="section" id="menu">
+    <div class="container">
+      <div class="text-center mb-6">
+        <p data-foundation-slot="services.body" class="eyebrow-rule mb-3">{{services.body}}</p>
+        <h2 data-foundation-slot="services.heading" class="display-serif section-title fs-4xl mb-2">{{services.heading}}</h2>
+        <p class="fg-3 fs-sm mb-0"></p>
+      </div>
+
+      <ul data-foundation-repeat-parent="services.items" class="nav nav-underline justify-content-center mb-5" role="tablist">
+        <!--foundation:each:services.items--><li data-foundation-slot="services.item.name" data-foundation-repeat="services.items" class="nav-item" role="presentation">{{services.item.name}}</li><!--/foundation:each:services.items-->
+        
+        
+      </ul>
+
+      <div class="tab-content">
+
+        <div class="tab-pane active" id="svcLunch" role="tabpanel">
+          <div class="menu-card">
+            <div class="row g-6">
+              <div class="md:col-6">
+                <p class="course-label"></p>
+                <div class="dish"><span class="dish-name"></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+                <div class="dish"><span class="dish-name"><span class="dish-tags"><span class="dish-tag"></span></span></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+                <div class="dish"><span class="dish-name"><span class="dish-tags"><span class="dish-tag"></span></span></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+              </div>
+              <div class="md:col-6">
+                <p class="course-label"></p>
+                <div class="dish"><span class="dish-name"><span class="dish-tags"><span class="dish-tag"></span></span></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+                <div class="dish"><span class="dish-name"></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+                <div class="dish"><span class="dish-name"><span class="dish-tags"><span class="dish-tag"></span></span></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="svcDinner" role="tabpanel">
+          <div class="menu-card">
+            <div class="row g-6">
+              <div class="md:col-6">
+                <p class="course-label"></p>
+                <div class="dish"><span class="dish-name"></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+                <div class="dish"><span class="dish-name"></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+                <div class="dish"><span class="dish-name"><span class="dish-tags"><span class="dish-tag"></span></span></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+              </div>
+              <div class="md:col-6">
+                <p class="course-label"></p>
+                <div class="dish"><span class="dish-name"></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+                <div class="dish"><span class="dish-name"></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+                <div class="dish"><span class="dish-name"><span class="dish-tags"><span class="dish-tag"></span></span></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="svcSunday" role="tabpanel">
+          <div class="menu-card">
+            <div class="row g-6">
+              <div class="md:col-6">
+                <p class="course-label"></p>
+                <div class="dish"><span class="dish-name"></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+                <div class="dish"><span class="dish-name"></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+              </div>
+              <div class="md:col-6">
+                <p class="course-label"></p>
+                <div class="dish"><span class="dish-name"></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+                <div class="dish"><span class="dish-name"><span class="dish-tags"><span class="dish-tag"></span></span></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+                <div class="dish"><span class="dish-name"></span><span class="dish-leader"></span><span class="dish-price"></span></div>
+                <p class="dish-note"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="text-center mt-5">
+        <a class="btn-outline theme-secondary btn-lg" href="menu.html"></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Kitchen -->
+  <section data-foundation-section="about" class="section bg-2" id="about">
+    <div class="container">
+      <div class="row g-6 align-items-center">
+        <div class="lg:col-6">
+          <div class="ph ph-4x3"><img data-foundation-image="about.image" src="{{about.image}}" alt="" width="900" height="675" loading="lazy"></div>
+        </div>
+        <div class="lg:col-6">
+          <p data-foundation-slot="about.body" class="eyebrow-rule mb-3">{{about.body}}</p>
+          <h2 data-foundation-slot="about.heading" class="display-serif section-title fs-4xl mb-4">{{about.heading}}</h2>
+          <p class="fg-2 mb-4"></p>
+          <p class="fg-2 mb-5"></p>
+          <blockquote class="quote-block mb-0"><cite class="d-block fs-sm fg-3 mt-3 fst-normal" style="font-family:inherit"></cite>
+          </blockquote>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Room / gallery -->
+  <section data-foundation-needs-adaptation="true" data-foundation-section="room" class="section" id="room">
+    <div class="container mb-5">
+      <p data-foundation-slot="unknown.body" class="eyebrow-rule mb-3">{{unknown.body}}</p>
+      <h2 data-foundation-slot="unknown.heading" class="display-serif section-title fs-4xl mb-0">{{unknown.heading}}</h2>
+    </div>
+    <div class="container-fluid px-4 lg:px-5">
+      <div class="mosaic">
+        <div class="ph"><img data-foundation-image="unknown.image" src="{{unknown.image}}" alt="" width="900" height="900" loading="lazy"></div>
+        <div class="ph"><img data-foundation-image="unknown.secondaryImage" src="{{unknown.secondaryImage}}" alt="" width="600" height="600" loading="lazy"></div>
+        <div class="ph"><img data-foundation-image="unknown.tertiaryImage" src="{{unknown.tertiaryImage}}" alt="" width="600" height="600" loading="lazy"></div>
+        <div class="ph"></div>
+        <div class="ph"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Booking -->
+  <section data-foundation-section="book" class="section bg-2" id="book">
+    <div class="container">
+      <div class="row g-6">
+        <div class="lg:col-5">
+          <p data-foundation-slot="contact-2.body" class="eyebrow-rule mb-3">{{contact-2.body}}</p>
+          <h2 data-foundation-slot="contact-2.heading" class="display-serif section-title fs-4xl mb-4">{{contact-2.heading}}</h2>
+          <p class="fg-2 mb-4"></p>
+          <div class="hours-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="hours-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="hours-row is-today"><span class="fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="hours-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <p class="fs-xs fg-3 mt-4 mb-0"></p>
+        </div>
+
+        <div class="lg:col-7">
+          <div class="book-card">
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Find us -->
+  <section data-foundation-section="find" class="section" id="find">
+    <div class="container">
+      <div class="row g-6">
+        <div class="lg:col-6">
+          <p data-foundation-slot="process.body" class="eyebrow-rule mb-3">{{process.body}}</p>
+          <h2 data-foundation-slot="process.heading" class="display-serif section-title fs-4xl mb-4">{{process.heading}}</h2>
+          <p class="fg-2 mb-4"></p>
+          <div class="hours-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="hours-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="hours-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="hours-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+        </div>
+        <div class="lg:col-6">
+          <div data-foundation-repeat-parent="process.items" class="accordion">
+            <!--foundation:each:process.items--><details data-foundation-slot="process.item.description" data-foundation-repeat="process.items" class="accordion-item" name="tfaq" open>{{process.item.description}}</details><!--/foundation:each:process.items-->
+            
+            
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer data-foundation-license="MIT" data-foundation-section="footer" class="site-footer section pb-5 bg-2"><span>{{footer.brand}}</span><span>{{footer.credit}}</span></footer>
+
+<script type="module" src="assets/js/main.js"></script>
+<span data-foundation-anchor="true" id="services"></span><span data-foundation-anchor="true" id="faqs"></span></body>
+</html>

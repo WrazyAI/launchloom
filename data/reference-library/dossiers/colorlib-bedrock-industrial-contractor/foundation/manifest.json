@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-bedrock-industrial-contractor",
+  "dossierId": "colorlib-bedrock-industrial-contractor",
+  "sourceDigest": "0b99b2a5bea507fa2f6d605c2a3e0b7405456a2d54e17a19c6b4b43e9c087855",
+  "entrypoint": "source/index.html",
+  "sourceClass": "licensed",
+  "license": {
+    "name": "MIT",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/bedrock",
+    "credit": "Template adapted from Colorlib Bootstrap Templates MIT and CC0 template"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "capabilities",
+      "sourceSelector": "#capabilities",
+      "order": 4,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "sectors",
+      "sourceSelector": "#sectors",
+      "order": 5,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "projects",
+      "sourceSelector": "#projects",
+      "order": 6,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "process",
+      "sourceSelector": "#process",
+      "order": 7,
+      "role": "process",
+      "required": false
+    },
+    {
+      "id": "unknown-2",
+      "sourceSelector": "section",
+      "order": 8,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "tender",
+      "sourceSelector": "#tender",
+      "order": 9,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 10,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "process.body",
+      "selector": "[data-foundation-slot=\"process.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "process.heading",
+      "selector": "[data-foundation-slot=\"process.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "process.item.description",
+      "selector": "[data-foundation-item=\"process.items\"] description",
+      "kind": "text",
+      "contentPath": "step.description",
+      "required": true
+    },
+    {
+      "id": "process.items",
+      "selector": "[data-foundation-repeat=\"process.items\"]",
+      "kind": "each",
+      "contentPath": "process",
+      "itemPath": "step",
+      "required": true
+    },
+    {
+      "id": "services-2.body",
+      "selector": "[data-foundation-slot=\"services-2.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services-2.heading",
+      "selector": "[data-foundation-slot=\"services-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services-2.image",
+      "selector": "[data-foundation-image=\"services-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "services-2.secondaryImage",
+      "selector": "[data-foundation-image=\"services-2.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "services-2.tertiaryImage",
+      "selector": "[data-foundation-image=\"services-2.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "unknown-2.body",
+      "selector": "[data-foundation-slot=\"unknown-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.image",
+      "selector": "[data-foundation-image=\"unknown.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    }
+  ],
+  "assets": [
+    {
+      "source": "img/hero.jpg",
+      "target": "template/source/img/hero.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "img/proj-1.jpg",
+      "target": "template/source/img/proj-1.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "img/proj-2.jpg",
+      "target": "template/source/img/proj-2.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "img/proj-3.jpg",
+      "target": "template/source/img/proj-3.jpg",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "network-script",
+      "message": "Foundation script contains a network, analytics, or tracking primitive; the foundation needs adaptation.",
+      "selector": "script"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+      "selector": "header"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-2' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "35b4fa295535db74c9103527fc39d98bc65ab10698bffed03c60eee3280ea139"
+}

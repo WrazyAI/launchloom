@@ -1,0 +1,479 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-landscaping-season-wheel",
+  "dossierId": "spicer-landscaping-season-wheel",
+  "sourceDigest": "e6fb0374a2fb04392aa8c6bc4fe48c6589afcefc8ce55943afbf1e3ba31de60a",
+  "entrypoint": "source/index.html",
+  "sourceClass": "licensed",
+  "license": {
+    "name": "CC BY 4.0",
+    "url": "https://www.spicerdesigns.com/templates/landscaping",
+    "credit": "Template adapted from Spicer Designs Landscaping website template"
+  },
+  "sections": [
+    {
+      "id": "navigation",
+      "sourceSelector": "nav",
+      "order": 1,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 2,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 3,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "work",
+      "sourceSelector": "#work",
+      "order": 4,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "seasons",
+      "sourceSelector": "#seasons",
+      "order": 5,
+      "role": "seasons",
+      "required": false
+    },
+    {
+      "id": "plans",
+      "sourceSelector": "#plans",
+      "order": 6,
+      "role": "plans",
+      "required": false
+    },
+    {
+      "id": "estimate",
+      "sourceSelector": "#estimate",
+      "order": 7,
+      "role": "estimate",
+      "required": false
+    },
+    {
+      "id": "coverage",
+      "sourceSelector": "#coverage",
+      "order": 8,
+      "role": "coverage",
+      "required": false
+    },
+    {
+      "id": "proof",
+      "sourceSelector": "section",
+      "order": 9,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "faq",
+      "sourceSelector": "#faq",
+      "order": 10,
+      "role": "faq",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "#contact",
+      "order": 11,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 12,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "#contact .xp-season-contact__body",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.email",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "text",
+      "contentPath": "brand.email",
+      "required": false
+    },
+    {
+      "id": "contact.emailHref",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "href",
+      "contentPath": "brand.emailHref",
+      "required": false
+    },
+    {
+      "id": "contact.form",
+      "selector": "[data-foundation-contact-form]",
+      "kind": "html",
+      "contentPath": "contact.form",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "#contact h2",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "contact.kicker",
+      "selector": "#contact .xp-season-contact__kicker",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.phone",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "text",
+      "contentPath": "brand.phone",
+      "required": false
+    },
+    {
+      "id": "contact.phoneHref",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "href",
+      "contentPath": "brand.phoneHref",
+      "required": false
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "coverage.body",
+      "selector": "[data-foundation-slot=\"coverage.body\"]",
+      "kind": "text",
+      "contentPath": "coverageIntro",
+      "required": true
+    },
+    {
+      "id": "coverage.heading",
+      "selector": "[data-foundation-slot=\"coverage.heading\"]",
+      "kind": "text",
+      "contentPath": "coverageHeading",
+      "required": true
+    },
+    {
+      "id": "coverage.item.name",
+      "selector": "[data-foundation-item=\"coverage.items\"] name",
+      "kind": "text",
+      "contentPath": "location.name",
+      "required": true
+    },
+    {
+      "id": "coverage.items",
+      "selector": "[data-foundation-repeat=\"coverage.items\"]",
+      "kind": "each",
+      "contentPath": "locations",
+      "itemPath": "location",
+      "required": true
+    },
+    {
+      "id": "estimate.body",
+      "selector": "[data-foundation-slot=\"estimate.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate.heading",
+      "selector": "[data-foundation-slot=\"estimate.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "faq.body",
+      "selector": "[data-foundation-slot=\"faq.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "faq.heading",
+      "selector": "[data-foundation-slot=\"faq.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.faqHeading",
+      "required": true
+    },
+    {
+      "id": "faq.item.answer",
+      "selector": "[data-foundation-item=\"faq.items\"] answer",
+      "kind": "text",
+      "contentPath": "faq.answer",
+      "required": true
+    },
+    {
+      "id": "faq.item.question",
+      "selector": "[data-foundation-item=\"faq.items\"] question",
+      "kind": "text",
+      "contentPath": "faq.question",
+      "required": true
+    },
+    {
+      "id": "faq.items",
+      "selector": "[data-foundation-repeat=\"faq.items\"]",
+      "kind": "each",
+      "contentPath": "faqs",
+      "itemPath": "faq",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.body",
+      "selector": "[data-foundation-slot=\"hero.body\"]",
+      "kind": "text",
+      "contentPath": "hero.body",
+      "required": true
+    },
+    {
+      "id": "hero.heading",
+      "selector": "[data-foundation-slot=\"hero.heading\"]",
+      "kind": "text",
+      "contentPath": "hero.heading",
+      "required": true
+    },
+    {
+      "id": "hero.image",
+      "selector": "[data-foundation-image=\"hero.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": true
+    },
+    {
+      "id": "hero.primaryLabel",
+      "selector": "[data-foundation-slot=\"hero.primaryLabel\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "hero.secondaryLabel",
+      "selector": "[data-foundation-slot=\"hero.secondaryLabel\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "plans.body",
+      "selector": "[data-foundation-slot=\"plans.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "plans.heading",
+      "selector": "[data-foundation-slot=\"plans.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.heading",
+      "selector": "[data-foundation-slot=\"proof.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.item.attribution",
+      "selector": "[data-foundation-item=\"proof.items\"] attribution",
+      "kind": "text",
+      "contentPath": "proof.attribution",
+      "required": true
+    },
+    {
+      "id": "proof.item.quote",
+      "selector": "[data-foundation-item=\"proof.items\"] quote",
+      "kind": "text",
+      "contentPath": "proof.quote",
+      "required": true
+    },
+    {
+      "id": "proof.items",
+      "selector": "[data-foundation-repeat=\"proof.items\"]",
+      "kind": "each",
+      "contentPath": "proof",
+      "itemPath": "proof",
+      "required": true
+    },
+    {
+      "id": "seasons.body",
+      "selector": "[data-foundation-slot=\"seasons.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "seasons.heading",
+      "selector": "[data-foundation-slot=\"seasons.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.item.description",
+      "selector": "[data-foundation-item=\"services.items\"] description",
+      "kind": "text",
+      "contentPath": "service.description",
+      "required": true
+    },
+    {
+      "id": "services.item.name",
+      "selector": "[data-foundation-item=\"services.items\"] name",
+      "kind": "text",
+      "contentPath": "service.name",
+      "required": true
+    },
+    {
+      "id": "services.items",
+      "selector": "[data-foundation-repeat=\"services.items\"]",
+      "kind": "each",
+      "contentPath": "services",
+      "itemPath": "service",
+      "required": true
+    }
+  ],
+  "assets": [
+    {
+      "source": "hero.webp",
+      "target": "template/source/hero.webp",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    },
+    {
+      "id": "faq-disclosure",
+      "source": "details",
+      "primitive": "native-disclosure",
+      "reducedMotion": "all content visible when closed"
+    },
+    {
+      "id": "seasons-buttons",
+      "source": "button[aria-pressed]",
+      "primitive": "native-buttons",
+      "reducedMotion": "static selected state"
+    },
+    {
+      "id": "work-buttons",
+      "source": "button[aria-pressed]",
+      "primitive": "native-buttons",
+      "reducedMotion": "static selected state"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "interactive-section-needs-adaptation",
+      "message": "Section 'estimate' preserves an interactive source composition that needs adaptation.",
+      "selector": "#estimate"
+    },
+    {
+      "code": "interactive-section-needs-adaptation",
+      "message": "Section 'seasons' preserves an interactive source composition that needs adaptation.",
+      "selector": "#seasons"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated seasons items in 'seasons' have no sealed content mapping.",
+      "selector": "#seasons"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'estimate' preserves source composition that needs adaptation.",
+      "selector": "#estimate"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'plans' preserves source composition that needs adaptation.",
+      "selector": "#plans"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'seasons' preserves source composition that needs adaptation.",
+      "selector": "#seasons"
+    }
+  ],
+  "fingerprint": "1e7a8dcfa7a829832f180a6d4eef2be82d3031c3aa6c2b6174a3de2c514125b4"
+}

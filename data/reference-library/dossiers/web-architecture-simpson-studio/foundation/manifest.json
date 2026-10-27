@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "id": "web-architecture-simpson-studio",
+  "dossierId": "web-architecture-simpson-studio",
+  "sourceDigest": "90b9d4e5cfe81b6a1887effb05b8889b04506b59622bde613f339a540aaef241",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://www.simpson-studio.com/",
+    "credit": "Template adapted from Simpson Studio integrated architecture and interiors official website"
+  },
+  "sections": [
+    {
+      "id": "header",
+      "sourceSelector": "#header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "page-regions",
+      "sourceSelector": "#page-regions",
+      "order": 2,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "#contact",
+      "order": 3,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer-sections",
+      "sourceSelector": "#footer-sections",
+      "order": 4,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "#contact .xp-season-contact__body",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.email",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "text",
+      "contentPath": "brand.email",
+      "required": false
+    },
+    {
+      "id": "contact.emailHref",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "href",
+      "contentPath": "brand.emailHref",
+      "required": false
+    },
+    {
+      "id": "contact.form",
+      "selector": "[data-foundation-contact-form]",
+      "kind": "html",
+      "contentPath": "contact.form",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "#contact h2",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "contact.kicker",
+      "selector": "#contact .xp-season-contact__kicker",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.phone",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "text",
+      "contentPath": "brand.phone",
+      "required": false
+    },
+    {
+      "id": "contact.phoneHref",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "href",
+      "contentPath": "brand.phoneHref",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "proof.heading",
+      "selector": "[data-foundation-slot=\"proof.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.item.quote",
+      "selector": "[data-foundation-item=\"proof.items\"] quote",
+      "kind": "text",
+      "contentPath": "proof.quote",
+      "required": true
+    },
+    {
+      "id": "proof.items",
+      "selector": "[data-foundation-repeat=\"proof.items\"]",
+      "kind": "each",
+      "contentPath": "proof",
+      "itemPath": "proof",
+      "required": true
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "missing-services",
+      "message": "No services or portfolio section was detected."
+    }
+  ],
+  "fingerprint": "490f3f431119fcf5726f0c75b12517c01245b9d8afb87025bffdb6bfd51c982f"
+}

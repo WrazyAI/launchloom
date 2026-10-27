@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "orgarden-gardening-services",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://download.html.design/demo/orgarden/index.html",
+    "finalUrl": "https://download.html.design/demo/orgarden/index.html",
+    "httpStatus": 200,
+    "pageTitle": "Orgarden",
+    "retrievedAt": "2026-10-27T16:19:00.778Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/LICENSE.md",
+    "licenseEvidencePath": "rights/LICENSE.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 24954,
+      "sha256": "a4242891c21211b2953b3575e679b8ef205d476b35c12fcd239279290a597069"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 192348,
+      "sha256": "35fbb6dc3891aacaf1ffa07abec2344fdbc454aab533a2a03bcf93577eb7837b"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 15620,
+      "sha256": "bc97a4560a7874deb40fcb946bfb6ad08f0de2e6140e82491c57342d897a19d9"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 3351,
+      "sha256": "521410e1fc44780061e09adc980275fb5ea277fd5d9e538454214ec4379ff4bc"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 49396,
+      "sha256": "a3c31b68b69890aabe6880548eb6be815113e8ca21381dd7802011f7be848d2e"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 1665,
+      "sha256": "9273e8c03b8ce4674651a95d64d211b958688caf82c2a299010ebf2a145aa01a"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://download.html.design/demo/orgarden/images/hero-bg.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/about-img.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/s1.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/s2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/s3.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/s4.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/s5.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/s6.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/t1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/t2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/t3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/t4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/contact-bg.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/c1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://download.html.design/demo/orgarden/images/c2.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 5 of 5 stylesheets retained.",
+  "digest": "098f3799039c9f60a0fc2c6782626f41443917d0d67b33d7974143609962328b"
+}

@@ -1,0 +1,85 @@
+/*
+ Theme Name:   Quick Roofing
+ Description:  Quick Roofing Website
+ Template:     Divi
+ Version:      0.0.2
+ License:      Private
+ Text Domain:  quickroofing
+*/
+.xp-foundation #logo {
+	-webkit-filter: brightness(0) invert(1) !important;
+    filter: brightness(0) invert(1) !important;
+}
+/* style the get inspection cta button */
+.xp-foundation .get-inspection-cta {
+    border-radius: 0px;
+}
+.xp-foundation .get-inspection-cta a {
+    color: #fff!important;
+}
+.xp-foundation li.get-inspection-cta {
+    border: 1px solid #fff;
+    font-weight: 700; 
+    text-transform: uppercase; 
+    text-align: center; 
+    padding: 9px 13px 10px 10px!important;
+    border-radius: 0px;
+    -moz-transition: all 0.5s; 
+    -webkit-transition: all 0.5s;
+    transition: all 0.5s;
+    margin-top: -5px;
+}
+.xp-foundation .get-inspection-cta:hover  {
+    background-color:#fff;
+    border: 1px solid #fff;
+    font-weight: 700; 
+    text-transform: uppercase; 
+    text-align: center; 
+    padding: 9px 13px 10px 10px!important;
+    border-radius: 0px;
+    -moz-transition: all 0.5s; 
+    -webkit-transition: all 0.5s;
+    transition: all 0.5s;
+    margin-top: -5px;
+}
+.xp-foundation .get-inspection-cta:hover a  {
+    color: #cc0000!important;
+    opacity: 1!important;
+}
+
+.xp-foundation .et-fixed-header #top-menu li.get-inspection-cta{
+    margin-top: -9px;
+}
+ 
+/* fixed header button text color */
+.xp-foundation .et-fixed-header #top-menu .get-inspection-cta a {
+    color: #fff!important;
+}
+.xp-foundation .et-fixed-header #top-menu .get-inspection-cta:hover a {
+    color: #cc0000!important;
+}
+.xp-foundation .get-inspection-cta li.current-menu-ancestor > a, .xp-foundation .get-inspection-cta li.current-menu-item > a {
+    color: #cc0000 !important;
+}
+@media only screen and (min-width : 981px) {
+    .xp-foundation li.get-inspection-cta {height: 33px;}
+}
+@media (min-width: 981px)
+.et_header_style_left .et-fixed-header #et-top-navigation {
+    padding: 7px 0 0 0;
+}
+@media only screen and (min-width: 981px)
+(index):106
+.et_header_style_left #et-top-navigation, .et_header_style_split #et-top-navigation {
+    padding: 20px 0 0 0;
+}
+.xp-foundation .et_mobile_menu {
+    border-top: 3px solid #5e5e5e;
+}
+.xp-foundation #et_search_icon:hover, .xp-foundation .mobile_menu_bar:before, .xp-foundation .mobile_menu_bar:after, .xp-foundation .et-social-icon a:hover, .xp-foundation .comment-reply-link, .xp-foundation .form-submit .et_pb_button, .xp-foundation .entry-summary p.price ins, .xp-foundation .woocommerce div.product span.price, .xp-foundation .woocommerce-page div.product span.price, .xp-foundation .woocommerce #content div.product span.price, .xp-foundation .woocommerce-page #content div.product span.price, .xp-foundation .woocommerce div.product p.price, .xp-foundation .woocommerce-page div.product p.price, .xp-foundation .woocommerce #content div.product p.price, .xp-foundation .woocommerce-page #content div.product p.price, .xp-foundation .woocommerce .star-rating span:before, .xp-foundation .woocommerce-page .star-rating span:before, .xp-foundation .woocommerce a.button.alt, .xp-foundation .woocommerce-page a.button.alt, .xp-foundation .woocommerce button.button.alt, .xp-foundation .woocommerce-page button.button.alt, .xp-foundation .woocommerce input.button.alt, .xp-foundation .woocommerce-page input.button.alt, .xp-foundation .woocommerce #respond input#submit.alt, .xp-foundation .woocommerce-page #respond input#submit.alt, .xp-foundation .woocommerce #content input.button.alt, .xp-foundation .woocommerce-page #content input.button.alt, .xp-foundation .woocommerce a.button, .xp-foundation .woocommerce-page a.button, .xp-foundation .woocommerce button.button, .xp-foundation .woocommerce-page button.button, .xp-foundation .woocommerce input.button, .xp-foundation .woocommerce-page input.button, .xp-foundation .woocommerce #respond input#submit, .xp-foundation .woocommerce-page #respond input#submit, .xp-foundation .woocommerce #content input.button, .xp-foundation .woocommerce-page #content input.button, .xp-foundation .woocommerce a.button.alt:hover, .xp-foundation .woocommerce-page a.button.alt:hover, .xp-foundation .woocommerce button.button.alt:hover, .xp-foundation .woocommerce-page button.button.alt:hover, .xp-foundation .woocommerce input.button.alt:hover, .xp-foundation .woocommerce-page input.button.alt:hover, .xp-foundation .woocommerce #respond input#submit.alt:hover, .xp-foundation .woocommerce-page #respond input#submit.alt:hover, .xp-foundation .woocommerce #content input.button.alt:hover, .xp-foundation .woocommerce-page #content input.button.alt:hover, .xp-foundation .woocommerce a.button:hover, .xp-foundation .woocommerce-page a.button:hover, .xp-foundation .woocommerce-page button.button:hover, .xp-foundation .woocommerce input.button:hover, .xp-foundation .woocommerce-page input.button:hover, .xp-foundation .woocommerce #respond input#submit:hover, .xp-foundation .woocommerce-page #respond input#submit:hover, .xp-foundation .woocommerce #content input.button:hover, .xp-foundation .wp-pagenavi span.current, .xp-foundation .wp-pagenavi a:hover, .xp-foundation .et_password_protected_form .et_submit_button, .xp-foundation .nav-single a, .xp-foundation .posted_in a, .xp-foundation #top-menu li.current-menu-ancestor > a, .xp-foundation #top-menu li.current-menu-item > a, .xp-foundation .bottom-nav li.current-menu-item > a, .xp-foundation .footer-widget h4 {
+    color: #5e5e5e;
+} 
+.xp-foundation .footer-logo {
+	-webkit-filter: brightness(0) invert(1) !important;
+    filter: brightness(0) invert(1) !important;
+}

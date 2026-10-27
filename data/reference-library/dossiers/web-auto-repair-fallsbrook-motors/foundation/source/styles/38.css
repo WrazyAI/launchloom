@@ -1,0 +1,59 @@
+.xp-foundation .nf-multi-cell .nf-row::after {
+  clear: both;
+  content: "";
+  display: block;
+}
+.xp-foundation .nf-multi-cell .nf-cell {
+  float: left;
+  padding: 0 5px;
+}
+.xp-foundation .nf-multi-cell .five-sixths,
+.xp-foundation .nf-multi-cell .four-sixths,
+.xp-foundation .nf-multi-cell .one-fourth,
+.xp-foundation .nf-multi-cell .one-half,
+.xp-foundation .nf-multi-cell .one-sixth,
+.xp-foundation .nf-multi-cell .one-third,
+.xp-foundation .nf-multi-cell .three-fourths,
+.xp-foundation .nf-multi-cell .three-sixths,
+.xp-foundation .nf-multi-cell .two-fourths,
+.xp-foundation .nf-multi-cell .two-sixths,
+.xp-foundation .nf-multi-cell .two-thirds {
+  float: none;
+  margin-left: 0;
+  width: 100%;
+}
+.xp-foundation .nf-multi-cell .five-sixths .inside,
+.xp-foundation .nf-multi-cell .four-sixths .inside,
+.xp-foundation .nf-multi-cell .one-fourth .inside,
+.xp-foundation .nf-multi-cell .one-half .inside,
+.xp-foundation .nf-multi-cell .one-sixth .inside,
+.xp-foundation .nf-multi-cell .one-third .inside,
+.xp-foundation .nf-multi-cell .three-fourths .inside,
+.xp-foundation .nf-multi-cell .three-sixths .inside,
+.xp-foundation .nf-multi-cell .two-fourths .inside,
+.xp-foundation .nf-multi-cell .two-sixths .inside,
+.xp-foundation .nf-multi-cell .two-thirds .inside {
+  padding: 20px;
+}
+.xp-foundation .nf-multi-cell .five-sixths::after,
+.xp-foundation .nf-multi-cell .four-sixths::after,
+.xp-foundation .nf-multi-cell .one-fourth::after,
+.xp-foundation .nf-multi-cell .one-half::after,
+.xp-foundation .nf-multi-cell .one-sixth::after,
+.xp-foundation .nf-multi-cell .one-third::after,
+.xp-foundation .nf-multi-cell .three-fourths::after,
+.xp-foundation .nf-multi-cell .three-sixths::after,
+.xp-foundation .nf-multi-cell .two-fourths::after,
+.xp-foundation .nf-multi-cell .two-sixths::after,
+.xp-foundation .nf-multi-cell .two-thirds::after {
+  clear: both;
+  content: "";
+  display: block;
+}
+
+@media only screen and (max-width: 600px) {
+  .xp-foundation .nf-cell {
+    width: 100% !important;
+  }
+}
+/*# sourceMappingURL=display-structure.css.map */

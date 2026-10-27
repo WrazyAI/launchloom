@@ -5,6 +5,7 @@ import PageSections from "../components/PageSections.astro";
 import Footer from "../components/Footer.astro";
 import ExperiencePage from "../components/ExperiencePage.astro";
 import CreativeExperience from "../components/CreativeExperience.astro";
+import FoundationExperience from "../components/FoundationExperience.astro";
 import site from "../lib/site";
 import { resolvePageRecipe } from "../lib/page-recipe";
 import { compileExperiencePack } from "../lib/experience-pack";
@@ -15,13 +16,19 @@ const creativeCandidate = Boolean(
   site.design?.experience?.renderer === "creative-candidate" &&
     site.design?.experience?.candidateId,
 );
-const experience = site.design?.experience?.packId || creativeCandidate
-  ? compileExperiencePack(site, page.recipe)
-  : null;
+const foundationRenderer = Boolean(
+  site.design?.experience?.renderer === "foundation" &&
+    site.design?.experience?.foundationId,
+);
+const experience =
+  !foundationRenderer &&
+  (site.design?.experience?.packId || creativeCandidate)
+    ? compileExperiencePack(site, page.recipe)
+    : null;
 ---
 
 <SiteLayout>
-  {creativeCandidate && experience ? <CreativeExperience experience={experience} /> : experience ? <ExperiencePage experience={experience} /> : <Fragment>
+  {foundationRenderer ? <FoundationExperience foundationId={String(site.design?.experience?.foundationId)} /> : creativeCandidate && experience ? <CreativeExperience experience={experience} /> : experience ? <ExperiencePage experience={experience} /> : <Fragment>
     <Header family={page.family} />
     <main class:list={["site-main", `recipe-${page.recipe}`, `layout-${site.conversion?.layout || "editorial-authority"}`, `density-${density}`, `type-${typography}`, `composition-${page.composition}`, page.variantId && `design-${page.variantId}`]}>
       <PageSections page={page} />

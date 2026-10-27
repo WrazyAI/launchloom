@@ -118,7 +118,8 @@ export type ExperiencePackId =
   | "kinetic-poster"
   | "editorial-folio"
   | "guided-conversation"
-  | "service-led";
+  | "service-led"
+  | "season-wheel";
 export type SiteConfig = {
   pipelineTest?: {
     version: 1;
@@ -304,7 +305,13 @@ export type SiteConfig = {
       variantId?: string;
       internal?: boolean;
       blueprintVersion?: 2;
-      renderer?: "reviewed-pack" | "creative-candidate" | "legacy" | string;
+      renderer?:
+        | "reviewed-pack"
+        | "creative-candidate"
+        | "foundation"
+        | "legacy"
+        | string;
+      foundationId?: string;
       candidateId?: string;
       routeId?: string;
       familyId?: string;
@@ -320,7 +327,8 @@ export type SiteConfig = {
         | "requested"
         | "legacy"
         | "creative-bakeoff"
-        | "creative-diagnostic";
+        | "creative-diagnostic"
+        | "foundation-preview";
       fingerprint?: string;
       servicePage?: boolean;
       locationPage?: boolean;

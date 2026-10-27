@@ -14,10 +14,17 @@ export type ExperiencePackId =
   | "kinetic-poster"
   | "stage-index"
   | "editorial-ledger"
-  | "results-ledger";
+  | "results-ledger"
+  | "season-wheel";
 export type LegacyExperiencePackId =
   "editorial-folio" | "guided-conversation" | "service-led";
-export type ExperienceSection = PageSectionType | "conversion" | "location-map";
+export type ExperienceSection =
+  | PageSectionType
+  | "conversion"
+  | "location-map"
+  | "seasons"
+  | "plans"
+  | "estimate";
 
 export type ExperienceNavigation =
   "minimal-inline" | "utility-pill" | "command-bar";
@@ -30,7 +37,8 @@ export type ExperienceHero =
   | "poster-full-bleed"
   | "centered-stage"
   | "editorial-ledger"
-  | "results-ledger";
+  | "results-ledger"
+  | "season-wheel";
 export type ExperienceConversion =
   | "discovery-ribbon"
   | "embedded-qualifier"
@@ -46,7 +54,8 @@ export type ExperienceServices =
   | "problem-grid"
   | "panel-list"
   | "ruled-ledger"
-  | "oversized-rows";
+  | "oversized-rows"
+  | "seasonal-ledger";
 export type ExperienceProof =
   "principle-line" | "quiet-ledger" | "evidence-strip" | "results-table";
 export type ExperienceClosing =
@@ -485,6 +494,45 @@ const packs: Record<ExperiencePackId, PackDefinition> = {
           "conversion",
           "services",
           "process",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+    ],
+  },
+  "season-wheel": {
+    packId: "season-wheel",
+    intent:
+      "Portfolio-led seasonal planning with a maintenance comparison, property estimate preparation, and a factual coverage ledger.",
+    preferredRecipes: ["local-trades"],
+    requiresImage: false,
+    navigation: "minimal-inline",
+    conversion: "discovery-ribbon",
+    proof: "principle-line",
+    closing: "cinematic-inquiry",
+    typography: "editorial-contrast",
+    imageStrategy: "narrative-crops",
+    rhythm: "editorial",
+    motion: { profile: "restrained", engine: "css", maxPinnedScenes: 0 },
+    mobile: "editorial-stack",
+    internalOnly: true,
+    variants: [
+      {
+        id: "standard",
+        label: "Seasonal portfolio",
+        affinity: ["refined-serif", "editorial", "humanist"],
+        hero: "season-wheel",
+        services: "seasonal-ledger",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "seasons",
+          "plans",
+          "estimate",
+          "coverage",
           "social-proof",
           "faq",
           "location-map",
@@ -1015,6 +1063,10 @@ function contentFor(site: SiteConfig): ExperienceContent {
         }
       : null,
   };
+}
+
+export function compileFoundationContent(site: SiteConfig): ExperienceContent {
+  return contentFor(site);
 }
 
 function describePack(id: ExperiencePackId) {

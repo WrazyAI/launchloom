@@ -1,0 +1,520 @@
+/********** Template CSS **********/
+.xp-foundation {
+    --primary: #348E38;
+    --secondary: #525368;
+    --light: #E8F5E9;
+    --dark: #0F4229;
+}
+
+.xp-foundation .back-to-top {
+    position: fixed;
+    display: none;
+    right: 30px;
+    bottom: 30px;
+    z-index: 99;
+}
+
+.xp-foundation h1,
+.xp-foundation .h1,
+.xp-foundation h2,
+.xp-foundation .h2,
+.xp-foundation .fw-bold {
+    font-weight: 700 !important;
+}
+
+.xp-foundation h3,
+.xp-foundation .h3,
+.xp-foundation h4,
+.xp-foundation .h4,
+.xp-foundation .fw-medium {
+    font-weight: 600 !important;
+}
+
+.xp-foundation h5,
+.xp-foundation .h5,
+.xp-foundation h6,
+.xp-foundation .h6,
+.xp-foundation .fw-semi-bold {
+    font-weight: 500 !important;
+}
+
+
+/*** Spinner ***/
+.xp-foundation #spinner {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .5s ease-out, visibility 0s linear .5s;
+    z-index: 99999;
+}
+
+.xp-foundation #spinner.show {
+    transition: opacity .5s ease-out, visibility 0s linear 0s;
+    visibility: visible;
+    opacity: 1;
+}
+
+
+/*** Button ***/
+.xp-foundation .btn {
+    transition: .5s;
+    font-weight: 500;
+}
+
+.xp-foundation .btn-primary,
+.xp-foundation .btn-outline-primary:hover {
+    color: var(--light);
+}
+
+.xp-foundation .btn-square {
+    width: 38px;
+    height: 38px;
+}
+
+.xp-foundation .btn-sm-square {
+    width: 32px;
+    height: 32px;
+}
+
+.xp-foundation .btn-lg-square {
+    width: 48px;
+    height: 48px;
+}
+
+.xp-foundation .btn-square,
+.xp-foundation .btn-sm-square,
+.xp-foundation .btn-lg-square {
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: normal;
+}
+
+
+/*** Navbar ***/
+.xp-foundation .navbar.sticky-top {
+    top: -100px;
+    transition: .5s;
+}
+
+.xp-foundation .navbar .navbar-brand,
+.xp-foundation .navbar a.btn {
+    height: 80px
+}
+
+.xp-foundation .navbar .navbar-nav .nav-link {
+    margin-right: 35px;
+    padding: 25px 0;
+    color: var(--dark);
+    font-size: 18px;
+    font-weight: 500;
+    outline: none;
+}
+
+.xp-foundation .navbar .navbar-nav .nav-link:hover,
+.xp-foundation .navbar .navbar-nav .nav-link.active {
+    color: var(--primary);
+}
+
+.xp-foundation .navbar .dropdown-toggle::after {
+    border: none;
+    content: "\f107";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
+@media (max-width: 991.98px) {
+    .xp-foundation .navbar .navbar-nav .nav-link  {
+        margin-right: 0;
+        padding: 10px 0;
+    }
+
+    .xp-foundation .navbar .navbar-nav {
+        border-top: 1px solid #EEEEEE;
+    }
+}
+
+@media (min-width: 992px) {
+    .xp-foundation .navbar .nav-item .dropdown-menu {
+        display: block;
+        border: none;
+        margin-top: 0;
+        top: 150%;
+        opacity: 0;
+        visibility: hidden;
+        transition: .5s;
+    }
+
+    .xp-foundation .navbar .nav-item:hover .dropdown-menu {
+        top: 100%;
+        visibility: visible;
+        transition: .5s;
+        opacity: 1;
+    }
+}
+
+
+/*** Header ***/
+.xp-foundation .carousel-caption {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: rgba(15, 66, 41, .6);
+    z-index: 1;
+}
+
+.xp-foundation .carousel-control-prev,
+.xp-foundation .carousel-control-next {
+    width: 15%;
+}
+
+.xp-foundation .carousel-control-prev-icon,
+.xp-foundation .carousel-control-next-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 3rem;
+    background-color: var(--primary);
+    border: 10px solid var(--primary);
+}
+
+@media (max-width: 768px) {
+    .xp-foundation #header-carousel .carousel-item {
+        position: relative;
+        min-height: 450px;
+    }
+    
+    .xp-foundation #header-carousel .carousel-item img {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+.xp-foundation .page-header {
+    background: linear-gradient(rgba(15, 66, 41, .6), rgba(15, 66, 41, .6)), none center center no-repeat;
+    background-size: cover;
+}
+
+.xp-foundation .page-header .breadcrumb-item+.breadcrumb-item::before {
+    color: var(--light);
+}
+
+.xp-foundation .page-header .breadcrumb-item,
+.xp-foundation .page-header .breadcrumb-item a {
+    font-size: 18px;
+    color: var(--light);
+}
+
+
+/*** Top Feature ***/
+@media (min-width: 991.98px) {
+    .xp-foundation .top-feature {
+        position: relative;
+        margin-top: -80px;
+        z-index: 1;
+    }
+}
+
+
+/*** Facts & Quote ***/
+.xp-foundation .facts,
+.xp-foundation .quote {
+    background: rgba(15, 66, 41, .6);
+}
+
+
+/*** Service ***/
+.xp-foundation .service-item {
+    position: relative;
+    text-align: center;
+}
+
+.xp-foundation .service-item .service-img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+    z-index: -1;
+}
+
+.xp-foundation .service-item .service-img img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    object-fit: cover;
+    transform: scale(1.2);
+    transition: .3s;
+    z-index: -1;
+}
+
+.xp-foundation .service-item:hover .service-img img {
+    transform: scale(1);
+}
+
+.xp-foundation .service-item .service-text {
+    background: #FFFFFF;
+    box-shadow: 0 0 45px rgba(0, 0, 0, .08);
+    transition: .3s;
+}
+
+.xp-foundation .service-item:hover .service-text {
+    background: rgba(15, 66, 41, .6);
+}
+
+.xp-foundation .service-item .service-text h4,
+.xp-foundation .service-item .service-text p {
+    transition: .3;
+}
+
+.xp-foundation .service-item:hover .service-text h4 {
+    color: #FFFFFF;
+}
+
+.xp-foundation .service-item:hover .service-text p {
+    color: var(--light);
+}
+
+.xp-foundation .service-item .service-text .btn-square {
+    width: 100px;
+    height: 100px;
+    background: transparent;
+    transition: .5s;
+}
+
+.xp-foundation .service-item:hover .service-text .btn-square {
+    background: var(--light);
+}
+
+.xp-foundation .service-item .service-text .btn {
+    width: 31px;
+    height: 31px;
+    display: inline-flex;
+    align-items: center;
+    color: var(--dark);
+    background: var(--light);
+    white-space: nowrap;
+    overflow: hidden;
+    transition: .3s;
+}
+
+.xp-foundation .service-item:hover .service-text .btn {
+    width: 112px;
+}
+
+
+/*** Project Portfolio ***/
+.xp-foundation #portfolio-flters {
+    display: inline-block;
+    background: var(--light);
+    padding: 10px 15px;
+}
+
+.xp-foundation #portfolio-flters li {
+    display: inline-block;
+    font-weight: 500;
+    color: var(--primary);
+    cursor: pointer;
+    transition: .5s;
+    border-bottom: 2px solid transparent;
+}
+
+.xp-foundation #portfolio-flters li:hover,
+.xp-foundation #portfolio-flters li.active {
+    color: var(--dark);
+    border-color: var(--dark);
+}
+
+.xp-foundation .portfolio-inner {
+    position: relative;
+    overflow: hidden;
+}
+
+.xp-foundation .portfolio-inner::before,
+.xp-foundation .portfolio-inner::after {
+    position: absolute;
+    content: "";
+    width: 0;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: rgba(15, 66, 41, .6);
+    transition: .5s;
+}
+
+.xp-foundation .portfolio-inner::after {
+    left: auto;
+    right: 0;
+}
+
+.xp-foundation .portfolio-inner:hover::before,
+.xp-foundation .portfolio-inner:hover::after {
+    width: 50%;
+}
+
+.xp-foundation .portfolio-inner .portfolio-text {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: .5s;
+    z-index: 3;
+    opacity: 0;
+}
+
+.xp-foundation .portfolio-inner:hover .portfolio-text {
+    transition-delay: .3s;
+    opacity: 1;
+}
+
+.xp-foundation .portfolio-inner .portfolio-text .btn {
+    background: var(--light);
+    color: var(--primary);
+}
+
+.xp-foundation .portfolio-inner .portfolio-text .btn:hover {
+    background: var(--primary);
+    color: var(--light);
+}
+
+
+/*** Team ***/
+.xp-foundation .team-item {
+    position: relative;
+    overflow: hidden;
+}
+
+.xp-foundation .team-item .team-text {
+    position: absolute;
+    width: calc(100% - 45px);
+    left: -100%;
+    bottom: 45px;
+    padding: 1.5rem;
+    background: #FFFFFF;
+    border-radius: 0 4px 4px 0;
+    opacity: 0;
+    transition: .5s;
+}
+
+.xp-foundation .team-item:hover .team-text {
+    left: 0;
+    opacity: 1;
+}
+
+.xp-foundation .team-item .team-social .btn {
+    background: var(--light);
+    color: var(--primary);
+}
+
+.xp-foundation .team-item .team-social .btn:hover {
+    background: var(--primary);
+    color: var(--light);
+}
+
+.xp-foundation .team-item .team-img .team-social {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: .5s;
+    z-index: 3;
+    opacity: 0;
+}
+
+.xp-foundation .team-item:hover .team-img .team-social {
+    transition-delay: .3s;
+    opacity: 1;
+}
+
+
+/*** Testimonial ***/
+
+.xp-foundation .testimonial-carousel .owl-item img {
+    width: 100px;
+    height: 100px;
+}
+
+.xp-foundation .testimonial-carousel .owl-nav {
+    margin-top: 30px;
+    display: flex;
+}
+
+.xp-foundation .testimonial-carousel .owl-nav .owl-prev,
+.xp-foundation .testimonial-carousel .owl-nav .owl-next {
+    margin-right: 15px;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    background: var(--light);
+    border-radius: 4px;
+    font-size: 22px;
+    transition: .5s;
+}
+
+.xp-foundation .testimonial-carousel .owl-nav .owl-prev:hover,
+.xp-foundation .testimonial-carousel .owl-nav .owl-next:hover {
+    background: var(--primary);
+    color: var(--light);
+}
+
+
+/*** Footer ***/
+.xp-foundation .footer .btn.btn-link {
+    display: block;
+    margin-bottom: 5px;
+    padding: 0;
+    text-align: left;
+    color: var(--light);
+    font-weight: normal;
+    text-transform: capitalize;
+    transition: .3s;
+}
+
+.xp-foundation .footer .btn.btn-link::before {
+    position: relative;
+    content: "\f105";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    margin-right: 10px;
+}
+
+.xp-foundation .footer .btn.btn-link:hover {
+    color: var(--primary);
+    letter-spacing: 1px;
+    box-shadow: none;
+}
+
+.xp-foundation .copyright {
+    color: var(--light);
+    background: #072A19;
+}
+
+.xp-foundation .copyright a {
+    color: #FFFFFF;
+}
+
+.xp-foundation .copyright a:hover {
+    color: var(--primary);
+}

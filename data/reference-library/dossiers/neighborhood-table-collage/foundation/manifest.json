@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "id": "neighborhood-table-collage",
+  "dossierId": "neighborhood-table-collage",
+  "sourceDigest": "b27d49f228931b8f6ad1497945bb9a355c0356465c9d5a288a574a5c84322b08",
+  "entrypoint": "source/index.html",
+  "sourceClass": "owned",
+  "license": {
+    "name": "owned",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/neighborhood-table-collage",
+    "credit": "Template adapted from LaunchLoom owned design study"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "coverage",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "coverage",
+      "required": false
+    },
+    {
+      "id": "services",
+      "sourceSelector": "#services",
+      "order": 4,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "approach",
+      "sourceSelector": "#approach",
+      "order": 5,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "#contact",
+      "order": 6,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 7,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "coverage.body",
+      "selector": "[data-foundation-slot=\"coverage.body\"]",
+      "kind": "text",
+      "contentPath": "coverageIntro",
+      "required": true
+    },
+    {
+      "id": "coverage.heading",
+      "selector": "[data-foundation-slot=\"coverage.heading\"]",
+      "kind": "text",
+      "contentPath": "coverageHeading",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.item.description",
+      "selector": "[data-foundation-item=\"services.items\"] description",
+      "kind": "text",
+      "contentPath": "service.description",
+      "required": true
+    },
+    {
+      "id": "services.item.name",
+      "selector": "[data-foundation-item=\"services.items\"] name",
+      "kind": "text",
+      "contentPath": "service.name",
+      "required": true
+    },
+    {
+      "id": "services.items",
+      "selector": "[data-foundation-repeat=\"services.items\"]",
+      "kind": "each",
+      "contentPath": "services",
+      "itemPath": "service",
+      "required": true
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'approach' has no supported content role.",
+      "selector": "#approach"
+    }
+  ],
+  "fingerprint": "e4a9114212496dee866e3145f4b3f33588d6fa0f2e8be2365c2fda3bcc267879"
+}

@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 1,
+  "id": "web-auto-repair-abees-hi-tech",
+  "dossierId": "web-auto-repair-abees-hi-tech",
+  "sourceDigest": "4e68ae13415a07813c22cf884c1a9eb10e9aaa3b055e941ac41e282d00dc91e1",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://www.abeesautomotive.com/",
+    "credit": "Template adapted from Abee's Hi-Tech Auto Service official website"
+  },
+  "sections": [
+    {
+      "id": "navigation",
+      "sourceSelector": "nav",
+      "order": 1,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 2,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 3,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "estimate",
+      "sourceSelector": "section",
+      "order": 4,
+      "role": "estimate",
+      "required": false
+    },
+    {
+      "id": "plans",
+      "sourceSelector": "section",
+      "order": 5,
+      "role": "plans",
+      "required": false
+    },
+    {
+      "id": "book",
+      "sourceSelector": "#book",
+      "order": 6,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "proof",
+      "sourceSelector": "section",
+      "order": 7,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "portfolio",
+      "sourceSelector": "section",
+      "order": 8,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "faq",
+      "sourceSelector": "#faq",
+      "order": 9,
+      "role": "faq",
+      "required": false
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 10,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 11,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "estimate.heading",
+      "selector": "[data-foundation-slot=\"estimate.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "faq.body",
+      "selector": "[data-foundation-slot=\"faq.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "faq.heading",
+      "selector": "[data-foundation-slot=\"faq.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.faqHeading",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.body",
+      "selector": "[data-foundation-slot=\"hero.body\"]",
+      "kind": "text",
+      "contentPath": "hero.body",
+      "required": true
+    },
+    {
+      "id": "hero.heading",
+      "selector": "[data-foundation-slot=\"hero.heading\"]",
+      "kind": "text",
+      "contentPath": "hero.heading",
+      "required": true
+    },
+    {
+      "id": "hero.image",
+      "selector": "[data-foundation-image=\"hero.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": true
+    },
+    {
+      "id": "hero.primaryLabel",
+      "selector": "[data-foundation-slot=\"hero.primaryLabel\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "hero.secondaryLabel",
+      "selector": "[data-foundation-slot=\"hero.secondaryLabel\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "plans.body",
+      "selector": "[data-foundation-slot=\"plans.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "plans.heading",
+      "selector": "[data-foundation-slot=\"plans.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.body",
+      "selector": "[data-foundation-slot=\"proof.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.heading",
+      "selector": "[data-foundation-slot=\"proof.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.image",
+      "selector": "[data-foundation-image=\"services.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated estimate items in 'estimate' have no sealed content mapping.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'estimate' preserves source composition that needs adaptation.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'plans' preserves source composition that needs adaptation.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "0a2e069a440fe385844d50a56a413759232239b7682fc1f059867ffce8a2f1be"
+}

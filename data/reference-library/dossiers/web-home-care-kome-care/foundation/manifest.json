@@ -1,0 +1,447 @@
+{
+  "schemaVersion": 1,
+  "id": "web-home-care-kome-care",
+  "dossierId": "web-home-care-kome-care",
+  "sourceDigest": "68f6308878c249f55e38eea1a2203b4b0ac1258c29209b9477965850f128e0cd",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://www.komecare.co.uk/",
+    "credit": "Template adapted from Kome Care official website"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "mobile-menu",
+      "sourceSelector": "#mobile-menu",
+      "order": 3,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "kcmobilenav",
+      "sourceSelector": "#kcMobileNav",
+      "order": 4,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "about",
+      "sourceSelector": "section",
+      "order": 5,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 6,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "services-one-page",
+      "sourceSelector": "#services-one-page",
+      "order": 7,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "about-2",
+      "sourceSelector": "section",
+      "order": 8,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "services",
+      "sourceSelector": "section",
+      "order": 9,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "portfolio",
+      "sourceSelector": "section",
+      "order": 10,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "proof",
+      "sourceSelector": "section",
+      "order": 11,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "blog-one-page",
+      "sourceSelector": "#blog-one-page",
+      "order": 12,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "plans",
+      "sourceSelector": "section",
+      "order": 13,
+      "role": "plans",
+      "required": false
+    },
+    {
+      "id": "about-3",
+      "sourceSelector": "section",
+      "order": 14,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "contact-one-page",
+      "sourceSelector": "#contact-one-page",
+      "order": 15,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "services-2",
+      "sourceSelector": "section",
+      "order": 16,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "coverage",
+      "sourceSelector": "section",
+      "order": 17,
+      "role": "coverage",
+      "required": false
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 18,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "about-2.body",
+      "selector": "[data-foundation-slot=\"about-2.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about-2.heading",
+      "selector": "[data-foundation-slot=\"about-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "about-2.image",
+      "selector": "[data-foundation-image=\"about-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "about-3.heading",
+      "selector": "[data-foundation-slot=\"about-3.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "about-3.image",
+      "selector": "[data-foundation-image=\"about-3.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "about-3.secondaryImage",
+      "selector": "[data-foundation-image=\"about-3.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "about-3.tertiaryImage",
+      "selector": "[data-foundation-image=\"about-3.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "about-4.body",
+      "selector": "[data-foundation-slot=\"about-4.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about-4.heading",
+      "selector": "[data-foundation-slot=\"about-4.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "about.body",
+      "selector": "[data-foundation-slot=\"about.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about.heading",
+      "selector": "[data-foundation-slot=\"about.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "about.image",
+      "selector": "[data-foundation-image=\"about.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "coverage.body",
+      "selector": "[data-foundation-slot=\"coverage.body\"]",
+      "kind": "text",
+      "contentPath": "coverageIntro",
+      "required": true
+    },
+    {
+      "id": "coverage.heading",
+      "selector": "[data-foundation-slot=\"coverage.heading\"]",
+      "kind": "text",
+      "contentPath": "coverageHeading",
+      "required": true
+    },
+    {
+      "id": "coverage.item.name",
+      "selector": "[data-foundation-item=\"coverage.items\"] name",
+      "kind": "text",
+      "contentPath": "location.name",
+      "required": true
+    },
+    {
+      "id": "coverage.items",
+      "selector": "[data-foundation-repeat=\"coverage.items\"]",
+      "kind": "each",
+      "contentPath": "locations",
+      "itemPath": "location",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.image",
+      "selector": "[data-foundation-image=\"hero.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": true
+    },
+    {
+      "id": "hero.primaryLabel",
+      "selector": "[data-foundation-slot=\"hero.primaryLabel\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "hero.secondaryLabel",
+      "selector": "[data-foundation-slot=\"hero.secondaryLabel\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "plans.body",
+      "selector": "[data-foundation-slot=\"plans.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "plans.heading",
+      "selector": "[data-foundation-slot=\"plans.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.body",
+      "selector": "[data-foundation-slot=\"proof.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.heading",
+      "selector": "[data-foundation-slot=\"proof.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "services-2.body",
+      "selector": "[data-foundation-slot=\"services-2.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services-2.heading",
+      "selector": "[data-foundation-slot=\"services-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services-3.body",
+      "selector": "[data-foundation-slot=\"services-3.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services-3.heading",
+      "selector": "[data-foundation-slot=\"services-3.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "missing-css",
+      "message": "Missing local stylesheet(s): /assets/css/font-awesome-pro.css?v=20260922e, /assets/css/flaticon_mycollection.css?v=20260922e",
+      "selector": "link[rel=stylesheet]"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+      "selector": "header"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'plans' preserves source composition that needs adaptation.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "f9082a6ad27543514b388d2fb6541b29b39b9620a9652be451a087e5d9d977fe"
+}

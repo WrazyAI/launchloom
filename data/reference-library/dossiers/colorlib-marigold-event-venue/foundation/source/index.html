@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{page.title}}</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="assets/vendor/bootstrap6/css/bootstrap.min.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<a class="visually-hidden-focusable btn-solid theme-primary m-2" href="#main">Skip to main content</a>
+
+<header data-foundation-needs-adaptation="true" data-experience-hero="true" data-foundation-section="hero" class="site-header">
+  <nav class="navbar lg:navbar-expand" aria-label="Main">
+    <div class="container">
+      <a data-foundation-slot="navigation.brand" class="wordmark" href="index.html">{{navigation.brand}}</a>
+
+      <dialog class="drawer drawer-end" tabindex="-1" id="navDrawer" aria-labelledby="navDrawerLabel">
+        <div class="drawer-header">
+          <h5 class="drawer-title" id="navDrawerLabel"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="drawer" aria-label="Close"></button>
+        </div>
+        <div class="drawer-body mb-2 lg:mb-0">
+          <ul class="nav navbar-nav ms-auto lg:gap-4">
+            <li class="nav-item"><nav class="nav-item" aria-label="Main navigation"><a class="nav-link" href="#services">Services</a><a class="nav-link" href="#faqs">FAQs</a><a class="nav-link" href="#contact">Contact</a></nav></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+          </ul>
+        </div>
+      </dialog>
+
+      <div class="d-flex align-items-center gap-2 ms-auto">
+        <button class="btn-icon" type="button" id="themeToggle" aria-label="Toggle color mode">
+  
+  
+</button>
+        <button class="btn-icon navbar-toggler" type="button" data-bs-toggle="drawer" data-bs-target="#navDrawer" aria-controls="navDrawer" aria-label="Open navigation">
+          <span class="navbar-toggler-icon" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+</header><aside data-foundation-section="conversion" data-early-conversion="true" class="xp-ribbon"><div class="xp-ribbon__copy">
+  <span class="xp-ribbon__kicker">Next step</span>
+  <p>{{conversion.body}}</p>
+</div>
+<a class="xp-ribbon__action" href="#contact">{{conversion.action}} <span aria-hidden="true">→</span></a></aside>
+
+<section data-foundation-needs-adaptation="true" data-foundation-section="unknown" class="vows">
+  <img data-foundation-image="unknown.image" class="hero-bg" src="{{unknown.image}}" alt="" width="1800" height="1200" loading="eager">
+  <div class="vows-inner">
+    <p data-foundation-slot="unknown.body" class="vows-rule mb-4">{{unknown.body}}</p>
+    <h1 data-foundation-slot="unknown.heading" class="names mb-4">{{unknown.heading}}</h1>
+    <p class="fs-lg mb-5" style="opacity:.9"></p>
+
+    <div class="days" role="timer" aria-live="off" data-countdown="2027-06-12T13:00:00Z">
+      <div><p class="days-value mb-0" id="cdD"></p><p class="days-label mb-0"></p></div>
+      <div><p class="days-value mb-0" id="cdH"></p><p class="days-label mb-0"></p></div>
+      <div><p class="days-value mb-0" id="cdM"></p><p class="days-label mb-0"></p></div>
+    </div>
+
+    <a class="btn-solid theme-primary btn-lg mt-5" href="#rsvp"></a>
+  </div>
+</section>
+
+<main id="main">
+
+  <!-- Story -->
+  <section data-foundation-needs-adaptation="true" data-foundation-section="story" class="section" id="story">
+    <div class="container">
+      <div class="row g-6 align-items-center">
+        <div class="lg:col-6">
+          <div class="ph ph-3x4"><img data-foundation-image="unknown-2.image" src="{{unknown-2.image}}" alt="" width="700" height="933" loading="lazy"></div>
+        </div>
+        <div class="lg:col-6">
+          <p data-foundation-slot="unknown-2.body" class="eyebrow-rule mb-3">{{unknown-2.body}}</p>
+          <h2 data-foundation-slot="unknown-2.heading" class="display-serif section-title fs-4xl mb-4">{{unknown-2.heading}}</h2>
+          <p class="fg-2 mb-4"></p>
+          <p class="fg-2 mb-4"></p>
+          <p class="fg-2 mb-0"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- The day -->
+  <section data-foundation-section="day" class="section bg-2" id="day">
+    <div class="container">
+      <div class="row g-6">
+        <div class="lg:col-4">
+          <p data-foundation-slot="about.body" class="eyebrow-rule mb-3">{{about.body}}</p>
+          <h2 data-foundation-slot="about.heading" class="display-serif section-title fs-4xl mb-4">{{about.heading}}</h2>
+          <p class="fg-2 mb-0"></p>
+        </div>
+
+        <div class="lg:col-8">
+          <div class="schedule">
+            <div class="schedule-item">
+              <span class="schedule-time"></span>
+              <div><p class="fw-semibold mb-1"></p><p class="fg-2 fs-sm mb-0"></p></div>
+            </div>
+            <div class="schedule-item">
+              <span class="schedule-time"></span>
+              <div><p class="fw-semibold mb-1"></p><p class="fg-2 fs-sm mb-0"></p></div>
+            </div>
+            <div class="schedule-item">
+              <span class="schedule-time"></span>
+              <div><p class="fw-semibold mb-1"></p><p class="fg-2 fs-sm mb-0"></p></div>
+            </div>
+            <div class="schedule-item">
+              <span class="schedule-time"></span>
+              <div><p class="fw-semibold mb-1"></p><p class="fg-2 fs-sm mb-0"></p></div>
+            </div>
+            <div class="schedule-item">
+              <span class="schedule-time"></span>
+              <div><p class="fw-semibold mb-1"></p><p class="fg-2 fs-sm mb-0"></p></div>
+            </div>
+            <div class="schedule-item">
+              <span class="schedule-time"></span>
+              <div><p class="fw-semibold mb-1"></p><p class="fg-2 fs-sm mb-0"></p></div>
+            </div>
+            <div class="schedule-item">
+              <span class="schedule-time"></span>
+              <div><p class="fw-semibold mb-1"></p><p class="fg-2 fs-sm mb-0"></p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gallery -->
+  <section data-foundation-section="unknown-2" class="section">
+    <div class="container mb-5">
+      <p data-foundation-slot="unknown-3.body" class="eyebrow-rule mb-3">{{unknown-3.body}}</p>
+      <h2 data-foundation-slot="unknown-3.heading" class="display-serif section-title fs-4xl mb-0">{{unknown-3.heading}}</h2>
+    </div>
+    <div class="container-fluid px-4 lg:px-5">
+      <div class="mosaic">
+        <div class="ph"><img data-foundation-image="unknown-3.image" src="{{unknown-3.image}}" alt="" width="900" height="900" loading="lazy"></div>
+        <div class="ph"><img data-foundation-image="unknown-3.secondaryImage" src="{{unknown-3.secondaryImage}}" alt="" width="600" height="600" loading="lazy"></div>
+        <div class="ph"><img data-foundation-image="unknown-3.tertiaryImage" src="{{unknown-3.tertiaryImage}}" alt="" width="600" height="600" loading="lazy"></div>
+        <div class="ph"></div>
+        <div class="ph"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RSVP -->
+  <section data-foundation-section="rsvp" class="section bg-2" id="rsvp">
+    <div class="container">
+      <div class="row g-6">
+        <div class="lg:col-4">
+          <p data-foundation-slot="contact.body" class="eyebrow-rule mb-3">{{contact.body}}</p>
+          <h2 data-foundation-slot="contact.heading" class="display-serif section-title fs-4xl mb-4">{{contact.heading}}</h2>
+          <p class="fg-2 mb-4"></p>
+          <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"><a href="mailto:hello@marigold.example"></a></span></div>
+        </div>
+
+        <div class="lg:col-8">
+          <div class="rsvp">
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gifts -->
+  <section data-foundation-section="gifts" class="section" id="gifts">
+    <div class="container">
+      <div class="row g-6">
+        <div class="lg:col-4">
+          <p data-foundation-slot="about-2.body" class="eyebrow-rule mb-3">{{about-2.body}}</p>
+          <h2 data-foundation-slot="about-2.heading" class="display-serif section-title fs-4xl mb-0">{{about-2.heading}}</h2>
+        </div>
+        <div class="lg:col-8">
+          <p class="fg-2 mb-5"></p>
+          <div class="row g-4">
+            <div class="md:col-4">
+              <div class="gift-cell">
+                <p class="fw-semibold mb-2"></p>
+                <p class="fg-2 fs-sm mb-0"></p>
+              </div>
+            </div>
+            <div class="md:col-4">
+              <div class="gift-cell">
+                <p class="fw-semibold mb-2"></p>
+                <p class="fg-2 fs-sm mb-0"></p>
+              </div>
+            </div>
+            <div class="md:col-4">
+              <div class="gift-cell">
+                <p class="fw-semibold mb-2"></p>
+                <p class="fg-2 fs-sm mb-0"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer data-foundation-license="MIT" data-foundation-section="footer" class="site-footer section pb-5 bg-2"><span>{{footer.brand}}</span><span>{{footer.credit}}</span></footer>
+
+<script type="module" src="assets/js/main.js"></script>
+<span data-foundation-anchor="true" id="services"></span><span data-foundation-anchor="true" id="faqs"></span></body>
+</html>

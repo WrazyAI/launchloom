@@ -1,0 +1,87 @@
+
+
+.xp-foundation .testrevicon { display:inline-block}
+.xp-foundation .testrevicon:before	{	font-family: inherit; content: '\e824';font-size:15px; color:#fff; display:block; line-height: 40px; text-align: center;}
+.xp-foundation .testloadedicon .testrevicon:before	{	font-family: 'revicons'; content: '\e824';font-size:15px; color:#fff; display:block; line-height: 40px; text-align: center;}
+
+ .xp-foundation [class^="revicon-"]:before, .xp-foundation [class*=" revicon-"]:before {
+  font-family: "revicons";
+  font-style: normal;
+  font-weight: normal;
+  speak: never;
+  speak-as: spell-out;
+  display: inline-block;
+  text-decoration: inherit;
+  width: 1em;
+  margin-right: .2em;
+  text-align: center;
+
+  /* For safety - reset parent styles, that can break glyph codes*/
+  font-variant: normal;
+  text-transform: none;
+
+  /* fix buttons height, for twitter bootstrap */
+  line-height: 1em;
+
+  /* Animation center compensation - margins should be symmetric */
+  /* remove if not needed */
+  margin-left: .2em;
+
+  /* you can be more comfortable with increased icons size */
+  /* font-size: 120%; */
+
+  /* Uncomment for 3D effect */
+  /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
+}
+.xp-foundation sr7-module [class^="revicon-"], .xp-foundation sr7-module [class*=" revicon-"], .xp-foundation .rb-modal-wrapper [class^="revicon-"], .xp-foundation .rb-modal-wrapper [class*=" revicon-"]{
+  display: inline-block;
+  font: normal normal normal 14px/1 FontAwesome;
+  font-size: inherit;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale; 
+}
+
+.xp-foundation .revicon-search-1:before { content: '\e802'; } /* '' */
+.xp-foundation .revicon-pencil-1:before { content: '\e831'; } /* '' */
+.xp-foundation .revicon-picture-1:before { content: '\e803'; } /* '' */
+.xp-foundation .revicon-cancel:before { content: '\e80a'; } /* '' */
+.xp-foundation .revicon-info-circled:before { content: '\e80f'; } /* '' */
+.xp-foundation .revicon-trash:before { content: '\e801'; } /* '' */
+.xp-foundation .revicon-left-dir:before { content: '\e817'; } /* '' */
+.xp-foundation .revicon-right-dir:before { content: '\e818'; } /* '' */
+.xp-foundation .revicon-down-open:before { content: '\e83b'; } /* '' */
+.xp-foundation .revicon-left-open:before { content: '\e819'; } /* '' */
+.xp-foundation .revicon-right-open:before { content: '\e81a'; } /* '' */
+.xp-foundation .revicon-angle-left:before { content: '\e820'; } /* '' */
+.xp-foundation .revicon-angle-right:before { content: '\e81d'; } /* '' */
+.xp-foundation .revicon-left-big:before { content: '\e81f'; } /* '' */
+.xp-foundation .revicon-right-big:before { content: '\e81e'; } /* '' */
+.xp-foundation .revicon-magic:before { content: '\e807'; } /* '' */
+.xp-foundation .revicon-picture:before { content: '\e800'; } /* '' */
+.xp-foundation .revicon-export:before { content: '\e80b'; } /* '' */
+.xp-foundation .revicon-cog:before { content: '\e832'; } /* '' */
+.xp-foundation .revicon-login:before { content: '\e833'; } /* '' */
+.xp-foundation .revicon-logout:before { content: '\e834'; } /* '' */
+.xp-foundation .revicon-video:before { content: '\e805'; } /* '' */
+.xp-foundation .revicon-arrow-combo:before { content: '\e827'; } /* '' */
+.xp-foundation .revicon-left-open-1:before { content: '\e82a'; } /* '' */
+.xp-foundation .revicon-right-open-1:before { content: '\e82b'; } /* '' */
+.xp-foundation .revicon-left-open-mini:before { content: '\e822'; } /* '' */
+.xp-foundation .revicon-right-open-mini:before { content: '\e823'; } /* '' */
+.xp-foundation .revicon-left-open-big:before { content: '\e824'; } /* '' */
+.xp-foundation .revicon-right-open-big:before { content: '\e825'; } /* '' */
+.xp-foundation .revicon-left:before { content: '\e836'; } /* '' */
+.xp-foundation .revicon-right:before { content: '\e826'; } /* '' */
+.xp-foundation .revicon-ccw:before { content: '\e808'; } /* '' */
+.xp-foundation .revicon-arrows-ccw:before { content: '\e806'; } /* '' */
+.xp-foundation .revicon-palette:before { content: '\e829'; } /* '' */
+.xp-foundation .revicon-list-add:before { content: '\e80c'; } /* '' */
+.xp-foundation .revicon-doc:before { content: '\e809'; } /* '' */
+.xp-foundation .revicon-left-open-outline:before { content: '\e82e'; } /* '' */
+.xp-foundation .revicon-left-open-2:before { content: '\e82c'; } /* '' */
+.xp-foundation .revicon-right-open-outline:before { content: '\e82f'; } /* '' */
+.xp-foundation .revicon-right-open-2:before { content: '\e82d'; } /* '' */
+.xp-foundation .revicon-equalizer:before { content: '\e83a'; } /* '' */
+.xp-foundation .revicon-layers-alt:before { content: '\e804'; } /* '' */
+.xp-foundation .revicon-popup:before { content: '\e828'; } /* '' */

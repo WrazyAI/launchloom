@@ -1,0 +1,307 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-caseworth-legal-ledger",
+  "dossierId": "colorlib-caseworth-legal-ledger",
+  "sourceDigest": "c7f38110a3b04d88d7948f2a44a98793b794dc0c2f54b2e2f0cbdb33d430b917",
+  "entrypoint": "source/index.html",
+  "sourceClass": "licensed",
+  "license": {
+    "name": "MIT",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/caseworth",
+    "credit": "Template adapted from Colorlib Bootstrap Templates Caseworth"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "portfolio",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "practices",
+      "sourceSelector": "#practices",
+      "order": 4,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "people",
+      "sourceSelector": "#people",
+      "order": 5,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "fees",
+      "sourceSelector": "#fees",
+      "order": 6,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "insights",
+      "sourceSelector": "#insights",
+      "order": 7,
+      "role": "process",
+      "required": false
+    },
+    {
+      "id": "enquiry",
+      "sourceSelector": "#enquiry",
+      "order": 8,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 9,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "about.body",
+      "selector": "[data-foundation-slot=\"about.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about.heading",
+      "selector": "[data-foundation-slot=\"about.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "about.image",
+      "selector": "[data-foundation-image=\"about.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "about.secondaryImage",
+      "selector": "[data-foundation-image=\"about.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "about.tertiaryImage",
+      "selector": "[data-foundation-image=\"about.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "process.body",
+      "selector": "[data-foundation-slot=\"process.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "process.heading",
+      "selector": "[data-foundation-slot=\"process.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.image",
+      "selector": "[data-foundation-image=\"services.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [
+    {
+      "source": "img/office.jpg",
+      "target": "template/source/img/office.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "img/person-1.jpg",
+      "target": "template/source/img/person-1.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "img/person-2.jpg",
+      "target": "template/source/img/person-2.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "img/person-3.jpg",
+      "target": "template/source/img/person-3.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "img/person-4.jpg",
+      "target": "template/source/img/person-4.jpg",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    },
+    {
+      "id": "enquiry-disclosure",
+      "source": "details",
+      "primitive": "native-disclosure",
+      "reducedMotion": "all content visible when closed"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "network-script",
+      "message": "Foundation script contains a network, analytics, or tracking primitive; the foundation needs adaptation.",
+      "selector": "script"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated contact items in 'enquiry' have no sealed content mapping.",
+      "selector": "#enquiry"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+      "selector": "header"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'fees' have no sealed content mapping.",
+      "selector": "#fees"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'fees' has no supported content role.",
+      "selector": "#fees"
+    }
+  ],
+  "fingerprint": "e4133c7b429ed97b849c2eeb0c8dcd7cdf9779a5f5056c6a08f1f236673ce95c"
+}

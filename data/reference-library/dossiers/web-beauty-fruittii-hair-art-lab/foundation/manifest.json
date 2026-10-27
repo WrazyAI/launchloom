@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "id": "web-beauty-fruittii-hair-art-lab",
+  "dossierId": "web-beauty-fruittii-hair-art-lab",
+  "sourceDigest": "45b4dc53f62bb5f15946f721194add9a74d6996e3c5cce496c7c382fa601adf9",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://fruittiilondon.com/",
+    "credit": "Template adapted from Fruittii London official website"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "portfolio",
+      "sourceSelector": "section",
+      "order": 4,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "section",
+      "order": 5,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 6,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "css-parse-failed",
+      "message": "Could not scope inline style: <css input>:1:40136: Unknown word <br>",
+      "selector": "style"
+    },
+    {
+      "code": "css-parse-failed",
+      "message": "Could not scope inline style: <css input>:15:1: Unknown word -moz-transition",
+      "selector": "style"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+      "selector": "header"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "0b174b6d449de8efc79fc2f6d04a0df84b08e63dc71790522fedfaf606aaf3a9"
+}

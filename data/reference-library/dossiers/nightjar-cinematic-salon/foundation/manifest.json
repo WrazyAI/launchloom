@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "id": "nightjar-cinematic-salon",
+  "dossierId": "nightjar-cinematic-salon",
+  "sourceDigest": "4754f3dc8252938cad1960c4d723993466093ad7c9b6646defbfbee45d02d3d3",
+  "entrypoint": "source/index.html",
+  "sourceClass": "owned",
+  "license": {
+    "name": "owned",
+    "url": "https://nightjar-cinematic-prototype.pages.dev/",
+    "credit": "Template adapted from LaunchLoom owned prototype"
+  },
+  "sections": [
+    {
+      "id": "contact",
+      "sourceSelector": "#contact",
+      "order": 1,
+      "role": "contact",
+      "required": true
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "#contact .xp-season-contact__body",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.email",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "text",
+      "contentPath": "brand.email",
+      "required": false
+    },
+    {
+      "id": "contact.emailHref",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "href",
+      "contentPath": "brand.emailHref",
+      "required": false
+    },
+    {
+      "id": "contact.form",
+      "selector": "[data-foundation-contact-form]",
+      "kind": "html",
+      "contentPath": "contact.form",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "#contact h2",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "contact.kicker",
+      "selector": "#contact .xp-season-contact__kicker",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.phone",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "text",
+      "contentPath": "brand.phone",
+      "required": false
+    },
+    {
+      "id": "contact.phoneHref",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "href",
+      "contentPath": "brand.phoneHref",
+      "required": false
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    }
+  ],
+  "assets": [
+    {
+      "source": "images/nightjar-collection.png",
+      "target": "template/source/images/nightjar-collection.png",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/nightjar-collection.webp",
+      "target": "template/source/images/nightjar-collection.webp",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/nightjar-hero.png",
+      "target": "template/source/images/nightjar-hero.png",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/nightjar-hero.webp",
+      "target": "template/source/images/nightjar-hero.webp",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/nightjar-session.png",
+      "target": "template/source/images/nightjar-session.png",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/nightjar-session.webp",
+      "target": "template/source/images/nightjar-session.webp",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "nightjar-mark.svg",
+      "target": "template/source/nightjar-mark.svg",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    },
+    {
+      "id": "inline-1",
+      "source": "[data-foundation-action=\"inline-1\"]",
+      "primitive": "local-script",
+      "reducedMotion": "static equivalent remains available"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "missing-hero",
+      "message": "No hero section with an h1 was detected."
+    },
+    {
+      "code": "missing-services",
+      "message": "No services or portfolio section was detected."
+    },
+    {
+      "code": "network-script",
+      "message": "Foundation script contains a network, analytics, or tracking primitive; the foundation needs adaptation.",
+      "selector": "script"
+    },
+    {
+      "code": "unsafe-script-path",
+      "message": "Removed a script path that escapes the foundation source: /assets/index-CyZ5WcZQ.js",
+      "selector": "script[src]"
+    }
+  ],
+  "fingerprint": "ecf819870a60cf63608bbe614f92017aab845bca0a55b514739da00bbe074f6b"
+}

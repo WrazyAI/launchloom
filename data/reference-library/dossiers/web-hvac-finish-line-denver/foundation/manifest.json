@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 1,
+  "id": "web-hvac-finish-line-denver",
+  "dossierId": "web-hvac-finish-line-denver",
+  "sourceDigest": "bac38c8cb9eee0dc7a930d0fc38f3e4aca343bae509c5dd56c344acf5d169d70",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://www.finishlineheatingandcooling.com/",
+    "credit": "Template adapted from Finish Line Heating and Cooling information page official website"
+  },
+  "sections": [
+    {
+      "id": "page-header",
+      "sourceSelector": "#page-header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 2,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-2",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "services",
+      "sourceSelector": "section",
+      "order": 4,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "unknown-3",
+      "sourceSelector": "section",
+      "order": 5,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "about",
+      "sourceSelector": "section",
+      "order": 6,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "unknown-4",
+      "sourceSelector": "section",
+      "order": 7,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-5",
+      "sourceSelector": "section",
+      "order": 8,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-6",
+      "sourceSelector": "section",
+      "order": 9,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "#contact",
+      "order": 10,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "page-footer",
+      "sourceSelector": "#page-footer",
+      "order": 11,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "about.body",
+      "selector": "[data-foundation-slot=\"about.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about.heading",
+      "selector": "[data-foundation-slot=\"about.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "contact.body",
+      "selector": "#contact .xp-season-contact__body",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.email",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "text",
+      "contentPath": "brand.email",
+      "required": false
+    },
+    {
+      "id": "contact.emailHref",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "href",
+      "contentPath": "brand.emailHref",
+      "required": false
+    },
+    {
+      "id": "contact.form",
+      "selector": "[data-foundation-contact-form]",
+      "kind": "html",
+      "contentPath": "contact.form",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "#contact h2",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "contact.kicker",
+      "selector": "#contact .xp-season-contact__kicker",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.phone",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "text",
+      "contentPath": "brand.phone",
+      "required": false
+    },
+    {
+      "id": "contact.phoneHref",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "href",
+      "contentPath": "brand.phoneHref",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.primaryLabel",
+      "selector": "[data-foundation-slot=\"hero.primaryLabel\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "hero.secondaryLabel",
+      "selector": "[data-foundation-slot=\"hero.secondaryLabel\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "unknown-3.body",
+      "selector": "[data-foundation-slot=\"unknown-3.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.heading",
+      "selector": "[data-foundation-slot=\"unknown-4.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-6.heading",
+      "selector": "[data-foundation-slot=\"unknown-6.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'page-header' have no sealed content mapping.",
+      "selector": "#page-header"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'unknown-6' have no sealed content mapping.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-2' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-3' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-4' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-5' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-6' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "be067fb7ddcf0da96c54d470bd07819dec0ec08177ed9e5a482104a7df56ed13"
+}

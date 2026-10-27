@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "id": "web-architecture-indie-interiors",
+  "dossierId": "web-architecture-indie-interiors",
+  "sourceDigest": "bbd13c1c7c5f159194b859b4f67dc0febd97c734a7746608799a3c40db6a1b0e",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://indieinteriors.co.uk/",
+    "credit": "Template adapted from Indie Interiors residential portfolio official website"
+  },
+  "sections": [
+    {
+      "id": "navigation",
+      "sourceSelector": "nav",
+      "order": 1,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "navigation-2",
+      "sourceSelector": "nav",
+      "order": 2,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "navigation-3",
+      "sourceSelector": "nav",
+      "order": 3,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "navigation-4",
+      "sourceSelector": "nav",
+      "order": 4,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "navigation-5",
+      "sourceSelector": "nav",
+      "order": 5,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "navigation-6",
+      "sourceSelector": "nav",
+      "order": 6,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "navigation-7",
+      "sourceSelector": "nav",
+      "order": 7,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "navigation-8",
+      "sourceSelector": "nav",
+      "order": 8,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "navigation-9",
+      "sourceSelector": "nav",
+      "order": 9,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "navigation-10",
+      "sourceSelector": "nav",
+      "order": 10,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "navigation-11",
+      "sourceSelector": "nav",
+      "order": 11,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "navigation-12",
+      "sourceSelector": "nav",
+      "order": 12,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "navigation-13",
+      "sourceSelector": "nav",
+      "order": 13,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "navigation-14",
+      "sourceSelector": "nav",
+      "order": 14,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "#contact",
+      "order": 15,
+      "role": "contact",
+      "required": true
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "#contact .xp-season-contact__body",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.email",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "text",
+      "contentPath": "brand.email",
+      "required": false
+    },
+    {
+      "id": "contact.emailHref",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "href",
+      "contentPath": "brand.emailHref",
+      "required": false
+    },
+    {
+      "id": "contact.form",
+      "selector": "[data-foundation-contact-form]",
+      "kind": "html",
+      "contentPath": "contact.form",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "#contact h2",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "contact.kicker",
+      "selector": "#contact .xp-season-contact__kicker",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.phone",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "text",
+      "contentPath": "brand.phone",
+      "required": false
+    },
+    {
+      "id": "contact.phoneHref",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "href",
+      "contentPath": "brand.phoneHref",
+      "required": false
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "missing-hero",
+      "message": "No hero section with an h1 was detected."
+    },
+    {
+      "code": "missing-services",
+      "message": "No services or portfolio section was detected."
+    }
+  ],
+  "fingerprint": "4c9b2e34ec8f8d2a9ba4bac72a6d217e19f81dbaebda458da72c4b0298091c9e"
+}

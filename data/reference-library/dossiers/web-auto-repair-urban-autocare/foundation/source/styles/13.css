@@ -1,0 +1,41 @@
+/* gravity forms custom styles */
+
+.xp-foundation .gform_wrapper .hidden_label .gfield_label,
+.xp-foundation .gform_wrapper label.hidden_sub_label,
+.xp-foundation .gform_wrapper label.screen-reader-text {
+    clip: rect(1px, 1px, 1px, 1px);
+    position: absolute!important;
+    height: 1px;
+    width: 1px;
+    overflow: hidden
+}
+
+.xp-foundation .gform_wrapper li.hidden_label input {
+    margin-top: 0px
+}
+
+.xp-foundation .gform_wrapper .field_sublabel_hidden_label .ginput_complex.ginput_container input[type=text],
+.xp-foundation .gform_wrapper .field_sublabel_hidden_label .ginput_complex.ginput_container select {
+    margin-bottom: 12px
+}
+
+.xp-foundation .gform_wrapper .left_label li.hidden_label input,
+.xp-foundation .gform_wrapper .right_label li.hidden_label input {
+    margin-left: 3.7%
+}
+
+.xp-foundation .gform_wrapper .hidden_label input.large,
+.xp-foundation .gform_wrapper .hidden_label select.large,
+.xp-foundation .gform_wrapper .top_label input.large,
+.xp-foundation .gform_wrapper .top_label select.large {
+    width: 100%
+}
+
+.xp-foundation .gf_simple_horizontal_wrapper .ginput_complex span {
+    padding-top: 0px !important;
+}
+
+.xp-foundation .gf_simple_horizontal_wrapper .ginput_container,
+.xp-foundation .gf_simple_horizontal_wrapper input {
+    margin-top: 0px !important;
+}

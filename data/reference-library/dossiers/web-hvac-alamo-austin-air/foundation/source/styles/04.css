@@ -1,0 +1,249 @@
+.xp-foundation .wpa-ld button span.screen-reader, .xp-foundation .longdesc-link span.screen-reader, .xp-foundation .wpa-hide-ltr#skiplinks a, .xp-foundation .wpa-hide-ltr#skiplinks a:hover, .xp-foundation .wpa-hide-ltr#skiplinks a:visited, .xp-foundation .wpa-hide-rtl#skiplinks a, .xp-foundation .wpa-hide-rtl#skiplinks a:hover, .xp-foundation .wpa-hide-rtl#skiplinks a:visited {
+	border: 0;
+	clip-path: inset(50%);
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	width: 1px;
+	word-wrap: normal !important;
+}
+
+.xp-foundation .wpa-hide-ltr#skiplinks a:focus,
+.xp-foundation .wpa-hide-rtl#skiplinks a:focus {
+	background-color: #eee;
+	clip-path: none;
+	color: #444;
+	display: block;
+	font-size: 1em;
+	height: auto;
+	left: 5px;
+	line-height: normal;
+	padding: 15px 23px 14px;
+	text-decoration: none;
+	top: 5px;
+	width: auto;
+	z-index: 100000; /* Above WP toolbar. */
+}
+
+.xp-foundation .wpa-alt,
+.xp-foundation .wpa-ld {
+	display: inline-block;
+	position: relative;
+}
+
+.xp-foundation .post-thumbnail .wpa-alt,
+.xp-foundation .post-thumbnail .wpa-ld {
+	display: block;
+}
+
+/* basic support for themes that don't define alignleft and alignright for non-image elements. */
+.xp-foundation div.alignleft.wpa-alt,
+.xp-foundation div.alignleft.wpa-ld {
+	float: left;
+}
+
+.xp-foundation div.alignright.wpa-alt,
+.xp-foundation div.alignright.wpa-ld {
+	float: right;
+}
+
+.xp-foundation div.aligncenter.wpa-alt,
+.xp-foundation div.aligncenter.wpa-ld {
+	display: block;
+	margin: 0 auto;
+	width: fit-content;
+}
+
+.xp-foundation .wpa-focusable:focus {
+	outline: 1px solid;
+	outline-offset: 1px;
+}
+
+.xp-foundation .wpa-ld .longdesc {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	overflow-y: scroll;
+	box-sizing: border-box;
+	background: rgba(255, 255, 255, .92);
+	color: #111;
+	padding: 46px 1rem 1rem;
+	text-align: start;
+}
+
+.xp-foundation .wpa-ld .longdesc,
+.xp-foundation .wpa-ld .longdesc p {
+	font-size: clamp( 16px, 1rem, 24px );
+}
+
+.xp-foundation .wpa-ld .longdesc-link {
+	position: absolute;
+	display: inline-block;
+	right: 3px;
+	bottom: 3px;
+	color: #000;
+	background: rgba(255, 255, 255, .92);
+	font-size: clamp( 14px, .875rem, 20px );
+	padding: 2px;
+	border-radius: 3px;
+}
+
+.xp-foundation .wpa-alt .wpa-alt-text {
+	position: absolute;
+	width: calc( 100% - 2em );
+	height: fit-content;
+	bottom: 0;
+	box-sizing: border-box;
+	background: rgba(255, 255, 255, .92);
+	padding: 1rem;
+	margin: 1rem;
+	border-radius: 15px;
+	box-shadow: 0 0 6px #333;
+	text-align: start;
+	z-index: 10;
+	font-size: clamp( 16px, 1rem, 24px );
+	line-height: 1.5;
+	color: #111;
+}
+
+.xp-foundation .top-right .wpa-alt .wpa-alt-text,
+.xp-foundation .top-left .wpa-alt .wpa-alt-text {
+	bottom: auto;
+	top: 0;
+	margin-top: 2.5em;
+}
+
+.xp-foundation .rtl .wpa-alt .wpa-alt-text,
+.xp-foundation .rtl .wpa-ld .longdesc {
+	text-align: right;
+}
+
+.xp-foundation .template-longdesc {
+	text-align: left;
+	line-height: 1.5;
+	width: 100%;
+	max-width: 50em;
+	padding: 2em;
+	margin: 1em auto;
+	background: #fdfdfd;
+	color: #333;
+	box-shadow: 0 0 5px;
+	font-size: 1.4em;
+}
+
+.xp-foundation label.wpa-screen-reader-text {
+	border: 0;
+	clip-path: inset(50%);
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	width: 1px;
+	word-wrap: normal !important;
+}
+
+.xp-foundation .wpa-content-summary {
+	padding: 30px;
+	background: rgba( 0,0,0,.05 );
+	margin-bottom: 30px;
+}
+
+.xp-foundation .wpa-content-summary div p:last-of-type {
+	margin-bottom: 0;
+	padding-bottom: 0;
+}
+
+.xp-foundation .wpa-excerpt .wp-block-read-more,
+.xp-foundation .wpa-excerpt .wp-block-post-excerpt__more-text {
+	display: none !important;
+}
+
+.xp-foundation .wpa-excerpt .wp-block-post-excerpt .continue {
+	margin-top: 1rem;
+	display: block;
+}
+
+.xp-foundation .wpa-alt button.wpa-toggle, .xp-foundation .wpa-alt a.wpa-toggle, .xp-foundation .wpa-ld button.wpa-toggle, .xp-foundation .wpa-ld a.wpa-toggle, .xp-foundation button.wpa-video {
+	all: unset;
+	background: #111;
+	display: block;
+	color: #fff;
+	border-radius: 32px !important;
+	height: 28px !important;
+	width: 28px !important;
+	display: flex !important;
+	align-items: center;
+	justify-content: center;
+	position: absolute !important;
+	z-index: 10;
+	padding: 4px !important;
+	border: 1px solid currentColor !important;
+}
+
+.xp-foundation .wpa-alt button {
+	font-family: monospace !important;
+	font-size: clamp( 14px,.875rem,20px ) !important;
+}
+
+.xp-foundation .wpa-alt button.wpa-toggle:active,
+.xp-foundation .wpa-ld button.wpa-toggle:active {
+	background: #f6f6f6;
+	color: #111;
+}
+
+.xp-foundation .wpa-ld button.wpa-toggle,
+.xp-foundation .wpa-alt button.wpa-toggle,
+.xp-foundation button.wpa-video {
+	top: 4px;
+	left: 4px;
+}
+
+.xp-foundation .wpa-ld button.wpa-toggle:focus, .xp-foundation .wpa-ld button.wpa-toggle:hover, .xp-foundation .wpa-alt button.wpa-toggle:focus, .xp-foundation .wpa-alt button.wpa-toggle:hover, .xp-foundation button.wpa-video:hover, .xp-foundation button.wpa-video:focus {
+	outline: 2px solid currentColor;
+	outline-offset: 1px;
+}
+
+.xp-foundation button.wpa-video[aria-pressed=true] .dashicons::before {
+	content: "\f522" / '';
+}
+
+.xp-foundation .wpa-alt button.wpa-toggle[aria-expanded=true],
+.xp-foundation .wpa-ld button.wpa-toggle[aria-expanded=true] {
+	color: #111;
+	background: #f6f6f6;
+}
+
+.xp-foundation .wpa-alt button:focus, .xp-foundation .wpa-alt button:hover, .xp-foundation .wpa-ld button:focus, .xp-foundation .wpa-ld button:hover {
+	cursor: pointer;
+}
+
+.xp-foundation .top-left .wpa-alt a.wpa-toggle, .xp-foundation .top-left .wpa-alt button.wpa-toggle, .xp-foundation .top-left .wpa-ld a.wpa-toggle, .xp-foundation .top-left .wpa-ld button.wpa-toggle {
+	top: 4px;
+	bottom: auto;
+}
+
+.xp-foundation .top-right .wpa-alt a.wpa-toggle, .xp-foundation .top-right .wpa-alt button.wpa-toggle, .xp-foundation .top-right .wpa-ld a.wpa-toggle, .xp-foundation .top-right .wpa-ld button.wpa-toggle {
+	top: 4px;
+	right: 4px;
+	left: auto;
+	bottom: auto;
+}
+
+.xp-foundation .bottom-right .wpa-alt a.wpa-toggle, .xp-foundation .bottom-right .wpa-alt button.wpa-toggle, .xp-foundation .bottom-right .wpa-ld a.wpa-toggle, .xp-foundation .bottom-right .wpa-ld button.wpa-toggle {
+	right: 4px;
+	left: auto;
+}
+
+.xp-foundation .wpa-alt .wpa-ld button {
+	left: 46px;
+}
+
+.xp-foundation .top-right .wpa-alt .wpa-ld button,
+.xp-foundation .bottom-right .wpa-alt .wpa-ld button {
+	left: auto;
+	right: 46px;
+}

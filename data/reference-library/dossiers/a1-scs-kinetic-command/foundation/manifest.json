@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "id": "a1-scs-kinetic-command",
+  "dossierId": "a1-scs-kinetic-command",
+  "sourceDigest": "cede2b4449285ba7df49ab0bb93f5c34b56ed2dc8cf7fec036aff2af1f7803dc",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://o-scs.com/",
+    "credit": "Template adapted from SCS Global Security official website"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-2",
+      "sourceSelector": "section",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-3",
+      "sourceSelector": "section",
+      "order": 5,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "about",
+      "sourceSelector": "section",
+      "order": 6,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "portfolio",
+      "sourceSelector": "section",
+      "order": 7,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "unknown-4",
+      "sourceSelector": "section",
+      "order": 8,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "#contact",
+      "order": 9,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 10,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "about.heading",
+      "selector": "[data-foundation-slot=\"about.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "contact.body",
+      "selector": "#contact .xp-season-contact__body",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.email",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "text",
+      "contentPath": "brand.email",
+      "required": false
+    },
+    {
+      "id": "contact.emailHref",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "href",
+      "contentPath": "brand.emailHref",
+      "required": false
+    },
+    {
+      "id": "contact.form",
+      "selector": "[data-foundation-contact-form]",
+      "kind": "html",
+      "contentPath": "contact.form",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "#contact h2",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "contact.kicker",
+      "selector": "#contact .xp-season-contact__kicker",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.phone",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "text",
+      "contentPath": "brand.phone",
+      "required": false
+    },
+    {
+      "id": "contact.phoneHref",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "href",
+      "contentPath": "brand.phoneHref",
+      "required": false
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.heading",
+      "selector": "[data-foundation-slot=\"unknown-3.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.heading",
+      "selector": "[data-foundation-slot=\"unknown-4.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-2' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-3' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-4' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "6785909f8b5c271910bc733cf849a7658663e850a1f21b19619347d4c2a0463f"
+}

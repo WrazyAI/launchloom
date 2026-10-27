@@ -1,0 +1,267 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-fixwell-quote-desk",
+  "dossierId": "colorlib-fixwell-quote-desk",
+  "sourceDigest": "ec6ac7f6745dfe6fa7deb2b77cc483d5aebc3f9bc6b4ae3929869d81dfd01d8b",
+  "entrypoint": "source/index.html",
+  "sourceClass": "licensed",
+  "license": {
+    "name": "MIT",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/fixwell",
+    "credit": "Template adapted from Colorlib Bootstrap Templates Fixwell"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "estimate",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "estimate",
+      "required": false
+    },
+    {
+      "id": "services",
+      "sourceSelector": "#services",
+      "order": 4,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "coverage",
+      "sourceSelector": "#coverage",
+      "order": 5,
+      "role": "coverage",
+      "required": false
+    },
+    {
+      "id": "pricing",
+      "sourceSelector": "#pricing",
+      "order": 6,
+      "role": "plans",
+      "required": false
+    },
+    {
+      "id": "work",
+      "sourceSelector": "#work",
+      "order": 7,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "book",
+      "sourceSelector": "#book",
+      "order": 8,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 9,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "coverage.body",
+      "selector": "[data-foundation-slot=\"coverage.body\"]",
+      "kind": "text",
+      "contentPath": "coverageIntro",
+      "required": true
+    },
+    {
+      "id": "coverage.heading",
+      "selector": "[data-foundation-slot=\"coverage.heading\"]",
+      "kind": "text",
+      "contentPath": "coverageHeading",
+      "required": true
+    },
+    {
+      "id": "estimate.body",
+      "selector": "[data-foundation-slot=\"estimate.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate.heading",
+      "selector": "[data-foundation-slot=\"estimate.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate.image",
+      "selector": "[data-foundation-image=\"estimate.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "plans.body",
+      "selector": "[data-foundation-slot=\"plans.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "plans.heading",
+      "selector": "[data-foundation-slot=\"plans.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    }
+  ],
+  "assets": [
+    {
+      "source": "img/hero.jpg",
+      "target": "template/source/img/hero.jpg",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "book-disclosure",
+      "source": "details",
+      "primitive": "native-disclosure",
+      "reducedMotion": "all content visible when closed"
+    },
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "interactive-section-needs-adaptation",
+      "message": "Section 'estimate' preserves an interactive source composition that needs adaptation.",
+      "selector": "section"
+    },
+    {
+      "code": "network-script",
+      "message": "Foundation script contains a network, analytics, or tracking primitive; the foundation needs adaptation.",
+      "selector": "script"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated contact items in 'book' have no sealed content mapping.",
+      "selector": "#book"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+      "selector": "header"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'estimate' preserves source composition that needs adaptation.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'pricing' preserves source composition that needs adaptation.",
+      "selector": "#pricing"
+    }
+  ],
+  "fingerprint": "b4f029ff3f7e650fe56834b23366a997822492c87fa17c3cc2951d7f69db1775"
+}

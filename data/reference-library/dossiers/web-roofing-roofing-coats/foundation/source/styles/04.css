@@ -1,0 +1,24 @@
+
+
+.xp-foundation .text:before,
+.xp-foundation .text-set {
+	display: inline-block;
+	font: normal normal normal 24px/1 'Text Icons';
+	font-size: inherit;
+	text-rendering: auto;
+	line-height: inherit;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.xp-foundation .text-contact-button::before {
+	content: '\e900';
+}
+
+.xp-foundation .text-livechat::before {
+	content: '\e901';
+}
+
+.xp-foundation .text-quality-badge::before {
+	content: '\e902';
+}

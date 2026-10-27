@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{page.title}}</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="assets/vendor/bootstrap6/css/bootstrap.min.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<a class="visually-hidden-focusable btn-solid theme-primary m-2" href="#main">Skip to main content</a>
+
+<header data-foundation-needs-adaptation="true" data-experience-hero="true" data-foundation-section="hero" class="site-header">
+  <nav class="navbar lg:navbar-expand" aria-label="Main">
+    <div class="container">
+      <a data-foundation-slot="navigation.brand" class="navbar-brand fw-bold" href="index.html" style="letter-spacing:-.02em">{{navigation.brand}}</a>
+
+      <dialog class="drawer drawer-end" tabindex="-1" id="navDrawer" aria-labelledby="navDrawerLabel">
+        <div class="drawer-header">
+          <h5 class="drawer-title" id="navDrawerLabel"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="drawer" aria-label="Close"></button>
+        </div>
+        <div class="drawer-body mb-2 lg:mb-0">
+          <ul class="nav navbar-nav ms-auto lg:gap-3">
+            <li class="nav-item"><nav class="nav-item" aria-label="Main navigation"><a class="nav-link" href="#services">Services</a><a class="nav-link" href="#faqs">FAQs</a><a class="nav-link" href="#contact">Contact</a></nav></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+          </ul>
+        </div>
+      </dialog>
+
+      <div class="d-flex align-items-center gap-2 ms-auto">
+        <button class="btn-icon" type="button" id="themeToggle" aria-label="Toggle color mode">
+  
+  
+</button>
+        
+        <button class="btn-icon navbar-toggler" type="button" data-bs-toggle="drawer" data-bs-target="#navDrawer" aria-controls="navDrawer" aria-label="Open navigation">
+          <span class="navbar-toggler-icon" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+</header><aside data-foundation-section="conversion" data-early-conversion="true" class="xp-ribbon"><div class="xp-ribbon__copy">
+  <span class="xp-ribbon__kicker">Next step</span>
+  <p>{{conversion.body}}</p>
+</div>
+<a class="xp-ribbon__action" href="#contact">{{conversion.action}} <span aria-hidden="true">→</span></a></aside>
+
+<section data-foundation-needs-adaptation="true" data-foundation-section="estimate" class="showroom">
+  <img data-foundation-image="estimate.image" class="hero-bg" src="{{estimate.image}}" alt="" width="1800" height="1000" loading="eager">
+  <div class="container">
+    <div class="row">
+      <div class="lg:col-7">
+        <p data-foundation-slot="estimate.body" class="fs-sm fg-primary mb-3" style="letter-spacing:.14em;text-transform:uppercase">{{estimate.body}}</p>
+        <h1 data-foundation-slot="estimate.heading" class="showroom-title mb-4">{{estimate.heading}}</h1>
+        <p class="fs-lg fg-2 mb-5" style="max-width:34rem"></p>
+      </div>
+    </div>
+
+    
+  </div>
+</section>
+
+<main id="main">
+
+  <!-- Stock -->
+  <section data-foundation-needs-adaptation="true" data-foundation-section="stock" class="section" id="stock">
+    <div class="container">
+      <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+          <h2 data-foundation-slot="unknown.heading" class="fs-3xl fw-bold mb-1" style="letter-spacing:-.03em">{{unknown.heading}}</h2>
+          <p data-foundation-slot="unknown.body" class="fg-3 fs-sm mb-0">{{unknown.body}}</p>
+        </div>
+        <a class="btn-outline theme-secondary" href="#stock"></a>
+      </div>
+
+      <div class="row g-4">
+        <div class="sm:col-6 lg:col-4">
+          <a class="car" href="vehicle.html">
+            <div class="car-media">
+              <div class="ph"><img data-foundation-image="unknown.image" src="{{unknown.image}}" alt="" width="800" height="600" loading="lazy"></div>
+              <span class="car-flag"></span>
+            </div>
+            <div class="car-body">
+              <p class="car-name mb-1"></p>
+              <p class="car-trim mb-0"></p>
+              <div class="car-specs">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="mt-auto">
+                <p class="car-pm mb-1" data-cash="27995"><span class="fs-xs fg-3 fw-normal"></span></p>
+                <p class="car-cash mb-0"></p>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="sm:col-6 lg:col-4">
+          <a class="car" href="vehicle.html">
+            <div class="car-media">
+              <div class="ph"><img data-foundation-image="unknown.secondaryImage" src="{{unknown.secondaryImage}}" alt="" width="800" height="600" loading="lazy"></div>
+              
+            </div>
+            <div class="car-body">
+              <p class="car-name mb-1"></p>
+              <p class="car-trim mb-0"></p>
+              <div class="car-specs">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="mt-auto">
+                <p class="car-pm mb-1" data-cash="17450"><span class="fs-xs fg-3 fw-normal"></span></p>
+                <p class="car-cash mb-0"></p>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="sm:col-6 lg:col-4">
+          <a class="car" href="vehicle.html">
+            <div class="car-media">
+              <div class="ph"><img data-foundation-image="unknown.tertiaryImage" src="{{unknown.tertiaryImage}}" alt="" width="800" height="600" loading="lazy"></div>
+              
+            </div>
+            <div class="car-body">
+              <p class="car-name mb-1"></p>
+              <p class="car-trim mb-0"></p>
+              <div class="car-specs">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="mt-auto">
+                <p class="car-pm mb-1" data-cash="24990"><span class="fs-xs fg-3 fw-normal"></span></p>
+                <p class="car-cash mb-0"></p>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="sm:col-6 lg:col-4">
+          <a class="car" href="vehicle.html">
+            <div class="car-media">
+              <div class="ph"></div>
+              <span class="car-flag"></span>
+            </div>
+            <div class="car-body">
+              <p class="car-name mb-1"></p>
+              <p class="car-trim mb-0"></p>
+              <div class="car-specs">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="mt-auto">
+                <p class="car-pm mb-1" data-cash="34495"><span class="fs-xs fg-3 fw-normal"></span></p>
+                <p class="car-cash mb-0"></p>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="sm:col-6 lg:col-4">
+          <a class="car" href="vehicle.html">
+            <div class="car-media">
+              <div class="ph"></div>
+              
+            </div>
+            <div class="car-body">
+              <p class="car-name mb-1"></p>
+              <p class="car-trim mb-0"></p>
+              <div class="car-specs">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="mt-auto">
+                <p class="car-pm mb-1" data-cash="16995"><span class="fs-xs fg-3 fw-normal"></span></p>
+                <p class="car-cash mb-0"></p>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="sm:col-6 lg:col-4">
+          <a class="car" href="vehicle.html">
+            <div class="car-media">
+              <div class="ph"></div>
+              
+            </div>
+            <div class="car-body">
+              <p class="car-name mb-1"></p>
+              <p class="car-trim mb-0"></p>
+              <div class="car-specs">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="mt-auto">
+                <p class="car-pm mb-1" data-cash="20950"><span class="fs-xs fg-3 fw-normal"></span></p>
+                <p class="car-cash mb-0"></p>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Finance calculator -->
+  <section data-foundation-needs-adaptation="true" data-foundation-section="finance" class="section bg-2" id="finance">
+    <div class="container">
+      <div class="row g-6 align-items-center">
+        <div class="lg:col-5">
+          <h2 data-foundation-slot="estimate-2.heading" class="fs-3xl fw-bold mb-3" style="letter-spacing:-.03em">{{estimate-2.heading}}</h2>
+          <p data-foundation-slot="estimate-2.body" class="fg-2 mb-4">{{estimate-2.body}}</p>
+          <p class="fs-sm fg-3 mb-0"></p>
+        </div>
+
+        <div class="lg:col-7">
+          <div class="calc">
+            <div class="row g-4">
+              <div class="md:col-7">
+                <div class="mb-4">
+                  <div class="d-flex justify-content-between mb-1">
+                    <label class="form-label mb-0" for="cDep"></label>
+                    <strong id="cDepOut"></strong>
+                  </div>
+                  <div class="form-range">
+                    <input type="range" class="form-range-input" id="cDep" min="0" max="40" step="5" value="10" aria-label="Deposit percentage">
+                  </div>
+                </div>
+
+                <div class="mb-4">
+                  <div class="d-flex justify-content-between mb-1">
+                    <label class="form-label mb-0" for="cTerm"></label>
+                    <strong id="cTermOut"></strong>
+                  </div>
+                  <div class="form-range">
+                    <input type="range" class="form-range-input" id="cTerm" min="12" max="60" step="12" value="48" aria-label="Term in months">
+                  </div>
+                </div>
+
+                <div>
+                  <div class="d-flex justify-content-between mb-1">
+                    <label class="form-label mb-0" for="cApr"></label>
+                    <strong id="cAprOut"></strong>
+                  </div>
+                  <div class="form-range">
+                    <input type="range" class="form-range-input" id="cApr" min="4.9" max="19.9" step="1" value="9.9" aria-label="Annual percentage rate">
+                  </div>
+                </div>
+              </div>
+
+              <div class="md:col-5">
+                <p class="fs-xs fg-3 mb-1" style="letter-spacing:.12em;text-transform:uppercase"></p>
+                <p class="calc-figure mb-4" id="cMonthly" data-cash="24990"><span class="fs-sm fg-3 fw-normal"></span></p>
+                <div class="calc-row"><span class="fg-3 fs-sm"></span><span class="fs-sm" id="cDepAmt"></span></div>
+                <div class="calc-row"><span class="fg-3 fs-sm"></span><span class="fs-sm" id="cFin"></span></div>
+                <div class="calc-row"><span class="fg-3 fs-sm"></span><span class="fs-sm" id="cTotal"></span></div>
+                <a class="btn-solid theme-primary w-100 mt-4" href="vehicle.html"></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Part exchange -->
+  <section data-foundation-section="partex" class="section" id="partex">
+    <div class="container">
+      <div class="row g-6">
+        <div class="lg:col-5">
+          <h2 data-foundation-slot="contact.heading" class="fs-3xl fw-bold mb-3" style="letter-spacing:-.03em">{{contact.heading}}</h2>
+          <p data-foundation-slot="contact.body" class="fg-2 mb-4">{{contact.body}}</p>
+          <div class="trust-cell"><div><p class="fw-semibold mb-1"></p><p class="fg-3 fs-sm mb-0"></p></div></div>
+          <div class="trust-cell"><div><p class="fw-semibold mb-1"></p><p class="fg-3 fs-sm mb-0"></p></div></div>
+          <div class="trust-cell"><div><p class="fw-semibold mb-1"></p><p class="fg-3 fs-sm mb-0"></p></div></div>
+        </div>
+
+        <div class="lg:col-7">
+          <div class="calc">
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Branches -->
+  <section data-foundation-needs-adaptation="true" data-foundation-section="branches" class="section bg-2" id="branches">
+    <div class="container">
+      <h2 data-foundation-slot="unknown-2.heading" class="fs-3xl fw-bold mb-5" style="letter-spacing:-.03em">{{unknown-2.heading}}</h2>
+      <div class="row g-4">
+        <div class="md:col-4">
+          <div class="branch">
+            <p data-foundation-slot="unknown-2.body" class="fw-semibold mb-1">{{unknown-2.body}}</p>
+            <p class="fg-3 fs-sm mb-3"></p>
+            <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+            <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+            <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+            <p class="fs-sm mt-3 mb-0"><a href="tel:01138000000"></a></p>
+          </div>
+        </div>
+        <div class="md:col-4">
+          <div class="branch">
+            <p class="fw-semibold mb-1"></p>
+            <p class="fg-3 fs-sm mb-3"></p>
+            <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+            <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+            <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+            <p class="fs-sm mt-3 mb-0"><a href="tel:01274000000"></a></p>
+          </div>
+        </div>
+        <div class="md:col-4">
+          <div class="branch">
+            <p class="fw-semibold mb-1"></p>
+            <p class="fg-3 fs-sm mb-3"></p>
+            <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+            <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+            <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+            <p class="fs-sm mt-3 mb-0"><a href="tel:01924000000"></a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer data-foundation-license="MIT" data-foundation-section="footer" class="site-footer section pb-5 bg-2"><span>{{footer.brand}}</span><span>{{footer.credit}}</span></footer>
+
+<script type="module" src="assets/js/main.js"></script>
+<span data-foundation-anchor="true" id="services"></span><span data-foundation-anchor="true" id="faqs"></span></body>
+</html>

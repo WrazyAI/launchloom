@@ -1,0 +1,373 @@
+{
+  "schemaVersion": 1,
+  "id": "care-concierge-cinematic",
+  "dossierId": "care-concierge-cinematic",
+  "sourceDigest": "91b04d753276791fd513c1a78a3150acc08d075c32efee78f7220b444ba9cd36",
+  "entrypoint": "source/index.html",
+  "sourceClass": "owned",
+  "license": {
+    "name": "owned",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/care-concierge-cinematic",
+    "credit": "Template adapted from LaunchLoom owned design study"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "care-hero",
+      "sourceSelector": "#care-hero",
+      "order": 3,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "care-services",
+      "sourceSelector": "#care-services",
+      "order": 4,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "care-about",
+      "sourceSelector": "#care-about",
+      "order": 5,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "care-trust",
+      "sourceSelector": "#care-trust",
+      "order": 6,
+      "role": "plans",
+      "required": false
+    },
+    {
+      "id": "care-process",
+      "sourceSelector": "#care-process",
+      "order": 7,
+      "role": "process",
+      "required": false
+    },
+    {
+      "id": "care-proof",
+      "sourceSelector": "#care-proof",
+      "order": 8,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "care-faq",
+      "sourceSelector": "#care-faq",
+      "order": 9,
+      "role": "faq",
+      "required": false
+    },
+    {
+      "id": "care-contact",
+      "sourceSelector": "#care-contact",
+      "order": 10,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 11,
+      "role": "footer",
+      "required": false
+    },
+    {
+      "id": "quick-answers-panel",
+      "sourceSelector": "#quick-answers-panel",
+      "order": 12,
+      "role": "faq",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "about-2.body",
+      "selector": "[data-foundation-slot=\"about-2.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about-2.heading",
+      "selector": "[data-foundation-slot=\"about-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "about.body",
+      "selector": "[data-foundation-slot=\"about.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about.heading",
+      "selector": "[data-foundation-slot=\"about.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "faq-2.body",
+      "selector": "[data-foundation-slot=\"faq-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "faq-2.heading",
+      "selector": "[data-foundation-slot=\"faq-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.faqHeading",
+      "required": true
+    },
+    {
+      "id": "faq.heading",
+      "selector": "[data-foundation-slot=\"faq.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.faqHeading",
+      "required": true
+    },
+    {
+      "id": "faq.item.answer",
+      "selector": "[data-foundation-item=\"faq.items\"] answer",
+      "kind": "text",
+      "contentPath": "faq.answer",
+      "required": true
+    },
+    {
+      "id": "faq.item.question",
+      "selector": "[data-foundation-item=\"faq.items\"] question",
+      "kind": "text",
+      "contentPath": "faq.question",
+      "required": true
+    },
+    {
+      "id": "faq.items",
+      "selector": "[data-foundation-repeat=\"faq.items\"]",
+      "kind": "each",
+      "contentPath": "faqs",
+      "itemPath": "faq",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.primaryLabel",
+      "selector": "[data-foundation-slot=\"hero.primaryLabel\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "hero.secondaryLabel",
+      "selector": "[data-foundation-slot=\"hero.secondaryLabel\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "plans.body",
+      "selector": "[data-foundation-slot=\"plans.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "process.body",
+      "selector": "[data-foundation-slot=\"process.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "process.heading",
+      "selector": "[data-foundation-slot=\"process.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "process.item.description",
+      "selector": "[data-foundation-item=\"process.items\"] description",
+      "kind": "text",
+      "contentPath": "step.description",
+      "required": true
+    },
+    {
+      "id": "process.items",
+      "selector": "[data-foundation-repeat=\"process.items\"]",
+      "kind": "each",
+      "contentPath": "process",
+      "itemPath": "step",
+      "required": true
+    },
+    {
+      "id": "proof.body",
+      "selector": "[data-foundation-slot=\"proof.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.heading",
+      "selector": "[data-foundation-slot=\"proof.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    }
+  ],
+  "assets": [
+    {
+      "source": "images/packs/professional-services-advisory-v1.png",
+      "target": "template/source/images/packs/professional-services-advisory-v1.png",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "care-faq-disclosure",
+      "source": "details",
+      "primitive": "native-disclosure",
+      "reducedMotion": "all content visible when closed"
+    },
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    },
+    {
+      "id": "inline-1",
+      "source": "[data-foundation-action=\"inline-1\"]",
+      "primitive": "local-script",
+      "reducedMotion": "static equivalent remains available"
+    },
+    {
+      "id": "quick-answers-panel-buttons",
+      "source": "button[aria-pressed]",
+      "primitive": "native-buttons",
+      "reducedMotion": "static selected state"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "network-script",
+      "message": "Removed an inline script with a network, analytics, or tracking primitive.",
+      "selector": "script"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed an inline script with a network, storage, navigation, or dynamic-code primitive.",
+      "selector": "script"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated about items in 'care-hero' have no sealed content mapping.",
+      "selector": "#care-hero"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'care-trust' preserves source composition that needs adaptation.",
+      "selector": "#care-trust"
+    }
+  ],
+  "fingerprint": "2832c0c650b21daa21677ec781031c619987bc72db448eff5ef6bc8ef6bc6b9d"
+}

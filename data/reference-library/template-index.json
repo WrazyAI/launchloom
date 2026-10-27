@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "id": "launchloom-reference-templates",
-  "updatedAt": "2026-10-26T16:37:34.983Z",
+  "updatedAt": "2026-10-27T16:21:13.421Z",
   "policy": "internal-refinement-only; retained under owned, licensed, or permission-cleared rights",
   "summary": {
-    "extracted": 128,
-    "pending": 2,
+    "extracted": 131,
+    "pending": 0,
     "unavailable": 0,
-    "failed": 3
+    "failed": 2
   },
   "entries": [
     {
@@ -436,8 +436,8 @@
       "fileCount": 0,
       "totalBytes": 0,
       "rights": "permission-cleared",
-      "retrievedAt": "2026-10-08T20:40:44.772Z",
-      "reason": "navigation failed: page.goto: Timeout 120000ms exceeded. Call log: [2m - navigating to \"https://mahalahotel.com/\", waiting until \"domcontentloaded\" [22m"
+      "retrievedAt": "2026-10-27T16:20:46.592Z",
+      "reason": "navigation failed: page.goto: Timeout 90000ms exceeded. Call log: [2m - navigating to \"https://mahalahotel.com/\", waiting until \"domcontentloaded\" [22m"
     },
     {
       "id": "direct-robins-kaplan-law",
@@ -494,15 +494,15 @@
     {
       "id": "htmlcodex-gardener-garden-services",
       "dossierPath": "data/reference-library/dossiers/htmlcodex-gardener-garden-services",
-      "status": "pending",
-      "method": null,
-      "digest": null,
-      "entrypoint": null,
-      "fileCount": 0,
-      "totalBytes": 0,
+      "status": "extracted",
+      "method": "live-site",
+      "digest": "a5ebe25662a2b1add45a4610ca87163d0f7f88f93f028fc0b4048752ef6d5c27",
+      "entrypoint": "source/index.html",
+      "fileCount": 9,
+      "totalBytes": 379323,
       "rights": "licensed",
-      "retrievedAt": null,
-      "reason": "No template extraction recorded yet."
+      "retrievedAt": "2026-10-27T16:18:53.941Z",
+      "reason": null
     },
     {
       "id": "independent-retail-beepy-bella-art-world",
@@ -637,15 +637,15 @@
     {
       "id": "orgarden-gardening-services",
       "dossierPath": "data/reference-library/dossiers/orgarden-gardening-services",
-      "status": "pending",
-      "method": null,
-      "digest": null,
-      "entrypoint": null,
-      "fileCount": 0,
-      "totalBytes": 0,
+      "status": "extracted",
+      "method": "live-site",
+      "digest": "098f3799039c9f60a0fc2c6782626f41443917d0d67b33d7974143609962328b",
+      "entrypoint": "source/index.html",
+      "fileCount": 6,
+      "totalBytes": 287334,
       "rights": "licensed",
-      "retrievedAt": null,
-      "reason": "No template extraction recorded yet."
+      "retrievedAt": "2026-10-27T16:19:00.778Z",
+      "reason": null
     },
     {
       "id": "quiet-care-consultation",
@@ -852,7 +852,7 @@
       "fileCount": 0,
       "totalBytes": 0,
       "rights": "permission-cleared",
-      "retrievedAt": "2026-10-08T20:40:48.716Z",
+      "retrievedAt": "2026-10-27T16:20:49.128Z",
       "reason": "navigation returned HTTP 403"
     },
     {
@@ -1001,15 +1001,15 @@
     {
       "id": "web-beauty-fruittii-hair-art-lab",
       "dossierPath": "data/reference-library/dossiers/web-beauty-fruittii-hair-art-lab",
-      "status": "failed",
+      "status": "extracted",
       "method": "live-site",
-      "digest": null,
-      "entrypoint": null,
-      "fileCount": 0,
-      "totalBytes": 0,
+      "digest": "45b4dc53f62bb5f15946f721194add9a74d6996e3c5cce496c7c382fa601adf9",
+      "entrypoint": "source/index.html",
+      "fileCount": 58,
+      "totalBytes": 2004781,
       "rights": "permission-cleared",
-      "retrievedAt": "2026-10-08T20:40:53.360Z",
-      "reason": "navigation returned HTTP 500"
+      "retrievedAt": "2026-10-27T16:21:10.922Z",
+      "reason": null
     },
     {
       "id": "web-beauty-salt-salon",

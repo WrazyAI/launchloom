@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "htmlcodex-gardener-garden-services",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://demo.htmlcodex.com/2606/gardening-website-template/",
+    "finalUrl": "https://demo.htmlcodex.com/2606/gardening-website-template/",
+    "httpStatus": 200,
+    "pageTitle": "Gardener - Gardening Website Template",
+    "retrievedAt": "2026-10-27T16:18:53.941Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/LICENSE.md",
+    "licenseEvidencePath": "rights/LICENSE.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 47819,
+      "sha256": "f365e8da4206404d70f7d9f0b726a629ffe43faec9da771818df9e93e8f2c1cd"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 15290,
+      "sha256": "88ebf28ca3dfa102bd11dfe2a0f00b643a102701dd91b087a48c083c2ff9e07d"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 56517,
+      "sha256": "a94a13d4e9df8dc2bc696a168930cd511f83498136bba3bb0b968d7556f0b807"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 63666,
+      "sha256": "412edd2008e5f7dfc4a86b864dcca396f7699308ec92abef7623ca151bf78d66"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 16964,
+      "sha256": "d94d98ac4369a9db03e7b4040445b922d71a46ab0065f33db21f157e8436c6dd"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 2936,
+      "sha256": "016ab0bd0de4839680e4a717a57db9b182a8c2c5fdeec4c24db7a8df761fca4d"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 2608,
+      "sha256": "6ae3e827093ff912ba2929226fdd8392ad58e6112466f2adbd2c2e72cd794a48"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 164116,
+      "sha256": "d814838bbc6d5c9ae7dc8d7a5e80e4c987f78a23c47120fb58f26aa91c1c29c6"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 9407,
+      "sha256": "be07401ee24630093f21a832a3932b5ca8f844a8ef718877bdfa4e33cfd56a88"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/carousel-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/carousel-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/about.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/service-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/icon/icon-3.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/service-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/icon/icon-6.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/service-3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/icon/icon-5.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/service-4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/icon/icon-4.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/service-5.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/icon/icon-8.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/service-6.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/icon/icon-2.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/team-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/team-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/team-3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/testimonial-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://demo.htmlcodex.com/2606/gardening-website-template/img/testimonial-2.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 8 of 8 stylesheets retained.",
+  "digest": "a5ebe25662a2b1add45a4610ca87163d0f7f88f93f028fc0b4048752ef6d5c27"
+}

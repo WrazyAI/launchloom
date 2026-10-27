@@ -1,0 +1,421 @@
+{
+  "schemaVersion": 1,
+  "id": "web-dental-gartside-street",
+  "dossierId": "web-dental-gartside-street",
+  "sourceDigest": "e206cd4c3ef48366ca4858ef4bb8139249ceb2f389911072886eb93bfe63ceae",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://gartsidestreetdental.com/",
+    "credit": "Template adapted from Gartside Street Dental Lounge official website"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-2",
+      "sourceSelector": "section",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "about",
+      "sourceSelector": "section",
+      "order": 5,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "services",
+      "sourceSelector": "section",
+      "order": 6,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "services-2",
+      "sourceSelector": "section",
+      "order": 7,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "about-2",
+      "sourceSelector": "section",
+      "order": 8,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "services-3",
+      "sourceSelector": "section",
+      "order": 9,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "coverage",
+      "sourceSelector": "section",
+      "order": 10,
+      "role": "coverage",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "section",
+      "order": 11,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 12,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "about-2.body",
+      "selector": "[data-foundation-slot=\"about-2.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about-2.heading",
+      "selector": "[data-foundation-slot=\"about-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "about.body",
+      "selector": "[data-foundation-slot=\"about.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about.heading",
+      "selector": "[data-foundation-slot=\"about.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "contact.image",
+      "selector": "[data-foundation-image=\"contact.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "contact.secondaryImage",
+      "selector": "[data-foundation-image=\"contact.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "contact.tertiaryImage",
+      "selector": "[data-foundation-image=\"contact.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "coverage.body",
+      "selector": "[data-foundation-slot=\"coverage.body\"]",
+      "kind": "text",
+      "contentPath": "coverageIntro",
+      "required": true
+    },
+    {
+      "id": "coverage.heading",
+      "selector": "[data-foundation-slot=\"coverage.heading\"]",
+      "kind": "text",
+      "contentPath": "coverageHeading",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.image",
+      "selector": "[data-foundation-image=\"hero.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": true
+    },
+    {
+      "id": "hero.primaryLabel",
+      "selector": "[data-foundation-slot=\"hero.primaryLabel\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "hero.secondaryImage",
+      "selector": "[data-foundation-image=\"hero.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "hero.secondaryLabel",
+      "selector": "[data-foundation-slot=\"hero.secondaryLabel\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "services-2.body",
+      "selector": "[data-foundation-slot=\"services-2.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services-2.heading",
+      "selector": "[data-foundation-slot=\"services-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services-2.image",
+      "selector": "[data-foundation-image=\"services-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "services-2.secondaryImage",
+      "selector": "[data-foundation-image=\"services-2.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "services-3.body",
+      "selector": "[data-foundation-slot=\"services-3.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services-3.heading",
+      "selector": "[data-foundation-slot=\"services-3.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services-3.image",
+      "selector": "[data-foundation-image=\"services-3.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "services-3.secondaryImage",
+      "selector": "[data-foundation-image=\"services-3.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "services-3.tertiaryImage",
+      "selector": "[data-foundation-image=\"services-3.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.image",
+      "selector": "[data-foundation-image=\"services.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "services.secondaryImage",
+      "selector": "[data-foundation-image=\"services.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "services.tertiaryImage",
+      "selector": "[data-foundation-image=\"services.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-2.body",
+      "selector": "[data-foundation-slot=\"unknown-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.image",
+      "selector": "[data-foundation-image=\"unknown-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-2.secondaryImage",
+      "selector": "[data-foundation-image=\"unknown-2.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.image",
+      "selector": "[data-foundation-image=\"unknown.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'unknown' have no sealed content mapping.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-2' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "9867ce017bd6e2a4582d750af52e8076c56c1a3b6848ded9a7c322c6409a0a7d"
+}

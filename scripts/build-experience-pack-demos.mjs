@@ -51,6 +51,37 @@ const demos = [
     packId: "results-ledger",
     variants: ["standard"],
   },
+  {
+    slug: "season-wheel",
+    fixture: "landscaping.json",
+    packId: "season-wheel",
+    variants: ["standard"],
+    internal: true,
+    lightOnly: true,
+    foundation: "spicer-landscaping-season-wheel",
+  },
+  {
+    slug: "web-painting-novak",
+    fixture: "painting.json",
+    packId: "web-painting-novak",
+    variants: ["standard"],
+    internal: true,
+    lightOnly: true,
+    foundation: "web-painting-novak",
+    renderer: "foundation",
+    diagnosticOnly: true,
+  },
+  {
+    slug: "spicer-landscaping-season-wheel",
+    fixture: "landscaping.json",
+    packId: "spicer-landscaping-season-wheel",
+    variants: ["standard"],
+    internal: true,
+    lightOnly: true,
+    foundation: "spicer-landscaping-season-wheel",
+    renderer: "foundation",
+    diagnosticOnly: true,
+  },
 ];
 const onlyFlag = process.argv.indexOf("--only");
 const only =
@@ -63,7 +94,7 @@ const only =
     : null;
 const selectedDemos = only
   ? demos.filter((demo) => only.has(demo.packId) || only.has(demo.slug))
-  : demos;
+  : demos.filter((demo) => !demo.diagnosticOnly);
 if (!selectedDemos.length)
   throw new Error("No experience pack demos matched --only.");
 // A dark requested palette must not place light text on a pack's fixed light
@@ -84,16 +115,19 @@ const palettes = [
 ];
 const renderTargets = palettes.flatMap((palette) =>
   selectedDemos.flatMap((demo) =>
-    (palette.name === "dark" ? demo.variants.slice(0, 1) : demo.variants).map(
-      (variantId) => ({
-        ...demo,
-        variantId,
-        slug: `${demo.slug}-${variantId}-${palette.name}`,
-        demoSlug: demo.slug,
-        palette: palette.name,
-        paletteStyle: palette.style,
-      }),
-    ),
+    (palette.name === "dark" && demo.lightOnly
+      ? []
+      : palette.name === "dark"
+        ? demo.variants.slice(0, 1)
+        : demo.variants
+    ).map((variantId) => ({
+      ...demo,
+      variantId,
+      slug: `${demo.slug}-${variantId}-${palette.name}`,
+      demoSlug: demo.slug,
+      palette: palette.name,
+      paletteStyle: palette.style,
+    })),
   ),
 );
 
@@ -192,6 +226,18 @@ for (const demo of renderTargets) {
         !source.includes(`${path.sep}node_modules`) &&
         !source.includes(`${path.sep}dist`),
     });
+    if (demo.foundation) {
+      await fs.cp(
+        path.join(
+          repository,
+          "data/reference-library/dossiers",
+          demo.foundation,
+          "foundation",
+        ),
+        path.join(workspace, "src/foundations", demo.packId),
+        { recursive: true, force: true },
+      );
+    }
     await fs.symlink(
       dependencyNodeModules,
       path.join(workspace, "node_modules"),
@@ -204,11 +250,20 @@ for (const demo of renderTargets) {
       ),
     );
     config.design ||= { recipe: "general-editorial", sections: [] };
-    config.design.experience = {
-      packId: demo.packId,
-      variantId: demo.variantId,
-      ...(demo.internal ? { internal: true } : {}),
-    };
+    config.design.experience =
+      demo.renderer === "foundation"
+        ? {
+            renderer: "foundation",
+            foundationId: demo.foundation,
+            packId: demo.packId,
+            variantId: demo.variantId,
+            internal: true,
+          }
+        : {
+            packId: demo.packId,
+            variantId: demo.variantId,
+            ...(demo.internal ? { internal: true } : {}),
+          };
     config.style = {
       ...config.style,
       ...resolvePalette({
@@ -360,7 +415,7 @@ try {
         const mainSections = [
           ...document.querySelectorAll("main > section, main > aside"),
         ];
-        const hero = document.querySelector("main > [data-experience-hero]");
+        const hero = document.querySelector("[data-experience-hero]");
         const heroBounds = hero?.getBoundingClientRect();
         return {
           packId: root?.getAttribute("data-experience-pack"),
@@ -370,7 +425,10 @@ try {
           nav: [
             ...document.querySelectorAll('nav[aria-label="Main navigation"] a'),
           ].map((link) => link.textContent?.trim()),
-          earlyConversion: mainSections[1]?.className || "",
+          earlyConversion:
+            hero?.nextElementSibling?.className ||
+            mainSections[1]?.className ||
+            "",
           heroBottom: Math.round(heroBounds?.bottom || 0),
           viewportHeight: window.innerHeight,
           heroFitsViewport:
@@ -465,9 +523,9 @@ try {
         await leadForm.locator('button[type="submit"]').click();
         const formStatus = await leadForm.locator(".lead-status").textContent();
         if (
-          !formStatus?.trim().startsWith(
-            "This inquiry form is not connected yet. Please call ",
-          )
+          !formStatus
+            ?.trim()
+            .startsWith("This inquiry form is not connected yet. Please call ")
         )
           throw new Error(
             `Editorial demo form fallback is not truthful: ${formStatus}`,

@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 1,
+  "id": "a1-uncommon-founder-atlas",
+  "dossierId": "a1-uncommon-founder-atlas",
+  "sourceDigest": "d303225b9aa8ddec4d1416cfd023beb13e1174c0499b9e85615085f2f1261bcf",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://www.theuncommonfounder.com/",
+    "credit": "Template adapted from The Uncommon Founder coaching and advisory website"
+  },
+  "sections": [
+    {
+      "id": "navigation",
+      "sourceSelector": "nav",
+      "order": 1,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 2,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 3,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "about",
+      "sourceSelector": "header",
+      "order": 4,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "about-2",
+      "sourceSelector": "header",
+      "order": 5,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "about-3",
+      "sourceSelector": "section",
+      "order": 6,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 7,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "portfolio",
+      "sourceSelector": "section",
+      "order": 8,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "about-4",
+      "sourceSelector": "header",
+      "order": 9,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "about-5",
+      "sourceSelector": "header",
+      "order": 10,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "about-6",
+      "sourceSelector": "header",
+      "order": 11,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "section",
+      "order": 12,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 13,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "about-2.body",
+      "selector": "[data-foundation-slot=\"about-2.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about-2.heading",
+      "selector": "[data-foundation-slot=\"about-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "about-3.body",
+      "selector": "[data-foundation-slot=\"about-3.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about-4.body",
+      "selector": "[data-foundation-slot=\"about-4.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about-4.heading",
+      "selector": "[data-foundation-slot=\"about-4.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "about-5.body",
+      "selector": "[data-foundation-slot=\"about-5.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about-5.heading",
+      "selector": "[data-foundation-slot=\"about-5.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "about-6.body",
+      "selector": "[data-foundation-slot=\"about-6.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about-6.heading",
+      "selector": "[data-foundation-slot=\"about-6.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.body",
+      "selector": "[data-foundation-slot=\"hero.body\"]",
+      "kind": "text",
+      "contentPath": "hero.body",
+      "required": true
+    },
+    {
+      "id": "hero.heading",
+      "selector": "[data-foundation-slot=\"hero.heading\"]",
+      "kind": "text",
+      "contentPath": "hero.heading",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.item.description",
+      "selector": "[data-foundation-item=\"services.items\"] description",
+      "kind": "text",
+      "contentPath": "service.description",
+      "required": true
+    },
+    {
+      "id": "services.item.name",
+      "selector": "[data-foundation-item=\"services.items\"] name",
+      "kind": "text",
+      "contentPath": "service.name",
+      "required": true
+    },
+    {
+      "id": "services.items",
+      "selector": "[data-foundation-repeat=\"services.items\"]",
+      "kind": "each",
+      "contentPath": "services",
+      "itemPath": "service",
+      "required": true
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated about items in 'about' have no sealed content mapping.",
+      "selector": "header"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "7ea7da12cac5f7a60c93361ad013062d204dc2e8166d2283ed49f2948ddf224e"
+}

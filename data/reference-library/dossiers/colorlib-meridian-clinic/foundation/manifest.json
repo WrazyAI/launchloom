@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-meridian-clinic",
+  "dossierId": "colorlib-meridian-clinic",
+  "sourceDigest": "e3201c136a8150aa73e4aea1b5fce50bb3bd2215fafc3bb0afacdea0a5e9f824",
+  "entrypoint": "source/index.html",
+  "sourceClass": "licensed",
+  "license": {
+    "name": "MIT",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/meridian",
+    "credit": "Template adapted from Colorlib Bootstrap Templates, Meridian MIT/CC0 template"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "services",
+      "sourceSelector": "#services",
+      "order": 4,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "doctors",
+      "sourceSelector": "#doctors",
+      "order": 5,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "portfolio",
+      "sourceSelector": "section",
+      "order": 6,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "faq",
+      "sourceSelector": "#faq",
+      "order": 7,
+      "role": "faq",
+      "required": false
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 8,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "about.body",
+      "selector": "[data-foundation-slot=\"about.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about.heading",
+      "selector": "[data-foundation-slot=\"about.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "contact.image",
+      "selector": "[data-foundation-image=\"contact.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "faq.body",
+      "selector": "[data-foundation-slot=\"faq.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "faq.heading",
+      "selector": "[data-foundation-slot=\"faq.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.faqHeading",
+      "required": true
+    },
+    {
+      "id": "faq.item.answer",
+      "selector": "[data-foundation-item=\"faq.items\"] answer",
+      "kind": "text",
+      "contentPath": "faq.answer",
+      "required": true
+    },
+    {
+      "id": "faq.item.question",
+      "selector": "[data-foundation-item=\"faq.items\"] question",
+      "kind": "text",
+      "contentPath": "faq.question",
+      "required": true
+    },
+    {
+      "id": "faq.items",
+      "selector": "[data-foundation-repeat=\"faq.items\"]",
+      "kind": "each",
+      "contentPath": "faqs",
+      "itemPath": "faq",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    }
+  ],
+  "assets": [
+    {
+      "source": "img/hero.jpg",
+      "target": "template/source/img/hero.jpg",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    },
+    {
+      "id": "faq-disclosure",
+      "source": "details",
+      "primitive": "native-disclosure",
+      "reducedMotion": "all content visible when closed"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "network-script",
+      "message": "Foundation script contains a network, analytics, or tracking primitive; the foundation needs adaptation.",
+      "selector": "script"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+      "selector": "header"
+    }
+  ],
+  "fingerprint": "6646f7cee3732acc51562d58e25d2ca9cef65b47255570f8712ffe8695723883"
+}

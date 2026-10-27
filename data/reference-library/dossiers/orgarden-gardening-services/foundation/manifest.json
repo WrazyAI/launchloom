@@ -1,0 +1,348 @@
+{
+  "schemaVersion": 1,
+  "id": "orgarden-gardening-services",
+  "dossierId": "orgarden-gardening-services",
+  "sourceDigest": "098f3799039c9f60a0fc2c6782626f41443917d0d67b33d7974143609962328b",
+  "entrypoint": "source/index.html",
+  "sourceClass": "licensed",
+  "license": {
+    "name": "CC-BY-3.0",
+    "url": "https://html.design/download/orgarden-free-gardening-services-html-template/",
+    "credit": "Template adapted from Orgarden gardening services HTML template"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "services",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "services-2",
+      "sourceSelector": "section",
+      "order": 5,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "unknown-2",
+      "sourceSelector": "section",
+      "order": 6,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "section",
+      "order": 7,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "proof",
+      "sourceSelector": "section",
+      "order": 8,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "contact-2",
+      "sourceSelector": "section",
+      "order": 9,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 10,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact-2.body",
+      "selector": "[data-foundation-slot=\"contact-2.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "contact.image",
+      "selector": "[data-foundation-image=\"contact.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "proof.body",
+      "selector": "[data-foundation-slot=\"proof.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.heading",
+      "selector": "[data-foundation-slot=\"proof.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.image",
+      "selector": "[data-foundation-image=\"proof.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "proof.secondaryImage",
+      "selector": "[data-foundation-image=\"proof.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "proof.tertiaryImage",
+      "selector": "[data-foundation-image=\"proof.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "services-2.body",
+      "selector": "[data-foundation-slot=\"services-2.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services-2.heading",
+      "selector": "[data-foundation-slot=\"services-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services-2.image",
+      "selector": "[data-foundation-image=\"services-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "services-2.secondaryImage",
+      "selector": "[data-foundation-image=\"services-2.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "services-2.tertiaryImage",
+      "selector": "[data-foundation-image=\"services-2.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.item.name",
+      "selector": "[data-foundation-item=\"services.items\"] name",
+      "kind": "text",
+      "contentPath": "service.name",
+      "required": true
+    },
+    {
+      "id": "services.items",
+      "selector": "[data-foundation-repeat=\"services.items\"]",
+      "kind": "each",
+      "contentPath": "services",
+      "itemPath": "service",
+      "required": true
+    },
+    {
+      "id": "unknown-2.body",
+      "selector": "[data-foundation-slot=\"unknown-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.image",
+      "selector": "[data-foundation-image=\"unknown-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-2.secondaryImage",
+      "selector": "[data-foundation-image=\"unknown-2.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-2.tertiaryImage",
+      "selector": "[data-foundation-image=\"unknown-2.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.image",
+      "selector": "[data-foundation-image=\"unknown.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated contact items in 'contact-2' have no sealed content mapping.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+      "selector": "header"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-2' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "dcb152a125830c5e0dd3334e25c3685e1fb4e82e2ea7235d0fa01770798aa3cc"
+}

@@ -1,0 +1,183 @@
+{
+  "preset": "home-services",
+  "industry": "home-services",
+  "businessKind": "landscaping",
+  "business": {
+    "name": "Harbor & Pine Landscape Co.",
+    "tagline": "Gardens that look designed, not mowed.",
+    "description": "Harbor & Pine helps homeowners plan, plant, and care for gardens that fit the property and the way they live. Start with a site visit, a clear scope, and a seasonal plan for the work ahead.",
+    "phone": "(555) 010-0142",
+    "email": "hello@harborpine.example",
+    "address": "",
+    "serviceAreas": ["Millbrook", "Oakwood", "Cedar Bend"],
+    "hours": "Monday to Friday, 8am to 5pm",
+    "primaryCta": "Request an estimate",
+    "offer": "A site visit and a clear scope before work begins",
+    "domain": "harborpine.example",
+    "leadEmail": "hello@harborpine.example"
+  },
+  "style": {
+    "primaryColor": "#2f6b3f",
+    "surfaceColor": "#f2f4ef",
+    "heroColor": "#e6ebe0",
+    "inkColor": "#16241a",
+    "mutedColor": "#5c6b5c",
+    "lineColor": "#d5ddcd",
+    "tone": "editorial"
+  },
+  "design": {
+    "recipe": "local-trades",
+    "sections": []
+  },
+  "services": [
+    {
+      "name": "Garden design",
+      "slug": "garden-design",
+      "description": "Measured planting plans that fit the property, the light, and the way the garden will be used.",
+      "decisionSupport": {
+        "scope": "Discuss the site, the light, the soil, and the way you want to use the garden before choosing plants.",
+        "nextStep": "Begin with a site visit so the plan can respond to the property instead of a generic plant list.",
+        "preparation": "Bring photos of the space, a rough idea of budget, and the parts of the garden that already work."
+      }
+    },
+    {
+      "name": "Garden maintenance",
+      "slug": "garden-maintenance",
+      "description": "Seasonal care for beds, hedges, and lawns, with a clear list of what each visit includes.",
+      "decisionSupport": {
+        "scope": "Confirm which beds, hedges, and lawn areas are included and what the visit covers.",
+        "nextStep": "Share the property address and the work you want handled so the team can confirm the right visit.",
+        "preparation": "Note the areas that need the most attention and whether the property has irrigation or a regular mowing schedule."
+      }
+    },
+    {
+      "name": "Irrigation service",
+      "slug": "irrigation-service",
+      "description": "Seasonal start-up, adjustments, and winterization for existing irrigation systems.",
+      "decisionSupport": {
+        "scope": "Describe the existing system, the number of zones, and whether the issue is coverage, timing, or a leak.",
+        "nextStep": "Share the property address and system details so the team can confirm the appropriate service.",
+        "preparation": "Note the controller make, any visible leaks, and the last time the system was started or winterized."
+      }
+    },
+    {
+      "name": "Hardscape installation",
+      "slug": "hardscape-installation",
+      "description": "Paths, patios, and retaining walls planned with the planting and drainage in mind.",
+      "decisionSupport": {
+        "scope": "Discuss the intended use, the slope, the drainage, and how the hardscape connects to the planting.",
+        "nextStep": "A site visit confirms the measurements and the construction approach before a scope is proposed.",
+        "preparation": "Bring photos, a rough sketch, and any survey or property documents that show the boundaries."
+      }
+    }
+  ],
+  "differentiators": [
+    "One crew from plan to planting",
+    "A clear scope before work begins",
+    "Seasonal care built around the property",
+    "Service areas confirmed by address"
+  ],
+  "locations": [
+    {
+      "name": "Millbrook",
+      "slug": "millbrook",
+      "description": "Garden design, maintenance, irrigation, and hardscape requests are available for Millbrook properties.",
+      "localNote": "Millbrook is a service area. Share the property address so the team can confirm coverage and the next available step."
+    },
+    {
+      "name": "Oakwood",
+      "slug": "oakwood",
+      "description": "Harbor & Pine accepts garden and landscape requests from Oakwood homeowners.",
+      "localNote": "Coverage is confirmed using the Oakwood property address and the work being considered."
+    },
+    {
+      "name": "Cedar Bend",
+      "slug": "cedar-bend",
+      "description": "Cedar Bend properties can request design, seasonal care, irrigation, and hardscape consultations.",
+      "localNote": "Cedar Bend is a service area, not an office. Share the address so the team can confirm the visit."
+    }
+  ],
+  "images": {
+    "hero": "https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=1600&q=85",
+    "secondary": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1200&q=85",
+    "tertiary": "https://images.unsplash.com/photo-1598902108854-10e335adac99?auto=format&fit=crop&w=1200&q=85"
+  },
+  "copy": {
+    "heroKicker": "Landscape design and care in the Millbrook area",
+    "servicesHeading": "Start with the property. Then choose the work.",
+    "servicesIntro": "Every garden begins with the site, the light, and the way the space will be used.",
+    "aboutKicker": "A garden plan that can be cared for",
+    "aboutHeading": "A garden plan that can be cared for.",
+    "aboutBody": "Harbor & Pine starts with the property, the existing planting, and the work the homeowner wants to keep up. The plan connects the design, the installation, and the seasonal care so the garden does not depend on guesswork after the first season.",
+    "processKicker": "From first visit to first season",
+    "processHeading": "A clear path from first visit to first season.",
+    "faqKicker": "Practical answers",
+    "faqHeading": "Questions before the first visit.",
+    "contactKicker": "Tell us about the property",
+    "contactHeading": "Request an estimate",
+    "formIntro": "Share the property address and the work you are considering so the team can confirm coverage and the next step."
+  },
+  "conversion": {
+    "layout": "local-proof",
+    "qualification": [
+      {
+        "name": "service",
+        "label": "What kind of help are you considering?",
+        "placeholder": "Select a service",
+        "options": [
+          "Garden design",
+          "Garden maintenance",
+          "Irrigation service",
+          "Hardscape installation",
+          "Not sure yet"
+        ]
+      },
+      {
+        "name": "timing",
+        "label": "When would you like to start?",
+        "placeholder": "Select timing",
+        "options": ["As soon as possible", "This season", "Planning ahead"]
+      }
+    ],
+    "process": [
+      "Walk the property and talk through the work",
+      "Agree the scope and the next step",
+      "Schedule the work for the right season"
+    ],
+    "faqs": [
+      {
+        "question": "Do you design and maintain gardens?",
+        "answer": "Yes. The same team can prepare a planting plan and care for the garden through the seasons, or handle only the part you need."
+      },
+      {
+        "question": "How is service-area coverage confirmed?",
+        "answer": "Share the full property address. The team will confirm current coverage and availability before scheduling a visit."
+      },
+      {
+        "question": "What happens at the first visit?",
+        "answer": "The team walks the property, reviews the light and existing planting, and talks through the work you are considering. The visit is used to prepare a clear scope, not to pressure a decision."
+      }
+    ],
+    "guidedQualifier": {
+      "enabled": true,
+      "heading": "Tell us about the property",
+      "intro": "Choose the closest options so the team can understand the work before following up."
+    },
+    "quickAnswers": {
+      "enabled": true,
+      "label": "Quick answers",
+      "greeting": "Welcome to Harbor & Pine Landscape Co. How can we help?",
+      "items": [],
+      "ctaLabel": "Request an estimate",
+      "ctaTarget": "#contact"
+    },
+    "exitOffer": {
+      "enabled": true,
+      "eyebrow": "Before you go",
+      "heading": "Request a site visit and a clear scope",
+      "body": "Share the property address and the work you are considering so the team can confirm the next step.",
+      "ctaLabel": "Request an estimate",
+      "ctaTarget": "#contact"
+    }
+  }
+}

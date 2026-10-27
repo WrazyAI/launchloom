@@ -1,0 +1,581 @@
+{
+  "schemaVersion": 1,
+  "id": "web-painting-concept-pro",
+  "dossierId": "web-painting-concept-pro",
+  "sourceDigest": "e439f8dbfe1b3fbdc9384e70db4558f74f4dd1edeb4dccf7855b4e7d12424642",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://www.conceptpropainting.com/",
+    "credit": "Template adapted from Concept Pro Painting South Florida official website"
+  },
+  "sections": [
+    {
+      "id": "nav",
+      "sourceSelector": "#nav",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "home",
+      "sourceSelector": "#home",
+      "order": 2,
+      "role": "estimate",
+      "required": false
+    },
+    {
+      "id": "services",
+      "sourceSelector": "#services",
+      "order": 3,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "owner",
+      "sourceSelector": "#owner",
+      "order": 4,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "work",
+      "sourceSelector": "#work",
+      "order": 5,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "process",
+      "sourceSelector": "#process",
+      "order": 6,
+      "role": "process",
+      "required": false
+    },
+    {
+      "id": "reviews",
+      "sourceSelector": "#reviews",
+      "order": 7,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "area",
+      "sourceSelector": "#area",
+      "order": 8,
+      "role": "coverage",
+      "required": false
+    },
+    {
+      "id": "onecrew",
+      "sourceSelector": "#oneCrew",
+      "order": 9,
+      "role": "estimate",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "#contact",
+      "order": 10,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "estimate",
+      "sourceSelector": "section",
+      "order": 11,
+      "role": "estimate",
+      "required": false
+    },
+    {
+      "id": "why",
+      "sourceSelector": "#why",
+      "order": 12,
+      "role": "estimate",
+      "required": false
+    },
+    {
+      "id": "estimate-2",
+      "sourceSelector": "#estimate",
+      "order": 13,
+      "role": "estimate",
+      "required": false
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 14,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "#contact .xp-season-contact__body",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.email",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "text",
+      "contentPath": "brand.email",
+      "required": false
+    },
+    {
+      "id": "contact.emailHref",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "href",
+      "contentPath": "brand.emailHref",
+      "required": false
+    },
+    {
+      "id": "contact.form",
+      "selector": "[data-foundation-contact-form]",
+      "kind": "html",
+      "contentPath": "contact.form",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "#contact h2",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "contact.kicker",
+      "selector": "#contact .xp-season-contact__kicker",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.phone",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "text",
+      "contentPath": "brand.phone",
+      "required": false
+    },
+    {
+      "id": "contact.phoneHref",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "href",
+      "contentPath": "brand.phoneHref",
+      "required": false
+    },
+    {
+      "id": "coverage.body",
+      "selector": "[data-foundation-slot=\"coverage.body\"]",
+      "kind": "text",
+      "contentPath": "coverageIntro",
+      "required": true
+    },
+    {
+      "id": "coverage.heading",
+      "selector": "[data-foundation-slot=\"coverage.heading\"]",
+      "kind": "text",
+      "contentPath": "coverageHeading",
+      "required": true
+    },
+    {
+      "id": "coverage.item.name",
+      "selector": "[data-foundation-item=\"coverage.items\"] name",
+      "kind": "text",
+      "contentPath": "location.name",
+      "required": true
+    },
+    {
+      "id": "coverage.items",
+      "selector": "[data-foundation-repeat=\"coverage.items\"]",
+      "kind": "each",
+      "contentPath": "locations",
+      "itemPath": "location",
+      "required": true
+    },
+    {
+      "id": "estimate-2.body",
+      "selector": "[data-foundation-slot=\"estimate-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate-2.heading",
+      "selector": "[data-foundation-slot=\"estimate-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate-2.image",
+      "selector": "[data-foundation-image=\"estimate-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "estimate-2.secondaryImage",
+      "selector": "[data-foundation-image=\"estimate-2.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "estimate-2.tertiaryImage",
+      "selector": "[data-foundation-image=\"estimate-2.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "estimate-3.body",
+      "selector": "[data-foundation-slot=\"estimate-3.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate-3.heading",
+      "selector": "[data-foundation-slot=\"estimate-3.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate-3.image",
+      "selector": "[data-foundation-image=\"estimate-3.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "estimate-4.body",
+      "selector": "[data-foundation-slot=\"estimate-4.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate-4.heading",
+      "selector": "[data-foundation-slot=\"estimate-4.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate-5.body",
+      "selector": "[data-foundation-slot=\"estimate-5.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate-5.heading",
+      "selector": "[data-foundation-slot=\"estimate-5.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate.body",
+      "selector": "[data-foundation-slot=\"estimate.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate.heading",
+      "selector": "[data-foundation-slot=\"estimate.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.image",
+      "selector": "[data-foundation-image=\"hero.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": true
+    },
+    {
+      "id": "hero.primaryLabel",
+      "selector": "[data-foundation-slot=\"hero.primaryLabel\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "hero.secondaryLabel",
+      "selector": "[data-foundation-slot=\"hero.secondaryLabel\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "process.body",
+      "selector": "[data-foundation-slot=\"process.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "process.heading",
+      "selector": "[data-foundation-slot=\"process.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "process.item.description",
+      "selector": "[data-foundation-item=\"process.items\"] description",
+      "kind": "text",
+      "contentPath": "step.description",
+      "required": true
+    },
+    {
+      "id": "process.items",
+      "selector": "[data-foundation-repeat=\"process.items\"]",
+      "kind": "each",
+      "contentPath": "process",
+      "itemPath": "step",
+      "required": true
+    },
+    {
+      "id": "proof-2.body",
+      "selector": "[data-foundation-slot=\"proof-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof-2.heading",
+      "selector": "[data-foundation-slot=\"proof-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof-2.image",
+      "selector": "[data-foundation-image=\"proof-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "proof-2.secondaryImage",
+      "selector": "[data-foundation-image=\"proof-2.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "proof-2.tertiaryImage",
+      "selector": "[data-foundation-image=\"proof-2.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "proof.body",
+      "selector": "[data-foundation-slot=\"proof.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.heading",
+      "selector": "[data-foundation-slot=\"proof.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.image",
+      "selector": "[data-foundation-image=\"proof.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "proof.item.quote",
+      "selector": "[data-foundation-item=\"proof.items\"] quote",
+      "kind": "text",
+      "contentPath": "proof.quote",
+      "required": true
+    },
+    {
+      "id": "proof.items",
+      "selector": "[data-foundation-repeat=\"proof.items\"]",
+      "kind": "each",
+      "contentPath": "proof",
+      "itemPath": "proof",
+      "required": true
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.image",
+      "selector": "[data-foundation-image=\"services.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "services.item.description",
+      "selector": "[data-foundation-item=\"services.items\"] description",
+      "kind": "text",
+      "contentPath": "service.description",
+      "required": true
+    },
+    {
+      "id": "services.item.image",
+      "selector": "[data-foundation-item=\"services.items\"] img",
+      "kind": "image",
+      "contentPath": "service.image",
+      "required": false
+    },
+    {
+      "id": "services.item.name",
+      "selector": "[data-foundation-item=\"services.items\"] name",
+      "kind": "text",
+      "contentPath": "service.name",
+      "required": true
+    },
+    {
+      "id": "services.items",
+      "selector": "[data-foundation-repeat=\"services.items\"]",
+      "kind": "each",
+      "contentPath": "services",
+      "itemPath": "service",
+      "required": true
+    },
+    {
+      "id": "services.secondaryImage",
+      "selector": "[data-foundation-image=\"services.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "services.tertiaryImage",
+      "selector": "[data-foundation-image=\"services.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "interactive-section-needs-adaptation",
+      "message": "Section 'estimate-2' preserves an interactive source composition that needs adaptation.",
+      "selector": "#estimate"
+    },
+    {
+      "code": "interactive-section-needs-adaptation",
+      "message": "Section 'estimate' preserves an interactive source composition that needs adaptation.",
+      "selector": "section"
+    },
+    {
+      "code": "interactive-section-needs-adaptation",
+      "message": "Section 'home' preserves an interactive source composition that needs adaptation.",
+      "selector": "#home"
+    },
+    {
+      "code": "interactive-section-needs-adaptation",
+      "message": "Section 'onecrew' preserves an interactive source composition that needs adaptation.",
+      "selector": "#oneCrew"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated estimate items in 'estimate-2' have no sealed content mapping.",
+      "selector": "#estimate"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated estimate items in 'home' have no sealed content mapping.",
+      "selector": "#home"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated estimate items in 'onecrew' have no sealed content mapping.",
+      "selector": "#oneCrew"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'estimate-2' preserves source composition that needs adaptation.",
+      "selector": "#estimate"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'estimate' preserves source composition that needs adaptation.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'home' preserves source composition that needs adaptation.",
+      "selector": "#home"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'onecrew' preserves source composition that needs adaptation.",
+      "selector": "#oneCrew"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'why' preserves source composition that needs adaptation.",
+      "selector": "#why"
+    }
+  ],
+  "fingerprint": "b23c1ba6e29f421220d4fa6010faf461758d12fd8ec31c1b73b4f3a85b679596"
+}

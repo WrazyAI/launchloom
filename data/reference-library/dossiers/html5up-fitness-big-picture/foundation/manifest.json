@@ -1,0 +1,604 @@
+{
+  "schemaVersion": 1,
+  "id": "html5up-fitness-big-picture",
+  "dossierId": "html5up-fitness-big-picture",
+  "sourceDigest": "541b82d3a2bd37a926e6aeaf278fad404d39759cef0ec4c944e904f71ab8541e",
+  "entrypoint": "source/index.html",
+  "sourceClass": "licensed",
+  "license": {
+    "name": "CC BY 3.0",
+    "url": "https://html5up.net/big-picture",
+    "credit": "Template adapted from Big Picture by HTML5 UP / AJ"
+  },
+  "sections": [
+    {
+      "id": "header",
+      "sourceSelector": "#header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "intro",
+      "sourceSelector": "#intro",
+      "order": 2,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "one",
+      "sourceSelector": "#one",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "two",
+      "sourceSelector": "#two",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "work",
+      "sourceSelector": "#work",
+      "order": 5,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "#contact",
+      "order": 6,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "#footer",
+      "order": 7,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.heading",
+      "selector": "[data-foundation-slot=\"hero.heading\"]",
+      "kind": "text",
+      "contentPath": "hero.heading",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.image",
+      "selector": "[data-foundation-image=\"services.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "services.item.image",
+      "selector": "[data-foundation-item=\"services.items\"] img",
+      "kind": "image",
+      "contentPath": "service.image",
+      "required": false
+    },
+    {
+      "id": "services.item.name",
+      "selector": "[data-foundation-item=\"services.items\"] name",
+      "kind": "text",
+      "contentPath": "service.name",
+      "required": true
+    },
+    {
+      "id": "services.items",
+      "selector": "[data-foundation-repeat=\"services.items\"]",
+      "kind": "each",
+      "contentPath": "services",
+      "itemPath": "service",
+      "required": true
+    },
+    {
+      "id": "services.secondaryImage",
+      "selector": "[data-foundation-image=\"services.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "services.tertiaryImage",
+      "selector": "[data-foundation-image=\"services.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-2.body",
+      "selector": "[data-foundation-slot=\"unknown-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.body",
+      "selector": "[data-foundation-slot=\"unknown-3.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.heading",
+      "selector": "[data-foundation-slot=\"unknown-3.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [
+    {
+      "source": "assets/css/images/arrow.svg",
+      "target": "template/source/assets/css/images/arrow.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/css/images/dark-arrow.svg",
+      "target": "template/source/assets/css/images/dark-arrow.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/css/images/overlay.png",
+      "target": "template/source/assets/css/images/overlay.png",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/css/images/poptrox-closer.svg",
+      "target": "template/source/assets/css/images/poptrox-closer.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/css/images/poptrox-nav.svg",
+      "target": "template/source/assets/css/images/poptrox-nav.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.eot",
+      "target": "template/source/assets/fonts/fontawesome-webfont.eot",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.svg",
+      "target": "template/source/assets/fonts/fontawesome-webfont.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.ttf",
+      "target": "template/source/assets/fonts/fontawesome-webfont.ttf",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.woff",
+      "target": "template/source/assets/fonts/fontawesome-webfont.woff",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.woff2",
+      "target": "template/source/assets/fonts/fontawesome-webfont.woff2",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/FontAwesome.otf",
+      "target": "template/source/assets/fonts/FontAwesome.otf",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/base/_page.scss",
+      "target": "template/source/assets/sass/base/_page.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/base/_reset.scss",
+      "target": "template/source/assets/sass/base/_reset.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/base/_typography.scss",
+      "target": "template/source/assets/sass/base/_typography.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_actions.scss",
+      "target": "template/source/assets/sass/components/_actions.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_box.scss",
+      "target": "template/source/assets/sass/components/_box.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_button.scss",
+      "target": "template/source/assets/sass/components/_button.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_form.scss",
+      "target": "template/source/assets/sass/components/_form.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_gallery.scss",
+      "target": "template/source/assets/sass/components/_gallery.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_icon.scss",
+      "target": "template/source/assets/sass/components/_icon.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_icons.scss",
+      "target": "template/source/assets/sass/components/_icons.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_image.scss",
+      "target": "template/source/assets/sass/components/_image.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_list.scss",
+      "target": "template/source/assets/sass/components/_list.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_poptrox-popup.scss",
+      "target": "template/source/assets/sass/components/_poptrox-popup.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_section.scss",
+      "target": "template/source/assets/sass/components/_section.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_table.scss",
+      "target": "template/source/assets/sass/components/_table.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/layout/_footer.scss",
+      "target": "template/source/assets/sass/layout/_footer.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/layout/_header.scss",
+      "target": "template/source/assets/sass/layout/_header.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/layout/_main.scss",
+      "target": "template/source/assets/sass/layout/_main.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_breakpoints.scss",
+      "target": "template/source/assets/sass/libs/_breakpoints.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_functions.scss",
+      "target": "template/source/assets/sass/libs/_functions.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_mixins.scss",
+      "target": "template/source/assets/sass/libs/_mixins.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_vars.scss",
+      "target": "template/source/assets/sass/libs/_vars.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_vendor.scss",
+      "target": "template/source/assets/sass/libs/_vendor.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/main.scss",
+      "target": "template/source/assets/sass/main.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/noscript.scss",
+      "target": "template/source/assets/sass/noscript.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/fulls/01.jpg",
+      "target": "template/source/images/fulls/01.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/fulls/02.jpg",
+      "target": "template/source/images/fulls/02.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/fulls/03.jpg",
+      "target": "template/source/images/fulls/03.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/fulls/04.jpg",
+      "target": "template/source/images/fulls/04.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/fulls/05.jpg",
+      "target": "template/source/images/fulls/05.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/fulls/06.jpg",
+      "target": "template/source/images/fulls/06.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/intro.jpg",
+      "target": "template/source/images/intro.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/one.jpg",
+      "target": "template/source/images/one.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/thumbs/01.jpg",
+      "target": "template/source/images/thumbs/01.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/thumbs/02.jpg",
+      "target": "template/source/images/thumbs/02.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/thumbs/03.jpg",
+      "target": "template/source/images/thumbs/03.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/thumbs/04.jpg",
+      "target": "template/source/images/thumbs/04.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/thumbs/05.jpg",
+      "target": "template/source/images/thumbs/05.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/thumbs/06.jpg",
+      "target": "template/source/images/thumbs/06.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/two.jpg",
+      "target": "template/source/images/two.jpg",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/breakpoints.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/browser.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.poptrox.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.scrollex.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.scrolly.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/main.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/util.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'header' have no sealed content mapping.",
+      "selector": "#header"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'intro' has no supported content role.",
+      "selector": "#intro"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'one' has no supported content role.",
+      "selector": "#one"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'two' has no supported content role.",
+      "selector": "#two"
+    }
+  ],
+  "fingerprint": "dd9bb89104512993a7d7f6d16978d1e6251dcbdcecb4dc1db2708e74cd651cad"
+}

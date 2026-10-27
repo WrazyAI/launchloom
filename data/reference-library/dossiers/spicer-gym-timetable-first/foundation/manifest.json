@@ -1,0 +1,348 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-gym-timetable-first",
+  "dossierId": "spicer-gym-timetable-first",
+  "sourceDigest": "0243e9a6925cb6db0e076cda82f868974e7910f84c1248bcd45344fb4c0e47ef",
+  "entrypoint": "source/index.html",
+  "sourceClass": "licensed",
+  "license": {
+    "name": "licensed",
+    "url": "https://www.spicerdesigns.com/templates/gym",
+    "credit": "Template adapted from Spicer Designs Gym template"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "timetable",
+      "sourceSelector": "#timetable",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "membership",
+      "sourceSelector": "#membership",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "kit",
+      "sourceSelector": "#kit",
+      "order": 5,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "induction",
+      "sourceSelector": "#induction",
+      "order": 6,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "portfolio",
+      "sourceSelector": "section",
+      "order": 7,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "about",
+      "sourceSelector": "section",
+      "order": 8,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 9,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "join",
+      "sourceSelector": "#join",
+      "order": 10,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 11,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "about.body",
+      "selector": "[data-foundation-slot=\"about.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about.heading",
+      "selector": "[data-foundation-slot=\"about.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.body",
+      "selector": "[data-foundation-slot=\"hero.body\"]",
+      "kind": "text",
+      "contentPath": "hero.body",
+      "required": true
+    },
+    {
+      "id": "hero.heading",
+      "selector": "[data-foundation-slot=\"hero.heading\"]",
+      "kind": "text",
+      "contentPath": "hero.heading",
+      "required": true
+    },
+    {
+      "id": "hero.image",
+      "selector": "[data-foundation-image=\"hero.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": true
+    },
+    {
+      "id": "hero.primaryLabel",
+      "selector": "[data-foundation-slot=\"hero.primaryLabel\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "hero.secondaryLabel",
+      "selector": "[data-foundation-slot=\"hero.secondaryLabel\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "unknown-2.body",
+      "selector": "[data-foundation-slot=\"unknown-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.body",
+      "selector": "[data-foundation-slot=\"unknown-3.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.heading",
+      "selector": "[data-foundation-slot=\"unknown-3.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.body",
+      "selector": "[data-foundation-slot=\"unknown-4.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.heading",
+      "selector": "[data-foundation-slot=\"unknown-4.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-5.heading",
+      "selector": "[data-foundation-slot=\"unknown-5.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [
+    {
+      "source": "hero.webp",
+      "target": "template/source/hero.webp",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    },
+    {
+      "id": "section-disclosure",
+      "source": "details",
+      "primitive": "native-disclosure",
+      "reducedMotion": "all content visible when closed"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'kit' have no sealed content mapping.",
+      "selector": "#kit"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'membership' have no sealed content mapping.",
+      "selector": "#membership"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'unknown' have no sealed content mapping.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'induction' has no supported content role.",
+      "selector": "#induction"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'kit' has no supported content role.",
+      "selector": "#kit"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'membership' has no supported content role.",
+      "selector": "#membership"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'timetable' has no supported content role.",
+      "selector": "#timetable"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "33ab5227556732dbaa1687251087b0f338efe65ca30b0aba6d50a2e12d7dd915"
+}
