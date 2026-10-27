@@ -366,11 +366,19 @@ These text, icon, or focus findings straddle two surfaces or media; no single co
 - For icons and focus rings, give the element one surface or move it away from the boundary; keep focus rings inset so rounded or overflow-hidden ancestors cannot clip them.`;
 
 const HERO_VIEWPORT_FIT_REPAIR_GUIDANCE = `HERO VIEWPORT FIT (hard gate)
-The rendered capture put the header plus hero taller than the first viewport (desktop 1536x864, compact 1366x768). Fix it structurally in this repair:
+The rendered capture put the header plus hero taller than the first viewport (desktop 1536x864, compact 1366x768, mobile 390x844). Fix it structurally in this repair:
 - Size the hero from the viewport, not from its content: cap the hero block at the viewport height minus the header (for example min-height: min(720px, calc(100svh - 88px)) or an explicit vh calculation) and let the media cover that box with object-fit: cover instead of an intrinsic image height.
 - Compress everything stacked above the fold: oversized hero padding, multi-line subcopy, extra actions, or a separate stats strip inside the hero block.
-- Keep the hero image chapter and the primary action visible inside the viewport; never delete the image, flatten the composition into a plain band, or hide the CTA just to fit. If the copy cannot fit beside or above the image, move secondary copy below the hero instead of growing the hero.
-- Verify the arithmetic before returning: header height plus hero height must be at most the viewport height at both 1536x864 and 1366x768.`;
+- Keep the hero image chapter, the primary action, and the secondary action visible inside the viewport at 390x844; never delete the image, flatten the composition into a plain band, or hide an action just to fit. If the copy cannot fit beside or above the image, move secondary copy below the hero instead of growing the hero.
+- Verify the arithmetic before returning: header height plus hero height must be at most the viewport height at 1536x864, 1366x768, and 390x844.`;
+
+const IMAGE_OVERLAY_HERO_REPAIR_GUIDANCE = `IMAGE-OVERLAY HERO REPAIR (hard gate)
+The assigned hero is an image-led stage and the rendered hero lost that composition. Fix it structurally in this repair:
+- Do not solve viewport fit by shrinking the image into a narrow banner above a separate copy field. The hero media must fill the hero stage.
+- Use a full-stage media container (absolute inset or a full-stage grid) with object-fit: cover. Place the promise group over the image or on a solid/scrim panel inside the stage.
+- Keep the header plus hero within 1536x864, 1366x768, and 390x844. At 390x844, the primary and secondary actions must both be visible.
+- Group the secondary action with the primary action; do not leave it as a bare underlined word at the fold.
+- If the copy cannot fit over the image, reduce the copy or use a compact scrim; never delete the image or flatten the stage into a band.`;
 
 export function privateRepairRejectionEvidence(value) {
   return value && typeof value === "object" ? privateRepairOutputs.get(value) || null : null;
@@ -1157,6 +1165,7 @@ ${
       targetFile = null,
       editsOnly = false,
       heroFit = false,
+      imageOverlayHero = false,
       contrastStructure = false,
     } = {},
   ) => {
@@ -1187,6 +1196,8 @@ Return a complete replacement for only this requested file. Keep source non-empt
       });
     if (heroFit)
       requestContent.push({ type: "text", text: HERO_VIEWPORT_FIT_REPAIR_GUIDANCE });
+    if (imageOverlayHero)
+      requestContent.push({ type: "text", text: IMAGE_OVERLAY_HERO_REPAIR_GUIDANCE });
     if (contrastStructure)
       requestContent.push({
         type: "text",
@@ -1229,6 +1240,9 @@ Return a complete replacement for only this requested file. Keep source non-empt
       targetFile,
       editsOnly,
       heroFit: hasFinding(findings, /hero exceeds .*viewport/iu),
+      imageOverlayHero:
+        hasFinding(findings, /hero exceeds .*viewport/iu) &&
+        hasFinding(findings, /image|media|band|full-bleed|overlay/iu),
       contrastStructure: hasFinding(
         findings,
         /overlapping non-ancestor paint|background plate only partially covers|filter, blend, backdrop-filter|pseudo-element backdrop/iu,

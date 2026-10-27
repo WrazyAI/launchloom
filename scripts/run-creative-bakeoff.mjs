@@ -21,6 +21,7 @@ import {
   diversityReport,
   fingerprintDistance,
   imageCompletenessScore,
+  routeRequiresHeroImage,
   scoreCreativeCandidate,
   validateCandidateManifest,
 } from "./creative-compiler.mjs";
@@ -229,6 +230,18 @@ async function inspect(page) {
           })
       : [];
     const text = [document.title, document.body.innerText].join("\n");
+    const heroActionBottom = hero
+      ? Math.max(
+          0,
+          ...[...hero.querySelectorAll(
+            'a[href], button, [role="button"], input[type="submit"]',
+          )]
+            .filter(visible)
+            .map(rect)
+            .filter(Boolean)
+            .map((bounds) => bounds.top + bounds.height),
+        )
+      : 0;
     const anchors = [...document.querySelectorAll("nav a")];
     const requiredTargets = ["#services", "#faqs", "#contact"];
     const identityHeading =
@@ -282,6 +295,7 @@ async function inspect(page) {
           ).trim(),
       ).length,
       heroBottom: Math.round(heroBounds?.bottom || 0),
+      heroActionBottom: Math.round(heroActionBottom),
       viewportHeight: window.innerHeight,
       overflow:
         document.documentElement.scrollWidth >
@@ -343,7 +357,11 @@ async function inspect(page) {
   }, CSS_IMAGE_URL_PATTERN.source);
 }
 
-function hardFailures(evidence, viewport) {
+export function hardFailures(
+  evidence,
+  viewport,
+  { requiresImageOverlay = false } = {},
+) {
   return [
     evidence.h1Count !== 1 && "expected one H1",
     !evidence.hasHero && "missing hero marker",
@@ -361,6 +379,10 @@ function hardFailures(evidence, viewport) {
     viewport.name !== "mobile" &&
       evidence.heroBottom > evidence.viewportHeight + 1 &&
       "hero exceeds desktop viewport",
+    viewport.name === "mobile" &&
+      requiresImageOverlay &&
+      evidence.heroActionBottom > evidence.viewportHeight + 1 &&
+      "hero action exceeds mobile viewport for an image-overlay route",
     evidence.overflow && "horizontal overflow",
     evidence.brokenImages > 0 && "broken image",
     evidence.emDashes > 0 && "em dash found",
@@ -811,6 +833,9 @@ export async function runCreativeBakeoff({
         viewports: [],
       };
       const candidateStartedAt = Date.now();
+      const requiresImageOverlay = routeRequiresHeroImage(
+        candidate.metadata.heroArchetype || candidate.metadata.heroGeometry,
+      );
       candidateResult.timings = {};
       /** Record one render phase; used per candidate and per run. */
       const recordPhase = (name, startedAt, category = "render") => {
@@ -1086,7 +1111,7 @@ export async function runCreativeBakeoff({
               await page.waitForTimeout(VIEWPORT_SETTLE_MS);
               const evidence = await inspect(page);
               const failures = [
-                ...hardFailures(evidence, viewport),
+                ...hardFailures(evidence, viewport, { requiresImageOverlay }),
                 browserErrors.length > 0 && "browser error",
               ].filter(Boolean);
               const compositionTopology =
