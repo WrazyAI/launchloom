@@ -199,6 +199,11 @@ describe("GitHub dispatch boundary", () => {
       },
     }), clock);
     expect(await longerReset(item)).toEqual({ outcome: "retryable", retryAfterSeconds: 600 });
+
+    const resetOnly = githubDispatcher(target, async () => new Response(null, {
+      status: 429, headers: { "x-ratelimit-reset": String(1_000 + 900) },
+    }), clock);
+    expect(await resetOnly(item)).toEqual({ outcome: "retryable", retryAfterSeconds: 900 });
   });
 
   it("refuses unsafe target configuration before sending", () => {

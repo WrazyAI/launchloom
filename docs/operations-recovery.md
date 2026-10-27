@@ -61,12 +61,14 @@ that a missing response means no run exists.
   zero `x-ratelimit-remaining` together with a valid `x-ratelimit-reset`, or a
   valid `retry-after` (seconds or HTTP date, including GitHub secondary limits).
   Empty, zero or malformed `retry-after` establishes nothing. `remaining: 0`
-  without a valid reset establishes nothing. When several valid signals exist,
-  the longer delay wins. Valid delays are clamped to 1..3600 seconds, and the
-  persisted exponential backoff is a floor: a zero or short header can never
-  shorten the 60, 120, 240, 480, 960, 1920 or 3600 second schedule. An ordinary
-  403 remains `attention` (`dispatch_rejected`); it is an
-  authorization/configuration failure, not a temporary limit.
+  without a valid reset establishes nothing. A 429 uses any valid retry-after
+  or reset because its status already proves the limit; a 403 requires the
+  validated signals above. When several valid signals exist, the longer delay
+  wins. Valid delays are clamped to 1..3600 seconds, and the persisted
+  exponential backoff is a floor: a zero or short header can never shorten the
+  60, 120, 240, 480, 960, 1920 or 3600 second schedule. An ordinary 403 remains
+  `attention` (`dispatch_rejected`); it is an authorization/configuration
+  failure, not a temporary limit.
 - HTTP 400/401/404/422 goes to attention (`dispatch_rejected`): fix the
   configuration through a reviewed recovery, not an endless loop.
 - Network failure, timeout, unexpected response or HTTP 5xx is ambiguous. Even a

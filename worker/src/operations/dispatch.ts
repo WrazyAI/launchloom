@@ -108,9 +108,19 @@ function zeroRemaining(value: string | null): boolean {
 function rateLimitSignal(
   headers: Headers,
   nowMs: number,
+  status: 403 | 429,
 ): { limited: boolean; delay?: number } {
   const retryAfter = retryAfterSeconds(headers.get("retry-after"), nowMs);
   const reset = resetSeconds(headers.get("x-ratelimit-reset"), nowMs);
+  if (status === 429) {
+    const delays = [retryAfter, reset].filter(
+      (value): value is number => value !== undefined,
+    );
+    return {
+      limited: true,
+      ...(delays.length ? { delay: Math.max(...delays) } : {}),
+    };
+  }
   if (retryAfter !== undefined) {
     return {
       limited: true,
@@ -162,13 +172,13 @@ export function githubDispatcher(
     await response.body?.cancel();
     if (response.status === 200 || response.status === 204) return "accepted";
     if (response.status === 429) {
-      const signal = rateLimitSignal(headers, clock());
+      const signal = rateLimitSignal(headers, clock(), 429);
       return signal.delay === undefined
         ? "retryable"
         : { outcome: "retryable", retryAfterSeconds: signal.delay };
     }
     if (response.status === 403) {
-      const signal = rateLimitSignal(headers, clock());
+      const signal = rateLimitSignal(headers, clock(), 403);
       if (signal.limited) {
         return signal.delay === undefined
           ? "retryable"
