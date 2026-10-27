@@ -1317,6 +1317,184 @@ describe("private onboarding invitations", () => {
     });
   });
 
+  it("keeps low-frequency recovery alive after repeated empty checks and a later commit", async () => {
+    const inviteId = "invite-postgres-uncertain-commit-001";
+    const submissionId = "submission-postgres-uncertain-commit-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({ inviteId, expiresAt, allowedOrigins: [origin] });
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    const tokenHash = [...digest].map((part) => part.toString(16).padStart(2, "0")).join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-uncertain-commit");
+    await coordinator.register({ inviteId, clientEmail: null, expiresAt, allowedOrigin: origin, tokenHash, now });
+    await coordinator.reserveSubmission(
+      inviteId, tokenHash, expiresAt, origin, submissionId, "payload-hash-a",
+      "sam@example.test", now, "postgres",
+      { recipient: "sam@example.test", businessName: "Harbor Plumbing" },
+    );
+    await coordinator.markAcceptanceCommitStarted(inviteId, submissionId, "payload-hash-a", now);
+    const committed = {
+      intakeId: "11111111-1111-4111-8111-111111111111",
+      requestId: "22222222-2222-4222-8222-222222222222",
+      attemptId: "33333333-3333-4333-8333-333333333333",
+      operationId: "44444444-4444-4444-8444-444444444444",
+      inviteId,
+      submissionId,
+      fingerprint: "payload-hash-a",
+      payloadVersion: 2,
+      payload: { businessName: "Harbor Plumbing" },
+      consent: { termsVersion: "client-intake-v2", rightsConfirmed: true },
+      profile: "home-services",
+      schemaVersion: 1,
+      clientId: "55555555-5555-4555-8555-555555555555",
+      acceptanceState: "unconfirmed",
+      receivedAt: new Date(now).toISOString(),
+      confirmedAt: null,
+    };
+    let committedRecord: typeof committed | null = null;
+    let confirmations = 0;
+    let emails = 0;
+    const store = {
+      async getIntakeByBinding() {
+        return committedRecord;
+      },
+      async confirmAcceptance() {
+        confirmations += 1;
+      },
+      async createAcceptance() {
+        throw new Error("recovery must not create");
+      },
+      async getIntake() {
+        return null;
+      },
+    };
+    await runInDurableObject(coordinator, (instance) => {
+      (instance as unknown as {
+        env: { OPERATIONS_STORE?: typeof store };
+      }).env.OPERATIONS_STORE = store;
+    });
+    network.use(
+      http.post("https://api.resend.com/emails", () => {
+        emails += 1;
+        return HttpResponse.json({ id: "email-uncertain-commit" }, { status: 200 });
+      }),
+    );
+
+    const runDueAlarm = async () => {
+      await runInDurableObject(coordinator, (_instance, state) => {
+        state.storage.sql.exec(
+          "UPDATE onboarding_invites SET acceptance_recovery_at = ? WHERE invite_id = ?",
+          Date.now() - 1,
+          inviteId,
+        );
+      });
+      await expect(runDurableObjectAlarm(coordinator)).resolves.toBe(true);
+    };
+
+    for (let attempt = 0; attempt < 9; attempt += 1) await runDueAlarm();
+
+    await runInDurableObject(coordinator, (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        acceptance_recovery_attempts: number;
+        acceptance_attention: number;
+        acceptance_recovery_at: number | null;
+        acceptance_last_error: string;
+        acceptance_state: string;
+      }>(
+        "SELECT acceptance_recovery_attempts, acceptance_attention, acceptance_recovery_at, acceptance_last_error, acceptance_state FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row.acceptance_recovery_attempts).toBeGreaterThanOrEqual(9);
+      expect(row.acceptance_attention).toBe(1);
+      expect(row.acceptance_last_error).toBe("no_committed_intake");
+      expect(row.acceptance_state).toBe("unconfirmed");
+      expect(row.acceptance_recovery_at).not.toBeNull();
+      // Low frequency is bounded even while recovery remains active forever.
+      expect(row.acceptance_recovery_at!).toBeLessThanOrEqual(
+        Date.now() + 30 * 60_000 + 2_000,
+      );
+    });
+
+    // A client retry resets the backoff window but must not stop recovery.
+    await coordinator.markAcceptanceCommitStarted(inviteId, submissionId, "payload-hash-a");
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        acceptance_recovery_attempts: number;
+        acceptance_attention: number;
+        acceptance_recovery_at: number;
+      }>(
+        "SELECT acceptance_recovery_attempts, acceptance_attention, acceptance_recovery_at FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row.acceptance_recovery_attempts).toBe(0);
+      expect(row.acceptance_attention).toBe(0);
+      expect(row.acceptance_recovery_at).toBeGreaterThan(Date.now());
+    });
+    await runDueAlarm();
+    await runInDurableObject(coordinator, (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        acceptance_recovery_attempts: number;
+        acceptance_recovery_at: number;
+      }>(
+        "SELECT acceptance_recovery_attempts, acceptance_recovery_at FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row.acceptance_recovery_attempts).toBe(1);
+      expect(row.acceptance_recovery_at).toBeGreaterThan(Date.now());
+    });
+
+    // The commit becomes visible later. No HTTP retry occurs; the alarm alone
+    // must finish the exact handshake and enqueue the receipt once.
+    committedRecord = committed;
+    await runDueAlarm();
+
+    expect(confirmations).toBe(1);
+    expect(emails).toBe(1);
+    await runInDurableObject(coordinator, (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        acceptance_state: string;
+        accepted_intake_id: string;
+        accepted_operation_id: string;
+        acceptance_recovery_at: number | null;
+        acceptance_attention: number;
+        receipt_queued_at: number | null;
+      }>(
+        "SELECT acceptance_state, accepted_intake_id, accepted_operation_id, acceptance_recovery_at, acceptance_attention, receipt_queued_at FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row).toEqual({
+        acceptance_state: "confirmed",
+        accepted_intake_id: committed.intakeId,
+        accepted_operation_id: committed.operationId,
+        acceptance_recovery_at: null,
+        acceptance_attention: 0,
+        receipt_queued_at: expect.any(Number),
+      });
+      const tasks = state.storage.sql.exec<{ task_type: string }>(
+        "SELECT task_type FROM intake_outbox WHERE invite_id = ? AND submission_id = ?",
+        inviteId,
+        submissionId,
+      ).toArray();
+      expect(tasks).toEqual([{ task_type: "receipt" }]);
+    });
+
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      state.storage.sql.exec(
+        "UPDATE intake_outbox SET next_attempt_at = ? WHERE invite_id = ? AND submission_id = ? AND task_type = 'receipt'",
+        Date.now() - 1,
+        inviteId,
+        submissionId,
+      );
+    });
+    await runDurableObjectAlarm(coordinator);
+    expect(emails).toBe(1);
+    await expect(coordinator.acceptanceHealth()).resolves.toMatchObject({
+      pendingCount: 0,
+      attentionCount: 0,
+    });
+  });
+
   it("attributes a link-only invite to the email submitted with the intake", async () => {
     const inviteId = "invite-attribution-001";
     const submissionId = "submission-attribution-001";

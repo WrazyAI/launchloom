@@ -69,6 +69,7 @@ type InviteRow = {
   acceptance_commit_started: number;
   acceptance_recovery_at: number | null;
   acceptance_recovery_attempts: number;
+  acceptance_attention: number;
   acceptance_last_error: string | null;
   receipt_recipient: string | null;
   receipt_business_name: string | null;
@@ -141,6 +142,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
           acceptance_commit_started INTEGER NOT NULL DEFAULT 0,
           acceptance_recovery_at INTEGER,
           acceptance_recovery_attempts INTEGER NOT NULL DEFAULT 0,
+          acceptance_attention INTEGER NOT NULL DEFAULT 0,
           acceptance_last_error TEXT,
           receipt_recipient TEXT,
           receipt_business_name TEXT,
@@ -223,6 +225,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         ["acceptance_commit_started", "INTEGER NOT NULL DEFAULT 0"],
         ["acceptance_recovery_at", "INTEGER"],
         ["acceptance_recovery_attempts", "INTEGER NOT NULL DEFAULT 0"],
+        ["acceptance_attention", "INTEGER NOT NULL DEFAULT 0"],
         ["acceptance_last_error", "TEXT"],
         ["receipt_recipient", "TEXT"],
         ["receipt_business_name", "TEXT"],
@@ -1054,6 +1057,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       .exec<{ invite_id: string }>(
         `UPDATE onboarding_invites
          SET acceptance_commit_started = 1, acceptance_recovery_at = ?,
+             acceptance_recovery_attempts = 0, acceptance_attention = 0,
              acceptance_last_error = NULL, updated_at = ?
          WHERE invite_id = ? AND status IN ('unused','expired')
            AND routing_mode = 'postgres' AND reserved_submission_id = ?
@@ -1081,6 +1085,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     this.ctx.storage.sql.exec(
       `UPDATE onboarding_invites SET acceptance_recovery_at = ?,
          acceptance_recovery_attempts = acceptance_recovery_attempts + 1,
+         acceptance_attention = CASE WHEN acceptance_recovery_attempts + 1 >= 8 THEN 1 ELSE acceptance_attention END,
          acceptance_last_error = ?, updated_at = ?
        WHERE invite_id = ? AND routing_mode = 'postgres' AND reserved_submission_id = ?`,
       now + Math.max(1_000, Math.min(delayMs, 30 * 60_000)),
@@ -1099,7 +1104,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
   ) {
     this.ctx.storage.sql.exec(
       `UPDATE onboarding_invites SET acceptance_recovery_at = NULL,
-         acceptance_recovery_attempts = 0, acceptance_last_error = NULL,
+         acceptance_recovery_attempts = 0, acceptance_attention = 0,
+         acceptance_last_error = NULL,
          receipt_queued_at = CASE WHEN receipt_recipient IS NULL THEN receipt_queued_at ELSE COALESCE(receipt_queued_at, ?) END,
          updated_at = ?
        WHERE invite_id = ? AND routing_mode = 'postgres' AND reserved_submission_id = ?`,
@@ -1213,30 +1219,21 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         },
       );
       if (recovered.status === "not_committed") {
-        const attempts = row.acceptance_recovery_attempts + 1;
-        if (attempts >= 8)
-          this.ctx.storage.sql.exec(
-            `UPDATE onboarding_invites SET acceptance_recovery_at = NULL,
-               acceptance_recovery_attempts = ?, acceptance_last_error = ?,
-               updated_at = ?
-             WHERE invite_id = ? AND routing_mode = 'postgres' AND reserved_submission_id = ?`,
-            attempts,
-            "no_committed_intake",
-            now,
-            inviteId,
-            submissionId,
-          );
-        else
-          await this.scheduleAcceptanceRecovery(
-            inviteId,
-            submissionId,
-            Math.min(
-              30 * 60_000,
-              5_000 * 2 ** Math.min(attempts, 8),
-            ),
-            "no_committed_intake",
-            now,
-          );
+        // An empty snapshot does not prove an outstanding transaction will
+        // never commit. Keep low-frequency recovery alive indefinitely; the
+        // backoff cap and per-tick limit bound resource use, and attention is
+        // raised after repeated uncertainty without releasing ownership.
+        await this.scheduleAcceptanceRecovery(
+          inviteId,
+          submissionId,
+          Math.min(
+            30 * 60_000,
+            5_000 *
+              2 ** Math.min(row.acceptance_recovery_attempts + 1, 9),
+          ),
+          "no_committed_intake",
+          now,
+        );
         return;
       }
       await this.completeAcceptanceRecovery(inviteId, submissionId, now);
@@ -1246,7 +1243,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         submissionId,
         Math.min(
           30 * 60_000,
-          5_000 * 2 ** Math.min(row.acceptance_recovery_attempts + 1, 8),
+          5_000 * 2 ** Math.min(row.acceptance_recovery_attempts + 1, 9),
         ),
         error instanceof Error ? error.message : "acceptance_recovery_failed",
         now,
@@ -1703,6 +1700,38 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     }
     await this.scheduleOutboxAlarm();
   }
+  /** Operator visibility for durable acceptance recovery without releasing it. */
+  async acceptanceHealth() {
+    const row = this.ctx.storage.sql
+      .exec<{
+        pending_count: number;
+        attention_count: number;
+        next_recovery_at: number | null;
+        last_error: string | null;
+      }>(
+        `SELECT
+           COUNT(*) AS pending_count,
+           COALESCE(SUM(acceptance_attention), 0) AS attention_count,
+           MIN(acceptance_recovery_at) AS next_recovery_at,
+           (SELECT acceptance_last_error FROM onboarding_invites
+             WHERE routing_mode='postgres' AND acceptance_commit_started=1
+               AND acceptance_last_error IS NOT NULL
+             ORDER BY acceptance_recovery_at ASC LIMIT 1) AS last_error
+         FROM onboarding_invites
+         WHERE routing_mode='postgres' AND acceptance_commit_started=1
+           AND (acceptance_recovery_at IS NOT NULL
+             OR (acceptance_state='confirmed' AND receipt_queued_at IS NULL
+                 AND receipt_recipient IS NOT NULL))`,
+      )
+      .one();
+    return {
+      pendingCount: row.pending_count,
+      attentionCount: row.attention_count,
+      nextRecoveryAt: row.next_recovery_at,
+      lastError: row.last_error,
+    };
+  }
+
   async projectionHealth() {
     const pending = this.ctx.storage.sql
       .exec<{ total: number }>(
