@@ -121,7 +121,11 @@ function intakeBody(token: string, submissionId: string) {
   };
 }
 
-function submit(token: string, submissionId: string) {
+function submit(
+  token: string,
+  submissionId: string,
+  overrides: Record<string, unknown> = {},
+) {
   return worker.fetch(
     new Request("https://api.launchloom.test/api/intake", {
       method: "POST",
@@ -129,7 +133,10 @@ function submit(token: string, submissionId: string) {
         "Content-Type": "application/json",
         Origin: onboardingOrigin,
       },
-      body: JSON.stringify(intakeBody(token, submissionId)),
+      body: JSON.stringify({
+        ...intakeBody(token, submissionId),
+        ...overrides,
+      }),
     }),
     {
       ...(env as unknown as Env),
@@ -165,6 +172,14 @@ describe("expired invitation replay over HTTP", () => {
       "submission-http-expired-replay-002",
     );
     expect(differentSubmission.status).toBe(403);
+
+    const changedPayload = await submit(token, submissionId, {
+      businessName: "Different Business",
+    });
+    expect(changedPayload.status).toBe(409);
+    await expect(changedPayload.json()).resolves.toMatchObject({
+      code: "submission_mismatch",
+    });
 
     fake.failCreate = false;
     const replay = await submit(token, submissionId);
