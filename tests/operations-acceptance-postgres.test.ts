@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import {
   acceptIntake,
+  reconcileAcceptance,
   type AcceptanceRoutingMode,
   type InviteAcceptanceAdapter,
   type InviteReservation,
@@ -138,6 +139,12 @@ class SequentialInvites implements InviteAcceptanceAdapter {
   }
 
   async queueReceipt(): Promise<void> {}
+
+  async markCommitStarted(): Promise<void> {}
+
+  async scheduleRecovery(): Promise<void> {}
+
+  async completeRecovery(): Promise<void> {}
 }
 
 const unique = crypto.randomUUID();
@@ -200,6 +207,50 @@ describe.runIf(enabled)(
         acceptanceState: "confirmed",
       });
       expect(invites.confirms).toBe(2);
+    });
+
+    it("recovers the exact committed IDs from the authoritative binding", async () => {
+      const store = createOperationsStore(psqlSql());
+      const invites = new SequentialInvites();
+      const suffix = crypto.randomUUID();
+      const recoveryInput: AcceptanceInput = {
+        ...input,
+        inviteId: `invite-real-pg-recovery-${suffix}`,
+        submissionId: `submission-real-pg-recovery-${suffix}`,
+        fingerprint: crypto
+          .randomUUID()
+          .replaceAll("-", "")
+          .padEnd(64, "d")
+          .slice(0, 64),
+        payload: {
+          submissionId: `submission-real-pg-recovery-${suffix}`,
+          businessName: "Synthetic Recovery Plumbing",
+          industry: "home-services",
+        },
+      };
+      const committed = await store.createAcceptance(recoveryInput);
+      const recovered = await reconcileAcceptance(recoveryInput, {
+        store,
+        invites,
+        receipt: {
+          recipient: "synthetic-recovery@example.test",
+          businessName: "Synthetic Recovery Plumbing",
+        },
+      });
+
+      expect(recovered).toEqual({
+        status: "confirmed",
+        acceptance: { ...committed, created: false },
+      });
+      const intake = await store.getIntakeByBinding(
+        recoveryInput.inviteId,
+        recoveryInput.submissionId,
+      );
+      expect(intake).toMatchObject({
+        intakeId: committed.intakeId,
+        fingerprint: recoveryInput.fingerprint,
+        acceptanceState: "confirmed",
+      });
     });
 
     it("rejects a changed fingerprint for the same invite and submission", async () => {

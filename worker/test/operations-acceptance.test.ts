@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   acceptIntake,
+  reconcileAcceptance,
   recoverAcceptance,
   type AcceptanceDependencies,
   type InviteAcceptanceAdapter,
@@ -60,9 +61,16 @@ class FakeInvites implements InviteAcceptanceAdapter {
   reason: InviteReservation["reason"] | undefined;
   fingerprint: string;
   failConfirm = false;
+  failReceipt = false;
   confirmCalls = 0;
   receiptCalls = 0;
   releaseCalls = 0;
+  commitStartedCalls = 0;
+  recoverySchedules: Array<{
+    delayMs: number;
+    error?: string;
+  }> = [];
+  completeCalls = 0;
   confirmed: AcceptanceResult | null = null;
   receipt: { recipient: string; businessName: string } | null = null;
   lastConfirm: {
@@ -143,10 +151,26 @@ class FakeInvites implements InviteAcceptanceAdapter {
     businessName: string;
   }): Promise<void> {
     this.receiptCalls += 1;
+    if (this.failReceipt) throw new Error("receipt outbox unavailable");
     this.receipt = {
       recipient: input.recipient,
       businessName: input.businessName,
     };
+  }
+
+  async markCommitStarted(): Promise<void> {
+    this.commitStartedCalls += 1;
+  }
+
+  async scheduleRecovery(input: {
+    delayMs: number;
+    error?: string;
+  }): Promise<void> {
+    this.recoverySchedules.push(input);
+  }
+
+  async completeRecovery(): Promise<void> {
+    this.completeCalls += 1;
   }
 
   /** Test-only evidence that uncertain ownership was never released. */
@@ -170,6 +194,8 @@ class FakeStore implements OperationsStore {
   confirmCalls = 0;
   outboxState: "blocked_unconfirmed" | "pending" = "blocked_unconfirmed";
   intakeState: "unconfirmed" | "confirmed" = "unconfirmed";
+  bindingRecord: IntakeRecord | null = null;
+  bindingLookups = 0;
   private createAttempts = 0;
   private confirmAttempts = 0;
 
@@ -219,8 +245,25 @@ class FakeStore implements OperationsStore {
   }
 
   async getIntake(): Promise<IntakeRecord | null> {
-    return null;
+    return this.bindingRecord;
   }
+
+  async getIntakeByBinding(): Promise<IntakeRecord | null> {
+    this.bindingLookups += 1;
+    return this.bindingRecord;
+  }
+}
+
+function bindingRecord(input: AcceptanceInput): IntakeRecord {
+  return {
+    ...result(false),
+    ...input,
+    schemaVersion: 1,
+    clientId: "55555555-5555-4555-8555-555555555555",
+    acceptanceState: "unconfirmed",
+    receivedAt: new Date(0).toISOString(),
+    confirmedAt: null,
+  };
 }
 
 function dependencies(
@@ -426,5 +469,121 @@ describe("invite-to-postgres acceptance handshake", () => {
     expect(invites.confirmCalls).toBe(1);
     expect(invites.state).toBe("confirmed");
     expect(invites.releaseCalls).toBe(0);
+  });
+
+  it("marks the commit intent before the Postgres network call", async () => {
+    const store = new FakeStore({ loseFirstResponse: true });
+    const invites = new FakeInvites();
+
+    await expect(
+      acceptIntake(acceptanceInput(), dependencies(store, invites)),
+    ).rejects.toMatchObject({ code: "dependency_unavailable" });
+    expect(invites.commitStartedCalls).toBe(1);
+    expect(invites.completeCalls).toBe(0);
+  });
+
+  it("keeps durable recovery pending when receipt enqueue fails after confirmation", async () => {
+    const store = new FakeStore();
+    const invites = new FakeInvites();
+    invites.failReceipt = true;
+
+    const accepted = await acceptIntake(
+      acceptanceInput(),
+      dependencies(store, invites),
+    );
+
+    expect(accepted.intakeId).toBe(store.committed.intakeId);
+    expect(store.intakeState).toBe("confirmed");
+    expect(invites.receiptCalls).toBe(1);
+    expect(invites.completeCalls).toBe(0);
+    expect(invites.recoverySchedules).toEqual([
+      expect.objectContaining({
+        delayMs: 5_000,
+        error: "receipt_not_queued",
+      }),
+    ]);
+
+    invites.failReceipt = false;
+    store.bindingRecord = bindingRecord(acceptanceInput());
+    const recovered = await reconcileAcceptance(
+      {
+        inviteId: "invite-acceptance-001",
+        submissionId: "submission-acceptance-001",
+        fingerprint: FINGERPRINT,
+        confirmed: store.committed,
+      },
+      dependencies(store, invites),
+    );
+    expect(recovered).toMatchObject({ status: "confirmed" });
+    expect(invites.receiptCalls).toBe(2);
+  });
+
+  it("reconciles only from an authoritative committed binding", async () => {
+    const store = new FakeStore();
+    const invites = new FakeInvites();
+    store.bindingRecord = bindingRecord(acceptanceInput());
+
+    const recovered = await reconcileAcceptance(
+      {
+        inviteId: "invite-acceptance-001",
+        submissionId: "submission-acceptance-001",
+        fingerprint: FINGERPRINT,
+      },
+      dependencies(store, invites),
+    );
+
+    expect(recovered).toEqual({
+      status: "confirmed",
+      acceptance: { ...store.committed, created: false },
+    });
+    expect(store.bindingLookups).toBe(1);
+    expect(invites.confirmCalls).toBe(1);
+    expect(invites.lastConfirm).toMatchObject({
+      fingerprint: FINGERPRINT,
+      acceptance: { intakeId: store.committed.intakeId },
+    });
+    expect(store.confirmCalls).toBe(1);
+    expect(invites.receiptCalls).toBe(1);
+  });
+
+  it("does not confirm when no authoritative Postgres commit exists", async () => {
+    const store = new FakeStore();
+    const invites = new FakeInvites();
+
+    await expect(
+      reconcileAcceptance(
+        {
+          inviteId: "invite-acceptance-001",
+          submissionId: "submission-acceptance-001",
+          fingerprint: FINGERPRINT,
+        },
+        dependencies(store, invites),
+      ),
+    ).resolves.toEqual({ status: "not_committed" });
+    expect(invites.confirmCalls).toBe(0);
+    expect(store.confirmCalls).toBe(0);
+    expect(invites.receiptCalls).toBe(0);
+  });
+
+  it("refuses recovery when committed binding data does not match", async () => {
+    const store = new FakeStore();
+    const invites = new FakeInvites();
+    store.bindingRecord = {
+      ...bindingRecord(acceptanceInput()),
+      fingerprint: "c".repeat(64),
+    };
+
+    await expect(
+      reconcileAcceptance(
+        {
+          inviteId: "invite-acceptance-001",
+          submissionId: "submission-acceptance-001",
+          fingerprint: FINGERPRINT,
+        },
+        dependencies(store, invites),
+      ),
+    ).rejects.toMatchObject({ code: "recovery_required" });
+    expect(invites.confirmCalls).toBe(0);
+    expect(store.confirmCalls).toBe(0);
   });
 });

@@ -77,6 +77,24 @@ export interface InviteAcceptanceAdapter {
     recipient: string;
     businessName: string;
   }): Promise<void>;
+  /** Records that a Postgres commit was attempted, enabling durable recovery. */
+  markCommitStarted(input: {
+    inviteId: string;
+    submissionId: string;
+    fingerprint: string;
+  }): Promise<void>;
+  /** Keeps the durable recovery alarm alive after a recoverable failure. */
+  scheduleRecovery(input: {
+    inviteId: string;
+    submissionId: string;
+    delayMs: number;
+    error?: string;
+  }): Promise<void>;
+  /** Stops recovery only after acceptance and receipt intent are both durable. */
+  completeRecovery(input: {
+    inviteId: string;
+    submissionId: string;
+  }): Promise<void>;
 }
 
 export type AcceptanceDependencies = {
@@ -220,6 +238,68 @@ function storeFailure(error: unknown, expired: boolean): AcceptanceError {
   );
 }
 
+export type AcceptanceRecoveryResult =
+  | { status: "confirmed"; acceptance: AcceptanceResult }
+  | { status: "not_committed" };
+
+/**
+ * Durable recovery from authoritative committed data. It never recreates an
+ * intake (no payload is stored in the DO), never releases ownership and only
+ * confirms the exact persisted reservation and fingerprint.
+ */
+export async function reconcileAcceptance(
+  input: {
+    inviteId: string;
+    submissionId: string;
+    fingerprint: string;
+    /** Previously persisted DO confirmation IDs, if the DO side completed. */
+    confirmed?: AcceptanceResult | null;
+  },
+  deps: AcceptanceDependencies,
+): Promise<AcceptanceRecoveryResult> {
+  const record = await deps.store.getIntakeByBinding(
+    input.inviteId,
+    input.submissionId,
+  );
+  if (!record) return { status: "not_committed" };
+  if (
+    record.inviteId !== input.inviteId ||
+    record.submissionId !== input.submissionId ||
+    record.fingerprint !== input.fingerprint
+  )
+    throw new AcceptanceError(
+      "recovery_required",
+      "The committed intake does not match the reserved submission.",
+    );
+  const acceptance: AcceptanceResult = {
+    intakeId: record.intakeId,
+    requestId: record.requestId,
+    attemptId: record.attemptId,
+    operationId: record.operationId,
+    created: false,
+  };
+  if (input.confirmed && !sameAcceptance(input.confirmed, acceptance))
+    throw new AcceptanceError(
+      "recovery_required",
+      "The committed intake does not match the confirmed reservation.",
+    );
+  await deps.invites.confirm({
+    inviteId: input.inviteId,
+    submissionId: input.submissionId,
+    fingerprint: input.fingerprint,
+    acceptance,
+  });
+  await deps.store.confirmAcceptance(acceptance.intakeId);
+  if (deps.receipt)
+    await deps.invites.queueReceipt({
+      inviteId: input.inviteId,
+      submissionId: input.submissionId,
+      recipient: deps.receipt.recipient,
+      businessName: deps.receipt.businessName,
+    });
+  return { status: "confirmed", acceptance };
+}
+
 /**
  * Reserve, commit, confirm the exact reservation, then confirm Postgres
  * eligibility. The returned result is only produced after all four durable
@@ -249,6 +329,21 @@ export async function acceptIntake(
       "submission_mismatch",
       "This submission changed after acceptance. Request a new invitation to send different details.",
     );
+
+  try {
+    // Durable before the network commit: recovery is allowed to inspect
+    // Postgres only for reservations whose commit may have started.
+    await deps.invites.markCommitStarted({
+      inviteId: input.inviteId,
+      submissionId: input.submissionId,
+      fingerprint: input.fingerprint,
+    });
+  } catch {
+    throw new AcceptanceError(
+      "dependency_unavailable",
+      "Your intake could not be saved yet. Retry with the same submission.",
+    );
+  }
 
   let acceptance: AcceptanceResult;
   try {
@@ -290,6 +385,7 @@ export async function acceptIntake(
     throw storeFailure(error, reservation.expired === true);
   }
 
+  let receiptQueued = !deps.receipt;
   if (deps.receipt) {
     try {
       await deps.invites.queueReceipt({
@@ -298,10 +394,34 @@ export async function acceptIntake(
         recipient: deps.receipt.recipient,
         businessName: deps.receipt.businessName,
       });
+      receiptQueued = true;
     } catch {
-      // The acceptance is already durable. The receipt outbox has its own
-      // retry semantics and must never turn a saved intake into a failure.
+      // The acceptance is already durable. Keep the recovery alarm pending so
+      // the idempotent receipt outbox is repaired instead of silently lost.
+      receiptQueued = false;
+      try {
+        await deps.invites.scheduleRecovery({
+          inviteId: input.inviteId,
+          submissionId: input.submissionId,
+          delayMs: 5_000,
+          error: "receipt_not_queued",
+        });
+      } catch {
+        // The pre-commit recovery alarm remains scheduled, so a later alarm
+        // still repairs the receipt.
+      }
       console.error("Intake receipt could not be queued");
+    }
+  }
+
+  if (receiptQueued) {
+    try {
+      await deps.invites.completeRecovery({
+        inviteId: input.inviteId,
+        submissionId: input.submissionId,
+      });
+    } catch {
+      // A stale recovery alarm is harmless and idempotent.
     }
   }
 

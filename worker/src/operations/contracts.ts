@@ -99,4 +99,9 @@ export interface OperationsStore {
   /** Caller must first durably confirm the matching invite reservation in the DO. */
   confirmAcceptance(intakeId: string): Promise<void>;
   getIntake(intakeId: string): Promise<IntakeRecord | null>;
+  /** Authoritative committed record lookup for bounded acceptance recovery. */
+  getIntakeByBinding(
+    inviteId: string,
+    submissionId: string,
+  ): Promise<IntakeRecord | null>;
 }

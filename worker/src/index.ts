@@ -304,6 +304,7 @@ async function verifiedInvite(
   tokenValue: unknown,
   allowConsumed = false,
   submissionId = "",
+  allowExpiredReservationReplay = false,
 ) {
   const origin = request.headers.get("Origin") || "";
   const allowedOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "") || "";
@@ -316,7 +317,8 @@ async function verifiedInvite(
   const claims = await verifyHmac<OnboardingInviteClaims>(token, env.ONBOARDING_INVITE_SIGNING_SECRET);
   if (
     !/^[a-z0-9-]{12,100}$/iu.test(claims.inviteId || "") ||
-    !Number.isFinite(claims.expiresAt) || claims.expiresAt <= Date.now() ||
+    !Number.isFinite(claims.expiresAt) ||
+    (!allowExpiredReservationReplay && claims.expiresAt <= Date.now()) ||
     !Array.isArray(claims.allowedOrigins) || !claims.allowedOrigins.includes(origin)
   ) throw new Error("Invalid invite.");
   const tokenHash = await digest(token);
@@ -326,6 +328,8 @@ async function verifiedInvite(
     claims.expiresAt,
     origin,
     allowConsumed ? submissionId : "",
+    Date.now(),
+    allowExpiredReservationReplay,
   );
   if (!status.valid && !(allowConsumed && status.accepted))
     throw new Error("Invalid invite.");
@@ -1241,6 +1245,7 @@ async function intake(request: Request, env: Env) {
         raw.inviteToken,
         true,
         clean(raw.submissionId, 100),
+        true,
       );
     } catch {
       return json({ error: "This invitation is invalid or no longer available." }, 403, headers);
@@ -1306,6 +1311,10 @@ async function intake(request: Request, env: Env) {
       normalized.email,
       Date.now(),
       requestedMode,
+      {
+        recipient: normalized.email,
+        businessName: normalized.businessName,
+      },
     );
     if (
       !reservation.accepted &&
@@ -1385,6 +1394,10 @@ async function intake(request: Request, env: Env) {
             normalized.email,
             Date.now(),
             request.routingMode,
+            {
+              recipient: normalized.email,
+              businessName: normalized.businessName,
+            },
           );
         },
         inspect: (request) =>
@@ -1410,6 +1423,24 @@ async function intake(request: Request, env: Env) {
             request.submissionId,
             request.recipient,
             request.businessName,
+          ),
+        markCommitStarted: (request) =>
+          coordinator.markAcceptanceCommitStarted(
+            request.inviteId,
+            request.submissionId,
+            request.fingerprint,
+          ),
+        scheduleRecovery: (request) =>
+          coordinator.scheduleAcceptanceRecovery(
+            request.inviteId,
+            request.submissionId,
+            request.delayMs,
+            request.error ?? null,
+          ),
+        completeRecovery: (request) =>
+          coordinator.completeAcceptanceRecovery(
+            request.inviteId,
+            request.submissionId,
           ),
       };
       try {

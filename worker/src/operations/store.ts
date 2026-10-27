@@ -142,5 +142,12 @@ export function createOperationsStore(sql: OperationsSql): OperationsStore {
       );
       return rows[0]?.record ?? null;
     },
+    async getIntakeByBinding(inviteId, submissionId) {
+      const rows = await query<{ record: IntakeRecord }>(
+        "select * from launchloom_operations.get_acceptance_by_binding($1, $2)",
+        [requireKey(inviteId), requireKey(submissionId)],
+      );
+      return rows[0]?.record ?? null;
+    },
   };
 }

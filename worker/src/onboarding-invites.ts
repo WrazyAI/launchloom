@@ -4,10 +4,15 @@ import { sendEmail, type TransactionalEmailEnvironment } from "./transactional-e
 import type { ActorSnapshot, AcceptedIntake, InviteFilters, InviteSummary, Page } from "../../src/lib/admin-contracts";
 import type { GenerationLedger } from "./generation-ledger";
 import { pageRecords } from "./admin/pagination";
-import type {
-  AcceptanceRoutingMode,
-  InviteReservation,
+import {
+  AcceptanceError,
+  operationsStoreFromEnv,
+  reconcileAcceptance,
+  type AcceptanceRoutingMode,
+  type InviteAcceptanceAdapter,
+  type InviteReservation,
 } from "./operations/acceptance";
+import type { OperationsStore } from "./operations/contracts";
 
 const unknownActor: ActorSnapshot = {kind:"unknown",id:null,name:null,email:null,source:"legacy"};
 type Snapshot = { businessName: string; contactName?: string | null; email: string; phone?: string | null };
@@ -61,6 +66,13 @@ type InviteRow = {
   accepted_request_id: string | null;
   accepted_attempt_id: string | null;
   accepted_operation_id: string | null;
+  acceptance_commit_started: number;
+  acceptance_recovery_at: number | null;
+  acceptance_recovery_attempts: number;
+  acceptance_last_error: string | null;
+  receipt_recipient: string | null;
+  receipt_business_name: string | null;
+  receipt_queued_at: number | null;
   submission_id: string | null;
   submission_hash: string | null;
   issue_number: number | null;
@@ -99,6 +111,9 @@ type OutboxRow = {
 type OnboardingInvitesEnvironment = TransactionalEmailEnvironment & {
   GITHUB_ORG_TOKEN: string;
   GENERATION_LEDGER: DurableObjectNamespace<GenerationLedger>;
+  OPERATIONS_DATABASE_URL?: string;
+  /** Test-only dependency seam; wrangler cannot provide this binding. */
+  OPERATIONS_STORE?: OperationsStore;
 };
 
 export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironment> {
@@ -123,6 +138,13 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
           accepted_request_id TEXT,
           accepted_attempt_id TEXT,
           accepted_operation_id TEXT,
+          acceptance_commit_started INTEGER NOT NULL DEFAULT 0,
+          acceptance_recovery_at INTEGER,
+          acceptance_recovery_attempts INTEGER NOT NULL DEFAULT 0,
+          acceptance_last_error TEXT,
+          receipt_recipient TEXT,
+          receipt_business_name TEXT,
+          receipt_queued_at INTEGER,
           submission_id TEXT,
           submission_hash TEXT,
           issue_number INTEGER,
@@ -198,6 +220,13 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         ["accepted_request_id", "TEXT"],
         ["accepted_attempt_id", "TEXT"],
         ["accepted_operation_id", "TEXT"],
+        ["acceptance_commit_started", "INTEGER NOT NULL DEFAULT 0"],
+        ["acceptance_recovery_at", "INTEGER"],
+        ["acceptance_recovery_attempts", "INTEGER NOT NULL DEFAULT 0"],
+        ["acceptance_last_error", "TEXT"],
+        ["receipt_recipient", "TEXT"],
+        ["receipt_business_name", "TEXT"],
+        ["receipt_queued_at", "INTEGER"],
         ["operation_id", "TEXT"],
         ["recovery_page", "INTEGER NOT NULL DEFAULT 1"],
         ["recovery_sweeps", "INTEGER NOT NULL DEFAULT 0"],
@@ -304,6 +333,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
 
   async alarm() {
     const now = Date.now();
+    await this.recoverPostgresAcceptances(now);
     const dueTasks = this.ctx.storage.sql
       .exec<Pick<OutboxRow, "invite_id" | "submission_id" | "task_type">>(
         `SELECT invite_id, submission_id, task_type FROM intake_outbox
@@ -502,6 +532,11 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
           UNION ALL SELECT next_attempt_at FROM intake_projection_outbox WHERE status='pending'
           UNION ALL SELECT 0 FROM onboarding_invites i WHERE status='consumed' AND submission_id IS NOT NULL
             AND issue_number IS NOT NULL AND NOT EXISTS (SELECT 1 FROM intake_projection_outbox p WHERE p.invite_id=i.invite_id AND p.submission_id=i.submission_id)
+          UNION ALL SELECT MIN(acceptance_recovery_at) FROM onboarding_invites
+            WHERE routing_mode='postgres' AND acceptance_commit_started=1 AND acceptance_recovery_at IS NOT NULL
+          UNION ALL SELECT 0 FROM onboarding_invites
+            WHERE routing_mode='postgres' AND acceptance_commit_started=1 AND acceptance_state='confirmed'
+              AND acceptance_recovery_at IS NULL AND receipt_queued_at IS NULL AND receipt_recipient IS NOT NULL
         )`,
       )
       .toArray()[0]?.next_attempt_at;
@@ -545,10 +580,18 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     origin: string,
     submissionId = "",
     now = Date.now(),
+    allowExpiredReservationReplay = false,
   ): Promise<InviteValidation> {
     const row = this.row(inviteId);
     if (!row) return { valid: false };
-    if (row.status === "unused" && row.expires_at <= now) {
+    // Only a cryptographically verified token whose exact Postgres
+    // reservation (same submission) already exists may replay after expiry.
+    const expiredReplay =
+      allowExpiredReservationReplay &&
+      Boolean(submissionId) &&
+      row.routing_mode === "postgres" &&
+      row.reserved_submission_id === submissionId;
+    if (row.status === "unused" && row.expires_at <= now && !expiredReplay) {
       this.ctx.storage.sql.exec(
         "UPDATE onboarding_invites SET status = 'expired', updated_at = ? WHERE invite_id = ? AND status = 'unused'",
         now,
@@ -566,7 +609,10 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       row.submission_id === submissionId &&
       Boolean(row.issue_number);
     return {
-      valid: claimsMatch && row.status === "unused",
+      valid:
+        claimsMatch &&
+        (row.status === "unused" ||
+          (expiredReplay && row.status === "expired")),
       accepted: claimsMatch && accepted,
       issue: accepted ? row.issue_number : null,
       clientEmail: row.client_email,
@@ -601,6 +647,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     clientEmail: string,
     now = Date.now(),
     routingMode: AcceptanceRoutingMode = "legacy",
+    receipt?: { recipient: string; businessName: string },
   ) {
     const row = this.row(inviteId);
     if (!row)
@@ -683,6 +730,18 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
           expired,
           acceptance: null,
         };
+      if (receipt)
+        this.ctx.storage.sql.exec(
+          `UPDATE onboarding_invites SET receipt_recipient = COALESCE(receipt_recipient, ?),
+             receipt_business_name = COALESCE(receipt_business_name, ?)
+           WHERE invite_id = ? AND routing_mode = 'postgres'
+             AND reserved_submission_id = ? AND reserved_submission_hash = ?`,
+          receipt.recipient,
+          receipt.businessName,
+          inviteId,
+          submissionId,
+          submissionHash,
+        );
       if (row.acceptance_state === "confirmed")
         return {
           ...base,
@@ -838,7 +897,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     }
     const postgres = routingMode === "postgres";
     this.ctx.storage.sql.exec(
-      `UPDATE onboarding_invites SET reserved_submission_id = ?, reserved_submission_hash = ?, reserved_at = ?, reservation_phase = 'reserved', operation_id = ?, routing_mode = ?, acceptance_state = ?, recovery_page = 1, recovery_sweeps = 0, recovery_lease = NULL, recovery_lease_until = 0, submitter_email = COALESCE(submitter_email, ?), updated_at = ?
+      `UPDATE onboarding_invites SET reserved_submission_id = ?, reserved_submission_hash = ?, reserved_at = ?, reservation_phase = 'reserved', operation_id = ?, routing_mode = ?, acceptance_state = ?, recovery_page = 1, recovery_sweeps = 0, recovery_lease = NULL, recovery_lease_until = 0, submitter_email = COALESCE(submitter_email, ?), receipt_recipient = ?, receipt_business_name = ?, updated_at = ?
        WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id IS NULL`,
       submissionId,
       submissionHash,
@@ -847,6 +906,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       routingMode,
       postgres ? "unconfirmed" : "legacy",
       clientEmail.trim().toLowerCase() || null,
+      postgres ? (receipt?.recipient ?? null) : null,
+      postgres ? (receipt?.businessName ?? null) : null,
       now,
       inviteId,
     );
@@ -983,6 +1044,216 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     return result;
   }
 
+  async markAcceptanceCommitStarted(
+    inviteId: string,
+    submissionId: string,
+    fingerprint: string,
+    now = Date.now(),
+  ) {
+    const updated = this.ctx.storage.sql
+      .exec<{ invite_id: string }>(
+        `UPDATE onboarding_invites
+         SET acceptance_commit_started = 1, acceptance_recovery_at = ?,
+             acceptance_last_error = NULL, updated_at = ?
+         WHERE invite_id = ? AND status IN ('unused','expired')
+           AND routing_mode = 'postgres' AND reserved_submission_id = ?
+           AND reserved_submission_hash = ? AND acceptance_state IN ('unconfirmed','confirmed')
+         RETURNING invite_id`,
+        now + 30_000,
+        now,
+        inviteId,
+        submissionId,
+        fingerprint,
+      )
+      .toArray();
+    if (updated.length !== 1)
+      throw new Error("conflict: acceptance recovery reservation");
+    await this.scheduleOutboxAlarm();
+  }
+
+  async scheduleAcceptanceRecovery(
+    inviteId: string,
+    submissionId: string,
+    delayMs: number,
+    error: string | null = null,
+    now = Date.now(),
+  ) {
+    this.ctx.storage.sql.exec(
+      `UPDATE onboarding_invites SET acceptance_recovery_at = ?,
+         acceptance_recovery_attempts = acceptance_recovery_attempts + 1,
+         acceptance_last_error = ?, updated_at = ?
+       WHERE invite_id = ? AND routing_mode = 'postgres' AND reserved_submission_id = ?`,
+      now + Math.max(1_000, Math.min(delayMs, 30 * 60_000)),
+      error?.slice(0, 160) ?? null,
+      now,
+      inviteId,
+      submissionId,
+    );
+    await this.scheduleOutboxAlarm();
+  }
+
+  async completeAcceptanceRecovery(
+    inviteId: string,
+    submissionId: string,
+    now = Date.now(),
+  ) {
+    this.ctx.storage.sql.exec(
+      `UPDATE onboarding_invites SET acceptance_recovery_at = NULL,
+         acceptance_recovery_attempts = 0, acceptance_last_error = NULL,
+         receipt_queued_at = CASE WHEN receipt_recipient IS NULL THEN receipt_queued_at ELSE COALESCE(receipt_queued_at, ?) END,
+         updated_at = ?
+       WHERE invite_id = ? AND routing_mode = 'postgres' AND reserved_submission_id = ?`,
+      now,
+      now,
+      inviteId,
+      submissionId,
+    );
+    await this.scheduleOutboxAlarm();
+  }
+
+  private async recoverPostgresAcceptances(now: number) {
+    const rows = this.ctx.storage.sql
+      .exec<InviteRow>(
+        `SELECT * FROM onboarding_invites
+         WHERE routing_mode = 'postgres' AND acceptance_commit_started = 1 AND (
+           (acceptance_recovery_at IS NOT NULL AND acceptance_recovery_at <= ?)
+           OR (acceptance_state = 'confirmed' AND acceptance_recovery_at IS NULL
+               AND receipt_queued_at IS NULL AND receipt_recipient IS NOT NULL)
+         )
+         ORDER BY acceptance_recovery_at ASC LIMIT 10`,
+        now,
+      )
+      .toArray();
+    for (const row of rows) await this.recoverPostgresAcceptance(row, now);
+  }
+
+  private async recoverPostgresAcceptance(row: InviteRow, now: number) {
+    const inviteId = row.invite_id;
+    const submissionId = row.reserved_submission_id;
+    const fingerprint = row.reserved_submission_hash;
+    if (!submissionId || !fingerprint) {
+      await this.scheduleAcceptanceRecovery(
+        inviteId,
+        submissionId || "",
+        30 * 60_000,
+        "invalid_recovery_reservation",
+        now,
+      );
+      return;
+    }
+    let store = this.env.OPERATIONS_STORE;
+    try {
+      store ??= operationsStoreFromEnv(this.env);
+    } catch {
+      // Keep waking while storage is unavailable; never release ownership.
+      await this.scheduleAcceptanceRecovery(
+        inviteId,
+        submissionId,
+        5 * 60_000,
+        "operations_storage_unavailable",
+        now,
+      );
+      return;
+    }
+    const adapter: InviteAcceptanceAdapter = {
+      reserve: async () => {
+        throw new AcceptanceError(
+          "recovery_required",
+          "Recovery does not create new reservations.",
+        );
+      },
+      inspect: () =>
+        this.acceptanceReservation(inviteId, submissionId, now),
+      confirm: async (input) => {
+        const confirmed = await this.confirmPostgresAcceptance({
+          ...input,
+          now,
+        });
+        if (!confirmed.confirmed)
+          throw new AcceptanceError(
+            "recovery_required",
+            "Acceptance recovery could not bind the reservation.",
+          );
+        return confirmed;
+      },
+      queueReceipt: (input) =>
+        this.queueIntakeReceipt(
+          input.inviteId,
+          input.submissionId,
+          input.recipient,
+          input.businessName,
+          now,
+        ),
+      markCommitStarted: async () => {},
+      scheduleRecovery: async () => {},
+      completeRecovery: async () => {},
+    };
+    try {
+      const recovered = await reconcileAcceptance(
+        {
+          inviteId,
+          submissionId,
+          fingerprint,
+          confirmed:
+            row.acceptance_state === "confirmed"
+              ? this.acceptanceIds(row)
+              : null,
+        },
+        {
+          store,
+          invites: adapter,
+          receipt:
+            row.receipt_recipient !== null
+              ? {
+                  recipient: row.receipt_recipient,
+                  businessName:
+                    row.receipt_business_name || "your business",
+                }
+              : undefined,
+        },
+      );
+      if (recovered.status === "not_committed") {
+        const attempts = row.acceptance_recovery_attempts + 1;
+        if (attempts >= 8)
+          this.ctx.storage.sql.exec(
+            `UPDATE onboarding_invites SET acceptance_recovery_at = NULL,
+               acceptance_recovery_attempts = ?, acceptance_last_error = ?,
+               updated_at = ?
+             WHERE invite_id = ? AND routing_mode = 'postgres' AND reserved_submission_id = ?`,
+            attempts,
+            "no_committed_intake",
+            now,
+            inviteId,
+            submissionId,
+          );
+        else
+          await this.scheduleAcceptanceRecovery(
+            inviteId,
+            submissionId,
+            Math.min(
+              30 * 60_000,
+              5_000 * 2 ** Math.min(attempts, 8),
+            ),
+            "no_committed_intake",
+            now,
+          );
+        return;
+      }
+      await this.completeAcceptanceRecovery(inviteId, submissionId, now);
+    } catch (error) {
+      await this.scheduleAcceptanceRecovery(
+        inviteId,
+        submissionId,
+        Math.min(
+          30 * 60_000,
+          5_000 * 2 ** Math.min(row.acceptance_recovery_attempts + 1, 8),
+        ),
+        error instanceof Error ? error.message : "acceptance_recovery_failed",
+        now,
+      );
+    }
+  }
+
   async rebindStaleReservation(
     inviteId: string,
     submissionId: string,
@@ -993,7 +1264,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
     const updated = this.ctx.storage.sql.exec<{ invite_id: string }>(
       `UPDATE onboarding_invites
        SET reserved_submission_hash = ?, reserved_at = ?, updated_at = ?, operation_id = ?, recovery_page = 1, recovery_sweeps = 0, recovery_lease = NULL, recovery_lease_until = 0
-       WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id = ?
+       WHERE invite_id = ? AND status = 'unused' AND routing_mode = 'legacy'
+         AND reserved_submission_id = ?
          AND reserved_submission_hash = ? AND reservation_phase = 'reserved'
          AND issue_number IS NULL AND reserved_at IS NOT NULL AND reserved_at <= ?
        RETURNING invite_id`,
@@ -1010,6 +1282,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
   }
 
   async recoveryReservation(inviteId: string) {
+    const routing = this.row(inviteId)?.routing_mode;
+    if (routing && routing !== "legacy") return null;
     const audit = this.ctx.storage.sql
       .exec<{
         submission_id: string;
@@ -1082,7 +1356,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
            submission_hash = reserved_submission_hash, issue_number = ?, operation_id = COALESCE(operation_id, ?),
            reserved_submission_id = NULL, reserved_submission_hash = NULL, reserved_at = NULL,
            reservation_phase = 'reserved', recovery_lease = NULL, recovery_lease_until = 0, updated_at = ?
-         WHERE invite_id = ? AND status IN ('unused','expired') AND reserved_submission_id = ?
+         WHERE invite_id = ? AND status IN ('unused','expired') AND routing_mode = 'legacy'
+           AND reserved_submission_id = ?
            AND reserved_submission_hash = ? AND operation_id IS ? AND reserved_at <= ?
            AND recovery_lease_until <= ? AND (operation_id IS NULL OR recovery_sweeps >= 3) RETURNING invite_id`,
           input.issueNumber,
@@ -1152,6 +1427,7 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       .exec<InviteRow>(
         `UPDATE onboarding_invites SET recovery_lease = ?, recovery_lease_until = ?
        WHERE invite_id = ? AND operation_id = ? AND status = 'unused'
+         AND routing_mode = 'legacy'
          AND recovery_sweeps < 3 AND recovery_lease_until <= ? RETURNING *`,
         lease,
         now + 120_000,
@@ -1171,7 +1447,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
   ) {
     this.ctx.storage.sql.exec(
       `UPDATE onboarding_invites SET recovery_page = ?
-       WHERE invite_id = ? AND operation_id = ? AND recovery_lease = ? AND status = 'unused'`,
+       WHERE invite_id = ? AND operation_id = ? AND recovery_lease = ? AND status = 'unused'
+         AND routing_mode = 'legacy'`,
       page,
       inviteId,
       operationId,
@@ -1190,7 +1467,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       .exec<{ invite_id: string }>(
         `UPDATE onboarding_invites SET recovery_page = ?, recovery_sweeps = recovery_sweeps + ?,
          recovery_lease = NULL, recovery_lease_until = 0
-       WHERE invite_id = ? AND operation_id = ? AND recovery_lease = ? AND status = 'unused' RETURNING invite_id`,
+       WHERE invite_id = ? AND operation_id = ? AND recovery_lease = ? AND status = 'unused'
+         AND routing_mode = 'legacy' RETURNING invite_id`,
         page,
         sweepComplete ? 1 : 0,
         inviteId,
@@ -1209,7 +1487,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
   ) {
     const updated = this.ctx.storage.sql.exec<{ invite_id: string }>(
       `UPDATE onboarding_invites SET reservation_phase = 'creating_issue', updated_at = ?
-       WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id = ?
+       WHERE invite_id = ? AND status = 'unused' AND routing_mode = 'legacy'
+         AND reserved_submission_id = ?
          AND reserved_submission_hash = ? AND reservation_phase = 'reserved'
        RETURNING invite_id`,
       now,
@@ -1234,7 +1513,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
        SET status = 'consumed', submission_id = ?, submission_hash = reserved_submission_hash,
            reserved_submission_id = NULL, reserved_submission_hash = NULL, reserved_at = NULL, reservation_phase = 'reserved',
            issue_number = ?, updated_at = ?
-       WHERE invite_id = ? AND reserved_submission_id = ? AND reserved_submission_hash = ? AND status = 'unused'`,
+       WHERE invite_id = ? AND routing_mode = 'legacy' AND reserved_submission_id = ?
+         AND reserved_submission_hash = ? AND status = 'unused'`,
         submissionId,
         issue,
         now,

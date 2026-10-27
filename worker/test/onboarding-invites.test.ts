@@ -1083,6 +1083,240 @@ describe("private onboarding invitations", () => {
     });
   });
 
+  it("blocks every legacy mutator from a Postgres-owned reservation", async () => {
+    const inviteId = "invite-postgres-legacy-mutators-001";
+    const submissionId = "submission-postgres-legacy-mutators-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({ inviteId, expiresAt, allowedOrigins: [origin] });
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    const tokenHash = [...digest].map((part) => part.toString(16).padStart(2, "0")).join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-legacy-mutators");
+    await coordinator.register({ inviteId, clientEmail: null, expiresAt, allowedOrigin: origin, tokenHash, now });
+    await coordinator.reserveSubmission(inviteId, tokenHash, expiresAt, origin, submissionId, "payload-hash-a", "owner@example.test", now, "postgres");
+    const acceptance = {
+      intakeId: "11111111-1111-4111-8111-111111111111",
+      requestId: "22222222-2222-4222-8222-222222222222",
+      attemptId: "33333333-3333-4333-8333-333333333333",
+      operationId: "44444444-4444-4444-8444-444444444444",
+    };
+    await coordinator.confirmPostgresAcceptance({ inviteId, submissionId, fingerprint: "payload-hash-a", acceptance, now });
+
+    await expect(
+      coordinator.rebindStaleReservation(inviteId, submissionId, "payload-hash-a", "payload-hash-b", now + 121_000),
+    ).resolves.toBe(false);
+    await expect(coordinator.recoveryReservation(inviteId)).resolves.toBeNull();
+    await expect(
+      coordinator.reconcileIssue({
+        inviteId,
+        submissionId,
+        submissionHash: "payload-hash-a",
+        operationId: acceptance.operationId,
+        issueNumber: 77,
+        reviewerEmail: "reviewer@example.test",
+        recipient: "sam@example.test",
+        businessName: "Harbor Plumbing",
+      }, now + 121_000),
+    ).resolves.toBe(false);
+    await expect(
+      coordinator.claimIssueCreation(inviteId, submissionId, "payload-hash-a", now),
+    ).resolves.toBe(false);
+    await expect(
+      coordinator.recordIssue(inviteId, submissionId, "payload-hash-a", 77, now),
+    ).resolves.toBe(false);
+    await expect(
+      coordinator.claimRecovery(inviteId, acceptance.operationId, now),
+    ).resolves.toBeNull();
+    await expect(
+      coordinator.checkpointRecovery(inviteId, acceptance.operationId, "lease", 1, true),
+    ).resolves.toBe(false);
+
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        status: string;
+        issue_number: number | null;
+        acceptance_state: string;
+        reserved_submission_hash: string;
+        reservation_phase: string;
+      }>(
+        "SELECT status, issue_number, acceptance_state, reserved_submission_hash, reservation_phase FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row).toEqual({
+        status: "unused",
+        issue_number: null,
+        acceptance_state: "confirmed",
+        reserved_submission_hash: "payload-hash-a",
+        reservation_phase: "reserved",
+      });
+    });
+  });
+
+  it("keeps receipt intent durable and wakes recovery after a quiet period", async () => {
+    const inviteId = "invite-postgres-recovery-wake-001";
+    const submissionId = "submission-postgres-recovery-wake-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({ inviteId, expiresAt, allowedOrigins: [origin] });
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    const tokenHash = [...digest].map((part) => part.toString(16).padStart(2, "0")).join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-recovery-wake");
+    await coordinator.register({ inviteId, clientEmail: null, expiresAt, allowedOrigin: origin, tokenHash, now });
+    await coordinator.reserveSubmission(
+      inviteId, tokenHash, expiresAt, origin, submissionId, "payload-hash-a",
+      "sam@example.test", now, "postgres",
+      { recipient: "sam@example.test", businessName: "Harbor Plumbing" },
+    );
+    await coordinator.markAcceptanceCommitStarted(inviteId, submissionId, "payload-hash-a", now);
+
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        receipt_recipient: string;
+        receipt_business_name: string;
+        receipt_queued_at: number | null;
+        acceptance_commit_started: number;
+        acceptance_recovery_at: number;
+      }>(
+        "SELECT receipt_recipient, receipt_business_name, receipt_queued_at, acceptance_commit_started, acceptance_recovery_at FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row).toMatchObject({
+        receipt_recipient: "sam@example.test",
+        receipt_business_name: "Harbor Plumbing",
+        receipt_queued_at: null,
+        acceptance_commit_started: 1,
+      });
+      expect(row.acceptance_recovery_at).toBeGreaterThan(now);
+      state.storage.sql.exec(
+        "UPDATE onboarding_invites SET acceptance_recovery_at = ? WHERE invite_id = ?",
+        Date.now() - 1,
+        inviteId,
+      );
+    });
+    await expect(
+      runDurableObjectAlarm(coordinator),
+    ).resolves.toBe(true);
+
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        acceptance_recovery_at: number;
+        acceptance_recovery_attempts: number;
+        acceptance_last_error: string;
+        receipt_queued_at: number | null;
+      }>(
+        "SELECT acceptance_recovery_at, acceptance_recovery_attempts, acceptance_last_error, receipt_queued_at FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row.acceptance_recovery_attempts).toBe(1);
+      expect(row.acceptance_last_error).toBe("operations_storage_unavailable");
+      expect(row.acceptance_recovery_at).toBeGreaterThan(Date.now());
+      expect(row.receipt_queued_at).toBeNull();
+      expect(await state.storage.getAlarm()).not.toBeNull();
+    });
+  });
+
+  it("completes an interrupted Postgres handshake from the alarm using committed data", async () => {
+    const inviteId = "invite-postgres-recovery-alarm-001";
+    const submissionId = "submission-postgres-recovery-alarm-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({ inviteId, expiresAt, allowedOrigins: [origin] });
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    const tokenHash = [...digest].map((part) => part.toString(16).padStart(2, "0")).join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-recovery-alarm");
+    await coordinator.register({ inviteId, clientEmail: null, expiresAt, allowedOrigin: origin, tokenHash, now });
+    await coordinator.reserveSubmission(
+      inviteId, tokenHash, expiresAt, origin, submissionId, "payload-hash-a",
+      "sam@example.test", now, "postgres",
+      { recipient: "sam@example.test", businessName: "Harbor Plumbing" },
+    );
+    await coordinator.markAcceptanceCommitStarted(inviteId, submissionId, "payload-hash-a", now);
+    const committed = {
+      intakeId: "11111111-1111-4111-8111-111111111111",
+      requestId: "22222222-2222-4222-8222-222222222222",
+      attemptId: "33333333-3333-4333-8333-333333333333",
+      operationId: "44444444-4444-4444-8444-444444444444",
+    };
+    let confirmations = 0;
+    const store = {
+      async getIntakeByBinding() {
+        return {
+          ...committed,
+          inviteId,
+          submissionId,
+          fingerprint: "payload-hash-a",
+          payloadVersion: 2,
+          payload: { businessName: "Harbor Plumbing" },
+          consent: { termsVersion: "client-intake-v2", rightsConfirmed: true },
+          profile: "home-services",
+          schemaVersion: 1,
+          clientId: "55555555-5555-4555-8555-555555555555",
+          acceptanceState: "unconfirmed",
+          receivedAt: new Date(now).toISOString(),
+          confirmedAt: null,
+        };
+      },
+      async confirmAcceptance() {
+        confirmations += 1;
+      },
+      async createAcceptance() {
+        throw new Error("recovery must not create");
+      },
+      async getIntake() {
+        return null;
+      },
+    };
+    await runInDurableObject(coordinator, (instance) => {
+      (instance as unknown as {
+        env: { OPERATIONS_STORE?: typeof store };
+      }).env.OPERATIONS_STORE = store;
+    });
+    network.use(
+      http.post("https://api.resend.com/emails", () =>
+        HttpResponse.json({ id: "email-alarm-recovery" }, { status: 200 }),
+      ),
+    );
+    await runInDurableObject(coordinator, (_instance, state) => {
+      state.storage.sql.exec(
+        "UPDATE onboarding_invites SET acceptance_recovery_at = ? WHERE invite_id = ?",
+        Date.now() - 1,
+        inviteId,
+      );
+    });
+
+    await expect(runDurableObjectAlarm(coordinator)).resolves.toBe(true);
+
+    expect(confirmations).toBe(1);
+    await runInDurableObject(coordinator, (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        acceptance_state: string;
+        accepted_intake_id: string;
+        accepted_operation_id: string;
+        acceptance_recovery_at: number | null;
+        receipt_queued_at: number | null;
+      }>(
+        "SELECT acceptance_state, accepted_intake_id, accepted_operation_id, acceptance_recovery_at, receipt_queued_at FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row).toEqual({
+        acceptance_state: "confirmed",
+        accepted_intake_id: committed.intakeId,
+        accepted_operation_id: committed.operationId,
+        acceptance_recovery_at: null,
+        receipt_queued_at: expect.any(Number),
+      });
+      const tasks = state.storage.sql.exec<{ task_type: string }>(
+        "SELECT task_type FROM intake_outbox WHERE invite_id = ? AND submission_id = ?",
+        inviteId,
+        submissionId,
+      ).toArray();
+      expect(tasks).toEqual([{ task_type: "receipt" }]);
+    });
+  });
+
   it("attributes a link-only invite to the email submitted with the intake", async () => {
     const inviteId = "invite-attribution-001";
     const submissionId = "submission-attribution-001";
