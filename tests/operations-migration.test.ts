@@ -80,6 +80,11 @@ if (url) {
 }
 
 function psql(sql: string): Promise<string> {
+  // PGDATABASE is a database name, not a reliable URI expansion surface.
+  // Split ONLY the already-validated disposable target; never permit libpq to
+  // fall back to its default socket/port or inherit connection overrides.
+  if (!url) throw new Error("Disposable PostgreSQL target is required.");
+  const target = new URL(url);
   return new Promise((resolve, reject) => {
     const child = spawn("psql", ["-X", "-qAt", "-v", "ON_ERROR_STOP=1"], {
       // Do not inherit PGHOSTADDR/PGSERVICE/PGOPTIONS that could override a local URI.
@@ -87,7 +92,12 @@ function psql(sql: string): Promise<string> {
         ...Object.fromEntries(
           Object.entries(process.env).filter(([key]) => !key.startsWith("PG")),
         ),
-        PGDATABASE: url,
+        PGDATABASE: decodeURIComponent(target.pathname.slice(1)),
+        PGHOST: target.hostname.replace(/^\[|\]$/gu, ""),
+        PGPORT: target.port || "5432",
+        PGUSER: decodeURIComponent(target.username),
+        PGPASSWORD: decodeURIComponent(target.password),
+        PGCONNECT_TIMEOUT: "5",
       },
       stdio: ["pipe", "pipe", "pipe"],
     });
