@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{page.title}}</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="assets/vendor/bootstrap6/css/bootstrap.min.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-bs-spy="scroll" data-bs-target="#navScroll" data-bs-top-margin="110px" data-bs-smooth-scroll="true">
+
+<a class="visually-hidden-focusable btn-solid theme-primary m-2" href="#main">Skip to main content</a>
+
+<div class="util-bar">
+  <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span class="fg-3">Regulated by the SRA · No. 604118</span>
+    <span class="fg-3"><a href="tel:01612000000">0161 200 0000</a> · <a href="mailto:enquiries@caseworth.example">enquiries@caseworth.example</a></span>
+  </div>
+</div>
+
+<header data-foundation-needs-adaptation="true" data-experience-hero="true" data-foundation-section="hero" class="site-header">
+  <nav class="navbar lg:navbar-expand" aria-label="Main">
+    <div class="container">
+      <a data-foundation-slot="navigation.brand" class="wordmark" href="index.html">{{navigation.brand}}</a>
+      <dialog class="drawer drawer-end" tabindex="-1" id="navDrawer" aria-labelledby="navDrawerLabel">
+        <div class="drawer-header">
+          <h5 class="drawer-title" id="navDrawerLabel"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="drawer" aria-label="Close"></button>
+        </div>
+        <div class="drawer-body mb-2 lg:mb-0">
+          <ul class="nav navbar-nav ms-auto lg:gap-3" id="navScroll">
+            <li class="nav-item"><nav class="nav-item" aria-label="Main navigation"><a class="nav-link" href="#services">Services</a><a class="nav-link" href="#faqs">FAQs</a><a class="nav-link" href="#contact">Contact</a></nav></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+          </ul>
+        </div>
+      </dialog>
+      <div class="d-flex align-items-center gap-2 ms-auto">
+        <button class="btn-icon" type="button" id="themeToggle" aria-label="Toggle color mode">
+          
+          
+        </button>
+        
+        <button class="btn-icon navbar-toggler" type="button" data-bs-toggle="drawer" data-bs-target="#navDrawer" aria-controls="navDrawer" aria-label="Open navigation">
+          <span class="navbar-toggler-icon" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+</header><aside data-foundation-section="conversion" data-early-conversion="true" class="xp-ribbon"><div class="xp-ribbon__copy">
+  <span class="xp-ribbon__kicker">Next step</span>
+  <p>{{conversion.body}}</p>
+</div>
+<a class="xp-ribbon__action" href="#contact">{{conversion.action}} <span aria-hidden="true">→</span></a></aside>
+
+<section data-foundation-section="portfolio" class="masthead">
+  <div class="container">
+    <div class="row g-6 align-items-center">
+      <div class="lg:col-7">
+        <p data-foundation-slot="services.body" class="eyebrow fs-sm fg-primary mb-3">{{services.body}}</p>
+        <h1 data-foundation-slot="services.heading" class="serif masthead-title mb-4">{{services.heading}}</h1>
+        <p class="lede fg-2 mb-5" style="max-width:36rem"></p>
+        <div class="d-flex flex-wrap gap-3">
+          <a class="btn-solid theme-primary btn-lg" href="#enquiry"></a>
+          <a class="btn-outline theme-secondary btn-lg" href="#fees"></a>
+        </div>
+      </div>
+      <div class="lg:col-5">
+        <div class="masthead-figure">
+          <div class="ph"><img data-foundation-image="services.image" src="{{services.image}}" alt="" width="700" height="875" loading="eager"></div>
+          <p class="figure-note mb-0"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main id="main">
+
+  <!-- Practice index -->
+  <section data-foundation-section="practices" class="section" id="practices">
+    <div class="container">
+      <div class="row g-6 mb-5">
+        <div class="lg:col-5">
+          <p data-foundation-slot="services.body" class="eyebrow fs-sm fg-primary mb-2">{{services.body}}</p>
+          <h2 data-foundation-slot="services.heading" class="serif section-title fs-4xl mb-0">{{services.heading}}</h2>
+        </div>
+        <div class="lg:col-7">
+          <p class="fg-2 mb-0"></p>
+        </div>
+      </div>
+
+      <div class="row g-0 lg:gx-6">
+        <div class="lg:col-6">
+          <div class="practice-index">
+            <a class="practice-item" href="practice.html"><span class="idx"></span><span><span class="practice-name d-block"></span><span class="fs-sm fg-3"></span></span><span class="go"></span></a>
+            <a class="practice-item" href="practice.html"><span class="idx"></span><span><span class="practice-name d-block"></span><span class="fs-sm fg-3"></span></span><span class="go"></span></a>
+            <a class="practice-item" href="practice.html"><span class="idx"></span><span><span class="practice-name d-block"></span><span class="fs-sm fg-3"></span></span><span class="go"></span></a>
+            <a class="practice-item" href="practice.html"><span class="idx"></span><span><span class="practice-name d-block"></span><span class="fs-sm fg-3"></span></span><span class="go"></span></a>
+            <a class="practice-item" href="practice.html"><span class="idx"></span><span><span class="practice-name d-block"></span><span class="fs-sm fg-3"></span></span><span class="go"></span></a>
+          </div>
+        </div>
+        <div class="lg:col-6">
+          <div class="practice-index">
+            <a class="practice-item" href="practice.html"><span class="idx"></span><span><span class="practice-name d-block"></span><span class="fs-sm fg-3"></span></span><span class="go"></span></a>
+            <a class="practice-item" href="practice.html"><span class="idx"></span><span><span class="practice-name d-block"></span><span class="fs-sm fg-3"></span></span><span class="go"></span></a>
+            <a class="practice-item" href="practice.html"><span class="idx"></span><span><span class="practice-name d-block"></span><span class="fs-sm fg-3"></span></span><span class="go"></span></a>
+            <a class="practice-item" href="practice.html"><span class="idx"></span><span><span class="practice-name d-block"></span><span class="fs-sm fg-3"></span></span><span class="go"></span></a>
+            <a class="practice-item" href="practice.html"><span class="idx"></span><span><span class="practice-name d-block"></span><span class="fs-sm fg-3"></span></span><span class="go"></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- People -->
+  <section data-foundation-section="people" class="section bg-2" id="people">
+    <div class="container">
+      <div class="row g-6 mb-5">
+        <div class="lg:col-5">
+          <p data-foundation-slot="about.body" class="eyebrow fs-sm fg-primary mb-2">{{about.body}}</p>
+          <h2 data-foundation-slot="about.heading" class="serif section-title fs-4xl mb-0">{{about.heading}}</h2>
+        </div>
+        <div class="lg:col-7">
+          <p class="fg-2 mb-0"></p>
+        </div>
+      </div>
+
+      <div class="row g-5">
+        <div class="sm:col-6 lg:col-3">
+          <div class="person">
+            <div class="ph"><img data-foundation-image="about.image" src="{{about.image}}" alt="" width="500" height="500" loading="lazy"></div>
+            <p class="cred mb-1"></p>
+            <p class="serif fs-lg mb-1"></p>
+            <p class="person-role mb-0"></p>
+          </div>
+        </div>
+        <div class="sm:col-6 lg:col-3">
+          <div class="person">
+            <div class="ph"><img data-foundation-image="about.secondaryImage" src="{{about.secondaryImage}}" alt="" width="500" height="500" loading="lazy"></div>
+            <p class="cred mb-1"></p>
+            <p class="serif fs-lg mb-1"></p>
+            <p class="person-role mb-0"></p>
+          </div>
+        </div>
+        <div class="sm:col-6 lg:col-3">
+          <div class="person">
+            <div class="ph"><img data-foundation-image="about.tertiaryImage" src="{{about.tertiaryImage}}" alt="" width="500" height="500" loading="lazy"></div>
+            <p class="cred mb-1"></p>
+            <p class="serif fs-lg mb-1"></p>
+            <p class="person-role mb-0"></p>
+          </div>
+        </div>
+        <div class="sm:col-6 lg:col-3">
+          <div class="person">
+            <div class="ph"></div>
+            <p class="cred mb-1"></p>
+            <p class="serif fs-lg mb-1"></p>
+            <p class="person-role mb-0"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Fees -->
+  <section data-foundation-needs-adaptation="true" data-foundation-section="fees" class="section" id="fees">
+    <div class="container">
+      <div class="row g-6 mb-5">
+        <div class="lg:col-5">
+          <p data-foundation-slot="unknown.body" class="eyebrow fs-sm fg-primary mb-2">{{unknown.body}}</p>
+          <h2 data-foundation-slot="unknown.heading" class="serif section-title fs-4xl mb-0">{{unknown.heading}}</h2>
+        </div>
+        <div class="lg:col-7">
+          <p class="fg-2 mb-4"></p>
+          <p class="fee-note fg-2 mb-0"></p>
+        </div>
+      </div>
+
+      <div class="form-control form-adorn mb-4" style="max-width:24rem">
+        <div class="form-adorn-icon">
+          
+        </div>
+        <input type="search" class="form-ghost" id="feeFilter" placeholder="Filter matters…" aria-label="Filter fee table by matter">
+      </div>
+
+      <div class="table-responsive">
+        <table class="table md:table-stacked" id="feeTable">
+          <caption class="fs-sm fg-3"></caption>
+          <thead>
+            <tr>
+              <th scope="col"></th>
+              <th scope="col"></th>
+              <th scope="col" class="text-end"></th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody class="table-group-divider">
+            <tr>
+              <th scope="row" class="fw-normal"></th>
+              <td data-cell="Basis"></td>
+              <td data-cell="From" class="text-end"></td>
+              <td data-cell="Timescale" class="fg-3"></td>
+            </tr>
+            <tr>
+              <th scope="row" class="fw-normal"></th>
+              <td data-cell="Basis"></td>
+              <td data-cell="From" class="text-end"></td>
+              <td data-cell="Timescale" class="fg-3"></td>
+            </tr>
+            <tr>
+              <th scope="row" class="fw-normal"></th>
+              <td data-cell="Basis"></td>
+              <td data-cell="From" class="text-end"></td>
+              <td data-cell="Timescale" class="fg-3"></td>
+            </tr>
+            <tr>
+              <th scope="row" class="fw-normal"></th>
+              <td data-cell="Basis"></td>
+              <td data-cell="From" class="text-end"></td>
+              <td data-cell="Timescale" class="fg-3"></td>
+            </tr>
+            <tr>
+              <th scope="row" class="fw-normal"></th>
+              <td data-cell="Basis"></td>
+              <td data-cell="From" class="text-end"></td>
+              <td data-cell="Timescale" class="fg-3"></td>
+            </tr>
+            <tr>
+              <th scope="row" class="fw-normal"></th>
+              <td data-cell="Basis"></td>
+              <td data-cell="From" class="text-end"></td>
+              <td data-cell="Timescale" class="fg-3"></td>
+            </tr>
+            <tr>
+              <th scope="row" class="fw-normal"></th>
+              <td data-cell="Basis"></td>
+              <td data-cell="From" class="text-end"></td>
+              <td data-cell="Timescale" class="fg-3"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="fg-3 fs-sm mt-3 mb-0" id="feeEmpty" hidden></p>
+    </div>
+  </section>
+
+  <!-- Insights -->
+  <section data-foundation-section="insights" class="section bg-2" id="insights">
+    <div class="container">
+      <div class="row g-6">
+        <div class="lg:col-4">
+          <p data-foundation-slot="process.body" class="eyebrow fs-sm fg-primary mb-2">{{process.body}}</p>
+          <h2 data-foundation-slot="process.heading" class="serif section-title fs-4xl mb-3">{{process.heading}}</h2>
+          <p class="fg-2 mb-0"></p>
+        </div>
+        <div class="lg:col-8">
+          <a class="insight" href="practice.html">
+            <p class="fs-xs fg-3 mb-2"></p>
+            <p class="insight-title mb-2"></p>
+            <p class="fg-2 fs-sm mb-0"></p>
+          </a>
+          <a class="insight" href="practice.html">
+            <p class="fs-xs fg-3 mb-2"></p>
+            <p class="insight-title mb-2"></p>
+            <p class="fg-2 fs-sm mb-0"></p>
+          </a>
+          <a class="insight" href="practice.html">
+            <p class="fs-xs fg-3 mb-2"></p>
+            <p class="insight-title mb-2"></p>
+            <p class="fg-2 fs-sm mb-0"></p>
+          </a>
+          <a class="insight" href="practice.html">
+            <p class="fs-xs fg-3 mb-2"></p>
+            <p class="insight-title mb-2"></p>
+            <p class="fg-2 fs-sm mb-0"></p>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Enquiry -->
+  <section data-foundation-needs-adaptation="true" data-foundation-section="enquiry" class="section" id="enquiry">
+    <div class="container">
+      <div class="row g-6">
+        <div class="lg:col-5">
+          <p data-foundation-slot="contact.body" class="eyebrow fs-sm fg-primary mb-2">{{contact.body}}</p>
+          <h2 data-foundation-slot="contact.heading" class="serif section-title fs-4xl mb-4">{{contact.heading}}</h2>
+          <p class="fg-2 mb-4"></p>
+          <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+
+          <div class="accordion mt-5">
+            <details class="accordion-item" name="cwfaq" open>
+              <summary class="accordion-header">
+              </summary>
+              <div class="accordion-body fg-2"></div>
+            </details>
+            <details class="accordion-item" name="cwfaq">
+              <summary class="accordion-header">
+              </summary>
+              <div class="accordion-body fg-2"></div>
+            </details>
+            <details class="accordion-item" name="cwfaq">
+              <summary class="accordion-header">
+              </summary>
+              <div class="accordion-body fg-2"></div>
+            </details>
+          </div>
+        </div>
+
+        <div class="lg:col-7">
+          <div class="enquiry">
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer data-foundation-license="MIT" data-foundation-section="footer" class="site-footer section pb-5 bg-2"><span>{{footer.brand}}</span><span>{{footer.credit}}</span></footer>
+
+<script type="module" src="assets/js/main.js"></script>
+<span data-foundation-anchor="true" id="services"></span><span data-foundation-anchor="true" id="faqs"></span></body>
+</html>

@@ -1,0 +1,314 @@
+
+/* Table of Content
+==================================================
+	1.0  -  Contact Form
+	2.0  -  DT Responsive*/
+
+	/*--------------------------------------------------------------
+	1.0 - Contact Form
+	--------------------------------------------------------------*/
+
+	/*----*****---- << 1.1 - Business Contact Form >> ----*****----*/
+	.xp-foundation .business-contact-form { background:#ffffff; padding:30px 15px; margin:0 0 10px; width:100%;  float:left; clear:both; position:relative; }
+	.xp-foundation .business-contact-form h2 { font-size:20px; }
+	.xp-foundation .business-contact-form:before { content:""; position:absolute; width:100%; height:100%; border:10px solid rgba(255, 255, 255, 0.4); left:-10px; top:-10px; }
+	.xp-foundation .business-contact-form input[type="text"], .xp-foundation .business-contact-form input[type="email"], .xp-foundation .business-contact-form textarea { background:rgba(0, 0, 0, 0.02); border:1px solid rgba(0, 0, 0, 0.05); border-radius:3px; padding:19px 15px 18px; }
+	.xp-foundation .business-contact-form textarea { height:134px; }
+	.xp-foundation .business-contact-form input[type="submit"] { margin-top:20px; padding:20px 20px 17px; font-size:18px; font-weight:normal; text-transform:none; width:100%; }
+
+	.xp-foundation .business-contact-form input[type="text"]:focus, .xp-foundation .business-contact-form input[type="email"]:focus, .xp-foundation .business-contact-form textarea:focus { border:1px solid rgba(0, 0, 0, 0.2); }
+
+	.xp-foundation .business-contact-social li { margin:0 30px; }
+	.xp-foundation .business-contact-social li a { font-size:20px; color:#000000; }
+
+
+	/*----*****---- << 1.2 - Attorney Contact Form >> ----*****----*/
+	.xp-foundation .attorney-contact-form input[type="text"], .xp-foundation .attorney-contact-form input[type="email"], .xp-foundation .attorney-contact-form input[type="tel"], .xp-foundation .attorney-contact-form textarea, .xp-foundation .attorney-contact-form select { border:0; border-bottom:1px solid #000000; color:#000000; padding:15px 0; font-size:16px; }
+	.xp-foundation .attorney-contact-form { margin: 0 auto; text-align: center; width: 70%; }
+	.xp-foundation .attorney-contact-form textarea { height:53px; }
+	.xp-foundation .attorney-contact-form input[type="submit"] { border-radius:0; background:#000000; margin:20px 20px 0 0; padding:16px 30px; float:none; }
+	.xp-foundation .attorney-contact-form input[type="submit"]:hover { background:#cda85c; }
+	.xp-foundation .attorney-contact-form .selection-box:after { content:none; }
+
+	.xp-foundation .secondary-sidebar .attorney-contact-form { width:100%; }
+	.xp-foundation .secondary-sidebar .attorney-contact-form input[type="submit"] { float:left; }
+
+
+	/*----*****---- << 1.3 - Event Contact Form >> ----*****----*/
+	.xp-foundation .event-contact-form input[type="text"], .xp-foundation .event-contact-form input[type="email"], .xp-foundation .event-contact-form input[type="tel"], .xp-foundation .event-contact-form textarea { background:transparent; border:2px solid #fff; color:#ffffff; padding:14px 15px 13px; border-radius:5px; }
+	.xp-foundation .event-contact-form textarea { height:153px; }
+	.xp-foundation .event-contact-form input[type="submit"] { float:right; text-transform:none; margin:20px 0 0; font-size:16px; font-weight:normal; }
+
+
+	/*----*****---- << 1.4 - Fitness Contact Form >> ----*****----*/
+	.xp-foundation .fitness-form h2 { color:#eb0029; font-weight:600; }
+	.xp-foundation .fitness-form .form-field { position:relative; margin:12px 0 0; float:left; clear:both; width:100%; }
+	.xp-foundation .fitness-form span.fa, .xp-foundation .fitness-form span.icon { position:absolute; left:15px; top:15px; color:rgba(0, 0, 0, 0.2); font-size:16px; z-index:9; color:#161616; }
+	.xp-foundation .fitness-form input[type="text"], .xp-foundation .fitness-form input[type="email"], .xp-foundation .fitness-form input[type="tel"], .xp-foundation .fitness-form textarea { padding:13px 0 13px 40px; text-transform:capitalize; font-size:14px; border-width:0 0 3px 0; border-color:#ebeef0; margin-bottom: 5px; color:#000000; }
+	.xp-foundation .fitness-form input[type="text"]:hover, .xp-foundation .fitness-form input[type="email"]:hover, .xp-foundation .fitness-form input[type="tel"]:hover, .xp-foundation .fitness-form textarea:hover { border-color:#161616; -webkit-transition:all 0.3s linear; -moz-transition:all 0.3s linear; -o-transition:all 0.3s linear; -ms-transition:all 0.3s linear; transition:all 0.3s linear; }
+	.xp-foundation .fitness-form input[type="submit"] { border-radius: 0; float: right; font-weight: normal; letter-spacing: 0.5px; margin-top: 20px; font-size:16px; padding: 16px 30px; }
+	.xp-foundation .fitness-form textarea { height:120px; }
+
+	.xp-foundation .fitness-contact-info .dt-sc-contact-info { font-size:16px; }
+	.xp-foundation .fitness-contact-info .dt-sc-contact-info p b { color:#666666; }
+	.xp-foundation .fitness-contact-info .dt-sc-contact-info span { font-size:18px; color:#eb0029; margin:1px 10px 30px 0; }
+	.xp-foundation .fitness-contact-info .dt-sc-contact-info h6 { font-size:18px; margin-bottom:10px; }
+
+	.xp-foundation .fitness-contact-info .dt-sc-sociable li a { color:#161616; }
+	.xp-foundation .fitness-contact-info .dt-sc-sociable li a:hover { color:#fff; }
+
+	.xp-foundation .fitness-contact-boxes .wpb_text_column { width:20.5%; float:left; margin-bottom:0; }
+	.xp-foundation .fitness-contact-boxes .wpb_text_column:nth-child(2), .xp-foundation .fitness-contact-boxes .wpb_text_column:last-child { width:23.1%; float:left; padding-left:30px; }
+	.xp-foundation .fitness-contact-boxes .wpb_text_column:nth-child(3) { width:12.8%; float:left; padding-top:85px; }
+	.xp-foundation .fitness-form-container.extend-bg-fullwidth-right:after { background:#ffffff; }
+
+
+	/*----*****---- << 1.5 - Hosting Contact Form >> ----*****----*/
+	.xp-foundation .hosting-contact-form input[type="submit"] { width:100%; padding:15px 20px 13px; margin-top:15px; }
+	.xp-foundation .hosting-contact-form textarea { height:196px; }
+
+
+	/*----*****---- << 1.6 - Restaurant Contact Form >> ----*****----*/
+	.xp-foundation .restaurant-contact-form { width:100%; float:right; max-width:570px; padding:30px 0 0; }
+	.xp-foundation .restaurant-contact-form h3 { margin-bottom:25px; padding-left: 10px; }
+	.xp-foundation .restaurant-contact-form input[type="text"], .xp-foundation .restaurant-contact-form input[type="email"], .xp-foundation .restaurant-contact-form input[type="tel"], .xp-foundation .restaurant-contact-form textarea { background:none; border-color:rgba(255, 255, 255, 0.2); color:#ffffff; }
+	.xp-foundation .restaurant-contact-form input[type="text"]:focus, .xp-foundation .restaurant-contact-form input[type="email"]:focus, .xp-foundation .restaurant-contact-form input[type="tel"]:focus, .xp-foundation .restaurant-contact-form textarea:focus { border-color:#b48b3c; }
+	.xp-foundation .restaurant-contact-form input[type="submit"] { margin-top:0; float:right; }
+
+	.xp-foundation .restaurant-contact-bg:before { content:""; position:absolute; right:-201px; top:0; background:none no-repeat; width:201px; height:525px; z-index:9; }
+
+	.xp-foundation .dt-sc-contact-details-on-map { position: relative; }
+	.xp-foundation .dt-sc-contact-details-on-map:after { background:rgba(0, 0, 0, 0.8); content:""; display: block; height:100%; position:absolute; left: 0; top: 0; width:100%; }
+	.xp-foundation .dt-sc-contact-details-on-map.hide-overlay:after { display: none; }
+
+	.xp-foundation .dt-sc-contact-details-on-map .map {  width: 100%; }
+	.xp-foundation .dt-sc-contact-details-on-map .dt-sc-map-overlay { padding: 72px 0 0; }
+
+	.xp-foundation .dt-sc-contact-details-on-map .section-wrapper.dt-sc-map-overlay { right:0; margin:auto; max-width:1170px; }
+
+	.xp-foundation .dt-sc-contact-details-on-map .dt-sc-map-overlay:after { left:100%; right:inherit; }
+	.xp-foundation .vc_row.vc_row-no-padding .dt-sc-map-overlay .wpb_column.vc_col-sm-3 { padding-left:15px; padding-right:15px; }
+
+
+	/*----*****---- << 1.7 - Spa Contact Form >> ----*****----*/
+	.xp-foundation .spa-contact-form input[type="text"], .xp-foundation .spa-contact-form input[type="tel"], .xp-foundation .spa-contact-form input[type="email"], .xp-foundation .spa-contact-form textarea { border-color:#ffc9d4; font-family:'Open Sans', sans-serif; font-size:16px; color:#000000; font-weight:600; border-radius:15px 0; }
+	.xp-foundation .spa-contact-form input[type="text"]:focus, .xp-foundation .spa-contact-form input[type="tel"]:focus, .xp-foundation .spa-contact-form input[type="email"]:focus, .xp-foundation .spa-contact-form textarea:focus{ border-color:#ef577a; }
+
+
+	/*----*****---- << 1.8 - University Forms >> ----*****----*/
+	.xp-foundation .university-contact-form .form-field, .xp-foundation .university-contact-form .button-field { position:relative; float:left; clear:both; margin:0 0 20px; width:100%; }
+	.xp-foundation .university-contact-form .form-field i, .xp-foundation .university-contact-form .button-field i { position:absolute; right:15px; top:15px; font-size:23px; color:#1c3f55; z-index:9; font-weight:bold; }
+	.xp-foundation .university-contact-form .form-field input[type="text"], .xp-foundation .university-contact-form .form-field input[type="tel"], .xp-foundation .university-contact-form .form-field input[type="email"], .xp-foundation .university-contact-form textarea, .xp-foundation .university-contact-form .form-field select { padding:16px 30px 15px 12px; color:#1c3f55; font-weight:normal; font-family:'Open Sans', sans-serif; }
+	.xp-foundation .university-contact-form textarea { height:205px; }
+	.xp-foundation .university-contact-form .button-field { margin:10px 0 0; }
+	.xp-foundation .university-contact-form .button-field input[type="submit"] { padding: 0 48px 0 20px; width: 100%; color: #ffffff; height: 49px; line-height: 49px; border-radius: 0; }
+	.xp-foundation .university-contact-form .button-field i { color: #463839; right: 0; top: 10px; width: 48px; height: 49px; line-height: 49px; text-align: center; }
+
+
+	/*----*****---- << 1.9 - Yoga Forms >> ----*****----*/
+	.xp-foundation .dt-sc-newsletter-section.yoga-expert-form .dt-sc-subscribe-frm { width:100%; float:left; }
+	.xp-foundation .dt-sc-newsletter-section.yoga-expert-form { float:left; clear:both; margin:0; padding:0; width:100%; }
+	.xp-foundation .dt-sc-newsletter-section.yoga-expert-form .dt-sc-subscribe-frm input[type="email"] { border:1px solid #c8dcdf; border-radius:5px; width:50%; float:left; margin:0 20px 0 0; }
+	.xp-foundation .dt-sc-newsletter-section.yoga-expert-form .dt-sc-subscribe-frm input[type="submit"] { background:#927d7d; clear:none; padding:17px 20px; margin:0; border-radius:3px; }
+	.xp-foundation .dt-sc-newsletter-section.yoga-expert-form .dt-sc-subscribe-frm input[type="submit"]:hover { background:#3c939d; }
+
+	.xp-foundation .yoga-contact-form input[type="text"], .xp-foundation .yoga-contact-form input[type="email"], .xp-foundation .yoga-contact-form input[type="tel"], .xp-foundation .yoga-contact-form textarea { border-color:#c8dcdf; border-radius:5px; }
+	.xp-foundation .yoga-contact-form input[type="submit"] { background:#927d7d; margin:20px 0 0; }
+	.xp-foundation .yoga-contact-form input[type="submit"]:hover { background:#3c939d; }
+	.xp-foundation .yoga-contact-form textarea { height:100px; }
+
+
+	/*----*****---- << 1.10 - Nightclub Booking Form >> ----*****----*/
+	.xp-foundation .nightclub-contact { float:left; clear:both; width:100%; margin:0; padding:0; }
+	.xp-foundation .nightclub-contact-info { width:23%; float:left; margin:0 2.5% 0 0; padding:20px 0 67px; border-bottom:1px solid #000000; }
+	.xp-foundation .nightclub-contact-info .dt-sc-contact-info { font-size:16px; line-height:34px; }
+	.xp-foundation .nightclub-contact-info .dt-sc-contact-info span { color:#c09245; font-size:24px; }
+	.xp-foundation .nightclub-contact-info .dt-sc-contact-info span.icon-pointer { font-size:30px; }
+	.xp-foundation .nightclub-contact-info .dt-sc-contact-info span.icon-phone2 { margin-bottom:45px; }
+	.xp-foundation .nightclub-contact-info .dt-sc-contact-info span.icon-plaine { margin-bottom:10px; }
+	.xp-foundation .nightclub-contact-info .dt-sc-contact-info a { color:#000000; }
+	.xp-foundation .nightclub-contact-info .dt-sc-contact-info a:hover { color:#c09245; }
+	.xp-foundation .nightclub-working-hours { color:#ffffff; background:#000000; padding:30px; width:32%; float:left; margin:0 2.5% 0 0; }
+	.xp-foundation .nightclub-working-hours h2 { color:#ffffff; }
+	.xp-foundation .nightclub-working-hours ul { float:left; clear:both; margin:10px 0 0; width:100%; }
+	.xp-foundation .nightclub-working-hours li { font-size:16px; display:block; clear:both; color:#c09245; padding:0; margin:0; }
+	.xp-foundation .nightclub-working-hours li span { color:#ffffff; width:120px; display:inline-block; }
+
+
+	.xp-foundation .nightclub-booking-form { float:left; clear:both; width:100%; margin:0; padding:0; }
+	.xp-foundation .nightclub-booking-form p { margin-bottom:20px; float:left; clear:both; width:100%; position:relative; }
+	.xp-foundation .nightclub-booking-form p.date:before, .xp-foundation .nightclub-booking-form p.time:before { position:absolute; right:14px; top:9px; color:#ffffff; font-size:25px; font-family:FontAwesome; }
+	.xp-foundation .nightclub-booking-form p.date:before { content:"\f073"; }
+	.xp-foundation .nightclub-booking-form p.time:before { content:"\f017"; }
+	.xp-foundation .nightclub-booking-form p label { float:left; width:35%; padding:0 10px 0 0;  color:#ffffff; font-size:16px; line-height:52px; }
+	.xp-foundation .nightclub-booking-form input[type="text"], .xp-foundation .nightclub-booking-form input[type="tel"], .xp-foundation .nightclub-booking-form input[type="date"] { width:65%;  background:rgba(255, 255, 255, 0.1); float:left; color:#ffffff; font-size:16px; font-family:'Open Sans', sans-serif; }
+	.xp-foundation .nightclub-booking-form input[type="submit"] { font-size:30px; text-transform:none; font-weight:normal; float:right; border-radius:0; margin:10px -105px 0 0; }
+
+	.xp-foundation .nightclub-contact-form { width:40%; float:left; margin:0;  padding:45px 45px 30px; position:relative; background:#f2f2f2; margin:-192px 0 0; }
+	.xp-foundation .nightclub-contact-form:before { border: 4px solid #000000; content:""; height: auto; position:absolute; bottom: 20px; left:20px; right: 20px; top:20px; width: auto; }
+	.xp-foundation .nightclub-contact-form p { font-size:14px; color:rgba(0, 0, 0, 0.5); line-height:24px; position:relative; z-index:1; }
+	.xp-foundation .nightclub-contact-form form { float:left; clear:both; width:100%; position:relative; z-index:1; }
+	.xp-foundation .nightclub-contact-form input[type="text"], .xp-foundation .nightclub-contact-form input[type="email"], .xp-foundation .nightclub-contact-form input[type="tel"], .xp-foundation .nightclub-contact-form textarea { background:none; border:none; border-bottom:1px solid #000000; font-size:16px; color:#000000; padding:16px 12px 8px 0; margin-bottom:7px; }
+	.xp-foundation .nightclub-contact-form textarea { height:150px; }
+	.xp-foundation .nightclub-contact-form input[type="submit"] { border-radius:0; width:100%; text-align:center; font-size:20px; font-weight:normal; margin:40px 0 0; padding:18px 20px 17px; }
+
+
+	/*----*****---- << 1.11 - Architecture Contact Form >> ----*****----*/
+	.xp-foundation .architecture-contact-form input[type="text"], .xp-foundation .architecture-contact-form input[type="email"], .xp-foundation .architecture-contact-form input[type="tel"], .xp-foundation .architecture-contact-form textarea { border:0; border-bottom:1px solid #000000; color:#000000; padding:15px 0 10px 30px; font-size:14px; background:none; }
+	.xp-foundation .architecture-contact-form textarea { height:130px; }
+	.xp-foundation .architecture-contact-form input[type="submit"] { float:right; border-radius:0; background:#000000; color:#ffffff; font-weight:normal; margin:20px 0 0 20px; padding:16px 30px; }
+	.xp-foundation .architecture-contact-form input[type="submit"]:hover { background:#ffe401; color:#000000; }
+
+	.xp-foundation .architecture-contact-form .form-field { position:relative; margin:0; float:left; clear:both; width:100%; }
+	.xp-foundation .architecture-contact-form span.fa { position:absolute; left:0; top:15px; color:#000000; font-size:16px; }
+
+
+	/*----*****---- << 1.12 - Insurance Contact Form >> ----*****----*/
+	.xp-foundation .insurance-contact-form input[type="text"], .xp-foundation .insurance-contact-form input[type="email"], .xp-foundation .insurance-contact-form textarea { background:rgba(0, 0, 0, 0.02); }
+	.xp-foundation .insurance-contact-form  input[type="submit"] { margin-top:20px; width:100%; font-size:16px; padding:17px 20px 16px; }
+	.xp-foundation .insurance-contact-form textarea { height:122px; }
+
+	.xp-foundation .insurance-custom-tab .dt-sc-tabs-horizontal-frame-content { border:1px solid rgba(0, 0, 0, 0.1); border-top:0; border-radius:0 0 3px 3px; padding:25px;  }
+	.xp-foundation .insurance-quote-form { float:left; width:100%; margin:0; padding:0; }
+	.xp-foundation .insurance-quote-form label { margin-bottom:5px; display:inline-block; }
+	.xp-foundation .insurance-quote-form .radio-label { clear:both; margin:0; }
+	.xp-foundation .insurance-quote-form .radio-label .wpcf7-list-item { position:relative; clear:both; display:inline-block; }
+	.xp-foundation .insurance-quote-form .radio-label .wpcf7-list-item label:before { content:""; position:absolute; left:5px; top:7px; width:14px; height:14px; border:1px solid rgba(0, 0, 0, 0.2); background:#ffffff; border-radius:50%; }
+	.xp-foundation .insurance-quote-form .radio-label input[type="radio"] { width:30px; }
+	.xp-foundation .insurance-quote-form .radio-label .wpcf7-list-item-label { position:relative; min-width:40px; display:inline-block; line-height:29px; margin:0; }
+	.xp-foundation .insurance-quote-form .radio-label .wpcf7-list-item-label:before { opacity:0; }
+	.xp-foundation .insurance-quote-form .radio-label input[type="radio"]:checked + .wpcf7-list-item-label:before  { content:""; position:absolute; left:-23px; top:2px; bottom:0; margin:auto; width:6px; height:6px; background:#008bd3; border-radius:50%;opacity:1; }
+	.xp-foundation .insurance-quote-form .radio-label .wpcf7-list-item.last input[type="radio"]:checked + .wpcf7-list-item-label:before { left:-31px; }
+
+	.xp-foundation .insurance-quote-form input[type="text"], .xp-foundation .insurance-quote-form input[type="tel"], .xp-foundation .insurance-quote-form input[type="date"], .xp-foundation .insurance-quote-form select { background:rgba(0, 0, 0, 0.02); }
+	.xp-foundation .insurance-quote-form .checkbox-label input[type="checkbox"] { position:absolute; left:0; top:2px; }
+	.xp-foundation .insurance-quote-form .checkbox-label span { line-height:20px; float:left; padding:0 0 0 23px; }
+	.xp-foundation .insurance-quote-form .checkbox-label { font-size:12px; color:#222222; position:relative; clear:both; display:inline-block; }
+
+	.xp-foundation .insurance-quote-form input[type="submit"] { border-radius:0; padding:14px 20px; }
+
+
+	/*----*****---- << 1.13 - Hotel Contact Form >> ----*****----*/
+	.xp-foundation .wpcf7-form.hotel-contact-form p { position:relative; margin-bottom:10px; }
+	.xp-foundation .hotel-contact-form p span.fa { position:absolute; right:15px; top:17px; color:rgba(0, 0, 0, 0.2); font-size:16px; z-index:1; }
+	.xp-foundation .hotel-contact-form p textarea { height:120px; }
+	.xp-foundation .hotel-contact-form p input[type="submit"] { float:right; margin:15px 0 0 10px; border-radius:0; }
+	.xp-foundation .hotel-contact-form p .clear { background:#000000; }
+	.xp-foundation .hotel-contact-form p .clear:hover { background:#c09245; }
+
+
+	/*----*****---- << 1.14 - Plumber Contact Form >> ----*****----*/
+	.xp-foundation .plumber-contact-form { width:100%; float:left; clear:both; margin:0; padding:0; text-align:center; }
+	.xp-foundation .plumber-contact-form form { width:50%; display:inline-block; }
+	.xp-foundation .plumber-contact-form form input[type="text"], .xp-foundation .plumber-contact-form form input[type="email"], .xp-foundation .plumber-contact-form form textarea { border-color:#e2ebf1; border-radius:3px; }
+	.xp-foundation .plumber-contact-form form input[type="submit"] { width:100%; font-size:16px; font-weight:bold; background:none; color:#15a7e1; border:1px solid #15a7e1; box-shadow:3px 3px 0 0 #1297cc; padding:16px 20px; }
+	.xp-foundation .plumber-contact-form form input[type="submit"]:hover { background:#15a7e1; color:#ffffff; box-shadow:3px 3px 0 0 rgba(0, 0, 0, 0.1); }
+
+
+	/*----*****---- << 1.15 - Fashion Contact Form >> ----*****----*/
+	.xp-foundation .fashion-contact-details .dt-sc-contact-info span { font-size:14px; }
+	.xp-foundation .fashion-contact-form input[type="submit"] { background:#000000; float:right; font-family:'Open Sans', sans-serif; float: right; font-size: 18px; font-weight: normal; padding: 15px 20px 12px; }
+	.xp-foundation .fashion-contact-form input[type="submit"]:hover { background:#c3875f }
+
+
+
+	/*----*****---- << 1.16 - Jewel Contact Form >> ----*****----*/
+	.xp-foundation .jewel-contact-form label { float:right; color:#000000; }
+	.xp-foundation .jewel-contact-form input[type="submit"] { float:right; margin:20px 0 0; padding:17px 20px 15px; }
+	.xp-foundation .jewel-contact-form textarea { height:306px; }
+
+
+	/*--------------------------------------------------------------
+	2.0 - DT Responsive
+	--------------------------------------------------------------*/
+	/* Note: Design for a width of 960px */
+    @media only screen and (min-width:992px) and (max-width:1199px) {
+
+		/** Restaurant **/
+		.xp-foundation .restaurant-contact-bg:before { content: none; }
+		.xp-foundation .restaurant-contact-bg > .vc_column-inner { padding-right: 0 !important; }
+
+		.xp-foundation .restaurant-contact-form { float: none; display: block; max-width: 100%; margin: 0 auto; width: 80%; }
+
+		/** Fitness **/
+		.xp-foundation .fitness-contact-boxes .wpb_text_column:nth-child(3) { padding-top:55px; }
+
+	}
+
+	/* Note: Design for a width of 768px */
+    @media only screen and (min-width:768px) and (max-width:991px) {
+
+		/** Business **/
+		.xp-foundation .business-contact-social li { margin: 0 20px; }
+		.xp-foundation .plumber-contact-form form { width:100%; }
+
+	}
+
+
+	/*----*****---- << Mobile (Landscape) >> ----*****----*/
+
+	/* Common Styles for the devices below 767px width */
+	@media only screen and (max-width: 767px) {
+
+ 		/** Restaurant **/
+		.xp-foundation .restaurant-booking-form { padding: 0 50px; }
+
+		.xp-foundation .restaurant-contact-bg:before { content: none; }
+		.xp-foundation .restaurant-contact-bg > .vc_column-inner { padding-right: 0 !important; }
+
+		.xp-foundation .restaurant-contact-form { float: none; display: block; max-width: 100%; margin: 0 auto 20px; width: 80%; }
+		.xp-foundation .restaurant-contact-form .wpb_column { margin-bottom: 20px; }
+
+		/** Contact-details-on-map **/
+		.xp-foundation .dt-sc-contact-details-on-map:after { z-index: -1; }
+		.xp-foundation .dt-sc-contact-details-on-map .dt-sc-map-overlay { position: inherit; }
+		.xp-foundation .dt-sc-contact-details-on-map .dt-sc-map-overlay .dt-sc-contact-info.type3 { font-size: 13px; }
+
+		/** Jewel **/
+		.xp-foundation .jewel-contact-form .vc_col-sm-2 { width: 30% !important; }
+		.xp-foundation .jewel-contact-form .vc_col-sm-10 { width: 70% !important; }
+
+		/** Plumber **/
+		.xp-foundation .plumber-contact-form form { width:100%; }
+
+	}
+
+	/*----*****---- << Mobile (Landscape) >> ----*****----*/
+    /* Note: Design for a width of 480px */
+    @media only screen and (min-width: 480px) and (max-width: 767px) {
+
+		/** Wedding **/
+		.xp-foundation .rsvp-form { padding: 65px 35px; }
+		.xp-foundation .rsvp-form form:before { left: -81px; }
+		.xp-foundation .rsvp-form form:after { right: -164px; }
+
+	}
+
+	/* Common Styles for the devices below 479px width */
+    @media only screen and (max-width: 479px) {
+		/** Attorney **/
+		.xp-foundation .attorney-contact-form { width:100%; }
+
+		/** Wedding **/
+		.xp-foundation .rsvp-form { padding: 65px 35px; width: 100%; }
+		.xp-foundation .rsvp-form form:before, .xp-foundation .rsvp-form form:after { content: none; }
+	}
+
+
+	/* Mobile Portrait Size to Mobile Landscape Size (devices and browsers) */
+	@media only screen and (max-width: 319px) {
+
+
+		/** Business **/
+		.xp-foundation .business-contact-form { padding-left: 5px; padding-right: 5px; }
+		.xp-foundation .business-contact-social li { margin: 0 5px; }
+
+		/** Jewel **/
+		.xp-foundation .jewel-contact-form { text-align: center; }
+		.xp-foundation .jewel-contact-form label { float: none; }
+		.xp-foundation .jewel-contact-form .vc_col-sm-2, .xp-foundation .jewel-contact-form .vc_col-sm-10 { width: 100% !important; }
+
+		/** Wedding **/
+		.xp-foundation .rsvp-form { padding: 65px 25px; margin-left: -15px; width: calc(100% + 30px); }
+		.xp-foundation .rsvp-form:before { height: auto; bottom: 5px; left: 5px; right: 5px; top: 5px; width: auto; }
+	}

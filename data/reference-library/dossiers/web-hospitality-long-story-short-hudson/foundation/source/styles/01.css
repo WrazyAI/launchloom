@@ -1,0 +1,913 @@
+/* Long Story Short NY — brand system
+   Colors and typeface matched to the original longstoryshortny.com (Squarespace) */
+
+/* inlined import: https://fonts.googleapis.com/css2?family=Forum&display=swap */
+/* cyrillic-ext */
+
+/* cyrillic */
+
+/* latin-ext */
+
+/* latin */
+
+
+
+.xp-foundation {
+  --bg: #ead3dd;
+  /* Darkened from #c92f2f (Aug 2026) — the original only hit 3.78:1 against
+     --bg, failing WCAG AA (4.5:1) for the site's small accent-colored text
+     (section labels, accordion summaries, footer wordmark, review citations).
+     This shade holds the same hue at 4.91:1 and improves every other accent
+     use too (button hover text, pull-quotes), so it's a pure upgrade. */
+  --accent: #aa2727;
+  --text: #252525;
+  --white: #fff;
+  --max-width: 1100px;
+}
+
+.xp-foundation * {
+  box-sizing: border-box;
+}
+
+.xp-foundation {
+  margin: 0;
+  padding: 0;
+}
+
+.xp-foundation {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Forum', Georgia, serif;
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.xp-foundation a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.xp-foundation img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Header / nav — logo left, nav right, booking CTA, mobile hamburger */
+
+.xp-foundation .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg);
+  border-bottom: 1px solid rgba(37, 37, 37, 0.12);
+}
+
+.xp-foundation .header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.xp-foundation .logo {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 190px;
+  max-width: 45vw;
+  margin: 0;
+}
+
+.xp-foundation .logo img {
+  width: 100%;
+  height: auto;
+}
+
+.xp-foundation .main-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 22px;
+  margin-left: auto;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+}
+
+.xp-foundation .main-nav a {
+  padding: 4px 2px;
+  border-bottom: 1px solid transparent;
+  transition: border-color .15s ease;
+  white-space: nowrap;
+}
+
+.xp-foundation .main-nav a:hover {
+  border-color: var(--text);
+}
+
+/* Distinct from :hover, so hovering another item doesn't make two links look
+   current at once. Padding compensates for the thicker border. */
+.xp-foundation .main-nav a.active {
+  border-bottom-width: 2px;
+  border-color: var(--accent);
+  padding-bottom: 3px;
+}
+
+.xp-foundation .nav-cta {
+  flex: 0 0 auto;
+  display: inline-block;
+  padding: 10px 20px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: background .15s ease;
+}
+
+.xp-foundation .nav-cta:hover {
+  background: var(--accent);
+}
+
+.xp-foundation .nav-toggle {
+  display: none;
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.xp-foundation .nav-toggle span {
+  display: block;
+  width: 26px;
+  height: 2px;
+  background: var(--text);
+}
+
+@media (max-width: 900px) {
+  .xp-foundation .header-inner {
+    flex-wrap: wrap;
+  }
+  .xp-foundation .nav-toggle {
+    display: flex;
+  }
+  .xp-foundation .nav-cta {
+    display: none;
+  }
+  .xp-foundation .main-nav {
+    display: none;
+    order: 3;
+    flex-basis: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    margin: 8px 0 4px;
+    font-size: 1.05rem;
+  }
+  .xp-foundation .main-nav.open {
+    display: flex;
+  }
+  .xp-foundation .main-nav a {
+    padding: 12px 0;
+    width: 100%;
+    border-bottom: 1px solid rgba(37, 37, 37, 0.1);
+  }
+}
+
+/* Main content */
+
+.xp-foundation main {
+  padding: 20px 24px 80px;
+}
+
+.xp-foundation .page-title {
+  text-align: center;
+  font-style: italic;
+  color: var(--accent);
+  font-size: 2rem;
+  margin: 40px auto;
+  max-width: 800px;
+}
+
+.xp-foundation .cta {
+  display: inline-block;
+  margin: 16px auto 0;
+  padding: 14px 36px;
+  border: 1px solid var(--text);
+  color: var(--text);
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background .15s ease, color .15s ease;
+}
+
+.xp-foundation .cta:hover {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.xp-foundation .prose {
+  max-width: 720px;
+  margin: 40px auto;
+}
+
+.xp-foundation .prose p {
+  margin: 0 0 1.4em;
+}
+
+.xp-foundation .prose p:last-child {
+  margin-bottom: 0;
+}
+
+/* Used by the "very cool things to do" list on /hudson-local-guide/. */
+.xp-foundation .prose ul {
+  margin: 0 0 1.4em;
+  padding-left: 1.1em;
+  list-style: none;
+}
+
+.xp-foundation .prose li {
+  position: relative;
+  margin: 0 0 0.5em;
+}
+
+.xp-foundation .prose li::before {
+  content: "\2013";
+  position: absolute;
+  left: -1.1em;
+  opacity: 0.55;
+}
+
+/* Booking form */
+
+.xp-foundation .booking-form {
+  max-width: 640px;
+  margin: 40px auto;
+}
+
+.xp-foundation .booking-form label {
+  display: block;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 18px 0 6px;
+}
+
+/*
+  The consent line is a sentence, not a field label, so it opts out of the
+  uppercase 0.85rem treatment above and reads at body size.
+*/
+.xp-foundation .booking-form label.consent-label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.xp-foundation .booking-form label.consent-label input[type="checkbox"] {
+  width: auto;
+  margin-top: 4px;
+  flex: none;
+}
+
+.xp-foundation .booking-form .field-hint {
+  font-size: 0.85rem;
+  font-style: italic;
+  margin: 2px 0 0;
+  color: #6b4a52;
+}
+
+.xp-foundation .booking-form input,
+.xp-foundation .booking-form textarea,
+.xp-foundation .booking-form select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--text);
+  background: rgba(255,255,255,0.4);
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.xp-foundation .booking-form .name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 560px) {
+  .xp-foundation .booking-form .name-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.xp-foundation .booking-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.xp-foundation .booking-form button.cta {
+  background: none;
+  cursor: pointer;
+  margin-top: 24px;
+  font-family: inherit;
+}
+
+.xp-foundation .form-note {
+  max-width: 640px;
+  margin: 30px auto 0;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.xp-foundation .form-status {
+  max-width: 640px;
+  margin: 16px auto 0;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+/* Booking calendar — the availability grid + quote panel on /to-book/.
+   js/booking-calendar.js toggles [hidden] on these blocks, so that has to win
+   over the display rules below. */
+
+.xp-foundation [hidden] {
+  display: none !important;
+}
+
+.xp-foundation .cal {
+  margin: 22px 0 4px;
+}
+
+.xp-foundation .cal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.xp-foundation .cal-bar-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.xp-foundation .cal-arrow {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--text);
+  background: rgba(255, 255, 255, 0.4);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.xp-foundation .cal-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.xp-foundation .cal-months {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+.xp-foundation .cal-caption {
+  text-align: center;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+
+.xp-foundation .cal-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.xp-foundation .cal-table th {
+  font-size: 0.7rem;
+  font-weight: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  padding-bottom: 6px;
+}
+
+.xp-foundation .cal-table th abbr {
+  text-decoration: none;
+}
+
+.xp-foundation .cal-table td {
+  padding: 1px;
+  text-align: center;
+}
+
+.xp-foundation .cal-day {
+  width: 100%;
+  padding: 9px 0;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.4);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.xp-foundation .cal-day:hover {
+  border-color: var(--text);
+}
+
+.xp-foundation .cal-day:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.xp-foundation .cal-day.is-past,
+.xp-foundation .cal-day.is-beyond,
+.xp-foundation .cal-day.is-unreachable {
+  background: none;
+  color: rgba(37, 37, 37, 0.55);
+  cursor: default;
+}
+
+.xp-foundation .cal-day.is-booked {
+  background: rgba(37, 37, 37, 0.1);
+  color: rgba(37, 37, 37, 0.7);
+  text-decoration: line-through;
+}
+
+.xp-foundation .cal-day.is-past:hover,
+.xp-foundation .cal-day.is-beyond:hover,
+.xp-foundation .cal-day.is-booked:hover,
+.xp-foundation .cal-day.is-unreachable:hover {
+  border-color: transparent;
+}
+
+/* Booked, but still a legal checkout day: a stay ending here is bookable even
+   though the night itself is sold. Reads as open, with a dotted underline
+   marking it departure-only, and keeps its hover affordance. Excluded once it
+   is the chosen departure so the selected-day fill below wins. */
+.xp-foundation .cal-day.is-booked.is-checkout-ok:not(.is-end) {
+  background: rgba(255, 255, 255, 0.4);
+  color: var(--text);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.xp-foundation .cal-day.is-booked.is-checkout-ok:not(.is-end):hover {
+  border-color: var(--text);
+}
+
+.xp-foundation .cal-day.is-inrange {
+  background: rgba(170, 39, 39, 0.15);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.xp-foundation .cal-day.is-start,
+.xp-foundation .cal-day.is-end {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--white);
+  text-decoration: none;
+}
+
+.xp-foundation .cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 0 0;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.xp-foundation .cal-key {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 10px;
+  vertical-align: middle;
+  border: 1px solid rgba(37, 37, 37, 0.3);
+}
+
+.xp-foundation .cal-key:first-child {
+  margin-left: 0;
+}
+
+.xp-foundation .cal-key.is-open {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.xp-foundation .cal-key.is-booked {
+  background: rgba(37, 37, 37, 0.18);
+}
+
+.xp-foundation .cal-key.is-checkout {
+  background: rgba(255, 255, 255, 0.6);
+  border-bottom: 2px dotted var(--text);
+}
+
+.xp-foundation .cal-status,
+.xp-foundation .cal-note {
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+  font-style: italic;
+  color: #6b4a52;
+  min-height: 1.4em;
+}
+
+/* Quote panel */
+
+.xp-foundation .quote {
+  margin: 20px 0 4px;
+  padding: 16px 18px;
+  border: 1px solid rgba(37, 37, 37, 0.25);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.xp-foundation .quote-empty,
+.xp-foundation .quote-dates {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.xp-foundation .quote-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0;
+  padding: 5px 0;
+}
+
+.xp-foundation .quote-line.quote-sum {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(37, 37, 37, 0.25);
+  font-size: 1.1rem;
+}
+
+.xp-foundation .quote-range {
+  margin: 10px 0 0;
+}
+
+.xp-foundation .quote-note {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #6b4a52;
+}
+
+.xp-foundation .quote-dates + .quote-line {
+  margin-top: 10px;
+}
+
+@media (max-width: 560px) {
+  .xp-foundation .cal-months {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Reviews */
+
+.xp-foundation .reviews-list {
+  max-width: 720px;
+  margin: 40px auto;
+}
+
+.xp-foundation .review {
+  margin-bottom: 44px;
+  padding-bottom: 44px;
+  border-bottom: 1px solid rgba(37,37,37,0.15);
+}
+
+.xp-foundation .review:last-child {
+  border-bottom: none;
+}
+
+.xp-foundation .review p {
+  margin: 0 0 12px;
+  font-style: italic;
+}
+
+.xp-foundation .review cite {
+  font-style: normal;
+  color: var(--accent);
+}
+
+/* Why Guests Return (reviews page) */
+.xp-foundation .why-return-heading {
+  max-width: 720px;
+  margin: 0 auto 8px;
+  text-align: center;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border-bottom: 1px solid rgba(37, 37, 37, 0.2);
+  padding-bottom: 10px;
+}
+.xp-foundation .why-return-lead {
+  max-width: 640px;
+  margin: 0 auto 32px;
+  text-align: center;
+  font-size: 1.15rem;
+}
+.xp-foundation .why-return-list {
+  list-style: none;
+  max-width: 560px;
+  margin: 0 auto 56px;
+  padding: 0;
+  border-top: 1px solid rgba(37, 37, 37, 0.18);
+}
+.xp-foundation .why-return-list li {
+  padding: 16px 4px;
+  border-bottom: 1px solid rgba(37, 37, 37, 0.18);
+  text-align: center;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* "In Their Words" heading + long-review excerpt toggle (reviews page) */
+.xp-foundation .reviews-heading {
+  max-width: 720px;
+  margin: 0 auto 8px;
+  text-align: center;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border-bottom: 1px solid rgba(37, 37, 37, 0.2);
+  padding-bottom: 10px;
+}
+.xp-foundation .review-details summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.xp-foundation .review-details summary::-webkit-details-marker { display: none; }
+.xp-foundation .review-details[open] p { margin-top: 12px; }
+/* The excerpt is a verbatim sentence from the full review below it, so once
+   expanded it would read twice (once as the teaser, again mid-paragraph).
+   Hide the standalone teaser while its review's details are open. */
+.xp-foundation .review:has(.review-details[open]) .review-excerpt { display: none; }
+
+/* Footer */
+
+.xp-foundation .site-footer {
+  text-align: center;
+  padding: 60px 24px 50px;
+  font-size: 0.95rem;
+}
+
+.xp-foundation .site-footer .address {
+  margin-bottom: 18px;
+}
+
+.xp-foundation .site-footer .wordmark {
+  font-style: italic;
+  color: var(--accent);
+  margin: 18px 0;
+  font-size: 1.1rem;
+}
+
+.xp-foundation .site-footer .footer-links a {
+  margin: 0 10px;
+  border-bottom: 1px solid var(--text);
+}
+
+.xp-foundation .site-footer .contact {
+  margin-top: 18px;
+}
+
+.xp-foundation .site-footer .contact a {
+  display: block;
+  margin: 4px 0;
+}
+
+/* Coming soon (Shop) */
+
+.xp-foundation .coming-soon {
+  text-align: center;
+  max-width: 620px;
+  margin: 80px auto;
+}
+
+.xp-foundation .coming-soon h1,
+.xp-foundation .coming-soon h2 {
+  font-style: italic;
+  color: var(--accent);
+  font-size: 2.2rem;
+  margin-bottom: 24px;
+}
+
+/* ============================================================
+   REFRESH 2026 — components for the new page architecture
+   ============================================================ */
+
+/* Layout helpers */
+.xp-foundation .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.xp-foundation .narrow { max-width: 760px; margin-left: auto; margin-right: auto; }
+.xp-foundation .section { padding: 72px 0; }
+.xp-foundation .section.tight { padding: 48px 0; }
+.xp-foundation .center { text-align: center; }
+
+.xp-foundation .section-label {
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.8rem;
+  color: var(--accent);
+  margin: 0 0 14px;
+}
+.xp-foundation .section-title {
+  text-align: center;
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  font-style: italic;
+  color: var(--accent);
+  margin: 0 0 28px;
+}
+.xp-foundation .section-lead {
+  max-width: 720px;
+  margin: 0 auto 28px;
+  text-align: center;
+  font-size: 1.15rem;
+}
+
+/* Buttons */
+.xp-foundation .btn {
+  display: inline-block;
+  padding: 14px 32px;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--text);
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+  cursor: pointer;
+  font-family: inherit;
+}
+.xp-foundation .btn-primary { background: var(--text); color: var(--bg); }
+.xp-foundation .btn-primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.xp-foundation .btn-secondary { background: transparent; color: var(--text); }
+.xp-foundation .btn-secondary:hover { background: var(--text); color: var(--bg); }
+.xp-foundation .btn-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+
+/* Hero */
+.xp-foundation .hero {
+  position: relative;
+  min-height: 84vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+.xp-foundation .hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.xp-foundation .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.44)); }
+.xp-foundation .hero-content { position: relative; z-index: 1; color: #fff; padding: 40px 24px; max-width: 860px; }
+/* nowrap is the brand rule: the wordmark never breaks across two lines. Above
+   ~520px the clamp() floor already fits it on one line; below that the narrow
+   rule further down sizes it in vw so it fills the width instead of shrinking
+   into the middle of it. */
+.xp-foundation .hero-title { font-size: clamp(2.4rem, 6.5vw, 4.4rem); letter-spacing: 0.16em; text-transform: uppercase; margin: 0 0 8px; line-height: 1.1; white-space: nowrap; }
+.xp-foundation .hero-sub { font-size: clamp(1.15rem, 2.6vw, 1.6rem); font-style: normal; margin: 0 0 6px; }
+.xp-foundation .hero .btn-row { margin-top: 30px; }
+.xp-foundation .hero .btn-primary { background: #fff; color: var(--text); border-color: #fff; }
+@media (max-width: 520px) {
+  .xp-foundation .hero-content { padding: 40px 16px; }
+  /* Measured in the browser at 320/375/390/430px: fills ~90% of the 32px-padded
+     width without clipping. .hero is overflow:hidden, so an over-wide value is
+     silently cropped rather than visibly broken. Re-measure if either number
+     changes. */
+  .xp-foundation .hero-title { font-size: 8.6vw; letter-spacing: 0.07em; }
+}
+.xp-foundation .hero .btn-primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.xp-foundation .hero .btn-secondary { color: #fff; border-color: rgba(255,255,255,0.85); }
+.xp-foundation .hero .btn-secondary:hover { background: #fff; color: var(--text); }
+
+/* Editorial image sequence */
+.xp-foundation .editorial { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.xp-foundation .editorial figure { margin: 0 0 16px; }
+.xp-foundation .editorial img { width: 100%; display: block; }
+.xp-foundation .ed-full img { aspect-ratio: 16 / 9; object-fit: cover; }
+.xp-foundation .ed-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.xp-foundation .ed-pair figure { margin: 0; }
+.xp-foundation .ed-pair img { aspect-ratio: 4 / 5; object-fit: cover; }
+@media (max-width: 640px) { .xp-foundation .ed-pair { grid-template-columns: 1fr; } }
+
+/* Pull quote (reviews / press) */
+.xp-foundation .pull-quote {
+  max-width: 820px;
+  margin: 0 auto 56px;
+  text-align: center;
+  font-style: italic;
+  color: var(--accent);
+  font-size: clamp(1.5rem, 3.6vw, 2.2rem);
+  line-height: 1.4;
+}
+.xp-foundation .pull-quote cite { display: block; margin-top: 18px; font-style: normal; font-size: 0.95rem; color: var(--text); letter-spacing: 0.08em; text-transform: uppercase; }
+/* Global `a` is color:inherit / no underline, so a cite that links out to the
+   original coverage needs a hairline to read as a link at all. */
+.xp-foundation .pull-quote cite a { border-bottom: 1px solid currentColor; padding-bottom: 2px; }
+.xp-foundation .pull-quote cite a:hover { color: var(--accent); }
+
+/* Final CTA band */
+.xp-foundation .final-cta { position: relative; min-height: 60vh; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
+.xp-foundation .final-cta img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.xp-foundation .final-cta::after { content: ''; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.38); }
+.xp-foundation .final-cta-content { position: relative; z-index: 1; color: #fff; padding: 40px 24px; }
+.xp-foundation .final-cta h2 { font-size: clamp(1.6rem, 4vw, 2.6rem); letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 28px; }
+.xp-foundation .final-cta .btn-primary { background: #fff; color: var(--text); border-color: #fff; }
+.xp-foundation .final-cta .btn-primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Experiences page */
+.xp-foundation .exp-category { max-width: 820px; margin: 0 auto 56px; }
+.xp-foundation .exp-category h2 { font-size: 1rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); border-bottom: 1px solid rgba(37, 37, 37, 0.2); padding-bottom: 10px; margin: 0 0 18px; }
+.xp-foundation .exp-list { list-style: none; margin: 0; padding: 0; }
+.xp-foundation .exp-list li { padding: 14px 0; border-bottom: 1px solid rgba(37, 37, 37, 0.08); }
+.xp-foundation .exp-name { display: block; font-size: 1.15rem; }
+.xp-foundation .exp-desc { display: block; font-size: 0.95rem; color: #6b4a52; margin-top: 4px; }
+
+.xp-foundation .gift-card {
+  max-width: 820px;
+  margin: 0 auto 56px;
+  padding: 40px;
+  text-align: center;
+  border: 1px solid var(--accent);
+  background: rgba(255, 255, 255, 0.35);
+}
+.xp-foundation .gift-card h2 { color: var(--accent); font-style: italic; font-size: 1.8rem; margin: 0 0 14px; }
+
+/* Guestbook (gated) — native <details> accordion */
+.xp-foundation .guestbook { max-width: 820px; margin: 0 auto; }
+.xp-foundation .gb-item { border-bottom: 1px solid rgba(37, 37, 37, 0.18); }
+.xp-foundation .gb-item:first-child { border-top: 1px solid rgba(37, 37, 37, 0.18); }
+.xp-foundation .gb-item summary {
+  list-style: none;
+  cursor: pointer;
+  position: relative;
+  padding: 22px 44px 22px 0;
+  font-size: clamp(1.15rem, 2.6vw, 1.4rem);
+  font-style: italic;
+  color: var(--accent);
+}
+.xp-foundation .gb-item summary::-webkit-details-marker { display: none; }
+.xp-foundation .gb-item summary::after {
+  content: '+';
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  font-style: normal;
+  line-height: 1;
+  color: var(--text);
+}
+.xp-foundation .gb-item[open] summary::after { content: '\2212'; } /* minus sign */
+.xp-foundation .gb-body { padding: 0 0 26px; }
+.xp-foundation .gb-body p { margin: 0 0 1.1em; }
+.xp-foundation .gb-body p:last-child { margin-bottom: 0; }
+.xp-foundation .gb-label {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.82rem;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.xp-foundation .gb-body ul { margin: 0 0 1.1em; padding-left: 1.2em; }
+.xp-foundation .gb-body li { margin-bottom: 7px; }
+.xp-foundation .gb-body a { border-bottom: 1px solid var(--text); }
+
+/* Footer additions */
+.xp-foundation .footer-cta-wrap { margin-bottom: 34px; }
+.xp-foundation .site-footer .wordmark { text-transform: none; }
+.xp-foundation .site-footer .contact a { display: inline-block; margin: 4px 12px; }
+.xp-foundation .site-footer .footer-links { margin-top: 20px; font-size: 0.82rem; }
+/* inline-block + padding gives each link a real tap target on a phone, and
+   nowrap stops a multi-word footer link (e.g. "Film + Photo Rentals")
+   splitting across two lines and reading as two separate links. */
+.xp-foundation .site-footer .footer-links a { border-bottom: none; margin: 0 6px; color: rgba(37, 37, 37, 0.7); display: inline-block; padding: 6px 4px; white-space: nowrap; }
+.xp-foundation .site-footer .footer-links a:hover { color: var(--text); }

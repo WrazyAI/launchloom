@@ -9,7 +9,10 @@ import {
 } from "./foundation-theme.mjs";
 import { detectFoundationSections } from "./foundation-sections.mjs";
 import { extractFoundationInteractions } from "./foundation-interactions.mjs";
-import { normalizeFoundationSource } from "./foundation-source.mjs";
+import {
+  SAFE_REMOVAL_CODES,
+  normalizeFoundationSource,
+} from "./foundation-source.mjs";
 
 function walk(directory) {
   const files = [];
@@ -104,14 +107,26 @@ function removeSourceForms(html) {
 function scopeInlineStyles(html) {
   const { document } = parseHTML(html);
   let changed = false;
+  const blockers = [];
   for (const style of document.querySelectorAll("style")) {
     const source = style.textContent || "";
     if (!source.trim()) continue;
-    const scoped = scopeFoundationCss(source);
-    style.textContent = applyFoundationThemeCss(scoped.css);
-    changed = true;
+    try {
+      const scoped = scopeFoundationCss(source);
+      style.textContent = applyFoundationThemeCss(scoped.css);
+      changed = true;
+    } catch (error) {
+      blockers.push({
+        code: "css-parse-failed",
+        message: `Could not scope inline style: ${String(error?.message || error).slice(0, 500)}`,
+        selector: "style",
+      });
+    }
   }
-  return changed ? document.toString() : html;
+  return {
+    html: changed ? document.toString() : html,
+    blockers,
+  };
 }
 
 function ensureFoundationScript(html, script) {
@@ -125,13 +140,26 @@ function ensureFoundationScript(html, script) {
   return `${html}\n<script src="foundation.js" defer></script>`;
 }
 
-function writeReadme({ manifest, dossierManifest, outputDirectory }) {
+function writeReadme({
+  manifest,
+  dossierManifest,
+  outputDirectory,
+  removals = [],
+}) {
   const source = dossierManifest.source || {};
   const blockers = manifest.blockers.length
     ? manifest.blockers
         .map(
           (blocker) =>
             `- \`${blocker.code}\`: ${blocker.message}${blocker.selector ? ` (\`${blocker.selector}\`)` : ""}`,
+        )
+        .join("\n")
+    : "- None.";
+  const removalList = removals.length
+    ? removals
+        .map(
+          (removal) =>
+            `- \`${removal.code}\`: ${removal.message}${removal.selector ? ` (\`${removal.selector}\`)` : ""}`,
         )
         .join("\n")
     : "- None.";
@@ -170,6 +198,10 @@ Blockers:
 
 ${blockers}
 
+## Normalization removals
+
+${removalList}
+
 ## Files
 
 - \`manifest.json\`: source digest, section map, content slots, assets,
@@ -196,6 +228,7 @@ export function compileSourceFoundation({
   dossierId,
   outputDirectory,
   write = true,
+  copyAssets = false,
 }) {
   if (!dossierId) throw new Error("A dossier id is required.");
   const dossierPath = `data/reference-library/dossiers/${dossierId}`;
@@ -207,6 +240,7 @@ export function compileSourceFoundation({
     repositoryRoot,
     dossierPath,
     outputDirectory: output,
+    copyAssets,
   });
   const entrypointPath = path.join(output, normalized.template.entrypoint);
   if (!fs.existsSync(entrypointPath))
@@ -221,7 +255,14 @@ export function compileSourceFoundation({
   });
   const globalHtml = bindGlobalSlots(sections.html, sections.slots);
   const sourceForms = removeSourceForms(globalHtml);
-  html = applyFoundationThemeHtml(scopeInlineStyles(sourceForms.html));
+  const inlineStyles = scopeInlineStyles(sourceForms.html);
+  const removals = [...normalized.removals];
+  const cssBlockers = [];
+  for (const blocker of inlineStyles.blockers) {
+    if (SAFE_REMOVAL_CODES.has(blocker.code)) removals.push(blocker);
+    else cssBlockers.push(blocker);
+  }
+  html = applyFoundationThemeHtml(inlineStyles.html);
   const interactions = extractFoundationInteractions({
     html,
     sourceDirectory: path.join(output, "source"),
@@ -235,12 +276,52 @@ export function compileSourceFoundation({
     );
   }
 
-  const cssBlockers = [];
-  for (const file of walk(path.join(output, "source"))) {
+  const cssRoot = path.join(output, "source");
+  for (const file of walk(cssRoot)) {
     if (!/\.css$/iu.test(file)) continue;
-    const scoped = scopeFoundationCss(fs.readFileSync(file, "utf8"));
-    fs.writeFileSync(file, applyFoundationThemeCss(scoped.css));
-    cssBlockers.push(...scoped.blockers);
+    const relative = path.relative(cssRoot, file).replaceAll(path.sep, "/");
+    try {
+      const scoped = scopeFoundationCss(fs.readFileSync(file, "utf8"));
+      fs.writeFileSync(file, applyFoundationThemeCss(scoped.css));
+      for (const blocker of scoped.blockers) {
+        if (SAFE_REMOVAL_CODES.has(blocker.code)) removals.push(blocker);
+        else cssBlockers.push(blocker);
+      }
+    } catch (error) {
+      cssBlockers.push({
+        code: "css-parse-failed",
+        message: `Could not scope ${relative}: ${String(error?.message || error).slice(0, 500)}`,
+        selector: relative,
+      });
+    }
+  }
+
+  const cssFiles = walk(cssRoot).filter((file) => /\.css$/iu.test(file));
+  const sourceHtml = fs.readFileSync(entrypointPath, "utf8");
+  const localStylesheetLinks = [
+    ...sourceHtml.matchAll(
+      /<link[^>]+rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/giu,
+    ),
+  ]
+    .map((match) => match[1])
+    .filter(
+      (href) => !/^(?:https?:)?\/\//iu.test(href) && !href.startsWith("data:"),
+    );
+  const missingCss = localStylesheetLinks.filter(
+    (href) => !fs.existsSync(path.join(cssRoot, href)),
+  );
+  if (!cssFiles.length && missingCss.length) {
+    cssBlockers.push({
+      code: "missing-css",
+      message: `The source references local stylesheets that were not retained: ${missingCss.join(", ")}`,
+      selector: "link[rel=stylesheet]",
+    });
+  } else if (missingCss.length) {
+    cssBlockers.push({
+      code: "missing-css",
+      message: `Missing local stylesheet(s): ${missingCss.join(", ")}`,
+      selector: "link[rel=stylesheet]",
+    });
   }
 
   const interactionsById = new Map();
@@ -262,17 +343,15 @@ export function compileSourceFoundation({
       reducedMotion: "static form",
     });
 
+  if (sourceForms.removed)
+    removals.push({
+      code: "source-form-removed",
+      message: `Removed ${sourceForms.removed} source form(s); the shared lead form is the only conversion path.`,
+    });
   const blockers = uniqueBlockers([
     ...normalized.blockers,
     ...sections.blockers,
-    ...(sourceForms.removed
-      ? [
-          {
-            code: "source-form-removed",
-            message: `Removed ${sourceForms.removed} source form(s); the shared lead form is the only conversion path.`,
-          },
-        ]
-      : []),
+
     ...interactions.blockers,
     ...cssBlockers,
   ]);
@@ -313,7 +392,12 @@ export function compileSourceFoundation({
       path.join(output, "manifest.json"),
       `${JSON.stringify(manifest, null, 2)}\n`,
     );
-    writeReadme({ manifest, dossierManifest, outputDirectory: output });
+    writeReadme({
+      manifest,
+      dossierManifest,
+      outputDirectory: output,
+      removals,
+    });
   }
 
   return {
@@ -356,6 +440,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       dossierId,
       outputDirectory: args.out,
       write: Boolean(args.write),
+      copyAssets: Boolean(args["with-assets"]),
     });
     console.log(
       JSON.stringify(

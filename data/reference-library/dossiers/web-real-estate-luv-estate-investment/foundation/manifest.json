@@ -1,0 +1,361 @@
+{
+  "schemaVersion": 1,
+  "id": "web-real-estate-luv-estate-investment",
+  "dossierId": "web-real-estate-luv-estate-investment",
+  "sourceDigest": "56b5e08341035bbd56bdda1a71530fe740ab827762cf416408bf52e78ee39472",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://luv.estate/",
+    "credit": "Template adapted from LUV Estate official website"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-2",
+      "sourceSelector": "section",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-3",
+      "sourceSelector": "article",
+      "order": 5,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "process",
+      "sourceSelector": "article",
+      "order": 6,
+      "role": "process",
+      "required": false
+    },
+    {
+      "id": "unknown-4",
+      "sourceSelector": "article",
+      "order": 7,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-5",
+      "sourceSelector": "article",
+      "order": 8,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-6",
+      "sourceSelector": "article",
+      "order": 9,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "section",
+      "order": 10,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 11,
+      "role": "footer",
+      "required": false
+    },
+    {
+      "id": "unknown-7",
+      "sourceSelector": "article",
+      "order": 12,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-8",
+      "sourceSelector": "article",
+      "order": 13,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "about",
+      "sourceSelector": "article",
+      "order": 14,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "unknown-9",
+      "sourceSelector": "article",
+      "order": 15,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-10",
+      "sourceSelector": "article",
+      "order": 16,
+      "role": "unknown",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "process.heading",
+      "selector": "[data-foundation-slot=\"process.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "process.image",
+      "selector": "[data-foundation-image=\"process.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-2.body",
+      "selector": "[data-foundation-slot=\"unknown-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.image",
+      "selector": "[data-foundation-image=\"unknown-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-3.heading",
+      "selector": "[data-foundation-slot=\"unknown-3.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.image",
+      "selector": "[data-foundation-image=\"unknown-3.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-4.heading",
+      "selector": "[data-foundation-slot=\"unknown-4.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.image",
+      "selector": "[data-foundation-image=\"unknown-4.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-5.heading",
+      "selector": "[data-foundation-slot=\"unknown-5.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-5.image",
+      "selector": "[data-foundation-image=\"unknown-5.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-6.heading",
+      "selector": "[data-foundation-slot=\"unknown-6.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-6.image",
+      "selector": "[data-foundation-image=\"unknown-6.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "missing-services",
+      "message": "No services or portfolio section was detected."
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+      "selector": "header"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'unknown-2' have no sealed content mapping.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-10' has no supported content role.",
+      "selector": "article"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-2' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-3' has no supported content role.",
+      "selector": "article"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-4' has no supported content role.",
+      "selector": "article"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-5' has no supported content role.",
+      "selector": "article"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-6' has no supported content role.",
+      "selector": "article"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-7' has no supported content role.",
+      "selector": "article"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-8' has no supported content role.",
+      "selector": "article"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-9' has no supported content role.",
+      "selector": "article"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "da29abba84215badb17d7572473e54b55d58b35ede3720b47defbe140cdddfd3"
+}

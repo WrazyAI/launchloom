@@ -146,17 +146,19 @@ describe("foundation source normalization", () => {
     expect(
       fs.existsSync(path.join(outputDirectory, "source", "hero.webp")),
     ).toBe(true);
-    expect(result.blockers.map((blocker) => blocker.code)).toEqual(
+    expect(result.removals.map((removal) => removal.code)).toEqual(
       expect.arrayContaining([
         "remote-stylesheet",
         "remote-script",
-        "network-script",
         "remote-image",
         "remote-form-action",
         "remote-font",
         "remote-import",
         "remote-css-url",
       ]),
+    );
+    expect(result.blockers.map((blocker) => blocker.code)).toContain(
+      "network-script",
     );
     expect(result.sourceDigest).toBe(fixture.record.digest);
     expect(result.compatibility).toBe("needs-adaptation");
@@ -181,12 +183,47 @@ describe("foundation source normalization", () => {
       outputDirectory,
     });
     expect(result.blockers).toEqual([]);
+    expect(result.removals).toEqual([]);
     expect(result.compatibility).toBe("renderable");
     expect(result.assets).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ source: "hero.webp", required: false }),
       ]),
     );
+  });
+
+  it("references retained assets without copying them when requested", () => {
+    const fixture = createTemplate({
+      html: '<!doctype html><html><body><img src="hero.webp" alt="Local"></body></html>',
+      css: ".hero { background: url(hero.webp); }",
+    });
+    const outputDirectory = path.join(
+      fixture.repositoryRoot,
+      "data/reference-library/dossiers/sample-reference/foundation",
+    );
+    const result = normalizeFoundationSource({
+      repositoryRoot: fixture.repositoryRoot,
+      dossierPath: fixture.dossierPath,
+      outputDirectory,
+      copyAssets: false,
+    });
+    expect(
+      fs.existsSync(path.join(outputDirectory, "source", "hero.webp")),
+    ).toBe(false);
+    expect(result.assets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: "hero.webp",
+          target: "template/source/hero.webp",
+        }),
+      ]),
+    );
+    const css = fs.readFileSync(
+      path.join(outputDirectory, "source", "styles.css"),
+      "utf8",
+    );
+    expect(css).not.toContain("url(hero.webp)");
+    expect(css).toContain("none");
   });
 
   it("does not modify the retained template bytes", () => {

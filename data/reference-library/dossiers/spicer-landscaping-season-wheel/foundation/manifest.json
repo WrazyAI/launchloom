@@ -395,7 +395,7 @@
   "assets": [
     {
       "source": "hero.webp",
-      "target": "source/hero.webp",
+      "target": "template/source/hero.webp",
       "role": "reference-only",
       "required": false
     }
@@ -455,25 +455,6 @@
       "selector": "#seasons"
     },
     {
-      "code": "remote-stylesheet",
-      "message": "Removed a remote stylesheet: https://fonts.googleapis.com",
-      "selector": "link[href]"
-    },
-    {
-      "code": "remote-stylesheet",
-      "message": "Removed a remote stylesheet: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&display=swap",
-      "selector": "link[href]"
-    },
-    {
-      "code": "remote-stylesheet",
-      "message": "Removed a remote stylesheet: https://fonts.gstatic.com",
-      "selector": "link[href]"
-    },
-    {
-      "code": "source-form-removed",
-      "message": "Removed 1 source form(s); the shared lead form is the only conversion path."
-    },
-    {
       "code": "unmapped-repeated-items",
       "message": "Repeated seasons items in 'seasons' have no sealed content mapping.",
       "selector": "#seasons"
@@ -494,5 +475,5 @@
       "selector": "#seasons"
     }
   ],
-  "fingerprint": "7b83c19499368cb3174cfe8dfdb63c064aad78ac4408003cd2d5e610cefffa40"
+  "fingerprint": "1e7a8dcfa7a829832f180a6d4eef2be82d3031c3aa6c2b6174a3de2c514125b4"
 }

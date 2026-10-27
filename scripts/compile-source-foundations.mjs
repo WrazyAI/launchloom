@@ -56,6 +56,7 @@ export function buildFoundationIndex({
   repositoryRoot = process.cwd(),
   write = false,
   check = false,
+  copyAssets = false,
 } = {}) {
   const root = path.resolve(repositoryRoot);
   const entries = listReferenceTemplateEntries(root);
@@ -89,6 +90,7 @@ export function buildFoundationIndex({
         dossierId: entry.id,
         outputDirectory,
         write,
+        copyAssets,
       });
       results.push(
         indexEntry({
@@ -184,6 +186,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const index = buildFoundationIndex({
       write: Boolean(args.write),
       check: Boolean(args.check),
+      copyAssets: Boolean(args["with-assets"]),
     });
     console.log(
       JSON.stringify(

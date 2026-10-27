@@ -1,0 +1,4856 @@
+
+
+.xp-foundation .icon-moon {
+    /* use !important to prevent issues with browser extensions that change fonts */
+    font-family: 'IcoMoon-Ultimate' !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    
+    /* Enable Ligatures ================ */
+    letter-spacing: 0;
+    -webkit-font-feature-settings: "liga";
+    -moz-font-feature-settings: "liga=1";
+    -moz-font-feature-settings: "liga";
+    -ms-font-feature-settings: "liga" 1;
+    -o-font-feature-settings: "liga";
+    font-feature-settings: "liga";
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.xp-foundation .icon-moon-home:before {
+    content: "\e900";
+}
+.xp-foundation .icon-moon-home2:before {
+    content: "\e901";
+}
+.xp-foundation .icon-moon-home3:before {
+    content: "\e902";
+}
+.xp-foundation .icon-moon-home4:before {
+    content: "\e903";
+}
+.xp-foundation .icon-moon-home5:before {
+    content: "\e904";
+}
+.xp-foundation .icon-moon-home6:before {
+    content: "\e905";
+}
+.xp-foundation .icon-moon-home7:before {
+    content: "\e906";
+}
+.xp-foundation .icon-moon-home8:before {
+    content: "\e907";
+}
+.xp-foundation .icon-moon-home9:before {
+    content: "\e908";
+}
+.xp-foundation .icon-moon-office:before {
+    content: "\e909";
+}
+.xp-foundation .icon-moon-city:before {
+    content: "\e90a";
+}
+.xp-foundation .icon-moon-newspaper:before {
+    content: "\e90b";
+}
+.xp-foundation .icon-moon-magazine:before {
+    content: "\e90c";
+}
+.xp-foundation .icon-moon-design:before {
+    content: "\e90d";
+}
+.xp-foundation .icon-moon-pencil:before {
+    content: "\e90e";
+}
+.xp-foundation .icon-moon-pencil2:before {
+    content: "\e90f";
+}
+.xp-foundation .icon-moon-pencil3:before {
+    content: "\e910";
+}
+.xp-foundation .icon-moon-pencil4:before {
+    content: "\e911";
+}
+.xp-foundation .icon-moon-pencil5:before {
+    content: "\e912";
+}
+.xp-foundation .icon-moon-pencil6:before {
+    content: "\e913";
+}
+.xp-foundation .icon-moon-pencil7:before {
+    content: "\e914";
+}
+.xp-foundation .icon-moon-eraser:before {
+    content: "\e915";
+}
+.xp-foundation .icon-moon-eraser2:before {
+    content: "\e916";
+}
+.xp-foundation .icon-moon-eraser3:before {
+    content: "\e917";
+}
+.xp-foundation .icon-moon-quill:before {
+    content: "\e918";
+}
+.xp-foundation .icon-moon-quill2:before {
+    content: "\e919";
+}
+.xp-foundation .icon-moon-quill3:before {
+    content: "\e91a";
+}
+.xp-foundation .icon-moon-quill4:before {
+    content: "\e91b";
+}
+.xp-foundation .icon-moon-pen:before {
+    content: "\e91c";
+}
+.xp-foundation .icon-moon-pen-plus:before {
+    content: "\e91d";
+}
+.xp-foundation .icon-moon-pen-minus:before {
+    content: "\e91e";
+}
+.xp-foundation .icon-moon-pen2:before {
+    content: "\e91f";
+}
+.xp-foundation .icon-moon-pen3:before {
+    content: "\e920";
+}
+.xp-foundation .icon-moon-pen4:before {
+    content: "\e921";
+}
+.xp-foundation .icon-moon-pen5:before {
+    content: "\e922";
+}
+.xp-foundation .icon-moon-marker:before {
+    content: "\e923";
+}
+.xp-foundation .icon-moon-marker2:before {
+    content: "\e924";
+}
+.xp-foundation .icon-moon-blog:before {
+    content: "\e925";
+}
+.xp-foundation .icon-moon-blog2:before {
+    content: "\e926";
+}
+.xp-foundation .icon-moon-pen6:before {
+    content: "\e927";
+}
+.xp-foundation .icon-moon-brush:before {
+    content: "\e928";
+}
+.xp-foundation .icon-moon-spray:before {
+    content: "\e929";
+}
+.xp-foundation .icon-moon-palette:before {
+    content: "\e92a";
+}
+.xp-foundation .icon-moon-palette2:before {
+    content: "\e92b";
+}
+.xp-foundation .icon-moon-color-sampler:before {
+    content: "\e92c";
+}
+.xp-foundation .icon-moon-toggle:before {
+    content: "\e92d";
+}
+.xp-foundation .icon-moon-bucket:before {
+    content: "\e92e";
+}
+.xp-foundation .icon-moon-bucket2:before {
+    content: "\e92f";
+}
+.xp-foundation .icon-moon-gradient:before {
+    content: "\e930";
+}
+.xp-foundation .icon-moon-eyedropper:before {
+    content: "\e931";
+}
+.xp-foundation .icon-moon-eyedropper2:before {
+    content: "\e932";
+}
+.xp-foundation .icon-moon-eyedropper3:before {
+    content: "\e933";
+}
+.xp-foundation .icon-moon-droplet:before {
+    content: "\e934";
+}
+.xp-foundation .icon-moon-droplet2:before {
+    content: "\e935";
+}
+.xp-foundation .icon-moon-droplet-contrast:before {
+    content: "\e936";
+}
+.xp-foundation .icon-moon-color-clear:before {
+    content: "\e937";
+}
+.xp-foundation .icon-moon-paint-format:before {
+    content: "\e938";
+}
+.xp-foundation .icon-moon-stamp:before {
+    content: "\e939";
+}
+.xp-foundation .icon-moon-images:before {
+    content: "\e93a";
+}
+.xp-foundation .icon-moon-image:before {
+    content: "\e93b";
+}
+.xp-foundation .icon-moon-image2:before {
+    content: "\e93c";
+}
+.xp-foundation .icon-moon-image-compare:before {
+    content: "\e93d";
+}
+.xp-foundation .icon-moon-images2:before {
+    content: "\e93e";
+}
+.xp-foundation .icon-moon-image3:before {
+    content: "\e93f";
+}
+.xp-foundation .icon-moon-images3:before {
+    content: "\e940";
+}
+.xp-foundation .icon-moon-image4:before {
+    content: "\e941";
+}
+.xp-foundation .icon-moon-image5:before {
+    content: "\e942";
+}
+.xp-foundation .icon-moon-image6:before {
+    content: "\e943";
+}
+.xp-foundation .icon-moon-camera:before {
+    content: "\e944";
+}
+.xp-foundation .icon-moon-camera2:before {
+    content: "\e945";
+}
+.xp-foundation .icon-moon-camera3:before {
+    content: "\e946";
+}
+.xp-foundation .icon-moon-shutter:before {
+    content: "\e947";
+}
+.xp-foundation .icon-moon-headphones:before {
+    content: "\e948";
+}
+.xp-foundation .icon-moon-headset:before {
+    content: "\e949";
+}
+.xp-foundation .icon-moon-music:before {
+    content: "\e94a";
+}
+.xp-foundation .icon-moon-music2:before {
+    content: "\e94b";
+}
+.xp-foundation .icon-moon-music3:before {
+    content: "\e94c";
+}
+.xp-foundation .icon-moon-music4:before {
+    content: "\e94d";
+}
+.xp-foundation .icon-moon-music5:before {
+    content: "\e94e";
+}
+.xp-foundation .icon-moon-music6:before {
+    content: "\e94f";
+}
+.xp-foundation .icon-moon-album:before {
+    content: "\e950";
+}
+.xp-foundation .icon-moon-cassette:before {
+    content: "\e951";
+}
+.xp-foundation .icon-moon-tape:before {
+    content: "\e952";
+}
+.xp-foundation .icon-moon-piano:before {
+    content: "\e953";
+}
+.xp-foundation .icon-moon-guitar:before {
+    content: "\e954";
+}
+.xp-foundation .icon-moon-trumpet:before {
+    content: "\e955";
+}
+.xp-foundation .icon-moon-speakers:before {
+    content: "\e956";
+}
+.xp-foundation .icon-moon-play:before {
+    content: "\e957";
+}
+.xp-foundation .icon-moon-play2:before {
+    content: "\e958";
+}
+.xp-foundation .icon-moon-clapboard-play:before {
+    content: "\e959";
+}
+.xp-foundation .icon-moon-clapboard:before {
+    content: "\e95a";
+}
+.xp-foundation .icon-moon-media:before {
+    content: "\e95b";
+}
+.xp-foundation .icon-moon-presentation:before {
+    content: "\e95c";
+}
+.xp-foundation .icon-moon-movie:before {
+    content: "\e95d";
+}
+.xp-foundation .icon-moon-film:before {
+    content: "\e95e";
+}
+.xp-foundation .icon-moon-film2:before {
+    content: "\e95f";
+}
+.xp-foundation .icon-moon-film3:before {
+    content: "\e960";
+}
+.xp-foundation .icon-moon-film4:before {
+    content: "\e961";
+}
+.xp-foundation .icon-moon-video-camera:before {
+    content: "\e962";
+}
+.xp-foundation .icon-moon-video-camera2:before {
+    content: "\e963";
+}
+.xp-foundation .icon-moon-video-camera-slash:before {
+    content: "\e964";
+}
+.xp-foundation .icon-moon-video-camera3:before {
+    content: "\e965";
+}
+.xp-foundation .icon-moon-video-camera4:before {
+    content: "\e966";
+}
+.xp-foundation .icon-moon-video-camera-slash2:before {
+    content: "\e967";
+}
+.xp-foundation .icon-moon-video-camera5:before {
+    content: "\e968";
+}
+.xp-foundation .icon-moon-recording:before {
+    content: "\e969";
+}
+.xp-foundation .icon-moon-dice:before {
+    content: "\e96a";
+}
+.xp-foundation .icon-moon-gamepad:before {
+    content: "\e96b";
+}
+.xp-foundation .icon-moon-gamepad2:before {
+    content: "\e96c";
+}
+.xp-foundation .icon-moon-gamepad3:before {
+    content: "\e96d";
+}
+.xp-foundation .icon-moon-pacman:before {
+    content: "\e96e";
+}
+.xp-foundation .icon-moon-spades:before {
+    content: "\e96f";
+}
+.xp-foundation .icon-moon-clubs:before {
+    content: "\e970";
+}
+.xp-foundation .icon-moon-diamonds:before {
+    content: "\e971";
+}
+.xp-foundation .icon-moon-chess-king:before {
+    content: "\e972";
+}
+.xp-foundation .icon-moon-chess-queen:before {
+    content: "\e973";
+}
+.xp-foundation .icon-moon-chess-rook:before {
+    content: "\e974";
+}
+.xp-foundation .icon-moon-chess-bishop:before {
+    content: "\e975";
+}
+.xp-foundation .icon-moon-chess-knight:before {
+    content: "\e976";
+}
+.xp-foundation .icon-moon-chess-pawn:before {
+    content: "\e977";
+}
+.xp-foundation .icon-moon-chess:before {
+    content: "\e978";
+}
+.xp-foundation .icon-moon-bullhorn:before {
+    content: "\e979";
+}
+.xp-foundation .icon-moon-megaphone:before {
+    content: "\e97a";
+}
+.xp-foundation .icon-moon-new:before {
+    content: "\e97b";
+}
+.xp-foundation .icon-moon-connection:before {
+    content: "\e97c";
+}
+.xp-foundation .icon-moon-connection2:before {
+    content: "\e97d";
+}
+.xp-foundation .icon-moon-connection3:before {
+    content: "\e97e";
+}
+.xp-foundation .icon-moon-connection4:before {
+    content: "\e97f";
+}
+.xp-foundation .icon-moon-podcast:before {
+    content: "\e980";
+}
+.xp-foundation .icon-moon-station:before {
+    content: "\e981";
+}
+.xp-foundation .icon-moon-station2:before {
+    content: "\e982";
+}
+.xp-foundation .icon-moon-antenna:before {
+    content: "\e983";
+}
+.xp-foundation .icon-moon-satellite-dish:before {
+    content: "\e984";
+}
+.xp-foundation .icon-moon-satellite-dish2:before {
+    content: "\e985";
+}
+.xp-foundation .icon-moon-feed:before {
+    content: "\e986";
+}
+.xp-foundation .icon-moon-podcast2:before {
+    content: "\e987";
+}
+.xp-foundation .icon-moon-antenna2:before {
+    content: "\e988";
+}
+.xp-foundation .icon-moon-mic:before {
+    content: "\e989";
+}
+.xp-foundation .icon-moon-mic-off:before {
+    content: "\e98a";
+}
+.xp-foundation .icon-moon-mic2:before {
+    content: "\e98b";
+}
+.xp-foundation .icon-moon-mic-off2:before {
+    content: "\e98c";
+}
+.xp-foundation .icon-moon-mic3:before {
+    content: "\e98d";
+}
+.xp-foundation .icon-moon-mic4:before {
+    content: "\e98e";
+}
+.xp-foundation .icon-moon-mic5:before {
+    content: "\e98f";
+}
+.xp-foundation .icon-moon-book:before {
+    content: "\e990";
+}
+.xp-foundation .icon-moon-book2:before {
+    content: "\e991";
+}
+.xp-foundation .icon-moon-book-play:before {
+    content: "\e992";
+}
+.xp-foundation .icon-moon-book3:before {
+    content: "\e993";
+}
+.xp-foundation .icon-moon-bookmark:before {
+    content: "\e994";
+}
+.xp-foundation .icon-moon-books:before {
+    content: "\e995";
+}
+.xp-foundation .icon-moon-archive:before {
+    content: "\e996";
+}
+.xp-foundation .icon-moon-reading:before {
+    content: "\e997";
+}
+.xp-foundation .icon-moon-library:before {
+    content: "\e998";
+}
+.xp-foundation .icon-moon-library2:before {
+    content: "\e999";
+}
+.xp-foundation .icon-moon-graduation:before {
+    content: "\e99a";
+}
+.xp-foundation .icon-moon-file-text:before {
+    content: "\e99b";
+}
+.xp-foundation .icon-moon-profile:before {
+    content: "\e99c";
+}
+.xp-foundation .icon-moon-file-empty:before {
+    content: "\e99d";
+}
+.xp-foundation .icon-moon-file-empty2:before {
+    content: "\e99e";
+}
+.xp-foundation .icon-moon-files-empty:before {
+    content: "\e99f";
+}
+.xp-foundation .icon-moon-files-empty2:before {
+    content: "\e9a0";
+}
+.xp-foundation .icon-moon-file-plus:before {
+    content: "\e9a1";
+}
+.xp-foundation .icon-moon-file-plus2:before {
+    content: "\e9a2";
+}
+.xp-foundation .icon-moon-file-minus:before {
+    content: "\e9a3";
+}
+.xp-foundation .icon-moon-file-minus2:before {
+    content: "\e9a4";
+}
+.xp-foundation .icon-moon-file-download:before {
+    content: "\e9a5";
+}
+.xp-foundation .icon-moon-file-download2:before {
+    content: "\e9a6";
+}
+.xp-foundation .icon-moon-file-upload:before {
+    content: "\e9a7";
+}
+.xp-foundation .icon-moon-file-upload2:before {
+    content: "\e9a8";
+}
+.xp-foundation .icon-moon-file-check:before {
+    content: "\e9a9";
+}
+.xp-foundation .icon-moon-file-check2:before {
+    content: "\e9aa";
+}
+.xp-foundation .icon-moon-file-eye:before {
+    content: "\e9ab";
+}
+.xp-foundation .icon-moon-file-eye2:before {
+    content: "\e9ac";
+}
+.xp-foundation .icon-moon-file-text2:before {
+    content: "\e9ad";
+}
+.xp-foundation .icon-moon-file-text3:before {
+    content: "\e9ae";
+}
+.xp-foundation .icon-moon-file-picture:before {
+    content: "\e9af";
+}
+.xp-foundation .icon-moon-file-picture2:before {
+    content: "\e9b0";
+}
+.xp-foundation .icon-moon-file-music:before {
+    content: "\e9b1";
+}
+.xp-foundation .icon-moon-file-music2:before {
+    content: "\e9b2";
+}
+.xp-foundation .icon-moon-file-play:before {
+    content: "\e9b3";
+}
+.xp-foundation .icon-moon-file-play2:before {
+    content: "\e9b4";
+}
+.xp-foundation .icon-moon-file-video:before {
+    content: "\e9b5";
+}
+.xp-foundation .icon-moon-file-video2:before {
+    content: "\e9b6";
+}
+.xp-foundation .icon-moon-copy:before {
+    content: "\e9b7";
+}
+.xp-foundation .icon-moon-copy2:before {
+    content: "\e9b8";
+}
+.xp-foundation .icon-moon-file-zip:before {
+    content: "\e9b9";
+}
+.xp-foundation .icon-moon-file-zip2:before {
+    content: "\e9ba";
+}
+.xp-foundation .icon-moon-file-xml:before {
+    content: "\e9bb";
+}
+.xp-foundation .icon-moon-file-xml2:before {
+    content: "\e9bc";
+}
+.xp-foundation .icon-moon-file-css:before {
+    content: "\e9bd";
+}
+.xp-foundation .icon-moon-file-css2:before {
+    content: "\e9be";
+}
+.xp-foundation .icon-moon-file-presentation:before {
+    content: "\e9bf";
+}
+.xp-foundation .icon-moon-file-presentation2:before {
+    content: "\e9c0";
+}
+.xp-foundation .icon-moon-file-stats:before {
+    content: "\e9c1";
+}
+.xp-foundation .icon-moon-file-stats2:before {
+    content: "\e9c2";
+}
+.xp-foundation .icon-moon-file-locked:before {
+    content: "\e9c3";
+}
+.xp-foundation .icon-moon-file-locked2:before {
+    content: "\e9c4";
+}
+.xp-foundation .icon-moon-file-spreadsheet:before {
+    content: "\e9c5";
+}
+.xp-foundation .icon-moon-file-spreadsheet2:before {
+    content: "\e9c6";
+}
+.xp-foundation .icon-moon-copy3:before {
+    content: "\e9c7";
+}
+.xp-foundation .icon-moon-copy4:before {
+    content: "\e9c8";
+}
+.xp-foundation .icon-moon-paste:before {
+    content: "\e9c9";
+}
+.xp-foundation .icon-moon-paste2:before {
+    content: "\e9ca";
+}
+.xp-foundation .icon-moon-paste3:before {
+    content: "\e9cb";
+}
+.xp-foundation .icon-moon-paste4:before {
+    content: "\e9cc";
+}
+.xp-foundation .icon-moon-stack:before {
+    content: "\e9cd";
+}
+.xp-foundation .icon-moon-stack2:before {
+    content: "\e9ce";
+}
+.xp-foundation .icon-moon-stack3:before {
+    content: "\e9cf";
+}
+.xp-foundation .icon-moon-folder:before {
+    content: "\e9d0";
+}
+.xp-foundation .icon-moon-folder-search:before {
+    content: "\e9d1";
+}
+.xp-foundation .icon-moon-folder-download:before {
+    content: "\e9d2";
+}
+.xp-foundation .icon-moon-folder-upload:before {
+    content: "\e9d3";
+}
+.xp-foundation .icon-moon-folder-plus:before {
+    content: "\e9d4";
+}
+.xp-foundation .icon-moon-folder-plus2:before {
+    content: "\e9d5";
+}
+.xp-foundation .icon-moon-folder-minus:before {
+    content: "\e9d6";
+}
+.xp-foundation .icon-moon-folder-minus2:before {
+    content: "\e9d7";
+}
+.xp-foundation .icon-moon-folder-check:before {
+    content: "\e9d8";
+}
+.xp-foundation .icon-moon-folder-heart:before {
+    content: "\e9d9";
+}
+.xp-foundation .icon-moon-folder-remove:before {
+    content: "\e9da";
+}
+.xp-foundation .icon-moon-folder2:before {
+    content: "\e9db";
+}
+.xp-foundation .icon-moon-folder-open:before {
+    content: "\e9dc";
+}
+.xp-foundation .icon-moon-folder3:before {
+    content: "\e9dd";
+}
+.xp-foundation .icon-moon-folder4:before {
+    content: "\e9de";
+}
+.xp-foundation .icon-moon-folder-plus3:before {
+    content: "\e9df";
+}
+.xp-foundation .icon-moon-folder-minus3:before {
+    content: "\e9e0";
+}
+.xp-foundation .icon-moon-folder-plus4:before {
+    content: "\e9e1";
+}
+.xp-foundation .icon-moon-folder-minus4:before {
+    content: "\e9e2";
+}
+.xp-foundation .icon-moon-folder-download2:before {
+    content: "\e9e3";
+}
+.xp-foundation .icon-moon-folder-upload2:before {
+    content: "\e9e4";
+}
+.xp-foundation .icon-moon-folder-download3:before {
+    content: "\e9e5";
+}
+.xp-foundation .icon-moon-folder-upload3:before {
+    content: "\e9e6";
+}
+.xp-foundation .icon-moon-folder5:before {
+    content: "\e9e7";
+}
+.xp-foundation .icon-moon-folder-open2:before {
+    content: "\e9e8";
+}
+.xp-foundation .icon-moon-folder6:before {
+    content: "\e9e9";
+}
+.xp-foundation .icon-moon-folder-open3:before {
+    content: "\e9ea";
+}
+.xp-foundation .icon-moon-certificate:before {
+    content: "\e9eb";
+}
+.xp-foundation .icon-moon-cc:before {
+    content: "\e9ec";
+}
+.xp-foundation .icon-moon-price-tag:before {
+    content: "\e9ed";
+}
+.xp-foundation .icon-moon-price-tag2:before {
+    content: "\e9ee";
+}
+.xp-foundation .icon-moon-price-tags:before {
+    content: "\e9ef";
+}
+.xp-foundation .icon-moon-price-tag3:before {
+    content: "\e9f0";
+}
+.xp-foundation .icon-moon-price-tags2:before {
+    content: "\e9f1";
+}
+.xp-foundation .icon-moon-price-tag4:before {
+    content: "\e9f2";
+}
+.xp-foundation .icon-moon-price-tags3:before {
+    content: "\e9f3";
+}
+.xp-foundation .icon-moon-price-tag5:before {
+    content: "\e9f4";
+}
+.xp-foundation .icon-moon-price-tags4:before {
+    content: "\e9f5";
+}
+.xp-foundation .icon-moon-barcode:before {
+    content: "\e9f6";
+}
+.xp-foundation .icon-moon-barcode2:before {
+    content: "\e9f7";
+}
+.xp-foundation .icon-moon-qrcode:before {
+    content: "\e9f8";
+}
+.xp-foundation .icon-moon-ticket:before {
+    content: "\e9f9";
+}
+.xp-foundation .icon-moon-ticket2:before {
+    content: "\e9fa";
+}
+.xp-foundation .icon-moon-theater:before {
+    content: "\e9fb";
+}
+.xp-foundation .icon-moon-store:before {
+    content: "\e9fc";
+}
+.xp-foundation .icon-moon-store2:before {
+    content: "\e9fd";
+}
+.xp-foundation .icon-moon-cart:before {
+    content: "\e9fe";
+}
+.xp-foundation .icon-moon-cart2:before {
+    content: "\e9ff";
+}
+.xp-foundation .icon-moon-cart3:before {
+    content: "\ea00";
+}
+.xp-foundation .icon-moon-cart4:before {
+    content: "\ea01";
+}
+.xp-foundation .icon-moon-cart5:before {
+    content: "\ea02";
+}
+.xp-foundation .icon-moon-cart-add:before {
+    content: "\ea03";
+}
+.xp-foundation .icon-moon-cart-add2:before {
+    content: "\ea04";
+}
+.xp-foundation .icon-moon-cart-remove:before {
+    content: "\ea05";
+}
+.xp-foundation .icon-moon-basket:before {
+    content: "\ea06";
+}
+.xp-foundation .icon-moon-bag:before {
+    content: "\ea07";
+}
+.xp-foundation .icon-moon-bag2:before {
+    content: "\ea08";
+}
+.xp-foundation .icon-moon-percent:before {
+    content: "\ea09";
+}
+.xp-foundation .icon-moon-coins:before {
+    content: "\ea0a";
+}
+.xp-foundation .icon-moon-coin-dollar:before {
+    content: "\ea0b";
+}
+.xp-foundation .icon-moon-coin-euro:before {
+    content: "\ea0c";
+}
+.xp-foundation .icon-moon-coin-pound:before {
+    content: "\ea0d";
+}
+.xp-foundation .icon-moon-coin-yen:before {
+    content: "\ea0e";
+}
+.xp-foundation .icon-moon-piggy-bank:before {
+    content: "\ea0f";
+}
+.xp-foundation .icon-moon-wallet:before {
+    content: "\ea10";
+}
+.xp-foundation .icon-moon-cash:before {
+    content: "\ea11";
+}
+.xp-foundation .icon-moon-cash2:before {
+    content: "\ea12";
+}
+.xp-foundation .icon-moon-cash3:before {
+    content: "\ea13";
+}
+.xp-foundation .icon-moon-cash4:before {
+    content: "\ea14";
+}
+.xp-foundation .icon-moon-credit-card:before {
+    content: "\ea15";
+}
+.xp-foundation .icon-moon-credit-card2:before {
+    content: "\ea16";
+}
+.xp-foundation .icon-moon-calculator:before {
+    content: "\ea17";
+}
+.xp-foundation .icon-moon-calculator2:before {
+    content: "\ea18";
+}
+.xp-foundation .icon-moon-calculator3:before {
+    content: "\ea19";
+}
+.xp-foundation .icon-moon-chip:before {
+    content: "\ea1a";
+}
+.xp-foundation .icon-moon-lifebuoy:before {
+    content: "\ea1b";
+}
+.xp-foundation .icon-moon-phone:before {
+    content: "\ea1c";
+}
+.xp-foundation .icon-moon-phone2:before {
+    content: "\ea1d";
+}
+.xp-foundation .icon-moon-phone-slash:before {
+    content: "\ea1e";
+}
+.xp-foundation .icon-moon-phone-wave:before {
+    content: "\ea1f";
+}
+.xp-foundation .icon-moon-phone-plus:before {
+    content: "\ea20";
+}
+.xp-foundation .icon-moon-phone-minus:before {
+    content: "\ea21";
+}
+.xp-foundation .icon-moon-phone-plus2:before {
+    content: "\ea22";
+}
+.xp-foundation .icon-moon-phone-minus2:before {
+    content: "\ea23";
+}
+.xp-foundation .icon-moon-phone-incoming:before {
+    content: "\ea24";
+}
+.xp-foundation .icon-moon-phone-outgoing:before {
+    content: "\ea25";
+}
+.xp-foundation .icon-moon-phone3:before {
+    content: "\ea26";
+}
+.xp-foundation .icon-moon-phone-slash2:before {
+    content: "\ea27";
+}
+.xp-foundation .icon-moon-phone-wave2:before {
+    content: "\ea28";
+}
+.xp-foundation .icon-moon-phone-hang-up:before {
+    content: "\ea29";
+}
+.xp-foundation .icon-moon-phone-hang-up2:before {
+    content: "\ea2a";
+}
+.xp-foundation .icon-moon-address-book:before {
+    content: "\ea2b";
+}
+.xp-foundation .icon-moon-address-book2:before {
+    content: "\ea2c";
+}
+.xp-foundation .icon-moon-address-book3:before {
+    content: "\ea2d";
+}
+.xp-foundation .icon-moon-notebook:before {
+    content: "\ea2e";
+}
+.xp-foundation .icon-moon-at-sign:before {
+    content: "\ea2f";
+}
+.xp-foundation .icon-moon-envelop:before {
+    content: "\ea30";
+}
+.xp-foundation .icon-moon-envelop2:before {
+    content: "\ea31";
+}
+.xp-foundation .icon-moon-envelop3:before {
+    content: "\ea32";
+}
+.xp-foundation .icon-moon-envelop4:before {
+    content: "\ea33";
+}
+.xp-foundation .icon-moon-envelop5:before {
+    content: "\ea34";
+}
+.xp-foundation .icon-moon-mailbox:before {
+    content: "\ea35";
+}
+.xp-foundation .icon-moon-pushpin:before {
+    content: "\ea36";
+}
+.xp-foundation .icon-moon-pushpin2:before {
+    content: "\ea37";
+}
+.xp-foundation .icon-moon-location:before {
+    content: "\ea38";
+}
+.xp-foundation .icon-moon-location2:before {
+    content: "\ea39";
+}
+.xp-foundation .icon-moon-location3:before {
+    content: "\ea3a";
+}
+.xp-foundation .icon-moon-location4:before {
+    content: "\ea3b";
+}
+.xp-foundation .icon-moon-location5:before {
+    content: "\ea3c";
+}
+.xp-foundation .icon-moon-location6:before {
+    content: "\ea3d";
+}
+.xp-foundation .icon-moon-location7:before {
+    content: "\ea3e";
+}
+.xp-foundation .icon-moon-compass:before {
+    content: "\ea3f";
+}
+.xp-foundation .icon-moon-compass2:before {
+    content: "\ea40";
+}
+.xp-foundation .icon-moon-compass3:before {
+    content: "\ea41";
+}
+.xp-foundation .icon-moon-compass4:before {
+    content: "\ea42";
+}
+.xp-foundation .icon-moon-compass5:before {
+    content: "\ea43";
+}
+.xp-foundation .icon-moon-compass6:before {
+    content: "\ea44";
+}
+.xp-foundation .icon-moon-map:before {
+    content: "\ea45";
+}
+.xp-foundation .icon-moon-map2:before {
+    content: "\ea46";
+}
+.xp-foundation .icon-moon-map3:before {
+    content: "\ea47";
+}
+.xp-foundation .icon-moon-map4:before {
+    content: "\ea48";
+}
+.xp-foundation .icon-moon-map5:before {
+    content: "\ea49";
+}
+.xp-foundation .icon-moon-direction:before {
+    content: "\ea4a";
+}
+.xp-foundation .icon-moon-reset:before {
+    content: "\ea4b";
+}
+.xp-foundation .icon-moon-history:before {
+    content: "\ea4c";
+}
+.xp-foundation .icon-moon-clock:before {
+    content: "\ea4d";
+}
+.xp-foundation .icon-moon-clock2:before {
+    content: "\ea4e";
+}
+.xp-foundation .icon-moon-clock3:before {
+    content: "\ea4f";
+}
+.xp-foundation .icon-moon-clock4:before {
+    content: "\ea50";
+}
+.xp-foundation .icon-moon-watch:before {
+    content: "\ea51";
+}
+.xp-foundation .icon-moon-watch2:before {
+    content: "\ea52";
+}
+.xp-foundation .icon-moon-alarm:before {
+    content: "\ea53";
+}
+.xp-foundation .icon-moon-alarm-add:before {
+    content: "\ea54";
+}
+.xp-foundation .icon-moon-alarm-check:before {
+    content: "\ea55";
+}
+.xp-foundation .icon-moon-alarm-cancel:before {
+    content: "\ea56";
+}
+.xp-foundation .icon-moon-bell:before {
+    content: "\ea57";
+}
+.xp-foundation .icon-moon-bell2:before {
+    content: "\ea58";
+}
+.xp-foundation .icon-moon-bell3:before {
+    content: "\ea59";
+}
+.xp-foundation .icon-moon-bell-plus:before {
+    content: "\ea5a";
+}
+.xp-foundation .icon-moon-bell-minus:before {
+    content: "\ea5b";
+}
+.xp-foundation .icon-moon-bell-check:before {
+    content: "\ea5c";
+}
+.xp-foundation .icon-moon-bell-cross:before {
+    content: "\ea5d";
+}
+.xp-foundation .icon-moon-stopwatch:before {
+    content: "\ea5e";
+}
+.xp-foundation .icon-moon-calendar:before {
+    content: "\ea5f";
+}
+.xp-foundation .icon-moon-calendar2:before {
+    content: "\ea60";
+}
+.xp-foundation .icon-moon-calendar3:before {
+    content: "\ea61";
+}
+.xp-foundation .icon-moon-calendar4:before {
+    content: "\ea62";
+}
+.xp-foundation .icon-moon-calendar5:before {
+    content: "\ea63";
+}
+.xp-foundation .icon-moon-calendar-empty:before {
+    content: "\ea64";
+}
+.xp-foundation .icon-moon-calendar-day:before {
+    content: "\ea65";
+}
+.xp-foundation .icon-moon-calendar-week:before {
+    content: "\ea66";
+}
+.xp-foundation .icon-moon-printer:before {
+    content: "\ea67";
+}
+.xp-foundation .icon-moon-printer2:before {
+    content: "\ea68";
+}
+.xp-foundation .icon-moon-printer3:before {
+    content: "\ea69";
+}
+.xp-foundation .icon-moon-printer4:before {
+    content: "\ea6a";
+}
+.xp-foundation .icon-moon-shredder:before {
+    content: "\ea6b";
+}
+.xp-foundation .icon-moon-mouse:before {
+    content: "\ea6c";
+}
+.xp-foundation .icon-moon-mouse2:before {
+    content: "\ea6d";
+}
+.xp-foundation .icon-moon-mouse-left:before {
+    content: "\ea6e";
+}
+.xp-foundation .icon-moon-mouse-right:before {
+    content: "\ea6f";
+}
+.xp-foundation .icon-moon-keyboard:before {
+    content: "\ea70";
+}
+.xp-foundation .icon-moon-keyboard2:before {
+    content: "\ea71";
+}
+.xp-foundation .icon-moon-typewriter:before {
+    content: "\ea72";
+}
+.xp-foundation .icon-moon-display:before {
+    content: "\ea73";
+}
+.xp-foundation .icon-moon-display2:before {
+    content: "\ea74";
+}
+.xp-foundation .icon-moon-display3:before {
+    content: "\ea75";
+}
+.xp-foundation .icon-moon-display4:before {
+    content: "\ea76";
+}
+.xp-foundation .icon-moon-laptop:before {
+    content: "\ea77";
+}
+.xp-foundation .icon-moon-mobile:before {
+    content: "\ea78";
+}
+.xp-foundation .icon-moon-mobile2:before {
+    content: "\ea79";
+}
+.xp-foundation .icon-moon-tablet:before {
+    content: "\ea7a";
+}
+.xp-foundation .icon-moon-mobile3:before {
+    content: "\ea7b";
+}
+.xp-foundation .icon-moon-tv:before {
+    content: "\ea7c";
+}
+.xp-foundation .icon-moon-radio:before {
+    content: "\ea7d";
+}
+.xp-foundation .icon-moon-cabinet:before {
+    content: "\ea7e";
+}
+.xp-foundation .icon-moon-drawer:before {
+    content: "\ea7f";
+}
+.xp-foundation .icon-moon-drawer2:before {
+    content: "\ea80";
+}
+.xp-foundation .icon-moon-drawer-out:before {
+    content: "\ea81";
+}
+.xp-foundation .icon-moon-drawer-in:before {
+    content: "\ea82";
+}
+.xp-foundation .icon-moon-drawer3:before {
+    content: "\ea83";
+}
+.xp-foundation .icon-moon-box:before {
+    content: "\ea84";
+}
+.xp-foundation .icon-moon-box-add:before {
+    content: "\ea85";
+}
+.xp-foundation .icon-moon-box-remove:before {
+    content: "\ea86";
+}
+.xp-foundation .icon-moon-download:before {
+    content: "\ea87";
+}
+.xp-foundation .icon-moon-upload:before {
+    content: "\ea88";
+}
+.xp-foundation .icon-moon-floppy-disk:before {
+    content: "\ea89";
+}
+.xp-foundation .icon-moon-floppy-disks:before {
+    content: "\ea8a";
+}
+.xp-foundation .icon-moon-floppy-disks2:before {
+    content: "\ea8b";
+}
+.xp-foundation .icon-moon-floppy-disk2:before {
+    content: "\ea8c";
+}
+.xp-foundation .icon-moon-floppy-disk3:before {
+    content: "\ea8d";
+}
+.xp-foundation .icon-moon-disk:before {
+    content: "\ea8e";
+}
+.xp-foundation .icon-moon-disk2:before {
+    content: "\ea8f";
+}
+.xp-foundation .icon-moon-usb-stick:before {
+    content: "\ea90";
+}
+.xp-foundation .icon-moon-drive:before {
+    content: "\ea91";
+}
+.xp-foundation .icon-moon-server:before {
+    content: "\ea92";
+}
+.xp-foundation .icon-moon-database:before {
+    content: "\ea93";
+}
+.xp-foundation .icon-moon-database2:before {
+    content: "\ea94";
+}
+.xp-foundation .icon-moon-database3:before {
+    content: "\ea95";
+}
+.xp-foundation .icon-moon-database4:before {
+    content: "\ea96";
+}
+.xp-foundation .icon-moon-database-menu:before {
+    content: "\ea97";
+}
+.xp-foundation .icon-moon-database-add:before {
+    content: "\ea98";
+}
+.xp-foundation .icon-moon-database-remove:before {
+    content: "\ea99";
+}
+.xp-foundation .icon-moon-database-insert:before {
+    content: "\ea9a";
+}
+.xp-foundation .icon-moon-database-export:before {
+    content: "\ea9b";
+}
+.xp-foundation .icon-moon-database-upload:before {
+    content: "\ea9c";
+}
+.xp-foundation .icon-moon-database-refresh:before {
+    content: "\ea9d";
+}
+.xp-foundation .icon-moon-database-diff:before {
+    content: "\ea9e";
+}
+.xp-foundation .icon-moon-database-edit:before {
+    content: "\ea9f";
+}
+.xp-foundation .icon-moon-database-edit2:before {
+    content: "\eaa0";
+}
+.xp-foundation .icon-moon-database-check:before {
+    content: "\eaa1";
+}
+.xp-foundation .icon-moon-database-arrow:before {
+    content: "\eaa2";
+}
+.xp-foundation .icon-moon-database-time:before {
+    content: "\eaa3";
+}
+.xp-foundation .icon-moon-database-time2:before {
+    content: "\eaa4";
+}
+.xp-foundation .icon-moon-undo:before {
+    content: "\eaa5";
+}
+.xp-foundation .icon-moon-redo:before {
+    content: "\eaa6";
+}
+.xp-foundation .icon-moon-rotate-ccw:before {
+    content: "\eaa7";
+}
+.xp-foundation .icon-moon-rotate-cw:before {
+    content: "\eaa8";
+}
+.xp-foundation .icon-moon-rotate-ccw2:before {
+    content: "\eaa9";
+}
+.xp-foundation .icon-moon-rotate-cw2:before {
+    content: "\eaaa";
+}
+.xp-foundation .icon-moon-rotate-ccw3:before {
+    content: "\eaab";
+}
+.xp-foundation .icon-moon-rotate-cw3:before {
+    content: "\eaac";
+}
+.xp-foundation .icon-moon-flip-vertical:before {
+    content: "\eaad";
+}
+.xp-foundation .icon-moon-flip-vertical2:before {
+    content: "\eaae";
+}
+.xp-foundation .icon-moon-flip-horizontal:before {
+    content: "\eaaf";
+}
+.xp-foundation .icon-moon-flip-horizontal2:before {
+    content: "\eab0";
+}
+.xp-foundation .icon-moon-flip-vertical3:before {
+    content: "\eab1";
+}
+.xp-foundation .icon-moon-flip-vertical4:before {
+    content: "\eab2";
+}
+.xp-foundation .icon-moon-angle:before {
+    content: "\eab3";
+}
+.xp-foundation .icon-moon-shear:before {
+    content: "\eab4";
+}
+.xp-foundation .icon-moon-unite:before {
+    content: "\eab5";
+}
+.xp-foundation .icon-moon-subtract:before {
+    content: "\eab6";
+}
+.xp-foundation .icon-moon-interset:before {
+    content: "\eab7";
+}
+.xp-foundation .icon-moon-exclude:before {
+    content: "\eab8";
+}
+.xp-foundation .icon-moon-align-left:before {
+    content: "\eab9";
+}
+.xp-foundation .icon-moon-align-center-horizontal:before {
+    content: "\eaba";
+}
+.xp-foundation .icon-moon-align-right:before {
+    content: "\eabb";
+}
+.xp-foundation .icon-moon-align-top:before {
+    content: "\eabc";
+}
+.xp-foundation .icon-moon-align-center-vertical:before {
+    content: "\eabd";
+}
+.xp-foundation .icon-moon-align-bottom:before {
+    content: "\eabe";
+}
+.xp-foundation .icon-moon-undo2:before {
+    content: "\eabf";
+}
+.xp-foundation .icon-moon-redo2:before {
+    content: "\eac0";
+}
+.xp-foundation .icon-moon-forward:before {
+    content: "\eac1";
+}
+.xp-foundation .icon-moon-reply:before {
+    content: "\eac2";
+}
+.xp-foundation .icon-moon-reply-all:before {
+    content: "\eac3";
+}
+.xp-foundation .icon-moon-bubble:before {
+    content: "\eac4";
+}
+.xp-foundation .icon-moon-bubbles:before {
+    content: "\eac5";
+}
+.xp-foundation .icon-moon-bubbles2:before {
+    content: "\eac6";
+}
+.xp-foundation .icon-moon-bubble2:before {
+    content: "\eac7";
+}
+.xp-foundation .icon-moon-bubbles3:before {
+    content: "\eac8";
+}
+.xp-foundation .icon-moon-bubbles4:before {
+    content: "\eac9";
+}
+.xp-foundation .icon-moon-bubble-notification:before {
+    content: "\eaca";
+}
+.xp-foundation .icon-moon-bubbles5:before {
+    content: "\eacb";
+}
+.xp-foundation .icon-moon-bubbles6:before {
+    content: "\eacc";
+}
+.xp-foundation .icon-moon-bubble3:before {
+    content: "\eacd";
+}
+.xp-foundation .icon-moon-bubble-dots:before {
+    content: "\eace";
+}
+.xp-foundation .icon-moon-bubble-lines:before {
+    content: "\eacf";
+}
+.xp-foundation .icon-moon-bubble4:before {
+    content: "\ead0";
+}
+.xp-foundation .icon-moon-bubble-dots2:before {
+    content: "\ead1";
+}
+.xp-foundation .icon-moon-bubble-lines2:before {
+    content: "\ead2";
+}
+.xp-foundation .icon-moon-bubble5:before {
+    content: "\ead3";
+}
+.xp-foundation .icon-moon-bubble6:before {
+    content: "\ead4";
+}
+.xp-foundation .icon-moon-bubbles7:before {
+    content: "\ead5";
+}
+.xp-foundation .icon-moon-bubble7:before {
+    content: "\ead6";
+}
+.xp-foundation .icon-moon-bubbles8:before {
+    content: "\ead7";
+}
+.xp-foundation .icon-moon-bubble8:before {
+    content: "\ead8";
+}
+.xp-foundation .icon-moon-bubble-dots3:before {
+    content: "\ead9";
+}
+.xp-foundation .icon-moon-bubble-lines3:before {
+    content: "\eada";
+}
+.xp-foundation .icon-moon-bubble9:before {
+    content: "\eadb";
+}
+.xp-foundation .icon-moon-bubble-dots4:before {
+    content: "\eadc";
+}
+.xp-foundation .icon-moon-bubble-lines4:before {
+    content: "\eadd";
+}
+.xp-foundation .icon-moon-bubbles9:before {
+    content: "\eade";
+}
+.xp-foundation .icon-moon-bubbles10:before {
+    content: "\eadf";
+}
+.xp-foundation .icon-moon-bubble-blocked:before {
+    content: "\eae0";
+}
+.xp-foundation .icon-moon-bubble-quote:before {
+    content: "\eae1";
+}
+.xp-foundation .icon-moon-bubble-user:before {
+    content: "\eae2";
+}
+.xp-foundation .icon-moon-bubble-smiley:before {
+    content: "\eae3";
+}
+.xp-foundation .icon-moon-bubble-check:before {
+    content: "\eae4";
+}
+.xp-foundation .icon-moon-bubble-video:before {
+    content: "\eae5";
+}
+.xp-foundation .icon-moon-bubble-link:before {
+    content: "\eae6";
+}
+.xp-foundation .icon-moon-bubble-lock:before {
+    content: "\eae7";
+}
+.xp-foundation .icon-moon-bubble-star:before {
+    content: "\eae8";
+}
+.xp-foundation .icon-moon-bubble-heart:before {
+    content: "\eae9";
+}
+.xp-foundation .icon-moon-bubble-paperclip:before {
+    content: "\eaea";
+}
+.xp-foundation .icon-moon-bubble-cancel:before {
+    content: "\eaeb";
+}
+.xp-foundation .icon-moon-bubble-plus:before {
+    content: "\eaec";
+}
+.xp-foundation .icon-moon-bubble-minus:before {
+    content: "\eaed";
+}
+.xp-foundation .icon-moon-bubble-notification2:before {
+    content: "\eaee";
+}
+.xp-foundation .icon-moon-bubble-left:before {
+    content: "\eaef";
+}
+.xp-foundation .icon-moon-bubble-right:before {
+    content: "\eaf0";
+}
+.xp-foundation .icon-moon-bubble-first:before {
+    content: "\eaf1";
+}
+.xp-foundation .icon-moon-bubble-last:before {
+    content: "\eaf2";
+}
+.xp-foundation .icon-moon-bubble-reply:before {
+    content: "\eaf3";
+}
+.xp-foundation .icon-moon-bubble-forward:before {
+    content: "\eaf4";
+}
+.xp-foundation .icon-moon-bubble-reply2:before {
+    content: "\eaf5";
+}
+.xp-foundation .icon-moon-bubble-forward2:before {
+    content: "\eaf6";
+}
+.xp-foundation .icon-moon-user:before {
+    content: "\eaf7";
+}
+.xp-foundation .icon-moon-users:before {
+    content: "\eaf8";
+}
+.xp-foundation .icon-moon-user-plus:before {
+    content: "\eaf9";
+}
+.xp-foundation .icon-moon-user-minus:before {
+    content: "\eafa";
+}
+.xp-foundation .icon-moon-user-cancel:before {
+    content: "\eafb";
+}
+.xp-foundation .icon-moon-user-block:before {
+    content: "\eafc";
+}
+.xp-foundation .icon-moon-user-lock:before {
+    content: "\eafd";
+}
+.xp-foundation .icon-moon-user-check:before {
+    content: "\eafe";
+}
+.xp-foundation .icon-moon-users2:before {
+    content: "\eaff";
+}
+.xp-foundation .icon-moon-user2:before {
+    content: "\eb00";
+}
+.xp-foundation .icon-moon-users3:before {
+    content: "\eb01";
+}
+.xp-foundation .icon-moon-user-plus2:before {
+    content: "\eb02";
+}
+.xp-foundation .icon-moon-user-minus2:before {
+    content: "\eb03";
+}
+.xp-foundation .icon-moon-user-cancel2:before {
+    content: "\eb04";
+}
+.xp-foundation .icon-moon-user-block2:before {
+    content: "\eb05";
+}
+.xp-foundation .icon-moon-user-lock2:before {
+    content: "\eb06";
+}
+.xp-foundation .icon-moon-user-check2:before {
+    content: "\eb07";
+}
+.xp-foundation .icon-moon-user3:before {
+    content: "\eb08";
+}
+.xp-foundation .icon-moon-user4:before {
+    content: "\eb09";
+}
+.xp-foundation .icon-moon-user5:before {
+    content: "\eb0a";
+}
+.xp-foundation .icon-moon-user6:before {
+    content: "\eb0b";
+}
+.xp-foundation .icon-moon-users4:before {
+    content: "\eb0c";
+}
+.xp-foundation .icon-moon-user-tie:before {
+    content: "\eb0d";
+}
+.xp-foundation .icon-moon-user7:before {
+    content: "\eb0e";
+}
+.xp-foundation .icon-moon-users5:before {
+    content: "\eb0f";
+}
+.xp-foundation .icon-moon-collaboration:before {
+    content: "\eb10";
+}
+.xp-foundation .icon-moon-vcard:before {
+    content: "\eb11";
+}
+.xp-foundation .icon-moon-hat:before {
+    content: "\eb12";
+}
+.xp-foundation .icon-moon-bowtie:before {
+    content: "\eb13";
+}
+.xp-foundation .icon-moon-tie:before {
+    content: "\eb14";
+}
+.xp-foundation .icon-moon-hanger:before {
+    content: "\eb15";
+}
+.xp-foundation .icon-moon-tshirt:before {
+    content: "\eb16";
+}
+.xp-foundation .icon-moon-pants:before {
+    content: "\eb17";
+}
+.xp-foundation .icon-moon-shorts:before {
+    content: "\eb18";
+}
+.xp-foundation .icon-moon-sock:before {
+    content: "\eb19";
+}
+.xp-foundation .icon-moon-laundry:before {
+    content: "\eb1a";
+}
+.xp-foundation .icon-moon-quotes-left:before {
+    content: "\eb1b";
+}
+.xp-foundation .icon-moon-quotes-right:before {
+    content: "\eb1c";
+}
+.xp-foundation .icon-moon-quotes-left2:before {
+    content: "\eb1d";
+}
+.xp-foundation .icon-moon-quotes-right2:before {
+    content: "\eb1e";
+}
+.xp-foundation .icon-moon-hour-glass:before {
+    content: "\eb1f";
+}
+.xp-foundation .icon-moon-hour-glass2:before {
+    content: "\eb20";
+}
+.xp-foundation .icon-moon-hour-glass3:before {
+    content: "\eb21";
+}
+.xp-foundation .icon-moon-spinner:before {
+    content: "\eb22";
+}
+.xp-foundation .icon-moon-spinner2:before {
+    content: "\eb23";
+}
+.xp-foundation .icon-moon-spinner3:before {
+    content: "\eb24";
+}
+.xp-foundation .icon-moon-spinner4:before {
+    content: "\eb25";
+}
+.xp-foundation .icon-moon-spinner5:before {
+    content: "\eb26";
+}
+.xp-foundation .icon-moon-spinner6:before {
+    content: "\eb27";
+}
+.xp-foundation .icon-moon-spinner7:before {
+    content: "\eb28";
+}
+.xp-foundation .icon-moon-spinner8:before {
+    content: "\eb29";
+}
+.xp-foundation .icon-moon-spinner9:before {
+    content: "\eb2a";
+}
+.xp-foundation .icon-moon-spinner10:before {
+    content: "\eb2b";
+}
+.xp-foundation .icon-moon-spinner11:before {
+    content: "\eb2c";
+}
+.xp-foundation .icon-moon-microscope:before {
+    content: "\eb2d";
+}
+.xp-foundation .icon-moon-binoculars:before {
+    content: "\eb2e";
+}
+.xp-foundation .icon-moon-binoculars2:before {
+    content: "\eb2f";
+}
+.xp-foundation .icon-moon-search:before {
+    content: "\eb30";
+}
+.xp-foundation .icon-moon-zoom-in:before {
+    content: "\eb31";
+}
+.xp-foundation .icon-moon-zoom-out:before {
+    content: "\eb32";
+}
+.xp-foundation .icon-moon-search2:before {
+    content: "\eb33";
+}
+.xp-foundation .icon-moon-zoom-in2:before {
+    content: "\eb34";
+}
+.xp-foundation .icon-moon-zoom-out2:before {
+    content: "\eb35";
+}
+.xp-foundation .icon-moon-search3:before {
+    content: "\eb36";
+}
+.xp-foundation .icon-moon-search4:before {
+    content: "\eb37";
+}
+.xp-foundation .icon-moon-zoom-in3:before {
+    content: "\eb38";
+}
+.xp-foundation .icon-moon-zoom-out3:before {
+    content: "\eb39";
+}
+.xp-foundation .icon-moon-search5:before {
+    content: "\eb3a";
+}
+.xp-foundation .icon-moon-search6:before {
+    content: "\eb3b";
+}
+.xp-foundation .icon-moon-enlarge:before {
+    content: "\eb3c";
+}
+.xp-foundation .icon-moon-shrink:before {
+    content: "\eb3d";
+}
+.xp-foundation .icon-moon-enlarge2:before {
+    content: "\eb3e";
+}
+.xp-foundation .icon-moon-shrink2:before {
+    content: "\eb3f";
+}
+.xp-foundation .icon-moon-enlarge3:before {
+    content: "\eb40";
+}
+.xp-foundation .icon-moon-shrink3:before {
+    content: "\eb41";
+}
+.xp-foundation .icon-moon-enlarge4:before {
+    content: "\eb42";
+}
+.xp-foundation .icon-moon-shrink4:before {
+    content: "\eb43";
+}
+.xp-foundation .icon-moon-enlarge5:before {
+    content: "\eb44";
+}
+.xp-foundation .icon-moon-shrink5:before {
+    content: "\eb45";
+}
+.xp-foundation .icon-moon-enlarge6:before {
+    content: "\eb46";
+}
+.xp-foundation .icon-moon-shrink6:before {
+    content: "\eb47";
+}
+.xp-foundation .icon-moon-enlarge7:before {
+    content: "\eb48";
+}
+.xp-foundation .icon-moon-shrink7:before {
+    content: "\eb49";
+}
+.xp-foundation .icon-moon-key:before {
+    content: "\eb4a";
+}
+.xp-foundation .icon-moon-key2:before {
+    content: "\eb4b";
+}
+.xp-foundation .icon-moon-key3:before {
+    content: "\eb4c";
+}
+.xp-foundation .icon-moon-key4:before {
+    content: "\eb4d";
+}
+.xp-foundation .icon-moon-key5:before {
+    content: "\eb4e";
+}
+.xp-foundation .icon-moon-keyhole:before {
+    content: "\eb4f";
+}
+.xp-foundation .icon-moon-lock:before {
+    content: "\eb50";
+}
+.xp-foundation .icon-moon-lock2:before {
+    content: "\eb51";
+}
+.xp-foundation .icon-moon-lock3:before {
+    content: "\eb52";
+}
+.xp-foundation .icon-moon-lock4:before {
+    content: "\eb53";
+}
+.xp-foundation .icon-moon-unlocked:before {
+    content: "\eb54";
+}
+.xp-foundation .icon-moon-lock5:before {
+    content: "\eb55";
+}
+.xp-foundation .icon-moon-unlocked2:before {
+    content: "\eb56";
+}
+.xp-foundation .icon-moon-safe:before {
+    content: "\eb57";
+}
+.xp-foundation .icon-moon-wrench:before {
+    content: "\eb58";
+}
+.xp-foundation .icon-moon-wrench2:before {
+    content: "\eb59";
+}
+.xp-foundation .icon-moon-wrench3:before {
+    content: "\eb5a";
+}
+.xp-foundation .icon-moon-equalizer:before {
+    content: "\eb5b";
+}
+.xp-foundation .icon-moon-equalizer2:before {
+    content: "\eb5c";
+}
+.xp-foundation .icon-moon-equalizer3:before {
+    content: "\eb5d";
+}
+.xp-foundation .icon-moon-equalizer4:before {
+    content: "\eb5e";
+}
+.xp-foundation .icon-moon-cog:before {
+    content: "\eb5f";
+}
+.xp-foundation .icon-moon-cogs:before {
+    content: "\eb60";
+}
+.xp-foundation .icon-moon-cog2:before {
+    content: "\eb61";
+}
+.xp-foundation .icon-moon-cog3:before {
+    content: "\eb62";
+}
+.xp-foundation .icon-moon-cog4:before {
+    content: "\eb63";
+}
+.xp-foundation .icon-moon-cog5:before {
+    content: "\eb64";
+}
+.xp-foundation .icon-moon-cog6:before {
+    content: "\eb65";
+}
+.xp-foundation .icon-moon-cog7:before {
+    content: "\eb66";
+}
+.xp-foundation .icon-moon-factory:before {
+    content: "\eb67";
+}
+.xp-foundation .icon-moon-hammer:before {
+    content: "\eb68";
+}
+.xp-foundation .icon-moon-hammer-wrench:before {
+    content: "\eb69";
+}
+.xp-foundation .icon-moon-knife:before {
+    content: "\eb6a";
+}
+.xp-foundation .icon-moon-screwdriver:before {
+    content: "\eb6b";
+}
+.xp-foundation .icon-moon-screwdriver2:before {
+    content: "\eb6c";
+}
+.xp-foundation .icon-moon-magic-wand:before {
+    content: "\eb6d";
+}
+.xp-foundation .icon-moon-magic-wand2:before {
+    content: "\eb6e";
+}
+.xp-foundation .icon-moon-pulse:before {
+    content: "\eb6f";
+}
+.xp-foundation .icon-moon-pulse2:before {
+    content: "\eb70";
+}
+.xp-foundation .icon-moon-aid-kit:before {
+    content: "\eb71";
+}
+.xp-foundation .icon-moon-aid-kit2:before {
+    content: "\eb72";
+}
+.xp-foundation .icon-moon-stethoscope:before {
+    content: "\eb73";
+}
+.xp-foundation .icon-moon-ambulance:before {
+    content: "\eb74";
+}
+.xp-foundation .icon-moon-alarm2:before {
+    content: "\eb75";
+}
+.xp-foundation .icon-moon-pandage:before {
+    content: "\eb76";
+}
+.xp-foundation .icon-moon-pandage2:before {
+    content: "\eb77";
+}
+.xp-foundation .icon-moon-bug:before {
+    content: "\eb78";
+}
+.xp-foundation .icon-moon-bug2:before {
+    content: "\eb79";
+}
+.xp-foundation .icon-moon-syringe:before {
+    content: "\eb7a";
+}
+.xp-foundation .icon-moon-syringe2:before {
+    content: "\eb7b";
+}
+.xp-foundation .icon-moon-pill:before {
+    content: "\eb7c";
+}
+.xp-foundation .icon-moon-construction:before {
+    content: "\eb7d";
+}
+.xp-foundation .icon-moon-traffic-cone:before {
+    content: "\eb7e";
+}
+.xp-foundation .icon-moon-traffic-lights:before {
+    content: "\eb7f";
+}
+.xp-foundation .icon-moon-pie-chart:before {
+    content: "\eb80";
+}
+.xp-foundation .icon-moon-pie-chart2:before {
+    content: "\eb81";
+}
+.xp-foundation .icon-moon-pie-chart3:before {
+    content: "\eb82";
+}
+.xp-foundation .icon-moon-pie-chart4:before {
+    content: "\eb83";
+}
+.xp-foundation .icon-moon-pie-chart5:before {
+    content: "\eb84";
+}
+.xp-foundation .icon-moon-pie-chart6:before {
+    content: "\eb85";
+}
+.xp-foundation .icon-moon-pie-chart7:before {
+    content: "\eb86";
+}
+.xp-foundation .icon-moon-stats-dots:before {
+    content: "\eb87";
+}
+.xp-foundation .icon-moon-stats-bars:before {
+    content: "\eb88";
+}
+.xp-foundation .icon-moon-pie-chart8:before {
+    content: "\eb89";
+}
+.xp-foundation .icon-moon-stats-bars2:before {
+    content: "\eb8a";
+}
+.xp-foundation .icon-moon-stats-bars3:before {
+    content: "\eb8b";
+}
+.xp-foundation .icon-moon-stats-bars4:before {
+    content: "\eb8c";
+}
+.xp-foundation .icon-moon-stats-bars5:before {
+    content: "\eb8d";
+}
+.xp-foundation .icon-moon-stats-bars6:before {
+    content: "\eb8e";
+}
+.xp-foundation .icon-moon-chart:before {
+    content: "\eb8f";
+}
+.xp-foundation .icon-moon-stats-growth:before {
+    content: "\eb90";
+}
+.xp-foundation .icon-moon-stats-decline:before {
+    content: "\eb91";
+}
+.xp-foundation .icon-moon-stats-growth2:before {
+    content: "\eb92";
+}
+.xp-foundation .icon-moon-stats-decline2:before {
+    content: "\eb93";
+}
+.xp-foundation .icon-moon-stairs-up:before {
+    content: "\eb94";
+}
+.xp-foundation .icon-moon-stairs-down:before {
+    content: "\eb95";
+}
+.xp-foundation .icon-moon-stairs:before {
+    content: "\eb96";
+}
+.xp-foundation .icon-moon-stairs2:before {
+    content: "\eb97";
+}
+.xp-foundation .icon-moon-ladder:before {
+    content: "\eb98";
+}
+.xp-foundation .icon-moon-rating:before {
+    content: "\eb99";
+}
+.xp-foundation .icon-moon-rating2:before {
+    content: "\eb9a";
+}
+.xp-foundation .icon-moon-rating3:before {
+    content: "\eb9b";
+}
+.xp-foundation .icon-moon-cake:before {
+    content: "\eb9c";
+}
+.xp-foundation .icon-moon-podium:before {
+    content: "\eb9d";
+}
+.xp-foundation .icon-moon-stars:before {
+    content: "\eb9e";
+}
+.xp-foundation .icon-moon-medal-star:before {
+    content: "\eb9f";
+}
+.xp-foundation .icon-moon-medal:before {
+    content: "\eba0";
+}
+.xp-foundation .icon-moon-medal2:before {
+    content: "\eba1";
+}
+.xp-foundation .icon-moon-medal-first:before {
+    content: "\eba2";
+}
+.xp-foundation .icon-moon-medal-second:before {
+    content: "\eba3";
+}
+.xp-foundation .icon-moon-medal-third:before {
+    content: "\eba4";
+}
+.xp-foundation .icon-moon-crown:before {
+    content: "\eba5";
+}
+.xp-foundation .icon-moon-trophy:before {
+    content: "\eba6";
+}
+.xp-foundation .icon-moon-trophy2:before {
+    content: "\eba7";
+}
+.xp-foundation .icon-moon-trophy3:before {
+    content: "\eba8";
+}
+.xp-foundation .icon-moon-diamond:before {
+    content: "\eba9";
+}
+.xp-foundation .icon-moon-diamond2:before {
+    content: "\ebaa";
+}
+.xp-foundation .icon-moon-trophy4:before {
+    content: "\ebab";
+}
+.xp-foundation .icon-moon-gift:before {
+    content: "\ebac";
+}
+.xp-foundation .icon-moon-gift2:before {
+    content: "\ebad";
+}
+.xp-foundation .icon-moon-balloon:before {
+    content: "\ebae";
+}
+.xp-foundation .icon-moon-pipe:before {
+    content: "\ebaf";
+}
+.xp-foundation .icon-moon-mustache:before {
+    content: "\ebb0";
+}
+.xp-foundation .icon-moon-mustache2:before {
+    content: "\ebb1";
+}
+.xp-foundation .icon-moon-glass:before {
+    content: "\ebb2";
+}
+.xp-foundation .icon-moon-glass2:before {
+    content: "\ebb3";
+}
+.xp-foundation .icon-moon-glass3:before {
+    content: "\ebb4";
+}
+.xp-foundation .icon-moon-glass4:before {
+    content: "\ebb5";
+}
+.xp-foundation .icon-moon-bottle:before {
+    content: "\ebb6";
+}
+.xp-foundation .icon-moon-bottle2:before {
+    content: "\ebb7";
+}
+.xp-foundation .icon-moon-bottle3:before {
+    content: "\ebb8";
+}
+.xp-foundation .icon-moon-bottle4:before {
+    content: "\ebb9";
+}
+.xp-foundation .icon-moon-mug:before {
+    content: "\ebba";
+}
+.xp-foundation .icon-moon-fork-knife:before {
+    content: "\ebbb";
+}
+.xp-foundation .icon-moon-spoon-knife:before {
+    content: "\ebbc";
+}
+.xp-foundation .icon-moon-cook:before {
+    content: "\ebbd";
+}
+.xp-foundation .icon-moon-plate:before {
+    content: "\ebbe";
+}
+.xp-foundation .icon-moon-steak:before {
+    content: "\ebbf";
+}
+.xp-foundation .icon-moon-fish:before {
+    content: "\ebc0";
+}
+.xp-foundation .icon-moon-chicken:before {
+    content: "\ebc1";
+}
+.xp-foundation .icon-moon-hamburger:before {
+    content: "\ebc2";
+}
+.xp-foundation .icon-moon-pizza:before {
+    content: "\ebc3";
+}
+.xp-foundation .icon-moon-cheese:before {
+    content: "\ebc4";
+}
+.xp-foundation .icon-moon-bread:before {
+    content: "\ebc5";
+}
+.xp-foundation .icon-moon-icecream:before {
+    content: "\ebc6";
+}
+.xp-foundation .icon-moon-milk:before {
+    content: "\ebc7";
+}
+.xp-foundation .icon-moon-cup:before {
+    content: "\ebc8";
+}
+.xp-foundation .icon-moon-cup2:before {
+    content: "\ebc9";
+}
+.xp-foundation .icon-moon-coffee-bean:before {
+    content: "\ebca";
+}
+.xp-foundation .icon-moon-coffee:before {
+    content: "\ebcb";
+}
+.xp-foundation .icon-moon-teapot:before {
+    content: "\ebcc";
+}
+.xp-foundation .icon-moon-leaf:before {
+    content: "\ebcd";
+}
+.xp-foundation .icon-moon-leaf2:before {
+    content: "\ebce";
+}
+.xp-foundation .icon-moon-apple:before {
+    content: "\ebcf";
+}
+.xp-foundation .icon-moon-grapes:before {
+    content: "\ebd0";
+}
+.xp-foundation .icon-moon-cherry:before {
+    content: "\ebd1";
+}
+.xp-foundation .icon-moon-tree:before {
+    content: "\ebd2";
+}
+.xp-foundation .icon-moon-tree2:before {
+    content: "\ebd3";
+}
+.xp-foundation .icon-moon-tree3:before {
+    content: "\ebd4";
+}
+.xp-foundation .icon-moon-tree4:before {
+    content: "\ebd5";
+}
+.xp-foundation .icon-moon-cactus:before {
+    content: "\ebd6";
+}
+.xp-foundation .icon-moon-mountains:before {
+    content: "\ebd7";
+}
+.xp-foundation .icon-moon-paw:before {
+    content: "\ebd8";
+}
+.xp-foundation .icon-moon-footprint:before {
+    content: "\ebd9";
+}
+.xp-foundation .icon-moon-tent:before {
+    content: "\ebda";
+}
+.xp-foundation .icon-moon-flower:before {
+    content: "\ebdb";
+}
+.xp-foundation .icon-moon-flower2:before {
+    content: "\ebdc";
+}
+.xp-foundation .icon-moon-rocket:before {
+    content: "\ebdd";
+}
+.xp-foundation .icon-moon-meter:before {
+    content: "\ebde";
+}
+.xp-foundation .icon-moon-meter2:before {
+    content: "\ebdf";
+}
+.xp-foundation .icon-moon-meter-slow:before {
+    content: "\ebe0";
+}
+.xp-foundation .icon-moon-meter-medium:before {
+    content: "\ebe1";
+}
+.xp-foundation .icon-moon-meter-fast:before {
+    content: "\ebe2";
+}
+.xp-foundation .icon-moon-meter3:before {
+    content: "\ebe3";
+}
+.xp-foundation .icon-moon-hammer2:before {
+    content: "\ebe4";
+}
+.xp-foundation .icon-moon-balance:before {
+    content: "\ebe5";
+}
+.xp-foundation .icon-moon-scale:before {
+    content: "\ebe6";
+}
+.xp-foundation .icon-moon-bomb:before {
+    content: "\ebe7";
+}
+.xp-foundation .icon-moon-fire:before {
+    content: "\ebe8";
+}
+.xp-foundation .icon-moon-fire2:before {
+    content: "\ebe9";
+}
+.xp-foundation .icon-moon-lab:before {
+    content: "\ebea";
+}
+.xp-foundation .icon-moon-atom:before {
+    content: "\ebeb";
+}
+.xp-foundation .icon-moon-atom2:before {
+    content: "\ebec";
+}
+.xp-foundation .icon-moon-magnet:before {
+    content: "\ebed";
+}
+.xp-foundation .icon-moon-magnet2:before {
+    content: "\ebee";
+}
+.xp-foundation .icon-moon-dumbbell:before {
+    content: "\ebef";
+}
+.xp-foundation .icon-moon-skull:before {
+    content: "\ebf0";
+}
+.xp-foundation .icon-moon-skull2:before {
+    content: "\ebf1";
+}
+.xp-foundation .icon-moon-lamp:before {
+    content: "\ebf2";
+}
+.xp-foundation .icon-moon-lamp2:before {
+    content: "\ebf3";
+}
+.xp-foundation .icon-moon-lamp3:before {
+    content: "\ebf4";
+}
+.xp-foundation .icon-moon-spotlight:before {
+    content: "\ebf5";
+}
+.xp-foundation .icon-moon-lamp4:before {
+    content: "\ebf6";
+}
+.xp-foundation .icon-moon-lamp5:before {
+    content: "\ebf7";
+}
+.xp-foundation .icon-moon-lamp6:before {
+    content: "\ebf8";
+}
+.xp-foundation .icon-moon-lamp7:before {
+    content: "\ebf9";
+}
+.xp-foundation .icon-moon-lamp8:before {
+    content: "\ebfa";
+}
+.xp-foundation .icon-moon-broom:before {
+    content: "\ebfb";
+}
+.xp-foundation .icon-moon-toiletpaper:before {
+    content: "\ebfc";
+}
+.xp-foundation .icon-moon-bin:before {
+    content: "\ebfd";
+}
+.xp-foundation .icon-moon-bin2:before {
+    content: "\ebfe";
+}
+.xp-foundation .icon-moon-bin3:before {
+    content: "\ebff";
+}
+.xp-foundation .icon-moon-bin4:before {
+    content: "\ec00";
+}
+.xp-foundation .icon-moon-bin5:before {
+    content: "\ec01";
+}
+.xp-foundation .icon-moon-briefcase:before {
+    content: "\ec02";
+}
+.xp-foundation .icon-moon-briefcase2:before {
+    content: "\ec03";
+}
+.xp-foundation .icon-moon-briefcase3:before {
+    content: "\ec04";
+}
+.xp-foundation .icon-moon-airplane:before {
+    content: "\ec05";
+}
+.xp-foundation .icon-moon-airplane2:before {
+    content: "\ec06";
+}
+.xp-foundation .icon-moon-airplane3:before {
+    content: "\ec07";
+}
+.xp-foundation .icon-moon-airplane4:before {
+    content: "\ec08";
+}
+.xp-foundation .icon-moon-paperplane:before {
+    content: "\ec09";
+}
+.xp-foundation .icon-moon-car:before {
+    content: "\ec0a";
+}
+.xp-foundation .icon-moon-steering-wheel:before {
+    content: "\ec0b";
+}
+.xp-foundation .icon-moon-car2:before {
+    content: "\ec0c";
+}
+.xp-foundation .icon-moon-gas:before {
+    content: "\ec0d";
+}
+.xp-foundation .icon-moon-bus:before {
+    content: "\ec0e";
+}
+.xp-foundation .icon-moon-truck:before {
+    content: "\ec0f";
+}
+.xp-foundation .icon-moon-bike:before {
+    content: "\ec10";
+}
+.xp-foundation .icon-moon-road:before {
+    content: "\ec11";
+}
+.xp-foundation .icon-moon-train:before {
+    content: "\ec12";
+}
+.xp-foundation .icon-moon-train2:before {
+    content: "\ec13";
+}
+.xp-foundation .icon-moon-ship:before {
+    content: "\ec14";
+}
+.xp-foundation .icon-moon-boat:before {
+    content: "\ec15";
+}
+.xp-foundation .icon-moon-chopper:before {
+    content: "\ec16";
+}
+.xp-foundation .icon-moon-chopper2:before {
+    content: "\ec17";
+}
+.xp-foundation .icon-moon-cube:before {
+    content: "\ec18";
+}
+.xp-foundation .icon-moon-cube2:before {
+    content: "\ec19";
+}
+.xp-foundation .icon-moon-cube3:before {
+    content: "\ec1a";
+}
+.xp-foundation .icon-moon-cube4:before {
+    content: "\ec1b";
+}
+.xp-foundation .icon-moon-pyramid:before {
+    content: "\ec1c";
+}
+.xp-foundation .icon-moon-pyramid2:before {
+    content: "\ec1d";
+}
+.xp-foundation .icon-moon-package:before {
+    content: "\ec1e";
+}
+.xp-foundation .icon-moon-puzzle:before {
+    content: "\ec1f";
+}
+.xp-foundation .icon-moon-puzzle2:before {
+    content: "\ec20";
+}
+.xp-foundation .icon-moon-puzzle3:before {
+    content: "\ec21";
+}
+.xp-foundation .icon-moon-puzzle4:before {
+    content: "\ec22";
+}
+.xp-foundation .icon-moon-glasses-3d:before {
+    content: "\ec23";
+}
+.xp-foundation .icon-moon-glasses-3d2:before {
+    content: "\ec24";
+}
+.xp-foundation .icon-moon-glasses:before {
+    content: "\ec25";
+}
+.xp-foundation .icon-moon-glasses2:before {
+    content: "\ec26";
+}
+.xp-foundation .icon-moon-brain:before {
+    content: "\ec27";
+}
+.xp-foundation .icon-moon-accessibility:before {
+    content: "\ec28";
+}
+.xp-foundation .icon-moon-accessibility2:before {
+    content: "\ec29";
+}
+.xp-foundation .icon-moon-strategy:before {
+    content: "\ec2a";
+}
+.xp-foundation .icon-moon-target:before {
+    content: "\ec2b";
+}
+.xp-foundation .icon-moon-target2:before {
+    content: "\ec2c";
+}
+.xp-foundation .icon-moon-target3:before {
+    content: "\ec2d";
+}
+.xp-foundation .icon-moon-ammo:before {
+    content: "\ec2e";
+}
+.xp-foundation .icon-moon-gun:before {
+    content: "\ec2f";
+}
+.xp-foundation .icon-moon-gun-forbidden:before {
+    content: "\ec30";
+}
+.xp-foundation .icon-moon-shield:before {
+    content: "\ec31";
+}
+.xp-foundation .icon-moon-shield-check:before {
+    content: "\ec32";
+}
+.xp-foundation .icon-moon-shield-notice:before {
+    content: "\ec33";
+}
+.xp-foundation .icon-moon-shield2:before {
+    content: "\ec34";
+}
+.xp-foundation .icon-moon-shield3:before {
+    content: "\ec35";
+}
+.xp-foundation .icon-moon-shield4:before {
+    content: "\ec36";
+}
+.xp-foundation .icon-moon-soccer:before {
+    content: "\ec37";
+}
+.xp-foundation .icon-moon-football:before {
+    content: "\ec38";
+}
+.xp-foundation .icon-moon-archery:before {
+    content: "\ec39";
+}
+.xp-foundation .icon-moon-bow:before {
+    content: "\ec3a";
+}
+.xp-foundation .icon-moon-sword:before {
+    content: "\ec3b";
+}
+.xp-foundation .icon-moon-tennis:before {
+    content: "\ec3c";
+}
+.xp-foundation .icon-moon-pingpong:before {
+    content: "\ec3d";
+}
+.xp-foundation .icon-moon-baseball:before {
+    content: "\ec3e";
+}
+.xp-foundation .icon-moon-basketball:before {
+    content: "\ec3f";
+}
+.xp-foundation .icon-moon-golf:before {
+    content: "\ec40";
+}
+.xp-foundation .icon-moon-golf2:before {
+    content: "\ec41";
+}
+.xp-foundation .icon-moon-hockey:before {
+    content: "\ec42";
+}
+.xp-foundation .icon-moon-racing:before {
+    content: "\ec43";
+}
+.xp-foundation .icon-moon-finish:before {
+    content: "\ec44";
+}
+.xp-foundation .icon-moon-eight-ball:before {
+    content: "\ec45";
+}
+.xp-foundation .icon-moon-bowling:before {
+    content: "\ec46";
+}
+.xp-foundation .icon-moon-bowling2:before {
+    content: "\ec47";
+}
+.xp-foundation .icon-moon-power:before {
+    content: "\ec48";
+}
+.xp-foundation .icon-moon-power2:before {
+    content: "\ec49";
+}
+.xp-foundation .icon-moon-power3:before {
+    content: "\ec4a";
+}
+.xp-foundation .icon-moon-switch:before {
+    content: "\ec4b";
+}
+.xp-foundation .icon-moon-switch2:before {
+    content: "\ec4c";
+}
+.xp-foundation .icon-moon-power-cord:before {
+    content: "\ec4d";
+}
+.xp-foundation .icon-moon-power-cord2:before {
+    content: "\ec4e";
+}
+.xp-foundation .icon-moon-outlet:before {
+    content: "\ec4f";
+}
+.xp-foundation .icon-moon-clipboard:before {
+    content: "\ec50";
+}
+.xp-foundation .icon-moon-clipboard2:before {
+    content: "\ec51";
+}
+.xp-foundation .icon-moon-clipboard3:before {
+    content: "\ec52";
+}
+.xp-foundation .icon-moon-clipboard4:before {
+    content: "\ec53";
+}
+.xp-foundation .icon-moon-clipboard5:before {
+    content: "\ec54";
+}
+.xp-foundation .icon-moon-clipboard6:before {
+    content: "\ec55";
+}
+.xp-foundation .icon-moon-playlist:before {
+    content: "\ec56";
+}
+.xp-foundation .icon-moon-playlist-add:before {
+    content: "\ec57";
+}
+.xp-foundation .icon-moon-list-numbered:before {
+    content: "\ec58";
+}
+.xp-foundation .icon-moon-list:before {
+    content: "\ec59";
+}
+.xp-foundation .icon-moon-list2:before {
+    content: "\ec5a";
+}
+.xp-foundation .icon-moon-more:before {
+    content: "\ec5b";
+}
+.xp-foundation .icon-moon-more2:before {
+    content: "\ec5c";
+}
+.xp-foundation .icon-moon-grid:before {
+    content: "\ec5d";
+}
+.xp-foundation .icon-moon-grid2:before {
+    content: "\ec5e";
+}
+.xp-foundation .icon-moon-grid3:before {
+    content: "\ec5f";
+}
+.xp-foundation .icon-moon-grid4:before {
+    content: "\ec60";
+}
+.xp-foundation .icon-moon-grid5:before {
+    content: "\ec61";
+}
+.xp-foundation .icon-moon-grid6:before {
+    content: "\ec62";
+}
+.xp-foundation .icon-moon-grid7:before {
+    content: "\ec63";
+}
+.xp-foundation .icon-moon-tree5:before {
+    content: "\ec64";
+}
+.xp-foundation .icon-moon-tree6:before {
+    content: "\ec65";
+}
+.xp-foundation .icon-moon-tree7:before {
+    content: "\ec66";
+}
+.xp-foundation .icon-moon-lan:before {
+    content: "\ec67";
+}
+.xp-foundation .icon-moon-lan2:before {
+    content: "\ec68";
+}
+.xp-foundation .icon-moon-lan3:before {
+    content: "\ec69";
+}
+.xp-foundation .icon-moon-menu:before {
+    content: "\ec6a";
+}
+.xp-foundation .icon-moon-circle-small:before {
+    content: "\ec6b";
+}
+.xp-foundation .icon-moon-menu2:before {
+    content: "\ec6c";
+}
+.xp-foundation .icon-moon-menu3:before {
+    content: "\ec6d";
+}
+.xp-foundation .icon-moon-menu4:before {
+    content: "\ec6e";
+}
+.xp-foundation .icon-moon-menu5:before {
+    content: "\ec6f";
+}
+.xp-foundation .icon-moon-menu6:before {
+    content: "\ec70";
+}
+.xp-foundation .icon-moon-menu7:before {
+    content: "\ec71";
+}
+.xp-foundation .icon-moon-menu8:before {
+    content: "\ec72";
+}
+.xp-foundation .icon-moon-menu9:before {
+    content: "\ec73";
+}
+.xp-foundation .icon-moon-menu10:before {
+    content: "\ec74";
+}
+.xp-foundation .icon-moon-cloud:before {
+    content: "\ec75";
+}
+.xp-foundation .icon-moon-cloud-download:before {
+    content: "\ec76";
+}
+.xp-foundation .icon-moon-cloud-upload:before {
+    content: "\ec77";
+}
+.xp-foundation .icon-moon-cloud-check:before {
+    content: "\ec78";
+}
+.xp-foundation .icon-moon-cloud2:before {
+    content: "\ec79";
+}
+.xp-foundation .icon-moon-cloud-download2:before {
+    content: "\ec7a";
+}
+.xp-foundation .icon-moon-cloud-upload2:before {
+    content: "\ec7b";
+}
+.xp-foundation .icon-moon-cloud-check2:before {
+    content: "\ec7c";
+}
+.xp-foundation .icon-moon-download2:before {
+    content: "\ec7d";
+}
+.xp-foundation .icon-moon-download3:before {
+    content: "\ec7e";
+}
+.xp-foundation .icon-moon-upload2:before {
+    content: "\ec7f";
+}
+.xp-foundation .icon-moon-upload3:before {
+    content: "\ec80";
+}
+.xp-foundation .icon-moon-import:before {
+    content: "\ec81";
+}
+.xp-foundation .icon-moon-import2:before {
+    content: "\ec82";
+}
+.xp-foundation .icon-moon-download4:before {
+    content: "\ec83";
+}
+.xp-foundation .icon-moon-upload4:before {
+    content: "\ec84";
+}
+.xp-foundation .icon-moon-download5:before {
+    content: "\ec85";
+}
+.xp-foundation .icon-moon-upload5:before {
+    content: "\ec86";
+}
+.xp-foundation .icon-moon-download6:before {
+    content: "\ec87";
+}
+.xp-foundation .icon-moon-upload6:before {
+    content: "\ec88";
+}
+.xp-foundation .icon-moon-download7:before {
+    content: "\ec89";
+}
+.xp-foundation .icon-moon-upload7:before {
+    content: "\ec8a";
+}
+.xp-foundation .icon-moon-download8:before {
+    content: "\ec8b";
+}
+.xp-foundation .icon-moon-upload8:before {
+    content: "\ec8c";
+}
+.xp-foundation .icon-moon-download9:before {
+    content: "\ec8d";
+}
+.xp-foundation .icon-moon-upload9:before {
+    content: "\ec8e";
+}
+.xp-foundation .icon-moon-download10:before {
+    content: "\ec8f";
+}
+.xp-foundation .icon-moon-upload10:before {
+    content: "\ec90";
+}
+.xp-foundation .icon-moon-sphere:before {
+    content: "\ec91";
+}
+.xp-foundation .icon-moon-sphere2:before {
+    content: "\ec92";
+}
+.xp-foundation .icon-moon-sphere3:before {
+    content: "\ec93";
+}
+.xp-foundation .icon-moon-planet:before {
+    content: "\ec94";
+}
+.xp-foundation .icon-moon-planet2:before {
+    content: "\ec95";
+}
+.xp-foundation .icon-moon-earth:before {
+    content: "\ec96";
+}
+.xp-foundation .icon-moon-earth2:before {
+    content: "\ec97";
+}
+.xp-foundation .icon-moon-earth3:before {
+    content: "\ec98";
+}
+.xp-foundation .icon-moon-link:before {
+    content: "\ec99";
+}
+.xp-foundation .icon-moon-unlink:before {
+    content: "\ec9a";
+}
+.xp-foundation .icon-moon-link2:before {
+    content: "\ec9b";
+}
+.xp-foundation .icon-moon-unlink2:before {
+    content: "\ec9c";
+}
+.xp-foundation .icon-moon-link3:before {
+    content: "\ec9d";
+}
+.xp-foundation .icon-moon-unlink3:before {
+    content: "\ec9e";
+}
+.xp-foundation .icon-moon-link4:before {
+    content: "\ec9f";
+}
+.xp-foundation .icon-moon-unlink4:before {
+    content: "\eca0";
+}
+.xp-foundation .icon-moon-link5:before {
+    content: "\eca1";
+}
+.xp-foundation .icon-moon-unlink5:before {
+    content: "\eca2";
+}
+.xp-foundation .icon-moon-anchor:before {
+    content: "\eca3";
+}
+.xp-foundation .icon-moon-flag:before {
+    content: "\eca4";
+}
+.xp-foundation .icon-moon-flag2:before {
+    content: "\eca5";
+}
+.xp-foundation .icon-moon-flag3:before {
+    content: "\eca6";
+}
+.xp-foundation .icon-moon-flag4:before {
+    content: "\eca7";
+}
+.xp-foundation .icon-moon-flag5:before {
+    content: "\eca8";
+}
+.xp-foundation .icon-moon-flag6:before {
+    content: "\eca9";
+}
+.xp-foundation .icon-moon-flag7:before {
+    content: "\ecaa";
+}
+.xp-foundation .icon-moon-flag8:before {
+    content: "\ecab";
+}
+.xp-foundation .icon-moon-attachment:before {
+    content: "\ecac";
+}
+.xp-foundation .icon-moon-attachment2:before {
+    content: "\ecad";
+}
+.xp-foundation .icon-moon-eye:before {
+    content: "\ecae";
+}
+.xp-foundation .icon-moon-eye-plus:before {
+    content: "\ecaf";
+}
+.xp-foundation .icon-moon-eye-minus:before {
+    content: "\ecb0";
+}
+.xp-foundation .icon-moon-eye-blocked:before {
+    content: "\ecb1";
+}
+.xp-foundation .icon-moon-eye2:before {
+    content: "\ecb2";
+}
+.xp-foundation .icon-moon-eye-blocked2:before {
+    content: "\ecb3";
+}
+.xp-foundation .icon-moon-eye3:before {
+    content: "\ecb4";
+}
+.xp-foundation .icon-moon-eye-blocked3:before {
+    content: "\ecb5";
+}
+.xp-foundation .icon-moon-eye4:before {
+    content: "\ecb6";
+}
+.xp-foundation .icon-moon-bookmark2:before {
+    content: "\ecb7";
+}
+.xp-foundation .icon-moon-bookmark3:before {
+    content: "\ecb8";
+}
+.xp-foundation .icon-moon-bookmarks:before {
+    content: "\ecb9";
+}
+.xp-foundation .icon-moon-bookmark4:before {
+    content: "\ecba";
+}
+.xp-foundation .icon-moon-spotlight2:before {
+    content: "\ecbb";
+}
+.xp-foundation .icon-moon-starburst:before {
+    content: "\ecbc";
+}
+.xp-foundation .icon-moon-snowflake:before {
+    content: "\ecbd";
+}
+.xp-foundation .icon-moon-temperature:before {
+    content: "\ecbe";
+}
+.xp-foundation .icon-moon-temperature2:before {
+    content: "\ecbf";
+}
+.xp-foundation .icon-moon-weather-lightning:before {
+    content: "\ecc0";
+}
+.xp-foundation .icon-moon-weather-lightning2:before {
+    content: "\ecc1";
+}
+.xp-foundation .icon-moon-weather-rain:before {
+    content: "\ecc2";
+}
+.xp-foundation .icon-moon-weather-rain2:before {
+    content: "\ecc3";
+}
+.xp-foundation .icon-moon-weather-snow:before {
+    content: "\ecc4";
+}
+.xp-foundation .icon-moon-weather-snow2:before {
+    content: "\ecc5";
+}
+.xp-foundation .icon-moon-weather-cloud-wind:before {
+    content: "\ecc6";
+}
+.xp-foundation .icon-moon-weather-cloud-wind2:before {
+    content: "\ecc7";
+}
+.xp-foundation .icon-moon-weather-cloud-sun:before {
+    content: "\ecc8";
+}
+.xp-foundation .icon-moon-weather-cloud-sun2:before {
+    content: "\ecc9";
+}
+.xp-foundation .icon-moon-weather-cloudy:before {
+    content: "\ecca";
+}
+.xp-foundation .icon-moon-weather-cloudy2:before {
+    content: "\eccb";
+}
+.xp-foundation .icon-moon-weather-sun-wind:before {
+    content: "\eccc";
+}
+.xp-foundation .icon-moon-weather-sun-wind2:before {
+    content: "\eccd";
+}
+.xp-foundation .icon-moon-sun:before {
+    content: "\ecce";
+}
+.xp-foundation .icon-moon-sun2:before {
+    content: "\eccf";
+}
+.xp-foundation .icon-moon-moon:before {
+    content: "\ecd0";
+}
+.xp-foundation .icon-moon-day-night:before {
+    content: "\ecd1";
+}
+.xp-foundation .icon-moon-day-night2:before {
+    content: "\ecd2";
+}
+.xp-foundation .icon-moon-weather-windy:before {
+    content: "\ecd3";
+}
+.xp-foundation .icon-moon-fan:before {
+    content: "\ecd4";
+}
+.xp-foundation .icon-moon-umbrella:before {
+    content: "\ecd5";
+}
+.xp-foundation .icon-moon-sun3:before {
+    content: "\ecd6";
+}
+.xp-foundation .icon-moon-contrast:before {
+    content: "\ecd7";
+}
+.xp-foundation .icon-moon-brightness-contrast:before {
+    content: "\ecd8";
+}
+.xp-foundation .icon-moon-brightness-high:before {
+    content: "\ecd9";
+}
+.xp-foundation .icon-moon-brightness-medium:before {
+    content: "\ecda";
+}
+.xp-foundation .icon-moon-brightness-low:before {
+    content: "\ecdb";
+}
+.xp-foundation .icon-moon-bed:before {
+    content: "\ecdc";
+}
+.xp-foundation .icon-moon-bed2:before {
+    content: "\ecdd";
+}
+.xp-foundation .icon-moon-furniture:before {
+    content: "\ecde";
+}
+.xp-foundation .icon-moon-chair:before {
+    content: "\ecdf";
+}
+.xp-foundation .icon-moon-star-empty:before {
+    content: "\ece0";
+}
+.xp-foundation .icon-moon-star-empty2:before {
+    content: "\ece1";
+}
+.xp-foundation .icon-moon-star-full:before {
+    content: "\ece2";
+}
+.xp-foundation .icon-moon-star-empty3:before {
+    content: "\ece3";
+}
+.xp-foundation .icon-moon-star-half:before {
+    content: "\ece4";
+}
+.xp-foundation .icon-moon-star-full2:before {
+    content: "\ece5";
+}
+.xp-foundation .icon-moon-star:before {
+    content: "\ece6";
+}
+.xp-foundation .icon-moon-heart:before {
+    content: "\ece7";
+}
+.xp-foundation .icon-moon-heart2:before {
+    content: "\ece8";
+}
+.xp-foundation .icon-moon-heart3:before {
+    content: "\ece9";
+}
+.xp-foundation .icon-moon-heart4:before {
+    content: "\ecea";
+}
+.xp-foundation .icon-moon-heart-broken:before {
+    content: "\eceb";
+}
+.xp-foundation .icon-moon-heart5:before {
+    content: "\ecec";
+}
+.xp-foundation .icon-moon-heart6:before {
+    content: "\eced";
+}
+.xp-foundation .icon-moon-heart-broken2:before {
+    content: "\ecee";
+}
+.xp-foundation .icon-moon-heart7:before {
+    content: "\ecef";
+}
+.xp-foundation .icon-moon-heart8:before {
+    content: "\ecf0";
+}
+.xp-foundation .icon-moon-heart-broken3:before {
+    content: "\ecf1";
+}
+.xp-foundation .icon-moon-lips:before {
+    content: "\ecf2";
+}
+.xp-foundation .icon-moon-lips2:before {
+    content: "\ecf3";
+}
+.xp-foundation .icon-moon-thumbs-up:before {
+    content: "\ecf4";
+}
+.xp-foundation .icon-moon-thumbs-up2:before {
+    content: "\ecf5";
+}
+.xp-foundation .icon-moon-thumbs-down:before {
+    content: "\ecf6";
+}
+.xp-foundation .icon-moon-thumbs-down2:before {
+    content: "\ecf7";
+}
+.xp-foundation .icon-moon-thumbs-up3:before {
+    content: "\ecf8";
+}
+.xp-foundation .icon-moon-thumbs-down3:before {
+    content: "\ecf9";
+}
+.xp-foundation .icon-moon-height:before {
+    content: "\ecfa";
+}
+.xp-foundation .icon-moon-man:before {
+    content: "\ecfb";
+}
+.xp-foundation .icon-moon-woman:before {
+    content: "\ecfc";
+}
+.xp-foundation .icon-moon-man-woman:before {
+    content: "\ecfd";
+}
+.xp-foundation .icon-moon-male:before {
+    content: "\ecfe";
+}
+.xp-foundation .icon-moon-female:before {
+    content: "\ecff";
+}
+.xp-foundation .icon-moon-peace:before {
+    content: "\ed00";
+}
+.xp-foundation .icon-moon-yin-yang:before {
+    content: "\ed01";
+}
+.xp-foundation .icon-moon-happy:before {
+    content: "\ed02";
+}
+.xp-foundation .icon-moon-happy2:before {
+    content: "\ed03";
+}
+.xp-foundation .icon-moon-smile:before {
+    content: "\ed04";
+}
+.xp-foundation .icon-moon-smile2:before {
+    content: "\ed05";
+}
+.xp-foundation .icon-moon-tongue:before {
+    content: "\ed06";
+}
+.xp-foundation .icon-moon-tongue2:before {
+    content: "\ed07";
+}
+.xp-foundation .icon-moon-sad:before {
+    content: "\ed08";
+}
+.xp-foundation .icon-moon-sad2:before {
+    content: "\ed09";
+}
+.xp-foundation .icon-moon-wink:before {
+    content: "\ed0a";
+}
+.xp-foundation .icon-moon-wink2:before {
+    content: "\ed0b";
+}
+.xp-foundation .icon-moon-grin:before {
+    content: "\ed0c";
+}
+.xp-foundation .icon-moon-grin2:before {
+    content: "\ed0d";
+}
+.xp-foundation .icon-moon-cool:before {
+    content: "\ed0e";
+}
+.xp-foundation .icon-moon-cool2:before {
+    content: "\ed0f";
+}
+.xp-foundation .icon-moon-angry:before {
+    content: "\ed10";
+}
+.xp-foundation .icon-moon-angry2:before {
+    content: "\ed11";
+}
+.xp-foundation .icon-moon-evil:before {
+    content: "\ed12";
+}
+.xp-foundation .icon-moon-evil2:before {
+    content: "\ed13";
+}
+.xp-foundation .icon-moon-shocked:before {
+    content: "\ed14";
+}
+.xp-foundation .icon-moon-shocked2:before {
+    content: "\ed15";
+}
+.xp-foundation .icon-moon-baffled:before {
+    content: "\ed16";
+}
+.xp-foundation .icon-moon-baffled2:before {
+    content: "\ed17";
+}
+.xp-foundation .icon-moon-confused:before {
+    content: "\ed18";
+}
+.xp-foundation .icon-moon-confused2:before {
+    content: "\ed19";
+}
+.xp-foundation .icon-moon-neutral:before {
+    content: "\ed1a";
+}
+.xp-foundation .icon-moon-neutral2:before {
+    content: "\ed1b";
+}
+.xp-foundation .icon-moon-hipster:before {
+    content: "\ed1c";
+}
+.xp-foundation .icon-moon-hipster2:before {
+    content: "\ed1d";
+}
+.xp-foundation .icon-moon-wondering:before {
+    content: "\ed1e";
+}
+.xp-foundation .icon-moon-wondering2:before {
+    content: "\ed1f";
+}
+.xp-foundation .icon-moon-sleepy:before {
+    content: "\ed20";
+}
+.xp-foundation .icon-moon-sleepy2:before {
+    content: "\ed21";
+}
+.xp-foundation .icon-moon-frustrated:before {
+    content: "\ed22";
+}
+.xp-foundation .icon-moon-frustrated2:before {
+    content: "\ed23";
+}
+.xp-foundation .icon-moon-crying:before {
+    content: "\ed24";
+}
+.xp-foundation .icon-moon-crying2:before {
+    content: "\ed25";
+}
+.xp-foundation .icon-moon-cursor:before {
+    content: "\ed26";
+}
+.xp-foundation .icon-moon-cursor2:before {
+    content: "\ed27";
+}
+.xp-foundation .icon-moon-lasso:before {
+    content: "\ed28";
+}
+.xp-foundation .icon-moon-lasso2:before {
+    content: "\ed29";
+}
+.xp-foundation .icon-moon-select:before {
+    content: "\ed2a";
+}
+.xp-foundation .icon-moon-select2:before {
+    content: "\ed2b";
+}
+.xp-foundation .icon-moon-point-up:before {
+    content: "\ed2c";
+}
+.xp-foundation .icon-moon-point-right:before {
+    content: "\ed2d";
+}
+.xp-foundation .icon-moon-point-down:before {
+    content: "\ed2e";
+}
+.xp-foundation .icon-moon-point-left:before {
+    content: "\ed2f";
+}
+.xp-foundation .icon-moon-pointer:before {
+    content: "\ed30";
+}
+.xp-foundation .icon-moon-reminder:before {
+    content: "\ed31";
+}
+.xp-foundation .icon-moon-drag-left-right:before {
+    content: "\ed32";
+}
+.xp-foundation .icon-moon-drag-left:before {
+    content: "\ed33";
+}
+.xp-foundation .icon-moon-drag-right:before {
+    content: "\ed34";
+}
+.xp-foundation .icon-moon-touch:before {
+    content: "\ed35";
+}
+.xp-foundation .icon-moon-multitouch:before {
+    content: "\ed36";
+}
+.xp-foundation .icon-moon-touch-zoom:before {
+    content: "\ed37";
+}
+.xp-foundation .icon-moon-touch-pinch:before {
+    content: "\ed38";
+}
+.xp-foundation .icon-moon-hand:before {
+    content: "\ed39";
+}
+.xp-foundation .icon-moon-grab:before {
+    content: "\ed3a";
+}
+.xp-foundation .icon-moon-stack-empty:before {
+    content: "\ed3b";
+}
+.xp-foundation .icon-moon-stack-plus:before {
+    content: "\ed3c";
+}
+.xp-foundation .icon-moon-stack-minus:before {
+    content: "\ed3d";
+}
+.xp-foundation .icon-moon-stack-star:before {
+    content: "\ed3e";
+}
+.xp-foundation .icon-moon-stack-picture:before {
+    content: "\ed3f";
+}
+.xp-foundation .icon-moon-stack-down:before {
+    content: "\ed40";
+}
+.xp-foundation .icon-moon-stack-up:before {
+    content: "\ed41";
+}
+.xp-foundation .icon-moon-stack-cancel:before {
+    content: "\ed42";
+}
+.xp-foundation .icon-moon-stack-check:before {
+    content: "\ed43";
+}
+.xp-foundation .icon-moon-stack-text:before {
+    content: "\ed44";
+}
+.xp-foundation .icon-moon-stack-clubs:before {
+    content: "\ed45";
+}
+.xp-foundation .icon-moon-stack-spades:before {
+    content: "\ed46";
+}
+.xp-foundation .icon-moon-stack-hearts:before {
+    content: "\ed47";
+}
+.xp-foundation .icon-moon-stack-diamonds:before {
+    content: "\ed48";
+}
+.xp-foundation .icon-moon-stack-user:before {
+    content: "\ed49";
+}
+.xp-foundation .icon-moon-stack4:before {
+    content: "\ed4a";
+}
+.xp-foundation .icon-moon-stack-music:before {
+    content: "\ed4b";
+}
+.xp-foundation .icon-moon-stack-play:before {
+    content: "\ed4c";
+}
+.xp-foundation .icon-moon-move:before {
+    content: "\ed4d";
+}
+.xp-foundation .icon-moon-dots:before {
+    content: "\ed4e";
+}
+.xp-foundation .icon-moon-warning:before {
+    content: "\ed4f";
+}
+.xp-foundation .icon-moon-warning2:before {
+    content: "\ed50";
+}
+.xp-foundation .icon-moon-notification:before {
+    content: "\ed51";
+}
+.xp-foundation .icon-moon-notification2:before {
+    content: "\ed52";
+}
+.xp-foundation .icon-moon-question:before {
+    content: "\ed53";
+}
+.xp-foundation .icon-moon-question2:before {
+    content: "\ed54";
+}
+.xp-foundation .icon-moon-question3:before {
+    content: "\ed55";
+}
+.xp-foundation .icon-moon-question4:before {
+    content: "\ed56";
+}
+.xp-foundation .icon-moon-question5:before {
+    content: "\ed57";
+}
+.xp-foundation .icon-moon-question6:before {
+    content: "\ed58";
+}
+.xp-foundation .icon-moon-plus:before {
+    content: "\ed59";
+}
+.xp-foundation .icon-moon-minus:before {
+    content: "\ed5a";
+}
+.xp-foundation .icon-moon-plus2:before {
+    content: "\ed5b";
+}
+.xp-foundation .icon-moon-minus2:before {
+    content: "\ed5c";
+}
+.xp-foundation .icon-moon-plus3:before {
+    content: "\ed5d";
+}
+.xp-foundation .icon-moon-minus3:before {
+    content: "\ed5e";
+}
+.xp-foundation .icon-moon-plus-circle:before {
+    content: "\ed5f";
+}
+.xp-foundation .icon-moon-minus-circle:before {
+    content: "\ed60";
+}
+.xp-foundation .icon-moon-plus-circle2:before {
+    content: "\ed61";
+}
+.xp-foundation .icon-moon-minus-circle2:before {
+    content: "\ed62";
+}
+.xp-foundation .icon-moon-info:before {
+    content: "\ed63";
+}
+.xp-foundation .icon-moon-info2:before {
+    content: "\ed64";
+}
+.xp-foundation .icon-moon-cancel-circle:before {
+    content: "\ed65";
+}
+.xp-foundation .icon-moon-cancel-circle2:before {
+    content: "\ed66";
+}
+.xp-foundation .icon-moon-blocked:before {
+    content: "\ed67";
+}
+.xp-foundation .icon-moon-cancel-square:before {
+    content: "\ed68";
+}
+.xp-foundation .icon-moon-cancel-square2:before {
+    content: "\ed69";
+}
+.xp-foundation .icon-moon-cancel:before {
+    content: "\ed6a";
+}
+.xp-foundation .icon-moon-spam:before {
+    content: "\ed6b";
+}
+.xp-foundation .icon-moon-cross:before {
+    content: "\ed6c";
+}
+.xp-foundation .icon-moon-cross2:before {
+    content: "\ed6d";
+}
+.xp-foundation .icon-moon-cross3:before {
+    content: "\ed6e";
+}
+.xp-foundation .icon-moon-checkmark:before {
+    content: "\ed6f";
+}
+.xp-foundation .icon-moon-checkmark2:before {
+    content: "\ed70";
+}
+.xp-foundation .icon-moon-checkmark3:before {
+    content: "\ed71";
+}
+.xp-foundation .icon-moon-checkmark4:before {
+    content: "\ed72";
+}
+.xp-foundation .icon-moon-checkmark5:before {
+    content: "\ed73";
+}
+.xp-foundation .icon-moon-spell-check:before {
+    content: "\ed74";
+}
+.xp-foundation .icon-moon-spell-check2:before {
+    content: "\ed75";
+}
+.xp-foundation .icon-moon-enter:before {
+    content: "\ed76";
+}
+.xp-foundation .icon-moon-exit:before {
+    content: "\ed77";
+}
+.xp-foundation .icon-moon-enter2:before {
+    content: "\ed78";
+}
+.xp-foundation .icon-moon-exit2:before {
+    content: "\ed79";
+}
+.xp-foundation .icon-moon-enter3:before {
+    content: "\ed7a";
+}
+.xp-foundation .icon-moon-exit3:before {
+    content: "\ed7b";
+}
+.xp-foundation .icon-moon-wall:before {
+    content: "\ed7c";
+}
+.xp-foundation .icon-moon-fence:before {
+    content: "\ed7d";
+}
+.xp-foundation .icon-moon-play3:before {
+    content: "\ed7e";
+}
+.xp-foundation .icon-moon-pause:before {
+    content: "\ed7f";
+}
+.xp-foundation .icon-moon-stop:before {
+    content: "\ed80";
+}
+.xp-foundation .icon-moon-previous:before {
+    content: "\ed81";
+}
+.xp-foundation .icon-moon-next:before {
+    content: "\ed82";
+}
+.xp-foundation .icon-moon-backward:before {
+    content: "\ed83";
+}
+.xp-foundation .icon-moon-forward2:before {
+    content: "\ed84";
+}
+.xp-foundation .icon-moon-play4:before {
+    content: "\ed85";
+}
+.xp-foundation .icon-moon-pause2:before {
+    content: "\ed86";
+}
+.xp-foundation .icon-moon-stop2:before {
+    content: "\ed87";
+}
+.xp-foundation .icon-moon-backward2:before {
+    content: "\ed88";
+}
+.xp-foundation .icon-moon-forward3:before {
+    content: "\ed89";
+}
+.xp-foundation .icon-moon-first:before {
+    content: "\ed8a";
+}
+.xp-foundation .icon-moon-last:before {
+    content: "\ed8b";
+}
+.xp-foundation .icon-moon-previous2:before {
+    content: "\ed8c";
+}
+.xp-foundation .icon-moon-next2:before {
+    content: "\ed8d";
+}
+.xp-foundation .icon-moon-eject:before {
+    content: "\ed8e";
+}
+.xp-foundation .icon-moon-volume-high:before {
+    content: "\ed8f";
+}
+.xp-foundation .icon-moon-volume-medium:before {
+    content: "\ed90";
+}
+.xp-foundation .icon-moon-volume-low:before {
+    content: "\ed91";
+}
+.xp-foundation .icon-moon-volume-mute:before {
+    content: "\ed92";
+}
+.xp-foundation .icon-moon-speaker-left:before {
+    content: "\ed93";
+}
+.xp-foundation .icon-moon-speaker-right:before {
+    content: "\ed94";
+}
+.xp-foundation .icon-moon-volume-mute2:before {
+    content: "\ed95";
+}
+.xp-foundation .icon-moon-volume-increase:before {
+    content: "\ed96";
+}
+.xp-foundation .icon-moon-volume-decrease:before {
+    content: "\ed97";
+}
+.xp-foundation .icon-moon-volume-high2:before {
+    content: "\ed98";
+}
+.xp-foundation .icon-moon-volume-medium2:before {
+    content: "\ed99";
+}
+.xp-foundation .icon-moon-volume-medium3:before {
+    content: "\ed9a";
+}
+.xp-foundation .icon-moon-volume-low2:before {
+    content: "\ed9b";
+}
+.xp-foundation .icon-moon-volume-mute3:before {
+    content: "\ed9c";
+}
+.xp-foundation .icon-moon-volume-increase2:before {
+    content: "\ed9d";
+}
+.xp-foundation .icon-moon-volume-decrease2:before {
+    content: "\ed9e";
+}
+.xp-foundation .icon-moon-volume-decrease3:before {
+    content: "\ed9f";
+}
+.xp-foundation .icon-moon-volume-5:before {
+    content: "\eda0";
+}
+.xp-foundation .icon-moon-volume-4:before {
+    content: "\eda1";
+}
+.xp-foundation .icon-moon-volume-3:before {
+    content: "\eda2";
+}
+.xp-foundation .icon-moon-volume-2:before {
+    content: "\eda3";
+}
+.xp-foundation .icon-moon-volume-1:before {
+    content: "\eda4";
+}
+.xp-foundation .icon-moon-volume-0:before {
+    content: "\eda5";
+}
+.xp-foundation .icon-moon-volume-mute4:before {
+    content: "\eda6";
+}
+.xp-foundation .icon-moon-volume-mute5:before {
+    content: "\eda7";
+}
+.xp-foundation .icon-moon-loop:before {
+    content: "\eda8";
+}
+.xp-foundation .icon-moon-loop2:before {
+    content: "\eda9";
+}
+.xp-foundation .icon-moon-loop3:before {
+    content: "\edaa";
+}
+.xp-foundation .icon-moon-infinite-square:before {
+    content: "\edab";
+}
+.xp-foundation .icon-moon-infinite:before {
+    content: "\edac";
+}
+.xp-foundation .icon-moon-infinite2:before {
+    content: "\edad";
+}
+.xp-foundation .icon-moon-loop4:before {
+    content: "\edae";
+}
+.xp-foundation .icon-moon-shuffle:before {
+    content: "\edaf";
+}
+.xp-foundation .icon-moon-shuffle2:before {
+    content: "\edb0";
+}
+.xp-foundation .icon-moon-wave:before {
+    content: "\edb1";
+}
+.xp-foundation .icon-moon-wave2:before {
+    content: "\edb2";
+}
+.xp-foundation .icon-moon-split:before {
+    content: "\edb3";
+}
+.xp-foundation .icon-moon-merge:before {
+    content: "\edb4";
+}
+.xp-foundation .icon-moon-first2:before {
+    content: "\edb5";
+}
+.xp-foundation .icon-moon-last2:before {
+    content: "\edb6";
+}
+.xp-foundation .icon-moon-arrow-up:before {
+    content: "\edb7";
+}
+.xp-foundation .icon-moon-arrow-up2:before {
+    content: "\edb8";
+}
+.xp-foundation .icon-moon-arrow-up3:before {
+    content: "\edb9";
+}
+.xp-foundation .icon-moon-arrow-up4:before {
+    content: "\edba";
+}
+.xp-foundation .icon-moon-arrow-right:before {
+    content: "\edbb";
+}
+.xp-foundation .icon-moon-arrow-right2:before {
+    content: "\edbc";
+}
+.xp-foundation .icon-moon-arrow-right3:before {
+    content: "\edbd";
+}
+.xp-foundation .icon-moon-arrow-right4:before {
+    content: "\edbe";
+}
+.xp-foundation .icon-moon-arrow-down:before {
+    content: "\edbf";
+}
+.xp-foundation .icon-moon-arrow-down2:before {
+    content: "\edc0";
+}
+.xp-foundation .icon-moon-arrow-down3:before {
+    content: "\edc1";
+}
+.xp-foundation .icon-moon-arrow-down4:before {
+    content: "\edc2";
+}
+.xp-foundation .icon-moon-arrow-left:before {
+    content: "\edc3";
+}
+.xp-foundation .icon-moon-arrow-left2:before {
+    content: "\edc4";
+}
+.xp-foundation .icon-moon-arrow-left3:before {
+    content: "\edc5";
+}
+.xp-foundation .icon-moon-arrow-left4:before {
+    content: "\edc6";
+}
+.xp-foundation .icon-moon-arrow-up5:before {
+    content: "\edc7";
+}
+.xp-foundation .icon-moon-arrow-right5:before {
+    content: "\edc8";
+}
+.xp-foundation .icon-moon-arrow-down5:before {
+    content: "\edc9";
+}
+.xp-foundation .icon-moon-arrow-left5:before {
+    content: "\edca";
+}
+.xp-foundation .icon-moon-arrow-up-left:before {
+    content: "\edcb";
+}
+.xp-foundation .icon-moon-arrow-up6:before {
+    content: "\edcc";
+}
+.xp-foundation .icon-moon-arrow-up-right:before {
+    content: "\edcd";
+}
+.xp-foundation .icon-moon-arrow-right6:before {
+    content: "\edce";
+}
+.xp-foundation .icon-moon-arrow-down-right:before {
+    content: "\edcf";
+}
+.xp-foundation .icon-moon-arrow-down6:before {
+    content: "\edd0";
+}
+.xp-foundation .icon-moon-arrow-down-left:before {
+    content: "\edd1";
+}
+.xp-foundation .icon-moon-arrow-left6:before {
+    content: "\edd2";
+}
+.xp-foundation .icon-moon-arrow-up-left2:before {
+    content: "\edd3";
+}
+.xp-foundation .icon-moon-arrow-up7:before {
+    content: "\edd4";
+}
+.xp-foundation .icon-moon-arrow-up-right2:before {
+    content: "\edd5";
+}
+.xp-foundation .icon-moon-arrow-right7:before {
+    content: "\edd6";
+}
+.xp-foundation .icon-moon-arrow-down-right2:before {
+    content: "\edd7";
+}
+.xp-foundation .icon-moon-arrow-down7:before {
+    content: "\edd8";
+}
+.xp-foundation .icon-moon-arrow-down-left2:before {
+    content: "\edd9";
+}
+.xp-foundation .icon-moon-arrow-left7:before {
+    content: "\edda";
+}
+.xp-foundation .icon-moon-arrow-up-left3:before {
+    content: "\eddb";
+}
+.xp-foundation .icon-moon-arrow-up8:before {
+    content: "\eddc";
+}
+.xp-foundation .icon-moon-arrow-up-right3:before {
+    content: "\eddd";
+}
+.xp-foundation .icon-moon-arrow-right8:before {
+    content: "\edde";
+}
+.xp-foundation .icon-moon-arrow-down-right3:before {
+    content: "\eddf";
+}
+.xp-foundation .icon-moon-arrow-down8:before {
+    content: "\ede0";
+}
+.xp-foundation .icon-moon-arrow-down-left3:before {
+    content: "\ede1";
+}
+.xp-foundation .icon-moon-arrow-left8:before {
+    content: "\ede2";
+}
+.xp-foundation .icon-moon-circle-up:before {
+    content: "\ede3";
+}
+.xp-foundation .icon-moon-circle-right:before {
+    content: "\ede4";
+}
+.xp-foundation .icon-moon-circle-down:before {
+    content: "\ede5";
+}
+.xp-foundation .icon-moon-circle-left:before {
+    content: "\ede6";
+}
+.xp-foundation .icon-moon-circle-up2:before {
+    content: "\ede7";
+}
+.xp-foundation .icon-moon-circle-right2:before {
+    content: "\ede8";
+}
+.xp-foundation .icon-moon-circle-down2:before {
+    content: "\ede9";
+}
+.xp-foundation .icon-moon-circle-left2:before {
+    content: "\edea";
+}
+.xp-foundation .icon-moon-circle-up-left:before {
+    content: "\edeb";
+}
+.xp-foundation .icon-moon-circle-up3:before {
+    content: "\edec";
+}
+.xp-foundation .icon-moon-circle-up-right:before {
+    content: "\eded";
+}
+.xp-foundation .icon-moon-circle-right3:before {
+    content: "\edee";
+}
+.xp-foundation .icon-moon-circle-down-right:before {
+    content: "\edef";
+}
+.xp-foundation .icon-moon-circle-down3:before {
+    content: "\edf0";
+}
+.xp-foundation .icon-moon-circle-down-left:before {
+    content: "\edf1";
+}
+.xp-foundation .icon-moon-circle-left3:before {
+    content: "\edf2";
+}
+.xp-foundation .icon-moon-circle-up-left2:before {
+    content: "\edf3";
+}
+.xp-foundation .icon-moon-circle-up4:before {
+    content: "\edf4";
+}
+.xp-foundation .icon-moon-circle-up-right2:before {
+    content: "\edf5";
+}
+.xp-foundation .icon-moon-circle-right4:before {
+    content: "\edf6";
+}
+.xp-foundation .icon-moon-circle-down-right2:before {
+    content: "\edf7";
+}
+.xp-foundation .icon-moon-circle-down4:before {
+    content: "\edf8";
+}
+.xp-foundation .icon-moon-circle-down-left2:before {
+    content: "\edf9";
+}
+.xp-foundation .icon-moon-circle-left4:before {
+    content: "\edfa";
+}
+.xp-foundation .icon-moon-arrow-resize:before {
+    content: "\edfb";
+}
+.xp-foundation .icon-moon-arrow-resize2:before {
+    content: "\edfc";
+}
+.xp-foundation .icon-moon-arrow-resize3:before {
+    content: "\edfd";
+}
+.xp-foundation .icon-moon-arrow-resize4:before {
+    content: "\edfe";
+}
+.xp-foundation .icon-moon-arrow-resize5:before {
+    content: "\edff";
+}
+.xp-foundation .icon-moon-arrow-resize6:before {
+    content: "\ee00";
+}
+.xp-foundation .icon-moon-arrow-resize7:before {
+    content: "\ee01";
+}
+.xp-foundation .icon-moon-arrow-resize8:before {
+    content: "\ee02";
+}
+.xp-foundation .icon-moon-square-up-left:before {
+    content: "\ee03";
+}
+.xp-foundation .icon-moon-square-up:before {
+    content: "\ee04";
+}
+.xp-foundation .icon-moon-square-up-right:before {
+    content: "\ee05";
+}
+.xp-foundation .icon-moon-square-right:before {
+    content: "\ee06";
+}
+.xp-foundation .icon-moon-square-down-right:before {
+    content: "\ee07";
+}
+.xp-foundation .icon-moon-square-down:before {
+    content: "\ee08";
+}
+.xp-foundation .icon-moon-square-down-left:before {
+    content: "\ee09";
+}
+.xp-foundation .icon-moon-square-left:before {
+    content: "\ee0a";
+}
+.xp-foundation .icon-moon-arrow-up9:before {
+    content: "\ee0b";
+}
+.xp-foundation .icon-moon-arrow-right9:before {
+    content: "\ee0c";
+}
+.xp-foundation .icon-moon-arrow-down9:before {
+    content: "\ee0d";
+}
+.xp-foundation .icon-moon-arrow-left9:before {
+    content: "\ee0e";
+}
+.xp-foundation .icon-moon-arrow-up10:before {
+    content: "\ee0f";
+}
+.xp-foundation .icon-moon-arrow-right10:before {
+    content: "\ee10";
+}
+.xp-foundation .icon-moon-arrow-down10:before {
+    content: "\ee11";
+}
+.xp-foundation .icon-moon-arrow-left10:before {
+    content: "\ee12";
+}
+.xp-foundation .icon-moon-arrow-up-left4:before {
+    content: "\ee13";
+}
+.xp-foundation .icon-moon-arrow-up11:before {
+    content: "\ee14";
+}
+.xp-foundation .icon-moon-arrow-up-right4:before {
+    content: "\ee15";
+}
+.xp-foundation .icon-moon-arrow-right11:before {
+    content: "\ee16";
+}
+.xp-foundation .icon-moon-arrow-down-right4:before {
+    content: "\ee17";
+}
+.xp-foundation .icon-moon-arrow-down11:before {
+    content: "\ee18";
+}
+.xp-foundation .icon-moon-arrow-down-left4:before {
+    content: "\ee19";
+}
+.xp-foundation .icon-moon-arrow-left11:before {
+    content: "\ee1a";
+}
+.xp-foundation .icon-moon-arrow-up-left5:before {
+    content: "\ee1b";
+}
+.xp-foundation .icon-moon-arrow-up12:before {
+    content: "\ee1c";
+}
+.xp-foundation .icon-moon-arrow-up-right5:before {
+    content: "\ee1d";
+}
+.xp-foundation .icon-moon-arrow-right12:before {
+    content: "\ee1e";
+}
+.xp-foundation .icon-moon-arrow-down-right5:before {
+    content: "\ee1f";
+}
+.xp-foundation .icon-moon-arrow-down12:before {
+    content: "\ee20";
+}
+.xp-foundation .icon-moon-arrow-down-left5:before {
+    content: "\ee21";
+}
+.xp-foundation .icon-moon-arrow-left12:before {
+    content: "\ee22";
+}
+.xp-foundation .icon-moon-arrow-up13:before {
+    content: "\ee23";
+}
+.xp-foundation .icon-moon-arrow-right13:before {
+    content: "\ee24";
+}
+.xp-foundation .icon-moon-arrow-down13:before {
+    content: "\ee25";
+}
+.xp-foundation .icon-moon-arrow-left13:before {
+    content: "\ee26";
+}
+.xp-foundation .icon-moon-arrow-up14:before {
+    content: "\ee27";
+}
+.xp-foundation .icon-moon-arrow-right14:before {
+    content: "\ee28";
+}
+.xp-foundation .icon-moon-arrow-down14:before {
+    content: "\ee29";
+}
+.xp-foundation .icon-moon-arrow-left14:before {
+    content: "\ee2a";
+}
+.xp-foundation .icon-moon-circle-up5:before {
+    content: "\ee2b";
+}
+.xp-foundation .icon-moon-circle-right5:before {
+    content: "\ee2c";
+}
+.xp-foundation .icon-moon-circle-down5:before {
+    content: "\ee2d";
+}
+.xp-foundation .icon-moon-circle-left5:before {
+    content: "\ee2e";
+}
+.xp-foundation .icon-moon-circle-up6:before {
+    content: "\ee2f";
+}
+.xp-foundation .icon-moon-circle-right6:before {
+    content: "\ee30";
+}
+.xp-foundation .icon-moon-circle-down6:before {
+    content: "\ee31";
+}
+.xp-foundation .icon-moon-circle-left6:before {
+    content: "\ee32";
+}
+.xp-foundation .icon-moon-arrow-up15:before {
+    content: "\ee33";
+}
+.xp-foundation .icon-moon-arrow-right15:before {
+    content: "\ee34";
+}
+.xp-foundation .icon-moon-arrow-down15:before {
+    content: "\ee35";
+}
+.xp-foundation .icon-moon-arrow-left15:before {
+    content: "\ee36";
+}
+.xp-foundation .icon-moon-arrow-up16:before {
+    content: "\ee37";
+}
+.xp-foundation .icon-moon-arrow-right16:before {
+    content: "\ee38";
+}
+.xp-foundation .icon-moon-arrow-down16:before {
+    content: "\ee39";
+}
+.xp-foundation .icon-moon-arrow-left16:before {
+    content: "\ee3a";
+}
+.xp-foundation .icon-moon-menu-open:before {
+    content: "\ee3b";
+}
+.xp-foundation .icon-moon-menu-open2:before {
+    content: "\ee3c";
+}
+.xp-foundation .icon-moon-menu-close:before {
+    content: "\ee3d";
+}
+.xp-foundation .icon-moon-menu-close2:before {
+    content: "\ee3e";
+}
+.xp-foundation .icon-moon-enter4:before {
+    content: "\ee3f";
+}
+.xp-foundation .icon-moon-enter5:before {
+    content: "\ee40";
+}
+.xp-foundation .icon-moon-esc:before {
+    content: "\ee41";
+}
+.xp-foundation .icon-moon-enter6:before {
+    content: "\ee42";
+}
+.xp-foundation .icon-moon-backspace:before {
+    content: "\ee43";
+}
+.xp-foundation .icon-moon-backspace2:before {
+    content: "\ee44";
+}
+.xp-foundation .icon-moon-tab:before {
+    content: "\ee45";
+}
+.xp-foundation .icon-moon-transmission:before {
+    content: "\ee46";
+}
+.xp-foundation .icon-moon-transmission2:before {
+    content: "\ee47";
+}
+.xp-foundation .icon-moon-sort:before {
+    content: "\ee48";
+}
+.xp-foundation .icon-moon-sort2:before {
+    content: "\ee49";
+}
+.xp-foundation .icon-moon-move-up:before {
+    content: "\ee4a";
+}
+.xp-foundation .icon-moon-move-down:before {
+    content: "\ee4b";
+}
+.xp-foundation .icon-moon-sort-alpha-asc:before {
+    content: "\ee4c";
+}
+.xp-foundation .icon-moon-sort-alpha-desc:before {
+    content: "\ee4d";
+}
+.xp-foundation .icon-moon-sort-numeric-asc:before {
+    content: "\ee4e";
+}
+.xp-foundation .icon-moon-sort-numberic-desc:before {
+    content: "\ee4f";
+}
+.xp-foundation .icon-moon-sort-amount-asc:before {
+    content: "\ee50";
+}
+.xp-foundation .icon-moon-sort-amount-desc:before {
+    content: "\ee51";
+}
+.xp-foundation .icon-moon-sort-time-asc:before {
+    content: "\ee52";
+}
+.xp-foundation .icon-moon-sort-time-desc:before {
+    content: "\ee53";
+}
+.xp-foundation .icon-moon-battery-6:before {
+    content: "\ee54";
+}
+.xp-foundation .icon-moon-battery-5:before {
+    content: "\ee55";
+}
+.xp-foundation .icon-moon-battery-4:before {
+    content: "\ee56";
+}
+.xp-foundation .icon-moon-battery-3:before {
+    content: "\ee57";
+}
+.xp-foundation .icon-moon-battery-2:before {
+    content: "\ee58";
+}
+.xp-foundation .icon-moon-battery-1:before {
+    content: "\ee59";
+}
+.xp-foundation .icon-moon-battery-0:before {
+    content: "\ee5a";
+}
+.xp-foundation .icon-moon-battery-charging:before {
+    content: "\ee5b";
+}
+.xp-foundation .icon-moon-key-keyboard:before {
+    content: "\ee5c";
+}
+.xp-foundation .icon-moon-key-A:before {
+    content: "\ee5d";
+}
+.xp-foundation .icon-moon-key-up:before {
+    content: "\ee5e";
+}
+.xp-foundation .icon-moon-key-right:before {
+    content: "\ee5f";
+}
+.xp-foundation .icon-moon-key-down:before {
+    content: "\ee60";
+}
+.xp-foundation .icon-moon-key-left:before {
+    content: "\ee61";
+}
+.xp-foundation .icon-moon-command:before {
+    content: "\ee62";
+}
+.xp-foundation .icon-moon-shift:before {
+    content: "\ee63";
+}
+.xp-foundation .icon-moon-ctrl:before {
+    content: "\ee64";
+}
+.xp-foundation .icon-moon-opt:before {
+    content: "\ee65";
+}
+.xp-foundation .icon-moon-checkbox-checked:before {
+    content: "\ee66";
+}
+.xp-foundation .icon-moon-checkbox-unchecked:before {
+    content: "\ee67";
+}
+.xp-foundation .icon-moon-checkbox-partial:before {
+    content: "\ee68";
+}
+.xp-foundation .icon-moon-square:before {
+    content: "\ee69";
+}
+.xp-foundation .icon-moon-triangle:before {
+    content: "\ee6a";
+}
+.xp-foundation .icon-moon-triangle2:before {
+    content: "\ee6b";
+}
+.xp-foundation .icon-moon-diamond3:before {
+    content: "\ee6c";
+}
+.xp-foundation .icon-moon-diamond4:before {
+    content: "\ee6d";
+}
+.xp-foundation .icon-moon-checkbox-checked2:before {
+    content: "\ee6e";
+}
+.xp-foundation .icon-moon-checkbox-unchecked2:before {
+    content: "\ee6f";
+}
+.xp-foundation .icon-moon-checkbox-partial2:before {
+    content: "\ee70";
+}
+.xp-foundation .icon-moon-radio-checked:before {
+    content: "\ee71";
+}
+.xp-foundation .icon-moon-radio-checked2:before {
+    content: "\ee72";
+}
+.xp-foundation .icon-moon-radio-unchecked:before {
+    content: "\ee73";
+}
+.xp-foundation .icon-moon-toggle-on:before {
+    content: "\ee74";
+}
+.xp-foundation .icon-moon-toggle-off:before {
+    content: "\ee75";
+}
+.xp-foundation .icon-moon-checkmark-circle:before {
+    content: "\ee76";
+}
+.xp-foundation .icon-moon-circle:before {
+    content: "\ee77";
+}
+.xp-foundation .icon-moon-circle2:before {
+    content: "\ee78";
+}
+.xp-foundation .icon-moon-circles:before {
+    content: "\ee79";
+}
+.xp-foundation .icon-moon-circles2:before {
+    content: "\ee7a";
+}
+.xp-foundation .icon-moon-crop:before {
+    content: "\ee7b";
+}
+.xp-foundation .icon-moon-crop2:before {
+    content: "\ee7c";
+}
+.xp-foundation .icon-moon-make-group:before {
+    content: "\ee7d";
+}
+.xp-foundation .icon-moon-ungroup:before {
+    content: "\ee7e";
+}
+.xp-foundation .icon-moon-vector:before {
+    content: "\ee7f";
+}
+.xp-foundation .icon-moon-vector2:before {
+    content: "\ee80";
+}
+.xp-foundation .icon-moon-rulers:before {
+    content: "\ee81";
+}
+.xp-foundation .icon-moon-ruler:before {
+    content: "\ee82";
+}
+.xp-foundation .icon-moon-pencil-ruler:before {
+    content: "\ee83";
+}
+.xp-foundation .icon-moon-scissors:before {
+    content: "\ee84";
+}
+.xp-foundation .icon-moon-scissors2:before {
+    content: "\ee85";
+}
+.xp-foundation .icon-moon-scissors3:before {
+    content: "\ee86";
+}
+.xp-foundation .icon-moon-haircut:before {
+    content: "\ee87";
+}
+.xp-foundation .icon-moon-comb:before {
+    content: "\ee88";
+}
+.xp-foundation .icon-moon-filter:before {
+    content: "\ee89";
+}
+.xp-foundation .icon-moon-filter2:before {
+    content: "\ee8a";
+}
+.xp-foundation .icon-moon-filter3:before {
+    content: "\ee8b";
+}
+.xp-foundation .icon-moon-filter4:before {
+    content: "\ee8c";
+}
+.xp-foundation .icon-moon-font:before {
+    content: "\ee8d";
+}
+.xp-foundation .icon-moon-ampersand:before {
+    content: "\ee8e";
+}
+.xp-foundation .icon-moon-ligature:before {
+    content: "\ee8f";
+}
+.xp-foundation .icon-moon-ligature2:before {
+    content: "\ee90";
+}
+.xp-foundation .icon-moon-font-size:before {
+    content: "\ee91";
+}
+.xp-foundation .icon-moon-typography:before {
+    content: "\ee92";
+}
+.xp-foundation .icon-moon-text-height:before {
+    content: "\ee93";
+}
+.xp-foundation .icon-moon-text-width:before {
+    content: "\ee94";
+}
+.xp-foundation .icon-moon-height2:before {
+    content: "\ee95";
+}
+.xp-foundation .icon-moon-width:before {
+    content: "\ee96";
+}
+.xp-foundation .icon-moon-bold:before {
+    content: "\ee97";
+}
+.xp-foundation .icon-moon-underline:before {
+    content: "\ee98";
+}
+.xp-foundation .icon-moon-italic:before {
+    content: "\ee99";
+}
+.xp-foundation .icon-moon-strikethrough:before {
+    content: "\ee9a";
+}
+.xp-foundation .icon-moon-strikethrough2:before {
+    content: "\ee9b";
+}
+.xp-foundation .icon-moon-font-size2:before {
+    content: "\ee9c";
+}
+.xp-foundation .icon-moon-bold2:before {
+    content: "\ee9d";
+}
+.xp-foundation .icon-moon-underline2:before {
+    content: "\ee9e";
+}
+.xp-foundation .icon-moon-italic2:before {
+    content: "\ee9f";
+}
+.xp-foundation .icon-moon-strikethrough3:before {
+    content: "\eea0";
+}
+.xp-foundation .icon-moon-omega:before {
+    content: "\eea1";
+}
+.xp-foundation .icon-moon-sigma:before {
+    content: "\eea2";
+}
+.xp-foundation .icon-moon-nbsp:before {
+    content: "\eea3";
+}
+.xp-foundation .icon-moon-page-break:before {
+    content: "\eea4";
+}
+.xp-foundation .icon-moon-page-break2:before {
+    content: "\eea5";
+}
+.xp-foundation .icon-moon-superscript:before {
+    content: "\eea6";
+}
+.xp-foundation .icon-moon-subscript:before {
+    content: "\eea7";
+}
+.xp-foundation .icon-moon-superscript2:before {
+    content: "\eea8";
+}
+.xp-foundation .icon-moon-subscript2:before {
+    content: "\eea9";
+}
+.xp-foundation .icon-moon-text-color:before {
+    content: "\eeaa";
+}
+.xp-foundation .icon-moon-highlight:before {
+    content: "\eeab";
+}
+.xp-foundation .icon-moon-pagebreak:before {
+    content: "\eeac";
+}
+.xp-foundation .icon-moon-clear-formatting:before {
+    content: "\eead";
+}
+.xp-foundation .icon-moon-table:before {
+    content: "\eeae";
+}
+.xp-foundation .icon-moon-table2:before {
+    content: "\eeaf";
+}
+.xp-foundation .icon-moon-insert-template:before {
+    content: "\eeb0";
+}
+.xp-foundation .icon-moon-pilcrow:before {
+    content: "\eeb1";
+}
+.xp-foundation .icon-moon-ltr:before {
+    content: "\eeb2";
+}
+.xp-foundation .icon-moon-rtl:before {
+    content: "\eeb3";
+}
+.xp-foundation .icon-moon-ltr2:before {
+    content: "\eeb4";
+}
+.xp-foundation .icon-moon-rtl2:before {
+    content: "\eeb5";
+}
+.xp-foundation .icon-moon-section:before {
+    content: "\eeb6";
+}
+.xp-foundation .icon-moon-paragraph-left:before {
+    content: "\eeb7";
+}
+.xp-foundation .icon-moon-paragraph-center:before {
+    content: "\eeb8";
+}
+.xp-foundation .icon-moon-paragraph-right:before {
+    content: "\eeb9";
+}
+.xp-foundation .icon-moon-paragraph-justify:before {
+    content: "\eeba";
+}
+.xp-foundation .icon-moon-paragraph-left2:before {
+    content: "\eebb";
+}
+.xp-foundation .icon-moon-paragraph-center2:before {
+    content: "\eebc";
+}
+.xp-foundation .icon-moon-paragraph-right2:before {
+    content: "\eebd";
+}
+.xp-foundation .icon-moon-paragraph-justify2:before {
+    content: "\eebe";
+}
+.xp-foundation .icon-moon-indent-increase:before {
+    content: "\eebf";
+}
+.xp-foundation .icon-moon-indent-decrease:before {
+    content: "\eec0";
+}
+.xp-foundation .icon-moon-paragraph-left3:before {
+    content: "\eec1";
+}
+.xp-foundation .icon-moon-paragraph-center3:before {
+    content: "\eec2";
+}
+.xp-foundation .icon-moon-paragraph-right3:before {
+    content: "\eec3";
+}
+.xp-foundation .icon-moon-paragraph-justify3:before {
+    content: "\eec4";
+}
+.xp-foundation .icon-moon-indent-increase2:before {
+    content: "\eec5";
+}
+.xp-foundation .icon-moon-indent-decrease2:before {
+    content: "\eec6";
+}
+.xp-foundation .icon-moon-share:before {
+    content: "\eec7";
+}
+.xp-foundation .icon-moon-share2:before {
+    content: "\eec8";
+}
+.xp-foundation .icon-moon-new-tab:before {
+    content: "\eec9";
+}
+.xp-foundation .icon-moon-new-tab2:before {
+    content: "\eeca";
+}
+.xp-foundation .icon-moon-popout:before {
+    content: "\eecb";
+}
+.xp-foundation .icon-moon-embed:before {
+    content: "\eecc";
+}
+.xp-foundation .icon-moon-embed2:before {
+    content: "\eecd";
+}
+.xp-foundation .icon-moon-markup:before {
+    content: "\eece";
+}
+.xp-foundation .icon-moon-regexp:before {
+    content: "\eecf";
+}
+.xp-foundation .icon-moon-regexp2:before {
+    content: "\eed0";
+}
+.xp-foundation .icon-moon-code:before {
+    content: "\eed1";
+}
+.xp-foundation .icon-moon-circle-css:before {
+    content: "\eed2";
+}
+.xp-foundation .icon-moon-circle-code:before {
+    content: "\eed3";
+}
+.xp-foundation .icon-moon-terminal:before {
+    content: "\eed4";
+}
+.xp-foundation .icon-moon-unicode:before {
+    content: "\eed5";
+}
+.xp-foundation .icon-moon-seven-segment-0:before {
+    content: "\eed6";
+}
+.xp-foundation .icon-moon-seven-segment-1:before {
+    content: "\eed7";
+}
+.xp-foundation .icon-moon-seven-segment-2:before {
+    content: "\eed8";
+}
+.xp-foundation .icon-moon-seven-segment-3:before {
+    content: "\eed9";
+}
+.xp-foundation .icon-moon-seven-segment-4:before {
+    content: "\eeda";
+}
+.xp-foundation .icon-moon-seven-segment-5:before {
+    content: "\eedb";
+}
+.xp-foundation .icon-moon-seven-segment-6:before {
+    content: "\eedc";
+}
+.xp-foundation .icon-moon-seven-segment-7:before {
+    content: "\eedd";
+}
+.xp-foundation .icon-moon-seven-segment-8:before {
+    content: "\eede";
+}
+.xp-foundation .icon-moon-seven-segment-9:before {
+    content: "\eedf";
+}
+.xp-foundation .icon-moon-share3:before {
+    content: "\eee0";
+}
+.xp-foundation .icon-moon-share4:before {
+    content: "\eee1";
+}
+.xp-foundation .icon-moon-mail:before {
+    content: "\eee2";
+}
+.xp-foundation .icon-moon-mail2:before {
+    content: "\eee3";
+}
+.xp-foundation .icon-moon-mail3:before {
+    content: "\eee4";
+}
+.xp-foundation .icon-moon-mail4:before {
+    content: "\eee5";
+}
+.xp-foundation .icon-moon-amazon:before {
+    content: "\eee6";
+}
+.xp-foundation .icon-moon-google:before {
+    content: "\eee7";
+}
+.xp-foundation .icon-moon-google2:before {
+    content: "\eee8";
+}
+.xp-foundation .icon-moon-google3:before {
+    content: "\eee9";
+}
+.xp-foundation .icon-moon-google-plus:before {
+    content: "\eeea";
+}
+.xp-foundation .icon-moon-google-plus2:before {
+    content: "\eeeb";
+}
+.xp-foundation .icon-moon-google-plus3:before {
+    content: "\eeec";
+}
+.xp-foundation .icon-moon-hangouts:before {
+    content: "\eeed";
+}
+.xp-foundation .icon-moon-google-drive:before {
+    content: "\eeee";
+}
+.xp-foundation .icon-moon-facebook:before {
+    content: "\eeef";
+}
+.xp-foundation .icon-moon-facebook2:before {
+    content: "\eef0";
+}
+.xp-foundation .icon-moon-instagram:before {
+    content: "\eef1";
+}
+.xp-foundation .icon-moon-whatsapp:before {
+    content: "\eef2";
+}
+.xp-foundation .icon-moon-spotify:before {
+    content: "\eef3";
+}
+.xp-foundation .icon-moon-telegram:before {
+    content: "\eef4";
+}
+.xp-foundation .icon-moon-twitter:before {
+    content: "\eef5";
+}
+.xp-foundation .icon-moon-vine:before {
+    content: "\eef6";
+}
+.xp-foundation .icon-moon-vk:before {
+    content: "\eef7";
+}
+.xp-foundation .icon-moon-renren:before {
+    content: "\eef8";
+}
+.xp-foundation .icon-moon-sina-weibo:before {
+    content: "\eef9";
+}
+.xp-foundation .icon-moon-rss:before {
+    content: "\eefa";
+}
+.xp-foundation .icon-moon-rss2:before {
+    content: "\eefb";
+}
+.xp-foundation .icon-moon-youtube:before {
+    content: "\eefc";
+}
+.xp-foundation .icon-moon-youtube2:before {
+    content: "\eefd";
+}
+.xp-foundation .icon-moon-twitch:before {
+    content: "\eefe";
+}
+.xp-foundation .icon-moon-vimeo:before {
+    content: "\eeff";
+}
+.xp-foundation .icon-moon-vimeo2:before {
+    content: "\ef00";
+}
+.xp-foundation .icon-moon-lanyrd:before {
+    content: "\ef01";
+}
+.xp-foundation .icon-moon-flickr:before {
+    content: "\ef02";
+}
+.xp-foundation .icon-moon-flickr2:before {
+    content: "\ef03";
+}
+.xp-foundation .icon-moon-flickr3:before {
+    content: "\ef04";
+}
+.xp-foundation .icon-moon-flickr4:before {
+    content: "\ef05";
+}
+.xp-foundation .icon-moon-dribbble:before {
+    content: "\ef06";
+}
+.xp-foundation .icon-moon-behance:before {
+    content: "\ef07";
+}
+.xp-foundation .icon-moon-behance2:before {
+    content: "\ef08";
+}
+.xp-foundation .icon-moon-deviantart:before {
+    content: "\ef09";
+}
+.xp-foundation .icon-moon-500px:before {
+    content: "\ef0a";
+}
+.xp-foundation .icon-moon-steam:before {
+    content: "\ef0b";
+}
+.xp-foundation .icon-moon-steam2:before {
+    content: "\ef0c";
+}
+.xp-foundation .icon-moon-dropbox:before {
+    content: "\ef0d";
+}
+.xp-foundation .icon-moon-onedrive:before {
+    content: "\ef0e";
+}
+.xp-foundation .icon-moon-github:before {
+    content: "\ef0f";
+}
+.xp-foundation .icon-moon-npm:before {
+    content: "\ef10";
+}
+.xp-foundation .icon-moon-basecamp:before {
+    content: "\ef11";
+}
+.xp-foundation .icon-moon-trello:before {
+    content: "\ef12";
+}
+.xp-foundation .icon-moon-wordpress:before {
+    content: "\ef13";
+}
+.xp-foundation .icon-moon-joomla:before {
+    content: "\ef14";
+}
+.xp-foundation .icon-moon-ello:before {
+    content: "\ef15";
+}
+.xp-foundation .icon-moon-blogger:before {
+    content: "\ef16";
+}
+.xp-foundation .icon-moon-blogger2:before {
+    content: "\ef17";
+}
+.xp-foundation .icon-moon-tumblr:before {
+    content: "\ef18";
+}
+.xp-foundation .icon-moon-tumblr2:before {
+    content: "\ef19";
+}
+.xp-foundation .icon-moon-yahoo:before {
+    content: "\ef1a";
+}
+.xp-foundation .icon-moon-yahoo2:before {
+    content: "\ef1b";
+}
+.xp-foundation .icon-moon-tux:before {
+    content: "\ef1c";
+}
+.xp-foundation .icon-moon-appleinc:before {
+    content: "\ef1d";
+}
+.xp-foundation .icon-moon-finder:before {
+    content: "\ef1e";
+}
+.xp-foundation .icon-moon-android:before {
+    content: "\ef1f";
+}
+.xp-foundation .icon-moon-windows:before {
+    content: "\ef20";
+}
+.xp-foundation .icon-moon-windows8:before {
+    content: "\ef21";
+}
+.xp-foundation .icon-moon-soundcloud:before {
+    content: "\ef22";
+}
+.xp-foundation .icon-moon-soundcloud2:before {
+    content: "\ef23";
+}
+.xp-foundation .icon-moon-skype:before {
+    content: "\ef24";
+}
+.xp-foundation .icon-moon-reddit:before {
+    content: "\ef25";
+}
+.xp-foundation .icon-moon-hackernews:before {
+    content: "\ef26";
+}
+.xp-foundation .icon-moon-wikipedia:before {
+    content: "\ef27";
+}
+.xp-foundation .icon-moon-linkedin:before {
+    content: "\ef28";
+}
+.xp-foundation .icon-moon-linkedin2:before {
+    content: "\ef29";
+}
+.xp-foundation .icon-moon-lastfm:before {
+    content: "\ef2a";
+}
+.xp-foundation .icon-moon-lastfm2:before {
+    content: "\ef2b";
+}
+.xp-foundation .icon-moon-delicious:before {
+    content: "\ef2c";
+}
+.xp-foundation .icon-moon-stumbleupon:before {
+    content: "\ef2d";
+}
+.xp-foundation .icon-moon-stumbleupon2:before {
+    content: "\ef2e";
+}
+.xp-foundation .icon-moon-stackoverflow:before {
+    content: "\ef2f";
+}
+.xp-foundation .icon-moon-pinterest:before {
+    content: "\ef30";
+}
+.xp-foundation .icon-moon-pinterest2:before {
+    content: "\ef31";
+}
+.xp-foundation .icon-moon-xing:before {
+    content: "\ef32";
+}
+.xp-foundation .icon-moon-xing2:before {
+    content: "\ef33";
+}
+.xp-foundation .icon-moon-flattr:before {
+    content: "\ef34";
+}
+.xp-foundation .icon-moon-foursquare:before {
+    content: "\ef35";
+}
+.xp-foundation .icon-moon-yelp:before {
+    content: "\ef36";
+}
+.xp-foundation .icon-moon-paypal:before {
+    content: "\ef37";
+}
+.xp-foundation .icon-moon-chrome:before {
+    content: "\ef38";
+}
+.xp-foundation .icon-moon-firefox:before {
+    content: "\ef39";
+}
+.xp-foundation .icon-moon-IE:before {
+    content: "\ef3a";
+}
+.xp-foundation .icon-moon-edge:before {
+    content: "\ef3b";
+}
+.xp-foundation .icon-moon-safari:before {
+    content: "\ef3c";
+}
+.xp-foundation .icon-moon-opera:before {
+    content: "\ef3d";
+}
+.xp-foundation .icon-moon-file-pdf:before {
+    content: "\ef3e";
+}
+.xp-foundation .icon-moon-file-openoffice:before {
+    content: "\ef3f";
+}
+.xp-foundation .icon-moon-file-word:before {
+    content: "\ef40";
+}
+.xp-foundation .icon-moon-file-excel:before {
+    content: "\ef41";
+}
+.xp-foundation .icon-moon-libreoffice:before {
+    content: "\ef42";
+}
+.xp-foundation .icon-moon-html-five:before {
+    content: "\ef43";
+}
+.xp-foundation .icon-moon-html-five2:before {
+    content: "\ef44";
+}
+.xp-foundation .icon-moon-css3:before {
+    content: "\ef45";
+}
+.xp-foundation .icon-moon-git:before {
+    content: "\ef46";
+}
+.xp-foundation .icon-moon-codepen:before {
+    content: "\ef47";
+}
+.xp-foundation .icon-moon-svg:before {
+    content: "\ef48";
+}
+.xp-foundation .icon-moon-IcoMoon:before {
+    content: "\ef49";
+}

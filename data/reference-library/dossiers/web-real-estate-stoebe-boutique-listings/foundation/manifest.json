@@ -1,0 +1,488 @@
+{
+  "schemaVersion": 1,
+  "id": "web-real-estate-stoebe-boutique-listings",
+  "dossierId": "web-real-estate-stoebe-boutique-listings",
+  "sourceDigest": "1e467a5eb165a150f034ef3d0c2c5563d8b52ea6303c1e2a6e34331611c5e7f3",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://stoebeco.com/",
+    "credit": "Template adapted from Stoebe & Co. official website"
+  },
+  "sections": [
+    {
+      "id": "global-navbar",
+      "sourceSelector": "#global-navbar",
+      "order": 1,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "section-b873a3c3-c2d9-4870-8ac3-20cd7173e520",
+      "sourceSelector": "#section-b873a3c3-c2d9-4870-8ac3-20cd7173e520",
+      "order": 2,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-d3ff9c60-f173-44eb-9649-f18d88743e77",
+      "sourceSelector": "#section-d3ff9c60-f173-44eb-9649-f18d88743e77",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-5843a015-af0a-4cc1-9a49-72d1277c2d13",
+      "sourceSelector": "#section-5843a015-af0a-4cc1-9a49-72d1277c2d13",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-841b8be8-b6bf-41eb-bec0-6dafb2fc34ed",
+      "sourceSelector": "#section-841b8be8-b6bf-41eb-bec0-6dafb2fc34ed",
+      "order": 5,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "section-2fe9ed9d-455e-46c4-a14c-bf36bf2907ad",
+      "sourceSelector": "#section-2fe9ed9d-455e-46c4-a14c-bf36bf2907ad",
+      "order": 6,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-5f32ca48-d38e-47b3-b297-3cae8af3f0bf",
+      "sourceSelector": "#section-5f32ca48-d38e-47b3-b297-3cae8af3f0bf",
+      "order": 7,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-dacadb99-b0da-4f0c-82e4-674e4b6d9ad6",
+      "sourceSelector": "#section-dacadb99-b0da-4f0c-82e4-674e4b6d9ad6",
+      "order": 8,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-64e1292d-d29d-4429-875c-5dbe8707727e",
+      "sourceSelector": "#section-64e1292d-d29d-4429-875c-5dbe8707727e",
+      "order": 9,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-9d4f18e1-1cee-4c46-8000-dc16b9908fa4",
+      "sourceSelector": "#section-9d4f18e1-1cee-4c46-8000-dc16b9908fa4",
+      "order": 10,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "section-a12ecc48-ba38-4207-b322-0befdc97f89a",
+      "sourceSelector": "#section-a12ecc48-ba38-4207-b322-0befdc97f89a",
+      "order": 11,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-da960fad-880a-4248-b38c-28f3b71c25b8",
+      "sourceSelector": "#section-da960fad-880a-4248-b38c-28f3b71c25b8",
+      "order": 12,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "section-59e54952-3707-40cb-bad6-8c2b05a7be44",
+      "sourceSelector": "#section-59e54952-3707-40cb-bad6-8c2b05a7be44",
+      "order": 13,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-ad78008c-c2fb-460d-8701-e14345e2afe6",
+      "sourceSelector": "#section-ad78008c-c2fb-460d-8701-e14345e2afe6",
+      "order": 14,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "section-8f829740-229e-4b58-9df8-7fecd916c307",
+      "sourceSelector": "#section-8f829740-229e-4b58-9df8-7fecd916c307",
+      "order": 15,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-22c5c7cf-e150-41b1-8b8d-b921b15c5765",
+      "sourceSelector": "#section-22c5c7cf-e150-41b1-8b8d-b921b15c5765",
+      "order": 16,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-e309fa35-4cad-430b-bc8d-a8f0c9cd9117",
+      "sourceSelector": "#section-e309fa35-4cad-430b-bc8d-a8f0c9cd9117",
+      "order": 17,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "section-d84e1f3b-909b-4bd1-95af-78c4dfa4970f",
+      "sourceSelector": "#section-d84e1f3b-909b-4bd1-95af-78c4dfa4970f",
+      "order": 18,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-ebd05da1-2512-41e8-8cee-60b303e21ced",
+      "sourceSelector": "#section-ebd05da1-2512-41e8-8cee-60b303e21ced",
+      "order": 19,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-a73c000c-5f9d-4f81-a742-aa97c87aad63",
+      "sourceSelector": "#section-a73c000c-5f9d-4f81-a742-aa97c87aad63",
+      "order": 20,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "section-5a540fa2-a055-40ee-a25d-1739e9239921",
+      "sourceSelector": "#section-5a540fa2-a055-40ee-a25d-1739e9239921",
+      "order": 21,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "global-footer",
+      "sourceSelector": "#global-footer",
+      "order": 22,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "proof-2.body",
+      "selector": "[data-foundation-slot=\"proof-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.body",
+      "selector": "[data-foundation-slot=\"proof.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.heading",
+      "selector": "[data-foundation-slot=\"proof.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "services-2.heading",
+      "selector": "[data-foundation-slot=\"services-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "unknown-10.body",
+      "selector": "[data-foundation-slot=\"unknown-10.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-10.heading",
+      "selector": "[data-foundation-slot=\"unknown-10.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-11.heading",
+      "selector": "[data-foundation-slot=\"unknown-11.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-12.body",
+      "selector": "[data-foundation-slot=\"unknown-12.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-12.heading",
+      "selector": "[data-foundation-slot=\"unknown-12.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-13.body",
+      "selector": "[data-foundation-slot=\"unknown-13.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-13.heading",
+      "selector": "[data-foundation-slot=\"unknown-13.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-14.heading",
+      "selector": "[data-foundation-slot=\"unknown-14.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.body",
+      "selector": "[data-foundation-slot=\"unknown-3.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.heading",
+      "selector": "[data-foundation-slot=\"unknown-3.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.body",
+      "selector": "[data-foundation-slot=\"unknown-4.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.heading",
+      "selector": "[data-foundation-slot=\"unknown-4.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-5.heading",
+      "selector": "[data-foundation-slot=\"unknown-5.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-6.heading",
+      "selector": "[data-foundation-slot=\"unknown-6.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-7.body",
+      "selector": "[data-foundation-slot=\"unknown-7.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-7.heading",
+      "selector": "[data-foundation-slot=\"unknown-7.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-8.heading",
+      "selector": "[data-foundation-slot=\"unknown-8.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-9.body",
+      "selector": "[data-foundation-slot=\"unknown-9.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "missing-hero",
+      "message": "No hero section with an h1 was detected."
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'section-59e54952-3707-40cb-bad6-8c2b05a7be44' have no sealed content mapping.",
+      "selector": "#section-59e54952-3707-40cb-bad6-8c2b05a7be44"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'section-b873a3c3-c2d9-4870-8ac3-20cd7173e520' have no sealed content mapping.",
+      "selector": "#section-b873a3c3-c2d9-4870-8ac3-20cd7173e520"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'section-d84e1f3b-909b-4bd1-95af-78c4dfa4970f' have no sealed content mapping.",
+      "selector": "#section-d84e1f3b-909b-4bd1-95af-78c4dfa4970f"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'section-ebd05da1-2512-41e8-8cee-60b303e21ced' have no sealed content mapping.",
+      "selector": "#section-ebd05da1-2512-41e8-8cee-60b303e21ced"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-22c5c7cf-e150-41b1-8b8d-b921b15c5765' has no supported content role.",
+      "selector": "#section-22c5c7cf-e150-41b1-8b8d-b921b15c5765"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-2fe9ed9d-455e-46c4-a14c-bf36bf2907ad' has no supported content role.",
+      "selector": "#section-2fe9ed9d-455e-46c4-a14c-bf36bf2907ad"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-5843a015-af0a-4cc1-9a49-72d1277c2d13' has no supported content role.",
+      "selector": "#section-5843a015-af0a-4cc1-9a49-72d1277c2d13"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-59e54952-3707-40cb-bad6-8c2b05a7be44' has no supported content role.",
+      "selector": "#section-59e54952-3707-40cb-bad6-8c2b05a7be44"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-5a540fa2-a055-40ee-a25d-1739e9239921' has no supported content role.",
+      "selector": "#section-5a540fa2-a055-40ee-a25d-1739e9239921"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-5f32ca48-d38e-47b3-b297-3cae8af3f0bf' has no supported content role.",
+      "selector": "#section-5f32ca48-d38e-47b3-b297-3cae8af3f0bf"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-64e1292d-d29d-4429-875c-5dbe8707727e' has no supported content role.",
+      "selector": "#section-64e1292d-d29d-4429-875c-5dbe8707727e"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-8f829740-229e-4b58-9df8-7fecd916c307' has no supported content role.",
+      "selector": "#section-8f829740-229e-4b58-9df8-7fecd916c307"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-a12ecc48-ba38-4207-b322-0befdc97f89a' has no supported content role.",
+      "selector": "#section-a12ecc48-ba38-4207-b322-0befdc97f89a"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-b873a3c3-c2d9-4870-8ac3-20cd7173e520' has no supported content role.",
+      "selector": "#section-b873a3c3-c2d9-4870-8ac3-20cd7173e520"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-d3ff9c60-f173-44eb-9649-f18d88743e77' has no supported content role.",
+      "selector": "#section-d3ff9c60-f173-44eb-9649-f18d88743e77"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-d84e1f3b-909b-4bd1-95af-78c4dfa4970f' has no supported content role.",
+      "selector": "#section-d84e1f3b-909b-4bd1-95af-78c4dfa4970f"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-dacadb99-b0da-4f0c-82e4-674e4b6d9ad6' has no supported content role.",
+      "selector": "#section-dacadb99-b0da-4f0c-82e4-674e4b6d9ad6"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-ebd05da1-2512-41e8-8cee-60b303e21ced' has no supported content role.",
+      "selector": "#section-ebd05da1-2512-41e8-8cee-60b303e21ced"
+    }
+  ],
+  "fingerprint": "15be42ed5fcfa18cca173ace8d883cac918b63ae670a69165adc8b1c2ecd62b0"
+}

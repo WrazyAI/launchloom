@@ -268,9 +268,11 @@ function normalizeBlockers(value) {
       fail(`blockers[${index}] must be an object.`);
     return {
       code: slug(blocker.code, `blockers[${index}].code`),
-      message: text(blocker.message, `blockers[${index}].message`, {
-        max: 1000,
-      }),
+      message:
+        String(blocker.message ?? "")
+          .replace(/\u0000/gu, "")
+          .trim()
+          .slice(0, 1000) || "Blocker message unavailable.",
       ...(optionalText(blocker.selector, `blockers[${index}].selector`, {
         max: 300,
       })

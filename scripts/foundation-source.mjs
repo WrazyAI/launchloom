@@ -7,8 +7,19 @@ const REMOTE_URL = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/iu;
 const HTML_FILE = /\.html?$/iu;
 const CSS_FILE = /\.css$/iu;
 const SCRIPT_FILE = /\.(?:m?js|jsx|ts|tsx)$/iu;
-const NON_ASSET_FILE =
+const TEXT_FILE =
   /\.(?:html?|css|m?js|jsx|ts|tsx|json|md|txt|map|xml|webmanifest)$/iu;
+const SAFE_REMOVAL_CODES = new Set([
+  "remote-base",
+  "remote-stylesheet",
+  "remote-script",
+  "remote-image",
+  "remote-form-action",
+  "remote-asset",
+  "remote-css-url",
+  "remote-import",
+  "remote-font",
+]);
 const NETWORK_PRIMITIVE =
   /\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon)\s*\(/iu;
 const ANALYTICS_PRIMITIVE =
@@ -55,7 +66,7 @@ function createBlockerCollector() {
   };
 }
 
-function normalizeHtml(html, blockers) {
+function normalizeHtml(html, blockers, { stripAssets = false } = {}) {
   const { document } = parseHTML(html);
   if (!document) throw new Error("Foundation HTML could not be parsed.");
 
@@ -146,23 +157,39 @@ function normalizeHtml(html, blockers) {
 
   for (const element of [...document.querySelectorAll("[style]")]) {
     const style = element.getAttribute("style") || "";
-    if (!/url\(\s*['"]?(?:https?:)?\/\//iu.test(style)) continue;
-    blockers.add(
-      "remote-css-url",
-      "Removed a remote CSS url() from an inline style.",
-      "[style]",
-    );
-    element.setAttribute(
-      "style",
-      style.replace(/url\(\s*(['"]?)(?:https?:)?\/\/[^)]*\1\s*\)/giu, "none"),
-    );
+    if (/url\(\s*['"]?(?:https?:)?\/\//iu.test(style)) {
+      blockers.add(
+        "remote-css-url",
+        "Removed a remote CSS url() from an inline style.",
+        "[style]",
+      );
+      element.setAttribute(
+        "style",
+        style.replace(/url\(\s*(['"]?)(?:https?:)?\/\/[^)]*\1\s*\)/giu, "none"),
+      );
+      continue;
+    }
+    if (stripAssets && /url\(\s*['"]?(?!data:)[^)]+\)/iu.test(style)) {
+      element.setAttribute(
+        "style",
+        style.replace(/url\(\s*['"]?(?!data:)[^)]+['"]?\s*\)/giu, "none"),
+      );
+    }
   }
 
   return document.toString();
 }
 
-function normalizeCss(css, blockers) {
-  let normalized = css.replace(
+function normalizeCss(css, blockers, { stripAssets = false } = {}) {
+  let normalized = css;
+  if (stripAssets) {
+    normalized = normalized.replace(/@font-face\s*\{[^}]*\}/giu, "");
+    normalized = normalized.replace(
+      /url\(\s*(['"]?)(?!data:)[^)'"]+\1\s*\)/giu,
+      "none",
+    );
+  }
+  normalized = normalized.replace(
     /@import\s+(?:url\(\s*)?["']?(?:https?:)?\/\/[^;]+;?/giu,
     () => {
       blockers.add("remote-import", "Removed a remote CSS @import.", "@import");
@@ -217,10 +244,13 @@ function normalizeScript(source, blockers) {
   return normalized;
 }
 
+export { SAFE_REMOVAL_CODES };
+
 export function normalizeFoundationSource({
   repositoryRoot = process.cwd(),
   dossierPath,
   outputDirectory,
+  copyAssets = true,
 }) {
   const template = loadReferenceTemplate(dossierPath, { repositoryRoot });
   if (!template) {
@@ -242,9 +272,16 @@ export function normalizeFoundationSource({
   const targetSource = path.join(outputDirectory, "source");
   fs.mkdirSync(outputDirectory, { recursive: true });
   fs.rmSync(targetSource, { recursive: true, force: true });
-  fs.cpSync(sourceRoot, targetSource, { recursive: true });
+  fs.cpSync(sourceRoot, targetSource, {
+    recursive: true,
+    filter: (source) => {
+      if (fs.statSync(source).isDirectory()) return true;
+      return copyAssets || TEXT_FILE.test(source);
+    },
+  });
 
   const blockers = createBlockerCollector();
+  const sourceFiles = walk(sourceRoot);
   const files = walk(targetSource);
   for (const file of files) {
     const relative = path
@@ -253,14 +290,18 @@ export function normalizeFoundationSource({
     if (HTML_FILE.test(file)) {
       fs.writeFileSync(
         file,
-        normalizeHtml(fs.readFileSync(file, "utf8"), blockers),
+        normalizeHtml(fs.readFileSync(file, "utf8"), blockers, {
+          stripAssets: !copyAssets,
+        }),
       );
       continue;
     }
     if (CSS_FILE.test(file)) {
       fs.writeFileSync(
         file,
-        normalizeCss(fs.readFileSync(file, "utf8"), blockers),
+        normalizeCss(fs.readFileSync(file, "utf8"), blockers, {
+          stripAssets: !copyAssets,
+        }),
       );
       continue;
     }
@@ -274,21 +315,27 @@ export function normalizeFoundationSource({
     if (relative.startsWith(".")) continue;
   }
 
-  const assets = files
-    .filter((file) => !NON_ASSET_FILE.test(file))
+  const assets = sourceFiles
+    .filter((file) => !TEXT_FILE.test(file))
     .map((file) => {
       const relative = path
-        .relative(targetSource, file)
+        .relative(sourceRoot, file)
         .replaceAll(path.sep, "/");
       return {
         source: relative,
-        target: `source/${relative}`,
+        target: `template/source/${relative}`,
         role: "reference-only",
         required: false,
       };
     });
 
   const values = blockers.values();
+  const removals = values.filter((blocker) =>
+    SAFE_REMOVAL_CODES.has(blocker.code),
+  );
+  const adaptationBlockers = values.filter(
+    (blocker) => !SAFE_REMOVAL_CODES.has(blocker.code),
+  );
   return {
     template,
     sourceDigest: template.digest,
@@ -297,7 +344,10 @@ export function normalizeFoundationSource({
       path.relative(targetSource, file).replaceAll(path.sep, "/"),
     ),
     assets,
-    blockers: values,
-    compatibility: values.length ? "needs-adaptation" : "renderable",
+    blockers: adaptationBlockers,
+    removals,
+    compatibility: adaptationBlockers.length
+      ? "needs-adaptation"
+      : "renderable",
   };
 }

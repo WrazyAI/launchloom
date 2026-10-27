@@ -423,6 +423,7 @@ function addAnchor(document, id, before) {
 function normalizeNavigation(section, slots) {
   const links = [...section.querySelectorAll("a[href]")];
   const first = links[0];
+  let isBrandLink = false;
   if (first) {
     const href = String(first.getAttribute("href") || "").trim();
     const firstText = elementText(first, 80);
@@ -431,10 +432,15 @@ function normalizeNavigation(section, slots) {
       /^(?:services?|work|faqs?|questions?|plans?|seasons?|estimates?|contacts?)$/iu.test(
         firstText,
       );
-    const isBrandLink =
-      !isSectionLink ||
-      Boolean(first.querySelector("svg, img")) ||
-      !isGenericSectionLabel;
+    const pathLikeNavLink =
+      /^\/(?:services?|about|contact|cities|locations?|portfolio|work|faqs?|plans?|seasons?|estimates?)\/?$/iu.test(
+        href,
+      );
+    isBrandLink =
+      !pathLikeNavLink &&
+      (!isSectionLink ||
+        Boolean(first.querySelector("svg, img")) ||
+        !isGenericSectionLabel);
     if (isBrandLink) {
       first.innerHTML = "{{navigation.brand}}";
       first.setAttribute("data-foundation-slot", "navigation.brand");
@@ -447,18 +453,16 @@ function normalizeNavigation(section, slots) {
       });
     }
   }
-  const sectionLinks = links.filter((link) => {
-    const href = String(link.getAttribute("href") || "").trim();
-    return link !== first && href.startsWith("#") && href.length > 1;
-  });
-  if (!sectionLinks.length) return;
-  const container = sectionLinks[0].parentElement;
-  if (!container) return;
-  const linkClass = sectionLinks[0].getAttribute("class") || "";
+  const sectionLinks = links.filter((link) => link !== first || !isBrandLink);
+  const linkClass = sectionLinks[0]?.getAttribute("class") || "";
   const innerNav = section.ownerDocument.createElement("nav");
-  innerNav.setAttribute("aria-label", "Main navigation");
-  const containerClass = container.getAttribute("class") || "";
-  if (containerClass) innerNav.setAttribute("class", containerClass);
+  const navContext = `${section.getAttribute("aria-label") || ""} ${section.getAttribute("class") || ""}`;
+  innerNav.setAttribute(
+    "aria-label",
+    /mobile|(?:sm|md|lg):hidden/iu.test(navContext)
+      ? "Mobile navigation"
+      : "Main navigation",
+  );
   const targets = [
     ["Services", "#services"],
     ["FAQs", "#faqs"],
@@ -471,8 +475,17 @@ function normalizeNavigation(section, slots) {
     link.textContent = label;
     innerNav.appendChild(link);
   }
-  container.insertBefore(innerNav, sectionLinks[0]);
-  for (const link of sectionLinks) link.remove();
+  if (sectionLinks.length) {
+    const container = sectionLinks[0].parentNode;
+    if (container) {
+      const containerClass = container.getAttribute("class") || "";
+      if (containerClass) innerNav.setAttribute("class", containerClass);
+      container.insertBefore(innerNav, sectionLinks[0]);
+      for (const link of sectionLinks) link.remove();
+    }
+  } else {
+    section.appendChild(innerNav);
+  }
 }
 
 function normalizeFooter(section, slots, license) {
@@ -519,13 +532,17 @@ function sectionBody(section, role, heading) {
 function sectionCta(section, role) {
   if (role !== "hero") return null;
   const candidates = [...section.querySelectorAll("a[href], button")].filter(
-    (element) => CTA_PATTERN.test(elementText(element, 80)),
+    (element) =>
+      !element.closest("nav, footer") &&
+      CTA_PATTERN.test(elementText(element, 80)),
   );
   return candidates[0] || null;
 }
 
 function sectionImages(section, role) {
-  const images = [...section.querySelectorAll("img")];
+  const images = [...section.querySelectorAll("img")].filter(
+    (image) => !image.closest("nav, footer"),
+  );
   if (role === "hero") return images.slice(0, 3);
   return images.slice(0, 3);
 }
@@ -648,6 +665,7 @@ export function detectFoundationSections({ html, dossierId, license }) {
   const interactions = [];
   const blockers = [];
   const usedSectionIds = new Set();
+  const roleCounts = new Map();
   const candidates = [
     ...document.querySelectorAll(
       "body nav, body header, body section, body article, body footer",
@@ -673,6 +691,10 @@ export function detectFoundationSections({ html, dossierId, license }) {
       required: ["hero", "services", "portfolio", "contact"].includes(role),
     });
     const slotPrefix = role === "portfolio" ? "services" : role;
+    const roleCount = (roleCounts.get(role) || 0) + 1;
+    roleCounts.set(role, roleCount);
+    const uniquePrefix =
+      roleCount === 1 ? slotPrefix : `${slotPrefix}-${roleCount}`;
     detectInteractions(element, interactions, blockers);
 
     if (role === "navigation") {
@@ -686,7 +708,7 @@ export function detectFoundationSections({ html, dossierId, license }) {
 
     const heading = sectionHeading(element, role);
     if (heading) {
-      const id = `${slotPrefix}.heading`;
+      const id = `${uniquePrefix}.heading`;
       const contentPath = HEADING_PATHS[role];
       replaceElementText(heading, id);
       heading.setAttribute("data-foundation-slot", id);
@@ -695,7 +717,7 @@ export function detectFoundationSections({ html, dossierId, license }) {
 
     const body = sectionBody(element, role, heading);
     if (body) {
-      const id = `${slotPrefix}.body`;
+      const id = `${uniquePrefix}.body`;
       const contentPath = BODY_PATHS[role];
       replaceElementText(body, id);
       body.setAttribute("data-foundation-slot", id);
@@ -704,7 +726,7 @@ export function detectFoundationSections({ html, dossierId, license }) {
 
     const cta = sectionCta(element, role);
     if (cta) {
-      const id = `${slotPrefix}.primaryLabel`;
+      const id = `${uniquePrefix}.primaryLabel`;
       replaceElementText(cta, id);
       cta.setAttribute("data-foundation-slot", id);
       if (cta.localName === "a") cta.setAttribute("href", "#contact");
@@ -736,7 +758,7 @@ export function detectFoundationSections({ html, dossierId, license }) {
           : index === 1
             ? "secondaryImage"
             : "tertiaryImage";
-      const id = `${slotPrefix}.${suffix}`;
+      const id = `${uniquePrefix}.${suffix}`;
       const contentPath = role === "hero" ? `hero.${suffix}` : `hero.${suffix}`;
       replaceImage(image, id);
       image.setAttribute("data-foundation-image", id);
@@ -746,7 +768,7 @@ export function detectFoundationSections({ html, dossierId, license }) {
     const repeated = findRepeatedGroup(element);
     const mapping = repeatedItemMapping(role);
     if (repeated && mapping) {
-      const slotId = `${slotPrefix}.items`;
+      const slotId = `${uniquePrefix}.items`;
       const template =
         repeated.items.find(
           (item) =>
@@ -874,10 +896,33 @@ export function detectFoundationSections({ html, dossierId, license }) {
       element.setAttribute("data-foundation-needs-adaptation", "true");
   }
 
+  for (const nav of [...document.querySelectorAll("nav")]) {
+    if (
+      nav.querySelector(
+        'nav[aria-label="Main navigation"], nav[aria-label="Mobile navigation"]',
+      )
+    )
+      continue;
+    normalizeNavigation(nav, slots);
+  }
+  for (const image of [...document.querySelectorAll("img")]) {
+    if (image.hasAttribute("data-foundation-image")) continue;
+    if (/\{\{[^}]+\}\}/u.test(image.getAttribute("src") || "")) continue;
+    image.remove();
+  }
+
+  const uniqueSlots = [];
+  const seenSlotIds = new Set();
+  for (const slot of slots) {
+    if (seenSlotIds.has(slot.id)) continue;
+    seenSlotIds.add(slot.id);
+    uniqueSlots.push(slot);
+  }
+
   return {
     html: document.toString(),
     sections: ordered,
-    slots,
+    slots: uniqueSlots,
     interactions,
     blockers,
     compatibility: blockers.length ? "needs-adaptation" : "renderable",

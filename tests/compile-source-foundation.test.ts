@@ -103,12 +103,23 @@ describe("source foundation compiler", () => {
       ),
     ).toContain("data-foundation-action");
     expect(
+      fs.existsSync(path.join(outputDirectory, "source", "hero.webp")),
+    ).toBe(false);
+    expect(result.manifest.assets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: "hero.webp",
+          target: "template/source/hero.webp",
+        }),
+      ]),
+    );
+    expect(
       fs.readFileSync(path.join(outputDirectory, "README.md"), "utf8"),
     ).toContain("Template adapted from Sample reference");
     expect(fs.readFileSync(templatePath)).toEqual(before);
   });
 
-  it("marks a source with a remote asset as needs-adaptation", () => {
+  it("treats a remote asset removal as a safe normalization", () => {
     const created = fixture({
       html: sampleFoundationHtml().replace(
         '<img src="hero.webp" alt="Garden">',
@@ -121,9 +132,13 @@ describe("source foundation compiler", () => {
       outputDirectory: path.join(created.directory, "foundation"),
       write: true,
     });
-    expect(result.manifest.compatibility).toBe("needs-adaptation");
+    expect(result.manifest.compatibility).toBe("renderable");
+    expect(result.manifest.blockers).toEqual([]);
     expect(
-      result.manifest.blockers.map((blocker: any) => blocker.code),
+      fs.readFileSync(
+        path.join(created.directory, "foundation", "README.md"),
+        "utf8",
+      ),
     ).toContain("remote-image");
   });
 

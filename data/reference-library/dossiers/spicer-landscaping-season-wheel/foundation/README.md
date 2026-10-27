@@ -33,14 +33,17 @@ Blockers:
 
 - `interactive-section-needs-adaptation`: Section 'estimate' preserves an interactive source composition that needs adaptation. (`#estimate`)
 - `interactive-section-needs-adaptation`: Section 'seasons' preserves an interactive source composition that needs adaptation. (`#seasons`)
-- `remote-stylesheet`: Removed a remote stylesheet: https://fonts.googleapis.com (`link[href]`)
-- `remote-stylesheet`: Removed a remote stylesheet: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&display=swap (`link[href]`)
-- `remote-stylesheet`: Removed a remote stylesheet: https://fonts.gstatic.com (`link[href]`)
-- `source-form-removed`: Removed 1 source form(s); the shared lead form is the only conversion path.
 - `unmapped-repeated-items`: Repeated seasons items in 'seasons' have no sealed content mapping. (`#seasons`)
 - `unmapped-section-content`: Section 'estimate' preserves source composition that needs adaptation. (`#estimate`)
 - `unmapped-section-content`: Section 'plans' preserves source composition that needs adaptation. (`#plans`)
 - `unmapped-section-content`: Section 'seasons' preserves source composition that needs adaptation. (`#seasons`)
+
+## Normalization removals
+
+- `remote-stylesheet`: Removed a remote stylesheet: https://fonts.googleapis.com (`link[href]`)
+- `remote-stylesheet`: Removed a remote stylesheet: https://fonts.gstatic.com (`link[href]`)
+- `remote-stylesheet`: Removed a remote stylesheet: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&display=swap (`link[href]`)
+- `source-form-removed`: Removed 1 source form(s); the shared lead form is the only conversion path.
 
 ## Files
 

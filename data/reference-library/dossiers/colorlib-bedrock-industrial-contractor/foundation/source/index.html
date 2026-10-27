@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{page.title}}</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="assets/vendor/bootstrap6/css/bootstrap.min.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-bs-spy="scroll" data-bs-target="#navScroll" data-bs-top-margin="110px" data-bs-smooth-scroll="true">
+
+<a class="visually-hidden-focusable btn-solid theme-primary m-2" href="#main">Skip to main content</a>
+
+<div class="top-strip">
+  <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span>CHAS · Constructionline Gold · ISO 9001 / 14001 / 45001</span>
+    <span>Tenders: <a href="mailto:tenders@bedrock.example">tenders@bedrock.example</a> · <a href="tel:01142000000">0114 200 0000</a></span>
+  </div>
+</div>
+
+<header data-foundation-needs-adaptation="true" data-experience-hero="true" data-foundation-section="hero" class="site-header">
+  <nav class="navbar lg:navbar-expand" aria-label="Main">
+    <div class="container">
+      <a data-foundation-slot="navigation.brand" class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="index.html">{{navigation.brand}}</a>
+      <dialog class="drawer drawer-end" tabindex="-1" id="navDrawer" aria-labelledby="navDrawerLabel">
+        <div class="drawer-header">
+          <h5 class="drawer-title" id="navDrawerLabel"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="drawer" aria-label="Close"></button>
+        </div>
+        <div class="drawer-body mb-2 lg:mb-0">
+          <ul class="nav navbar-nav me-auto" id="navScroll">
+            <li class="nav-item"><nav class="nav-item" aria-label="Main navigation"><a class="nav-link" href="#services">Services</a><a class="nav-link" href="#faqs">FAQs</a><a class="nav-link" href="#contact">Contact</a></nav></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+          </ul>
+        </div>
+      </dialog>
+      <div class="d-flex align-items-center gap-2 ms-auto">
+        <button class="btn-icon" type="button" id="themeToggle" aria-label="Toggle color mode">
+          
+          
+        </button>
+        
+        <button class="btn-icon navbar-toggler" type="button" data-bs-toggle="drawer" data-bs-target="#navDrawer" aria-controls="navDrawer" aria-label="Open navigation">
+          <span class="navbar-toggler-icon" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+</header><aside data-foundation-section="conversion" data-early-conversion="true" class="xp-ribbon"><div class="xp-ribbon__copy">
+  <span class="xp-ribbon__kicker">Next step</span>
+  <p>{{conversion.body}}</p>
+</div>
+<a class="xp-ribbon__action" href="#contact">{{conversion.action}} <span aria-hidden="true">→</span></a></aside>
+
+<section data-foundation-needs-adaptation="true" data-foundation-section="unknown" class="site-hero">
+  <img data-foundation-image="unknown.image" class="hero-bg" src="{{unknown.image}}" alt="" width="1800" height="1000" loading="eager">
+  <div class="container">
+    <div class="row">
+      <div class="lg:col-8">
+        <div class="hero-copy">
+          <p data-foundation-slot="unknown.body" class="eyebrow fs-sm fg-primary mb-3">{{unknown.body}}</p>
+          <h1 data-foundation-slot="unknown.heading" class="slab hero-slab mb-4">{{unknown.heading}}</h1>
+          <p class="fs-lg fg-2 mb-5" style="max-width:38rem"></p>
+          <div class="d-flex flex-wrap gap-3">
+            <a class="btn-solid theme-primary btn-lg" href="#tender"></a>
+            <a class="btn-outline theme-secondary btn-lg" href="#projects"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-strip">
+    <div class="container">
+      <div class="row g-0 text-center">
+        <div class="col-6 lg:col-3"><p class="stat-figure fg-primary mb-1"></p><p class="fs-xs fg-3 mb-0 text-uppercase" style="letter-spacing:.12em"></p></div>
+        <div class="col-6 lg:col-3"><p class="stat-figure fg-primary mb-1"></p><p class="fs-xs fg-3 mb-0 text-uppercase" style="letter-spacing:.12em"></p></div>
+        <div class="col-6 lg:col-3"><p class="stat-figure fg-primary mb-1"></p><p class="fs-xs fg-3 mb-0 text-uppercase" style="letter-spacing:.12em"></p></div>
+        <div class="col-6 lg:col-3"><p class="stat-figure fg-primary mb-1"></p><p class="fs-xs fg-3 mb-0 text-uppercase" style="letter-spacing:.12em"></p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main id="main">
+
+  <!-- Capabilities -->
+  <section data-foundation-section="capabilities" class="section" id="capabilities">
+    <div class="container">
+      <div class="row g-5 mb-6">
+        <div class="lg:col-5">
+          <p data-foundation-slot="services.body" class="eyebrow fs-sm fg-primary mb-2">{{services.body}}</p>
+          <h2 data-foundation-slot="services.heading" class="slab section-title fs-4xl mb-0">{{services.heading}}</h2>
+        </div>
+        <div class="lg:col-7">
+          <p class="fg-2 fs-lg mb-0"></p>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <div class="md:col-6 lg:col-4">
+          <div class="cap-card">
+            <h3 class="fs-xl fw-bold mb-3"></h3>
+            <p class="fg-2 fs-sm mb-3"></p>
+            <p class="fs-xs fg-3 mb-0"></p>
+          </div>
+        </div>
+        <div class="md:col-6 lg:col-4">
+          <div class="cap-card">
+            <h3 class="fs-xl fw-bold mb-3"></h3>
+            <p class="fg-2 fs-sm mb-3"></p>
+            <p class="fs-xs fg-3 mb-0"></p>
+          </div>
+        </div>
+        <div class="md:col-6 lg:col-4">
+          <div class="cap-card">
+            <h3 class="fs-xl fw-bold mb-3"></h3>
+            <p class="fg-2 fs-sm mb-3"></p>
+            <p class="fs-xs fg-3 mb-0"></p>
+          </div>
+        </div>
+        <div class="md:col-6 lg:col-4">
+          <div class="cap-card">
+            <h3 class="fs-xl fw-bold mb-3"></h3>
+            <p class="fg-2 fs-sm mb-3"></p>
+            <p class="fs-xs fg-3 mb-0"></p>
+          </div>
+        </div>
+        <div class="md:col-6 lg:col-4">
+          <div class="cap-card">
+            <h3 class="fs-xl fw-bold mb-3"></h3>
+            <p class="fg-2 fs-sm mb-3"></p>
+            <p class="fs-xs fg-3 mb-0"></p>
+          </div>
+        </div>
+        <div class="md:col-6 lg:col-4">
+          <div class="cap-card">
+            <h3 class="fs-xl fw-bold mb-3"></h3>
+            <p class="fg-2 fs-sm mb-3"></p>
+            <p class="fs-xs fg-3 mb-0"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sectors -->
+  <section data-foundation-section="sectors" class="section bg-2" id="sectors">
+    <div class="container">
+      <div class="row g-6">
+        <div class="lg:col-5">
+          <p data-foundation-slot="services.body" class="eyebrow fs-sm fg-primary mb-2">{{services.body}}</p>
+          <h2 data-foundation-slot="services.heading" class="slab section-title fs-4xl mb-4">{{services.heading}}</h2>
+          <p class="fg-2 mb-0"></p>
+        </div>
+        <div class="lg:col-7">
+          <div class="sector-row"><span class="num"></span><div><p class="fw-bold mb-1"></p><p class="fg-3 fs-sm mb-0"></p></div></div>
+          <div class="sector-row"><span class="num"></span><div><p class="fw-bold mb-1"></p><p class="fg-3 fs-sm mb-0"></p></div></div>
+          <div class="sector-row"><span class="num"></span><div><p class="fw-bold mb-1"></p><p class="fg-3 fs-sm mb-0"></p></div></div>
+          <div class="sector-row"><span class="num"></span><div><p class="fw-bold mb-1"></p><p class="fg-3 fs-sm mb-0"></p></div></div>
+          <div class="sector-row"><span class="num"></span><div><p class="fw-bold mb-1"></p><p class="fg-3 fs-sm mb-0"></p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Projects -->
+  <section data-foundation-section="projects" class="section" id="projects">
+    <div class="container">
+      <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-6">
+        <div>
+          <p data-foundation-slot="services-2.body" class="eyebrow fs-sm fg-primary mb-2">{{services-2.body}}</p>
+          <h2 data-foundation-slot="services-2.heading" class="slab section-title fs-4xl mb-0">{{services-2.heading}}</h2>
+        </div>
+        <a class="btn-outline theme-secondary" href="project.html"></a>
+      </div>
+
+      <div class="row g-4">
+        <div class="md:col-6 lg:col-4">
+          <a class="proj-card" href="project.html">
+            <div class="proj-media"><div class="ph"><img data-foundation-image="services-2.image" src="{{services-2.image}}" alt="" width="900" height="600" loading="lazy"></div></div>
+            <div class="proj-body">
+              <p class="fs-xs fg-3 text-uppercase mb-2" style="letter-spacing:.12em"></p>
+              <h3 class="fs-lg fw-bold mb-2"></h3>
+              <p class="fg-2 fs-sm mb-3"></p>
+              <p class="proj-value fs-sm mb-0"></p>
+            </div>
+          </a>
+        </div>
+        <div class="md:col-6 lg:col-4">
+          <a class="proj-card" href="project.html">
+            <div class="proj-media"><div class="ph"><img data-foundation-image="services-2.secondaryImage" src="{{services-2.secondaryImage}}" alt="" width="900" height="600" loading="lazy"></div></div>
+            <div class="proj-body">
+              <p class="fs-xs fg-3 text-uppercase mb-2" style="letter-spacing:.12em"></p>
+              <h3 class="fs-lg fw-bold mb-2"></h3>
+              <p class="fg-2 fs-sm mb-3"></p>
+              <p class="proj-value fs-sm mb-0"></p>
+            </div>
+          </a>
+        </div>
+        <div class="md:col-6 lg:col-4">
+          <a class="proj-card" href="project.html">
+            <div class="proj-media"><div class="ph"><img data-foundation-image="services-2.tertiaryImage" src="{{services-2.tertiaryImage}}" alt="" width="900" height="600" loading="lazy"></div></div>
+            <div class="proj-body">
+              <p class="fs-xs fg-3 text-uppercase mb-2" style="letter-spacing:.12em"></p>
+              <h3 class="fs-lg fw-bold mb-2"></h3>
+              <p class="fg-2 fs-sm mb-3"></p>
+              <p class="proj-value fs-sm mb-0"></p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Process — the Stepper as a page section, not a form control -->
+  <section data-foundation-section="process" class="section bg-2" id="process">
+    <div class="container">
+      <div class="row g-6 mb-6">
+        <div class="lg:col-5">
+          <p data-foundation-slot="process.body" class="eyebrow fs-sm fg-primary mb-2">{{process.body}}</p>
+          <h2 data-foundation-slot="process.heading" class="slab section-title fs-4xl mb-0">{{process.heading}}</h2>
+        </div>
+        <div class="lg:col-7">
+          <p class="fg-2 fs-lg mb-0"></p>
+        </div>
+      </div>
+
+      <ol data-foundation-repeat-parent="process.items" class="stepper md:stepper-horizontal mb-6">
+        <!--foundation:each:process.items--><li data-foundation-slot="process.item.description" data-foundation-repeat="process.items" class="stepper-item active">{{process.item.description}}</li><!--/foundation:each:process.items-->
+        
+        
+        
+        
+      </ol>
+
+      <div class="row g-4">
+        <div class="md:col-4">
+          <p class="fw-bold mb-2"></p>
+          <p class="fg-2 fs-sm mb-0"></p>
+        </div>
+        <div class="md:col-4">
+          <p class="fw-bold mb-2"></p>
+          <p class="fg-2 fs-sm mb-0"></p>
+        </div>
+        <div class="md:col-4">
+          <p class="fw-bold mb-2"></p>
+          <p class="fg-2 fs-sm mb-0"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Accreditations -->
+  <section data-foundation-section="unknown-2" class="section">
+    <div class="container">
+      <p data-foundation-slot="unknown-2.body" class="eyebrow fs-sm fg-primary mb-2">{{unknown-2.body}}</p>
+      <h2 data-foundation-slot="unknown-2.heading" class="slab section-title fs-3xl mb-5">{{unknown-2.heading}}</h2>
+      <div class="row g-3">
+        <div class="sm:col-6 lg:col-3">
+          <div class="accred"></div>
+        </div>
+        <div class="sm:col-6 lg:col-3">
+          <div class="accred"></div>
+        </div>
+        <div class="sm:col-6 lg:col-3">
+          <div class="accred"></div>
+        </div>
+        <div class="sm:col-6 lg:col-3">
+          <div class="accred"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tender request -->
+  <section data-foundation-section="tender" class="section bg-2" id="tender">
+    <div class="container">
+      <div class="row g-6">
+        <div class="lg:col-5">
+          <p data-foundation-slot="contact.body" class="eyebrow fs-sm fg-primary mb-2">{{contact.body}}</p>
+          <h2 data-foundation-slot="contact.heading" class="slab section-title fs-4xl mb-4">{{contact.heading}}</h2>
+          <p class="fg-2 mb-4"></p>
+          <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+          <div class="spec-row"><span class="fg-3 fs-sm"></span><span class="fs-sm"></span></div>
+        </div>
+
+        <div class="lg:col-7">
+          <div class="tender">
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer data-foundation-license="MIT" data-foundation-section="footer" class="site-footer section pb-5"><span>{{footer.brand}}</span><span>{{footer.credit}}</span></footer>
+
+<script type="module" src="assets/js/main.js"></script>
+<span data-foundation-anchor="true" id="services"></span><span data-foundation-anchor="true" id="faqs"></span></body>
+</html>
