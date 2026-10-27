@@ -26,65 +26,72 @@
       "required": true
     },
     {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 3,
+      "role": "conversion",
+      "required": true
+    },
+    {
       "id": "work",
       "sourceSelector": "#work",
-      "order": 3,
+      "order": 4,
       "role": "portfolio",
       "required": true
     },
     {
       "id": "seasons",
       "sourceSelector": "#seasons",
-      "order": 4,
+      "order": 5,
       "role": "seasons",
       "required": false
     },
     {
       "id": "plans",
       "sourceSelector": "#plans",
-      "order": 5,
+      "order": 6,
       "role": "plans",
       "required": false
     },
     {
       "id": "estimate",
       "sourceSelector": "#estimate",
-      "order": 6,
+      "order": 7,
       "role": "estimate",
       "required": false
     },
     {
       "id": "coverage",
       "sourceSelector": "#coverage",
-      "order": 7,
+      "order": 8,
       "role": "coverage",
       "required": false
     },
     {
       "id": "proof",
       "sourceSelector": "section",
-      "order": 8,
+      "order": 9,
       "role": "proof",
       "required": false
     },
     {
       "id": "faq",
       "sourceSelector": "#faq",
-      "order": 9,
+      "order": 10,
       "role": "faq",
       "required": false
     },
     {
       "id": "contact",
       "sourceSelector": "#contact",
-      "order": 10,
+      "order": 11,
       "role": "contact",
       "required": true
     },
     {
       "id": "footer",
       "sourceSelector": "footer",
-      "order": 11,
+      "order": 12,
       "role": "footer",
       "required": false
     }
@@ -103,6 +110,20 @@
       "kind": "text",
       "contentPath": "copy.contactHeading",
       "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
     },
     {
       "id": "coverage.body",
@@ -191,7 +212,7 @@
       "id": "footer.credit",
       "selector": "footer [data-foundation-footer-credit]",
       "kind": "text",
-      "contentPath": "license.credit",
+      "contentPath": "license.name",
       "required": true
     },
     {
@@ -221,6 +242,12 @@
       "kind": "text",
       "contentPath": "hero.primaryLabel",
       "required": true
+    },
+    {
+      "id": "hero.secondaryLabel",
+      "selector": "[data-foundation-slot=\"hero.secondaryLabel\"]",
+      "kind": "text",
+      "required": false
     },
     {
       "id": "navigation.brand",
@@ -418,9 +445,14 @@
     },
     {
       "code": "unmapped-section-content",
+      "message": "Section 'plans' preserves source composition that needs adaptation.",
+      "selector": "#plans"
+    },
+    {
+      "code": "unmapped-section-content",
       "message": "Section 'seasons' preserves source composition that needs adaptation.",
       "selector": "#seasons"
     }
   ],
-  "fingerprint": "8695179e4aaabdfa4c852cf07bd971ec2cf3b25f4e09774327dc6e3e155b29b1"
+  "fingerprint": "604723f3b7c35c01b41bad9b61fc2f14db81c257c5ac47fb10b3c21001f00ae7"
 }

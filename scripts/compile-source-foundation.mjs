@@ -3,6 +3,10 @@ import path from "node:path";
 import { parseHTML } from "linkedom";
 import { buildFoundationManifest } from "./foundation-schema.mjs";
 import { scopeFoundationCss } from "./foundation-css.mjs";
+import {
+  applyFoundationThemeCss,
+  applyFoundationThemeHtml,
+} from "./foundation-theme.mjs";
 import { detectFoundationSections } from "./foundation-sections.mjs";
 import { extractFoundationInteractions } from "./foundation-interactions.mjs";
 import { normalizeFoundationSource } from "./foundation-source.mjs";
@@ -104,7 +108,7 @@ function scopeInlineStyles(html) {
     const source = style.textContent || "";
     if (!source.trim()) continue;
     const scoped = scopeFoundationCss(source);
-    style.textContent = scoped.css;
+    style.textContent = applyFoundationThemeCss(scoped.css);
     changed = true;
   }
   return changed ? document.toString() : html;
@@ -217,7 +221,7 @@ export function compileSourceFoundation({
   });
   const globalHtml = bindGlobalSlots(sections.html, sections.slots);
   const sourceForms = removeSourceForms(globalHtml);
-  html = scopeInlineStyles(sourceForms.html);
+  html = applyFoundationThemeHtml(scopeInlineStyles(sourceForms.html));
   const interactions = extractFoundationInteractions({
     html,
     sourceDirectory: path.join(output, "source"),
@@ -235,7 +239,7 @@ export function compileSourceFoundation({
   for (const file of walk(path.join(output, "source"))) {
     if (!/\.css$/iu.test(file)) continue;
     const scoped = scopeFoundationCss(fs.readFileSync(file, "utf8"));
-    fs.writeFileSync(file, scoped.css);
+    fs.writeFileSync(file, applyFoundationThemeCss(scoped.css));
     cssBlockers.push(...scoped.blockers);
   }
 

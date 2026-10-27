@@ -1,0 +1,52 @@
+---
+import type {
+  ExperienceBlueprintV2,
+  ExperienceContent,
+} from "../../lib/experience-pack";
+import {
+  FOUNDATION_LEAD_FORM_MARKER,
+  renderFoundation,
+} from "../../lib/foundation-render.mjs";
+import LeadForm from "../LeadForm.astro";
+import ReferencePackCredit from "./ReferencePackCredit.astro";
+import "../../styles/foundation-runtime.css";
+import foundationManifest from "../../foundations/season-wheel/manifest.json";
+import foundationHtml from "../../foundations/season-wheel/source/index.html?raw";
+import foundationCss from "../../foundations/season-wheel/source/styles.css?raw";
+
+interface Props {
+  program: ExperienceBlueprintV2;
+  content: ExperienceContent;
+}
+
+const { program, content } = Astro.props;
+const bodyClass =
+  foundationHtml.match(/<body[^>]*class="([^"]*)"/iu)?.[1] || "";
+const rendered = renderFoundation({
+  html: foundationHtml,
+  manifest: foundationManifest,
+  content,
+});
+const [beforeLead, ...afterLeadParts] = rendered.html.split(
+  FOUNDATION_LEAD_FORM_MARKER,
+);
+const afterLead = afterLeadParts.join(FOUNDATION_LEAD_FORM_MARKER);
+---
+
+<div
+  class:list={["xp-foundation", "xp-season-wheel", bodyClass]}
+  data-experience-pack={program.packId}
+  data-experience-variant={program.variantId}
+  data-layout-fingerprint={program.fingerprint}
+  data-foundation-dossier={foundationManifest.id}
+>
+  <style is:inline set:html={foundationCss}></style>
+  <Fragment set:html={beforeLead} />
+  <LeadForm id="season-wheel-lead" />
+  <Fragment set:html={afterLead} />
+  <ReferencePackCredit
+    label={foundationManifest.license.credit}
+    href={foundationManifest.license.url}
+    license={foundationManifest.license.name}
+  />
+</div>

@@ -25,8 +25,8 @@ publish the source assets as client assets. Do not copy the source verbatim.
 ## Compatibility
 
 - Status: `needs-adaptation`
-- Sections: 11
-- Content slots: 34
+- Sections: 12
+- Content slots: 37
 - Interactions: 4
 
 Blockers:
@@ -39,6 +39,7 @@ Blockers:
 - `source-form-removed`: Removed 1 source form(s); the shared lead form is the only conversion path.
 - `unmapped-repeated-items`: Repeated seasons items in 'seasons' have no sealed content mapping. (`#seasons`)
 - `unmapped-section-content`: Section 'estimate' preserves source composition that needs adaptation. (`#estimate`)
+- `unmapped-section-content`: Section 'plans' preserves source composition that needs adaptation. (`#plans`)
 - `unmapped-section-content`: Section 'seasons' preserves source composition that needs adaptation. (`#seasons`)
 
 ## Files

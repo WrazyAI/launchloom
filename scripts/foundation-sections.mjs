@@ -210,7 +210,7 @@ function findRepeatedGroup(section) {
       const groups = new Map();
       for (const child of children) {
         if (!REPEATABLE_TAGS.has(child.localName)) continue;
-        const key = `${child.localName}|${child.getAttribute("class") || ""}`;
+        const key = child.localName;
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(child);
       }
@@ -324,6 +324,7 @@ function addSection(
     required,
   };
   element.setAttribute("data-foundation-section", id);
+  if (role === "hero") element.setAttribute("data-experience-hero", "true");
   sections.push(section);
   return section;
 }
@@ -396,20 +397,32 @@ function normalizeNavigation(section, slots) {
       });
     }
   }
-  for (const link of links) {
-    link.setAttribute("href", normalizeHref(link.getAttribute("href")));
-    if (
-      link === first &&
-      !String(link.getAttribute("href") || "").startsWith("#")
-    )
-      continue;
-    const text = elementText(link, 60);
-    if (/^(?:work|portfolio|projects?)$/iu.test(text))
-      link.textContent = "Services";
-    else if (/^(?:faq|questions?)$/iu.test(text)) link.textContent = "FAQs";
-    else if (/^(?:estimate|quote|contact|book)$/iu.test(text))
-      link.textContent = "Contact";
+  const sectionLinks = links.filter((link) => {
+    const href = String(link.getAttribute("href") || "").trim();
+    return link !== first && href.startsWith("#") && href.length > 1;
+  });
+  if (!sectionLinks.length) return;
+  const container = sectionLinks[0].parentElement;
+  if (!container) return;
+  const linkClass = sectionLinks[0].getAttribute("class") || "";
+  const innerNav = section.ownerDocument.createElement("nav");
+  innerNav.setAttribute("aria-label", "Main navigation");
+  const containerClass = container.getAttribute("class") || "";
+  if (containerClass) innerNav.setAttribute("class", containerClass);
+  const targets = [
+    ["Services", "#services"],
+    ["FAQs", "#faqs"],
+    ["Contact", "#contact"],
+  ];
+  for (const [label, href] of targets) {
+    const link = section.ownerDocument.createElement("a");
+    link.setAttribute("href", href);
+    if (linkClass) link.setAttribute("class", linkClass);
+    link.textContent = label;
+    innerNav.appendChild(link);
   }
+  container.insertBefore(innerNav, sectionLinks[0]);
+  for (const link of sectionLinks) link.remove();
 }
 
 function normalizeFooter(section, slots, license) {
@@ -426,7 +439,7 @@ function normalizeFooter(section, slots, license) {
     id: "footer.credit",
     selector: "footer [data-foundation-footer-credit]",
     kind: "text",
-    contentPath: "license.credit",
+    contentPath: "license.name",
     required: true,
   });
   section.setAttribute("data-foundation-license", license.name || "");
@@ -522,6 +535,58 @@ function detectInteractions(section, interactions, blockers) {
     );
 }
 
+function wrapMain(document) {
+  if (document.querySelector("main[data-foundation-main]")) return;
+  const nav = document.querySelector("nav");
+  const footer = document.querySelector("footer");
+  if (!nav || !footer || nav.parentElement !== footer.parentElement) return;
+  const parent = nav.parentElement;
+  const main = document.createElement("main");
+  main.setAttribute("data-foundation-main", "true");
+  parent.insertBefore(main, nav.nextSibling);
+  let node = main.nextSibling;
+  while (node && node !== footer) {
+    const next = node.nextSibling;
+    main.appendChild(node);
+    node = next;
+  }
+}
+
+function injectConversionRibbon(document, sections, slots, usedSectionIds) {
+  const hero = document.querySelector('[data-foundation-section="hero"]');
+  if (
+    !hero ||
+    hero.parentElement?.querySelector('[data-foundation-section="conversion"]')
+  )
+    return;
+  const ribbon = document.createElement("aside");
+  ribbon.className = "xp-ribbon";
+  ribbon.setAttribute("data-early-conversion", "true");
+  ribbon.innerHTML =
+    '<p>{{conversion.body}}</p><a href="#contact">{{conversion.action}}</a>';
+  hero.parentNode.insertBefore(ribbon, hero.nextSibling);
+  addSection(sections, usedSectionIds, {
+    element: ribbon,
+    role: "conversion",
+    order: sections.length + 1,
+    required: true,
+  });
+  slots.push({
+    id: "conversion.body",
+    selector: '[data-foundation-slot="conversion.body"]',
+    kind: "text",
+    contentPath: "hero.offer",
+    required: false,
+  });
+  slots.push({
+    id: "conversion.action",
+    selector: '[data-foundation-slot="conversion.action"]',
+    kind: "text",
+    contentPath: "hero.primaryLabel",
+    required: true,
+  });
+}
+
 export function detectFoundationSections({ html, dossierId, license }) {
   const { document } = parseHTML(html);
   if (!document?.body) throw new Error("Foundation HTML has no body.");
@@ -591,6 +656,23 @@ export function detectFoundationSections({ html, dossierId, license }) {
       cta.setAttribute("data-foundation-slot", id);
       if (cta.localName === "a") cta.setAttribute("href", "#contact");
       addTextSlot(slots, id, "hero.primaryLabel", true);
+      if (role === "hero" && cta.parentElement) {
+        const secondary = [
+          ...cta.parentElement.querySelectorAll("a[href]"),
+        ].find((link) => link !== cta);
+        if (secondary) {
+          const secondaryId = "hero.secondaryLabel";
+          replaceElementText(secondary, secondaryId);
+          secondary.setAttribute("data-foundation-slot", secondaryId);
+          secondary.setAttribute("href", "#services");
+          slots.push({
+            id: secondaryId,
+            selector: '[data-foundation-slot="hero.secondaryLabel"]',
+            kind: "text",
+            required: false,
+          });
+        }
+      }
     }
 
     const images = sectionImages(element, role);
@@ -612,12 +694,26 @@ export function detectFoundationSections({ html, dossierId, license }) {
     const mapping = repeatedItemMapping(role);
     if (repeated && mapping) {
       const slotId = `${slotPrefix}.items`;
-      const [template, ...rest] = repeated.items;
-      for (const item of rest) item.remove();
+      const template =
+        repeated.items.find(
+          (item) =>
+            item.querySelector("h1, h2, h3, h4, summary, strong") &&
+            item.querySelector("p"),
+        ) || repeated.items[0];
+      for (const item of repeated.items) {
+        if (item !== template) item.remove();
+      }
+      if (["portfolio", "services"].includes(role)) {
+        for (const article of [...element.querySelectorAll("article")]) {
+          if (article !== template && !template.contains(article))
+            article.remove();
+        }
+      }
       const start = createComment(document, `foundation:each:${slotId}`);
       const end = createComment(document, `/foundation:each:${slotId}`);
       repeated.parent.insertBefore(start, template);
       repeated.parent.insertBefore(end, template.nextSibling);
+      repeated.parent.setAttribute("data-foundation-repeat-parent", slotId);
       slots.push({
         id: slotId,
         selector: `[data-foundation-repeat="${slotId}"]`,
@@ -665,11 +761,7 @@ export function detectFoundationSections({ html, dossierId, license }) {
       setTextNode(textNode, "");
     }
 
-    if (
-      role === "unknown" ||
-      (["seasons", "plans", "estimate"].includes(role) &&
-        element.querySelector("button, input, svg"))
-    ) {
+    if (role === "unknown" || ["seasons", "plans", "estimate"].includes(role)) {
       blockers.push({
         code: "unmapped-section-content",
         message:
@@ -678,7 +770,7 @@ export function detectFoundationSections({ html, dossierId, license }) {
             : `Section '${section.id}' preserves source composition that needs adaptation.`,
         selector: section.sourceSelector,
       });
-      if (role !== "unknown")
+      if (role !== "unknown" && element.querySelector("button, input, svg"))
         blockers.push({
           code: "interactive-section-needs-adaptation",
           message: `Section '${section.id}' preserves an interactive source composition that needs adaptation.`,
@@ -708,6 +800,8 @@ export function detectFoundationSections({ html, dossierId, license }) {
   addAnchor(document, "faqs", document.getElementById("faq"));
   if (!sections.some((section) => section.role === "contact"))
     createContactSection(document, sections, slots, usedSectionIds);
+  wrapMain(document);
+  injectConversionRibbon(document, sections, slots, usedSectionIds);
 
   const ordered = [...document.querySelectorAll("[data-foundation-section]")]
     .map((element) =>
@@ -720,6 +814,12 @@ export function detectFoundationSections({ html, dossierId, license }) {
   ordered.forEach((section, index) => {
     section.order = index + 1;
   });
+  for (const blocker of blockers) {
+    if (!blocker.selector) continue;
+    const element = document.querySelector(blocker.selector);
+    if (element)
+      element.setAttribute("data-foundation-needs-adaptation", "true");
+  }
 
   return {
     html: document.toString(),

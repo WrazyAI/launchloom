@@ -230,7 +230,33 @@ const EXPERIENCE_CONTRACTS = {
 // Internal-only reference packs derived from extracted source templates. New
 // reference packs are added here until their attribution decision; promoted
 // packs move into EXPERIENCE_CONTRACTS above.
-const INTERNAL_EXPERIENCE_CONTRACTS = {};
+const INTERNAL_EXPERIENCE_CONTRACTS = {
+  "season-wheel": {
+    navigation: "minimal-inline",
+    conversion: "discovery-ribbon",
+    proof: "principle-line",
+    closing: "cinematic-inquiry",
+    variants: {
+      standard: {
+        hero: "season-wheel",
+        services: "seasonal-ledger",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "seasons",
+          "plans",
+          "estimate",
+          "coverage",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+    },
+  },
+};
 
 function experienceContract(packId) {
   return EXPERIENCE_CONTRACTS[packId] || INTERNAL_EXPERIENCE_CONTRACTS[packId];

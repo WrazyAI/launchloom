@@ -118,7 +118,8 @@ export type ExperiencePackId =
   | "kinetic-poster"
   | "editorial-folio"
   | "guided-conversation"
-  | "service-led";
+  | "service-led"
+  | "season-wheel";
 export type SiteConfig = {
   pipelineTest?: {
     version: 1;
