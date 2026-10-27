@@ -50,7 +50,7 @@ every commit is reachable from a retained local branch, remote branch, or tag.
 "Unique unmerged work" means anything outside that definition. Keep the
 worktree when unique unmerged work remains.
 
-"Follow-up is active" means a tracked Nifty task and a progress-ledger entry.
+"Follow-up is active" means a tracked Work OS ledger task and a progress-ledger entry.
 Remove the worktree when that follow-up ships or is explicitly abandoned.
 
 Before removing a worktree:
@@ -81,36 +81,73 @@ Before removing a worktree:
    refs and records that approval.
 
 If cleanup cannot proceed, record the exact path, branch, and blocker in the
-progress ledger and the Nifty task. A worktree left behind without a recorded
+progress ledger and the Work OS ledger task. A worktree left behind without a recorded
 blocker is an incomplete handoff.
 
 ## Work tracking
 
-Create or reuse a Nifty task before user-requested investigation,
+Create or reuse a Work OS ledger task before user-requested investigation,
 implementation, deployment, integration, or external action. Read existing
 tasks first and reuse equivalent active work. Track LaunchLoom work in
-**Tasks** (`czFZk9928z`), identifying LaunchLoom in the name or description.
+**TASKS** (the default progress project), identifying LaunchLoom in the name or description.
 If access fails, report the exact blocker and stop before changes; do not
 silently do untracked work. Keep unfinished work open with a concise blocker.
 
-The canonical creator is `/home/dev/agent-os/scripts/log-nifty-tasks.mjs` on
-the VPS, not a local LaunchLoom script. Reach it through:
+Use `scripts/work-os-ledger.mjs`, the canonical Work OS ledger tool mirrored at
+`/home/dev/agent-os/scripts/work-os-ledger.mjs` on the VPS, not an ad-hoc
+LaunchLoom helper or direct database writes. It writes to the work record through
+the Work OS Agent API. Reach the canonical VPS copy through:
 
 ```bash
 ssh -i /home/zahemen/.ssh/google_compute_engine dev@72.62.5.190
 ```
 
-Resolve the VPS Node toolchain before running the logger. Keep credentials on
-the VPS; never shell-source env files, print tokens, or automatically retry
-with the stale refresh-token flow.
+Resolve the VPS Node toolchain before running the tool. Keep the token on the
+VPS as `WORK_OS_AGENT_TOKEN` in `/home/dev/agent-os/.env.local`; the tool reads
+it there. Never copy, print, paste, or commit it, or shell-source env files.
 
-Re-read tasks immediately before writes. Retain returned subtask IDs; never
-guess missing IDs. Complete known subtasks before their parent only after the
-outcome and verification are done. Use the VPS-held Bearer token with
-`POST https://openapi.niftypm.com/api/v1.0/tasks/{task_id}/complete` and
-`{"completed":true}`; read back `name`, `completed`, and `archived`.
-Partial task PUTs can reset completion: include the current `completed` value
-when updating descriptions/blockers, and verify the resulting state.
+Keep descriptions short (one to three sentences), without bullet-pointed
+implementation detail; put that detail in subtasks with five-to-eight-word names.
+Every task and subtask gets the `agent-ledger` label automatically, keeping agent
+progress separable from the employee's own work. Do not remove that label.
+
+Run these commands on the VPS with its resolved Node toolchain:
+
+```bash
+# List before creating; reuse an equivalent active task.
+node /home/dev/agent-os/scripts/work-os-ledger.mjs list --query "LaunchLoom"
+node /home/dev/agent-os/scripts/work-os-ledger.mjs create --json '{
+  "tasks": [{
+    "name": "LaunchLoom: fix the production bug",
+    "description": "Restore checkout and verify the affected workflow.",
+    "subtasks": ["Diagnose the affected checkout request path", "Verify checkout restoration with live evidence"]
+  }]
+}'
+# Alternatively: create --file <tasks.json>; add --dry-run to validate only.
+node /home/dev/agent-os/scripts/work-os-ledger.mjs get <TASK_ID>
+node /home/dev/agent-os/scripts/work-os-ledger.mjs describe <TASK_ID> --description "Concise progress or blocker."
+node /home/dev/agent-os/scripts/work-os-ledger.mjs complete <TASK_ID>
+```
+
+Re-read tasks immediately before writes. Retain returned task/subtask IDs;
+never guess missing IDs or reuse historical provider IDs as Work OS IDs.
+Complete each task/subtask as its outcome and verification finish, not in a
+batch at the end. Completing a parent also closes its open subtasks, so do not
+complete a parent with unfinished work. The tool posts completion and reads
+`completed` back; confirm `completed=true` before reporting success. Use `get`
+for additional readback when needed. Leave blocked work open with a concise
+description using `describe`.
+
+### EOD reports
+
+**EOD Report** is a project, not a task. Confirm read access before drafting or
+submitting; never create a test report. Submit only after explicit approval of
+the final name and description, using `create --project-name "EOD Report"`
+with the same JSON document shape. Name the task `<Full Name><MM/DD/YYYY>`.
+Its description contains shift start/end times, completed/in-progress task
+counts, a concise outcome-focused shift summary, and a blocker line only when
+work remains open. Ask for missing or ambiguous values; disclose inferred
+counts or summaries. A draft is read-only and never authorizes a ledger write.
 
 ## Sentry credentials and issue navigation
 
@@ -164,7 +201,7 @@ For every new substantive work item, create or append
 `.github/agents/progress-update/UPDATE-YYYY-MM-DD.md` using the current UTC
 date and a timestamped section. Never overwrite previous entries.
 
-- At the start, record the task, intended outcome, branch/worktree, and Nifty ID.
+- At the start, record the task, intended outcome, branch/worktree, and Work OS ledger ID.
 - After substantive progress or a direction change, record changes, relevant
   files/artifacts, and the evidence or decision behind them.
 - At completion, record the outcome, important files, actual validation
@@ -180,7 +217,7 @@ bash ./task_complete "<verified outcome>"
 This appends UTC time, branch, and short HEAD hash to
 `.collab/task-complete.log`. HEAD identifies checkout context, not proof that
 uncommitted edits belong to that commit; state uncommitted work explicitly.
-The receipt supplements daily progress and Nifty completion/readback.
+The receipt supplements daily progress and Work OS ledger completion/readback.
 Never use it to mark unfinished work complete.
 
 Include ledger updates in the same workstream. Logging does not authorize

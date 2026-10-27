@@ -50,4 +50,4 @@ A2P widget preparation, prospecting automation, ongoing SEO campaigns, analytics
 
 ## Final handoff
 
-Provide the implemented contracts, actual checks and artifacts, pending client/provider dependencies, migration instructions, and remaining release actions. Complete Nifty and append the task receipt only for the verified scope; never mark deferred release or implementation work complete merely because a plan or local report exists.
+Provide the implemented contracts, actual checks and artifacts, pending client/provider dependencies, migration instructions, and remaining release actions. Complete the Work OS ledger task via the canonical tool in `AGENTS.md`, confirm readback, and append the task receipt only for the verified scope; never mark deferred release or implementation work complete merely because a plan or local report exists.
