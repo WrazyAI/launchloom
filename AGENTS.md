@@ -37,6 +37,38 @@ verify the deployment workflow and deployed commit before claiming it is live.
 Remove the task worktree only after confirming its work is integrated and it
 contains no dirty or unique work; retain it while follow-up is active.
 
+### Worktree cleanup is part of the task
+
+Cleanup is mandatory, not optional follow-up. Every agent must remove its own
+task worktree after its changes are merged into `main` and the deployment is
+verified, or after the owner explicitly abandons the task and its work is
+preserved or intentionally discarded.
+
+Before removing a worktree:
+
+1. Run `git status --porcelain` in it. Never remove a worktree with
+   uncommitted or untracked changes.
+2. Confirm the work is integrated. A branch is integrated when its pull
+   request was merged at its final head, when
+   `git merge-base --is-ancestor HEAD origin/main` succeeds, or when its
+   content has been reconciled and `git diff --quiet origin/main...HEAD`
+   succeeds. Keep the branch ref when its content is not fully integrated so
+   the work remains recoverable.
+3. Remove the worktree with `git worktree remove <path>`, then run
+   `git worktree prune` to clear stale registrations.
+4. Delete the local task branch after step 2 passes, and delete the remote
+   branch after its pull request is merged. Use `git branch -D` only after the
+   integration check, never as a substitute for it. For an abandoned task with
+   unmerged work, keep the branch and do not delete it unless the owner
+   explicitly authorizes discarding that work.
+5. Never remove `/home/maigreeks/projects/launchloom`,
+   `/home/maigreeks/projects/.worktrees/launchloom-main`, another agent's
+   worktree, or any worktree with dirty or unique unmerged work.
+
+If cleanup cannot proceed, record the exact path, branch, and blocker in the
+progress ledger and the Nifty task. A worktree left behind without a recorded
+blocker is an incomplete handoff.
+
 ## Work tracking
 
 Create or reuse a Nifty task before user-requested investigation,
