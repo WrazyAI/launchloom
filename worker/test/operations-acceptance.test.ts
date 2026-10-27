@@ -189,6 +189,9 @@ type StoreOptions = {
 };
 
 class FakeStore implements OperationsStore {
+  async leaseDispatch() { return null; }
+  async recordDispatchResult() {}
+  async claimRun() { return "attention" as const; }
   readonly committed = result();
   createCalls = 0;
   confirmCalls = 0;

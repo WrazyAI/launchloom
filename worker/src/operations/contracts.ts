@@ -93,8 +93,35 @@ export type DispatchOutboxRecord = {
   lastErrorCode: string | null;
 };
 
+export type RunIdentity = {
+  /** Verified GitHub repository ID, not an untrusted repository name/input. */
+  repositoryId: string;
+  runId: string;
+  runAttempt: number;
+};
+export type DispatchResult = {
+  outcome: "accepted" | "retryable" | "unknown" | "rejected";
+  now: number;
+};
+export type LeasedDispatch = {
+  operationId: string;
+  fence: number;
+  payload: DispatchOutboxRecord["payload"];
+};
+
 /** Trusted service boundary. API adapters MUST authorize callers before any read/write. */
 export interface OperationsStore {
+  leaseDispatch(now: number): Promise<LeasedDispatch | null>;
+  recordDispatchResult(
+    operationId: string,
+    fence: number,
+    result: DispatchResult,
+  ): Promise<void>;
+  /** One-time election only. No automatic ownership transfer or claim replay. */
+  claimRun(
+    operationId: string,
+    run: RunIdentity,
+  ): Promise<"claimed" | "duplicate" | "attention">;
   createAcceptance(input: AcceptanceInput): Promise<AcceptanceResult>;
   /** Caller must first durably confirm the matching invite reservation in the DO. */
   confirmAcceptance(intakeId: string): Promise<void>;

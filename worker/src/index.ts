@@ -64,6 +64,10 @@ import {
 } from "./operations/acceptance";
 import type { AcceptanceInput } from "./operations/contracts";
 import {
+  scheduledOperations,
+  type DispatchEnvironment,
+} from "./operations/dispatch";
+import {
   GenerationLedger,
   type GenerationCostKind,
   type GenerationEventInput,
@@ -3939,6 +3943,13 @@ async function aiChat(request: Request, env: Env) {
 }
 
 export default {
+  async scheduled(
+    _controller: ScheduledController,
+    env: DispatchEnvironment,
+    _ctx: ExecutionContext,
+  ): Promise<void> {
+    await scheduledOperations(env);
+  },
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const requestUrl = new URL(request.url);
     const previewOrigin = (env.PREVIEW_ORIGIN || "").replace(/\/$/u, "");

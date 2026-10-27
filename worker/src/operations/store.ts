@@ -2,6 +2,7 @@ import { neon } from "@neondatabase/serverless";
 import type {
   AcceptanceResult,
   IntakeRecord,
+  LeasedDispatch,
   OperationsStore,
 } from "./contracts";
 export type { OperationsStore } from "./contracts";
@@ -68,6 +69,51 @@ export function createOperationsStore(sql: OperationsSql): OperationsStore {
     }
   }
   return {
+    async leaseDispatch(now) {
+      if (!Number.isSafeInteger(now) || now < 0 || now > 8640000000000000) invalid();
+      const rows = await query<{
+        operation_id: string;
+        fence: string | number;
+        payload: LeasedDispatch["payload"];
+      }>(
+        "select * from launchloom_operations.lease_dispatch($1::timestamptz)",
+        [new Date(now).toISOString()],
+      );
+      if (!rows.length) return null;
+      const row = rows[0];
+      const fence = Number(row.fence);
+      if (
+        !Number.isSafeInteger(fence) || fence < 1 || !row.operation_id ||
+        !object(row.payload) || row.payload.operationId !== row.operation_id
+      ) unavailable();
+      return { operationId: row.operation_id, fence, payload: row.payload };
+    },
+    async recordDispatchResult(operationId, fence, result) {
+      requireKey(operationId);
+      if (
+        !Number.isSafeInteger(fence) || fence < 1 || !object(result) ||
+        !["accepted", "retryable", "unknown", "rejected"].includes(result.outcome) ||
+        !Number.isSafeInteger(result.now) || result.now < 0 || result.now > 8640000000000000
+      ) invalid();
+      await query(
+        "select launchloom_operations.record_dispatch_result($1::uuid, $2::bigint, $3, $4::timestamptz)",
+        [operationId, fence, result.outcome, new Date(result.now).toISOString()],
+      );
+    },
+    async claimRun(operationId, run) {
+      requireKey(operationId);
+      if (
+        !object(run) || typeof run.repositoryId !== "string" || typeof run.runId !== "string" ||
+        !/^[1-9][0-9]{0,19}$/u.test(run.repositoryId) || !/^[1-9][0-9]{0,19}$/u.test(run.runId) ||
+        !Number.isSafeInteger(run.runAttempt) || run.runAttempt < 1 || run.runAttempt > 2147483647
+      ) invalid();
+      const rows = await query<{ result: "claimed" | "duplicate" | "attention" }>(
+        "select launchloom_operations.claim_run($1::uuid, $2, $3, $4::integer) as result",
+        [operationId, run.repositoryId, run.runId, run.runAttempt],
+      );
+      if (!["claimed", "duplicate", "attention"].includes(rows[0]?.result)) unavailable();
+      return rows[0].result;
+    },
     async createAcceptance(input) {
       if (!object(input)) invalid();
       const invite = requireKey(input.inviteId);

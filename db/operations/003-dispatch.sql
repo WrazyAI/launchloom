@@ -1,0 +1,129 @@
+-- Isolated/staging migration only until separately authorized for production.
+-- Service functions do not authenticate GitHub. The Task 4 adapter MUST verify
+-- repository/workflow/ref/audience/expiry and the operation's configured target.
+BEGIN;
+
+CREATE OR REPLACE FUNCTION launchloom_operations.lease_dispatch(p_now timestamptz)
+RETURNS TABLE (operation_id uuid, fence bigint, payload jsonb)
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = pg_catalog, launchloom_operations, pg_temp
+AS $$
+DECLARE v launchloom_operations.dispatch_outbox%ROWTYPE;
+BEGIN
+  IF p_now IS NULL OR NOT isfinite(p_now) THEN RAISE EXCEPTION 'invalid_dispatch'; END IF;
+  -- Expiry is NOT evidence that GitHub rejected a dispatch. A crashed sender
+  -- may already have started a run. Fence late writes, never blindly re-lease.
+  FOR v IN SELECT o.* FROM launchloom_operations.dispatch_outbox o
+    WHERE (o.state = 'leased' AND o.lease_until <= p_now)
+       OR (o.state = 'dispatched' AND o.next_attempt_at <= p_now AND EXISTS (
+         SELECT 1 FROM launchloom_operations.generation_attempts a
+         WHERE a.id = o.attempt_id AND a.workflow_run_id IS NULL))
+    ORDER BY o.next_attempt_at, o.id LIMIT 50 FOR UPDATE OF o SKIP LOCKED
+  LOOP
+    UPDATE launchloom_operations.dispatch_outbox SET state = 'attention', lease_until = NULL,
+      fencing_version = fencing_version + 1,
+      last_error_code = CASE WHEN v.state = 'leased' THEN 'dispatch_lease_expired' ELSE 'run_claim_missing' END
+      WHERE id = v.id;
+    UPDATE launchloom_operations.generation_requests SET dispatch_state = 'attention'
+      WHERE id = v.request_id;
+  END LOOP;
+
+  SELECT o.* INTO v FROM launchloom_operations.dispatch_outbox o
+    JOIN launchloom_operations.intakes i ON i.id = o.intake_id
+    JOIN launchloom_operations.generation_requests r ON r.id = o.request_id
+    JOIN launchloom_operations.generation_attempts a ON a.id = o.attempt_id
+    WHERE o.state = 'pending' AND o.next_attempt_at <= p_now AND o.retry_count < 8
+      AND i.acceptance_state = 'confirmed' AND r.dispatch_state = 'waiting_to_start'
+      AND a.state = 'waiting_to_start' AND a.workflow_run_id IS NULL
+    ORDER BY o.next_attempt_at, o.id LIMIT 1 FOR UPDATE OF o SKIP LOCKED;
+  IF NOT FOUND THEN RETURN; END IF;
+  UPDATE launchloom_operations.dispatch_outbox SET state = 'leased',
+    lease_until = p_now + interval '2 minutes', fencing_version = fencing_version + 1
+    WHERE id = v.id RETURNING * INTO v;
+  RETURN QUERY SELECT v.id, v.fencing_version, v.payload;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION launchloom_operations.record_dispatch_result(
+  p_operation uuid, p_fence bigint, p_outcome text, p_now timestamptz
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = pg_catalog, launchloom_operations, pg_temp
+AS $$
+DECLARE v launchloom_operations.dispatch_outbox%ROWTYPE; v_state text; v_error text;
+BEGIN
+  IF p_fence IS NULL OR p_fence < 1 OR p_outcome IS NULL
+    OR p_outcome NOT IN ('accepted', 'retryable', 'unknown', 'rejected')
+    OR p_now IS NULL OR NOT isfinite(p_now) THEN RAISE EXCEPTION 'invalid_dispatch'; END IF;
+  SELECT o.* INTO v FROM launchloom_operations.dispatch_outbox o WHERE o.id = p_operation FOR UPDATE;
+  -- A run may claim before the HTTP response is observed. Its election fences
+  -- this sender too; no transport result may regress an already running owner.
+  IF NOT FOUND OR v.state <> 'leased' OR v.fencing_version <> p_fence
+    OR v.lease_until <= p_now THEN RETURN; END IF;
+  v_state := CASE WHEN p_outcome = 'accepted' THEN 'dispatched'
+    WHEN p_outcome = 'retryable' AND v.retry_count + 1 < 8 THEN 'pending' ELSE 'attention' END;
+  v_error := CASE WHEN p_outcome = 'unknown' THEN 'dispatch_unknown'
+    WHEN p_outcome = 'rejected' THEN 'dispatch_rejected'
+    WHEN p_outcome = 'retryable' AND v_state = 'attention' THEN 'dispatch_retries_exhausted'
+    WHEN p_outcome = 'retryable' THEN 'github_rate_limited' ELSE NULL END;
+  UPDATE launchloom_operations.dispatch_outbox SET state = v_state,
+    retry_count = retry_count + 1, lease_until = NULL, last_error_code = v_error,
+    next_attempt_at = p_now + CASE WHEN v_state = 'pending'
+      THEN make_interval(secs => least(3600, 60 * power(2, v.retry_count)::integer))
+      ELSE interval '10 minutes' END
+    WHERE id = v.id;
+  UPDATE launchloom_operations.generation_requests SET dispatch_state =
+    CASE WHEN v_state = 'pending' THEN 'waiting_to_start'
+      WHEN v_state = 'dispatched' THEN 'dispatched' ELSE 'attention' END
+    WHERE id = v.request_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION launchloom_operations.claim_run(
+  p_operation uuid, p_repository text, p_run text, p_attempt integer
+) RETURNS text LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = pg_catalog, launchloom_operations, pg_temp
+AS $$
+DECLARE v launchloom_operations.dispatch_outbox%ROWTYPE;
+  a launchloom_operations.generation_attempts%ROWTYPE;
+BEGIN
+  IF p_repository IS NULL OR p_repository !~ '^[1-9][0-9]{0,19}$'
+    OR p_run IS NULL OR p_run !~ '^[1-9][0-9]{0,19}$'
+    OR p_attempt IS NULL OR p_attempt < 1 THEN RAISE EXCEPTION 'invalid_dispatch'; END IF;
+  SELECT o.* INTO v FROM launchloom_operations.dispatch_outbox o
+    JOIN launchloom_operations.intakes i ON i.id = o.intake_id
+    WHERE o.id = p_operation AND i.acceptance_state = 'confirmed' FOR UPDATE OF o;
+  IF NOT FOUND THEN RETURN 'attention'; END IF;
+  SELECT ga.* INTO a FROM launchloom_operations.generation_attempts ga WHERE ga.id = v.attempt_id FOR UPDATE;
+  -- Never infer that an old owner's side effects are absent. Same-run retries
+  -- also stop: a lost claim response requires reconciliation, not re-execution.
+  IF a.state = 'attention' THEN RETURN 'attention'; END IF;
+  IF a.workflow_run_id IS NOT NULL THEN RETURN 'duplicate'; END IF;
+  IF a.state <> 'waiting_to_start' OR (v.state NOT IN ('leased', 'dispatched')
+    AND NOT (v.state = 'attention' AND v.last_error_code IN (
+      'dispatch_unknown', 'dispatch_lease_expired', 'run_claim_missing')))
+    THEN RETURN 'attention'; END IF;
+  UPDATE launchloom_operations.generation_attempts SET workflow_repository = p_repository,
+    workflow_run_id = p_run, workflow_run_attempt = p_attempt,
+    state = 'running', started_at = clock_timestamp() WHERE id = a.id;
+  UPDATE launchloom_operations.dispatch_outbox SET state = 'dispatched', lease_until = NULL,
+    fencing_version = fencing_version + 1, last_error_code = NULL WHERE id = v.id;
+  UPDATE launchloom_operations.generation_requests SET dispatch_state = 'dispatched' WHERE id = v.request_id;
+  RETURN 'claimed';
+EXCEPTION WHEN unique_violation THEN
+  -- The same trusted run identity cannot own a different operation. The
+  -- subtransaction rolls back ALL writes above; no partial election survives.
+  RETURN 'attention';
+END;
+$$;
+
+REVOKE ALL ON FUNCTION launchloom_operations.lease_dispatch(timestamptz) FROM PUBLIC;
+REVOKE ALL ON FUNCTION launchloom_operations.record_dispatch_result(uuid, bigint, text, timestamptz) FROM PUBLIC;
+REVOKE ALL ON FUNCTION launchloom_operations.claim_run(uuid, text, text, integer) FROM PUBLIC;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'launchloom_operations_worker') THEN
+    GRANT EXECUTE ON FUNCTION launchloom_operations.lease_dispatch(timestamptz) TO launchloom_operations_worker;
+    GRANT EXECUTE ON FUNCTION launchloom_operations.record_dispatch_result(uuid, bigint, text, timestamptz) TO launchloom_operations_worker;
+    GRANT EXECUTE ON FUNCTION launchloom_operations.claim_run(uuid, text, text, integer) TO launchloom_operations_worker;
+  END IF;
+END $$;
+COMMIT;
