@@ -1,6 +1,6 @@
 # Postgres operational records design
 
-**Status:** Draft for user approval. Design only; no production migration is authorized.
+**Status:** User approved on 2026-10-27. Design only; no production migration is authorized.
 
 ## Purpose and decisions
 
