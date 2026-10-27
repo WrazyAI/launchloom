@@ -53,16 +53,19 @@ Automatic retry depends on what the response proved, never on an assumption
 that a missing response means no run exists.
 
 - HTTP 429 is an explicit non-acceptance: retain `waiting_to_start` and retry
-  durably after 60, 120, 240, 480, 960, 1920, then 3600 seconds. The eighth
-  rate-limited send goes to `attention` (`dispatch_retries_exhausted`). A 429
-  never elects a run: `claimRun` rejects a pending entry that has only a
+  durably after at least 60, 120, 240, 480, 960, 1920, then 3600 seconds. The
+  eighth rate-limited send goes to `attention` (`dispatch_retries_exhausted`). A
+  429 never elects a run: `claimRun` rejects a pending entry that has only a
   `github_rate_limited` history.
-- A rate-limited HTTP 403 is recognized only from safe headers: a
-  `x-ratelimit-remaining: 0` count, a `retry-after` delay, or GitHub's secondary
-  limit form. The delay is parsed from seconds, an HTTP date, or
-  `x-ratelimit-reset`, clamped to 1..3600 seconds. Malformed or absent values
-  fall back to the persisted exponential backoff. An ordinary 403 with a
-  non-zero remaining count remains `attention` (`dispatch_rejected`); it is an
+- A rate-limited HTTP 403 is recognized only from validated signals: a numeric
+  zero `x-ratelimit-remaining` together with a valid `x-ratelimit-reset`, or a
+  valid `retry-after` (seconds or HTTP date, including GitHub secondary limits).
+  Empty, zero or malformed `retry-after` establishes nothing. `remaining: 0`
+  without a valid reset establishes nothing. When several valid signals exist,
+  the longer delay wins. Valid delays are clamped to 1..3600 seconds, and the
+  persisted exponential backoff is a floor: a zero or short header can never
+  shorten the 60, 120, 240, 480, 960, 1920 or 3600 second schedule. An ordinary
+  403 remains `attention` (`dispatch_rejected`); it is an
   authorization/configuration failure, not a temporary limit.
 - HTTP 400/401/404/422 goes to attention (`dispatch_rejected`): fix the
   configuration through a reviewed recovery, not an endless loop.
@@ -73,13 +76,16 @@ that a missing response means no run exists.
 - **Inside the verified gate only** (`OPERATIONS_DISPATCH_MODE=claim-gated-v1`
   and `OPERATIONS_CLAIM_GATE=verified-v1`) an ambiguous result or a crashed
   sender lease is re-queued as `waiting_to_start` with the same stable
-  operation ID and a new fence. The retry uses the same bounded 60, 120, 240,
-  480, 960, 1920, then 3600 second backoff. A gated replay is marked durably
-  (`uncertain_replay`) so a genuine run from the earlier ambiguous send can win
-  the atomic claim during backoff. After eight attempts the entry becomes
-  visible `attention` (`dispatch_unknown` for an ambiguous send,
-  `dispatch_retries_exhausted` for a limit); it never loops forever or hides
-  the terminal state.
+  operation ID and a new fence. The gate provenance is captured durably before
+  the **first** send (`verified-v1` or `unverified`) and is never upgraded. A
+  historical unverified send can never become auto-replayable after an operator
+  enables the flag later; that path fails closed to attention. The retry uses
+  the same bounded 60, 120, 240, 480, 960, 1920, then 3600 second backoff. A
+  gated replay is marked durably (`uncertain_replay`) so a genuine run from the
+  earlier ambiguous send can win the atomic claim during backoff. After eight
+  attempts the entry becomes visible `attention` (`dispatch_unknown` for an
+  ambiguous send, `dispatch_retries_exhausted` for a limit); it never loops
+  forever or hides the terminal state.
 - The gate is what makes a duplicate dispatch safe: the workflow calls
   `claimRun` before any side effect, exactly one run becomes `claimed`, and all
   duplicates exit. Until Task 4 implements and independently verifies that
@@ -92,10 +98,14 @@ that a missing response means no run exists.
   accepted run with unknown liveness, not an uncertain send, so it is not
   auto-replayed. Each sweep locks at most fifty rows.
 - A response lost after acceptance can still yield a first legitimate claim
-  from those three specific unknown-dispatch attention states. This is not
-  ownership transfer: the attempt must still be waiting and never owned.
-  Same-run replay and rerun attempts receive `duplicate`; an attempt marked
-  attention for unknown side effects receives `attention`.
+  from those three specific unknown-dispatch attention states. Prior verified
+  `uncertain_replay` evidence also survives later 429 or rejection status, so a
+  real run from the earlier ambiguous send can still be the first owner after a
+  subsequent 429 exhausts. Entries with only a rate-limit history (no
+  uncertain evidence) never become claimable. This is not ownership transfer:
+  the attempt must still be waiting and never owned. Same-run replay and rerun
+  attempts receive `duplicate`; an attempt marked attention for unknown side
+  effects receives `attention`.
 
 ## Ownership and operator recovery
 
@@ -105,9 +115,13 @@ runs, including a replay of the same run or a GitHub rerun attempt, get
 An attempt marked attention for unknown prior side effects returns `attention`.
 A claimed/running attempt is never taken over: its run ID is already bound, so a
 lease expiry or a late sender cannot replace it. The only additional claimable
-pre-owner state is a gated uncertain replay (`pending` plus `uncertain_replay`),
-where a real run from the ambiguous send may still be the first owner. One
-trusted run identity cannot own two operations.
+pre-owner state is a gated uncertain replay (`pending`/`attention` plus
+`uncertain_replay`), where a real run from the ambiguous send may still be the
+first owner. Unowned waiting attempts that already carry prior-effect evidence
+(`started_at`, `finished_at`, `terminal_reason`, artifact references or stage
+events) are never leased or claimed: both paths lock the attempt row and surface
+`attention` (`prior_effects_unexplained`). One trusted run identity cannot own
+two operations.
 
 A lost claim response also fails closed: retrying the election cannot give a
 second permission to execute. The workflow must stop and escalate, not retry
@@ -144,8 +158,9 @@ cover locks/fences, retained confirmed state, fresh scheduled-handler store
 instances after a quiet period, concurrent run claims, unknown outcomes and
 bounded backoff. They also exercise an outage followed by recovery, a lost
 accepted response with a duplicate job, a crashed sender lease, exact retry
-exhaustion, and the rule that a claimed/running attempt is never re-leased or
-repeated. The restart proof reconstructs application stores on the same
+exhaustion, first-send gate provenance that cannot be upgraded, claims after a
+later 429 exhaustion, retry-after floors, prior-effect lease/claim refusal, and
+the rule that a claimed/running attempt is never re-leased or repeated. The restart proof reconstructs application stores on the same
 persistent test database; it is a **simulated Worker restart**, not an actual
 Cloudflare deployment/process eviction. The Neon HTTP transport and GitHub API
 are synthetic in that test. Live OIDC/workflow, browser, deployment and production

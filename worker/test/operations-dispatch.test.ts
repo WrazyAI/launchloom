@@ -151,7 +151,32 @@ describe("GitHub dispatch boundary", () => {
     expect(await forbidden(item)).toBe("rejected");
   });
 
-  it("caps retry-after and ignores malformed rate-limit delays", async () => {
+  it("does not treat unvalidated 403 headers as a rate limit", async () => {
+    const clock = () => 1_000_000_000;
+    const empty = githubDispatcher(target, async () => new Response(null, {
+      status: 403, headers: { "retry-after": "", "x-ratelimit-remaining": "0" },
+    }), clock);
+    expect(await empty(item)).toBe("rejected");
+
+    const malformed = githubDispatcher(target, async () => new Response(null, {
+      status: 403, headers: { "retry-after": "soon", "x-ratelimit-remaining": "0" },
+    }), clock);
+    expect(await malformed(item)).toBe("rejected");
+
+    const remainingOnly = githubDispatcher(target, async () => new Response(null, {
+      status: 403, headers: { "x-ratelimit-remaining": "0" },
+    }), clock);
+    expect(await remainingOnly(item)).toBe("rejected");
+
+    const withReset = githubDispatcher(target, async () => new Response(null, {
+      status: 403, headers: {
+        "x-ratelimit-remaining": "00", "x-ratelimit-reset": "1000120",
+      },
+    }), clock);
+    expect(await withReset(item)).toEqual({ outcome: "retryable", retryAfterSeconds: 120 });
+  });
+
+  it("caps retry-after, ignores zero and malformed delays, and uses the longer reset", async () => {
     const clock = () => 1_000_000;
     const capped = githubDispatcher(target, async () => new Response(null, {
       status: 429, headers: { "retry-after": "7200" },
@@ -161,12 +186,19 @@ describe("GitHub dispatch boundary", () => {
     const zero = githubDispatcher(target, async () => new Response(null, {
       status: 429, headers: { "retry-after": "0" },
     }), clock);
-    expect(await zero(item)).toEqual({ outcome: "retryable", retryAfterSeconds: 1 });
+    expect(await zero(item)).toBe("retryable");
 
     const malformed = githubDispatcher(target, async () => new Response(null, {
       status: 429, headers: { "retry-after": "soon", "x-ratelimit-reset": "later" },
     }), clock);
     expect(await malformed(item)).toBe("retryable");
+
+    const longerReset = githubDispatcher(target, async () => new Response(null, {
+      status: 429, headers: {
+        "retry-after": "5", "x-ratelimit-reset": String(1_000 + 600),
+      },
+    }), clock);
+    expect(await longerReset(item)).toEqual({ outcome: "retryable", retryAfterSeconds: 600 });
   });
 
   it("refuses unsafe target configuration before sending", () => {

@@ -67,34 +67,60 @@ export async function dispatchScheduled(deps: {
   }
 }
 
-function rateLimited(headers: Headers): boolean {
-  return (
-    headers.get("x-ratelimit-remaining") === "0" ||
-    headers.has("retry-after")
-  );
+function retryAfterSeconds(
+  value: string | null,
+  nowMs: number,
+): number | undefined {
+  if (!value) return undefined;
+  const text = value.trim();
+  if (!text) return undefined;
+  if (/^[0-9]{1,6}$/u.test(text)) {
+    const seconds = Number(text);
+    return seconds >= 1 ? boundedSeconds(seconds) : undefined;
+  }
+  const when = Date.parse(text);
+  if (!Number.isFinite(when)) return undefined;
+  const seconds = Math.ceil((when - nowMs) / 1000);
+  return seconds >= 1 ? boundedSeconds(seconds) : undefined;
+}
+
+function resetSeconds(
+  value: string | null,
+  nowMs: number,
+): number | undefined {
+  if (!value || !/^[0-9]{1,12}$/u.test(value.trim())) return undefined;
+  const seconds = Math.ceil(Number(value.trim()) - nowMs / 1000);
+  return seconds >= 1 ? boundedSeconds(seconds) : undefined;
+}
+
+function zeroRemaining(value: string | null): boolean {
+  if (value === null || !/^[0-9]+$/u.test(value.trim())) return false;
+  return Number(value.trim()) === 0;
 }
 
 /**
- * Reads only documented delay headers. GitHub always supplies x-ratelimit-reset
- * (even on ordinary 403s), so a zero remaining count or retry-after is required
- * before this delay is trusted. Invalid values fall back to persisted backoff.
+ * Reads only documented delay headers. A valid retry-after is a rate-limit
+ * signal on its own (secondary limits). x-ratelimit-reset is trusted only with a
+ * numeric zero remaining count; GitHub sends a reset header on ordinary 403s
+ * too. Empty/malformed values establish nothing and fall back to the persisted
+ * exponential backoff. The longer valid delay wins.
  */
-function retryDelay(headers: Headers, nowMs: number): number | undefined {
-  const retryAfter = headers.get("retry-after")?.trim();
-  if (retryAfter) {
-    if (/^[0-9]{1,6}$/u.test(retryAfter)) return boundedSeconds(Number(retryAfter));
-    const when = Date.parse(retryAfter);
-    if (Number.isFinite(when)) {
-      const seconds = Math.ceil((when - nowMs) / 1000);
-      if (seconds >= 0) return boundedSeconds(seconds);
-    }
+function rateLimitSignal(
+  headers: Headers,
+  nowMs: number,
+): { limited: boolean; delay?: number } {
+  const retryAfter = retryAfterSeconds(headers.get("retry-after"), nowMs);
+  const reset = resetSeconds(headers.get("x-ratelimit-reset"), nowMs);
+  if (retryAfter !== undefined) {
+    return {
+      limited: true,
+      delay: Math.max(retryAfter, reset ?? 0),
+    };
   }
-  const reset = headers.get("x-ratelimit-reset")?.trim();
-  if (reset && /^[0-9]{1,12}$/u.test(reset)) {
-    const seconds = Math.ceil(Number(reset) - nowMs / 1000);
-    if (seconds >= 0) return boundedSeconds(seconds);
+  if (zeroRemaining(headers.get("x-ratelimit-remaining")) && reset !== undefined) {
+    return { limited: true, delay: reset };
   }
-  return undefined;
+  return { limited: false };
 }
 
 export function githubDispatcher(
@@ -135,11 +161,19 @@ export function githubDispatcher(
     const headers = response.headers;
     await response.body?.cancel();
     if (response.status === 200 || response.status === 204) return "accepted";
-    if (response.status === 429 || (response.status === 403 && rateLimited(headers))) {
-      const seconds = retryDelay(headers, clock());
-      return seconds === undefined
+    if (response.status === 429) {
+      const signal = rateLimitSignal(headers, clock());
+      return signal.delay === undefined
         ? "retryable"
-        : { outcome: "retryable", retryAfterSeconds: seconds };
+        : { outcome: "retryable", retryAfterSeconds: signal.delay };
+    }
+    if (response.status === 403) {
+      const signal = rateLimitSignal(headers, clock());
+      if (signal.limited) {
+        return signal.delay === undefined
+          ? "retryable"
+          : { outcome: "retryable", retryAfterSeconds: signal.delay };
+      }
     }
     // A plain 403 is an authorization failure, not a proven temporary limit.
     if ([400, 401, 403, 404, 422].includes(response.status)) return "rejected";

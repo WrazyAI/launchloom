@@ -90,6 +90,10 @@ export type DispatchOutboxRecord = {
   nextAttemptAt: string;
   leaseUntil: string | null;
   fencingVersion: string;
+  /** Captured before the first send and never upgraded. */
+  gateProvenance: "verified-v1" | "unverified" | null;
+  /** True after at least one verified-gate ambiguous send. */
+  uncertainReplay: boolean;
   lastErrorCode: string | null;
 };
 
