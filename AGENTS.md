@@ -76,7 +76,9 @@ Before removing a worktree:
    delete it unless the owner explicitly authorizes discarding that work.
 5. Never remove `/home/maigreeks/projects/launchloom`,
    `/home/maigreeks/projects/.worktrees/launchloom-main`, another agent's
-   worktree, or any worktree with unique unmerged work.
+   worktree, or any worktree with unique unmerged work, unless the owner
+   explicitly authorizes a documented cleanup that preserves dirty files and
+   refs and records that approval.
 
 If cleanup cannot proceed, record the exact path, branch, and blocker in the
 progress ledger and the Nifty task. A worktree left behind without a recorded
