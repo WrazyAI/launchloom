@@ -10,14 +10,14 @@
     "rights": "licensed",
     "rightsEvidence": "Creative Commons 3.0 template license retained locally.",
     "rightsEvidencePath": "rights/LICENSE.md",
-    "assetEvidencePaths": [
-      "rights/ASSET-PROVENANCE.md"
-    ],
+    "assetEvidencePaths": ["rights/ASSET-PROVENANCE.md"],
     "provenanceEvidencePaths": [
       "rights/SOURCE-README.md",
       "rights/business-verification.md",
       "rights/capture-record.md"
-    ]
+    ],
+    "templateUrl": "https://download.html.design/demo/orgarden/index.html",
+    "license": "CC-BY-3.0"
   },
   "provenance": {
     "retrievedAt": "2026-10-26",
@@ -53,16 +53,8 @@
       "team-row",
       "contact-panel"
     ],
-    "conversion": [
-      "quote-request",
-      "direct-contact",
-      "service-selection"
-    ],
-    "motion": [
-      "native-menu",
-      "card-hover",
-      "image-reveal"
-    ],
+    "conversion": ["quote-request", "direct-contact", "service-selection"],
+    "motion": ["native-menu", "card-hover", "image-reveal"],
     "imagery": [
       "garden-photography",
       "service-icons",
@@ -107,15 +99,9 @@
       "scale": "compact opening statement, clear section labels and readable service metadata"
     },
     "palette": {
-      "surfaces": [
-        "white",
-        "pale garden neutral",
-        "deep forest green"
-      ],
+      "surfaces": ["white", "pale garden neutral", "deep forest green"],
       "ink": "deep evergreen",
-      "accents": [
-        "leaf green"
-      ],
+      "accents": ["leaf green"],
       "contrastIntent": "dark green actions on light surfaces with legible body copy"
     },
     "imageTreatment": {

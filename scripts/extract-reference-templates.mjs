@@ -252,6 +252,7 @@ function classifyDossier(manifest) {
 function methodFor(manifest, classification) {
   if (classification === "owned") return "owned-artifact";
   if (classification === "live") return "live-site";
+  if (manifest.source?.templateUrl) return "live-site";
   if (/spicerdesigns\.com\/templates\//u.test(manifest.source?.url || ""))
     return "zip-download";
   return "pinned-git";
@@ -259,6 +260,7 @@ function methodFor(manifest, classification) {
 
 function licenseFor(manifest) {
   const source = manifest.source || {};
+  if (source.license) return source.license;
   if (source.rights === "owned") return "owned";
   if (source.repository === "https://github.com/zce/html5up")
     return "CC-BY-3.0";
@@ -612,7 +614,7 @@ async function inlineImports(cssText, baseUrl, requestContext, failures) {
 }
 
 async function extractLiveSite(manifest, stagedSource, options) {
-  const url = manifest.source?.url;
+  const url = manifest.source?.templateUrl || manifest.source?.url;
   if (!url) throw new Error("Live site extraction requires a source URL.");
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
@@ -856,7 +858,9 @@ async function stageExtraction(manifest, classification, options) {
     let result;
     if (classification === "licensed") {
       const source = manifest.source || {};
-      if (/spicerdesigns\.com\/templates\//u.test(source.url || ""))
+      if (source.templateUrl)
+        result = await extractLiveSite(manifest, stagedSource, options);
+      else if (/spicerdesigns\.com\/templates\//u.test(source.url || ""))
         result = await extractSpicer(manifest, stagedSource, workspace);
       else result = await extractPinnedGit(manifest, stagedSource);
     } else if (classification === "owned") {
@@ -1147,16 +1151,20 @@ async function main() {
       const result = {
         ...staged,
         method,
-      source: {
-        url: redactSensitiveUrl(plan.manifest.source?.url),
-        ...staged.source,
-        attestationPath:
-          plan.manifest.source?.rights === "owned" ? null : ATT_LICENSED,
-        rightsEvidencePath:
-          plan.manifest.source?.rights === "owned"
-            ? null
-            : plan.manifest.source?.rightsEvidencePath || null,
-      },
+        source: {
+          url: redactSensitiveUrl(plan.manifest.source?.url),
+          ...staged.source,
+          attestationPath:
+            plan.manifest.source?.rights === "owned" ? null : ATT_LICENSED,
+          rightsEvidencePath:
+            plan.manifest.source?.rights === "owned"
+              ? null
+              : plan.manifest.source?.rightsEvidencePath || null,
+          licenseEvidencePath:
+            plan.manifest.source?.rights === "licensed"
+              ? plan.manifest.source?.rightsEvidencePath || null
+              : null,
+        },
       };
       const status = await commitExtraction({
         manifest: plan.manifest,
