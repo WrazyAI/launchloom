@@ -6,7 +6,7 @@ import { extractFoundationInteractions } from "../scripts/foundation-interaction
 
 const temporaryRoots: string[] = [];
 
-function temporarySource(files = {}) {
+function temporarySource(files: Record<string, string> = {}) {
   const root = fs.mkdtempSync(
     path.join(os.tmpdir(), "launchloom-interactions-"),
   );

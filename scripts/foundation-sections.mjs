@@ -20,35 +20,45 @@ const SKIP_TEXT_TAGS = new Set([
 ]);
 
 const ROLE_PATTERNS = [
-  { role: "seasons", pattern: /\b(?:season|calendar|schedule)\b/iu },
-  { role: "plans", pattern: /\b(?:plan|pricing|package|maintenance)\b/iu },
+  { role: "seasons", pattern: /\b(?:seasons?|calendar|schedules?)\b/iu },
+  { role: "plans", pattern: /\b(?:plans?|pricing|packages?|maintenance)\b/iu },
   {
     role: "estimate",
-    pattern: /\b(?:estimate|quote|calculator|budget|lot size)\b/iu,
+    pattern: /\b(?:estimates?|quotes?|calculator|budget|lot size)\b/iu,
   },
   {
     role: "coverage",
     pattern:
-      /\b(?:coverage|area|location|serving|neighbourhood|neighborhood)\b/iu,
+      /\b(?:coverage|areas?|locations?|serving|neighbourhoods?|neighborhoods?)\b/iu,
   },
-  { role: "faq", pattern: /\b(?:faq|question|accordion)\b/iu },
+  { role: "faq", pattern: /\b(?:faqs?|questions?|accordion)\b/iu },
   {
     role: "proof",
-    pattern: /\b(?:testimonial|review|proof|result|case stud|client say)\b/iu,
+    pattern:
+      /\b(?:testimonials?|reviews?|proofs?|results?|case stud(?:y|ies)|client say)\b/iu,
   },
-  { role: "process", pattern: /\b(?:process|step|how it works|timeline)\b/iu },
+  {
+    role: "process",
+    pattern: /\b(?:process(?:es)?|steps?|how it works|timeline)\b/iu,
+  },
   {
     role: "contact",
-    pattern: /\b(?:contact|enquir|inquir|book|consult)\b/iu,
+    pattern:
+      /\b(?:contacts?|enquir(?:y|ies)?|inquir(?:y|ies)?|book|consult)\b/iu,
   },
   {
     role: "about",
-    pattern: /\b(?:about|story|approach|philosoph|who we|team)\b/iu,
+    pattern:
+      /\b(?:about|stories?|approaches?|philosoph(?:y|ies)?|who we|team)\b/iu,
   },
-  { role: "portfolio", pattern: /\b(?:work|portfolio|project|gallery)\b/iu },
+  {
+    role: "portfolio",
+    pattern: /\b(?:works?|portfolios?|projects?|galleries|gallery)\b/iu,
+  },
   {
     role: "services",
-    pattern: /\b(?:service|practice|treatment|menu|program|capabilit)\b/iu,
+    pattern:
+      /\b(?:services?|practices?|treatments?|menu|programs?|capabilit(?:y|ies))\b/iu,
   },
 ];
 
@@ -364,8 +374,17 @@ function normalizeNavigation(section, slots) {
   const first = links[0];
   if (first) {
     const href = String(first.getAttribute("href") || "").trim();
-    const isSectionLink = href.startsWith("#");
-    if (!isSectionLink) {
+    const firstText = elementText(first, 80);
+    const isSectionLink = href.startsWith("#") && href.length > 1;
+    const isGenericSectionLabel =
+      /^(?:services?|work|faqs?|questions?|plans?|seasons?|estimates?|contacts?)$/iu.test(
+        firstText,
+      );
+    const isBrandLink =
+      !isSectionLink ||
+      Boolean(first.querySelector("svg, img")) ||
+      !isGenericSectionLabel;
+    if (isBrandLink) {
       first.innerHTML = "{{navigation.brand}}";
       first.setAttribute("data-foundation-slot", "navigation.brand");
       slots.push({
@@ -512,8 +531,14 @@ export function detectFoundationSections({ html, dossierId, license }) {
   const blockers = [];
   const usedSectionIds = new Set();
   const candidates = [
-    ...document.querySelectorAll("body > *, body > main > *"),
-  ].filter((element) => SECTION_TAGS.has(element.localName));
+    ...document.querySelectorAll(
+      "body nav, body header, body section, body article, body footer",
+    ),
+  ].filter(
+    (element) =>
+      SECTION_TAGS.has(element.localName) &&
+      !element.parentElement?.closest("nav, header, section, article, footer"),
+  );
   let firstHeader = true;
   const firstH1 = document.querySelector("h1");
 

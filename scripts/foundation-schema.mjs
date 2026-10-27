@@ -50,7 +50,7 @@ export const FOUNDATION_COMPATIBILITY = Object.freeze([
 const SOURCE_CLASSES = new Set(["owned", "licensed", "permission-cleared"]);
 
 const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/u;
-const SLOT_ID_PATTERN = /^[a-z0-9][a-z0-9._-]*$/u;
+const SLOT_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/u;
 const DIGEST_PATTERN = /^[a-f0-9]{64}$/u;
 
 function fail(message) {
