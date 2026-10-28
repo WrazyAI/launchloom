@@ -1,4 +1,6 @@
 export type AdminIconName =
+  | "operations"
+  | "history"
   | "generations"
   | "clients"
   | "invitations"
@@ -29,6 +31,20 @@ export function AdminIcon({
 }) {
   const common = { viewBox: "0 0 24 24", "aria-hidden": true, className };
   switch (name) {
+    case "operations":
+      return (
+        <svg {...common} {...STROKE}>
+          <path d="M3.5 12h3.2l2.1-5.2 3.4 10.4 2.2-6.2 1.4 3h4.7" />
+          <circle cx="12" cy="12" r="8.6" opacity=".35" />
+        </svg>
+      );
+    case "history":
+      return (
+        <svg {...common} {...STROKE}>
+          <path d="M4.2 10.2A8 8 0 1 1 6 17.1" />
+          <path d="M4.2 5.4v4.8h4.8M12 8v4.4l2.9 1.8" />
+        </svg>
+      );
     case "generations":
       return (
         <svg {...common} {...STROKE}>

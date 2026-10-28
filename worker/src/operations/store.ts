@@ -5,6 +5,12 @@ import type {
   ClaimedOperation,
   IntakeRecord,
   LeasedDispatch,
+  OperationDetailRecord,
+  OperationEvent,
+  OperationOperatorAction,
+  OperationPageRecord,
+  OperationRecord,
+  OperationsReadStore,
   OperationsStore,
   RunIdentity,
   RunStageEvent,
@@ -84,11 +90,191 @@ export function operationsDatabaseSql(connectionString: string): OperationsSql {
   return neon(connectionString) as unknown as OperationsSql;
 }
 
+function epoch(value: unknown): number {
+  if (typeof value !== "string") unavailable();
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed) || parsed < 0) unavailable();
+  return parsed;
+}
+function nullableEpoch(value: unknown): number | null {
+  return value === null ? null : epoch(value);
+}
+function safeCount(value: unknown): number {
+  if (!Number.isSafeInteger(value) || (value as number) < 0) unavailable();
+  return value as number;
+}
+function nullableText(value: unknown): string | null {
+  if (value !== null && typeof value !== "string") unavailable();
+  return value as string | null;
+}
+function parseOperatorAction(value: unknown): OperationOperatorAction | null {
+  if (value === null) return null;
+  if (!object(value)) unavailable();
+  if (
+    typeof value.actorId !== "string" ||
+    value.actorId.length < 1 ||
+    value.actorId.length > 200 ||
+    value.decision !== "retain_attention" ||
+    typeof value.evidenceRef !== "string" ||
+    !/^[a-f0-9]{40,64}$/u.test(value.evidenceRef)
+  )
+    unavailable();
+  return {
+    actorId: value.actorId,
+    recordedAt: epoch(value.recordedAt),
+    decision: "retain_attention",
+    evidenceRef: value.evidenceRef,
+  };
+}
+function parseOperationRecord(value: unknown): OperationRecord {
+  if (!object(value)) unavailable();
+  const status = value.status;
+  if (
+    ![
+      "waiting_to_start",
+      "running",
+      "attention",
+      "failed",
+      "cancelled",
+      "preview_ready",
+    ].includes(String(status))
+  )
+    unavailable();
+  if (
+    value.deliveryStatus !== "none" &&
+    value.deliveryStatus !== "preview_ready"
+  )
+    unavailable();
+  if (
+    !["actual", "estimated", "unreported"].includes(String(value.costKind))
+  )
+    unavailable();
+  if (typeof value.telemetryIncomplete !== "boolean") unavailable();
+  if (!Array.isArray(value.costs)) unavailable();
+  const costs = value.costs.map((cost) => {
+    if (!object(cost)) unavailable();
+    return {
+      currency: nullableText(cost.currency),
+      actual: nullableText(cost.actual),
+      estimated: nullableText(cost.estimated),
+      unreportedCount: safeCount(cost.unreportedCount),
+      incompleteCount: safeCount(cost.incompleteCount),
+      unknownCoverageCount: safeCount(cost.unknownCoverageCount),
+    };
+  });
+  // Explicit field reads are the privacy boundary: unknown source columns stay out.
+  return {
+    attemptId: requireUuid(value.attemptId),
+    requestId: requireUuid(value.requestId),
+    intakeId: requireUuid(value.intakeId),
+    clientId: requireUuid(value.clientId),
+    operationId: requireUuid(value.operationId),
+    profile: requireKey(value.profile),
+    attemptNumber: (() => {
+      const number = safeCount(value.attemptNumber);
+      if (number < 1) unavailable();
+      return number;
+    })(),
+    status: status as OperationRecord["status"],
+    executionStatus: String(value.executionStatus),
+    dispatchState: requireKey(value.dispatchState),
+    deliveryStatus: value.deliveryStatus,
+    createdAt: epoch(value.createdAt),
+    startedAt: nullableEpoch(value.startedAt),
+    finishedAt: nullableEpoch(value.finishedAt),
+    lastObservedAt: epoch(value.lastObservedAt),
+    costKind: value.costKind as OperationRecord["costKind"],
+    telemetryIncomplete: value.telemetryIncomplete,
+    costs,
+    attentionReason: nullableText(value.attentionReason),
+    recoveryReason: nullableText(value.recoveryReason),
+    operatorAction: parseOperatorAction(value.operatorAction),
+  };
+}
+function parseOperationEvent(value: unknown): OperationEvent {
+  if (!object(value)) unavailable();
+  if (
+    !["actual", "estimated", "unreported"].includes(String(value.costKind))
+  )
+    unavailable();
+  return {
+    eventId: requireUuid(value.eventId),
+    eventKey: requireKey(value.eventKey),
+    stage: requireKey(value.stage),
+    transition: requireKey(value.transition),
+    occurredAt: epoch(value.occurredAt),
+    recordedAt: epoch(value.recordedAt),
+    detailCode: nullableText(value.detailCode),
+    provider: nullableText(value.provider),
+    model: nullableText(value.model),
+    costKind: value.costKind as OperationEvent["costKind"],
+    amount: nullableText(value.amount),
+    currency: nullableText(value.currency),
+    buildSha: nullableText(value.buildSha),
+  };
+}
+export function encodeOperationsCursor(boundary: {
+  createdAt: string;
+  attemptId: string;
+}) {
+  if (
+    typeof boundary.createdAt !== "string" ||
+    !Number.isFinite(Date.parse(boundary.createdAt))
+  )
+    invalid();
+  requireUuid(boundary.attemptId);
+  const bytes = new TextEncoder().encode(
+    JSON.stringify({
+      createdAt: boundary.createdAt,
+      attemptId: boundary.attemptId,
+    }),
+  );
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary)
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/u, "");
+}
+export function decodeOperationsCursor(cursor: string) {
+  if (
+    typeof cursor !== "string" ||
+    cursor.length < 1 ||
+    cursor.length > 1024 ||
+    !/^[A-Za-z0-9_-]+$/u.test(cursor)
+  )
+    invalid();
+  try {
+    const base64 = cursor.replaceAll("-", "+").replaceAll("_", "/");
+    const padded = base64.padEnd(
+      base64.length + ((4 - (base64.length % 4)) % 4),
+      "=",
+    );
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    const value = JSON.parse(new TextDecoder().decode(bytes));
+    if (
+      !object(value) ||
+      Object.keys(value).length !== 2 ||
+      typeof value.createdAt !== "string" ||
+      !Number.isFinite(Date.parse(value.createdAt))
+    )
+      throw Error();
+    return {
+      createdAt: value.createdAt,
+      attemptId: requireUuid(value.attemptId),
+    };
+  } catch {
+    invalid();
+  }
+}
+
 export function createOperationsStore(
   sql: OperationsSql,
   options: OperationsStoreOptions = {},
 ): OperationsStore &
-  ReconciliationStore & {
+  ReconciliationStore &
+  OperationsReadStore & {
     listReconciliationAttempts(): Promise<string[]>;
     getOperationAlerts(): Promise<{ attemptId: string; code: string }[]>;
   } {
@@ -126,6 +312,76 @@ export function createOperationsStore(
     }
   }
   return {
+    async listOperations(limit, cursor = null): Promise<OperationPageRecord> {
+      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) invalid();
+      const boundary =
+        cursor === null || cursor === undefined
+          ? null
+          : decodeOperationsCursor(cursor);
+      const rows = await query<{ record: unknown }>(
+        "select * from launchloom_operations.list_operations($1::integer, $2::timestamptz, $3::uuid)",
+        [limit, boundary?.createdAt ?? null, boundary?.attemptId ?? null],
+      );
+      const page = rows[0]?.record;
+      if (!object(page) || !Array.isArray(page.items)) unavailable();
+      const items = page.items.map(parseOperationRecord);
+      const total = safeCount(page.total);
+      const hasMore = page.hasMore === true;
+      const last = page.items[page.items.length - 1];
+      const nextCursor =
+        hasMore && object(last) && typeof last.createdAt === "string"
+          ? encodeOperationsCursor({
+              createdAt: last.createdAt,
+              attemptId: requireUuid(last.attemptId),
+            })
+          : null;
+      return { items, nextCursor, total };
+    },
+    async getOperation(attemptId): Promise<OperationDetailRecord | null> {
+      requireUuid(attemptId);
+      const rows = await query<{ record: unknown }>(
+        "select launchloom_operations.get_operation($1::uuid) as record",
+        [attemptId],
+      );
+      const value = rows[0]?.record;
+      if (value === undefined || value === null) return null;
+      if (!object(value) || !Array.isArray(value.events)) unavailable();
+      const record = parseOperationRecord(value);
+      const events = value.events.map(parseOperationEvent);
+      const eventCount = safeCount(value.eventCount);
+      if (!object(value.workflow) || !object(value.outbox)) unavailable();
+      const workflow = value.workflow;
+      const outbox = value.outbox;
+      if (
+        (workflow.repository !== null &&
+          typeof workflow.repository !== "string") ||
+        (workflow.runId !== null && typeof workflow.runId !== "string") ||
+        (workflow.runAttempt !== null &&
+          (!Number.isSafeInteger(workflow.runAttempt) ||
+            (workflow.runAttempt as number) < 1)) ||
+        typeof outbox.state !== "string" ||
+        typeof outbox.retryCount !== "number" ||
+        !Number.isSafeInteger(outbox.retryCount) ||
+        (outbox.retryCount as number) < 0
+      )
+        unavailable();
+      return {
+        ...record,
+        events,
+        eventCount,
+        workflow: {
+          repository: workflow.repository as string | null,
+          runId: workflow.runId as string | null,
+          runAttempt: workflow.runAttempt as number | null,
+        },
+        outbox: {
+          state: outbox.state,
+          retryCount: outbox.retryCount as number,
+          nextAttemptAt: nullableEpoch(outbox.nextAttemptAt),
+          lastErrorCode: nullableText(outbox.lastErrorCode),
+        },
+      };
+    },
     async getReconciliationAttempt(id) {
       requireUuid(id);
       const rows = await query<{

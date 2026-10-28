@@ -79,6 +79,94 @@ export type StageEventRecord = EventCost & {
   model: string | null;
   buildSha: string | null;
 };
+/** Read-only dashboard projections. They never include payload, consent or client identity. */
+export type OperationStatus =
+  | "waiting_to_start"
+  | "running"
+  | "attention"
+  | "failed"
+  | "cancelled"
+  | "preview_ready";
+export type OperationCostRollup = {
+  currency: string | null;
+  actual: string | null;
+  estimated: string | null;
+  unreportedCount: number;
+  incompleteCount: number;
+  unknownCoverageCount: number;
+};
+export type OperationOperatorAction = {
+  actorId: string;
+  recordedAt: number;
+  decision: "retain_attention";
+  evidenceRef: string;
+};
+export type OperationRecord = {
+  attemptId: string;
+  requestId: string;
+  intakeId: string;
+  clientId: string;
+  operationId: string;
+  profile: string;
+  attemptNumber: number;
+  status: OperationStatus;
+  executionStatus: string;
+  dispatchState: string;
+  deliveryStatus: "none" | "preview_ready";
+  createdAt: number;
+  startedAt: number | null;
+  finishedAt: number | null;
+  lastObservedAt: number;
+  costKind: CostKind;
+  telemetryIncomplete: boolean;
+  costs: OperationCostRollup[];
+  attentionReason: string | null;
+  recoveryReason: string | null;
+  operatorAction: OperationOperatorAction | null;
+};
+export type OperationEvent = {
+  eventId: string;
+  eventKey: string;
+  stage: string;
+  transition: string;
+  occurredAt: number;
+  recordedAt: number;
+  detailCode: string | null;
+  provider: string | null;
+  model: string | null;
+  costKind: CostKind;
+  amount: string | null;
+  currency: string | null;
+  buildSha: string | null;
+};
+export type OperationDetailRecord = OperationRecord & {
+  events: OperationEvent[];
+  eventCount: number;
+  workflow: {
+    repository: string | null;
+    runId: string | null;
+    runAttempt: number | null;
+  };
+  outbox: {
+    state: string;
+    retryCount: number;
+    nextAttemptAt: number | null;
+    lastErrorCode: string | null;
+  };
+};
+export type OperationPageRecord = {
+  items: OperationRecord[];
+  nextCursor: string | null;
+  total: number;
+};
+export interface OperationsReadStore {
+  listOperations(
+    limit: number,
+    cursor?: string | null,
+  ): Promise<OperationPageRecord>;
+  getOperation(attemptId: string): Promise<OperationDetailRecord | null>;
+}
+
 export type DispatchOutboxRecord = {
   operationId: string;
   attemptId: string;

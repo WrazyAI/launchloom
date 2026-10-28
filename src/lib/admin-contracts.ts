@@ -159,6 +159,92 @@ export type ClientFilters = {
   cursor?: string;
   limit?: number;
 };
+
+/** Current Postgres-backed operations. Legacy ledger records never use these. */
+export type OperationStatus =
+  | "waiting_to_start"
+  | "running"
+  | "attention"
+  | "failed"
+  | "cancelled"
+  | "preview_ready";
+export type OperationCostKind = "actual" | "estimated" | "unreported";
+export type OperationCostRollup = {
+  currency: string | null;
+  actual: string | null;
+  estimated: string | null;
+  unreportedCount: number;
+  incompleteCount: number;
+  unknownCoverageCount: number;
+};
+export type OperationOperatorAction = {
+  actorId: string;
+  recordedAt: number;
+  decision: "retain_attention";
+  evidenceRef: string;
+};
+export type OperationRecord = {
+  attemptId: string;
+  requestId: string;
+  intakeId: string;
+  clientId: string;
+  operationId: string;
+  profile: string;
+  attemptNumber: number;
+  status: OperationStatus;
+  executionStatus: string;
+  dispatchState: string;
+  deliveryStatus: "none" | "preview_ready";
+  createdAt: number;
+  startedAt: number | null;
+  finishedAt: number | null;
+  lastObservedAt: number;
+  costKind: OperationCostKind;
+  telemetryIncomplete: boolean;
+  costs: OperationCostRollup[];
+  attentionReason: string | null;
+  recoveryReason: string | null;
+  operatorAction: OperationOperatorAction | null;
+};
+export type OperationEvent = {
+  eventId: string;
+  eventKey: string;
+  stage: string;
+  transition: string;
+  occurredAt: number;
+  recordedAt: number;
+  detailCode: string | null;
+  provider: string | null;
+  model: string | null;
+  costKind: OperationCostKind;
+  amount: string | null;
+  currency: string | null;
+  buildSha: string | null;
+};
+export type OperationDetail = OperationRecord & {
+  events: OperationEvent[];
+  eventCount: number;
+  workflow: {
+    repository: string | null;
+    runId: string | null;
+    runAttempt: number | null;
+  };
+  outbox: {
+    state: string;
+    retryCount: number;
+    nextAttemptAt: number | null;
+    lastErrorCode: string | null;
+  };
+};
+export type OperationFilters = { cursor?: string | null; limit?: number };
+export type OperationPage = Page<OperationRecord> & {
+  recordSource: "operations";
+  readOnly: true;
+};
+export type LegacyAttemptPage = Page<AttemptSummary> & {
+  recordSource: "legacy";
+  readOnly: true;
+};
 export type InviteFilters = {
   cursor?: string;
   limit?: number;

@@ -10,6 +10,16 @@ import type {
   ActorSnapshot,
   AttemptFilters,
 } from "../../../src/lib/admin-contracts";
+import type { OperationsReadStore } from "../operations/contracts";
+import {
+  createOperationsStore,
+  operationsDatabaseSql,
+  OperationsError,
+} from "../operations/store";
+
+const WORKSPACE_PREFIX = "/api/admin/onboarding-invites/workspace";
+const OPERATION_UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 
 /** Deterministic legacy ID derived only from a verified, normalized email. */
 export async function legacyAccessId(verifiedEmail: string): Promise<string> {
@@ -250,7 +260,11 @@ export async function attemptIngest(
     );
   }
 }
-const json = (body: unknown, status = 200) =>
+const json = (
+  body: unknown,
+  status = 200,
+  extraHeaders: Record<string, string> = {},
+) =>
   new Response(
     JSON.stringify(body, (key, value) =>
       SITE_URL_FIELDS.has(key) ? safeSiteLink(value) : safeText(value),
@@ -261,11 +275,108 @@ const json = (body: unknown, status = 200) =>
         "Content-Type": "application/json",
         "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
+        ...extraHeaders,
       },
     },
   );
 export const workspaceError = (code: string, message: string, status: number) =>
   json({ error: { code, message } }, status);
+
+/**
+ * Authenticated read-only current-operations API. The browser never receives a
+ * database connection, provider text, intake payload, consent record or email.
+ * Existing readonly reconciliation controls remain in operationsAdminApi.
+ */
+export async function operationsDashboardApi(
+  request: Request,
+  env: Env,
+  principal: { id?: string; role?: string } | null | undefined,
+  store?: OperationsReadStore,
+) {
+  if (!principal?.id || !["admin", "owner"].includes(principal.role ?? ""))
+    return workspaceError("forbidden", "Admin access required.", 403);
+  if (request.method !== "GET")
+    return workspaceError("method_not_allowed", "Use GET.", 405);
+  if (
+    env.OPERATIONS_RECONCILE_MODE !== "observe-v1" ||
+    !env.OPERATIONS_DATABASE_URL
+  )
+    return workspaceError(
+      "not_enabled",
+      "Current operations are not enabled in this environment.",
+      503,
+    );
+  const suffix = new URL(request.url).pathname.slice(WORKSPACE_PREFIX.length);
+  const list = suffix === "/operations/records";
+  const detailMatch = /^\/operations\/records\/(.+)$/u.exec(suffix);
+  const detail =
+    detailMatch && OPERATION_UUID.test(detailMatch[1])
+      ? detailMatch[1]
+      : null;
+  if (!list && !detail)
+    return workspaceError("not_found", "Route not found.", 404);
+  const url = new URL(request.url);
+  const query = url.searchParams;
+  let limit = 50;
+  if (query.has("limit")) {
+    if (!/^\d+$/u.test(query.get("limit") ?? ""))
+      return workspaceError("invalid_input", "Invalid query.", 400);
+    limit = Number(query.get("limit"));
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100)
+      return workspaceError("invalid_input", "Invalid query.", 400);
+  }
+  const cursor = query.get("cursor");
+  if (
+    cursor !== null &&
+    (!/^[A-Za-z0-9_-]{1,1024}$/u.test(cursor) || cursor.length < 1)
+  )
+    return workspaceError("invalid_input", "Invalid query.", 400);
+  try {
+    const reader =
+      store ??
+      createOperationsStore(
+        operationsDatabaseSql(env.OPERATIONS_DATABASE_URL!),
+      );
+    if (list) {
+      const page = await reader.listOperations(limit, cursor);
+      return json(
+        {
+          ...page,
+          recordSource: "operations",
+          readOnly: true,
+        },
+        200,
+        { "X-LaunchLoom-Record-Source": "operations" },
+      );
+    }
+    if (!detail)
+      return workspaceError("not_found", "Operation not found.", 404);
+    const operation = await reader.getOperation(detail);
+    if (!operation)
+      return workspaceError("not_found", "Operation not found.", 404);
+    return json(
+      {
+        operation,
+        recordSource: "operations",
+        readOnly: true,
+      },
+      200,
+      { "X-LaunchLoom-Record-Source": "operations" },
+    );
+  } catch (error) {
+    if (error instanceof OperationsError) {
+      if (error.code === "invalid")
+        return workspaceError("invalid_input", "Invalid query.", 400);
+      if (error.code === "not_found")
+        return workspaceError("not_found", "Operation not found.", 404);
+    }
+    return workspaceError(
+      "unavailable",
+      "Current operations are temporarily unavailable.",
+      503,
+    );
+  }
+}
 
 /** Read-only operational APIs. No issue reads/creation, projection writes, dispatch or mail. */
 export async function workspaceApi(
@@ -276,9 +387,16 @@ export async function workspaceApi(
   if (request.method !== "GET")
     return workspaceError("method_not_allowed", "Use GET.", 405);
   const url = new URL(request.url);
-  const suffix = url.pathname.slice(
-    "/api/admin/onboarding-invites/workspace".length,
-  );
+  let suffix = url.pathname.slice(WORKSPACE_PREFIX.length);
+  if (suffix === "/legacy" || suffix.startsWith("/legacy/"))
+    suffix = suffix.slice("/legacy".length) || "/";
+  // Every existing ledger read is legacy history. There is deliberately no
+  // browser-accessible write, projection or dispatch path here.
+  const legacyMeta = {
+    recordSource: "legacy" as const,
+    readOnly: true as const,
+  };
+  const legacyHeaders = { "X-LaunchLoom-Record-Source": "legacy" };
   if (suffix === "/me") {
     if (env.ADMIN_AUTH_MODE === "neon")
       return workspaceError(
@@ -338,9 +456,21 @@ export async function workspaceApi(
         acceptanceRecovery: acceptance,
       };
     };
-    if (suffix === "/health") return json(await combinedHealth());
+    if (suffix === "/health")
+      return json(
+        { ...(await combinedHealth()), ...legacyMeta },
+        200,
+        legacyHeaders,
+      );
     if (suffix === "/attempts")
-      return json(await ledger.listAttempts(filters as AttemptFilters));
+      return json(
+        {
+          ...(await ledger.listAttempts(filters as AttemptFilters)),
+          ...legacyMeta,
+        },
+        200,
+        legacyHeaders,
+      );
     if (suffix === "/invites") return json(await coordinator.listPage(filters));
     if (suffix === "/clients") {
       const [page, health] = await Promise.all([
@@ -348,7 +478,7 @@ export async function workspaceApi(
         combinedHealth(),
       ]);
       // Additive coverage metadata: consumers must not present partial directory as complete.
-      return json({ ...page, health });
+      return json({ ...page, health, ...legacyMeta }, 200, legacyHeaders);
     }
     const match = /^\/(attempts|clients)\/([^/]+)(\/events)?$/u.exec(suffix);
     if (match) {
@@ -361,7 +491,7 @@ export async function workspaceApi(
       if (match[1] === "clients" && !match[3]) {
         const client = await ledger.getClient(id);
         return client
-          ? json({ client })
+          ? json({ client, ...legacyMeta }, 200, legacyHeaders)
           : workspaceError("not_found", "Client not found.", 404);
       }
       if (match[1] === "attempts") {
@@ -370,8 +500,17 @@ export async function workspaceApi(
           return workspaceError("not_found", "Attempt not found.", 404);
         return json(
           match[3]
-            ? await ledger.getAttemptEvents(id, query.cursor, filters.limit)
-            : { attempt },
+            ? {
+                ...(await ledger.getAttemptEvents(
+                  id,
+                  query.cursor,
+                  filters.limit,
+                )),
+                ...legacyMeta,
+              }
+            : { attempt, ...legacyMeta },
+          200,
+          legacyHeaders,
         );
       }
     }

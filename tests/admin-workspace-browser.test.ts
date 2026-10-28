@@ -1178,10 +1178,10 @@ describe("real admin workspace browser behavior", () => {
       const nav = page.getByRole("navigation", {
         name: "Workspace sections",
       });
-      await expect.poll(() => nav.getByRole("link").count()).toBe(6);
+      await expect.poll(() => nav.getByRole("link").count()).toBe(7);
       const active = nav.locator('[aria-current="page"]');
       await expect.poll(() => active.count()).toBe(1);
-      await expect.poll(() => active.textContent()).toBe("Generations");
+      await expect.poll(() => active.textContent()).toBe("Legacy history");
 
       const tone = await active.evaluate((element) => {
         const style = getComputedStyle(element);
@@ -1202,7 +1202,7 @@ describe("real admin workspace browser behavior", () => {
         text: element.textContent?.trim() || "",
         outline: getComputedStyle(element).outlineColor,
       }));
-      expect(focus.text).toBe("Generations");
+      expect(focus.text).toBe("Legacy history");
       expect(focus.outline).toBe("rgb(217, 240, 107)");
       autoErrors(errors);
     } finally {
@@ -1512,7 +1512,7 @@ describe("real admin workspace browser behavior", () => {
         .poll(() => page.locator(".admin-shell").getAttribute("class"))
         .toContain("admin-shell--collapsed");
       await visible(
-        page.getByRole("link", { name: "Generations", exact: true }),
+        page.getByRole("link", { name: "Legacy history", exact: true }),
       );
       await page.getByRole("button", { name: "Expand sidebar" }).click();
       await expect
