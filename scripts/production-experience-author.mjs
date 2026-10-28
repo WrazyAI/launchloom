@@ -3725,6 +3725,15 @@ function stageValue(value, key, stage) {
   return asText(value[key], `${stage}.${key}`);
 }
 
+function contractValue(value, key, minimumLength) {
+  const text = asText(value?.[key], `contract.${key}`);
+  if (text.length < minimumLength)
+    throw new Error(
+      `Model stage returned a contract.${key} that is too short to be a complete implementation contract.`,
+    );
+  return text;
+}
+
 function validationRepairMessage(error) {
   const message = error instanceof Error ? error.message : String(error);
   return typeof error?.repairDirective === "string"
@@ -3752,8 +3761,8 @@ async function generateContract(generate, request) {
   try {
     result = await generate(request);
     return {
-      designContract: stageValue(result, "designContract", "contract"),
-      designRationale: stageValue(result, "designRationale", "contract"),
+      designContract: contractValue(result, "designContract", 200),
+      designRationale: contractValue(result, "designRationale", 40),
       repaired: false,
     };
   } catch (error) {
@@ -3763,8 +3772,8 @@ async function generateContract(generate, request) {
       previousSource: contractRepairSummary(result),
     });
     return {
-      designContract: stageValue(result, "designContract", "contract"),
-      designRationale: stageValue(result, "designRationale", "contract"),
+      designContract: contractValue(result, "designContract", 200),
+      designRationale: contractValue(result, "designRationale", 40),
       repaired: true,
     };
   }

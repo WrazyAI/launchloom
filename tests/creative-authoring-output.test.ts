@@ -168,7 +168,7 @@ describe("creative authoring output budgets", () => {
 
   it("gives each authoring stage generous output and time headroom", () => {
     expect(AUTHORING_STAGE_BUDGETS).toEqual({
-      contract: { maxTokens: 24000, timeoutMs: 300000 },
+      contract: { maxTokens: 32000, timeoutMs: 360000 },
       experience: { maxTokens: 48000, timeoutMs: 480000 },
       service: { maxTokens: 32000, timeoutMs: 360000 },
       location: { maxTokens: 32000, timeoutMs: 360000 },
