@@ -5,9 +5,13 @@ import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   buildAttemptObservation,
+  safeDiagnosticPreviewUrl,
   buildAttemptEvents,
 } from "./generation-tracking-contract.mjs";
-import { postAttemptTracking } from "./record-generation-event.mjs";
+import {
+  postAttemptTracking,
+  uploadGenerationHero,
+} from "./record-generation-event.mjs";
 import {
   parsePipelineTestArgs,
   resolvePipelineTestPolicy,
@@ -621,14 +625,8 @@ const writeJson = async (file, value) => {
   await fs.writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
 };
 
-/** Actual cloud adapter. Its only writable client target is the unique QA repository. */
-export function createCloudDependencies(
-  input,
-  {
-    root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
-    work = process.env.RUNNER_TEMP,
-  } = {},
-) {
+/** One slug contract for the isolated workspace and its evidence repository. */
+export function pipelineSitePath(input, work = process.env.RUNNER_TEMP) {
   if (!work)
     throw new Error("RUNNER_TEMP is required for the isolated test workspace.");
   const profileSlug =
@@ -637,8 +635,19 @@ export function createCloudDependencies(
       : input.profile === "creative-only"
         ? "creative"
         : "full";
-  const slug = `llqa-${input.issue}-${profileSlug}-${input.runId}`;
-  const site = path.join(work, slug);
+  return path.join(work, `llqa-${input.issue}-${profileSlug}-${input.runId}`);
+}
+
+/** Actual cloud adapter. Its only writable client target is the unique QA repository. */
+export function createCloudDependencies(
+  input,
+  {
+    root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
+    work = process.env.RUNNER_TEMP,
+  } = {},
+) {
+  const site = pipelineSitePath(input, work);
+  const slug = path.basename(site);
   const evidence = path.join(site, ".launchloom");
   const repo = `WrazyAI/${slug}`;
   const pagesProject = resolveTestPreviewProject(
@@ -840,6 +849,7 @@ export function createCloudDependencies(
     );
   }
   return {
+    site,
     async prepare({ report }) {
       for (const key of [
         "GH_TOKEN",
@@ -1563,6 +1573,9 @@ export function buildPipelineAttemptTracking(
     triggeringActor: environment.GITHUB_TRIGGERING_ACTOR || null,
     executionStatus: failed ? "failed" : "succeeded",
     deliveryStatus: report.previewDelivered ? "diagnostic" : "none",
+    previewUrl: report.previewDelivered
+      ? safeDiagnosticPreviewUrl(report.previewUrl)
+      : null,
     observedAt: Date.parse(report.finishedAt),
     startedAt: Date.parse(report.startedAt),
     completedAt: Date.parse(report.finishedAt),
@@ -1581,6 +1594,68 @@ export function buildPipelineAttemptTracking(
   };
 }
 
+/** A capture is usable only when the selected build passed rendered verification. */
+export function diagnosticScreenshotPath(report, site) {
+  const select = report.stages?.select;
+  const technical = report.stages?.technical;
+  if (
+    !report.previewDelivered ||
+    select?.status !== "passed" ||
+    !/^candidate-[abc]$/u.test(select.candidate || "") ||
+    !technical?.gates?.some(
+      (gate) => gate.name === "rendered" && gate.passed === true,
+    )
+  )
+    return null;
+  return path.join(site, ".launchloom", "screenshots", "desktop.png");
+}
+
+/** Explain why a diagnostic capture can or cannot be uploaded. */
+export function diagnosticThumbnailStatus({
+  report,
+  observation,
+  site,
+  secret,
+}) {
+  if (!report.previewDelivered)
+    return { status: "unavailable", reason: "not_delivered" };
+  if (!observation.previewUrl)
+    return {
+      status: "unavailable",
+      reason: report.previewUrl ? "preview_url_invalid" : "preview_url_missing",
+    };
+  if (!secret) return { status: "unavailable", reason: "no_tracking_secret" };
+  const heroFile = diagnosticScreenshotPath(report, site);
+  if (!heroFile)
+    return { status: "unavailable", reason: "screenshot_not_verified" };
+  return { status: "ready", heroFile };
+}
+
+/** Store one verified capture under the run/attempt key. No fallback or backfill. */
+export async function uploadDiagnosticScreenshot({
+  report,
+  observation,
+  site,
+  api,
+  secret,
+  upload = uploadGenerationHero,
+}) {
+  const outcome = diagnosticThumbnailStatus({
+    report,
+    observation,
+    site,
+    secret,
+  });
+  if (outcome.status !== "ready") return false;
+  await upload({
+    api,
+    secret,
+    generationId: `github:${observation.runId}:${observation.runAttempt}`,
+    heroFile: outcome.heroFile,
+  });
+  return true;
+}
+
 if (
   process.argv[1] &&
   fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
@@ -1594,11 +1669,39 @@ if (
     candidateRepository: args["candidate-repository"] || "",
   };
   validatePipelineTestInput(input);
-  const report = await runPipelineTest(input, createCloudDependencies(input));
+  const dependencies = createCloudDependencies(input);
+  const report = await runPipelineTest(input, dependencies);
   try {
-    await postAttemptTracking(
-      buildPipelineAttemptTracking(report, process.env, input.issue),
+    const tracking = buildPipelineAttemptTracking(
+      report,
+      process.env,
+      input.issue,
     );
+    await postAttemptTracking(tracking);
+    const thumbnail = diagnosticThumbnailStatus({
+      report,
+      observation: tracking.observation,
+      site: dependencies.site,
+      secret: process.env.GENERATION_TRACKING_SECRET,
+    });
+    if (thumbnail.status === "ready") {
+      const uploaded = await uploadDiagnosticScreenshot({
+        report,
+        observation: tracking.observation,
+        site: dependencies.site,
+        api: (
+          process.env.LAUNCHLOOM_API_URL || "https://api.launchloom.wrazyos.com"
+        ).replace(/\/$/u, ""),
+        secret: process.env.GENERATION_TRACKING_SECRET,
+      }).catch(() => false);
+      console.log(
+        `diagnostic_thumbnail=${uploaded ? "uploaded" : "unavailable reason=upload_failed"}`,
+      );
+    } else if (thumbnail.reason !== "not_delivered") {
+      console.warn(
+        `diagnostic_thumbnail=unavailable reason=${thumbnail.reason}`,
+      );
+    }
   } catch {
     console.warn("attempt_tracking=skipped reason=unavailable");
   }
