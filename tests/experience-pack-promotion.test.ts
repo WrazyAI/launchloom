@@ -58,11 +58,58 @@ const allPackIds: ExperiencePackId[] = [
 ];
 
 describe("promoted reference packs", () => {
-  it("lists all six packs in production and none as internal", () => {
+  it("lists six production packs and the season-wheel internal pack", () => {
     const production = listExperiencePacks();
     expect(production.map((pack) => pack.packId)).toEqual(allPackIds);
     expect(production.every((pack) => pack.internalOnly === false)).toBe(true);
-    expect(listInternalExperiencePacks()).toEqual([]);
+    expect(listInternalExperiencePacks().map((pack) => pack.packId)).toEqual([
+      "season-wheel",
+    ]);
+  });
+
+  it("compiles season-wheel only with the internal review flag", () => {
+    const internal = compileExperiencePack(
+      {
+        ...site("Harbor & Pine", "season-wheel"),
+        preset: "home-services",
+        industry: "home-services",
+        businessKind: "landscaping",
+        images: {
+          hero: "/images/hero.webp",
+          secondary: "/images/secondary.webp",
+        },
+        design: {
+          recipe: "local-trades",
+          sections: [],
+          experience: { packId: "season-wheel", internal: true },
+        },
+      },
+      "local-trades",
+    );
+    expect(internal.program.packId).toBe("season-wheel");
+    expect(internal.program.hero).toBe("season-wheel");
+    expect(internal.program.services).toBe("seasonal-ledger");
+    expect(internal.program.sectionOrder).toContain("seasons");
+
+    const production = compileExperiencePack(
+      {
+        ...site("Harbor & Pine", "season-wheel"),
+        preset: "home-services",
+        industry: "home-services",
+        businessKind: "landscaping",
+        images: {
+          hero: "/images/hero.webp",
+          secondary: "/images/secondary.webp",
+        },
+        design: {
+          recipe: "local-trades",
+          sections: [],
+          experience: { packId: "season-wheel" },
+        },
+      },
+      "local-trades",
+    );
+    expect(production.program.packId).not.toBe("season-wheel");
   });
 
   it("selects every promoted pack across production seeds", () => {

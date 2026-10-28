@@ -366,11 +366,53 @@ These text, icon, or focus findings straddle two surfaces or media; no single co
 - For icons and focus rings, give the element one surface or move it away from the boundary; keep focus rings inset so rounded or overflow-hidden ancestors cannot clip them.`;
 
 const HERO_VIEWPORT_FIT_REPAIR_GUIDANCE = `HERO VIEWPORT FIT (hard gate)
-The rendered capture put the header plus hero taller than the first viewport (desktop 1536x864, compact 1366x768). Fix it structurally in this repair:
+The rendered capture put the header plus hero taller than the first viewport (desktop 1536x864, compact 1366x768, mobile 390x844). Fix it structurally in this repair:
 - Size the hero from the viewport, not from its content: cap the hero block at the viewport height minus the header (for example min-height: min(720px, calc(100svh - 88px)) or an explicit vh calculation) and let the media cover that box with object-fit: cover instead of an intrinsic image height.
 - Compress everything stacked above the fold: oversized hero padding, multi-line subcopy, extra actions, or a separate stats strip inside the hero block.
-- Keep the hero image chapter and the primary action visible inside the viewport; never delete the image, flatten the composition into a plain band, or hide the CTA just to fit. If the copy cannot fit beside or above the image, move secondary copy below the hero instead of growing the hero.
-- Verify the arithmetic before returning: header height plus hero height must be at most the viewport height at both 1536x864 and 1366x768.`;
+- Keep the hero image chapter, the primary action, and the secondary action visible inside the viewport at 390x844; never delete the image, flatten the composition into a plain band, or hide an action just to fit. If the copy cannot fit beside or above the image, move secondary copy below the hero instead of growing the hero.
+- Verify the arithmetic before returning: header height plus hero height must be at most the viewport height at 1536x864, 1366x768, and 390x844.`;
+
+const IMAGE_OVERLAY_HERO_REPAIR_GUIDANCE = `IMAGE-OVERLAY HERO REPAIR (hard gate)
+The assigned hero is an image-led stage and the rendered hero lost that composition. Fix it structurally in this repair:
+- Do not solve viewport fit by shrinking the image into a narrow banner above a separate copy field. The hero media must fill the hero stage.
+- Use a full-stage media container (absolute inset or a full-stage grid) with object-fit: cover. Place the promise group over the image on a compact scrim; do not box it in a full-height card.
+- Keep the header plus hero within 1536x864, 1366x768, and 390x844. At 390x844, the primary and secondary actions must both be visible.
+- Group the secondary action with the primary action; do not leave it as a bare underlined word at the fold.
+- If the copy cannot fit over the image, reduce the copy or use a compact scrim; never delete the image or flatten the stage into a band.`;
+
+const HERO_CARD_FIDELITY_REPAIR_GUIDANCE = `HERO CARD FIDELITY (hard gate)
+The assigned reference floats the headline in the image's negative space, but the render puts the promise group in a large bordered card. Fix it structurally in this repair:
+- Replace the card with a floating promise group over the image. Do not keep a boxed copy panel and only change its color.
+- Use a compact gradient scrim or a narrow solid strip behind the text only. Keep the copy group under about 25 percent of the desktop hero area and under about 50 percent of its height; keep it under 35 percent of the mobile hero area.
+- Keep the full-bleed image stage and both actions visible at 390x844.
+- Do not remove the image, flatten the stage into a band, or hide an action.`;
+
+/** Targeted repair directives for the finding classes in this request. */
+export function targetedRepairGuidance(findings = []) {
+  const guidance = [];
+  const heroFit = hasFinding(findings, /hero exceeds .*viewport/iu);
+  if (heroFit) guidance.push(HERO_VIEWPORT_FIT_REPAIR_GUIDANCE);
+  if (
+    heroFit &&
+    hasFinding(findings, /image|media|band|full-bleed|overlay/iu)
+  )
+    guidance.push(IMAGE_OVERLAY_HERO_REPAIR_GUIDANCE);
+  if (
+    hasFinding(
+      findings,
+      /large bordered card|bordered hero card|hero copy is a large/iu,
+    )
+  )
+    guidance.push(HERO_CARD_FIDELITY_REPAIR_GUIDANCE);
+  if (
+    hasFinding(
+      findings,
+      /overlapping non-ancestor paint|background plate only partially covers|filter, blend, backdrop-filter|pseudo-element backdrop/iu,
+    )
+  )
+    guidance.push(CONTRAST_STRUCTURE_REPAIR_GUIDANCE);
+  return guidance;
+}
 
 export function privateRepairRejectionEvidence(value) {
   return value && typeof value === "object" ? privateRepairOutputs.get(value) || null : null;
@@ -1153,12 +1195,7 @@ ${
 
   const buildRepairContent = (
     currentFiles,
-    {
-      targetFile = null,
-      editsOnly = false,
-      heroFit = false,
-      contrastStructure = false,
-    } = {},
+    { targetFile = null, editsOnly = false, guidance = [] } = {},
   ) => {
     const requestContent = [
       ...referenceContext,
@@ -1185,13 +1222,8 @@ Return only trusted span IDs and replacements described below. Select the exact 
 TARGET CANDIDATE FILE: ${targetFile}
 Return a complete replacement for only this requested file. Keep source non-empty, at most ${MAX_REPAIR_FILE_SOURCE_CHARS} characters, and free of inline image data. All other files remain immutable; the combined bundle must pass source validation, rebuild, and rendered gates.`,
       });
-    if (heroFit)
-      requestContent.push({ type: "text", text: HERO_VIEWPORT_FIT_REPAIR_GUIDANCE });
-    if (contrastStructure)
-      requestContent.push({
-        type: "text",
-        text: CONTRAST_STRUCTURE_REPAIR_GUIDANCE,
-      });
+    for (const text of guidance)
+      requestContent.push({ type: "text", text });
     assertModelPromptTextBudget(requestContent);
     return requestContent;
   };
@@ -1228,11 +1260,7 @@ Return a complete replacement for only this requested file. Keep source non-empt
     const requestContent = buildRepairContent(currentFiles, {
       targetFile,
       editsOnly,
-      heroFit: hasFinding(findings, /hero exceeds .*viewport/iu),
-      contrastStructure: hasFinding(
-        findings,
-        /overlapping non-ancestor paint|background plate only partially covers|filter, blend, backdrop-filter|pseudo-element backdrop/iu,
-      ),
+      guidance: targetedRepairGuidance(findings),
     });
     if (spanCatalog) {
       requestContent.push({ type: "text", text: "TRUSTED SOURCE SPANS\n" + JSON.stringify(spanCatalog) +

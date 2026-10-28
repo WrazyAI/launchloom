@@ -1,0 +1,386 @@
+{
+  "schemaVersion": 1,
+  "id": "web-dental-smile-san-francisco",
+  "dossierId": "web-dental-smile-san-francisco",
+  "sourceDigest": "da090522545581a22f7ca1fd138ffd57ba427266346d5bc8ed5e281e7d5dd3e2",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://smilesanfrancisco.com/",
+    "credit": "Template adapted from Smile! San Francisco official website"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "seasons",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "seasons",
+      "required": false
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "practice",
+      "sourceSelector": "#practice",
+      "order": 5,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "services",
+      "sourceSelector": "#services",
+      "order": 6,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "services-2",
+      "sourceSelector": "section",
+      "order": 7,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "proof",
+      "sourceSelector": "section",
+      "order": 8,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "unknown-2",
+      "sourceSelector": "section",
+      "order": 9,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "schedule",
+      "sourceSelector": "#schedule",
+      "order": 10,
+      "role": "seasons",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "#contact",
+      "order": 11,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 12,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "#contact .xp-season-contact__body",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.email",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "text",
+      "contentPath": "brand.email",
+      "required": false
+    },
+    {
+      "id": "contact.emailHref",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "href",
+      "contentPath": "brand.emailHref",
+      "required": false
+    },
+    {
+      "id": "contact.form",
+      "selector": "[data-foundation-contact-form]",
+      "kind": "html",
+      "contentPath": "contact.form",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "#contact h2",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "contact.kicker",
+      "selector": "#contact .xp-season-contact__kicker",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.phone",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "text",
+      "contentPath": "brand.phone",
+      "required": false
+    },
+    {
+      "id": "contact.phoneHref",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "href",
+      "contentPath": "brand.phoneHref",
+      "required": false
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "proof.body",
+      "selector": "[data-foundation-slot=\"proof.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.heading",
+      "selector": "[data-foundation-slot=\"proof.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "seasons-2.heading",
+      "selector": "[data-foundation-slot=\"seasons-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "seasons.body",
+      "selector": "[data-foundation-slot=\"seasons.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "seasons.heading",
+      "selector": "[data-foundation-slot=\"seasons.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "services-2.body",
+      "selector": "[data-foundation-slot=\"services-2.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services-2.heading",
+      "selector": "[data-foundation-slot=\"services-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services-3.body",
+      "selector": "[data-foundation-slot=\"services-3.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services-3.heading",
+      "selector": "[data-foundation-slot=\"services-3.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services-3.image",
+      "selector": "[data-foundation-image=\"services-3.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.image",
+      "selector": "[data-foundation-image=\"services.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "services.secondaryImage",
+      "selector": "[data-foundation-image=\"services.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "services.tertiaryImage",
+      "selector": "[data-foundation-image=\"services.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-2.body",
+      "selector": "[data-foundation-slot=\"unknown-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.image",
+      "selector": "[data-foundation-image=\"unknown-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-2.secondaryImage",
+      "selector": "[data-foundation-image=\"unknown-2.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-2.tertiaryImage",
+      "selector": "[data-foundation-image=\"unknown-2.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown.image",
+      "selector": "[data-foundation-image=\"unknown.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'schedule' preserves source composition that needs adaptation.",
+      "selector": "#schedule"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'seasons' preserves source composition that needs adaptation.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-2' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "fb66e77791b9346bffa11cdc8cb4d50e39fb58a6a3d1748dd616a268818c6ed0"
+}

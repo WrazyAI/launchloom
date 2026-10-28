@@ -1,14 +1,373 @@
 {
   "schemaVersion": 1,
   "dossierId": "web-beauty-fruittii-hair-art-lab",
-  "status": "failed",
+  "status": "extracted",
   "method": "live-site",
   "source": {
     "url": "https://fruittiilondon.com/",
-    "repository": null,
-    "retrievedAt": "2026-10-08T20:40:53.360Z",
+    "finalUrl": "https://fruittiilondon.com/",
+    "httpStatus": 200,
+    "pageTitle": "Fruittii London – LGBTQIA Hair Lab",
+    "retrievedAt": "2026-10-27T16:21:10.922Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
     "attestationPath": "rights/template-extraction.md",
-    "rightsEvidencePath": "rights/requester-attestation.md"
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "licenseEvidencePath": null
   },
-  "reason": "navigation returned HTTP 500"
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 192410,
+      "sha256": "507fa7aa96d248ee2bb866a73690a279362aeb818705d38e22619b80e50ed5e3"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 2739,
+      "sha256": "02e8e72c518a73011c8949b88ee638657a1b115d9773b0768801a5ced8405172"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 42223,
+      "sha256": "2983301575fce4f4cf0f4e65811ff02676e3deb626606220fd78fb78d0de4d7d"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 17323,
+      "sha256": "a537aad6eabf5077292bf664e1e3c33d171baab709bfeba905f8c6dfb08a8d82"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 17798,
+      "sha256": "caaf6339bfbb842f4a83156111a05f454cbfcdda7b5d36a04d922f9d7571b747"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 9085,
+      "sha256": "7f49e3ac3eb4d5c054782405d8d87732760b301da72a897a3884db3a29330acb"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 365,
+      "sha256": "5091ad62cf0244b72307cbbe4d6d5fbff3fe54e5183f0053c7242061a5c06c35"
+    },
+    {
+      "path": "source/styles/07.css",
+      "bytes": 3778,
+      "sha256": "e4202303588535d6c32e866487f113ff26a493fac6445cf3dacc533c521cd161"
+    },
+    {
+      "path": "source/styles/08.css",
+      "bytes": 61266,
+      "sha256": "d6f9c2b270e1f986d6f2fc68509ee57bfe0d83982abaeefafeb8a4b8b944870b"
+    },
+    {
+      "path": "source/styles/09.css",
+      "bytes": 3077,
+      "sha256": "765b4163a5a1a4a94f21c27912c10df2f9976a6707c80621fb2112d15b1d47ac"
+    },
+    {
+      "path": "source/styles/10.css",
+      "bytes": 10482,
+      "sha256": "151a0df21620199247f56a702276ef9f87fdbe12d721c6f6734ac27e7b846829"
+    },
+    {
+      "path": "source/styles/11.css",
+      "bytes": 4367,
+      "sha256": "5bca839f5ee90c2a77e95d73bbae019bdf1ca08cbb71f7b2edff227d4f6ee0b9"
+    },
+    {
+      "path": "source/styles/12.css",
+      "bytes": 44907,
+      "sha256": "1914de5e11239bfbb5a5327a3f88d8c790979edc55f98868fcb1d4677df5ded0"
+    },
+    {
+      "path": "source/styles/13.css",
+      "bytes": 31211,
+      "sha256": "1a0a8134b3abb640bf943b3e72c11b1c45fdb33548073b9746b38983b44aa048"
+    },
+    {
+      "path": "source/styles/14.css",
+      "bytes": 280109,
+      "sha256": "e5b10f24c2be67cbfc531fd0a9dd9f28081ecfb66fdc1977e4ab42ce3baaf8ba"
+    },
+    {
+      "path": "source/styles/15.css",
+      "bytes": 494,
+      "sha256": "f53dbe5e22e9ee9898f7a7fa88428e8f15895bee30583d396adb8c560e9f2332"
+    },
+    {
+      "path": "source/styles/16.css",
+      "bytes": 434826,
+      "sha256": "e05a37574e16edce1fb21791532fca5a9d14a0b19f84375557642c6fc0c22b69"
+    },
+    {
+      "path": "source/styles/17.css",
+      "bytes": 39297,
+      "sha256": "6ed2ebc4abf76d249753aef170b12d7970ef5e079746be0d5ad6ecf941004119"
+    },
+    {
+      "path": "source/styles/18.css",
+      "bytes": 11256,
+      "sha256": "b7908a015a567ec2363011df2475368dbff34360e9da3fdff50604d6395fb646"
+    },
+    {
+      "path": "source/styles/19.css",
+      "bytes": 4186,
+      "sha256": "2e10d353ff038c2cad3492fc17801af3e6ef2669c9e9713bdb78b1dcb104c4fe"
+    },
+    {
+      "path": "source/styles/20.css",
+      "bytes": 37944,
+      "sha256": "4f47463b94383a568407a26e8448b5ec6f6ed5bf64592156cf67644a30907f9c"
+    },
+    {
+      "path": "source/styles/21.css",
+      "bytes": 507,
+      "sha256": "bc1bd24c215192571243c0f13c8f3c4221ca2b10efadf02a6c6f1d8d46018f02"
+    },
+    {
+      "path": "source/styles/22.css",
+      "bytes": 17298,
+      "sha256": "da9fbf74a0124d6db673b7cb83f3cedcefe62f5c2fb46085eddab64a548e25a2"
+    },
+    {
+      "path": "source/styles/23.css",
+      "bytes": 41881,
+      "sha256": "4fb1e76ca32509d24511a3393ca4e88b51bc6765a766f02ef0da336dafb5d0a9"
+    },
+    {
+      "path": "source/styles/24.css",
+      "bytes": 384,
+      "sha256": "7e241aa3a9f54b3832a18f30fd2bc1aeeb83143a9f922e77f92c394718ce7740"
+    },
+    {
+      "path": "source/styles/25.css",
+      "bytes": 5331,
+      "sha256": "31164356618cf9b1ef3cc5caba9aee9c5e277d6fa1b5e001f43274bd5512293f"
+    },
+    {
+      "path": "source/styles/26.css",
+      "bytes": 54666,
+      "sha256": "0a5d398672e25dc7f020f69df92a985481b248a60e301fee232d0c8afd648dc5"
+    },
+    {
+      "path": "source/styles/27.css",
+      "bytes": 214,
+      "sha256": "fb8690e594b2f9b841585895d811e8cb839667a1a63963d1a1cdea11e2aa2abb"
+    },
+    {
+      "path": "source/styles/28.css",
+      "bytes": 27364,
+      "sha256": "c95d73900d2a2683c8f87205fa2816681df6ea04508f8938cda9ed9ea938d6e0"
+    },
+    {
+      "path": "source/styles/29.css",
+      "bytes": 77,
+      "sha256": "d9c370831c74b1850d70f5b1c99453d6cda21e5099428a3f21c43bd96c3acb5d"
+    },
+    {
+      "path": "source/styles/30.css",
+      "bytes": 560,
+      "sha256": "f68e889145cb0e47b7b190b2fdf087a9213a264ad33951512880c9f8bb6d0cd8"
+    },
+    {
+      "path": "source/styles/31.css",
+      "bytes": 10255,
+      "sha256": "1b34d4c7324321e36db5d35f05bb011238a1326f89058a4399d028d1f6c47dd5"
+    },
+    {
+      "path": "source/styles/32.css",
+      "bytes": 1229,
+      "sha256": "e9b6ba625e4f651ccca3d798b255de6061b83dd0ab5e9901c0792664eaa5cace"
+    },
+    {
+      "path": "source/styles/33.css",
+      "bytes": 1793,
+      "sha256": "808a659eb4e85607c6efe022bff149c3076853c5570a322bd35e5e8cb9458904"
+    },
+    {
+      "path": "source/styles/34.css",
+      "bytes": 16470,
+      "sha256": "82ef200ece01e84b0387a394dd784b93e1a677f8b2efed9d6b79f61d3084121a"
+    },
+    {
+      "path": "source/styles/35.css",
+      "bytes": 5486,
+      "sha256": "196f351ce1a780302b50e7b2404023102d7f555aa518d62ec678829c4b7b1185"
+    },
+    {
+      "path": "source/styles/36.css",
+      "bytes": 19692,
+      "sha256": "73f1f9851ce1e98cef76808d3ac1f204505d6d0d5eb635414854c8a7c98526df"
+    },
+    {
+      "path": "source/styles/37.css",
+      "bytes": 7884,
+      "sha256": "2f4aeee0de964ea068c54ec9e3285ec1dc8557c534d968c2938807a504638e15"
+    },
+    {
+      "path": "source/styles/38.css",
+      "bytes": 4802,
+      "sha256": "172ea2f3be4da1aa53dda3d8d93a16bf93cf2743d92bdb8cc2c8f0fcfa6f8cec"
+    },
+    {
+      "path": "source/styles/39.css",
+      "bytes": 3847,
+      "sha256": "1dbc07bb355a95a9d5b532116de4ef55e1132580902129dfa6002f6634906a3a"
+    },
+    {
+      "path": "source/styles/40.css",
+      "bytes": 1243,
+      "sha256": "a70523cb50408132c72e2c22c692e9622fb1038894c74485609e9e7e08492387"
+    },
+    {
+      "path": "source/styles/41.css",
+      "bytes": 9986,
+      "sha256": "d9e5c0970419ad23d954c3e807804fa2116c11f2d7b9f43ea9e55dcf6bafd491"
+    },
+    {
+      "path": "source/styles/42.css",
+      "bytes": 1886,
+      "sha256": "4eaad19740eb6e3e94182f60f9d4f1c31ce6b9626eb7bdd7cc5f265644fba1bb"
+    },
+    {
+      "path": "source/styles/43.css",
+      "bytes": 87,
+      "sha256": "6d2c0fc112d7a76682334131ec4d0d618fadb44d42849933f88ae954ddd9d0d5"
+    },
+    {
+      "path": "source/styles/44.css",
+      "bytes": 3122,
+      "sha256": "9a8b424e8eec84f3394a24cf9c9cecf4754dd2debdc499c64a5f534efd81f92f"
+    },
+    {
+      "path": "source/styles/45.css",
+      "bytes": 11625,
+      "sha256": "2ea7e073aec883b3046c15d046bf4bde9f4ca0228e6247d8ba8d8fbf92e759a8"
+    },
+    {
+      "path": "source/styles/46.css",
+      "bytes": 73890,
+      "sha256": "74005d7c17d4a02f2f25404ec0655d9bc2fdaa53166874c87d7b7eec69d9088a"
+    },
+    {
+      "path": "source/styles/47.css",
+      "bytes": 21211,
+      "sha256": "6650a50d8591259400ed356b424ff4fe633bc0d1fc7be58e17c78fbb1312a707"
+    },
+    {
+      "path": "source/styles/48.css",
+      "bytes": 100422,
+      "sha256": "33c951b402c9bea213649f907555b538120f0509587981a8bc90b27b6d0d5828"
+    },
+    {
+      "path": "source/styles/49.css",
+      "bytes": 22365,
+      "sha256": "275c64f303c8e9a0320bc267c893cdae309afadde9750bebbe4e838040bd4cde"
+    },
+    {
+      "path": "source/styles/50.css",
+      "bytes": 21893,
+      "sha256": "e4fb0f6358ab16ff3aadf3334df4c94960a58a8580fd0eac974a2545e8e54085"
+    },
+    {
+      "path": "source/styles/51.css",
+      "bytes": 171643,
+      "sha256": "3af5676658ac1cdbb653113801eaeb18b64df499090e8a560fa177f6ac5a6338"
+    },
+    {
+      "path": "source/styles/52.css",
+      "bytes": 4237,
+      "sha256": "170208b0f6618b784e86dc7612c54930318188d38633a393404f5589b7f5f53f"
+    },
+    {
+      "path": "source/styles/53.css",
+      "bytes": 2340,
+      "sha256": "22cdf34177147f02d10acac750b7e2eb47938309be4a8db498d6c77ed7b1709e"
+    },
+    {
+      "path": "source/styles/54.css",
+      "bytes": 1811,
+      "sha256": "95f85566f1a367477de1b548a395aa8c5d267e29faaf86925bbe3779b67a57d4"
+    },
+    {
+      "path": "source/styles/55.css",
+      "bytes": 74185,
+      "sha256": "547a97285861331729b9b61ff718967428a88c46d8f4d7b14388e1f00c5bbdc3"
+    },
+    {
+      "path": "source/styles/56.css",
+      "bytes": 4451,
+      "sha256": "b0cf2f1ac53149382ff9f88b8b47bbeb264578b9e8395bc172137d75fe754492"
+    },
+    {
+      "path": "source/styles/57.css",
+      "bytes": 9501,
+      "sha256": "28d978b85db9e2840019b1beb31bd6f7487f234b621c7cfca021aa51c91c5601"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://fruittiilondon.com/wp-content/uploads/2026/02/fruittiilondon-Medium.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fruittiilondon.com/wp-content/uploads/2026/02/fruittiilondon-Medium-300x127.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fruittiilondon.com/wp-content/uploads/2026/02/unnamed-2.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fruittiilondon.com/wp-content/uploads/2026/02/unnamed-7.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fruittiilondon.com/wp-content/uploads/2026/02/unnamed-1.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fruittiilondon.com/wp-content/uploads/2026/02/unnamed-6.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fruittiilondon.com/wp-content/uploads/2026/02/unnamed-5.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fruittiilondon.com/wp-content/uploads/2026/02/logo.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fruittiilondon.com/wp-content/uploads/2026/02/logo-600x253.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fruittiilondon.com/wp-content/uploads/2026/02/logo-300x127.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fruittiilondon.com/wp-content/uploads/2026/02/logo-1024x432.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fruittiilondon.com/wp-content/uploads/2026/02/logo-768x324.webp",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://fruittii.shop.wisemarketer.net/wp-content/uploads/2026/03/Website-Loader-2.mp4#t=,8",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://www.youtube.com/embed/8Px8Q8orM2U?origin=https%3A%2F%2Ffruittiilondon.com&playsinline=true&enablejsapi=1&controls=0&showinfo=0&modestbranding=1&wmode=opaque&muted=true&html5=1&start=0&end=26&loop=1&rel=0&widgetid=1&forigin=https%3A%2F%2Ffruittiilondon.com%2F&aoriginsup=1&vf=6",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 57 of 57 stylesheets retained.",
+  "digest": "45b4dc53f62bb5f15946f721194add9a74d6996e3c5cce496c7c382fa601adf9"
 }

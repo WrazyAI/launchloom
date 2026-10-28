@@ -1,0 +1,731 @@
+{
+  "schemaVersion": 1,
+  "id": "html5up-home-care-story",
+  "dossierId": "html5up-home-care-story",
+  "sourceDigest": "560516aa4bed22bd0b0c0ee02907554b5a1568cf945a2511d979f5a032973b99",
+  "entrypoint": "source/index.html",
+  "sourceClass": "licensed",
+  "license": {
+    "name": "CC BY 3.0",
+    "url": "https://html5up.net/story",
+    "credit": "Template adapted from Story by HTML5 UP / AJ"
+  },
+  "sections": [
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 1,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "first",
+      "sourceSelector": "#first",
+      "order": 2,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-2",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-3",
+      "sourceSelector": "section",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-4",
+      "sourceSelector": "section",
+      "order": 5,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "unknown-5",
+      "sourceSelector": "section",
+      "order": 6,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "section",
+      "order": 7,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 8,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "unknown-2.body",
+      "selector": "[data-foundation-slot=\"unknown-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.image",
+      "selector": "[data-foundation-image=\"unknown-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-3.body",
+      "selector": "[data-foundation-slot=\"unknown-3.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.heading",
+      "selector": "[data-foundation-slot=\"unknown-3.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.image",
+      "selector": "[data-foundation-image=\"unknown-3.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-4.body",
+      "selector": "[data-foundation-slot=\"unknown-4.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.heading",
+      "selector": "[data-foundation-slot=\"unknown-4.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.image",
+      "selector": "[data-foundation-image=\"unknown-4.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-5.body",
+      "selector": "[data-foundation-slot=\"unknown-5.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-5.heading",
+      "selector": "[data-foundation-slot=\"unknown-5.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-5.image",
+      "selector": "[data-foundation-image=\"unknown-5.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-5.secondaryImage",
+      "selector": "[data-foundation-image=\"unknown-5.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-5.tertiaryImage",
+      "selector": "[data-foundation-image=\"unknown-5.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-6.body",
+      "selector": "[data-foundation-slot=\"unknown-6.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-6.heading",
+      "selector": "[data-foundation-slot=\"unknown-6.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.image",
+      "selector": "[data-foundation-image=\"unknown.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    }
+  ],
+  "assets": [
+    {
+      "source": "assets/fonts/fontawesome-webfont.eot",
+      "target": "template/source/assets/fonts/fontawesome-webfont.eot",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.svg",
+      "target": "template/source/assets/fonts/fontawesome-webfont.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.ttf",
+      "target": "template/source/assets/fonts/fontawesome-webfont.ttf",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.woff",
+      "target": "template/source/assets/fonts/fontawesome-webfont.woff",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.woff2",
+      "target": "template/source/assets/fonts/fontawesome-webfont.woff2",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/FontAwesome.otf",
+      "target": "template/source/assets/fonts/FontAwesome.otf",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/base/_page.scss",
+      "target": "template/source/assets/sass/base/_page.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/base/_reset.scss",
+      "target": "template/source/assets/sass/base/_reset.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/base/_typography.scss",
+      "target": "template/source/assets/sass/base/_typography.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_actions.scss",
+      "target": "template/source/assets/sass/components/_actions.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_banner.scss",
+      "target": "template/source/assets/sass/components/_banner.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_box.scss",
+      "target": "template/source/assets/sass/components/_box.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_button.scss",
+      "target": "template/source/assets/sass/components/_button.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_form.scss",
+      "target": "template/source/assets/sass/components/_form.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_gallery.scss",
+      "target": "template/source/assets/sass/components/_gallery.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_icon.scss",
+      "target": "template/source/assets/sass/components/_icon.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_icons.scss",
+      "target": "template/source/assets/sass/components/_icons.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_image.scss",
+      "target": "template/source/assets/sass/components/_image.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_index.scss",
+      "target": "template/source/assets/sass/components/_index.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_items.scss",
+      "target": "template/source/assets/sass/components/_items.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_list.scss",
+      "target": "template/source/assets/sass/components/_list.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_row.scss",
+      "target": "template/source/assets/sass/components/_row.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_section.scss",
+      "target": "template/source/assets/sass/components/_section.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_spotlight.scss",
+      "target": "template/source/assets/sass/components/_spotlight.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_table.scss",
+      "target": "template/source/assets/sass/components/_table.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/components/_wrapper.scss",
+      "target": "template/source/assets/sass/components/_wrapper.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/layout/_wrapper.scss",
+      "target": "template/source/assets/sass/layout/_wrapper.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_breakpoints.scss",
+      "target": "template/source/assets/sass/libs/_breakpoints.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_functions.scss",
+      "target": "template/source/assets/sass/libs/_functions.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_html-grid.scss",
+      "target": "template/source/assets/sass/libs/_html-grid.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_mixins.scss",
+      "target": "template/source/assets/sass/libs/_mixins.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_vars.scss",
+      "target": "template/source/assets/sass/libs/_vars.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_vendor.scss",
+      "target": "template/source/assets/sass/libs/_vendor.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/main.scss",
+      "target": "template/source/assets/sass/main.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/noscript.scss",
+      "target": "template/source/assets/sass/noscript.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/banner.jpg",
+      "target": "template/source/images/banner.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/fulls/01.jpg",
+      "target": "template/source/images/gallery/fulls/01.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/fulls/02.jpg",
+      "target": "template/source/images/gallery/fulls/02.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/fulls/03.jpg",
+      "target": "template/source/images/gallery/fulls/03.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/fulls/04.jpg",
+      "target": "template/source/images/gallery/fulls/04.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/fulls/05.jpg",
+      "target": "template/source/images/gallery/fulls/05.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/fulls/06.jpg",
+      "target": "template/source/images/gallery/fulls/06.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/fulls/07.jpg",
+      "target": "template/source/images/gallery/fulls/07.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/fulls/08.jpg",
+      "target": "template/source/images/gallery/fulls/08.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/fulls/09.jpg",
+      "target": "template/source/images/gallery/fulls/09.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/fulls/10.jpg",
+      "target": "template/source/images/gallery/fulls/10.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/fulls/11.jpg",
+      "target": "template/source/images/gallery/fulls/11.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/fulls/12.jpg",
+      "target": "template/source/images/gallery/fulls/12.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/thumbs/01.jpg",
+      "target": "template/source/images/gallery/thumbs/01.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/thumbs/02.jpg",
+      "target": "template/source/images/gallery/thumbs/02.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/thumbs/03.jpg",
+      "target": "template/source/images/gallery/thumbs/03.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/thumbs/04.jpg",
+      "target": "template/source/images/gallery/thumbs/04.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/thumbs/05.jpg",
+      "target": "template/source/images/gallery/thumbs/05.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/thumbs/06.jpg",
+      "target": "template/source/images/gallery/thumbs/06.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/thumbs/07.jpg",
+      "target": "template/source/images/gallery/thumbs/07.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/thumbs/08.jpg",
+      "target": "template/source/images/gallery/thumbs/08.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/thumbs/09.jpg",
+      "target": "template/source/images/gallery/thumbs/09.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/thumbs/10.jpg",
+      "target": "template/source/images/gallery/thumbs/10.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/thumbs/11.jpg",
+      "target": "template/source/images/gallery/thumbs/11.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/gallery/thumbs/12.jpg",
+      "target": "template/source/images/gallery/thumbs/12.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/pic01.jpg",
+      "target": "template/source/images/pic01.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/pic02.jpg",
+      "target": "template/source/images/pic02.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/pic03.jpg",
+      "target": "template/source/images/pic03.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/spotlight01.jpg",
+      "target": "template/source/images/spotlight01.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/spotlight02.jpg",
+      "target": "template/source/images/spotlight02.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/spotlight03.jpg",
+      "target": "template/source/images/spotlight03.jpg",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "missing-hero",
+      "message": "No hero section with an h1 was detected."
+    },
+    {
+      "code": "missing-services",
+      "message": "No services or portfolio section was detected."
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/breakpoints.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/browser.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.scrollex.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.scrolly.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/main.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/util.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'unknown-4' have no sealed content mapping.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'unknown-5' have no sealed content mapping.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'first' has no supported content role.",
+      "selector": "#first"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-2' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-3' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-4' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown-5' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "45099e6eafb378e043782372b1d542946a36718cb609f4d04a563f7beb94090d"
+}

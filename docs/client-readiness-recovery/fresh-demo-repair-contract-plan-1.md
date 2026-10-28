@@ -73,7 +73,7 @@
 - [x] Run the same two authored sets with one cycle and one provider call per candidate, at most two calls per run and four across the experiment. Stop immediately on a contract rejection or exhausted ceiling; retain private diagnostics. No new intake/authoring/SEO campaign or gate change.
 - [ ] For gate-passing previews, inspect final desktop/mobile identity, contextual imagery, readability, overflow, em dashes and configured routes. Verify deployed commit and signed recipient/project/origin. Use the actual form to prove simulated failure retention, then exactly one labelled real submission per site and successful reset.
 - [ ] Run read-only correlated provider verification. Report receiving-provider delivery separately from inbox placement. Missing read access, incomplete listing, bounce or unknown status remains unverified; do not substitute workflow success.
-- [ ] Append actual evidence and close only verified Nifty scopes. Keep historical-client/content/approval blockers open. Write a completion receipt only for achieved outcomes; commit the verified ledger and preserve unfinished branches.
+- [ ] Append actual evidence and close only verified Work OS ledger scopes using the canonical tool in `AGENTS.md`, with completion readback. Keep historical-client/content/approval blockers open. Write a completion receipt only for achieved outcomes; commit the verified ledger and preserve unfinished branches.
 
 ## Review decision
 

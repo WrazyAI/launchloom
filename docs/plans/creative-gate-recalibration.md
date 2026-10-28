@@ -300,7 +300,7 @@ and `tests/pipeline-test-runner.test.ts`.
       (same sequence as the optimization shipment).
 - [ ] Keep rollback levers documented: bar constants (revert commit),
       `CREATIVE_NEAR_MISS_PREVIEW=false`, `CREATIVE_PIXEL_CONTRAST=false`.
-- [ ] Ledger + Nifty completion with readback; remove the task worktree only
+- [ ] Work OS ledger completion with readback via the canonical tool in `AGENTS.md`; remove the task worktree only
       after integration is confirmed.
 
 ## Execution order and dependencies

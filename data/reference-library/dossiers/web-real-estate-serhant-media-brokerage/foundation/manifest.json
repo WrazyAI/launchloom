@@ -1,0 +1,468 @@
+{
+  "schemaVersion": 1,
+  "id": "web-real-estate-serhant-media-brokerage",
+  "dossierId": "web-real-estate-serhant-media-brokerage",
+  "sourceDigest": "68869e2155d26f84c564672df2d1fd85bbb869ca914dbeed3d6c2176f9530ed6",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://serhant.com/",
+    "credit": "Template adapted from SERHANT. official website"
+  },
+  "sections": [
+    {
+      "id": "global-navbar",
+      "sourceSelector": "#global-navbar",
+      "order": 1,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "section-c008e2e1-0e21-48e2-b41f-743f48d76b16",
+      "sourceSelector": "#section-c008e2e1-0e21-48e2-b41f-743f48d76b16",
+      "order": 2,
+      "role": "coverage",
+      "required": false
+    },
+    {
+      "id": "section-2a4eb31e-2db9-4eff-bcb4-9a5c22b0334a",
+      "sourceSelector": "#section-2a4eb31e-2db9-4eff-bcb4-9a5c22b0334a",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-f688e22a-158c-442f-a711-6746115f2340",
+      "sourceSelector": "#section-f688e22a-158c-442f-a711-6746115f2340",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-d3e1b80a-0c2e-4ff3-9557-cfb75cdfe45b",
+      "sourceSelector": "#section-d3e1b80a-0c2e-4ff3-9557-cfb75cdfe45b",
+      "order": 5,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-02d3031e-cf2b-47f6-9455-c7a67dd3539e",
+      "sourceSelector": "#section-02d3031e-cf2b-47f6-9455-c7a67dd3539e",
+      "order": 6,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "section-011ec1c8-c6f6-482c-a74d-e3f21b5c6384",
+      "sourceSelector": "#section-011ec1c8-c6f6-482c-a74d-e3f21b5c6384",
+      "order": 7,
+      "role": "seasons",
+      "required": false
+    },
+    {
+      "id": "section-e684c59e-ddb2-4f8d-88f4-3fdfbc11d0c5",
+      "sourceSelector": "#section-e684c59e-ddb2-4f8d-88f4-3fdfbc11d0c5",
+      "order": 8,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-03f5cefa-ee34-4514-bb86-c4b052ef68fe",
+      "sourceSelector": "#section-03f5cefa-ee34-4514-bb86-c4b052ef68fe",
+      "order": 9,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-de54ab7c-6896-4de8-9f19-4886bdbac834",
+      "sourceSelector": "#section-de54ab7c-6896-4de8-9f19-4886bdbac834",
+      "order": 10,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-bce733b5-f5a7-42ac-b009-6a57a98fa1bc",
+      "sourceSelector": "#section-bce733b5-f5a7-42ac-b009-6a57a98fa1bc",
+      "order": 11,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-81920a6f-2675-4677-bb49-d56eff0676e7",
+      "sourceSelector": "#section-81920a6f-2675-4677-bb49-d56eff0676e7",
+      "order": 12,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "section-2842dce6-5739-4098-b8c9-c0296b6f6f27",
+      "sourceSelector": "#section-2842dce6-5739-4098-b8c9-c0296b6f6f27",
+      "order": 13,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-42ff8789-94e2-46fb-a8e9-aed5b34f83d8",
+      "sourceSelector": "#section-42ff8789-94e2-46fb-a8e9-aed5b34f83d8",
+      "order": 14,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-0bd01c71-4f92-4764-a514-e20ba26d6575",
+      "sourceSelector": "#section-0bd01c71-4f92-4764-a514-e20ba26d6575",
+      "order": 15,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "section-794370e8-27a5-4abe-aa13-7d64ac4ef00a",
+      "sourceSelector": "#section-794370e8-27a5-4abe-aa13-7d64ac4ef00a",
+      "order": 16,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-da2047a0-cb1c-4566-9bc6-2f598fcbb437",
+      "sourceSelector": "#section-da2047a0-cb1c-4566-9bc6-2f598fcbb437",
+      "order": 17,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "section-f659b720-f0dc-4ee4-9d40-272a67ae557f",
+      "sourceSelector": "#section-f659b720-f0dc-4ee4-9d40-272a67ae557f",
+      "order": 18,
+      "role": "about",
+      "required": false
+    },
+    {
+      "id": "section-5208b399-1790-4b67-a3ad-27c33c6eec24",
+      "sourceSelector": "#section-5208b399-1790-4b67-a3ad-27c33c6eec24",
+      "order": 19,
+      "role": "coverage",
+      "required": false
+    },
+    {
+      "id": "section-08879ca4-08b3-47a1-a06c-6f9691dd4e1b",
+      "sourceSelector": "#section-08879ca4-08b3-47a1-a06c-6f9691dd4e1b",
+      "order": 20,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "global-footer",
+      "sourceSelector": "#global-footer",
+      "order": 21,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "about-2.body",
+      "selector": "[data-foundation-slot=\"about-2.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about-2.heading",
+      "selector": "[data-foundation-slot=\"about-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "about.body",
+      "selector": "[data-foundation-slot=\"about.body\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutBody",
+      "required": true
+    },
+    {
+      "id": "about.heading",
+      "selector": "[data-foundation-slot=\"about.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.aboutHeading",
+      "required": true
+    },
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "coverage-2.heading",
+      "selector": "[data-foundation-slot=\"coverage-2.heading\"]",
+      "kind": "text",
+      "contentPath": "coverageHeading",
+      "required": true
+    },
+    {
+      "id": "coverage.body",
+      "selector": "[data-foundation-slot=\"coverage.body\"]",
+      "kind": "text",
+      "contentPath": "coverageIntro",
+      "required": true
+    },
+    {
+      "id": "coverage.heading",
+      "selector": "[data-foundation-slot=\"coverage.heading\"]",
+      "kind": "text",
+      "contentPath": "coverageHeading",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "seasons.heading",
+      "selector": "[data-foundation-slot=\"seasons.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "unknown-10.heading",
+      "selector": "[data-foundation-slot=\"unknown-10.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-11.heading",
+      "selector": "[data-foundation-slot=\"unknown-11.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-12.heading",
+      "selector": "[data-foundation-slot=\"unknown-12.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.body",
+      "selector": "[data-foundation-slot=\"unknown-3.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.heading",
+      "selector": "[data-foundation-slot=\"unknown-3.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.body",
+      "selector": "[data-foundation-slot=\"unknown-4.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.heading",
+      "selector": "[data-foundation-slot=\"unknown-4.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-7.body",
+      "selector": "[data-foundation-slot=\"unknown-7.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-7.heading",
+      "selector": "[data-foundation-slot=\"unknown-7.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-8.body",
+      "selector": "[data-foundation-slot=\"unknown-8.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-8.heading",
+      "selector": "[data-foundation-slot=\"unknown-8.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-9.body",
+      "selector": "[data-foundation-slot=\"unknown-9.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-9.heading",
+      "selector": "[data-foundation-slot=\"unknown-9.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "missing-hero",
+      "message": "No hero section with an h1 was detected."
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'section-2a4eb31e-2db9-4eff-bcb4-9a5c22b0334a' have no sealed content mapping.",
+      "selector": "#section-2a4eb31e-2db9-4eff-bcb4-9a5c22b0334a"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-011ec1c8-c6f6-482c-a74d-e3f21b5c6384' preserves source composition that needs adaptation.",
+      "selector": "#section-011ec1c8-c6f6-482c-a74d-e3f21b5c6384"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-03f5cefa-ee34-4514-bb86-c4b052ef68fe' has no supported content role.",
+      "selector": "#section-03f5cefa-ee34-4514-bb86-c4b052ef68fe"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-08879ca4-08b3-47a1-a06c-6f9691dd4e1b' has no supported content role.",
+      "selector": "#section-08879ca4-08b3-47a1-a06c-6f9691dd4e1b"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-2842dce6-5739-4098-b8c9-c0296b6f6f27' has no supported content role.",
+      "selector": "#section-2842dce6-5739-4098-b8c9-c0296b6f6f27"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-2a4eb31e-2db9-4eff-bcb4-9a5c22b0334a' has no supported content role.",
+      "selector": "#section-2a4eb31e-2db9-4eff-bcb4-9a5c22b0334a"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-42ff8789-94e2-46fb-a8e9-aed5b34f83d8' has no supported content role.",
+      "selector": "#section-42ff8789-94e2-46fb-a8e9-aed5b34f83d8"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-794370e8-27a5-4abe-aa13-7d64ac4ef00a' has no supported content role.",
+      "selector": "#section-794370e8-27a5-4abe-aa13-7d64ac4ef00a"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-bce733b5-f5a7-42ac-b009-6a57a98fa1bc' has no supported content role.",
+      "selector": "#section-bce733b5-f5a7-42ac-b009-6a57a98fa1bc"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-d3e1b80a-0c2e-4ff3-9557-cfb75cdfe45b' has no supported content role.",
+      "selector": "#section-d3e1b80a-0c2e-4ff3-9557-cfb75cdfe45b"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-da2047a0-cb1c-4566-9bc6-2f598fcbb437' has no supported content role.",
+      "selector": "#section-da2047a0-cb1c-4566-9bc6-2f598fcbb437"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-de54ab7c-6896-4de8-9f19-4886bdbac834' has no supported content role.",
+      "selector": "#section-de54ab7c-6896-4de8-9f19-4886bdbac834"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-e684c59e-ddb2-4f8d-88f4-3fdfbc11d0c5' has no supported content role.",
+      "selector": "#section-e684c59e-ddb2-4f8d-88f4-3fdfbc11d0c5"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'section-f688e22a-158c-442f-a711-6746115f2340' has no supported content role.",
+      "selector": "#section-f688e22a-158c-442f-a711-6746115f2340"
+    }
+  ],
+  "fingerprint": "5b308106fbba23b11433537993d8e30200fd3072ffaa67f608d6af6bed06b580"
+}

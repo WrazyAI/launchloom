@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "id": "web-beauty-salt-salon",
+  "dossierId": "web-beauty-salt-salon",
+  "sourceDigest": "23baee6c99fd177b649afa7e5199aebc1c0d72ba566c30f9e202e2d2f79115c5",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://www.saltsalonlondon.com/",
+    "credit": "Template adapted from SALT contemporary salon official website"
+  },
+  "sections": [
+    {
+      "id": "header",
+      "sourceSelector": "#header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "page-regions",
+      "sourceSelector": "#page-regions",
+      "order": 2,
+      "role": "coverage",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "#contact",
+      "order": 3,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer-sections",
+      "sourceSelector": "#footer-sections",
+      "order": 4,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "#contact .xp-season-contact__body",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.email",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "text",
+      "contentPath": "brand.email",
+      "required": false
+    },
+    {
+      "id": "contact.emailHref",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "href",
+      "contentPath": "brand.emailHref",
+      "required": false
+    },
+    {
+      "id": "contact.form",
+      "selector": "[data-foundation-contact-form]",
+      "kind": "html",
+      "contentPath": "contact.form",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "#contact h2",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "contact.kicker",
+      "selector": "#contact .xp-season-contact__kicker",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.phone",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "text",
+      "contentPath": "brand.phone",
+      "required": false
+    },
+    {
+      "id": "contact.phoneHref",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "href",
+      "contentPath": "brand.phoneHref",
+      "required": false
+    },
+    {
+      "id": "coverage.item.name",
+      "selector": "[data-foundation-item=\"coverage.items\"] name",
+      "kind": "text",
+      "contentPath": "location.name",
+      "required": true
+    },
+    {
+      "id": "coverage.items",
+      "selector": "[data-foundation-repeat=\"coverage.items\"]",
+      "kind": "each",
+      "contentPath": "locations",
+      "itemPath": "location",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "missing-services",
+      "message": "No services or portfolio section was detected."
+    }
+  ],
+  "fingerprint": "90dbc7e1ee1a10560cc657c811f820dc32d6162171ee37e05db346b24f909554"
+}

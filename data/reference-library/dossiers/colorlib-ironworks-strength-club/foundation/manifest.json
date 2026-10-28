@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-ironworks-strength-club",
+  "dossierId": "colorlib-ironworks-strength-club",
+  "sourceDigest": "178dfef14e777a646ad0afcb5fd6ef7a2086ac007bddfc3883cb53f8c9e807a9",
+  "entrypoint": "source/index.html",
+  "sourceClass": "licensed",
+  "license": {
+    "name": "MIT",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/ironworks",
+    "credit": "Template adapted from Colorlib Bootstrap Templates Ironworks"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "classes",
+      "sourceSelector": "#classes",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "timetable",
+      "sourceSelector": "#timetable",
+      "order": 5,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "coaches",
+      "sourceSelector": "#coaches",
+      "order": 6,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "plans",
+      "sourceSelector": "#plans",
+      "order": 7,
+      "role": "plans",
+      "required": false
+    },
+    {
+      "id": "trial",
+      "sourceSelector": "#trial",
+      "order": 8,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 9,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.body",
+      "selector": "[data-foundation-slot=\"hero.body\"]",
+      "kind": "text",
+      "contentPath": "hero.body",
+      "required": true
+    },
+    {
+      "id": "hero.primaryLabel",
+      "selector": "[data-foundation-slot=\"hero.primaryLabel\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "plans.body",
+      "selector": "[data-foundation-slot=\"plans.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "plans.heading",
+      "selector": "[data-foundation-slot=\"plans.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.body",
+      "selector": "[data-foundation-slot=\"unknown-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.body",
+      "selector": "[data-foundation-slot=\"unknown-3.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.heading",
+      "selector": "[data-foundation-slot=\"unknown-3.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.body",
+      "selector": "[data-foundation-slot=\"unknown-4.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.image",
+      "selector": "[data-foundation-image=\"unknown.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    }
+  ],
+  "assets": [
+    {
+      "source": "img/hero.jpg",
+      "target": "template/source/img/hero.jpg",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    },
+    {
+      "id": "trial-disclosure",
+      "source": "details",
+      "primitive": "native-disclosure",
+      "reducedMotion": "all content visible when closed"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "missing-services",
+      "message": "No services or portfolio section was detected."
+    },
+    {
+      "code": "network-script",
+      "message": "Foundation script contains a network, analytics, or tracking primitive; the foundation needs adaptation.",
+      "selector": "script"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/main.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated contact items in 'trial' have no sealed content mapping.",
+      "selector": "#trial"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+      "selector": "header"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated plans items in 'plans' have no sealed content mapping.",
+      "selector": "#plans"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'timetable' have no sealed content mapping.",
+      "selector": "#timetable"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'classes' has no supported content role.",
+      "selector": "#classes"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'coaches' has no supported content role.",
+      "selector": "#coaches"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'plans' preserves source composition that needs adaptation.",
+      "selector": "#plans"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'timetable' has no supported content role.",
+      "selector": "#timetable"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "019132d32f4fd109943c2a60477b2c62da902933fd505df5c132c2d09b7e0e63"
+}

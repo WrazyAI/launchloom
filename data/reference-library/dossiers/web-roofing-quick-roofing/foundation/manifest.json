@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "id": "web-roofing-quick-roofing",
+  "dossierId": "web-roofing-quick-roofing",
+  "sourceDigest": "5ffe51a04b6dd32cee76533f495e1183d989510f0069735b9d182038abb3a8e7",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://www.quickroofing.com/",
+    "credit": "Template adapted from Quick Roofing contractor homepage official website"
+  },
+  "sections": [
+    {
+      "id": "main-header",
+      "sourceSelector": "#main-header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "post-73",
+      "sourceSelector": "#post-73",
+      "order": 2,
+      "role": "plans",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "#contact",
+      "order": 3,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "main-footer",
+      "sourceSelector": "#main-footer",
+      "order": 4,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "#contact .xp-season-contact__body",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.email",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "text",
+      "contentPath": "brand.email",
+      "required": false
+    },
+    {
+      "id": "contact.emailHref",
+      "selector": "#contact .xp-season-contact__details a:last-child",
+      "kind": "href",
+      "contentPath": "brand.emailHref",
+      "required": false
+    },
+    {
+      "id": "contact.form",
+      "selector": "[data-foundation-contact-form]",
+      "kind": "html",
+      "contentPath": "contact.form",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "#contact h2",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "contact.kicker",
+      "selector": "#contact .xp-season-contact__kicker",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "contact.phone",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "text",
+      "contentPath": "brand.phone",
+      "required": false
+    },
+    {
+      "id": "contact.phoneHref",
+      "selector": "#contact .xp-season-contact__details a:first-child",
+      "kind": "href",
+      "contentPath": "brand.phoneHref",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.primaryLabel",
+      "selector": "[data-foundation-slot=\"hero.primaryLabel\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "plans.heading",
+      "selector": "[data-foundation-slot=\"plans.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    },
+    {
+      "id": "post-73-buttons",
+      "source": "button[aria-pressed]",
+      "primitive": "native-buttons",
+      "reducedMotion": "static selected state"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "interactive-section-needs-adaptation",
+      "message": "Section 'post-73' preserves an interactive source composition that needs adaptation.",
+      "selector": "#post-73"
+    },
+    {
+      "code": "missing-services",
+      "message": "No services or portfolio section was detected."
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'main-header' have no sealed content mapping.",
+      "selector": "#main-header"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated plans items in 'post-73' have no sealed content mapping.",
+      "selector": "#post-73"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'post-73' preserves source composition that needs adaptation.",
+      "selector": "#post-73"
+    }
+  ],
+  "fingerprint": "6d164c696e6c5b0780c9cc835d88939111ac167d6fceb4d2c4e1f6f4ee7919ee"
+}

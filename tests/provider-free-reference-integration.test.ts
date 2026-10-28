@@ -26,6 +26,7 @@ import {
 } from "../scripts/creative-authoring-output.mjs";
 import { cacheableReferenceDna } from "../scripts/openrouter-client.mjs";
 import { designAdherencePromptBlock } from "../scripts/design-adherence-guidance.mjs";
+import { imageOverlayHeroContract } from "../scripts/hero-overlay-contract.mjs";
 import { requestRepair } from "../scripts/creative-repair-loop.mjs";
 import {
   promptImagePart,
@@ -78,6 +79,7 @@ function authorPromptBuilders() {
       omitDuplicateRouteDesignTemplates,
       cacheableReferenceDna,
       designAdherencePromptBlock,
+      imageOverlayHeroContract,
       formatModelBoundContentShape,
       typographyPalettePrompt,
       creativeServicePageShape,

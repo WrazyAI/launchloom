@@ -1,0 +1,421 @@
+{
+  "schemaVersion": 1,
+  "id": "direct-brixton-cycles-community-workshop",
+  "dossierId": "direct-brixton-cycles-community-workshop",
+  "sourceDigest": "640ab5857eaec3f05405270d2215f282003b7a36e1b5efa9ccdbfc4f5f6fead5",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://www.brixtoncycles.co.uk/",
+    "credit": "Template adapted from Brixton Cycles official website"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "top",
+      "sourceSelector": "#top",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "services",
+      "sourceSelector": "#services",
+      "order": 4,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "shop",
+      "sourceSelector": "#shop",
+      "order": 5,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "workshop",
+      "sourceSelector": "#workshop",
+      "order": 6,
+      "role": "plans",
+      "required": false
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 7,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "community",
+      "sourceSelector": "#community",
+      "order": 8,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "gallery",
+      "sourceSelector": "#gallery",
+      "order": 9,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "proof",
+      "sourceSelector": "section",
+      "order": 10,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "#contact",
+      "order": 11,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 12,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.image",
+      "selector": "[data-foundation-image=\"hero.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "plans.body",
+      "selector": "[data-foundation-slot=\"plans.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "plans.heading",
+      "selector": "[data-foundation-slot=\"plans.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "plans.image",
+      "selector": "[data-foundation-image=\"plans.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "plans.secondaryImage",
+      "selector": "[data-foundation-image=\"plans.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "plans.tertiaryImage",
+      "selector": "[data-foundation-image=\"plans.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "proof.heading",
+      "selector": "[data-foundation-slot=\"proof.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof.item.attribution",
+      "selector": "[data-foundation-item=\"proof.items\"] attribution",
+      "kind": "text",
+      "contentPath": "proof.attribution",
+      "required": true
+    },
+    {
+      "id": "proof.item.quote",
+      "selector": "[data-foundation-item=\"proof.items\"] quote",
+      "kind": "text",
+      "contentPath": "proof.quote",
+      "required": true
+    },
+    {
+      "id": "proof.items",
+      "selector": "[data-foundation-repeat=\"proof.items\"]",
+      "kind": "each",
+      "contentPath": "proof",
+      "itemPath": "proof",
+      "required": true
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.image",
+      "selector": "[data-foundation-image=\"services.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "services.secondaryImage",
+      "selector": "[data-foundation-image=\"services.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "services.tertiaryImage",
+      "selector": "[data-foundation-image=\"services.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-2.body",
+      "selector": "[data-foundation-slot=\"unknown-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.image",
+      "selector": "[data-foundation-image=\"unknown-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-2.secondaryImage",
+      "selector": "[data-foundation-image=\"unknown-2.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-2.tertiaryImage",
+      "selector": "[data-foundation-image=\"unknown-2.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-3.body",
+      "selector": "[data-foundation-slot=\"unknown-3.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.heading",
+      "selector": "[data-foundation-slot=\"unknown-3.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.image",
+      "selector": "[data-foundation-image=\"unknown-3.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-3.secondaryImage",
+      "selector": "[data-foundation-image=\"unknown-3.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-4.body",
+      "selector": "[data-foundation-slot=\"unknown-4.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.heading",
+      "selector": "[data-foundation-slot=\"unknown-4.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.image",
+      "selector": "[data-foundation-image=\"unknown-4.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.image",
+      "selector": "[data-foundation-image=\"unknown.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "interactive-section-needs-adaptation",
+      "message": "Section 'workshop' preserves an interactive source composition that needs adaptation.",
+      "selector": "#workshop"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated plans items in 'workshop' have no sealed content mapping.",
+      "selector": "#workshop"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'community' has no supported content role.",
+      "selector": "#community"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'shop' has no supported content role.",
+      "selector": "#shop"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'top' has no supported content role.",
+      "selector": "#top"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'workshop' preserves source composition that needs adaptation.",
+      "selector": "#workshop"
+    }
+  ],
+  "fingerprint": "5384d7786f74ea36d726cd869e4842f9211b56396e9440f1cf3bfeecddb082c4"
+}

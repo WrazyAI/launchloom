@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "id": "lapa-mesh-architects-editorial",
+  "dossierId": "lapa-mesh-architects-editorial",
+  "sourceDigest": "5c831f789446c20f8b2408c527fa8e8975add02cb8b2c5a50e63875a78ef0010",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://www.mesharchitects.co.uk/",
+    "credit": "Template adapted from Mesh Architects"
+  },
+  "sections": [
+    {
+      "id": "navigation",
+      "sourceSelector": "nav",
+      "order": 1,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 2,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "portfolio",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "process",
+      "sourceSelector": "section",
+      "order": 4,
+      "role": "process",
+      "required": false
+    },
+    {
+      "id": "services",
+      "sourceSelector": "section",
+      "order": 5,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "process-2",
+      "sourceSelector": "section",
+      "order": 6,
+      "role": "process",
+      "required": false
+    },
+    {
+      "id": "portfolio-2",
+      "sourceSelector": "section",
+      "order": 7,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "section",
+      "order": 8,
+      "role": "contact",
+      "required": true
+    }
+  ],
+  "slots": [
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "process-2.heading",
+      "selector": "[data-foundation-slot=\"process-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "services-2.heading",
+      "selector": "[data-foundation-slot=\"services-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "missing-hero",
+      "message": "No hero section with an h1 was detected."
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "0732f3c75a76c38ab13200f819998f96fad8dffcbd7f079b3732cbc42c0282a6"
+}

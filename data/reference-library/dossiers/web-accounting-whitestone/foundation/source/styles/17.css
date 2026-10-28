@@ -1,0 +1,5 @@
+.xp-foundation.compose-mode .vc-templatera .templatera_shortcode,
+.xp-foundation.compose-mode .vc_templatera .templatera_shortcode {
+  opacity: 0.5;
+  filter: alpha(opacity=50);
+}

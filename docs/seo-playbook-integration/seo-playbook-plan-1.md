@@ -25,7 +25,7 @@ Source playbook: `/mnt/c/Users/jnopa/Downloads/Copy-of-Dominic-Baptist-AI-Studio
 
 ## Implementation steps after approval
 
-1. Inspect the current canonical brief, intake validation, research readiness, and generated config. Record existing behavior and separate already-fixed observations from remaining gaps. Create an isolated worktree from fresh main and reuse equivalent active Nifty work before editing.
+1. Inspect the current canonical brief, intake validation, research readiness, and generated config. Record existing behavior and separate already-fixed observations from remaining gaps. Create an isolated worktree from fresh main and reuse equivalent active Work OS ledger work via the canonical tool in `AGENTS.md` before editing.
 2. Extend the existing fact contract with source, confirmation state, public-display permission, and affected requirements. Distinguish confirmed, missing but deferrable, contradictory, and launch-blocking values. Client confirmation remains evidence of what the client supplied, not independent verification of credentials.
 3. Add explicit address visibility. A verified private address may remain in protected operational data but must be absent from public HTML, public config, JSON-LD, maps, and model payloads that do not need it. Preserve public address behavior through a documented legacy migration.
 4. Harden existing research evidence where regressions show a gap: empty successful responses, duplicate geographic terms, missing/unknown metrics, locale selection, fallback provenance, and budget reporting. Keep measured evidence distinct from qualitative citations; do not label a pending city complete or invent metrics.

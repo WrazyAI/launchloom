@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" style="--header-height: 109.78px; --header-is-visible: 1;"><head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, height=device-height, minimum-scale=1.0, maximum-scale=5.0">
+
+    <title>{{page.title}}</title>
+      <meta property="og:type" content="website">
+  <meta property="og:title" content="Studio Peake"><meta property="og:url" content="https://www.studiopeake.com/">
+<meta property="og:site_name" content="Studio Peake"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="Studio Peake">
+  <meta name="twitter:description" content="Studio Peake"><style>/* Typography (heading) */
+
+/* Typography (body) */
+
+/* Typography (button) */
+
+
+  .xp-foundation {
+    /* Container */
+    --container-max-width: 100%;
+    --container-xxs-max-width: 27.5rem; /* 440px */
+    --container-xs-max-width: 42.5rem; /* 680px */
+    --container-sm-max-width: 61.25rem; /* 980px */
+    --container-md-max-width: 71.875rem; /* 1150px */
+    --container-lg-max-width: 78.75rem; /* 1260px */
+    --container-xl-max-width: 85rem; /* 1360px */
+    --container-gutter: 1.25rem;
+
+    --section-vertical-spacing: 3.75rem;
+    --section-vertical-spacing-tight:2.5rem;
+
+    --section-stack-gap:2.5rem;
+    --section-stack-gap-tight:2.25rem;
+
+    /* Form settings */
+    --form-gap: 1.25rem; /* Gap between fieldset and submit button */
+    --fieldset-gap: 1rem; /* Gap between each form input within a fieldset */
+    --form-control-gap: 0.625rem; /* Gap between input and label (ignored for floating label) */
+    --checkbox-control-gap: 0.75rem; /* Horizontal gap between checkbox and its associated label */
+    --input-padding-block: 0.65rem; /* Vertical padding for input, textarea and native select */
+    --input-padding-inline: 0.8rem; /* Horizontal padding for input, textarea and native select */
+    --checkbox-size: 0.875rem; /* Size (width and height) for checkbox */
+
+    /* Other sizes */
+    --sticky-area-height: calc(var(--announcement-bar-is-sticky, 0) * var(--announcement-bar-height, 0px) + var(--header-is-sticky, 0) * var(--header-is-visible, 1) * var(--header-height, 0px));
+
+    /* RTL support */
+    --transform-logical-flip: 1;
+    --transform-origin-start: left;
+    --transform-origin-end: right;
+
+    /**
+     * ---------------------------------------------------------------------
+     * TYPOGRAPHY
+     * ---------------------------------------------------------------------
+     */
+
+    /* Font properties */
+    --heading-font-family: 'Mynaruse Flare', "Bricolage Grotesque", sans-serif;
+    --heading-font-weight: 400;
+    --heading-font-style: normal;
+    --heading-line-height: 1.1;
+    --heading-text-transform: uppercase;
+    --heading-letter-spacing: -0.03em;
+    --text-font-family: "EB Garamond", serif;
+    --text-font-weight: 400;
+    --text-font-style: normal;
+    --text-letter-spacing: 0.0em;
+    --button-font-family: "Nunito Sans", sans-serif;
+    --button-font-weight: 400;
+    --button-font-style: normal;
+    --button-text-transform: uppercase;
+    --button-letter-spacing: 0.01em;
+
+    /* Font sizes */--text-heading-size-factor: 1.1;
+    --text-h1: max(0.6875rem, clamp(1.375rem, 1.2189500640204864rem + 0.6658130601792573vw, 1.8181818181818182rem) * var(--text-heading-size-factor));
+    --text-h2: max(0.6875rem, clamp(1.25rem, 1.0670731707317074rem + 0.7804878048780488vw, 1.75rem) * var(--text-heading-size-factor));
+    --text-h3: max(0.6875rem, clamp(1.125rem, 1.0335365853658536rem + 0.3902439024390244vw, 1.375rem) * var(--text-heading-size-factor));
+    --text-h4: max(0.6875rem, clamp(1rem, 0.9542682926829268rem + 0.1951219512195122vw, 1.125rem) * var(--text-heading-size-factor));
+    --text-h5: calc(0.875rem * var(--text-heading-size-factor));
+    --text-h6: calc(0.75rem * var(--text-heading-size-factor));
+
+    --text-xs: 0.75rem;
+    --text-sm: 0.8125rem;
+    --text-base: 0.875rem;
+    --text-lg: 1.0rem;
+    --text-xl: 1.25rem;
+
+    /* Rounded variables (used for border radius) */
+    --rounded-full: 9999px;
+    --button-border-radius: 0.0rem;
+    --input-border-radius: 0.0rem;
+
+    /* Box shadow */
+    --shadow-sm: 0 2px 8px rgb(0 0 0 / 0.05);
+    --shadow: 0 5px 15px rgb(0 0 0 / 0.05);
+    --shadow-md: 0 5px 30px rgb(0 0 0 / 0.05);
+    --shadow-block: px px px rgb(var(--text-primary) / 0.0);
+
+    /**
+     * ---------------------------------------------------------------------
+     * OTHER
+     * ---------------------------------------------------------------------
+     */
+
+    --checkmark-svg-url: none;
+    --cursor-zoom-in-svg-url: none;
+  }
+
+  .xp-foundation [dir="rtl"]:root {
+    /* RTL support */
+    --transform-logical-flip: -1;
+    --transform-origin-start: right;
+    --transform-origin-end: left;
+  }
+
+  @media screen and (min-width: 700px) {
+    .xp-foundation {
+      /* Typography (font size) */
+      --text-xs: 0.875rem;
+      --text-sm: 0.875rem; /* 14px — locked for nav + buttons */
+      --text-base: 1.0rem;
+      --text-lg: 1.125rem;
+      --text-xl: 1.375rem;
+
+      /* Spacing settings */
+      --container-gutter: 2rem;
+    }
+  }
+
+  @media screen and (min-width: 1000px) {
+    .xp-foundation {
+      /* Spacing settings */
+      --container-gutter: 6rem;
+
+      --section-vertical-spacing: 5rem;
+      --section-vertical-spacing-tight: 4rem;
+
+      --section-stack-gap:4rem;
+      --section-stack-gap-tight:4rem;
+    }
+  }.xp-foundation {/* Overlay used for modal */
+    --page-overlay: 0 0 0 / 0.4;
+
+    /* We use the first scheme background as default */
+    --page-background: ;
+
+    /* Product colors */
+    --on-sale-text: 227 44 43;
+    --on-sale-badge-background: 227 44 43;
+    --on-sale-badge-text: 255 255 255;
+    --sold-out-badge-background: 239 239 239;
+    --sold-out-badge-text: 0 0 0 / 0.65;
+    --custom-badge-background: 28 28 28;
+    --custom-badge-text: 255 255 255;
+    --star-color: 28 28 28;
+
+    /* Status colors */
+    --success-background: 212 227 203;
+    --success-text: 48 122 7;
+    --warning-background: 253 241 224;
+    --warning-text: 237 138 0;
+    --error-background: 243 204 204;
+    --error-text: 203 43 43;
+  }.xp-foundation .color-scheme--scheme-1 {
+      /* Color settings */--accent: 140 47 27;
+      --text-color: 74 38 43;
+      --background: 247 241 235 / 1.0;
+      --background-without-opacity: 247 241 235;
+      --background-gradient: ;
+
+      --border-color: 74 38 43;
+
+      /* Button colors */
+      --button-background: 140 47 27;
+      --button-text-color: 248 246 243;
+
+      /* Circled buttons */
+      --circle-button-background: 248 246 243;
+      --circle-button-text-color: 74 38 43;
+    }.xp-foundation .shopify-section:has(.section-spacing.color-scheme--bg-bffa5248dd44b60966750fac9edcee2f) + .shopify-section:has(.section-spacing.color-scheme--bg-bffa5248dd44b60966750fac9edcee2f:not(.bordered-section)) .section-spacing {
+      padding-block-start: 0;
+    }.xp-foundation .color-scheme--scheme-2 {
+      /* Color settings */--accent: 74 38 43;
+      --text-color: 74 38 43;
+      --background: 247 241 235 / 1.0;
+      --background-without-opacity: 247 241 235;
+      --background-gradient: ;
+
+      --border-color: 74 38 43;
+
+      /* Button colors */
+      --button-background: 74 38 43;
+      --button-text-color: 248 246 243;
+
+      /* Circled buttons */
+      --circle-button-background: 248 246 243;
+      --circle-button-text-color: 74 38 43;
+    }.xp-foundation .shopify-section:has(.section-spacing.color-scheme--bg-bffa5248dd44b60966750fac9edcee2f) + .shopify-section:has(.section-spacing.color-scheme--bg-bffa5248dd44b60966750fac9edcee2f:not(.bordered-section)) .section-spacing {
+      padding-block-start: 0;
+    }.xp-foundation .color-scheme--scheme-3 {
+      /* Color settings */--accent: 140 47 27;
+      --text-color: 248 246 243;
+      --background: 74 38 43 / 1.0;
+      --background-without-opacity: 74 38 43;
+      --background-gradient: ;
+
+      --border-color: 248 246 243;
+
+      /* Button colors */
+      --button-background: 140 47 27;
+      --button-text-color: 248 246 243;
+
+      /* Circled buttons */
+      --circle-button-background: 248 246 243;
+      --circle-button-text-color: 74 38 43;
+    }.xp-foundation .shopify-section:has(.section-spacing.color-scheme--bg-fcd32f90334d7a9d21a017f7b57fafbf) + .shopify-section:has(.section-spacing.color-scheme--bg-fcd32f90334d7a9d21a017f7b57fafbf:not(.bordered-section)) .section-spacing {
+      padding-block-start: 0;
+    }.xp-foundation .color-scheme--scheme-4 {
+      /* Color settings */--accent: 140 47 27;
+      --text-color: 248 246 243;
+      --background: 0 0 0 / 0.0;
+      --background-without-opacity: 0 0 0;
+      --background-gradient: ;
+
+      --border-color: 248 246 243;
+
+      /* Button colors */
+      --button-background: 140 47 27;
+      --button-text-color: 248 246 243;
+
+      /* Circled buttons */
+      --circle-button-background: 248 246 243;
+      --circle-button-text-color: 74 38 43;
+    }.xp-foundation .shopify-section:has(.section-spacing.color-scheme--bg-3671eee015764974ee0aef1536023e0f) + .shopify-section:has(.section-spacing.color-scheme--bg-3671eee015764974ee0aef1536023e0f:not(.bordered-section)) .section-spacing {
+      padding-block-start: 0;
+    }.xp-foundation .color-scheme--scheme-ed3c746e-2171-49ad-9711-2a0e8616f021 {
+      /* Color settings */--accent: 140 47 27;
+      --text-color: 74 38 43;
+      --background: 238 230 219 / 1.0;
+      --background-without-opacity: 238 230 219;
+      --background-gradient: ;
+
+      --border-color: 74 38 43;
+
+      /* Button colors */
+      --button-background: 140 47 27;
+      --button-text-color: 248 246 243;
+
+      /* Circled buttons */
+      --circle-button-background: 248 246 243;
+      --circle-button-text-color: 74 38 43;
+    }.xp-foundation .shopify-section:has(.section-spacing.color-scheme--bg-1ac67c968bf9bca6824a584ffab0cd5c) + .shopify-section:has(.section-spacing.color-scheme--bg-1ac67c968bf9bca6824a584ffab0cd5c:not(.bordered-section)) .section-spacing {
+      padding-block-start: 0;
+    }.xp-foundation .color-scheme--scheme-1f3e3275-c7f4-4736-948b-ec7297152781 {
+      /* Color settings */--accent: 74 38 43;
+      --text-color: 248 246 243;
+      --background: 191 122 54 / 1.0;
+      --background-without-opacity: 191 122 54;
+      --background-gradient: ;
+
+      --border-color: 248 246 243;
+
+      /* Button colors */
+      --button-background: 74 38 43;
+      --button-text-color: 248 246 243;
+
+      /* Circled buttons */
+      --circle-button-background: 248 246 243;
+      --circle-button-text-color: 248 246 243;
+    }.xp-foundation .shopify-section:has(.section-spacing.color-scheme--bg-7a423d16f94ced33b027f63cb2de40c1) + .shopify-section:has(.section-spacing.color-scheme--bg-7a423d16f94ced33b027f63cb2de40c1:not(.bordered-section)) .section-spacing {
+      padding-block-start: 0;
+    }.xp-foundation .color-scheme--scheme-7b22112a-e5d0-4011-8d76-009305168e80 {
+      /* Color settings */--accent: 140 47 27;
+      --text-color: 74 38 43;
+      --background: 139 162 179 / 1.0;
+      --background-without-opacity: 139 162 179;
+      --background-gradient: ;
+
+      --border-color: 74 38 43;
+
+      /* Button colors */
+      --button-background: 140 47 27;
+      --button-text-color: 248 246 243;
+
+      /* Circled buttons */
+      --circle-button-background: 248 246 243;
+      --circle-button-text-color: 74 38 43;
+    }.xp-foundation .shopify-section:has(.section-spacing.color-scheme--bg-ccbe016895b664ae6d5df620138b1797) + .shopify-section:has(.section-spacing.color-scheme--bg-ccbe016895b664ae6d5df620138b1797:not(.bordered-section)) .section-spacing {
+      padding-block-start: 0;
+    }.xp-foundation .color-scheme--scheme-e6df9bf7-5811-4d32-beb4-97cf89c548bf {
+      /* Color settings */--accent: 140 47 27;
+      --text-color: 255 255 255;
+      --background: 140 47 27 / 1.0;
+      --background-without-opacity: 140 47 27;
+      --background-gradient: ;
+
+      --border-color: 255 255 255;
+
+      /* Button colors */
+      --button-background: 140 47 27;
+      --button-text-color: 248 246 243;
+
+      /* Circled buttons */
+      --circle-button-background: 248 246 243;
+      --circle-button-text-color: 74 38 43;
+    }.xp-foundation .shopify-section:has(.section-spacing.color-scheme--bg-f96aa4457c57a61c6aca0da2a86b5cca) + .shopify-section:has(.section-spacing.color-scheme--bg-f96aa4457c57a61c6aca0da2a86b5cca:not(.bordered-section)) .section-spacing {
+      padding-block-start: 0;
+    }.xp-foundation .color-scheme--scheme-e70f18a6-0720-4612-a0a1-f3c66638194c {
+      /* Color settings */--accent: 140 47 27;
+      --text-color: 247 241 235;
+      --background: 104 108 47 / 1.0;
+      --background-without-opacity: 104 108 47;
+      --background-gradient: ;
+
+      --border-color: 247 241 235;
+
+      /* Button colors */
+      --button-background: 140 47 27;
+      --button-text-color: 248 246 243;
+
+      /* Circled buttons */
+      --circle-button-background: 248 246 243;
+      --circle-button-text-color: 74 38 43;
+    }.xp-foundation .shopify-section:has(.section-spacing.color-scheme--bg-6c92a8dd8aa77a261d25f0dfc9ad5199) + .shopify-section:has(.section-spacing.color-scheme--bg-6c92a8dd8aa77a261d25f0dfc9ad5199:not(.bordered-section)) .section-spacing {
+      padding-block-start: 0;
+    }.xp-foundation .color-scheme--scheme-bf3577da-2951-40ec-9421-5091ed6dd682 {
+      /* Color settings */--accent: 74 38 43;
+      --text-color: 74 38 43;
+      --background: 238 230 219 / 1.0;
+      --background-without-opacity: 238 230 219;
+      --background-gradient: ;
+
+      --border-color: 74 38 43;
+
+      /* Button colors */
+      --button-background: 74 38 43;
+      --button-text-color: 248 246 243;
+
+      /* Circled buttons */
+      --circle-button-background: 248 246 243;
+      --circle-button-text-color: 74 38 43;
+    }.xp-foundation .shopify-section:has(.section-spacing.color-scheme--bg-1ac67c968bf9bca6824a584ffab0cd5c) + .shopify-section:has(.section-spacing.color-scheme--bg-1ac67c968bf9bca6824a584ffab0cd5c:not(.bordered-section)) .section-spacing {
+      padding-block-start: 0;
+    }.xp-foundation .color-scheme--scheme-1a490825-e016-4d25-9c52-41ea818c4c0d {
+      /* Color settings */--accent: 247 241 235;
+      --text-color: 74 38 43;
+      --background: 247 241 235 / 1.0;
+      --background-without-opacity: 247 241 235;
+      --background-gradient: ;
+
+      --border-color: 74 38 43;
+
+      /* Button colors */
+      --button-background: 247 241 235;
+      --button-text-color: 74 38 43;
+
+      /* Circled buttons */
+      --circle-button-background: 248 246 243;
+      --circle-button-text-color: 247 241 235;
+    }.xp-foundation .shopify-section:has(.section-spacing.color-scheme--bg-bffa5248dd44b60966750fac9edcee2f) + .shopify-section:has(.section-spacing.color-scheme--bg-bffa5248dd44b60966750fac9edcee2f:not(.bordered-section)) .section-spacing {
+      padding-block-start: 0;
+    }.xp-foundation .color-scheme--dialog {
+      /* Color settings */--accent: 74 38 43;
+      --text-color: 74 38 43;
+      --background: 247 241 235 / 1.0;
+      --background-without-opacity: 247 241 235;
+      --background-gradient: ;
+
+      --border-color: 74 38 43;
+
+      /* Button colors */
+      --button-background: 74 38 43;
+      --button-text-color: 248 246 243;
+
+      /* Circled buttons */
+      --circle-button-background: 248 246 243;
+      --circle-button-text-color: 74 38 43;
+    }
+</style>
+
+    
+    
+    
+
+    <meta name="google-site-verification" content="XMSo4K2VNlg02jAZXURmtPiQhihNw04aYL7KnCylbLA">
+<meta id="shopify-digital-wallet" name="shopify-digital-wallet" content="/92719841614/digital_wallets/dialog">
+<meta id="in-context-paypal-metadata" data-shop-id="92719841614" data-venmo-supported="false" data-environment="production" data-locale="en_US" data-paypal-v4="true" data-currency="GBP">
+<link rel="ucp" href="/.well-known/ucp" version="2026-08-25">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link id="shopify-accelerated-checkout-styles" rel="stylesheet" media="screen" href="styles/01.css">
+<style id="shopify-accelerated-checkout-cart">
+        .xp-foundation #shopify-buyer-consent {
+  margin-top: 1em;
+  display: inline-block;
+  width: 100%;
+}
+
+.xp-foundation #shopify-buyer-consent.hidden {
+  display: none;
+}
+
+.xp-foundation #shopify-subscription-policy-button {
+  background: none;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.xp-foundation #shopify-subscription-policy-button::before {
+  box-shadow: none;
+}
+
+      </style>
+
+
+<link href="styles/02.css" rel="stylesheet" type="text/css" media="all"><link href="styles/03.css" rel="stylesheet" type="text/css" media="all"><link href="styles/04.css" rel="stylesheet" type="text/css" media="all"><link rel="stylesheet" href="styles/05.css">
+  
+
+
+
+
+
+<meta name="shopify-y" content="7d53fb7a-5dc0-423c-b411-ca449c8de8b8" data-expiration="1823048457000"><meta name="shopify-s" content="d5e1b5a2-14fc-461a-b718-20f7aacc0cbd" data-expiration="1791492657000"><meta name="new-cookie-storage-activated" content="t">
+<meta http-equiv="origin-trial" content="A1duO9QWZ/3h+eq5jQsvYqOTVq5h5q2AoGInpwNr4FT22/JUt3BxFERXHAo5iKhs6doOavi6G5hno0oBANPzSgIAAABxeyJvcmlnaW4iOiJodHRwczovL2Nkbi5zaG9waWZ5LmNvbTo0NDMiLCJmZWF0dXJlIjoiUHJlcmVuZGVyVW50aWxTY3JpcHQiLCJleHBpcnkiOjE3ODg4MjU2MDAsImlzVGhpcmRQYXJ0eSI6dHJ1ZX0="><meta http-equiv="origin-trial" content="AwnTE1hYg9Bsa5x0wEDsbG6tOdZ3j6ebKzXxbr/2TnTilsCRK9FwndlhAyFVnnBH1qQAqpOPJxVWiKGUqBnOmAYAAAB8eyJvcmlnaW4iOiJodHRwczovL2Nkbi5zaG9waWZ5LmNvbTo0NDMiLCJmZWF0dXJlIjoiTG9uZ0FuaW1hdGlvbkZyYW1lU3R5bGVEdXJhdGlvbiIsImV4cGlyeSI6MTc5MTI0NDgwMCwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><meta http-equiv="origin-trial" content="A1cNj7yeFpBT/ETqZHRgUfM9tToLwOpBySTd4C9Eya3JtQo/BEQegM6MMV7BZESSyAjQJJXYgH/ovHY1UHmB8woAAABjeyJvcmlnaW4iOiJodHRwczovL2Nkbi5zaG9waWZ5LmNvbTo0NDMiLCJmZWF0dXJlIjoiV2ViTUNQIiwiZXhwaXJ5IjoxNzk0ODczNjAwLCJpc1RoaXJkUGFydHkiOnRydWV9"><meta http-equiv="origin-trial" content="A1XQljJxk3U4c44gueu4vlIeDofyyWFswfVKbUiNw4itZx4Yy8Uw3nIhtzBePIrv1bSXqzHGDfYymYF5W7TKKAoAAABzeyJvcmlnaW4iOiJodHRwczovL2Nkbi5zaG9waWZ5LmNvbTo0NDMiLCJmZWF0dXJlIjoiU3BlY3VsYXRpb25NZWFzdXJlbWVudCIsImV4cGlyeSI6MTc5MzY2NDAwMCwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><meta http-equiv="origin-trial" content="Ax9yX6wXQN8G5IFmAMuROwlLDFBpw1CUnFgsIGNYqJJ4H6td1fqjIYkL02d7HpmOAFMFSi3/1kym00LEfYqOdwYAAACOeyJvcmlnaW4iOiJodHRwczovL2Nkbi5zaG9waWZ5LmNvbTo0NDMiLCJmZWF0dXJlIjoiU3BlY3VsYXRpb25SdWxlc01vZGVyYXRlVmlld3BvcnRIZXVyaXN0aWNzQ29udHJvbCIsImV4cGlyeSI6MTc5NjY4ODAwMCwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="></head>
+
+  
+
+  
+
+  <body class="color-scheme color-scheme--scheme-1 template-index"><template id="drawer-default-template">
+  <div part="base">
+    <div part="overlay"></div>
+
+    <div part="content">
+      <header part="header">
+        <slot name="header"></slot>
+
+        <dialog-close-button style="display: contents">
+          <button type="button" part="close-button tap-area" aria-label="Close"><svg aria-hidden="true" focusable="false" fill="none" width="14" class="icon icon-close" viewBox="0 0 16 16">
+      <path d="m1 1 14 14M1 15 15 1" stroke="currentColor" stroke-width="1" />
+    </svg>
+
+  </button>
+        </dialog-close-button>
+      </header>
+
+      <div part="body">
+        <slot></slot>
+      </div>
+
+      <footer part="footer">
+        <slot name="footer"></slot>
+      </footer>
+    </div>
+  </div>
+</template><template id="modal-default-template">
+  <div part="base">
+    <div part="overlay"></div>
+
+    <div part="content">
+      <header part="header">
+        <slot name="header"></slot>
+
+        <dialog-close-button style="display: contents">
+          <button type="button" part="close-button tap-area" aria-label="Close"><svg aria-hidden="true" focusable="false" fill="none" width="14" class="icon icon-close" viewBox="0 0 16 16">
+      <path d="m1 1 14 14M1 15 15 1" stroke="currentColor" stroke-width="1" />
+    </svg>
+
+  </button>
+        </dialog-close-button>
+      </header>
+
+      <div part="body">
+        <slot></slot>
+      </div>
+    </div>
+  </div>
+</template><template id="popover-default-template">
+  <div part="base">
+    <div part="overlay"></div>
+
+    <div part="content">
+      <header part="header">
+        <slot name="header"></slot>
+
+        <dialog-close-button style="display: contents">
+          <button type="button" part="close-button tap-area" aria-label="Close"><svg aria-hidden="true" focusable="false" fill="none" width="14" class="icon icon-close" viewBox="0 0 16 16">
+      <path d="m1 1 14 14M1 15 15 1" stroke="currentColor" stroke-width="1" />
+    </svg>
+
+  </button>
+        </dialog-close-button>
+      </header>
+
+      <div part="body">
+        <slot></slot>
+      </div>
+    </div>
+  </div>
+</template><template id="header-search-default-template">
+  <div part="base">
+    <div part="overlay"></div>
+
+    <div part="content">
+      <slot></slot>
+    </div>
+  </div>
+</template><template id="video-media-default-template">
+  <slot></slot>
+
+  <svg part="play-button" fill="none" width="48" height="48" viewBox="0 0 48 48">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M48 24c0 13.255-10.745 24-24 24S0 37.255 0 24 10.745 0 24 0s24 10.745 24 24Zm-18 0-9-6.6v13.2l9-6.6Z" fill="var(--play-button-background, #f7f1eb)" />
+  </svg>
+</template><loading-bar class="loading-bar" aria-hidden="true"></loading-bar>
+    <a href="#main" allow-hash-change="" class="skip-to-content sr-only">Skip to content</a>
+
+    <span id="header-scroll-tracker" style="position: absolute; width: 1px; height: 1px; top: var(--header-scroll-tracker-offset, 10px); left: 0;"></span><!-- BEGIN sections: header-group -->
+<header data-foundation-needs-adaptation="true" data-experience-hero="true" data-foundation-section="shopify-section-sections-28409970458958-header" id="shopify-section-sections--28409970458958__header" class="shopify-section shopify-section-group-header-group shopify-section--header"><style>
+  .xp-foundation {
+    --header-is-sticky: 1;
+  }
+
+  .xp-foundation #shopify-section-sections--28409970458958__header {
+    --header-grid: "logo secondary-nav primary-nav" / auto 1fr auto;
+    --header-padding-block: 1rem;
+    --header-transparent-header-text-color: 247 241 235;
+    --header-separation-border-color: 0 0 0 / 0;
+
+    position: relative;
+    z-index: 4;
+  }
+
+  @media screen and (min-width: 700px) {
+    .xp-foundation #shopify-section-sections--28409970458958__header {
+      --header-padding-block: 1.2rem;
+    }
+  }
+
+  @media screen and (min-width: 1440px) {
+    .xp-foundation #shopify-section-sections--28409970458958__header {
+      --header-padding-block: 1.5rem;
+    }
+  }
+
+  @media screen and (min-width: 1000px) {
+    .xp-foundation #shopify-section-sections--28409970458958__header {--header-grid: "logo primary-nav secondary-nav" / auto minmax(0, 1fr) auto;}
+  }.xp-foundation #shopify-section-sections--28409970458958__header {
+      position: sticky;
+      top: 0;
+    }
+
+    .xp-foundation .shopify-section--announcement-bar ~ #shopify-section-sections--28409970458958__header {
+      top: calc(var(--announcement-bar-is-sticky, 0) * var(--announcement-bar-height, 0px));
+    }.xp-foundation #shopify-section-sections--28409970458958__header {
+      --header-logo-width: 20px;
+    }
+
+    @media screen and (min-width: 700px) {
+      .xp-foundation #shopify-section-sections--28409970458958__header {
+        --header-logo-width: 25px;
+      }
+    }</style>
+
+<height-observer variable="header">
+  <x-header hide-on-scroll="" class="header color-scheme color-scheme--scheme-2"><h1 data-foundation-slot="hero.heading" class="header__logo">{{hero.heading}}</h1>
+    
+<nav class="header__primary-nav" aria-label="Primary navigation">
+        <button type="button" aria-controls="sidebar-menu" class="md:hidden">
+          <span class="sr-only"></span></button><ul class="contents unstyled-list md-max:hidden">
+
+              <li class="header__primary-nav-item" data-title="Portfolio"><dropdown-menu-disclosure follow-summary-link="" trigger="hover"><details class="header__menu-disclosure" aria-expanded="false">
+                      <summary data-follow-link="/collections/all-projects" class="link"></summary><ul class="header__dropdown-menu header__dropdown-menu--restrictable unstyled-list" role="list"><li><a data-foundation-slot="navigation.brand" href="/collections/residential" class="link-faded-reverse">{{navigation.brand}}</a></li><li><nav aria-label="Main navigation"><a class="link-faded-reverse" href="#services">Services</a><a class="link-faded-reverse" href="#faqs">FAQs</a><a class="link-faded-reverse" href="#contact">Contact</a></nav></li><li></li></ul></details></dropdown-menu-disclosure></li>
+
+              <li class="header__primary-nav-item" data-title="Studio"><dropdown-menu-disclosure follow-summary-link="" trigger="hover"><details class="header__menu-disclosure" aria-expanded="false">
+                      <summary data-follow-link="/pages/about" class="link"></summary><ul class="header__dropdown-menu header__dropdown-menu--restrictable unstyled-list" role="list"><li></li><li></li></ul></details></dropdown-menu-disclosure></li>
+
+              <li class="header__primary-nav-item" data-title="Shop"><dropdown-menu-disclosure follow-summary-link="" trigger="hover"><details class="header__menu-disclosure" aria-expanded="false">
+                      <summary data-follow-link="/collections/workshop" class="link"></summary><ul class="header__dropdown-menu header__dropdown-menu--restrictable unstyled-list" role="list"><li></li><li></li></ul></details></dropdown-menu-disclosure></li>
+
+              <li class="header__primary-nav-item" data-title="News"><dropdown-menu-disclosure follow-summary-link="" trigger="hover"><details class="header__menu-disclosure" aria-expanded="false">
+                      <summary data-follow-link="/pages/press" class="link"></summary><ul class="header__dropdown-menu header__dropdown-menu--restrictable unstyled-list" role="list"><li></li><li></li><li></li></ul></details></dropdown-menu-disclosure></li>
+
+              <li class="header__primary-nav-item" data-title="Contact"></li></ul></nav><nav class="header__secondary-nav" aria-label="Secondary navigation"><ul class="contents unstyled-list"><li class="header__account-link sm-max:hidden">
+            <a data-foundation-slot="navigation.brand" href="https://www.studiopeake.com/customer_authentication/redirect?locale=en&region_country=GB">{{navigation.brand}}</a>
+          </li><li class="relative header__cart-link">
+          <nav class="relative header__cart-link" aria-label="Main navigation"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>
+        </li>
+      </ul>
+    </nav><template id="header-sidebar-template">
+                                                                          
+   <style>
+
+   .sr-only {
+        position: absolute;                                                                               
+        width: 1px;
+        height: 1px;                                                                                      
+        padding: 0;                                                       
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;                                                                              
+        border: 0;
+      }                                                                                                   
+      :host {                                                                                             
+        --header-logo-width: 20px;                                               
+      }                                                                   
+
+      @media screen and (min-width: 700px) {                                                              
+        :host {
+          --header-logo-width: px;                                                    
+        }                                                                 
+      }
+
+      .header__logo-image:not(.header__logo-image--transparent) {                                         
+        display: none;
+      }                                                                                                   
+                                                                          
+      .header__logo-image--transparent {
+        display: block;
+        width: var(--header-logo-width);
+        height: auto;
+      }
+    </style>   
+  <div part="base">
+    <div part="overlay"></div>
+
+    <div part="content">
+      <header part="header">
+     <h1 class="header__logo">                         
+            <a href="/"><span class="sr-only">Studio Peake</span><img src="//www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Aubergine.svg?v=1775291634&width=116" alt="" srcset="//www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Aubergine.svg?v=1775291634&width=50 50w, //www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Aubergine.svg?v=1775291634&width=75 75w" width="116" height="288" sizes="25px" class="header__logo-image"><img src="//www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Clotted_Cream.png?v=1773999449&width=486" alt="" srcset="//www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Clotted_Cream.png?v=1773999449&width=50 50w, //www.studiopeake.com/cdn/shop/files/Studio_Peake_Emblem_Clotted_Cream.png?v=1773999449&width=75 75w" width="486" height="1200" sizes="25px" class="header__logo-image header__logo-image--transparent"></a>        
+          </h1>        
+        <dialog-close-button class="contents">
+          <button type="button" part="close-button tap-area" aria-label="Close"><svg aria-hidden="true" focusable="false" fill="none" width="16" class="icon icon-close" viewBox="0 0 16 16">
+      <path d="m1 1 14 14M1 15 15 1" stroke="currentColor" stroke-width="1" />
+    </svg>
+
+  </button>
+        </dialog-close-button>
+      </header>
+
+      <div part="panel-list">
+        <slot name="main-panel"></slot><slot name="collapsible-panel"></slot></div>
+    </div>
+  </div>
+</template>
+
+<header-sidebar id="sidebar-menu" class="header-sidebar drawer drawer--sm color-scheme color-scheme--scheme-2" template="header-sidebar-template" open-from="left" style="--background: 24 53 79; --text-color: 247 241 235; --border-color: 247 241 235 / 0.15;" role="dialog" aria-modal="true"><div class="header-sidebar__main-panel" slot="main-panel">
+    <div class="header-sidebar__scroller">
+      <ul class="header-sidebar__linklist unstyled-list" role="list"><li><button type="button" class="header-sidebar__linklist-button" aria-controls="header-panel-1" aria-expanded="false"></button></li><li><button type="button" class="header-sidebar__linklist-button" aria-controls="header-panel-2" aria-expanded="false"></button></li><li><button type="button" class="header-sidebar__linklist-button" aria-controls="header-panel-3" aria-expanded="false"></button></li><li><button type="button" class="header-sidebar__linklist-button" aria-controls="header-panel-4" aria-expanded="false"></button></li><li><a data-foundation-slot="hero.primaryLabel" href="#contact" class="header-sidebar__linklist-button">{{hero.primaryLabel}}</a></li></ul>
+    </div><div class="header-sidebar__footer"><div class="header-sidebar__footer-block"><p data-foundation-slot="hero.body" class="header-sidebar__footer-title">{{hero.body}}</p><div class="header-sidebar__footer-text"><p><a href="mailto:info@studiopeake.com"></a></p></div></div><div class="header-sidebar__footer-block"><p class="header-sidebar__footer-title"></p><div class="header-sidebar__footer-text"><p><br></p></div></div></div>
+  </div><header-sidebar-collapsible-panel class="header-sidebar__collapsible-panel" slot="collapsible-panel" role="dialog">
+      <div class="header-sidebar__scroller"><div id="header-panel-1" class="header-sidebar__sub-panel" hidden>
+              <button type="button" class="header-sidebar__back-button link-faded text-with-icon md:hidden" data-action="close-panel"></button>
+
+              <ul class="header-sidebar__linklist unstyled-list" role="list"><li><a href="/collections/residential" class="header-sidebar__linklist-button"></a></li><li><a href="/collections/commercial" class="header-sidebar__linklist-button"></a></li><li><a href="/collections/all-projects" class="header-sidebar__linklist-button"></a></li></ul></div><div id="header-panel-2" class="header-sidebar__sub-panel" hidden>
+              <button type="button" class="header-sidebar__back-button link-faded text-with-icon md:hidden" data-action="close-panel"></button>
+
+              <ul class="header-sidebar__linklist unstyled-list" role="list"><li><a href="/pages/about" class="header-sidebar__linklist-button"></a></li><li><a href="/pages/about#process" class="header-sidebar__linklist-button"></a></li><li><a href="/pages/about#team" class="header-sidebar__linklist-button"></a></li></ul></div><div id="header-panel-3" class="header-sidebar__sub-panel" hidden>
+              <button type="button" class="header-sidebar__back-button link-faded text-with-icon md:hidden" data-action="close-panel"></button>
+
+              <ul class="header-sidebar__linklist unstyled-list" role="list"><li><a href="/collections/workshop" class="header-sidebar__linklist-button"></a></li><li><a href="/pages/the-workshop" class="header-sidebar__linklist-button"></a></li></ul></div><div id="header-panel-4" class="header-sidebar__sub-panel" hidden>
+              <button type="button" class="header-sidebar__back-button link-faded text-with-icon md:hidden" data-action="close-panel"></button>
+
+              <ul class="header-sidebar__linklist unstyled-list" role="list"><li><a href="/pages/press" class="header-sidebar__linklist-button"></a></li><li><a href="/pages/press" class="header-sidebar__linklist-button"></a></li><li><a href="/blogs/news" class="header-sidebar__linklist-button"></a></li></ul></div></div>
+    </header-sidebar-collapsible-panel></header-sidebar></x-header>
+</height-observer>
+
+
+
+
+<style> .xp-foundation #shopify-section-sections--28409970458958__header .header {column-gap: 0rem;} </style></header>
+<!-- END sections: header-group --><!-- BEGIN sections: overlay-group -->
+<section data-foundation-needs-adaptation="true" data-foundation-section="shopify-section-sections-28409970491726-cart-drawer" id="shopify-section-sections--28409970491726__cart-drawer" class="shopify-section shopify-section-group-overlay-group shopify-section--cart-drawer"><cart-drawer id="cart-drawer" class="cart-drawer drawer drawer--center-body color-scheme color-scheme--scheme-1" initial-focus="false" handle-editor-events="" role="dialog" aria-modal="true">
+  <p data-foundation-slot="unknown.body" class="h4" slot="header">{{unknown.body}}</p><p class="h5 text-center"></p></cart-drawer>
+
+</section><div id="shopify-section-sections--28409970491726__newsletter-popup" class="shopify-section shopify-section-group-overlay-group shopify-section--popup"><newsletter-popup id="newsletter-popup" class="pop-in newsletter-popup color-scheme color-scheme--scheme-e70f18a6-0720-4612-a0a1-f3c66638194c" title="Newsletter popup" apparition-delay="5" no-auto-show="" handle-editor-events="" role="dialog">
+      <dialog-close-button class="contents">
+        <button class="pop-in__close-button tap-area">
+          <span class="sr-only">Close</span><svg aria-hidden="true" focusable="false" fill="none" width="16" class="icon icon-close" viewBox="0 0 16 16">
+      <path d="m1 1 14 14M1 15 15 1" stroke="currentColor" stroke-width="1" />
+    </svg>
+
+  </button>
+      </dialog-close-button>
+
+      <div class="v-stack gap-8"><div class="v-stack gap-4 text-center"><p class="h4">Sign Up for our newsletter</p><div class="newsletter-popup__logo">
+                
+              </div><div class="prose">
+                For the latest from Studio Peake and the Workshop, sharing new work, craft collaborations, events, and design thinking.
+              </div></div></div>
+    </newsletter-popup>
+
+    
+</div><div id="shopify-section-sections--28409970491726__product-enquiry-modal" class="shopify-section shopify-section-group-overlay-group shopify-section--enquiry-modal"><x-drawer id="enquiry-modal" class="drawer enquiry-modal color-scheme color-scheme--scheme-2" open-from="right" handle-editor-events="" aria-label="Product Enquiry" role="dialog" aria-modal="true">
+  <div class="enquiry-modal__layout">
+    <div class="enquiry-modal__image-panel" aria-hidden="true"></div>
+    <div class="enquiry-modal__form-panel">
+      <dialog-close-button class="contents">
+        <button type="button" class="enquiry-modal__close tap-area" aria-label="Close"><svg aria-hidden="true" focusable="false" fill="none" width="16" class="icon icon-close" viewBox="0 0 16 16">
+      <path d="m1 1 14 14M1 15 15 1" stroke="currentColor" stroke-width="1" />
+    </svg>
+
+  </button>
+      </dialog-close-button>
+      <div class="enquiry-modal__form-content"></div>
+    </div>
+  </div>
+</x-drawer>
+
+
+
+
+</div>
+<!-- END sections: overlay-group --><main id="main" class="anchor">
+      <section data-foundation-needs-adaptation="true" data-foundation-section="shopify-section-template-28409970655566-slideshow" id="shopify-section-template--28409970655566__slideshow" class="shopify-section shopify-section--slideshow"><slideshow-carousel id="carousel-template--28409970655566__slideshow" class="slideshow" allow-swipe="" allow-transparent-header="" cell-selector=".slideshow__slide" autoplay="8" autoplay-pause-on-video="" role="region" style="--background: 0 0 0 ; background-color: rgb(var(--background));--border-color: var(--text-color) / 0.15;"><div class="slideshow__slide is-selected" media-type="image" role="group"><div class="content-over-media content-over-media--fill" style="--content-over-media-content-max-width: 1440px; --content-over-media-gradient-overlay: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0) 53.24%, rgba(0, 0, 0, 0) 75%, rgba(4, 4, 4, 0.65) 100%); --content-over-media-column-gap: var(--container-gutter)"><picture><source media="(max-width: 699px)" width="1847" height="2771"></picture>
+
+          <div class="slideshow__slide-content place-self-center text-center sm:place-self-end-center sm:text-center" style="--text-color: 255 255 255; color: rgb(var(--text-color));--border-color: var(--text-color) / 0.15;">
+            <div class="prose"><picture><source media="(max-width: 699px)" width="1988" height="944">
+                </picture></div>
+          </div>
+        </div></div></slideshow-carousel>
+<style> .xp-foundation #shopify-section-template--28409970655566__slideshow .content-over-media {max-height: 100vh;} .xp-foundation #shopify-section-template--28409970655566__slideshow .sp-slideshow-logo {width: 100vw;} .xp-foundation #shopify-section-template--28409970655566__slideshow .content-over-media {row-gap: 2rem;} </style></section><section data-foundation-needs-adaptation="true" data-foundation-section="shopify-section-template-28409970655566-multi-column-f7xhfw" id="shopify-section-template--28409970655566__multi_column_F7XhFW" class="shopify-section shopify-section--multi-column"><style>
+    .xp-foundation #shopify-section-template--28409970655566__multi_column_F7XhFW {
+      --multi-column-gap: 1.5rem;
+      --multi-column-column-width: 100%;
+      --multi-column-grid: auto / repeat(auto-fit, var(--multi-column-column-width));
+      --multi-column-content-alignment: safe start;
+      --multi-column-heading-max-width: 280px;
+    }
+
+    @media screen and (min-width: 700px) {
+      .xp-foundation #shopify-section-template--28409970655566__multi_column_F7XhFW {
+        --multi-column-columns-per-row: 2;
+        --multi-column-column-width: calc(100% / var(--multi-column-columns-per-row) - var(--multi-column-gap) * ((var(--multi-column-columns-per-row) - 1) / var(--multi-column-columns-per-row)));
+      }
+    }
+
+    @media screen and (min-width: 999px) {
+      .xp-foundation #shopify-section-template--28409970655566__multi_column_F7XhFW {
+        --multi-column-gap: 1.875rem;
+        --multi-column-columns-per-row: 2;
+        --multi-column-column-width: calc(100% / var(--multi-column-columns-per-row) - var(--multi-column-gap) * ((var(--multi-column-columns-per-row) - 1) / var(--multi-column-columns-per-row)));
+        --multi-column-grid: auto / repeat(auto-fit, var(--multi-column-column-width));
+         --multi-column-heading-max-width: 380px;
+      }
+    }
+  </style><div class="section-spacing color-scheme color-scheme--scheme-1 color-scheme--bg-bffa5248dd44b60966750fac9edcee2f">
+    <div class="container">
+      <div class="section-stack"><multi-column class="multi-column"><div class="multi-column__item snap-center group"><div class="prose text-start prose--compact"><p data-foundation-slot="unknown-3.body" class="h1" style="max-width: var(--multi-column-heading-max-width); text-wrap: balance;">{{unknown-3.body}}</p></div></div><div class="multi-column__item snap-center group"><div class="prose text-start"><p></p><a href="/pages/about" class="link"></a></div></div></multi-column>
+      </div>
+    </div>
+  </div>
+<style> .xp-foundation #shopify-section-template--28409970655566__multi_column_F7XhFW .h1 {text-wrap: balance;} </style></section><section data-foundation-needs-adaptation="true" data-foundation-section="shopify-section-template-28409970655566-collection-list-tg3akw" id="shopify-section-template--28409970655566__collection_list_TG3AKw" class="shopify-section shopify-section--collection-list"><style>
+    .xp-foundation #shopify-section-template--28409970655566__collection_list_TG3AKw {--collection-list-items-per-row: 1;}
+
+    .xp-foundation #shopify-section-template--28409970655566__collection_list_TG3AKw .content-over-media {
+      aspect-ratio: 2 / 3;
+      min-height: unset;
+    }
+
+    .xp-foundation #shopify-section-template--28409970655566__collection_list_TG3AKw .content-over-media > :is(img, video, iframe, svg, video-media), .xp-foundation #shopify-section-template--28409970655566__collection_list_TG3AKw .content-over-media > picture img, .xp-foundation #shopify-section-template--28409970655566__collection_list_TG3AKw .content-over-media > image-parallax img {
+      height: 100%;
+    }
+
+    @media screen and (min-width: 700px) {
+      .xp-foundation #shopify-section-template--28409970655566__collection_list_TG3AKw {--collection-list-items-per-row: 2;}
+    }
+
+    @media screen and (min-width: 1150px) {
+      .xp-foundation #shopify-section-template--28409970655566__collection_list_TG3AKw {
+        --collection-list-item-size: unset;
+        --collection-list-items-per-row: 3;}
+    }
+
+    @media screen and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+      .xp-foundation #shopify-section-template--28409970655566__collection_list_TG3AKw .content-over-media::before {
+        background: rgb(0 0 0 / 0);
+        transition: background 1.2s cubic-bezier(.4, .0, .2, 1);
+      }
+
+      .xp-foundation #shopify-section-template--28409970655566__collection_list_TG3AKw .group:hover .content-over-media::before {
+        background: rgb(0 0 0 / 0.3);
+      }
+    }
+  </style><div class="color-scheme color-scheme--scheme-1 color-scheme--bg-bffa5248dd44b60966750fac9edcee2f">
+    <div>
+      <div class="section-stack">
+
+        
+          <div class="collection-list wrap">
+            
+<a href="/collections/residential" class="collection-card is-selected group"><div class="content-over-media content-over-media--lg" style="--content-over-media-overlay: 0 0 0 / 0.0;"><div class="collection-card__content color-scheme color-scheme--scheme-4 prose prose--tight place-self-center text-center"><p data-foundation-slot="unknown-4.body" class="h3">{{unknown-4.body}}</p><p class="collection-card__subheading"></p></div></div></a><a href="/collections/workshop" class="collection-card group"><div class="content-over-media content-over-media--lg" style="--content-over-media-overlay: 0 0 0 / 0.0;"><div class="collection-card__content color-scheme color-scheme--scheme-4 prose prose--tight place-self-center text-center"><p class="h3"></p><p class="collection-card__subheading"></p></div></div></a><a href="/collections/commercial" class="collection-card group"><div class="content-over-media content-over-media--lg" style="--content-over-media-overlay: 0 0 0 / 0.0;"><div class="collection-card__content color-scheme color-scheme--scheme-4 prose prose--tight place-self-center text-center"><p class="h3"></p><p class="collection-card__subheading"></p></div></div></a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</section><section data-foundation-needs-adaptation="true" data-foundation-section="shopify-section-template-28409970655566-image-with-text-dcpmqg" id="shopify-section-template--28409970655566__image_with_text_DcpmQg" class="shopify-section shopify-section--image-with-text"><style>
+    .xp-foundation #shopify-section-template--28409970655566__image_with_text_DcpmQg {
+      --image-with-text-content-max-width: 100%;
+    }
+  </style><div class="color-scheme color-scheme--scheme-1 color-scheme--bg-bffa5248dd44b60966750fac9edcee2f">
+    <image-with-text class="image-with-text"><picture></picture><div class="prose text-start sm:text-start"><p data-foundation-slot="unknown-5.body" class="h1">{{unknown-5.body}}</p><div><p>&#160;<br><br></p></div><div class="sp-link-group sp-is-visible"><a href="/pages/press" class="sp-link-row">
+                      <span class="sp-link-row__text">&#160;</span></a><a href="/pages/press" class="sp-link-row">
+                      <span class="sp-link-row__text">&#160;&#160;&#160;</span></a><a href="/pages/press" class="sp-link-row">
+                      <span class="sp-link-row__text">&#160;&#160;</span></a><a href="/pages/press" class="sp-link-row">
+                      <span class="sp-link-row__text">&#160;&#160;&#160;</span></a></div></div>
+    </image-with-text>
+  </div>
+<style> .xp-foundation #shopify-section-template--28409970655566__image_with_text_DcpmQg picture img {border-radius: 0; object-fit: fill;} @media (min-width: 600px) {.xp-foundation #shopify-section-template--28409970655566__image_with_text_DcpmQg .image-with-text {gap: 96px !important; padding: 100px 96px; } .xp-foundation #shopify-section-template--28409970655566__image_with_text_DcpmQg .image-with-text .prose {padding-inline-start: 0px; padding-inline-end: 0px; }} @media screen and (min-width: 700px) {.xp-foundation #shopify-section-template--28409970655566__image_with_text_DcpmQg picture img {width: 45.8125rem; object-fit: cover; }} @media screen and (max-width: 699px) {.xp-foundation #shopify-section-template--28409970655566__image_with_text_DcpmQg .image-with-text img {padding: 60px 20px 00px; }} </style></section><section data-foundation-needs-adaptation="true" data-foundation-section="shopify-section-template-28409970655566-slideshow-d6td8w" id="shopify-section-template--28409970655566__slideshow_d6TD8w" class="shopify-section shopify-section--slideshow"><slideshow-carousel id="carousel-template--28409970655566__slideshow_d6TD8w" class="slideshow" allow-swipe="" allow-transparent-header="" cell-selector=".slideshow__slide" autoplay="5" autoplay-pause-on-video="" role="region" style="--background: 0 0 0 ; background-color: rgb(var(--background));--border-color: var(--text-color) / 0.15;"><div class="slideshow__slide is-selected" media-type="image" role="group"><div class="content-over-media content-over-media--lg" style="--content-over-media-content-max-width: 640px; --content-over-media-gradient-overlay: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(9, 9, 9, 0.2) 30%); --content-over-media-column-gap: var(--container-gutter)"><picture></picture>
+
+          <div class="slideshow__slide-content place-self-center text-center sm:place-self-center sm:text-center" style="--background: 0 0 0 / 0.0; background-color: rgb(var(--background));--text-color: 255 255 255; color: rgb(var(--text-color));--border-color:38 38 38;">
+            <div class="prose"><p data-foundation-slot="unknown-6.body" class="slideshow__subheading">{{unknown-6.body}}</p><p class="h1"></p></div>
+          </div>
+        </div></div></slideshow-carousel>
+<style> .xp-foundation #shopify-section-template--28409970655566__slideshow_d6TD8w .h1 {text-wrap: balance;} </style></section><div id="shopify-section-template--28409970655566__tabs_7DqCmK" class="shopify-section shopify-section--tabs"><div id="approach" class="section-anchor"></div><style>
+    .xp-foundation .tabs-layout {
+      grid-template-columns: 1fr 1fr;
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    .xp-foundation .tabs-layout__left {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .xp-foundation .tabs-layout__right {
+      position: sticky;
+      top: 2rem;
+    }
+
+    .xp-foundation .tabs-layout__image[hidden] {
+      display: none;
+    }
+
+    .xp-foundation .tabs__panel-image {
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+    }
+
+    @media screen and (min-width: 700px) {
+      .xp-foundation .content-tabs--stacked {
+        margin-block-start: 1.5rem;
+      }
+    }
+
+    .xp-foundation .content-tabs--stacked::part(tab-list) {
+      grid-auto-flow: row;
+      border-block-end: none;
+      gap: 0.25rem;
+      margin-block-end: 1.5rem;
+    }
+
+    .xp-foundation .content-tabs--stacked [role="tab"] {
+      text-align: start;
+      width: fit-content;
+    }
+
+  </style>
+
+  <div class="section-spacing color-scheme color-scheme--scheme-2 color-scheme--bg-bffa5248dd44b60966750fac9edcee2f">
+    <div class="container">
+      <div class="section-stack">
+
+        <!-- DESKTOP LAYOUT -->
+
+        <div class="tabs-layout hidden sm:grid">
+          <div class="tabs-layout__left">
+  <div class="section-header justify-self-start text-start"><div class="prose"><h2 class="h2">our approach</h2></div></div><x-tabs class="content-tabs content-tabs--stacked" selected-index="0" style="--item-count: 3; --selected-index: 0;">
+              <button class="tabs__title" type="button" role="tab" slot="title" aria-controls="tab-panel-01373aa3-d312-472d-bb74-4ea081085fc3-0" id="tab-01373aa3-d312-472d-bb74-4ea081085fc3-0" aria-selected="true">Interior Design</button>
+
+                  <div role="tabpanel" slot="content" aria-labelledby="tab-01373aa3-d312-472d-bb74-4ea081085fc3-0" id="tab-panel-01373aa3-d312-472d-bb74-4ea081085fc3-0">
+                    <div class="prose"><p>We always start by getting to know the client.&#160;</p><p>We want to create homes that feel intuitive, warm and deeply personal. They also need to be practical – spaces must ‘work’, they must support the flow of life. We don’t stop at what our clients love – we need to know how they live. What turns a house into a home is purpose. Each room is tailored in both form and function.&#160;</p><p>When it comes to finishing touches, we’re just getting started. We know that the secret to really great design is detail. We pay attention.&#160;</p><p>Our job is to turn the personality and style of our client into a beautiful, truly tailored home: an eloquent and timeless expression of who they are and how they live.</p><p></p><p><a href="/pages/about" title="about">LEARN MORE</a></p></div>
+                  </div><button class="tabs__title" type="button" role="tab" slot="title" aria-controls="tab-panel-01373aa3-d312-472d-bb74-4ea081085fc3-1" id="tab-01373aa3-d312-472d-bb74-4ea081085fc3-1" aria-selected="false">Architectural Design</button>
+
+                  <div role="tabpanel" slot="content" hidden aria-labelledby="tab-01373aa3-d312-472d-bb74-4ea081085fc3-1" id="tab-panel-01373aa3-d312-472d-bb74-4ea081085fc3-1">
+                    <div class="prose"><p>Design is holistic.</p><p>Every building has a back story – its architectural ‘bones’. You cannot design out of context – the interior must respond to the architecture of the building, its history and style.&#160;</p><p>Interior architectural design is a key part of what we do, working with architects and contractors from the very start of a project. We focus on how the structural elements impact on the interior design – creativity loves constraints – and conversely how the interior design can, and should, steer the structure.&#160;</p><p>Architectural proportions play a key role in setting the tone of a space. The flow of a building, how each space leads to the next, is all-important. We pride ourselves on seeing a project from all angles.&#160;&#160;</p><p></p><p><a href="/pages/about" title="about">LEARN MORE</a></p></div>
+                  </div><button class="tabs__title" type="button" role="tab" slot="title" aria-controls="tab-panel-01373aa3-d312-472d-bb74-4ea081085fc3-2" id="tab-01373aa3-d312-472d-bb74-4ea081085fc3-2" aria-selected="false">Craftsmanship</button>
+
+                  <div role="tabpanel" slot="content" hidden aria-labelledby="tab-01373aa3-d312-472d-bb74-4ea081085fc3-2" id="tab-panel-01373aa3-d312-472d-bb74-4ea081085fc3-2">
+                    <div class="prose"><p>A commitment to craftsmanship sits at the heart of everything we do.&#160;</p><p>We bring our designs to life in perspective sketches. We work painstakingly with artisans, makers and specialist workshops to create true masterpieces. Our clients are involved in our process every step of the way.&#160;</p><p>Over the years we have developed our own little black book of specialists in a number of fields, from carpenters and stone masons to embroiderers and leather workers. For all of us at the studio, this is our favourite part of the job – seeing something go from inspiration to real life work of art.</p><p></p><p><a href="/collections/workshop" title="Workshop">SHOP OUR COLLECTION</a></p></div>
+                  </div></x-tabs>
+          </div>
+
+          <div class="tabs-layout__right"><div class="tabs-layout__image" data-tab-index="0"></div><div class="tabs-layout__image" data-tab-index="1" hidden></div><div class="tabs-layout__image" data-tab-index="2" hidden></div></div>
+        </div>
+
+        
+
+        <!-- MOBILE LAYOUT -->
+
+        <div class="sm:hidden">
+  <div class="section-header justify-self-start text-start"><div class="prose"><h2 class="h2">our approach</h2></div></div></div>
+        <div class="accordion-group sm:hidden"><accordion-disclosure class="accordion">
+  <details class="accordion__disclosure group" open aria-expanded="true">
+    <summary><span class="accordion__toggle h6"><span class="text-with-icon gap-4">Interior Design</span><svg aria-hidden="true" focusable="false" fill="none" width="10" class="group-expanded:rotate icon icon-chevron-down" viewBox="0 0 10 10">
+      <path d="m1 3 4 4 4-4" stroke="currentColor" stroke-linecap="square" />
+    </svg></span>
+    </summary>
+
+    <div class="accordion__content prose"><div class="tabs-mobile__image"></div><p>We always start by getting to know the client.&#160;</p><p>We want to create homes that feel intuitive, warm and deeply personal. They also need to be practical – spaces must ‘work’, they must support the flow of life. We don’t stop at what our clients love – we need to know how they live. What turns a house into a home is purpose. Each room is tailored in both form and function.&#160;</p><p>When it comes to finishing touches, we’re just getting started. We know that the secret to really great design is detail. We pay attention.&#160;</p><p>Our job is to turn the personality and style of our client into a beautiful, truly tailored home: an eloquent and timeless expression of who they are and how they live.</p><p></p><p><a href="/pages/about" title="about">LEARN MORE</a></p></div>
+  </details>
+</accordion-disclosure><accordion-disclosure class="accordion">
+  <details class="accordion__disclosure group" aria-expanded="false">
+    <summary><span class="accordion__toggle h6"><span class="text-with-icon gap-4">Architectural Design</span><svg aria-hidden="true" focusable="false" fill="none" width="10" class="group-expanded:rotate icon icon-chevron-down" viewBox="0 0 10 10">
+      <path d="m1 3 4 4 4-4" stroke="currentColor" stroke-linecap="square" />
+    </svg></span>
+    </summary>
+
+    <div class="accordion__content prose"><div class="tabs-mobile__image"></div><p>Design is holistic.</p><p>Every building has a back story – its architectural ‘bones’. You cannot design out of context – the interior must respond to the architecture of the building, its history and style.&#160;</p><p>Interior architectural design is a key part of what we do, working with architects and contractors from the very start of a project. We focus on how the structural elements impact on the interior design – creativity loves constraints – and conversely how the interior design can, and should, steer the structure.&#160;</p><p>Architectural proportions play a key role in setting the tone of a space. The flow of a building, how each space leads to the next, is all-important. We pride ourselves on seeing a project from all angles.&#160;&#160;</p><p></p><p><a href="/pages/about" title="about">LEARN MORE</a></p></div>
+  </details>
+</accordion-disclosure><accordion-disclosure class="accordion">
+  <details class="accordion__disclosure group" aria-expanded="false">
+    <summary><span class="accordion__toggle h6"><span class="text-with-icon gap-4">Craftsmanship</span><svg aria-hidden="true" focusable="false" fill="none" width="10" class="group-expanded:rotate icon icon-chevron-down" viewBox="0 0 10 10">
+      <path d="m1 3 4 4 4-4" stroke="currentColor" stroke-linecap="square" />
+    </svg></span>
+    </summary>
+
+    <div class="accordion__content prose"><div class="tabs-mobile__image"></div><p>A commitment to craftsmanship sits at the heart of everything we do.&#160;</p><p>We bring our designs to life in perspective sketches. We work painstakingly with artisans, makers and specialist workshops to create true masterpieces. Our clients are involved in our process every step of the way.&#160;</p><p>Over the years we have developed our own little black book of specialists in a number of fields, from carpenters and stone masons to embroiderers and leather workers. For all of us at the studio, this is our favourite part of the job – seeing something go from inspiration to real life work of art.</p><p></p><p><a href="/collections/workshop" title="Workshop">SHOP OUR COLLECTION</a></p></div>
+  </details>
+</accordion-disclosure></div>
+      </div>
+    </div>
+  </div><style> @media screen and (min-width: 700px) {.xp-foundation #shopify-section-template--28409970655566__tabs_7DqCmK .tabs__panel-image {width: 45.8125rem; object-fit: cover; }} </style></div><section data-foundation-section="shopify-section-template-28409970655566-slideshow-hyjbrn" id="shopify-section-template--28409970655566__slideshow_HYjBrn" class="shopify-section shopify-section--slideshow"><slideshow-carousel id="carousel-template--28409970655566__slideshow_HYjBrn" class="slideshow" allow-swipe="" allow-transparent-header="" cell-selector=".slideshow__slide" autoplay="3.5" autoplay-pause-on-video="" role="region" style="--background: 0 0 0; background-color: rgb(var(--background)); --border-color: var(--text-color) / 0.15; --slideshow-progress-duration: 3.5s; --slideshow-progress-play-state: running;" tabindex="0"><div class="slideshow__slide is-selected" media-type="image" role="group" style="z-index: 1;"><div class="content-over-media content-over-media--auto" style="--content-over-media-content-max-width: 1200px; --content-over-media-gradient-overlay: linear-gradient(180deg, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.3) 100%); --content-over-media-column-gap: var(--container-gutter)"><picture><source media="(max-width: 699px)" width="919" height="1242"></picture>
+
+          <div class="slideshow__slide-content place-self-end-start text-start sm:place-self-end-start sm:text-start" style="--text-color: 255 255 255; color: rgb(var(--text-color));--border-color: var(--text-color) / 0.15;">
+            <div class="prose"><p data-foundation-slot="services.body" class="h1">{{services.body}}</p><div class="button-group justify-start sm:justify-start">
+<a class="link" href="/pages/project/kensington-townhouse"></a></div></div>
+          </div>
+        </div></div><div class="slideshow__slide is-selected" media-type="image" role="group" style="opacity: 0; position: absolute; inset: 0px; z-index: 2;"><div class="content-over-media content-over-media--auto" style="--content-over-media-content-max-width: 1200px; --content-over-media-gradient-overlay: linear-gradient(180deg, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.3) 100%); --content-over-media-column-gap: var(--container-gutter)"><picture><source media="(max-width: 699px)" width="919" height="1242"></picture>
+
+          <div class="slideshow__slide-content place-self-end-start text-start sm:place-self-end-start sm:text-start" style="--text-color: 255 255 255; color: rgb(var(--text-color));--border-color: var(--text-color) / 0.15;">
+            <div class="prose"><p class="h1"></p><div class="button-group justify-start sm:justify-start">
+<a class="link" href="/pages/project/surrey-arts-and-craft-home"></a></div></div>
+          </div>
+        </div></div><div class="slideshow__slide" media-type="image" role="group"><div class="content-over-media content-over-media--auto" style="--content-over-media-content-max-width: 1200px; --content-over-media-gradient-overlay: linear-gradient(180deg, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.3) 100%); --content-over-media-column-gap: var(--container-gutter)"><picture><source media="(max-width: 699px)" width="919" height="1242"></picture>
+
+          <div class="slideshow__slide-content place-self-end-start text-start sm:place-self-end-start sm:text-start" style="--text-color: 255 255 255; color: rgb(var(--text-color));--border-color: var(--text-color) / 0.15;">
+            <div class="prose"><p class="h1"></p><div class="button-group justify-start sm:justify-start">
+<a class="link" href="/pages/project/notting-hill-pied-a-terre"></a></div></div>
+          </div>
+        </div></div><div class="slideshow__slide" media-type="image" role="group"><div class="content-over-media content-over-media--auto" style="--content-over-media-content-max-width: 1200px; --content-over-media-gradient-overlay: linear-gradient(180deg, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.3) 100%); --content-over-media-column-gap: var(--container-gutter)"><picture><source media="(max-width: 699px)" width="919" height="1242"></picture>
+
+          <div class="slideshow__slide-content place-self-end-start text-start sm:place-self-end-start sm:text-start" style="--text-color: 255 255 255; color: rgb(var(--text-color));--border-color: var(--text-color) / 0.15;">
+            <div class="prose"><p class="h1"></p><div class="button-group justify-start sm:justify-start">
+<a class="link" href="/pages/project/chelsea-townhouse"></a></div></div>
+          </div>
+        </div></div><carousel-navigation aria-controls="carousel-template--28409970655566__slideshow_HYjBrn" class="page-dots page-dots--autoplay" style="--text-color: 255 255 255; color: rgb(var(--text-color));--border-color: var(--text-color) / 0.15;"><button class="tap-area" aria-current="false">
+            <span class="sr-only"></span></button><button class="tap-area" aria-current="true">
+            <span class="sr-only"></span></button><button class="tap-area" aria-current="false">
+            <span class="sr-only"></span></button><button class="tap-area" aria-current="false">
+            <span class="sr-only"></span></button></carousel-navigation></slideshow-carousel>
+<style> .xp-foundation #shopify-section-template--28409970655566__slideshow_HYjBrn .h1 {text-wrap: balance; max-width: 300px;} .xp-foundation #shopify-section-template--28409970655566__slideshow_HYjBrn .button-group {margin-block-start: 0.3rem !important;}@media screen and (max-width: 699px) {/* mobile-only styles */} </style></section><section data-foundation-section="shopify-section-template-28409970655566-blog-posts-jhaxiv" id="shopify-section-template--28409970655566__blog_posts_JHAxiV" class="shopify-section shopify-section--blog-posts"><div class="section-spacing color-scheme color-scheme--scheme-1 color-scheme--bg-bffa5248dd44b60966750fac9edcee2f bordered-section" style="padding-block-end: 0;"><div class="container">
+    <div class="section-stack"><div class="blog-posts-header">
+          <div class="blog-posts-header__left"><h2 data-foundation-slot="about.heading" class="h2">{{about.heading}}</h2></div>
+
+          <div class="blog-posts-header__right"><div class="blog-posts-header__content prose"><p data-foundation-slot="about.body">{{about.body}}</p></div>
+<a class="link" href="/blogs/news"></a><div class="blog-posts-header__controls"><div class="blog-posts-header__arrows">
+                <carousel-prev-button aria-controls="blog-carousel-template--28409970655566__blog_posts_JHAxiV">
+                  <button type="button" class="prev-next-button prev-next-button--prev" disabled>
+                    <span class="sr-only"></span></button>
+                </carousel-prev-button>
+
+                <carousel-next-button aria-controls="blog-carousel-template--28409970655566__blog_posts_JHAxiV">
+                  <button type="button" class="prev-next-button prev-next-button--next">
+                    <span class="sr-only"></span></button>
+                </carousel-next-button>
+              </div>
+            </div>
+          </div>
+        </div><scroll-carousel id="blog-carousel-template--28409970655566__blog_posts_JHAxiV" class="blog-post-list blog-post-list--carousel scroll-area snap-x full-bleed is-scrollable"><div class="blog-post-card group snap-center">
+  <div class="blog-post-card__image-wrap"></div><div class="blog-post-card__info" style="background-color: #686c2f; color: #f7f1eb;"><div class="blog-post-card__info-top"><p class="blog-post-card__title h4"></p><p class="blog-post-card__category"></p></div>
+
+    <div class="blog-post-card__info-bottom"><p class="prose"></p><a href="/blogs/news/5-years-of-studio-peake" class="blog-post-card__read-more link"></a></div>
+  </div>
+</div><div class="blog-post-card group snap-center">
+  <div class="blog-post-card__image-wrap"></div><div class="blog-post-card__info" style="background-color: #8ba2b3;"><div class="blog-post-card__info-top"><p class="blog-post-card__title h4"></p><p class="blog-post-card__category"></p></div>
+
+    <div class="blog-post-card__info-bottom"><p class="prose"></p><a href="/blogs/news/porter" class="blog-post-card__read-more link"></a></div>
+  </div>
+</div></scroll-carousel>
+    </div>
+  </div>
+</div>
+
+<style> .xp-foundation #shopify-section-template--28409970655566__blog_posts_JHAxiV .h4 {text-wrap: balance; max-width: 250px;} .xp-foundation #shopify-section-template--28409970655566__blog_posts_JHAxiV .section-stack {gap: 2rem;} </style></section><section data-foundation-section="shopify-section-template-28409970655566-rich-text-vph4pc" id="shopify-section-template--28409970655566__rich_text_Vph4PC" class="shopify-section shopify-section--rich-text"><div id="have-a-project-in-mind" class="section-anchor"></div><div class="color-scheme color-scheme--scheme-1 color-scheme--bg-bffa5248dd44b60966750fac9edcee2f section-spacing">
+    <div class="container container--sm">
+      <div class="prose text-start sm:text-center"><p data-foundation-slot="about-2.body" class="h1">{{about-2.body}}</p><a href="/pages/contact" class="link" style="display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap;"><span style="padding-top: 0.2em;"></span></a></div>
+    </div>
+  </div>
+<style> .xp-foundation #shopify-section-template--28409970655566__rich_text_Vph4PC .prose {text-align: center;} </style></section>
+<!-- BEGIN sections: footer-group -->
+<section data-foundation-section="contact" data-foundation-contact="true" id="contact"><div class="xp-season-contact">
+  <div class="xp-season-contact__intro">
+    <p class="xp-season-contact__kicker">{{contact.kicker}}</p>
+    <h2>{{contact.heading}}</h2>
+    <p class="xp-season-contact__body">{{contact.body}}</p>
+    <div class="xp-season-contact__details">
+      <a href="{{contact.phoneHref}}">{{contact.phone}}</a>
+      <a href="{{contact.emailHref}}">{{contact.email}}</a>
+    </div>
+  </div>
+  <div class="xp-season-contact__form" data-foundation-contact-form="">{{contact.form}}</div>
+</div></section><footer data-foundation-license="permission-cleared" data-foundation-section="shopify-section-sections-28409970393422-footer" id="shopify-section-sections--28409970393422__footer" class="shopify-section shopify-section-group-footer-group shopify-section--footer"><span>{{footer.brand}}</span><span>{{footer.credit}}</span></footer>
+<!-- END sections: footer-group --></main>
+  
+
+
+<shop-cart-sync data-instance-id="08c8c371-3f46-46c2-951c-dab8f9774768"></shop-cart-sync><div tabindex="-1" aria-hidden="true" id="web-pixels-manager-sandbox-container" data-shopify-privacy="exclude" style="height: 0px !important; width: 0px !important; position: fixed !important; visibility: hidden !important; overflow: hidden !important; z-index: -100 !important; margin: 0px !important; padding: 0px !important; border: 0px !important;"></div><span data-foundation-anchor="true" id="services"></span><span data-foundation-anchor="true" id="faqs"></span></body></html>

@@ -10,6 +10,10 @@ import http from "node:http";
 import path from "node:path";
 import { builtRoutes, enforceBuiltContrast } from "./contrast-sweep.mjs";
 import {
+  heroCardCoverageFinding,
+  routeRequiresFloatingHeroCopy,
+} from "./hero-card-contract.mjs";
+import {
   captureRenderedInteractionEvidence,
   interactionSourceDigest,
   requiresPurposefulInteraction,
@@ -21,6 +25,7 @@ import {
   diversityReport,
   fingerprintDistance,
   imageCompletenessScore,
+  routeRequiresHeroImage,
   scoreCreativeCandidate,
   validateCandidateManifest,
 } from "./creative-compiler.mjs";
@@ -56,7 +61,10 @@ import {
  * Bump when capture or render behavior changes so evidence cached under an
  * earlier behavior version can never be reused.
  */
-export const BAKEOFF_RENDER_EVIDENCE_VERSION = 1;
+// Version 2 adds hero-copy coverage evidence and the route-scoped
+// large-card hard failure, so cached render bundles from version 1 cannot
+// bypass the new gate.
+export const BAKEOFF_RENDER_EVIDENCE_VERSION = 2;
 const HOMEPAGE_VIEWPORTS = [
   { name: "desktop", width: 1536, height: 864 },
   { name: "compact", width: 1366, height: 768 },
@@ -203,9 +211,110 @@ async function inspect(page) {
       return { left, top, width: right - left, height: bottom - top };
     };
     const visible = (element) => Boolean(rect(element));
-    const copyRegions = hero
-      ? [...hero.querySelectorAll("[data-hero-copy]")].filter(visible).map(rect)
+    const alphaOf = (value) => {
+      const match = String(value || "").match(/rgba?\(([^)]+)\)/u);
+      if (!match) return value === "transparent" ? 0 : 1;
+      const parts = match[1].split(/[,\s/]+/u).filter(Boolean);
+      return parts.length >= 4 ? Number(parts[3]) : 1;
+    };
+    const borderVisible = (style) =>
+      ["Top", "Right", "Bottom", "Left"].some((side) => {
+        const width = parseFloat(style[`border${side}Width`]) || 0;
+        const borderStyle = style[`border${side}Style`];
+        return width > 0 && borderStyle !== "none" && alphaOf(style[`border${side}Color`]) > 0;
+      });
+    const backgroundVisible = (style) =>
+      alphaOf(style.backgroundColor) >= 0.5 ||
+      Boolean(style.backgroundImage && style.backgroundImage !== "none");
+    const pseudoBackgroundVisible = (element) =>
+      ["::before", "::after"].some((pseudo) => {
+        const style = window.getComputedStyle(element, pseudo);
+        if (!style || style.content === "none") return false;
+        return backgroundVisible(style);
+      });
+    const cardTreatment = (
+      element,
+      style = window.getComputedStyle(element),
+    ) => ({
+      hasBorder: borderVisible(style),
+      hasOpaqueBackground:
+        backgroundVisible(style) || pseudoBackgroundVisible(element),
+    });
+    const smallestCommonAncestor = (elements) => {
+      if (!elements.length) return null;
+      let ancestor = elements[0];
+      for (const element of elements.slice(1)) {
+        while (ancestor && !ancestor.contains(element))
+          ancestor = ancestor.parentElement;
+        if (!ancestor) return null;
+      }
+      return ancestor;
+    };
+    // A marked copy group can sit inside a card. Walk a bounded ancestor
+    // chain so the card's bounds are measured, but never treat a huge wrapper
+    // or the hero stage itself as the card.
+    const cardFor = (element) => {
+      const bounds = rect(element);
+      if (!bounds) return null;
+      const limit = bounds.width * bounds.height * 2.5;
+      for (let node = element; node && node !== hero; node = node.parentElement) {
+        const treatment = cardTreatment(node);
+        if (!treatment.hasBorder && !treatment.hasOpaqueBackground) continue;
+        const nodeBounds = rect(node);
+        if (!nodeBounds) continue;
+        if (node !== element && nodeBounds.width * nodeBounds.height > limit)
+          continue;
+        return { bounds: nodeBounds, ...treatment };
+      }
+      return null;
+    };
+    const markedCopyElements = hero
+      ? [...hero.querySelectorAll("[data-hero-copy]")].filter(visible)
       : [];
+    const fallbackCopyElement = (() => {
+      if (!hero || markedCopyElements.length) return null;
+      const heading = [...hero.querySelectorAll("h1")].find(visible);
+      if (!heading) return null;
+      const container = heading.parentElement;
+      if (!container) return null;
+      const action = [
+        ...container.querySelectorAll(
+          'a[href], button, [role="button"], input[type="submit"]',
+        ),
+      ].find(visible);
+      if (!action) return null;
+      const ancestor = smallestCommonAncestor([heading, action]);
+      return ancestor && ancestor !== hero && visible(ancestor)
+        ? ancestor
+        : null;
+    })();
+    const copyElements = markedCopyElements.length
+      ? markedCopyElements
+      : fallbackCopyElement
+        ? [fallbackCopyElement]
+        : [];
+    // The composition gate still requires the explicit marker. The fallback
+    // only feeds hero-card coverage evidence, never compositionEvidence.copy.
+    const copyRegions = markedCopyElements.map(rect);
+    const copyCards = copyElements.map(cardFor).filter(Boolean);
+    const largestCopy = [...copyCards].sort(
+      (left, right) =>
+        right.bounds.width * right.bounds.height -
+        left.bounds.width * left.bounds.height,
+    )[0];
+    const heroArea = heroBounds ? heroBounds.width * heroBounds.height : 0;
+    const copyArea = largestCopy
+      ? largestCopy.bounds.width * largestCopy.bounds.height
+      : 0;
+    const heroCopyAreaRatio = heroArea > 0 ? copyArea / heroArea : 0;
+    const heroCopyWidthRatio =
+      heroBounds && largestCopy
+        ? largestCopy.bounds.width / heroBounds.width
+        : 0;
+    const heroCopyHeightRatio =
+      heroBounds && largestCopy
+        ? largestCopy.bounds.height / heroBounds.height
+        : 0;
     const mediaRegions = hero
       ? [...hero.querySelectorAll("[data-hero-media]")]
           .filter(visible)
@@ -229,6 +338,18 @@ async function inspect(page) {
           })
       : [];
     const text = [document.title, document.body.innerText].join("\n");
+    const heroActionBottom = hero
+      ? Math.max(
+          0,
+          ...[...hero.querySelectorAll(
+            'a[href], button, [role="button"], input[type="submit"]',
+          )]
+            .filter(visible)
+            .map(rect)
+            .filter(Boolean)
+            .map((bounds) => bounds.top + bounds.height),
+        )
+      : 0;
     const anchors = [...document.querySelectorAll("nav a")];
     const requiredTargets = ["#services", "#faqs", "#contact"];
     const identityHeading =
@@ -282,6 +403,16 @@ async function inspect(page) {
           ).trim(),
       ).length,
       heroBottom: Math.round(heroBounds?.bottom || 0),
+      heroActionBottom: Math.round(heroActionBottom),
+      heroCopyAreaRatio,
+      heroCopyWidthRatio,
+      heroCopyHeightRatio,
+      heroCopyMobileAreaRatio:
+        window.innerWidth <= 767 ? heroCopyAreaRatio : 0,
+      heroCopyHasBorder: Boolean(largestCopy?.hasBorder),
+      heroCopyHasOpaqueBackground: Boolean(
+        largestCopy?.hasOpaqueBackground,
+      ),
       viewportHeight: window.innerHeight,
       overflow:
         document.documentElement.scrollWidth >
@@ -333,6 +464,16 @@ async function inspect(page) {
       compositionEvidence: {
         hero: heroBounds ? rect(hero) : null,
         copy: copyRegions,
+        copyCards: copyCards.map((card) => ({
+          ...card.bounds,
+          hasBorder: card.hasBorder,
+          hasOpaqueBackground: card.hasOpaqueBackground,
+        })),
+        copyCoverage: {
+          areaRatio: heroCopyAreaRatio,
+          widthRatio: heroCopyWidthRatio,
+          heightRatio: heroCopyHeightRatio,
+        },
         media: mediaRegions,
         utilityCount:
           hero?.querySelectorAll(
@@ -343,7 +484,11 @@ async function inspect(page) {
   }, CSS_IMAGE_URL_PATTERN.source);
 }
 
-function hardFailures(evidence, viewport) {
+export function hardFailures(
+  evidence,
+  viewport,
+  { requiresImageOverlay = false, requiresFloatingCopy = false } = {},
+) {
   return [
     evidence.h1Count !== 1 && "expected one H1",
     !evidence.hasHero && "missing hero marker",
@@ -361,6 +506,15 @@ function hardFailures(evidence, viewport) {
     viewport.name !== "mobile" &&
       evidence.heroBottom > evidence.viewportHeight + 1 &&
       "hero exceeds desktop viewport",
+    viewport.name === "mobile" &&
+      requiresImageOverlay &&
+      evidence.heroActionBottom > evidence.viewportHeight + 1 &&
+      "hero action exceeds mobile viewport for an image-overlay route",
+    requiresFloatingCopy &&
+      heroCardCoverageFinding(evidence, {
+        mobile: viewport.name === "mobile",
+        requiresFloatingCopy,
+      }),
     evidence.overflow && "horizontal overflow",
     evidence.brokenImages > 0 && "broken image",
     evidence.emDashes > 0 && "em dash found",
@@ -811,6 +965,17 @@ export async function runCreativeBakeoff({
         viewports: [],
       };
       const candidateStartedAt = Date.now();
+      const requiresImageOverlay = routeRequiresHeroImage(
+        candidate.metadata.heroArchetype || candidate.metadata.heroGeometry,
+      );
+      const requiresFloatingCopy = routeRequiresFloatingHeroCopy({
+        compositionTopology:
+          candidate.manifest.referenceDna?.compositionTopology ||
+          candidate.metadata.referenceDna?.compositionTopology,
+        heroGeometry:
+          candidate.metadata.heroGeometry ||
+          candidate.manifest.referenceDna?.heroGeometry?.mode,
+      });
       candidateResult.timings = {};
       /** Record one render phase; used per candidate and per run. */
       const recordPhase = (name, startedAt, category = "render") => {
@@ -1086,7 +1251,10 @@ export async function runCreativeBakeoff({
               await page.waitForTimeout(VIEWPORT_SETTLE_MS);
               const evidence = await inspect(page);
               const failures = [
-                ...hardFailures(evidence, viewport),
+                ...hardFailures(evidence, viewport, {
+                  requiresImageOverlay,
+                  requiresFloatingCopy,
+                }),
                 browserErrors.length > 0 && "browser error",
               ].filter(Boolean);
               const compositionTopology =

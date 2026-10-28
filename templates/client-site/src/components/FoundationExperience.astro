@@ -1,0 +1,96 @@
+---
+import { compileFoundationContent } from "../lib/experience-pack";
+import {
+  FOUNDATION_LEAD_FORM_MARKER,
+  renderFoundation,
+} from "../lib/foundation-render.mjs";
+import site from "../lib/site";
+import LeadForm from "./LeadForm.astro";
+import ReferencePackCredit from "./experiences/ReferencePackCredit.astro";
+import "../styles/foundation-runtime.css";
+
+interface Props {
+  foundationId: string;
+}
+
+const { foundationId } = Astro.props;
+const manifests = import.meta.glob("../foundations/*/manifest.json", {
+  eager: true,
+  import: "default",
+});
+const htmls = import.meta.glob("../foundations/*/source/index.html", {
+  eager: true,
+  query: "?raw",
+  import: "default",
+});
+const cssFiles = import.meta.glob("../foundations/*/source/**/*.css", {
+  eager: true,
+  query: "?raw",
+  import: "default",
+});
+const manifestKey = `../foundations/${foundationId}/manifest.json`;
+const htmlKey = `../foundations/${foundationId}/source/index.html`;
+const manifest = manifests[manifestKey] as
+  | {
+      id: string;
+      fingerprint?: string;
+      license?: { name?: string; url?: string; credit?: string };
+    }
+  | undefined;
+const foundationHtml = htmls[htmlKey];
+if (!manifest || typeof foundationHtml !== "string") {
+  throw new Error(`Foundation '${foundationId}' is not available in this build.`);
+}
+const foundationCss = Object.entries(cssFiles)
+  .filter(([key]) => key.startsWith(`../foundations/${foundationId}/source/`))
+  .map(([, value]) => value)
+  .filter((value): value is string => typeof value === "string")
+  .join("\n");
+const content = compileFoundationContent(site);
+const rendered = renderFoundation({
+  html: foundationHtml,
+  manifest,
+  content,
+});
+const [beforeLead, ...afterLeadParts] = rendered.html.split(
+  FOUNDATION_LEAD_FORM_MARKER,
+);
+const afterLead = afterLeadParts.join(FOUNDATION_LEAD_FORM_MARKER);
+const bodyClass =
+  foundationHtml.match(/<body[^>]*class="([^"]*)"/iu)?.[1] || "";
+const program = {
+  packId: foundationId,
+  variantId: "standard",
+  fingerprint: manifest.fingerprint || foundationId,
+};
+---
+
+<div
+  class:list={[
+    "xp-foundation",
+    "xp-foundation-shell",
+    "xp-generic-foundation",
+    bodyClass,
+  ]}
+  data-experience-pack={program.packId}
+  data-experience-variant={program.variantId}
+  data-layout-fingerprint={program.fingerprint}
+  data-foundation-dossier={manifest.id}
+>
+  <style is:inline set:html={foundationCss}></style>
+  <Fragment set:html={beforeLead} />
+  <LeadForm id={`foundation-${foundationId}-lead`} />
+  <Fragment set:html={afterLead} />
+  {manifest.license?.url ? (
+    <ReferencePackCredit
+      label={manifest.license.credit || `Source: ${manifest.id}`}
+      href={manifest.license.url}
+      license={manifest.license.name || "reference source"}
+    />
+  ) : (
+    <p class="xp-credit">
+      {manifest.license?.credit || `Source: ${manifest.id}`} (
+      {manifest.license?.name || "reference source"})
+    </p>
+  )}
+</div>

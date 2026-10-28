@@ -150,4 +150,4 @@
 - [ ] Review contrast and focus states.
 - [ ] Open PR, wait for `validate` and `route-fixtures`, merge, deploy.
 - [ ] Verify production login, ledger, gallery, sheet, previews and favicon.
-- [ ] Append progress ledger and complete Nifty task `XpQJ6EQn4P`.
+- [ ] Append progress ledger; list/reuse and complete the corresponding Work OS ledger task via the canonical tool in `AGENTS.md`, confirming readback. Historical Nifty `XpQJ6EQn4P` is context, not a current API target.

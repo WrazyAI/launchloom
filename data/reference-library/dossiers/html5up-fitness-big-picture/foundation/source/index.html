@@ -1,0 +1,116 @@
+<!DOCTYPE HTML>
+<!--
+	Big Picture by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>{{page.title}}</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+		<link rel="stylesheet" href="assets/css/main.css">
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css"></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Header -->
+			<header data-foundation-needs-adaptation="true" data-experience-hero="true" data-foundation-section="header" id="header">
+				<h1 data-foundation-slot="hero.heading">{{hero.heading}}</h1>
+				<nav>
+					<ul>
+						<li><a data-foundation-slot="navigation.brand" href="#intro">{{navigation.brand}}</a></li>
+						<li><nav aria-label="Main navigation"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav></li>
+						<li></li>
+						<li></li>
+						<li></li>
+					</ul>
+				</nav>
+			</header>
+
+		<!-- Intro -->
+			<section data-foundation-needs-adaptation="true" data-foundation-section="intro" id="intro" class="main style1 dark fullscreen">
+				<div class="content">
+					<header>
+						<h2 data-foundation-slot="unknown.heading">{{unknown.heading}}</h2>
+					</header>
+					<p data-foundation-slot="unknown.body">{{unknown.body}}</p>
+					<footer>
+						<a href="#one" class="button style2 down"></a>
+					</footer>
+				</div>
+			</section>
+
+		<!-- One -->
+			<section data-foundation-needs-adaptation="true" data-foundation-section="one" id="one" class="main style2 right dark fullscreen">
+				<div class="content box style2">
+					<header>
+						<h2 data-foundation-slot="unknown-2.heading">{{unknown-2.heading}}</h2>
+					</header>
+					<p data-foundation-slot="unknown-2.body">{{unknown-2.body}}</p>
+				</div>
+				<a href="#two" class="button style2 down anchored"></a>
+			</section>
+
+		<!-- Two -->
+			<section data-foundation-needs-adaptation="true" data-foundation-section="two" id="two" class="main style2 left dark fullscreen">
+				<div class="content box style2">
+					<header>
+						<h2 data-foundation-slot="unknown-3.heading">{{unknown-3.heading}}</h2>
+					</header>
+					<p data-foundation-slot="unknown-3.body">{{unknown-3.body}}</p>
+				</div>
+				<a href="#work" class="button style2 down anchored"></a>
+			</section>
+
+		<!-- Work -->
+			<span data-foundation-anchor="true" id="services"></span><section data-foundation-section="work" id="work" class="main style3 primary">
+				<div class="content">
+					<header>
+						<h2 data-foundation-slot="services.heading">{{services.heading}}</h2>
+						<p data-foundation-slot="services.body">{{services.body}}</p>
+					</header>
+
+					<!-- Gallery  -->
+						<div data-foundation-repeat-parent="services.items" class="gallery">
+							<!--foundation:each:services.items--><article data-foundation-repeat="services.items" class="from-left">
+								<a data-foundation-slot="services.item.name" href="images/fulls/01.jpg" class="image fit">{{services.item.name}}</a>
+							</article><!--/foundation:each:services.items-->
+							
+							
+							
+							
+							
+						</div>
+
+				</div>
+			</section>
+
+		<!-- Contact -->
+			<section data-foundation-section="contact" id="contact" class="main style3 secondary">
+				<div class="content">
+					<header>
+						<h2 data-foundation-slot="contact.heading">{{contact.heading}}</h2>
+						<p data-foundation-slot="contact.body">{{contact.body}}</p>
+					</header>
+					<div class="box">
+						
+					</div>
+				</div>
+			</section>
+
+		<!-- Footer -->
+			<footer data-foundation-license="CC BY 3.0" data-foundation-section="footer" id="footer"><span>{{footer.brand}}</span><span>{{footer.credit}}</span></footer>
+
+		<!-- Scripts -->
+			
+			
+			
+			
+			
+			
+			
+			
+
+	<span data-foundation-anchor="true" id="faqs"></span></body>
+</html>

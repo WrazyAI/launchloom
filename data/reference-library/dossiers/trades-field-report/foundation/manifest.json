@@ -1,0 +1,367 @@
+{
+  "schemaVersion": 1,
+  "id": "trades-field-report",
+  "dossierId": "trades-field-report",
+  "sourceDigest": "ad5563d64a78bf4207d7d77bf3efe4c77062abb894fce2cb81d001d6587fec60",
+  "entrypoint": "source/index.html",
+  "sourceClass": "owned",
+  "license": {
+    "name": "owned",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/trades-field-report",
+    "credit": "Template adapted from LaunchLoom owned design study"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "service-hero",
+      "sourceSelector": "#service-hero",
+      "order": 3,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "service-services",
+      "sourceSelector": "#service-services",
+      "order": 4,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "service-gallery",
+      "sourceSelector": "#service-gallery",
+      "order": 5,
+      "role": "portfolio",
+      "required": true
+    },
+    {
+      "id": "service-process",
+      "sourceSelector": "#service-process",
+      "order": 6,
+      "role": "process",
+      "required": false
+    },
+    {
+      "id": "service-trust",
+      "sourceSelector": "#service-trust",
+      "order": 7,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "service-coverage",
+      "sourceSelector": "#service-coverage",
+      "order": 8,
+      "role": "coverage",
+      "required": false
+    },
+    {
+      "id": "service-faq",
+      "sourceSelector": "#service-faq",
+      "order": 9,
+      "role": "faq",
+      "required": false
+    },
+    {
+      "id": "service-contact",
+      "sourceSelector": "#service-contact",
+      "order": 10,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 11,
+      "role": "footer",
+      "required": false
+    },
+    {
+      "id": "quick-answers-panel",
+      "sourceSelector": "#quick-answers-panel",
+      "order": 12,
+      "role": "faq",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "coverage.body",
+      "selector": "[data-foundation-slot=\"coverage.body\"]",
+      "kind": "text",
+      "contentPath": "coverageIntro",
+      "required": true
+    },
+    {
+      "id": "coverage.heading",
+      "selector": "[data-foundation-slot=\"coverage.heading\"]",
+      "kind": "text",
+      "contentPath": "coverageHeading",
+      "required": true
+    },
+    {
+      "id": "faq-2.body",
+      "selector": "[data-foundation-slot=\"faq-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "faq-2.heading",
+      "selector": "[data-foundation-slot=\"faq-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.faqHeading",
+      "required": true
+    },
+    {
+      "id": "faq.heading",
+      "selector": "[data-foundation-slot=\"faq.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.faqHeading",
+      "required": true
+    },
+    {
+      "id": "faq.item.answer",
+      "selector": "[data-foundation-item=\"faq.items\"] answer",
+      "kind": "text",
+      "contentPath": "faq.answer",
+      "required": true
+    },
+    {
+      "id": "faq.item.question",
+      "selector": "[data-foundation-item=\"faq.items\"] question",
+      "kind": "text",
+      "contentPath": "faq.question",
+      "required": true
+    },
+    {
+      "id": "faq.items",
+      "selector": "[data-foundation-repeat=\"faq.items\"]",
+      "kind": "each",
+      "contentPath": "faqs",
+      "itemPath": "faq",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.primaryLabel",
+      "selector": "[data-foundation-slot=\"hero.primaryLabel\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "hero.secondaryLabel",
+      "selector": "[data-foundation-slot=\"hero.secondaryLabel\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "process.body",
+      "selector": "[data-foundation-slot=\"process.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "process.heading",
+      "selector": "[data-foundation-slot=\"process.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "process.item.description",
+      "selector": "[data-foundation-item=\"process.items\"] description",
+      "kind": "text",
+      "contentPath": "step.description",
+      "required": true
+    },
+    {
+      "id": "process.items",
+      "selector": "[data-foundation-repeat=\"process.items\"]",
+      "kind": "each",
+      "contentPath": "process",
+      "itemPath": "step",
+      "required": true
+    },
+    {
+      "id": "services-2.body",
+      "selector": "[data-foundation-slot=\"services-2.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services-2.heading",
+      "selector": "[data-foundation-slot=\"services-2.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services-3.body",
+      "selector": "[data-foundation-slot=\"services-3.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.item.name",
+      "selector": "[data-foundation-item=\"services.items\"] name",
+      "kind": "text",
+      "contentPath": "service.name",
+      "required": true
+    },
+    {
+      "id": "services.items",
+      "selector": "[data-foundation-repeat=\"services.items\"]",
+      "kind": "each",
+      "contentPath": "services",
+      "itemPath": "service",
+      "required": true
+    }
+  ],
+  "assets": [
+    {
+      "source": "images/packs/professional-services-advisory-v1.png",
+      "target": "template/source/images/packs/professional-services-advisory-v1.png",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    },
+    {
+      "id": "inline-1",
+      "source": "[data-foundation-action=\"inline-1\"]",
+      "primitive": "local-script",
+      "reducedMotion": "static equivalent remains available"
+    },
+    {
+      "id": "quick-answers-panel-buttons",
+      "source": "button[aria-pressed]",
+      "primitive": "native-buttons",
+      "reducedMotion": "static selected state"
+    },
+    {
+      "id": "service-faq-disclosure",
+      "source": "details",
+      "primitive": "native-disclosure",
+      "reducedMotion": "all content visible when closed"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "network-script",
+      "message": "Removed an inline script with a network, analytics, or tracking primitive.",
+      "selector": "script"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed an inline script with a network, storage, navigation, or dynamic-code primitive.",
+      "selector": "script"
+    }
+  ],
+  "fingerprint": "bcb458d8ed6e30a8c6eb20c54ac04167e3273565544ab08940c429a5895a3f24"
+}

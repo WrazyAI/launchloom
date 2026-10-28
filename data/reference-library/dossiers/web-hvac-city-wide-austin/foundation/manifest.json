@@ -1,0 +1,426 @@
+{
+  "schemaVersion": 1,
+  "id": "web-hvac-city-wide-austin",
+  "dossierId": "web-hvac-city-wide-austin",
+  "sourceDigest": "1b6755e37a16e5963d4e6bf2043683b5075bd6b7cfeecd7c840c5735639cb78f",
+  "entrypoint": "source/index.html",
+  "sourceClass": "permission-cleared",
+  "license": {
+    "name": "permission-cleared",
+    "url": "https://citywideaustin.com/",
+    "credit": "Template adapted from City Wide Services diagnostic HVAC route official website"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "navigation",
+      "sourceSelector": "nav",
+      "order": 3,
+      "role": "navigation",
+      "required": false
+    },
+    {
+      "id": "content",
+      "sourceSelector": "#content",
+      "order": 4,
+      "role": "coverage",
+      "required": false
+    },
+    {
+      "id": "proof",
+      "sourceSelector": "section",
+      "order": 5,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "process",
+      "sourceSelector": "section",
+      "order": 6,
+      "role": "process",
+      "required": false
+    },
+    {
+      "id": "services",
+      "sourceSelector": "#services",
+      "order": 7,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "plans",
+      "sourceSelector": "section",
+      "order": 8,
+      "role": "plans",
+      "required": false
+    },
+    {
+      "id": "proof-2",
+      "sourceSelector": "section",
+      "order": 9,
+      "role": "proof",
+      "required": false
+    },
+    {
+      "id": "unknown",
+      "sourceSelector": "section",
+      "order": 10,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "coverage",
+      "sourceSelector": "section",
+      "order": 11,
+      "role": "coverage",
+      "required": false
+    },
+    {
+      "id": "faq",
+      "sourceSelector": "section",
+      "order": 12,
+      "role": "faq",
+      "required": false
+    },
+    {
+      "id": "contact",
+      "sourceSelector": "section",
+      "order": 13,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 14,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "coverage-2.body",
+      "selector": "[data-foundation-slot=\"coverage-2.body\"]",
+      "kind": "text",
+      "contentPath": "coverageIntro",
+      "required": true
+    },
+    {
+      "id": "coverage-2.heading",
+      "selector": "[data-foundation-slot=\"coverage-2.heading\"]",
+      "kind": "text",
+      "contentPath": "coverageHeading",
+      "required": true
+    },
+    {
+      "id": "coverage.body",
+      "selector": "[data-foundation-slot=\"coverage.body\"]",
+      "kind": "text",
+      "contentPath": "coverageIntro",
+      "required": true
+    },
+    {
+      "id": "coverage.heading",
+      "selector": "[data-foundation-slot=\"coverage.heading\"]",
+      "kind": "text",
+      "contentPath": "coverageHeading",
+      "required": true
+    },
+    {
+      "id": "faq.body",
+      "selector": "[data-foundation-slot=\"faq.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "faq.heading",
+      "selector": "[data-foundation-slot=\"faq.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.faqHeading",
+      "required": true
+    },
+    {
+      "id": "faq.item.answer",
+      "selector": "[data-foundation-item=\"faq.items\"] answer",
+      "kind": "text",
+      "contentPath": "faq.answer",
+      "required": true
+    },
+    {
+      "id": "faq.item.question",
+      "selector": "[data-foundation-item=\"faq.items\"] question",
+      "kind": "text",
+      "contentPath": "faq.question",
+      "required": true
+    },
+    {
+      "id": "faq.items",
+      "selector": "[data-foundation-repeat=\"faq.items\"]",
+      "kind": "each",
+      "contentPath": "faqs",
+      "itemPath": "faq",
+      "required": true
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "hero.image",
+      "selector": "[data-foundation-image=\"hero.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": true
+    },
+    {
+      "id": "hero.primaryLabel",
+      "selector": "[data-foundation-slot=\"hero.primaryLabel\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "hero.secondaryLabel",
+      "selector": "[data-foundation-slot=\"hero.secondaryLabel\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "plans.body",
+      "selector": "[data-foundation-slot=\"plans.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "plans.heading",
+      "selector": "[data-foundation-slot=\"plans.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "process.body",
+      "selector": "[data-foundation-slot=\"process.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "process.heading",
+      "selector": "[data-foundation-slot=\"process.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof-2.body",
+      "selector": "[data-foundation-slot=\"proof-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof-2.heading",
+      "selector": "[data-foundation-slot=\"proof-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "proof-2.item.attribution",
+      "selector": "[data-foundation-item=\"proof-2.items\"] attribution",
+      "kind": "text",
+      "contentPath": "proof.attribution",
+      "required": true
+    },
+    {
+      "id": "proof-2.item.quote",
+      "selector": "[data-foundation-item=\"proof-2.items\"] quote",
+      "kind": "text",
+      "contentPath": "proof.quote",
+      "required": true
+    },
+    {
+      "id": "proof-2.items",
+      "selector": "[data-foundation-repeat=\"proof-2.items\"]",
+      "kind": "each",
+      "contentPath": "proof",
+      "itemPath": "proof",
+      "required": true
+    },
+    {
+      "id": "proof.body",
+      "selector": "[data-foundation-slot=\"proof.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.item.description",
+      "selector": "[data-foundation-item=\"services.items\"] description",
+      "kind": "text",
+      "contentPath": "service.description",
+      "required": true
+    },
+    {
+      "id": "services.item.name",
+      "selector": "[data-foundation-item=\"services.items\"] name",
+      "kind": "text",
+      "contentPath": "service.name",
+      "required": true
+    },
+    {
+      "id": "services.items",
+      "selector": "[data-foundation-repeat=\"services.items\"]",
+      "kind": "each",
+      "contentPath": "services",
+      "itemPath": "service",
+      "required": true
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    },
+    {
+      "id": "section-disclosure",
+      "source": "details",
+      "primitive": "native-disclosure",
+      "reducedMotion": "all content visible when closed"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "missing-css",
+      "message": "Missing local stylesheet(s): /assets/index-Dz2yYBqC.css",
+      "selector": "link[rel=stylesheet]"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated plans items in 'plans' have no sealed content mapping.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'unknown' have no sealed content mapping.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'plans' preserves source composition that needs adaptation.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'unknown' has no supported content role.",
+      "selector": "section"
+    }
+  ],
+  "fingerprint": "39914951cf084edee9785d8f8250a9fbbb5f55845cdceb932e37f401058e5b6a"
+}

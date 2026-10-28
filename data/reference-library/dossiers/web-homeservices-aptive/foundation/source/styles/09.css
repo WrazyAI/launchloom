@@ -1,0 +1,28 @@
+.xp-foundation .et-fb-settings-options-tab .dica_divi_carousel .et-fb-icon{
+    margin: -2px 0 -5px 0 !important;
+}
+.xp-foundation .et-fb-settings-options-tab .dica_divi_carousel svg{
+    max-width: 28px;
+    margin: 0 auto;
+}
+.xp-foundation .et-fb-settings-options-tab .dica_divi_carousel{
+    background-size: initial !important;
+    background-repeat: no-repeat !important;
+    background-position: 4px 2px !important;
+    background-color: #FFF4EB !important;
+}
+.xp-foundation .et-fb-settings-options-tab .dica_divi_carousel:hover{
+    background-color: #FFE9D7 !important;
+    background-image: none !important;
+    background-size: initial !important;
+    background-repeat: no-repeat !important;
+    background-position: 4px 2px !important;
+}
+.xp-foundation .et-fb-settings-options-tab [class^="dica_"],
+.xp-foundation .et-fb-settings-options-tab .dica_divi_carousel
+{
+    background-image: none !important;
+    background-size: initial !important;
+    background-repeat: no-repeat !important;
+    background-position: 4px 2px !important;
+}

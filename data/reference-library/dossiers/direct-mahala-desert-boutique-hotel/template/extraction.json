@@ -6,9 +6,9 @@
   "source": {
     "url": "https://mahalahotel.com/",
     "repository": null,
-    "retrievedAt": "2026-10-08T20:40:44.772Z",
+    "retrievedAt": "2026-10-27T16:20:46.592Z",
     "attestationPath": "rights/template-extraction.md",
     "rightsEvidencePath": "rights/REQUESTER-ATTESTATION.md"
   },
-  "reason": "navigation failed: page.goto: Timeout 120000ms exceeded. Call log: \u001b[2m - navigating to \"https://mahalahotel.com/\", waiting until \"domcontentloaded\"\u001b[22m "
+  "reason": "navigation failed: page.goto: Timeout 90000ms exceeded. Call log: \u001b[2m - navigating to \"https://mahalahotel.com/\", waiting until \"domcontentloaded\"\u001b[22m "
 }

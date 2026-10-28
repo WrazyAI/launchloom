@@ -1,0 +1,197 @@
+/* ======================================================================
+   Humahome — Colors & Type
+   Source of truth for the brand. Imported by every preview / UI kit page.
+   ====================================================================== */
+
+/* ---------- Web fonts (LICENSED brand fonts) ----------
+   Season Mix and Season Sans are the brand's licensed faces.
+   Merriweather (editorial body) is loaded from Google Fonts —
+   no licensed alternative was supplied.
+-------------------------------------------------------------------- */
+
+
+
+/* inlined import: https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap */
+/* cyrillic-ext */
+
+/* cyrillic */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+/* cyrillic-ext */
+
+/* cyrillic */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+/* cyrillic-ext */
+
+/* cyrillic */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+/* cyrillic-ext */
+
+/* cyrillic */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+/* cyrillic-ext */
+
+/* cyrillic */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+
+
+.xp-foundation {
+  /* =========================================================
+     COLORS — taken from METADATA.md usage counts in Figma
+     ========================================================= */
+
+  /* Brand */
+  --hh-terracotta:      #984834;     /* primary accent — buttons, header bar, footer */
+  --hh-terracotta-deep: #7e3a2a;
+  --hh-terracotta-soft: #b56250;
+  --hh-clay:            #b08759;     /* warm tan – buttons, micro-accents */
+  --hh-sage:            #4b7f5e;     /* secondary CTA – "Get my free consultation" */
+  --hh-sage-soft:       #6e9b80;
+
+  /* Neutrals — the canvas the brand sits on */
+  --hh-bone:            #f7f7f0;     /* page background, light text on dark */
+  --hh-sand:            #dfdfcd;     /* secondary panels, "Tell us your story" band */
+  --hh-stone:           #bfb49f;     /* mid-tan – secondary buttons accent */
+  --hh-paper:           #f1f1f1;     /* form fills */
+  --hh-mist:            #f9f9fc;
+  --hh-blue-mist:       #a1b4cf;     /* About page hero pane */
+  --hh-blue-tag:        #e0e6f0;     /* utility tag chip */
+  --hh-yellow-tag:      #ffe8a3;     /* "OFFER" / new-build tag */
+
+  /* Ink */
+  --hh-ink:             #222222;     /* default text + UI strokes */
+  --hh-ink-deep:        #1e1e1e;
+  --hh-ink-soft:        #444444;
+  --hh-graphite:        #777373;     /* metadata, captions */
+  --hh-grey:            #7b7b7b;
+  --hh-grey-line:       #dddddd;     /* dividers */
+  --hh-grey-soft:       #cfcfcf;
+  --hh-grey-disabled:   #d9d9d9;
+  --hh-white:           #ffffff;
+  --hh-black:           #000000;
+
+  /* Semantic */
+  --hh-bg:              var(--hh-bone);
+  --hh-bg-alt:          var(--hh-sand);
+  --hh-bg-dark:         var(--hh-terracotta);
+  --hh-bg-form:         var(--hh-paper);
+
+  --hh-fg:              var(--hh-ink);
+  --hh-fg-soft:         var(--hh-graphite);
+  --hh-fg-on-dark:      var(--hh-bone);
+  --hh-fg-link:         var(--hh-terracotta);
+
+  --hh-border:          var(--hh-grey-line);
+  --hh-border-strong:   var(--hh-ink);
+
+  --hh-accent:          var(--hh-terracotta);
+  --hh-accent-on:       var(--hh-bone);
+  --hh-success:         var(--hh-sage);
+
+  /* Shadow — soft, layered, very low opacity */
+  --hh-shadow-sm:       0 1px 2px rgba(0,0,0,0.04);
+  --hh-shadow-md:       0 2px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04);
+  --hh-shadow-lg:       0 4px 8px rgba(0,0,0,0.06), 0 24px 48px rgba(0,0,0,0.08);
+
+  /* Radius — Humahome is mostly square. Pills are the exception. */
+  --hh-radius-0:        0px;
+  --hh-radius-sm:       2px;
+  --hh-radius-md:       4px;
+  --hh-radius-lg:       7px;          /* blog cover image, soft cards */
+  --hh-radius-pill:     1000px;       /* search dropdowns, primary buttons */
+
+  /* Spacing (Figma uses a 7-based grid: 7/14/28/56/112) */
+  --hh-s-1:             7px;
+  --hh-s-2:             14px;
+  --hh-s-3:             21px;
+  --hh-s-4:             28px;
+  --hh-s-5:             42px;
+  --hh-s-6:             56px;
+  --hh-s-7:             84px;
+  --hh-s-8:             112px;
+
+  /* =========================================================
+     TYPOGRAPHY
+     ========================================================= */
+  --hh-font-display:    "Season Mix", "Spectral", "Cormorant Garamond", "Times New Roman", serif;
+  --hh-font-body:       "Season Sans", "Manrope", "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --hh-font-editorial:  "Merriweather", "Season Mix", Georgia, serif;
+  --hh-font-mono:       ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Display weights */
+  --hh-display-1: 400 90px/0.85 var(--hh-font-display);   /* "Real life estate" hero */
+  --hh-display-2: 400 64px/0.9  var(--hh-font-display);
+  --hh-display-3: 400 36px/1.05 var(--hh-font-display);   /* section headers */
+  --hh-display-4: 400 26px/1.1  var(--hh-font-display);
+
+  /* Body — Season Sans Regular is 400, SemiBold is 600 */
+  --hh-body-lg:   400 18px/1.3  var(--hh-font-body);
+  --hh-body:      400 14px/1.3  var(--hh-font-body);      /* the workhorse */
+  --hh-body-sm:   400 10px/1.0  var(--hh-font-body);
+  --hh-bold:      600 14px/1.0  var(--hh-font-body);
+  --hh-bold-lg:   600 26px/1.0  var(--hh-font-body);
+  --hh-eyebrow:   600 10px/1.0  var(--hh-font-body);      /* tag chips */
+
+  /* Editorial (long-form blog) */
+  --hh-editorial-h1: 700 64px/1.0 var(--hh-font-editorial);
+  --hh-editorial-h2: 700 32px/1.5 var(--hh-font-editorial);
+  --hh-editorial-p:  400 18px/1.6 var(--hh-font-editorial);
+}
+
+/* ---------- Semantic element defaults ---------- */
+.xp-foundation { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+.xp-foundation {
+  background: var(--hh-bg);
+  color: var(--hh-fg);
+  font: var(--hh-body);
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.xp-foundation h1, .xp-foundation .hh-h1 { font: var(--hh-display-1); letter-spacing: -0.01em; color: var(--hh-fg); margin: 0; }
+.xp-foundation h2, .xp-foundation .hh-h2 { font: var(--hh-display-2); letter-spacing: -0.01em; color: var(--hh-fg); margin: 0; }
+.xp-foundation h3, .xp-foundation .hh-h3 { font: var(--hh-display-3); letter-spacing:  0;      color: var(--hh-fg); margin: 0; }
+.xp-foundation h4, .xp-foundation .hh-h4 { font: var(--hh-display-4); letter-spacing: -0.01em; color: var(--hh-fg); margin: 0; }
+
+.xp-foundation .hh-bold      { font: var(--hh-bold); }
+.xp-foundation .hh-bold-lg   { font: var(--hh-bold-lg); letter-spacing: -0.01em; }
+.xp-foundation .hh-body      { font: var(--hh-body); }
+.xp-foundation .hh-body-lg   { font: var(--hh-body-lg); }
+.xp-foundation .hh-eyebrow   { font: var(--hh-eyebrow); letter-spacing: -0.02em; text-transform: uppercase; }
+.xp-foundation .hh-meta      { font: 700 10px/1 var(--hh-font-body); letter-spacing: -0.02em; color: var(--hh-graphite); }
+.xp-foundation .hh-mono      { font-family: var(--hh-font-mono); }
+
+.xp-foundation a { color: inherit; text-decoration: none; }
+.xp-foundation a:hover { color: var(--hh-terracotta); }
+
+.xp-foundation * { box-sizing: border-box; }

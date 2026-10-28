@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{page.title}}</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="assets/vendor/bootstrap6/css/bootstrap.min.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-bs-spy="scroll" data-bs-target="#navScroll" data-bs-top-margin="110px" data-bs-smooth-scroll="true">
+
+<a class="visually-hidden-focusable btn-solid theme-primary m-2" href="#main">Skip to main content</a>
+
+<div class="info-bar">
+  <div class="container d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <span><strong>Emergency:</strong> call 999 · <strong>NHS 111</strong> for urgent advice</span>
+    <div class="d-flex flex-wrap gap-3">
+      <a href="#contact">020 7000 0000</a>
+      <button class="btn-text btn-sm p-0" type="button" data-bs-toggle="dialog" data-bs-target="#portalDialog" style="color:inherit">Patient portal</button>
+    </div>
+  </div>
+</div>
+
+<header data-foundation-needs-adaptation="true" data-experience-hero="true" data-foundation-section="hero" class="site-header">
+  <nav class="navbar lg:navbar-expand" aria-label="Main">
+    <div class="container">
+      <a data-foundation-slot="navigation.brand" class="navbar-brand d-flex align-items-center gap-2 fw-semibold" href="index.html">{{navigation.brand}}</a>
+      <dialog class="drawer drawer-end" tabindex="-1" id="navDrawer" aria-labelledby="navDrawerLabel">
+        <div class="drawer-header">
+          <h5 class="drawer-title" id="navDrawerLabel"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="drawer" aria-label="Close"></button>
+        </div>
+        <div class="drawer-body mb-2 lg:mb-0">
+          <ul class="nav navbar-nav me-auto" id="navScroll">
+            <li class="nav-item"><nav class="nav-item" aria-label="Main navigation"><a class="nav-link" href="#services">Services</a><a class="nav-link" href="#faqs">FAQs</a><a class="nav-link" href="#contact">Contact</a></nav></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+            <li class="nav-item"></li>
+          </ul>
+        </div>
+      </dialog>
+      <div class="d-flex align-items-center gap-2 ms-auto">
+        <button class="btn-icon" type="button" id="themeToggle" aria-label="Toggle color mode">
+          
+          
+        </button>
+        
+        <button class="btn-icon navbar-toggler" type="button" data-bs-toggle="drawer" data-bs-target="#navDrawer" aria-controls="navDrawer" aria-label="Open navigation">
+          <span class="navbar-toggler-icon" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+</header><aside data-foundation-section="conversion" data-early-conversion="true" class="xp-ribbon"><div class="xp-ribbon__copy">
+  <span class="xp-ribbon__kicker">Next step</span>
+  <p>{{conversion.body}}</p>
+</div>
+<a class="xp-ribbon__action" href="#contact">{{conversion.action}} <span aria-hidden="true">→</span></a></aside>
+
+<main id="main">
+
+  <!-- Hero + booking -->
+  <section data-foundation-section="contact" class="hero has-hero-img">
+  <img data-foundation-image="contact.image" class="hero-bg" src="{{contact.image}}" alt="" width="1800" height="1000" loading="eager">
+    <div class="container">
+      <div class="row align-items-start g-6">
+        <div class="lg:col-7">
+          <span class="badge badge-subtle theme-success mb-4"></span>
+          <h1 class="hero-title fs-6xl fw-bold mb-4"></h1>
+          <p data-foundation-slot="contact.body" class="hero-lede fs-lg fg-2 mb-6">{{contact.body}}</p>
+          <div class="d-flex flex-wrap gap-3 mb-6">
+            <a class="btn-solid theme-primary btn-lg" href="#booking"></a>
+            <a class="btn-outline theme-secondary btn-lg" href="#services"></a>
+          </div>
+          <div class="row g-4">
+            <div class="col-6 md:col-3"><p class="fs-2xl fw-bold mb-0 fg-primary"></p><p class="fs-xs fg-3 mb-0"></p></div>
+            <div class="col-6 md:col-3"><p class="fs-2xl fw-bold mb-0 fg-primary"></p><p class="fs-xs fg-3 mb-0"></p></div>
+            <div class="col-6 md:col-3"><p class="fs-2xl fw-bold mb-0 fg-primary"></p><p class="fs-xs fg-3 mb-0"></p></div>
+            <div class="col-6 md:col-3"><p class="fs-2xl fw-bold mb-0 fg-primary"></p><p class="fs-xs fg-3 mb-0"></p></div>
+          </div>
+        </div>
+
+        <div class="lg:col-5" id="booking">
+          <div class="booking">
+            <h2 data-foundation-slot="contact.heading" class="fs-lg fw-semibold mb-1">{{contact.heading}}</h2>
+            <p class="fg-2 fs-sm mb-4"></p>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section data-foundation-section="services" class="section bg-2" id="services">
+    <div class="container">
+      <div class="section-narrow text-center mb-7">
+        <p data-foundation-slot="services.body" class="eyebrow fs-sm fg-primary mb-2">{{services.body}}</p>
+        <h2 data-foundation-slot="services.heading" class="fs-4xl fw-bold mb-3" style="letter-spacing:-.03em">{{services.heading}}</h2>
+        <p class="fs-lg fg-2 mb-0"></p>
+      </div>
+
+      <div class="row g-4">
+        <div class="md:col-6 lg:col-4">
+          <article class="service surface surface-pad lift">
+            <span class="icon-tile mb-3"></span>
+            <h3 class="service-title"><a href="service.html"></a></h3>
+            <p class="fg-2 fs-sm mb-0"></p>
+          </article>
+        </div>
+        <div class="md:col-6 lg:col-4">
+          <article class="service surface surface-pad lift">
+            <span class="icon-tile mb-3"></span>
+            <h3 class="service-title"><a href="service.html"></a></h3>
+            <p class="fg-2 fs-sm mb-0"></p>
+          </article>
+        </div>
+        <div class="md:col-6 lg:col-4">
+          <article class="service surface surface-pad lift">
+            <span class="icon-tile mb-3"></span>
+            <h3 class="service-title"><a href="service.html"></a></h3>
+            <p class="fg-2 fs-sm mb-0"></p>
+          </article>
+        </div>
+        <div class="md:col-6 lg:col-4">
+          <article class="service surface surface-pad lift">
+            <span class="icon-tile mb-3"></span>
+            <h3 class="service-title"><a href="service.html"></a></h3>
+            <p class="fg-2 fs-sm mb-0"></p>
+          </article>
+        </div>
+        <div class="md:col-6 lg:col-4">
+          <article class="service surface surface-pad lift">
+            <span class="icon-tile mb-3"></span>
+            <h3 class="service-title"><a href="service.html"></a></h3>
+            <p class="fg-2 fs-sm mb-0"></p>
+          </article>
+        </div>
+        <div class="md:col-6 lg:col-4">
+          <article class="service surface surface-pad lift">
+            <span class="icon-tile mb-3"></span>
+            <h3 class="service-title"><a href="service.html"></a></h3>
+            <p class="fg-2 fs-sm mb-0"></p>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Doctors -->
+  <section data-foundation-section="doctors" class="section" id="doctors">
+    <div class="container">
+      <div class="section-narrow text-center mb-7">
+        <p data-foundation-slot="about.body" class="eyebrow fs-sm fg-primary mb-2">{{about.body}}</p>
+        <h2 data-foundation-slot="about.heading" class="fs-4xl fw-bold mb-0" style="letter-spacing:-.03em">{{about.heading}}</h2>
+      </div>
+      <div class="row g-4">
+        <div class="sm:col-6 lg:col-3">
+          <div class="doctor-photo"><div class="ph ph-1x1"></div></div>
+          <h3 class="fs-md fw-semibold mb-1"></h3>
+          <p class="fg-3 fs-sm mb-2"></p>
+          <div class="d-flex flex-wrap gap-1"><span class="chip"></span><span class="chip"></span></div>
+        </div>
+        <div class="sm:col-6 lg:col-3">
+          <div class="doctor-photo"><div class="ph ph-1x1"></div></div>
+          <h3 class="fs-md fw-semibold mb-1"></h3>
+          <p class="fg-3 fs-sm mb-2"></p>
+          <div class="d-flex flex-wrap gap-1"><span class="chip"></span><span class="chip"></span></div>
+        </div>
+        <div class="sm:col-6 lg:col-3">
+          <div class="doctor-photo"><div class="ph ph-1x1"></div></div>
+          <h3 class="fs-md fw-semibold mb-1"></h3>
+          <p class="fg-3 fs-sm mb-2"></p>
+          <div class="d-flex flex-wrap gap-1"><span class="chip"></span><span class="chip"></span></div>
+        </div>
+        <div class="sm:col-6 lg:col-3">
+          <div class="doctor-photo"><div class="ph ph-1x1"></div></div>
+          <h3 class="fs-md fw-semibold mb-1"></h3>
+          <p class="fg-3 fs-sm mb-2"></p>
+          <div class="d-flex flex-wrap gap-1"><span class="chip"></span><span class="chip"></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Insurers -->
+  <section data-foundation-section="portfolio" class="pb-9">
+    <div class="container">
+      <p data-foundation-slot="services.body" class="text-center fs-sm fg-3 eyebrow mb-5">{{services.body}}</p>
+      <div class="insurers">
+        <span class="insurer"></span><span class="insurer"></span><span class="insurer"></span>
+        <span class="insurer"></span><span class="insurer"></span><span class="insurer"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Patient info -->
+  <span data-foundation-anchor="true" id="faqs"></span><section data-foundation-section="faq" class="section bg-2" id="faq">
+    <div class="container">
+      <div class="row g-6">
+        <div class="lg:col-7">
+          <p data-foundation-slot="faq.body" class="eyebrow fs-sm fg-primary mb-2">{{faq.body}}</p>
+          <h2 data-foundation-slot="faq.heading" class="fs-3xl fw-bold mb-5" style="letter-spacing:-.02em">{{faq.heading}}</h2>
+          <div data-foundation-repeat-parent="faq.items" class="accordion">
+            <!--foundation:each:faq.items--><details data-foundation-repeat="faq.items" class="accordion-item" name="pfaq" open>
+              <summary data-foundation-slot="faq.item.question" class="accordion-header">{{faq.item.question}}</summary>
+              <div data-foundation-slot="faq.item.answer" class="accordion-body">{{faq.item.answer}}</div>
+            </details><!--/foundation:each:faq.items-->
+            
+            
+            
+          </div>
+        </div>
+
+        <div class="lg:col-5" id="contact">
+          <div class="surface surface-pad">
+            <h2 class="fs-lg fw-semibold mb-4"></h2>
+            <div class="mb-4">
+              <div class="hours-row is-today"><span></span><span></span></div>
+              <div class="hours-row"><span></span><span></span></div>
+              <div class="hours-row"><span></span><span></span></div>
+              <div class="hours-row"><span></span><span></span></div>
+              <div class="hours-row"><span></span><span></span></div>
+              <div class="hours-row"><span></span><span></span></div>
+              <div class="hours-row"><span></span><span class="fg-3"></span></div>
+            </div>
+            <hr class="mb-4">
+            <ul class="vstack gap-3 list-unstyled mb-4">
+              <li class="d-flex align-items-center gap-3">
+                <span class="icon-tile"></span>
+                <span><span class="d-block fs-xs fg-3"></span><span class="fw-semibold fs-sm"></span></span>
+              </li>
+              <li class="d-flex align-items-center gap-3">
+                <span class="icon-tile"></span>
+                <span><span class="d-block fs-xs fg-3"></span><span class="fw-semibold fs-sm"></span></span>
+              </li>
+            </ul>
+            <button class="btn-outline theme-secondary w-100" type="button" data-bs-toggle="dialog" data-bs-target="#portalDialog"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer data-foundation-license="MIT" data-foundation-section="footer" class="site-footer bg-2 py-6"><span>{{footer.brand}}</span><span>{{footer.credit}}</span></footer>
+
+<!-- Patient portal — OTP + password strength -->
+<dialog class="dialog" id="portalDialog" aria-labelledby="portalTitle">
+  <div class="dialog-header">
+    <h1 class="dialog-title fs-lg" id="portalTitle">Patient portal</h1>
+    <button type="button" class="btn-close" data-bs-dismiss="dialog" aria-label="Close"></button>
+  </div>
+  <div class="dialog-body">
+    <ul class="nav nav-tabs mb-4" role="tablist">
+      <li class="nav-item" role="presentation"><button class="nav-link active" id="si-tab" data-bs-toggle="tab" data-bs-target="#si" type="button" role="tab" aria-controls="si" aria-selected="true">Sign in</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" id="su-tab" data-bs-toggle="tab" data-bs-target="#su" type="button" role="tab" aria-controls="su" aria-selected="false">Register</button></li>
+    </ul>
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="si" role="tabpanel" aria-labelledby="si-tab" tabindex="0">
+        
+      </div>
+      <div class="tab-pane fade" id="su" role="tabpanel" aria-labelledby="su-tab" tabindex="0">
+        
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

@@ -230,7 +230,33 @@ const EXPERIENCE_CONTRACTS = {
 // Internal-only reference packs derived from extracted source templates. New
 // reference packs are added here until their attribution decision; promoted
 // packs move into EXPERIENCE_CONTRACTS above.
-const INTERNAL_EXPERIENCE_CONTRACTS = {};
+const INTERNAL_EXPERIENCE_CONTRACTS = {
+  "season-wheel": {
+    navigation: "minimal-inline",
+    conversion: "discovery-ribbon",
+    proof: "principle-line",
+    closing: "cinematic-inquiry",
+    variants: {
+      standard: {
+        hero: "season-wheel",
+        services: "seasonal-ledger",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "seasons",
+          "plans",
+          "estimate",
+          "coverage",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+    },
+  },
+};
 
 function experienceContract(packId) {
   return EXPERIENCE_CONTRACTS[packId] || INTERNAL_EXPERIENCE_CONTRACTS[packId];
@@ -262,6 +288,34 @@ function safeDesignManifest(config) {
       requiredSections: ["hero", "conversion", "services", "faq", "contact"],
       optionalSections: [],
       sectionOrder: [],
+      allowedVariants: {},
+      treatment: null,
+    };
+  }
+  if (config.design?.experience?.renderer === "foundation") {
+    return {
+      recipe: publicText(config.design?.recipe, 60),
+      renderer: {
+        type: "foundation",
+        foundationId: publicText(config.design?.experience?.foundationId, 120),
+        fingerprint: publicText(config.design?.experience?.fingerprint, 100),
+        compatibility: publicText(
+          config.design?.experience?.foundationCompatibility,
+          40,
+        ),
+      },
+      navigationLinks: ["Services", "FAQs", "Contact"],
+      requiredSections: ["hero", "conversion", "services", "faq", "contact"],
+      optionalSections: ["coverage", "social-proof"],
+      sectionOrder: [
+        "hero",
+        "conversion",
+        "services",
+        "coverage",
+        "social-proof",
+        "faq",
+        "contact",
+      ],
       allowedVariants: {},
       treatment: null,
     };

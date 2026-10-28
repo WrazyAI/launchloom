@@ -1,0 +1,11 @@
+@media only screen and (max-width: 1024px){
+}
+
+@media only screen and (min-width: 769px) and (max-width: 1024px){
+.xp-foundation h1 { font-size: 70px;}.xp-foundation h2 { font-size: 40px;}}
+
+@media only screen and (min-width: 681px) and (max-width: 768px){
+.xp-foundation h1 { font-size: 70px;}.xp-foundation h2 { font-size: 40px;}}
+
+@media only screen and (max-width: 680px){
+.xp-foundation h1 { font-size: 35px;}.xp-foundation h2 { font-size: 30px;}.xp-foundation h3 { font-size: 26px;}}

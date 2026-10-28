@@ -1,0 +1,321 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-forecourt-showroom",
+  "dossierId": "colorlib-forecourt-showroom",
+  "sourceDigest": "cf0544a82059e15e69c199ce87e6c242b03d702fc9d4a90641f3fed2dc94134e",
+  "entrypoint": "source/index.html",
+  "sourceClass": "licensed",
+  "license": {
+    "name": "MIT",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/forecourt",
+    "credit": "Template adapted from Colorlib Bootstrap Templates MIT and CC0 template"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "estimate",
+      "sourceSelector": "section",
+      "order": 3,
+      "role": "estimate",
+      "required": false
+    },
+    {
+      "id": "stock",
+      "sourceSelector": "#stock",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "finance",
+      "sourceSelector": "#finance",
+      "order": 5,
+      "role": "estimate",
+      "required": false
+    },
+    {
+      "id": "partex",
+      "sourceSelector": "#partex",
+      "order": 6,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "branches",
+      "sourceSelector": "#branches",
+      "order": 7,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 8,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "estimate-2.body",
+      "selector": "[data-foundation-slot=\"estimate-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate-2.heading",
+      "selector": "[data-foundation-slot=\"estimate-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate.body",
+      "selector": "[data-foundation-slot=\"estimate.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate.heading",
+      "selector": "[data-foundation-slot=\"estimate.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "estimate.image",
+      "selector": "[data-foundation-image=\"estimate.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "unknown-2.body",
+      "selector": "[data-foundation-slot=\"unknown-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.image",
+      "selector": "[data-foundation-image=\"unknown.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown.secondaryImage",
+      "selector": "[data-foundation-image=\"unknown.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown.tertiaryImage",
+      "selector": "[data-foundation-image=\"unknown.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    }
+  ],
+  "assets": [
+    {
+      "source": "img/car-1.jpg",
+      "target": "template/source/img/car-1.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "img/car-2.jpg",
+      "target": "template/source/img/car-2.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "img/car-3.jpg",
+      "target": "template/source/img/car-3.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "img/car-4.jpg",
+      "target": "template/source/img/car-4.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "img/car-5.jpg",
+      "target": "template/source/img/car-5.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "img/car-6.jpg",
+      "target": "template/source/img/car-6.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "img/hero.jpg",
+      "target": "template/source/img/hero.jpg",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "interactive-section-needs-adaptation",
+      "message": "Section 'estimate' preserves an interactive source composition that needs adaptation.",
+      "selector": "section"
+    },
+    {
+      "code": "interactive-section-needs-adaptation",
+      "message": "Section 'finance' preserves an interactive source composition that needs adaptation.",
+      "selector": "#finance"
+    },
+    {
+      "code": "missing-services",
+      "message": "No services or portfolio section was detected."
+    },
+    {
+      "code": "network-script",
+      "message": "Foundation script contains a network, analytics, or tracking primitive; the foundation needs adaptation.",
+      "selector": "script"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+      "selector": "header"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'branches' has no supported content role.",
+      "selector": "#branches"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'estimate' preserves source composition that needs adaptation.",
+      "selector": "section"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'finance' preserves source composition that needs adaptation.",
+      "selector": "#finance"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'stock' has no supported content role.",
+      "selector": "#stock"
+    }
+  ],
+  "fingerprint": "c55291545abed70c4614d1ed04fdf30831080794222a9b10d6fce39d449fb5be"
+}
