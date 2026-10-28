@@ -61,6 +61,7 @@ import {
   CLIENT_TYPOGRAPHY_CONTRACT,
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
+  SERVICE_PAGE_DIRECT_BINDING_CONTRACT,
   authoringCompletionDiagnostics,
   completionLimitRequestField,
   formatAuthoringCompletionDiagnostics,
@@ -147,8 +148,8 @@ const authorStageSchema = {
           "motion",
         ],
       },
-      designContract: { type: "string", maxLength: 12000 },
-      designRationale: { type: "string", maxLength: 1600 },
+      designContract: { type: "string", minLength: 200, maxLength: 12000 },
+      designRationale: { type: "string", minLength: 40, maxLength: 1600 },
       content: { type: "string" },
     },
   },
@@ -334,7 +335,7 @@ function stagePromptSuffix(request) {
     return `${repair}
 CONTRACT STAGE
 ${imageOverlayHeroContract(request)}
-Return a precise implementation contract and a rationale under 220 words. The contract must specify the independent page narrative, DOM outline, exact section IDs, class vocabulary, navigation behavior, normalized hero compositionTopology, actual copy/media region relationship, hero geometry, early conversion, shared-form placement (put the single form inside a desktop or mobile utility-panel hero when either assigned topology requires it; otherwise put it in #contact), non-card service treatment, section sequence, typography system, image placement using content.hero image tokens, compact-desktop behavior, mobile recomposition, one justified interaction strategy, reduced-motion behavior, and accessibility. Do not return source files.`;
+Return a precise implementation contract and a rationale under 220 words. The designContract must be at least 200 characters and the designRationale at least 40 characters; both must be complete sentences, not placeholders. The contract must specify the independent page narrative, DOM outline, exact section IDs, class vocabulary, navigation behavior, normalized hero compositionTopology, actual copy/media region relationship, hero geometry, early conversion, shared-form placement (put the single form inside a desktop or mobile utility-panel hero when either assigned topology requires it; otherwise put it in #contact), non-card service treatment, section sequence, typography system, image placement using content.hero image tokens, compact-desktop behavior, mobile recomposition, one justified interaction strategy, reduced-motion behavior, and accessibility. Do not return source files.`;
 
   if (request.stage === "experience")
     return `DESIGN CONTRACT
@@ -372,6 +373,7 @@ SEALED SERVICE PAGE SHAPE
 ${JSON.stringify(creativeServicePageShape(), null, 2)}
 
 SERVICE PAGE RULES
+${SERVICE_PAGE_DIRECT_BINDING_CONTRACT}
 - Import PageBriefSections from @launchloom/runtime and render <PageBriefSections brief={service.brief} /> within the main landmark after decision support and before contact. It emits only supported optional content, preserving the page recipe. Do not hide it or restate its paragraphs. Missing optional fields are omitted, never invented.
 - Render exactly one <h1> bound to service.name and the opening summary bound to service.description.
 - Render the three decision-support blocks bound to service.support.scope, service.support.preparation, and service.support.nextStep.

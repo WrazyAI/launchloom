@@ -22,6 +22,7 @@ import {
   CLIENT_TYPOGRAPHY_CONTRACT,
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
+  SERVICE_PAGE_DIRECT_BINDING_CONTRACT,
   referenceImplementationChecklist,
 } from "../scripts/creative-authoring-output.mjs";
 import { cacheableReferenceDna } from "../scripts/openrouter-client.mjs";
@@ -88,6 +89,7 @@ function authorPromptBuilders() {
       CLIENT_TYPOGRAPHY_CONTRACT,
       EARLY_CONVERSION_OUTPUT_CONTRACT,
       REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
+      SERVICE_PAGE_DIRECT_BINDING_CONTRACT,
     },
     { timeout: 1000 },
   );

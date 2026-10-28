@@ -1,5 +1,5 @@
 export const AUTHORING_STAGE_BUDGETS = Object.freeze({
-  contract: Object.freeze({ maxTokens: 24_000, timeoutMs: 5 * 60_000 }),
+  contract: Object.freeze({ maxTokens: 32_000, timeoutMs: 6 * 60_000 }),
   experience: Object.freeze({ maxTokens: 48_000, timeoutMs: 8 * 60_000 }),
   // Service, location, and services-index pages are authored as additional
   // pages of the same visual system, so they get real composition budgets
@@ -12,6 +12,12 @@ export const AUTHORING_STAGE_BUDGETS = Object.freeze({
 });
 
 export const CREATIVE_REPAIR_MAX_COMPLETION_TOKENS = 48_000;
+
+export const SERVICE_PAGE_DIRECT_BINDING_CONTRACT = [
+  "DIRECT SERVICE SUPPORT BINDINGS",
+  "Render the three decision-support blocks as direct JSX bindings to service.support.scope, service.support.preparation, and service.support.nextStep.",
+  "PageBriefSections renders optional brief sections only and does not satisfy these bindings.",
+].join("\n");
 
 export const EARLY_CONVERSION_OUTPUT_CONTRACT = [
   "EARLY CONVERSION INVARIANT",

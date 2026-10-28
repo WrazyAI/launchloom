@@ -21,6 +21,7 @@ import { createInferenceAuthorAdapter } from "../scripts/author-inference-adapte
 import {
   AUTHORING_STAGE_BUDGETS,
   HERO_MEDIA_FOCUS_CONTRACT,
+  SERVICE_PAGE_DIRECT_BINDING_CONTRACT,
 } from "../scripts/creative-authoring-output.mjs";
 
 const site = {
@@ -107,8 +108,8 @@ const inspirationPack = {
 function safeStage(request: AuthorStageRequest) {
   if (request.stage === "contract") {
     return {
-      designContract: `A complete ${request.route.label} composition using ${request.route.heroGeometry}.`,
-      designRationale: `The route owns ${request.route.navigation}.`,
+      designContract: `A complete ${request.route.label} composition using ${request.route.heroGeometry}. The page opens with one promise group over the assigned media, keeps the primary and secondary actions together, and carries the reference section rhythm through services, FAQs, and contact. The navigation follows ${request.route.navigation} and the mobile recomposition preserves the opening action without horizontal overflow.`,
+      designRationale: `The route owns ${request.route.navigation} and the assigned composition, so the contract preserves that geometry rather than substituting a generic template.`,
     };
   }
   if (request.stage === "experience") {
@@ -2512,6 +2513,50 @@ export default function Experience`,
     expect(repairRequests[0].previousSource).not.toContain(
       "unexpected contract payload",
     );
+  });
+
+  it("requires direct service.support bindings and rejects PageBriefSections as a substitute", () => {
+    expect(SERVICE_PAGE_DIRECT_BINDING_CONTRACT).toContain(
+      "service.support.scope",
+    );
+    expect(SERVICE_PAGE_DIRECT_BINDING_CONTRACT).toContain(
+      "service.support.preparation",
+    );
+    expect(SERVICE_PAGE_DIRECT_BINDING_CONTRACT).toContain(
+      "service.support.nextStep",
+    );
+    expect(SERVICE_PAGE_DIRECT_BINDING_CONTRACT).toContain("does not satisfy");
+    const source = readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+    expect(source).toContain("${SERVICE_PAGE_DIRECT_BINDING_CONTRACT}");
+  });
+
+  it("retries a contract that is too short to be a complete implementation contract", async () => {
+    const repairRequests: AuthorStageRequest[] = [];
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        if (request.route.id === "route-01" && request.stage === "contract") {
+          if (!request.validationError)
+            return {
+              stage: "contract",
+              designContract: "Too short.",
+              designRationale: "Also short.",
+              content: "",
+            };
+          repairRequests.push(request);
+        }
+        return safeStage(request);
+      },
+      model: "openai/gpt-6-luna",
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(repairRequests).toHaveLength(1);
+    expect(repairRequests[0].validationError).toContain("too short");
   });
 
   it("limits concurrent model stages to protect the provider in-flight budget", async () => {
