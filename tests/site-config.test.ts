@@ -380,7 +380,9 @@ describe("site configuration", () => {
     );
     expect(config.pageContentContractVersion).toBe(1);
     const content = config.pageContent["service:emergency dental care"];
-    expect(content.introduction.text).toContain("sudden dental concern");
+    expect(content.introduction.text).toContain(
+      "Northline Dental Studio serves",
+    );
     expect(content.faqs.length).toBeGreaterThanOrEqual(2);
     expect(pageBriefReadiness(config)).toEqual({ allowed: true });
     const brief = config.pageBriefs.briefs.find(
