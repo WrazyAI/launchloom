@@ -321,6 +321,48 @@ describe("trusted attempt ingestion", () => {
     ).toBe(false);
     expect((await ledger().getHealth()).lastSyncAt).toBeNull();
   });
+  it("fails a reconciliation page closed with a precise preview reason", async () => {
+    const batch = {
+      attempts: [
+        {
+          observation: observation({
+            runId: "9095",
+            profile: "creative-only",
+            source: "github-reconcile",
+          }),
+          events: [],
+        },
+        {
+          observation: observation({
+            runId: "9096",
+            profile: "creative-only",
+            source: "github-reconcile",
+            previewUrl: "https://-abc.launchloom-pipeline-preview.pages.dev/",
+          }),
+          events: [],
+        },
+      ],
+      checkpoint: null,
+      health: {
+        lastSyncAt: 9000,
+        coverageStart: 1,
+        partial: false,
+        lastError: null,
+      },
+    };
+    const response = await post(
+      batch,
+      "test-secret",
+      "generation-reconciliation",
+    );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body).toMatchObject({ error: { code: "invalid_input" } });
+    expect(JSON.stringify(body)).toContain("preview_url");
+    const items = (await ledger().listAttempts({})).items;
+    expect(items.some((item) => item.runId === "9095")).toBe(false);
+    expect(items.some((item) => item.runId === "9096")).toBe(false);
+  });
   it("records one canonical execution and github actor, terminal authority and safe detail", async () => {
     expect(
       (

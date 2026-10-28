@@ -292,6 +292,15 @@ export function safeFocusedPreviewUrl(
   }
 }
 
+/** A focused link and thumbnail share the same delivery and host proof. */
+export function focusedDiagnosticPreviewUrl(
+  attempt: Pick<AttemptSummary, "deliveryStatus" | "previewUrl">,
+): string | null {
+  return attempt.deliveryStatus === "diagnostic"
+    ? safeFocusedPreviewUrl(attempt.previewUrl)
+    : null;
+}
+
 /** Focused runs must never fall back to another attempt's issue screenshot. */
 export function generationHeroUrl(
   attempt: Pick<
@@ -307,8 +316,7 @@ export function generationHeroUrl(
   let id: string;
   if (attempt.profile !== "full") {
     if (
-      attempt.deliveryStatus !== "diagnostic" ||
-      !safeFocusedPreviewUrl(attempt.previewUrl) ||
+      !focusedDiagnosticPreviewUrl(attempt) ||
       !attempt.runId ||
       !/^[1-9]\d{0,19}$/u.test(attempt.runId) ||
       !Number.isSafeInteger(attempt.runAttempt) ||

@@ -14,6 +14,7 @@ import {
   formatElapsed,
   formatProfile,
   formatTimestamp,
+  focusedDiagnosticPreviewUrl,
   parseDateEnd,
   parseDateStart,
   previewHref,
@@ -55,6 +56,10 @@ describe("admin view model formatting", () => {
       previewUrl: "https://abc123.launchloom-pipeline-preview.pages.dev/",
     };
     expect(generationHeroUrl(attempt)).toContain("id=github%3A9001%3A2");
+    expect(focusedDiagnosticPreviewUrl(attempt)).toBe(attempt.previewUrl);
+    expect(
+      focusedDiagnosticPreviewUrl({ ...attempt, deliveryStatus: "none" }),
+    ).toBeNull();
     expect(generationHeroUrl({ ...attempt, previewUrl: null })).toBeNull();
     expect(
       generationHeroUrl({ ...attempt, deliveryStatus: "none" }),

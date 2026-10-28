@@ -6,10 +6,13 @@ import {
 } from "../scripts/record-generation-event.mjs";
 import {
   buildPipelineAttemptTracking,
+  createCloudDependencies,
   diagnosticScreenshotPath,
+  diagnosticThumbnailStatus,
   pipelineSitePath,
   uploadDiagnosticScreenshot,
 } from "../scripts/run-pipeline-test.mjs";
+import { isAllowedPreviewHost } from "../src/lib/preview-proxy-contract.mjs";
 import fs from "node:fs/promises";
 import YAML from "yaml";
 
@@ -44,6 +47,112 @@ describe("trusted attempt producer", () => {
         previewUrl,
       }),
     ).toThrow();
+  });
+  it("uses the shared host validator for diagnostic preview labels", () => {
+    const valid = "https://abc123.launchloom-pipeline-preview.pages.dev/";
+    expect(contract.safeDiagnosticPreviewUrl(valid)).toBe(valid);
+    for (const label of ["-abc", "abc-", "a".repeat(64)]) {
+      const host = `${label}.launchloom-pipeline-preview.pages.dev`;
+      expect(isAllowedPreviewHost(host)).toBe(false);
+      expect(contract.safeDiagnosticPreviewUrl(`https://${host}/`)).toBeNull();
+    }
+  });
+  it("reports a precise reason for rejected preview evidence", () => {
+    const cases: Array<[Record<string, unknown>, string]> = [
+      [
+        {
+          previewUrl: "https://-abc.launchloom-pipeline-preview.pages.dev/",
+        },
+        "preview_url",
+      ],
+      [
+        {
+          profile: "unsupported",
+          previewUrl: "https://-abc.launchloom-pipeline-preview.pages.dev/",
+        },
+        "profile",
+      ],
+      [
+        {
+          deliveryStatus: "none",
+          previewUrl: "https://abc123.launchloom-pipeline-preview.pages.dev/",
+        },
+        "preview_delivery",
+      ],
+    ];
+    for (const [change, reason] of cases) {
+      try {
+        contract.buildAttemptObservation({ ...input, ...change });
+        throw new Error("expected rejection");
+      } catch (error) {
+        expect((error as { reason?: string }).reason).toBe(reason);
+      }
+    }
+  });
+  it("wires cloud dependencies to the shared site path without commands", () => {
+    const siteInput = {
+      profile: "creative-only",
+      issue: 185,
+      runId: "9001-2",
+    };
+    const dependencies = createCloudDependencies(siteInput, {
+      work: "/tmp/runner",
+    });
+    expect(dependencies.site).toBe(pipelineSitePath(siteInput, "/tmp/runner"));
+  });
+  it("reports diagnostic thumbnail outcomes without cloud calls", () => {
+    const report = {
+      previewDelivered: true,
+      previewUrl: "https://abc123.launchloom-pipeline-preview.pages.dev/",
+      stages: {
+        select: { status: "passed", candidate: "candidate-b" },
+        technical: { gates: [{ name: "rendered", passed: true }] },
+      },
+    };
+    const observation = {
+      previewUrl: "https://abc123.launchloom-pipeline-preview.pages.dev/",
+    };
+    const base = { report, observation, site: "/tmp/site", secret: "secret" };
+    expect(diagnosticThumbnailStatus(base)).toMatchObject({
+      status: "ready",
+      heroFile: "/tmp/site/.launchloom/screenshots/desktop.png",
+    });
+    expect(
+      diagnosticThumbnailStatus({
+        ...base,
+        report: { ...report, previewDelivered: false },
+      }),
+    ).toEqual({ status: "unavailable", reason: "not_delivered" });
+    expect(
+      diagnosticThumbnailStatus({
+        ...base,
+        report: { ...report, previewUrl: null },
+        observation: { previewUrl: null },
+      }),
+    ).toEqual({ status: "unavailable", reason: "preview_url_missing" });
+    expect(
+      diagnosticThumbnailStatus({
+        ...base,
+        report: { ...report, previewUrl: "https://evil.pages.dev/" },
+        observation: { previewUrl: null },
+      }),
+    ).toEqual({ status: "unavailable", reason: "preview_url_invalid" });
+    expect(diagnosticThumbnailStatus({ ...base, secret: "" })).toEqual({
+      status: "unavailable",
+      reason: "no_tracking_secret",
+    });
+    expect(
+      diagnosticThumbnailStatus({
+        ...base,
+        report: {
+          ...report,
+          stages: {
+            ...report.stages,
+            technical: { gates: [{ name: "rendered", passed: false }] },
+          },
+        },
+      }),
+    ).toEqual({ status: "unavailable", reason: "screenshot_not_verified" });
   });
   it("binds a diagnostic URL to its delivery, never to an undelivered report", () => {
     const report = {

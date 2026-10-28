@@ -1610,6 +1610,27 @@ export function diagnosticScreenshotPath(report, site) {
   return path.join(site, ".launchloom", "screenshots", "desktop.png");
 }
 
+/** Explain why a diagnostic capture can or cannot be uploaded. */
+export function diagnosticThumbnailStatus({
+  report,
+  observation,
+  site,
+  secret,
+}) {
+  if (!report.previewDelivered)
+    return { status: "unavailable", reason: "not_delivered" };
+  if (!observation.previewUrl)
+    return {
+      status: "unavailable",
+      reason: report.previewUrl ? "preview_url_invalid" : "preview_url_missing",
+    };
+  if (!secret) return { status: "unavailable", reason: "no_tracking_secret" };
+  const heroFile = diagnosticScreenshotPath(report, site);
+  if (!heroFile)
+    return { status: "unavailable", reason: "screenshot_not_verified" };
+  return { status: "ready", heroFile };
+}
+
 /** Store one verified capture under the run/attempt key. No fallback or backfill. */
 export async function uploadDiagnosticScreenshot({
   report,
@@ -1619,14 +1640,18 @@ export async function uploadDiagnosticScreenshot({
   secret,
   upload = uploadGenerationHero,
 }) {
-  if (!observation.previewUrl || !secret) return false;
-  const heroFile = diagnosticScreenshotPath(report, site);
-  if (!heroFile) return false;
+  const outcome = diagnosticThumbnailStatus({
+    report,
+    observation,
+    site,
+    secret,
+  });
+  if (outcome.status !== "ready") return false;
   await upload({
     api,
     secret,
     generationId: `github:${observation.runId}:${observation.runAttempt}`,
-    heroFile,
+    heroFile: outcome.heroFile,
   });
   return true;
 }
@@ -1653,26 +1678,29 @@ if (
       input.issue,
     );
     await postAttemptTracking(tracking);
-    if (tracking.observation.previewUrl) {
-      if (!process.env.GENERATION_TRACKING_SECRET) {
-        console.warn(
-          "diagnostic_thumbnail=unavailable reason=no_tracking_secret",
-        );
-      } else {
-        const uploaded = await uploadDiagnosticScreenshot({
-          report,
-          observation: tracking.observation,
-          site: dependencies.site,
-          api: (
-            process.env.LAUNCHLOOM_API_URL ||
-            "https://api.launchloom.wrazyos.com"
-          ).replace(/\/$/u, ""),
-          secret: process.env.GENERATION_TRACKING_SECRET,
-        }).catch(() => false);
-        console.log(
-          `diagnostic_thumbnail=${uploaded ? "uploaded" : "unavailable"}`,
-        );
-      }
+    const thumbnail = diagnosticThumbnailStatus({
+      report,
+      observation: tracking.observation,
+      site: dependencies.site,
+      secret: process.env.GENERATION_TRACKING_SECRET,
+    });
+    if (thumbnail.status === "ready") {
+      const uploaded = await uploadDiagnosticScreenshot({
+        report,
+        observation: tracking.observation,
+        site: dependencies.site,
+        api: (
+          process.env.LAUNCHLOOM_API_URL || "https://api.launchloom.wrazyos.com"
+        ).replace(/\/$/u, ""),
+        secret: process.env.GENERATION_TRACKING_SECRET,
+      }).catch(() => false);
+      console.log(
+        `diagnostic_thumbnail=${uploaded ? "uploaded" : "unavailable reason=upload_failed"}`,
+      );
+    } else if (thumbnail.reason !== "not_delivered") {
+      console.warn(
+        `diagnostic_thumbnail=unavailable reason=${thumbnail.reason}`,
+      );
     }
   } catch {
     console.warn("attempt_tracking=skipped reason=unavailable");

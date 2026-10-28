@@ -13,13 +13,13 @@ import {
   StatusBadge,
 } from "./StatusBadge";
 import {
+  focusedDiagnosticPreviewUrl,
   formatCost,
   formatElapsed,
   formatProfile,
   formatTimestamp,
   previewHref,
   safeEvidenceUrl,
-  safeFocusedPreviewUrl,
   safeSiteUrl,
 } from "./format";
 
@@ -223,7 +223,7 @@ export function AttemptInspector({
   const [open, setOpen] = useState(false);
   const focused = attempt && attempt.profile !== "full";
   const previewUrl = focused
-    ? safeFocusedPreviewUrl(attempt.previewUrl)
+    ? focusedDiagnosticPreviewUrl(attempt)
     : safeSiteUrl(client?.previewUrl);
   const productionUrl = focused ? null : safeSiteUrl(client?.productionUrl);
   const siteUrl = previewUrl || productionUrl;

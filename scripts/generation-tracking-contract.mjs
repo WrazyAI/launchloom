@@ -1,5 +1,5 @@
 // Pure wire boundary shared by trusted Node producers and Worker ingestion.
-import { DEFAULT_PREVIEW_HOST_SUFFIX } from "../src/lib/preview-proxy-contract.mjs";
+import { isAllowedPreviewHost } from "../src/lib/preview-proxy-contract.mjs";
 
 export const TRACKING_REPOSITORY = "WrazyAI/launchloom";
 export const GENERATION_PROFILES = [
@@ -25,8 +25,10 @@ const deliveries = [
   "published",
 ];
 const sources = ["callback", "github-reconcile", "legacy-import"];
-const fail = () => {
-  throw new Error("invalid tracking evidence");
+const fail = (reason = "invalid") => {
+  const error = new Error(`invalid tracking evidence: ${reason}`);
+  error.reason = reason;
+  throw error;
 };
 const record = (v) => v && typeof v === "object" && !Array.isArray(v);
 export function strictKeys(value, keys) {
@@ -83,10 +85,6 @@ export function safeDiagnosticPreviewUrl(value) {
   if (typeof value !== "string") return null;
   try {
     const url = new URL(value);
-    const suffix = `.${DEFAULT_PREVIEW_HOST_SUFFIX}`;
-    const label = url.hostname.endsWith(suffix)
-      ? url.hostname.slice(0, -suffix.length)
-      : "";
     if (
       url.protocol !== "https:" ||
       url.username ||
@@ -95,7 +93,7 @@ export function safeDiagnosticPreviewUrl(value) {
       url.pathname !== "/" ||
       url.search ||
       url.hash ||
-      !/^[a-z0-9-]+$/u.test(label)
+      !isAllowedPreviewHost(url.hostname)
     )
       return null;
     return url.href;
@@ -131,23 +129,20 @@ export function buildAttemptObservation(input) {
     input.runAttempt < 1 ||
     input.runAttempt > 1000
   )
-    fail();
+    fail("identity");
+  if (!GENERATION_PROFILES.includes(input.profile)) fail("profile");
+  if (!executions.includes(input.executionStatus)) fail("execution_status");
+  if (!deliveries.includes(input.deliveryStatus)) fail("delivery_status");
   let previewUrl = null;
   if (input.previewUrl != null) {
-    previewUrl = safeDiagnosticPreviewUrl(input.previewUrl);
     if (
-      !previewUrl ||
       input.deliveryStatus !== "diagnostic" ||
       !["creative-only", "seo-only", "full-preview"].includes(input.profile)
     )
-      fail();
+      fail("preview_delivery");
+    previewUrl = safeDiagnosticPreviewUrl(input.previewUrl);
+    if (!previewUrl) fail("preview_url");
   }
-  if (
-    !GENERATION_PROFILES.includes(input.profile) ||
-    !executions.includes(input.executionStatus) ||
-    !deliveries.includes(input.deliveryStatus)
-  )
-    fail();
   const source = input.source ?? "callback";
   if (!sources.includes(source)) fail();
   const actor = input.triggeringActor ?? null;
