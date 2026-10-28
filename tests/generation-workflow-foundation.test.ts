@@ -230,6 +230,9 @@ describe("generation workflow pack renderer", () => {
     expect(step("Post handoff links").run).toContain(
       "Diagnostic developer preview (noindex)",
     );
+    expect(step("Mark intake handoff complete").if).toBe(
+      "${{ steps.deploy.outputs.diagnostic != 'true' }}",
+    );
   });
 
   it("records pack render failures with the pack stage", () => {
