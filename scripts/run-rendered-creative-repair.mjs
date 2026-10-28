@@ -875,6 +875,10 @@ export function findingsRequirePaletteChange(findings) {
     const text = repairFindingText(finding);
     if (/already at their thresholds must not regress/iu.test(text))
       return false;
+    // Removing the failing hero card's fill is the requested structural
+    // change, not an unprompted repaint.
+    if (/large bordered card|bordered hero card|hero copy is a large/iu.test(text))
+      return true;
     return /dimension paletteAdherence scored|palette-adherence/iu.test(text);
   });
 }

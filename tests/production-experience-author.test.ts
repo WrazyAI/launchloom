@@ -3395,11 +3395,12 @@ export default function Experience`,
     );
     expect(workflow).toContain("--failure-mode throw");
     expect(workflow).not.toContain("--failure-mode record");
+    // Foundation, pack, and creative previews each run the rendered verifier.
     expect(
       workflow.match(
         /PUBLIC_REVIEW_MODE=true node "\$GITHUB_WORKSPACE\/scripts\/verify-rendered-revision\.mjs"/g,
       ),
-    ).toHaveLength(2);
+    ).toHaveLength(3);
   });
 
   it("emits route-specific content manifests with independently reproducible digests", async () => {

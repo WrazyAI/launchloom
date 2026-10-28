@@ -138,6 +138,25 @@ complete a parent with unfinished work. The tool posts completion and reads
 for additional readback when needed. Leave blocked work open with a concise
 description using `describe`.
 
+### Consolidating duplicate tasks
+
+When asked to clean up the ledger, resolve the exact task ids first and group
+them by outcome. Keep one clearly named canonical task per outcome and preserve
+unrelated work even if it was created on the same day.
+
+- Page through `list --include-completed --limit 100` and deduplicate by task id.
+- Archive redundant tasks rather than deleting them, so the audit trail stays
+  recoverable.
+- Fold useful detail from the duplicates into the canonical task before
+  archiving them.
+- Mark a canonical task complete only when the represented outcome is done;
+  leave genuine follow-up open.
+- Treat exact-title duplicates from parallel agent threads as duplicates too,
+  including the cleanup task itself.
+
+Read back every canonical task and a sample of the archived ones, and state how
+many were retained, archived, completed, and left open.
+
 ### EOD reports
 
 **EOD Report** is a project, not a task. Confirm read access before drafting or

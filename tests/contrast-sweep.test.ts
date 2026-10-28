@@ -386,7 +386,7 @@ describe("persisted bounded contrast sweep", () => {
       mixed.every((r: any) => r.stateScope === ":focus-visible"),
     ).toBe(true);
     const mixedCss = module.contrastRepairCss(mixed);
-    expect(mixedCss).toContain(":focus-visible{");
+    expect(mixedCss).toContain(":focus-visible");
     expect(mixedCss).not.toContain("background-color:");
     // The default-state repair still refuses when another state of the same
     // selector paints a different color: a static rule would clobber it.
@@ -450,6 +450,135 @@ describe("persisted bounded contrast sweep", () => {
     expect(css).toContain(":focus-visible{outline:2px solid #");
     expect(css).toContain("outline-offset:-2px!important");
   });
+  it("repairs a failing focus-state text color as text, not as an indicator", async () => {
+    const module = await modulePromise;
+    const target = {
+      selector:
+        "body > main:nth-of-type(1) > section:nth-of-type(4) > a:nth-of-type(2) > span:nth-of-type(2)",
+      kind: "text",
+      state: "focus",
+      status: "fail",
+      repairEligible: false,
+      color: "#6b716d",
+      background: "#ece7dc",
+      foreground: [107, 113, 109, 1],
+      backgrounds: [[236, 231, 220, 1]],
+      minimum: 4.5,
+      paintProperty: "color",
+      issues: [],
+      text: "For brewing at home, choose whole-bean coffee.",
+    };
+    const pages = [
+      {
+        route: "/services/wholesale-coffee/",
+        viewport: module.CONTRAST_VIEWPORTS[2],
+        repairScopeVerified: true,
+        mediaConditions: null,
+        targets: [target],
+        findings: [target],
+      },
+    ];
+    const repairs = module.planContrastRepairs({ pages });
+    expect(repairs).toHaveLength(1);
+    expect(repairs[0].kind).toBe("foreground");
+    expect(repairs[0].paintProperty).toBe("color");
+    const css = module.contrastRepairCss(repairs);
+    expect(css).toContain(":focus-visible");
+    expect(css).toContain("color:var(--ll-creative-auto-text)!important");
+    expect(css).not.toContain("outline:2px solid");
+    // The span inherits the focused anchor's state; a pseudo-class on the
+    // span itself would never match while the anchor holds focus.
+    expect(css).toContain("a:nth-of-type(2):focus-visible > span:nth-of-type(2)");
+    expect(css).not.toContain("span:nth-of-type(2):focus-visible{");
+  });
+  it("scopes a text repair to a non-native focused parent", async () => {
+    const module = await modulePromise;
+    const target = {
+      selector:
+        "body > main:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+      kind: "text",
+      state: "focus",
+      status: "fail",
+      color: "#6b716d",
+      background: "#ece7dc",
+      foreground: [107, 113, 109, 1],
+      backgrounds: [[236, 231, 220, 1]],
+      minimum: 4.5,
+      paintProperty: "color",
+      issues: [],
+      text: "Open the menu",
+    };
+    const pages = [
+      {
+        route: "/",
+        viewport: module.CONTRAST_VIEWPORTS[0],
+        repairScopeVerified: true,
+        mediaConditions: null,
+        targets: [target],
+        findings: [target],
+      },
+    ];
+    const css = module.contrastRepairCss(
+      module.planContrastRepairs({ pages }),
+    );
+    expect(css).toContain(
+      "div:nth-of-type(1):focus-visible > span:nth-of-type(1)",
+    );
+    expect(css).not.toContain("span:nth-of-type(1):focus-visible{");
+  });
+
+  it("keeps a text repair and an outline repair on the same selector", async () => {
+    const module = await modulePromise;
+    const selector =
+      "body > main:nth-of-type(1) > button:nth-of-type(1)";
+    const text = {
+      selector,
+      kind: "text",
+      state: "focus",
+      status: "fail",
+      color: "#6b716d",
+      background: "#ece7dc",
+      foreground: [107, 113, 109, 1],
+      backgrounds: [[236, 231, 220, 1]],
+      minimum: 4.5,
+      paintProperty: "color",
+      issues: [],
+      text: "Request a visit",
+    };
+    const outline = {
+      selector,
+      kind: "focus",
+      state: "focus",
+      status: "fail",
+      color: "#ffffff",
+      background: "#ece7dc",
+      foreground: [255, 255, 255, 1],
+      backgrounds: [[236, 231, 220, 1]],
+      minimum: 3,
+      paintProperty: "outline-color",
+      issues: [],
+      text: "Request a visit",
+    };
+    const pages = [
+      {
+        route: "/",
+        viewport: module.CONTRAST_VIEWPORTS[0],
+        repairScopeVerified: true,
+        mediaConditions: null,
+        targets: [text, outline],
+        findings: [text, outline],
+      },
+    ];
+    const repairs = module.planContrastRepairs({ pages });
+    expect(repairs.map((repair: any) => repair.kind).sort()).toEqual([
+      "foreground",
+      "indicator",
+    ]);
+    const css = module.contrastRepairCss(repairs);
+    expect(css).toContain("color:var(--ll-creative-auto-text)");
+    expect(css).toContain("outline:2px solid");
+  });
+
   it("scopes an audit to an explicit route allowlist", async () => {
     const module = await modulePromise;
     const root = await mkdtemp(path.join(os.tmpdir(), "ll-contrast-scope-"));

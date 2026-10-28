@@ -2381,6 +2381,14 @@
   white-space: nowrap;
 }
 
+/* The UA focus ring is near-black, which disappears on the dark request band
+   and footer. Paint an explicit light ring for keyboard focus. */
+.xp-results__request a:focus-visible,
+.xp-results__footer a:focus-visible {
+  outline: 2px solid #f7f6f3;
+  outline-offset: 3px;
+}
+
 .xp-results__services,
 .xp-results__process,
 .xp-results__about,
