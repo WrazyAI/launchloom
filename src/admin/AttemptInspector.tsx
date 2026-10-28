@@ -378,7 +378,8 @@ export function AttemptInspector({
                 <p className="admin-inspector__summary">
                   No preview delivery is recorded for this attempt. The latest
                   successful generation for issue {relatedPreview.issueNumber}{" "}
-                  was attempt {relatedPreview.attemptId}
+                  was{" "}
+                  <span className="admin-mono">{relatedPreview.attemptId}</span>
                   {relatedPreview.runId
                     ? ` (run ${relatedPreview.runId}${
                         relatedPreview.runAttempt
