@@ -286,3 +286,26 @@ Astro checks, and a production build. Inspect rendered desktop and mobile
 output for the requested sections, contextual imagery, readable contrast,
 working calls/forms, layout overflow, and em dashes. A successful workflow or
 HTML marker alone does not prove the visual result is acceptable.
+
+Run the release gates locally before dispatching a generation:
+
+```bash
+npm run verify:local-release -- --config <site.config.json> --build
+```
+
+This builds the client template with review mode and a synthetic lead origin,
+then runs the rendered verifier and the SEO release gate. See
+`docs/local-release-check.md`.
+
+## Convergence freeze
+
+Until the core generation path has five consecutive green runs across the
+creative, foundation, and pack renderers, do not add new renderers, intake
+fields, admin surfaces, or client-facing artifacts. Loop-shortening fixes and
+gate repairs are allowed. Record the current success rate from
+`npm run report:generation-success` when starting and finishing a task in this
+period.
+
+A green run means the workflow completes with `preview_ready`, not a diagnostic
+or attention delivery. A diagnostic preview counts as a gate failure for the
+freeze even though it is useful for review.
