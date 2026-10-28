@@ -77,6 +77,28 @@ const ref = (v) => {
     fail();
   return v;
 };
+export function safeDiagnosticPreviewUrl(value) {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.port ||
+      url.pathname !== "/" ||
+      url.search ||
+      url.hash ||
+      !/^[a-z0-9-]+\.launchloom-pipeline-preview\.pages\.dev$/u.test(
+        url.hostname,
+      )
+    )
+      return null;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
 export function buildAttemptObservation(input) {
   strictKeys(input, [
     "repository",
@@ -89,6 +111,7 @@ export function buildAttemptObservation(input) {
     "triggeringActor",
     "executionStatus",
     "deliveryStatus",
+    "previewUrl",
     "observedAt",
     "source",
     "failure",
@@ -105,6 +128,16 @@ export function buildAttemptObservation(input) {
     input.runAttempt > 1000
   )
     fail();
+  let previewUrl = null;
+  if (input.previewUrl != null) {
+    previewUrl = safeDiagnosticPreviewUrl(input.previewUrl);
+    if (
+      !previewUrl ||
+      input.deliveryStatus !== "diagnostic" ||
+      !["creative-only", "seo-only", "full-preview"].includes(input.profile)
+    )
+      fail();
+  }
   if (
     !GENERATION_PROFILES.includes(input.profile) ||
     !executions.includes(input.executionStatus) ||
@@ -141,6 +174,7 @@ export function buildAttemptObservation(input) {
     triggeringActor: actor,
     executionStatus: input.executionStatus,
     deliveryStatus: input.deliveryStatus,
+    previewUrl,
     observedAt: time(input.observedAt),
     source,
     createdAt: time(input.createdAt, true),

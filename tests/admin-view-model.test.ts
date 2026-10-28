@@ -19,6 +19,7 @@ import {
   previewHref,
   safeEvidenceUrl,
   safeSiteUrl,
+  generationHeroUrl,
 } from "../src/admin/format";
 import { readRouteState, writeRouteState } from "../src/admin/route-state";
 import {
@@ -43,6 +44,16 @@ afterEach(() => {
 });
 
 describe("admin view model formatting", () => {
+  it("uses only the exact GitHub attempt image for focused runs", () => {
+    const attempt = {
+      issueNumber: 185,
+      profile: "creative-only" as const,
+      runId: "9001",
+      runAttempt: 2,
+    };
+    expect(generationHeroUrl(attempt)).toContain("id=github%3A9001%3A2");
+    expect(generationHeroUrl({ ...attempt, runId: null })).toBeNull();
+  });
   it("does not manufacture an actor name or a zero price", () => {
     expect(formatActor(unknownActor).label).toBe("Not recorded");
     expect(

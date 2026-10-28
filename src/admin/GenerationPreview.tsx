@@ -1,22 +1,21 @@
 import { useEffect, useState } from "react";
 import type { AttemptSummary } from "../lib/admin-contracts";
-
-/** The authenticated full-page screenshot stored by the generation ledger. */
-export function generationHeroUrl(
-  attempt: Pick<AttemptSummary, "issueNumber">,
-): string | null {
-  if (!attempt.issueNumber) return null;
-  return `/api/admin/onboarding-invites/generation-hero?id=${encodeURIComponent(
-    `issue:${attempt.issueNumber}`,
-  )}`;
-}
+import { generationHeroUrl } from "./format";
 
 export function GenerationPreview({
   attempt,
   large = false,
   className = "",
 }: {
-  attempt: Pick<AttemptSummary, "issueNumber" | "clientName" | "clientId">;
+  attempt: Pick<
+    AttemptSummary,
+    | "issueNumber"
+    | "clientName"
+    | "clientId"
+    | "profile"
+    | "runId"
+    | "runAttempt"
+  >;
   large?: boolean;
   className?: string;
 }) {

@@ -36,6 +36,54 @@ const post = (
 const ledger = () =>
   bindings.GENERATION_LEDGER.getByName("launchloom-generations");
 describe("trusted attempt ingestion", () => {
+  it("preserves a diagnostic URL on the exact run attempt after reconciliation", async () => {
+    const previewUrl = "https://abc123.launchloom-pipeline-preview.pages.dev/";
+    expect(
+      (
+        await post({
+          observation: observation({
+            runId: "9099",
+            profile: "creative-only",
+            previewUrl,
+          }),
+          events: [],
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await post({
+          observation: observation({
+            runId: "9099",
+            profile: "creative-only",
+            source: "github-reconcile",
+            observedAt: 2000,
+          }),
+          events: [],
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await post({
+          observation: observation({
+            runId: "9099",
+            runAttempt: 2,
+            profile: "creative-only",
+            deliveryStatus: "none",
+          }),
+          events: [],
+        })
+      ).status,
+    ).toBe(200);
+    const items = (await ledger().listAttempts({})).items.filter(
+      (a) => a.runId === "9099",
+    );
+    expect(items.find((a) => a.runAttempt === 1)?.previewUrl).toBe(previewUrl);
+    expect(
+      items.find((a) => a.runAttempt === 2)?.previewUrl ?? null,
+    ).toBeNull();
+  });
   it("redacts prefixed structured credentials before persistence", async () => {
     const detail = {
       OPENROUTER_API_KEY: "synthetic-persist-value",

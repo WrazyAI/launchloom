@@ -5,9 +5,13 @@ import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   buildAttemptObservation,
+  safeDiagnosticPreviewUrl,
   buildAttemptEvents,
 } from "./generation-tracking-contract.mjs";
-import { postAttemptTracking } from "./record-generation-event.mjs";
+import {
+  postAttemptTracking,
+  uploadGenerationHero,
+} from "./record-generation-event.mjs";
 import {
   parsePipelineTestArgs,
   resolvePipelineTestPolicy,
@@ -1563,6 +1567,9 @@ export function buildPipelineAttemptTracking(
     triggeringActor: environment.GITHUB_TRIGGERING_ACTOR || null,
     executionStatus: failed ? "failed" : "succeeded",
     deliveryStatus: report.previewDelivered ? "diagnostic" : "none",
+    previewUrl: report.previewDelivered
+      ? safeDiagnosticPreviewUrl(report.previewUrl)
+      : null,
     observedAt: Date.parse(report.finishedAt),
     startedAt: Date.parse(report.startedAt),
     completedAt: Date.parse(report.finishedAt),
@@ -1581,6 +1588,42 @@ export function buildPipelineAttemptTracking(
   };
 }
 
+/** A capture is usable only when the selected build passed rendered verification. */
+export function diagnosticScreenshotPath(report, site) {
+  const select = report.stages?.select;
+  const technical = report.stages?.technical;
+  if (
+    !report.previewDelivered ||
+    select?.status !== "passed" ||
+    !/^candidate-[abc]$/u.test(select.candidate || "") ||
+    !technical?.gates?.some(
+      (gate) => gate.name === "rendered" && gate.passed === true,
+    )
+  )
+    return null;
+  return path.join(site, ".launchloom", "screenshots", "desktop.png");
+}
+
+export async function uploadDiagnosticScreenshot({
+  report,
+  observation,
+  site,
+  api,
+  secret,
+  upload = uploadGenerationHero,
+}) {
+  if (!observation.previewUrl || !secret) return false;
+  const heroFile = diagnosticScreenshotPath(report, site);
+  if (!heroFile) return false;
+  await upload({
+    api,
+    secret,
+    generationId: `github:${observation.runId}:${observation.runAttempt}`,
+    heroFile,
+  });
+  return true;
+}
+
 if (
   process.argv[1] &&
   fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
@@ -1596,9 +1639,41 @@ if (
   validatePipelineTestInput(input);
   const report = await runPipelineTest(input, createCloudDependencies(input));
   try {
-    await postAttemptTracking(
-      buildPipelineAttemptTracking(report, process.env, input.issue),
+    const tracking = buildPipelineAttemptTracking(
+      report,
+      process.env,
+      input.issue,
     );
+    await postAttemptTracking(tracking);
+    if (
+      tracking.observation.previewUrl &&
+      process.env.GENERATION_TRACKING_SECRET
+    ) {
+      const profileSlug =
+        input.profile === "seo-only"
+          ? "seo"
+          : input.profile === "creative-only"
+            ? "creative"
+            : "full";
+      const site = path.join(
+        process.env.RUNNER_TEMP,
+        `llqa-${input.issue}-${profileSlug}-${input.runId}`,
+      );
+      try {
+        await uploadDiagnosticScreenshot({
+          report,
+          observation: tracking.observation,
+          site,
+          api: (
+            process.env.LAUNCHLOOM_API_URL ||
+            "https://api.launchloom.wrazyos.com"
+          ).replace(/\/$/u, ""),
+          secret: process.env.GENERATION_TRACKING_SECRET,
+        });
+      } catch {
+        console.warn("diagnostic_thumbnail=unavailable");
+      }
+    }
   } catch {
     console.warn("attempt_tracking=skipped reason=unavailable");
   }

@@ -5,6 +5,10 @@ import {
   buildGenerationTrackingPayload,
 } from "../scripts/record-generation-event.mjs";
 import { buildPipelineAttemptTracking } from "../scripts/run-pipeline-test.mjs";
+import {
+  diagnosticScreenshotPath,
+  uploadDiagnosticScreenshot,
+} from "../scripts/run-pipeline-test.mjs";
 import fs from "node:fs/promises";
 import YAML from "yaml";
 
@@ -19,6 +23,157 @@ const input = {
   observedAt: 1000,
 };
 describe("trusted attempt producer", () => {
+  it("only accepts a token-free private diagnostic URL for diagnostic delivery", () => {
+    const previewUrl = "https://abc123.launchloom-pipeline-preview.pages.dev/";
+    expect(
+      contract.buildAttemptObservation({ ...input, previewUrl }).previewUrl,
+    ).toBe(previewUrl);
+    for (const invalid of [
+      "https://evil.pages.dev/",
+      `${previewUrl}?review=secret`,
+      "http://abc123.launchloom-pipeline-preview.pages.dev/",
+    ])
+      expect(() =>
+        contract.buildAttemptObservation({ ...input, previewUrl: invalid }),
+      ).toThrow();
+    expect(() =>
+      contract.buildAttemptObservation({
+        ...input,
+        deliveryStatus: "none",
+        previewUrl,
+      }),
+    ).toThrow();
+  });
+  it("binds a diagnostic URL to its delivery, never to an undelivered report", () => {
+    const report = {
+      profile: "creative-only",
+      verdict: "failed",
+      previewDelivered: true,
+      previewUrl: "https://abc123.launchloom-pipeline-preview.pages.dev/",
+      startedAt: "2026-10-01T00:00:00Z",
+      finishedAt: "2026-10-01T00:01:00Z",
+      stages: {},
+      costs: null,
+    };
+    const env = {
+      GITHUB_RUN_ID: "9001",
+      GITHUB_RUN_ATTEMPT: "2",
+      GITHUB_REPOSITORY: "WrazyAI/launchloom",
+    };
+    expect(
+      buildPipelineAttemptTracking(report, env, 5).observation.previewUrl,
+    ).toBe(report.previewUrl);
+    expect(
+      buildPipelineAttemptTracking(
+        { ...report, previewDelivered: false },
+        env,
+        5,
+      ).observation.previewUrl,
+    ).toBeNull();
+    const unsupported = buildPipelineAttemptTracking(
+      { ...report, previewUrl: "https://untrusted.pages.dev/" },
+      env,
+      5,
+    ).observation;
+    expect(unsupported.previewUrl).toBeNull();
+    expect(unsupported.executionStatus).toBe("failed");
+    expect(unsupported.deliveryStatus).toBe("diagnostic");
+  });
+  it("only selects the rendered desktop capture after selected build and successful rendered gate", () => {
+    const report = {
+      previewDelivered: true,
+      stages: {
+        select: { status: "passed", candidate: "candidate-b" },
+        technical: {
+          status: "failed",
+          gates: [
+            { name: "rendered", passed: true },
+            { name: "contrast", passed: false },
+          ],
+        },
+      },
+    };
+    expect(diagnosticScreenshotPath(report, "/tmp/site")).toBe(
+      "/tmp/site/.launchloom/screenshots/desktop.png",
+    );
+    expect(
+      diagnosticScreenshotPath(
+        { ...report, previewDelivered: false },
+        "/tmp/site",
+      ),
+    ).toBeNull();
+    expect(
+      diagnosticScreenshotPath(
+        {
+          ...report,
+          stages: {
+            ...report.stages,
+            technical: {
+              status: "failed",
+              gates: [{ name: "rendered", passed: false }],
+            },
+          },
+        },
+        "/tmp/site",
+      ),
+    ).toBeNull();
+    expect(
+      diagnosticScreenshotPath(
+        {
+          ...report,
+          stages: { ...report.stages, select: { status: "failed" } },
+        },
+        "/tmp/site",
+      ),
+    ).toBeNull();
+  });
+  it("uploads a verified capture under the exact run and attempt key", async () => {
+    const uploads: any[] = [];
+    const report = {
+      previewDelivered: true,
+      stages: {
+        select: { status: "passed", candidate: "candidate-b" },
+        technical: { gates: [{ name: "rendered", passed: true }] },
+      },
+    };
+    const observation = {
+      previewUrl: "https://abc123.launchloom-pipeline-preview.pages.dev/",
+      runId: "9001",
+      runAttempt: 2,
+    };
+    const upload = async (v: any) => {
+      uploads.push(v);
+      return {
+        bytes: 1,
+        width: 1280 as const,
+        quality: 72 as const,
+        attempts: [],
+      };
+    };
+    await uploadDiagnosticScreenshot({
+      report,
+      observation,
+      site: "/tmp/site",
+      api: "https://api.example.test",
+      secret: "secret",
+      upload,
+    });
+    expect(uploads).toMatchObject([
+      {
+        generationId: "github:9001:2",
+        heroFile: "/tmp/site/.launchloom/screenshots/desktop.png",
+      },
+    ]);
+    await uploadDiagnosticScreenshot({
+      report: { ...report, previewDelivered: false },
+      observation,
+      site: "/tmp/site",
+      api: "https://api.example.test",
+      secret: "secret",
+      upload,
+    });
+    expect(uploads).toHaveLength(1);
+  });
   it("redacts prefixed quoted credential keys and entire escaped JSON values in object and serialized details", () => {
     const detail = {
       OPENROUTER_API_KEY: "synthetic-sensitive-value",

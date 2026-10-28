@@ -55,11 +55,11 @@ function trimmed(value: string | null | undefined) {
  * Render only the recorded actor snapshot. A stable ID alone is not a name and
  * an absent name/email is reported as unknown rather than inferred.
  */
-export function formatActor(
-  actor: ActorSnapshot | null | undefined,
-): { label: string; sourceLabel: string } {
-  if (!actor)
-    return { label: "Not recorded", sourceLabel: "Unknown source" };
+export function formatActor(actor: ActorSnapshot | null | undefined): {
+  label: string;
+  sourceLabel: string;
+} {
+  if (!actor) return { label: "Not recorded", sourceLabel: "Unknown source" };
   const recorded = trimmed(actor.name) || trimmed(actor.email);
   const category =
     actor.kind === "system"
@@ -215,7 +215,10 @@ export function formatClientName(
   return record ? `Client ${record}` : "Client record";
 }
 
-function safeHttpUrl(value: string | null | undefined, hostAllowed: (host: string) => boolean) {
+function safeHttpUrl(
+  value: string | null | undefined,
+  hostAllowed: (host: string) => boolean,
+) {
   const raw = trimmed(value);
   if (!raw) return null;
   try {
@@ -230,7 +233,9 @@ function safeHttpUrl(value: string | null | undefined, hostAllowed: (host: strin
 }
 
 /** Approved GitHub evidence routes only, with no query token. */
-export function safeEvidenceUrl(value: string | null | undefined): string | null {
+export function safeEvidenceUrl(
+  value: string | null | undefined,
+): string | null {
   const raw = trimmed(value);
   if (
     !/^https:\/\/github\.com\/WrazyAI\/launchloom\/(?:actions\/runs\/\d+(?:\/attempts\/\d+)?|issues\/\d+|pull\/\d+)\/?$/u.test(
@@ -270,6 +275,32 @@ export function previewHref(value: string | null | undefined): string | null {
   }
 }
 
+/** Focused runs must never fall back to another attempt's issue screenshot. */
+export function generationHeroUrl(
+  attempt: Pick<
+    AttemptSummary,
+    "issueNumber" | "profile" | "runId" | "runAttempt"
+  >,
+): string | null {
+  let id: string;
+  if (attempt.profile !== "full") {
+    if (
+      !attempt.runId ||
+      !/^[1-9]\d{0,19}$/u.test(attempt.runId) ||
+      !Number.isSafeInteger(attempt.runAttempt) ||
+      !attempt.runAttempt ||
+      attempt.runAttempt < 1 ||
+      attempt.runAttempt > 1000
+    )
+      return null;
+    id = `github:${attempt.runId}:${attempt.runAttempt}`;
+  } else {
+    if (!attempt.issueNumber) return null;
+    id = `issue:${attempt.issueNumber}`;
+  }
+  return `/api/admin/onboarding-invites/generation-hero?id=${encodeURIComponent(id)}`;
+}
+
 export function isSafeEvidenceUrl(value: string | null | undefined) {
   return safeEvidenceUrl(value) !== null;
 }
@@ -279,8 +310,8 @@ export function clientHasKnownIdentity(
 ) {
   return Boolean(
     trimmed(client.businessName) ||
-      trimmed(client.contactName) ||
-      trimmed(client.email),
+    trimmed(client.contactName) ||
+    trimmed(client.email),
   );
 }
 
