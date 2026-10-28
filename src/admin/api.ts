@@ -7,6 +7,12 @@ import type {
   ClientFilters,
   ClientRecord,
   Health,
+  LegacyAttemptPage,
+  OperationDetail,
+  OperationEvent,
+  OperationFilters,
+  OperationPage,
+  OperationRecord,
   Page,
 } from "../lib/admin-contracts";
 
@@ -353,6 +359,28 @@ export type AdminApi = {
   ): Promise<ClientPage>;
   getClient(id: string, options?: AdminRequestOptions): Promise<ClientRecord>;
   getHealth(options?: AdminRequestOptions): Promise<Health>;
+  listOperations(
+    filters?: OperationFilters,
+    options?: AdminRequestOptions,
+  ): Promise<OperationPage>;
+  getOperation(
+    attemptId: string,
+    options?: AdminRequestOptions,
+  ): Promise<OperationDetail>;
+  listLegacyAttempts(
+    filters?: AttemptFilters,
+    options?: AdminRequestOptions,
+  ): Promise<LegacyAttemptPage>;
+  getLegacyAttempt(
+    id: string,
+    options?: AdminRequestOptions,
+  ): Promise<AttemptDetail>;
+  getLegacyAttemptEvents(
+    id: string,
+    cursor?: string | null,
+    limit?: number,
+    signal?: AbortSignal,
+  ): Promise<Page<AttemptEventRecord>>;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -402,6 +430,159 @@ function isClientEnvelope(value: unknown): value is { client: ClientRecord } {
 
 function isClientPage(value: unknown): value is ClientPage {
   return isPageShape(value) && isHealth((value as { health?: unknown }).health);
+}
+
+const OPERATION_UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+const OPERATION_STATUSES = new Set([
+  "waiting_to_start",
+  "running",
+  "attention",
+  "failed",
+  "cancelled",
+  "preview_ready",
+]);
+const OPERATION_COST_KINDS = new Set(["actual", "estimated", "unreported"]);
+
+function isEpoch(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= 0 &&
+    value <= 8_640_000_000_000_000
+  );
+}
+
+function isNullableEpoch(value: unknown): value is number | null {
+  return value === null || isEpoch(value);
+}
+
+function isOperationCost(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    (value.currency === null || typeof value.currency === "string") &&
+    (value.actual === null || typeof value.actual === "string") &&
+    (value.estimated === null || typeof value.estimated === "string") &&
+    typeof value.unreportedCount === "number" &&
+    Number.isSafeInteger(value.unreportedCount) &&
+    value.unreportedCount >= 0 &&
+    typeof value.incompleteCount === "number" &&
+    Number.isSafeInteger(value.incompleteCount) &&
+    value.incompleteCount >= 0 &&
+    typeof value.unknownCoverageCount === "number" &&
+    Number.isSafeInteger(value.unknownCoverageCount) &&
+    value.unknownCoverageCount >= 0
+  );
+}
+
+function isOperatorAction(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isSiteId(value.actorId) &&
+    isEpoch(value.recordedAt) &&
+    value.decision === "retain_attention" &&
+    typeof value.evidenceRef === "string" &&
+    /^[a-f0-9]{40,64}$/u.test(value.evidenceRef)
+  );
+}
+
+function isOperationRecord(value: unknown): value is OperationRecord {
+  if (!isRecord(value)) return false;
+  return (
+    OPERATION_UUID.test(String(value.attemptId)) &&
+    OPERATION_UUID.test(String(value.requestId)) &&
+    OPERATION_UUID.test(String(value.intakeId)) &&
+    OPERATION_UUID.test(String(value.clientId)) &&
+    OPERATION_UUID.test(String(value.operationId)) &&
+    isSiteId(value.profile) &&
+    typeof value.attemptNumber === "number" &&
+    Number.isSafeInteger(value.attemptNumber) &&
+    value.attemptNumber > 0 &&
+    typeof value.status === "string" &&
+    OPERATION_STATUSES.has(value.status) &&
+    typeof value.executionStatus === "string" &&
+    isSiteId(value.dispatchState) &&
+    (value.deliveryStatus === "none" ||
+      value.deliveryStatus === "preview_ready") &&
+    isEpoch(value.createdAt) &&
+    isNullableEpoch(value.startedAt) &&
+    isNullableEpoch(value.finishedAt) &&
+    isEpoch(value.lastObservedAt) &&
+    typeof value.costKind === "string" &&
+    OPERATION_COST_KINDS.has(value.costKind) &&
+    typeof value.telemetryIncomplete === "boolean" &&
+    Array.isArray(value.costs) &&
+    value.costs.every(isOperationCost) &&
+    (value.attentionReason === null ||
+      typeof value.attentionReason === "string") &&
+    (value.recoveryReason === null ||
+      typeof value.recoveryReason === "string") &&
+    (value.operatorAction === null || isOperatorAction(value.operatorAction))
+  );
+}
+
+function isOperationPage(value: unknown): value is OperationPage {
+  return (
+    isPageShape(value) &&
+    value.items.every(isOperationRecord) &&
+    (value as { recordSource?: unknown }).recordSource === "operations" &&
+    (value as { readOnly?: unknown }).readOnly === true
+  );
+}
+
+function isOperationEvent(value: unknown): value is OperationEvent {
+  return (
+    isRecord(value) &&
+    OPERATION_UUID.test(String(value.eventId)) &&
+    isSiteId(value.eventKey) &&
+    isSiteId(value.stage) &&
+    isSiteId(value.transition) &&
+    isEpoch(value.occurredAt) &&
+    isEpoch(value.recordedAt) &&
+    (value.detailCode === null || isSiteId(value.detailCode)) &&
+    (value.provider === null || isSiteId(value.provider)) &&
+    (value.model === null || isSiteId(value.model)) &&
+    typeof value.costKind === "string" &&
+    OPERATION_COST_KINDS.has(value.costKind) &&
+    (value.amount === null || typeof value.amount === "string") &&
+    (value.currency === null || typeof value.currency === "string") &&
+    (value.buildSha === null || typeof value.buildSha === "string")
+  );
+}
+
+function isOperationDetail(value: unknown): value is OperationDetail {
+  if (!isOperationRecord(value)) return false;
+  const detail = value as unknown as Record<string, unknown>;
+  return (
+    Array.isArray(detail.events) &&
+    detail.events.every(isOperationEvent) &&
+    typeof detail.eventCount === "number" &&
+    Number.isSafeInteger(detail.eventCount) &&
+    detail.eventCount >= 0 &&
+    isRecord(detail.workflow) &&
+    (detail.workflow.repository === null ||
+      typeof detail.workflow.repository === "string") &&
+    (detail.workflow.runId === null ||
+      typeof detail.workflow.runId === "string") &&
+    (detail.workflow.runAttempt === null ||
+      typeof detail.workflow.runAttempt === "number") &&
+    isRecord(detail.outbox) &&
+    typeof detail.outbox.state === "string" &&
+    typeof detail.outbox.retryCount === "number" &&
+    (detail.outbox.nextAttemptAt === null ||
+      isEpoch(detail.outbox.nextAttemptAt)) &&
+    (detail.outbox.lastErrorCode === null ||
+      typeof detail.outbox.lastErrorCode === "string")
+  );
+}
+
+function isLegacyAttemptPage(value: unknown): value is LegacyAttemptPage {
+  return (
+    isPageShape(value) &&
+    value.items.every((item) => isRecord(item) && isSiteId(item.attemptId)) &&
+    (value as { recordSource?: unknown }).recordSource === "legacy" &&
+    (value as { readOnly?: unknown }).readOnly === true
+  );
 }
 
 function isAccessModePrincipal(value: unknown): value is AccessModePrincipal {
@@ -683,6 +864,18 @@ export function buildClientQuery(filters: ClientFilters = {}) {
   return params;
 }
 
+export function buildOperationQuery(filters: OperationFilters = {}) {
+  const params = new URLSearchParams();
+  if (
+    Number.isSafeInteger(filters.limit) &&
+    filters.limit! >= 1 &&
+    filters.limit! <= 100
+  )
+    add(params, "limit", filters.limit);
+  add(params, "cursor", filters.cursor);
+  return params;
+}
+
 function querySuffix(params: URLSearchParams) {
   const text = params.toString();
   return text ? `?${text}` : "";
@@ -953,6 +1146,63 @@ export function createAdminApi(
         signal: options?.signal,
         validate: isHealth,
       });
+    },
+    listOperations(filters = {}, options) {
+      return fetcher<OperationPage>(
+        `${WORKSPACE_PREFIX}/operations/records${querySuffix(buildOperationQuery(filters))}`,
+        { signal: options?.signal, validate: isOperationPage },
+      );
+    },
+    async getOperation(attemptId, options) {
+      const payload = await fetcher<{
+        operation: OperationDetail;
+        recordSource: "operations";
+        readOnly: true;
+      }>(
+        `${WORKSPACE_PREFIX}/operations/records/${encodeURIComponent(attemptId)}`,
+        {
+          signal: options?.signal,
+          validate: (
+            value,
+          ): value is {
+            operation: OperationDetail;
+            recordSource: "operations";
+            readOnly: true;
+          } =>
+            isRecord(value) &&
+            isOperationDetail(value.operation) &&
+            value.recordSource === "operations" &&
+            value.readOnly === true,
+        },
+      );
+      return payload.operation;
+    },
+    listLegacyAttempts(filters = {}, options) {
+      return fetcher<LegacyAttemptPage>(
+        `${WORKSPACE_PREFIX}/legacy/attempts${querySuffix(buildAttemptQuery(filters))}`,
+        { signal: options?.signal, validate: isLegacyAttemptPage },
+      );
+    },
+    async getLegacyAttempt(id, options) {
+      const payload = await fetcher<{ attempt: AttemptDetail }>(
+        `${WORKSPACE_PREFIX}/legacy/attempts/${encodeURIComponent(id)}`,
+        { signal: options?.signal, validate: isAttemptEnvelope },
+      );
+      return payload.attempt;
+    },
+    getLegacyAttemptEvents(id, cursor, limit, signal) {
+      const params = new URLSearchParams();
+      add(params, "cursor", cursor);
+      if (Number.isSafeInteger(limit) && limit! >= 1 && limit! <= 100)
+        add(params, "limit", limit);
+      return fetcher<Page<AttemptEventRecord>>(
+        `${WORKSPACE_PREFIX}/legacy/attempts/${encodeURIComponent(id)}/events${querySuffix(params)}`,
+        {
+          signal,
+          validate: (value): value is Page<AttemptEventRecord> =>
+            isPageShape(value),
+        },
+      );
     },
   };
 }

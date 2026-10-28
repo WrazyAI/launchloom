@@ -4,6 +4,7 @@ import { ClientsView } from "./ClientsView";
 import { GenerationsView } from "./GenerationsView";
 import { IntegrationsView } from "./IntegrationsView";
 import { InvitationsView } from "./InvitationsView";
+import { OperationsView } from "./OperationsView";
 import { ProfileView } from "./ProfileView";
 import { TeamView } from "./TeamView";
 import { WorkspaceShell } from "./WorkspaceShell";
@@ -40,11 +41,17 @@ const VIEW_COPY: Record<
   AdminView,
   { label: string; title: string; description: string }
 > = {
-  generations: {
-    label: "Generations",
-    title: "Recent generations",
+  operations: {
+    label: "Operations",
+    title: "Current operations",
     description:
-      "Every generation attempt across the shared workspace, newest first. All admins see the same records.",
+      "Postgres-backed intake and generation records, with dispatch, execution, delivery, cost and telemetry reported separately.",
+  },
+  generations: {
+    label: "Legacy history",
+    title: "Legacy history",
+    description:
+      "Read-only generation history from the existing ledger. New operations appear under Operations; nothing on this page changes a record.",
   },
   clients: {
     label: "Clients",
@@ -153,7 +160,14 @@ export function AdminApp() {
       title={copy.title}
       description={copy.description}
     >
-      {state.view === "generations" ? (
+      {state.view === "operations" ? (
+        <OperationsView
+          api={api}
+          state={state}
+          cursorTrail={cursorTrail}
+          onNavigate={commit}
+        />
+      ) : state.view === "generations" ? (
         <GenerationsView
           api={api}
           state={state}

@@ -10,7 +10,8 @@ import { BrandMark } from "./BrandMark";
 import { ADMIN_VIEWS, type AdminView } from "./route-state";
 
 const VIEW_LABELS: Record<AdminView, string> = {
-  generations: "Generations",
+  operations: "Operations",
+  generations: "Legacy history",
   clients: "Clients",
   invitations: "Invitations",
   team: "Team",
@@ -19,7 +20,8 @@ const VIEW_LABELS: Record<AdminView, string> = {
 };
 
 const VIEW_ICONS: Record<AdminView, AdminIconName> = {
-  generations: "generations",
+  operations: "operations",
+  generations: "history",
   clients: "clients",
   invitations: "invitations",
   team: "team",

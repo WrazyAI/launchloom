@@ -960,7 +960,7 @@ describe("Neon account flows", () => {
         expect(target.origin).toBe(origin);
         expect(target.pathname).toBe("/admin/onboarding-invites");
         await visible(
-          page.getByRole("heading", { name: "Recent generations" }),
+          page.getByRole("heading", { name: "Legacy history", exact: true }),
         );
         unexpectedErrors(errors);
       } finally {

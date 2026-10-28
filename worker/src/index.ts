@@ -35,6 +35,7 @@ import type { PublicationCommand } from "./publication";
 import { OnboardingInvites } from "./onboarding-invites";
 import {
   workspaceApi, workspaceError, attemptIngest, legacyAccessPrincipal,
+  operationsDashboardApi,
 } from "./admin/workspace-api";
 import {
   operationsAdminApi, scheduledReconciliation, type ReconciliationEnvironment,
@@ -411,9 +412,12 @@ async function authenticatedWorkspace(
             store: guard.store!,
             principal: guard.principal,
           })
-        : suffix.startsWith("/operations/")
-          ? operationsAdminApi(request, env, guard.principal)
-          : workspaceApi(request, env, guard.principal.email),
+        : suffix === "/operations/records" ||
+            suffix.startsWith("/operations/records/")
+          ? operationsDashboardApi(request, env, guard.principal)
+          : suffix.startsWith("/operations/")
+            ? operationsAdminApi(request, env, guard.principal)
+            : workspaceApi(request, env, guard.principal.email),
     );
   }
 
@@ -449,6 +453,15 @@ async function authenticatedWorkspace(
       "forbidden",
       "Membership management requires a Neon account.",
       403,
+    );
+  if (
+    suffix === "/operations/records" ||
+    suffix.startsWith("/operations/records/")
+  )
+    return operationsDashboardApi(
+      request,
+      env,
+      await legacyAccessPrincipal(verifiedEmail),
     );
   if (suffix.startsWith("/operations/"))
     return operationsAdminApi(request, env, await legacyAccessPrincipal(verifiedEmail));
