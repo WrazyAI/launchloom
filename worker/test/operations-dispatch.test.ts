@@ -251,6 +251,77 @@ describe("GitHub dispatch boundary", () => {
     expect(await forbidden(item)).toBe("rejected");
   });
 
+  it("rejects impossible calendar days instead of normalizing them", async () => {
+    const clock = () => Date.UTC(2026, 0, 1);
+    for (const date of [
+      "Wed, 31 Feb 2027 08:49:37 GMT",
+      "Sat, 31 Apr 2027 08:49:37 GMT",
+      "Mon, 29 Feb 2027 08:49:37 GMT",
+      "Mon, 31-Feb-27 08:49:37 GMT",
+      "Sun Feb 30 08:49:37 2027",
+    ]) {
+      const limited = githubDispatcher(target, async () => new Response(null, {
+        status: 403,
+        headers: { "retry-after": date, "x-ratelimit-remaining": "0" },
+      }), clock);
+      expect(await limited(item)).toBe("rejected");
+
+      const throttled = githubDispatcher(target, async () => new Response(null, {
+        status: 429, headers: { "retry-after": date },
+      }), clock);
+      expect(await throttled(item)).toBe("retryable");
+    }
+  });
+
+  it("keeps an independently valid reset beside an impossible date", async () => {
+    const send = githubDispatcher(target, async () => new Response(null, {
+      status: 403,
+      headers: {
+        "retry-after": "Wed, 31 Feb 2027 08:49:37 GMT",
+        "x-ratelimit-remaining": "0",
+        "x-ratelimit-reset": "1767225720",
+      },
+    }), () => Date.UTC(2026, 0, 1));
+    expect(await send(item)).toEqual({ outcome: "retryable", retryAfterSeconds: 120 });
+  });
+
+  it("accepts a real leap day and rejects a non-leap February 29", async () => {
+    const leap = githubDispatcher(target, async () => new Response(null, {
+      status: 429,
+      headers: { "retry-after": "Tue, 29 Feb 2028 00:40:00 GMT" },
+    }), () => Date.UTC(2028, 1, 29));
+    expect(await leap(item)).toEqual({ outcome: "retryable", retryAfterSeconds: 2_400 });
+
+    const notLeap = githubDispatcher(target, async () => new Response(null, {
+      status: 403,
+      headers: {
+        "retry-after": "Thu, 29 Feb 2100 00:40:00 GMT",
+        "x-ratelimit-remaining": "0",
+      },
+    }), () => Date.UTC(2099, 11, 31));
+    expect(await notLeap(item)).toBe("rejected");
+  });
+
+  it("resolves RFC850 two-digit years against the supplied clock", async () => {
+    const send = (date: string, nowMs: number) =>
+      githubDispatcher(target, async () => new Response(null, {
+        status: 429, headers: { "retry-after": date },
+      }), () => nowMs)(item);
+
+    // 2076 is exactly 50 years after 2026, so it stays a future date.
+    expect(await send("Tuesday, 16-Jun-76 00:00:00 GMT", Date.UTC(2026, 5, 15)))
+      .toEqual({ outcome: "retryable", retryAfterSeconds: 3_600 });
+    // The same header from 2025 is 51 years ahead, so it means 1976.
+    expect(await send("Tuesday, 16-Jun-76 00:00:00 GMT", Date.UTC(2025, 5, 15)))
+      .toBe("retryable");
+    // 2077 is 51 years after 2026, so it means 1977.
+    expect(await send("Tuesday, 16-Jun-77 00:00:00 GMT", Date.UTC(2026, 5, 15)))
+      .toBe("retryable");
+    // 2049 is inside the window and remains a measurable future delay.
+    expect(await send("Tuesday, 16-Jun-49 00:00:00 GMT", Date.UTC(2026, 5, 15)))
+      .toEqual({ outcome: "retryable", retryAfterSeconds: 3_600 });
+  });
+
   it("refuses unsafe target configuration before sending", () => {
     expect(() => githubDispatcher({ ...target, repository: "../../elsewhere" })).toThrow();
     expect(() => githubDispatcher({ ...target, repository: "../elsewhere" })).toThrow();

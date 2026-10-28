@@ -61,7 +61,12 @@ that a missing response means no run exists.
   zero `x-ratelimit-remaining` together with a valid `x-ratelimit-reset`, or a
   valid `retry-after` (seconds or an RFC 7231 HTTP-date, including GitHub
   secondary limits). An HTTP-date is accepted only in IMF-fixdate, RFC 850 or
-  asctime form; ISO dates and other JavaScript-parseable strings are rejected.
+  asctime form, and its calendar date must exist: a day such as 31 February or
+  29 February in a non-leap year is rejected instead of being normalized. An
+  RFC 850 two-digit year follows the 50-year rule against the dispatcher clock,
+  so it is read as the most recent year with those digits unless that would be
+  more than 50 years in the future. ISO dates and other JavaScript-parseable
+  strings are rejected.
   Empty, zero or malformed `retry-after` establishes nothing. `remaining: 0`
   without a valid reset establishes nothing. A 429 uses any valid retry-after
   or reset because its status already proves the limit; a 403 requires the

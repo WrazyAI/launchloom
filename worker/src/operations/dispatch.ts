@@ -67,37 +67,88 @@ export async function dispatchScheduled(deps: {
   }
 }
 
-const HTTP_DATE_MONTHS = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec";
+const HTTP_DATE_MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+] as const;
+const HTTP_DATE_MONTH_PATTERN = HTTP_DATE_MONTHS.join("|");
 const HTTP_DATE_DAYS = "Mon|Tue|Wed|Thu|Fri|Sat|Sun";
 const HTTP_DATE_LONG_DAYS =
   "Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday";
+const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
 const IMF_FIXDATE = new RegExp(
-  `^(?:${HTTP_DATE_DAYS}), (?:0[1-9]|[12][0-9]|3[01]) (?:${HTTP_DATE_MONTHS}) [0-9]{4} (?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9] GMT$`,
+  `^(?:${HTTP_DATE_DAYS}), (?<day>0[1-9]|[12][0-9]|3[01]) (?<month>${HTTP_DATE_MONTH_PATTERN}) (?<year>[0-9]{4}) (?<hour>[01][0-9]|2[0-3]):(?<minute>[0-5][0-9]):(?<second>[0-5][0-9]) GMT$`,
   "u",
 );
 const RFC850_DATE = new RegExp(
-  `^(?:${HTTP_DATE_LONG_DAYS}), (?:0[1-9]|[12][0-9]|3[01])-(?:${HTTP_DATE_MONTHS})-[0-9]{2} (?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9] GMT$`,
+  `^(?:${HTTP_DATE_LONG_DAYS}), (?<day>0[1-9]|[12][0-9]|3[01])-(?<month>${HTTP_DATE_MONTH_PATTERN})-(?<year>[0-9]{2}) (?<hour>[01][0-9]|2[0-3]):(?<minute>[0-5][0-9]):(?<second>[0-5][0-9]) GMT$`,
   "u",
 );
 const ASCTIME_DATE = new RegExp(
-  `^(?:${HTTP_DATE_DAYS}) (?:${HTTP_DATE_MONTHS}) (?: [0-9]|[0-9]{2}) (?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9] [0-9]{4}$`,
+  `^(?:${HTTP_DATE_DAYS}) (?<month>${HTTP_DATE_MONTH_PATTERN}) (?<day> [0-9]|[0-9]{2}) (?<hour>[01][0-9]|2[0-3]):(?<minute>[0-5][0-9]):(?<second>[0-5][0-9]) (?<year>[0-9]{4})$`,
   "u",
 );
+const HTTP_DATE_FORMS = [
+  { pattern: IMF_FIXDATE, twoDigitYear: false },
+  { pattern: RFC850_DATE, twoDigitYear: true },
+  { pattern: ASCTIME_DATE, twoDigitYear: false },
+] as const;
+
+function isLeapYear(year: number): boolean {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+}
+
+/**
+ * RFC 9110 5.6.7: an rfc850-date two-digit year that appears to be more than 50
+ * years in the future means the most recent past year with those digits.
+ */
+function resolveTwoDigitYear(twoDigit: number, nowMs: number): number {
+  const currentYear = new Date(nowMs).getUTCFullYear();
+  const candidate = Math.floor(currentYear / 100) * 100 + twoDigit;
+  return candidate - currentYear > 50 ? candidate - 100 : candidate;
+}
 
 /**
  * Retry-After dates must be one of the three HTTP-date forms. JavaScript's
- * Date.parse accepts ISO and prose-like dates that are not HTTP-date, so it is
- * only consulted after an exact format match.
+ * Date.parse accepts ISO and prose-like dates and silently normalizes impossible
+ * calendar days, so the components are matched and validated here instead.
  */
-function httpDateMilliseconds(value: string): number | undefined {
-  if (
-    !IMF_FIXDATE.test(value) &&
-    !RFC850_DATE.test(value) &&
-    !ASCTIME_DATE.test(value)
-  )
-    return undefined;
-  const when = Date.parse(value);
-  return Number.isFinite(when) ? when : undefined;
+function httpDateMilliseconds(value: string, nowMs: number): number | undefined {
+  for (const form of HTTP_DATE_FORMS) {
+    const groups = form.pattern.exec(value)?.groups;
+    if (!groups) continue;
+    const { day, month, year, hour, minute, second } = groups;
+    if (
+      day === undefined || month === undefined || year === undefined ||
+      hour === undefined || minute === undefined || second === undefined
+    )
+      continue;
+    const monthIndex = HTTP_DATE_MONTHS.indexOf(
+      month as (typeof HTTP_DATE_MONTHS)[number],
+    );
+    if (monthIndex < 0) return undefined;
+    const fullYear = form.twoDigitYear
+      ? resolveTwoDigitYear(Number(year), nowMs)
+      : Number(year);
+    // Date.UTC remaps years 0..99 to the 1900s, so require a real calendar year.
+    if (!Number.isInteger(fullYear) || fullYear < 100 || fullYear > 9999)
+      return undefined;
+    const dayOfMonth = Number(day.trim());
+    const daysInMonth =
+      monthIndex === 1 && isLeapYear(fullYear)
+        ? 29
+        : DAYS_PER_MONTH[monthIndex];
+    if (dayOfMonth < 1 || dayOfMonth > daysInMonth) return undefined;
+    return Date.UTC(
+      fullYear,
+      monthIndex,
+      dayOfMonth,
+      Number(hour),
+      Number(minute),
+      Number(second),
+    );
+  }
+  return undefined;
 }
 
 function retryAfterSeconds(
@@ -111,7 +162,7 @@ function retryAfterSeconds(
     const seconds = Number(text);
     return seconds >= 1 ? boundedSeconds(seconds) : undefined;
   }
-  const when = httpDateMilliseconds(text);
+  const when = httpDateMilliseconds(text, nowMs);
   if (when === undefined) return undefined;
   const seconds = Math.ceil((when - nowMs) / 1000);
   return seconds >= 1 ? boundedSeconds(seconds) : undefined;
