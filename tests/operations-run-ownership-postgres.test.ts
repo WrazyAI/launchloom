@@ -374,13 +374,12 @@ describe.skipIf(!enabled)("run ownership on real disposable PostgreSQL", () => {
         "invalid_dispatch",
       );
 
-    expect(
-      await asOperations(
+    // NULL operation and identity fields are malformed claims, not a lookup miss.
+    await expect(
+      asOperations(
         `select launchloom_operations.claim_run(NULL, '${repositoryId}', '${run}', 1);`,
       ),
-    ).toBe("attention");
-    // A NULL operation ID is not part of the numeric identity validation and
-    // fails closed as attention (no row, no owner). NULL identity fields raise.
+    ).rejects.toThrow("invalid_dispatch");
     for (const [repo, runValue] of [
       ["NULL", `'${run}'`],
       [`'${repositoryId}'`, "NULL"],

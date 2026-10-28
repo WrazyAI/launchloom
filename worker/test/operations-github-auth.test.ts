@@ -84,7 +84,7 @@ function claims(overrides: Claims = {}): Claims {
     ref_type: "branch",
     event_name: OPERATIONS_EVENT,
     run_id: "424242",
-    run_attempt: 1,
+    run_attempt: "1",
     actor: "synthetic-actor",
     actor_id: "2",
     iat: nowSeconds - 5,
@@ -229,12 +229,21 @@ describe("GitHub OIDC run identity", () => {
     ["ref type", { ref_type: "tag" }, "ref"],
     ["event", { event_name: "pull_request" }, "event"],
     ["run id", { run_id: "0" }, "run"],
-    ["run attempt", { run_attempt: 0 }, "run"],
+    ["run attempt", { run_attempt: "0" }, "run"],
+    ["numeric run attempt", { run_attempt: 1 }, "run"],
+    ["fractional run attempt", { run_attempt: "1.5" }, "run"],
+    ["padded run attempt", { run_attempt: " 1" }, "run"],
+    ["oversized run attempt", { run_attempt: "2147483648" }, "run"],
     ["expiration", { exp: nowSeconds }, "expired"],
     ["missing expiration", { exp: undefined }, "claims"],
     ["future issue time", { iat: nowSeconds + 120 }, "issued_in_future"],
     ["stale issue time", { iat: nowSeconds - 601 }, "stale"],
     ["future not-before", { nbf: nowSeconds + 120 }, "not_yet_valid"],
+    ["string not-before", { nbf: String(nowSeconds - 5) }, "claims"],
+    ["fractional not-before", { nbf: nowSeconds + 0.5 }, "claims"],
+    ["negative not-before", { nbf: -1 }, "claims"],
+    ["null not-before", { nbf: null }, "claims"],
+    ["not-before after expiry", { nbf: nowSeconds + 400 }, "claims"],
   ])("denies a token with a wrong %s", async (_label, overrides, code) => {
     expect(await authCode(await token(claims(overrides)))).toBe(code);
   });
@@ -397,7 +406,7 @@ describe("operations claim and intake API", () => {
   it("refuses a rerun attempt that does not own the operation", async () => {
     const { store, calls } = fakeStore();
     const rerun = await operationsClaim(
-      request("/api/internal/operations/claim", { operationId }, await token(claims({ run_attempt: 2 }))),
+      request("/api/internal/operations/claim", { operationId }, await token(claims({ run_attempt: "2" }))),
       apiEnv,
       { store, policy: policy() },
     );

@@ -357,6 +357,7 @@ export async function runOperationsClient(argv, dependencies = {}) {
         api, operationId, requestId, attemptId, token, fetchImpl,
       });
       await writeGithubOutput(options["github-output"], {
+        claimed: "true",
         intake_id: result.intakeId,
         request_id: result.requestId,
         attempt_id: result.attemptId,

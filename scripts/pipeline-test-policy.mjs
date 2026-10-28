@@ -49,6 +49,10 @@ export function resolveWorkflowTestDispatch({
     return Object.freeze({ profile, requiresIntakeIssue: false });
   }
   const resolved = resolvePipelineTestPolicy({ profile, eventName });
+  if (opaque && String(issue || "").trim())
+    throw new Error(
+      "Issue and operations identifiers cannot be mixed in one generation dispatch.",
+    );
   if (opaque && resolved.profile !== "full")
     throw new Error("New-mode operations dispatch requires the full profile.");
   if (!String(issue || "").trim() && !opaque)

@@ -211,7 +211,8 @@ AS $$
 DECLARE v launchloom_operations.dispatch_outbox%ROWTYPE;
   a launchloom_operations.generation_attempts%ROWTYPE;
 BEGIN
-  IF p_repository IS NULL OR p_repository !~ '^[1-9][0-9]{0,19}$'
+  IF p_operation IS NULL
+    OR p_repository IS NULL OR p_repository !~ '^[1-9][0-9]{0,19}$'
     OR p_run IS NULL OR p_run !~ '^[1-9][0-9]{0,19}$'
     OR p_attempt IS NULL OR p_attempt < 1 THEN RAISE EXCEPTION 'invalid_dispatch'; END IF;
   SELECT o.* INTO v FROM launchloom_operations.dispatch_outbox o

@@ -282,8 +282,13 @@ export async function verifyRunIdentity(
 
   const runId = exactString(claims.run_id);
   if (!runId || !/^[1-9][0-9]{0,19}$/u.test(runId)) deny("run");
-  const runAttempt = numericClaim(claims.run_attempt);
-  if (!runAttempt || !Number.isSafeInteger(runAttempt) || runAttempt < 1 || runAttempt > 2147483647)
+  // GitHub's current OIDC document represents run_attempt as a decimal string.
+  // Accept only that strict form, and bound it to PostgreSQL's integer range.
+  const runAttemptClaim = claims.run_attempt;
+  if (typeof runAttemptClaim !== "string" || !/^[1-9][0-9]{0,9}$/u.test(runAttemptClaim))
+    deny("run");
+  const runAttempt = Number(runAttemptClaim);
+  if (!Number.isSafeInteger(runAttempt) || runAttempt < 1 || runAttempt > 2147483647)
     deny("run");
 
   const expiration = numericClaim(claims.exp);
@@ -294,8 +299,18 @@ export async function verifyRunIdentity(
   if (issuedAt > nowSeconds + CLOCK_SKEW_SECONDS) deny("issued_in_future");
   const maxAge = policy.maxTokenAgeSeconds ?? DEFAULT_MAX_TOKEN_AGE_SECONDS;
   if (issuedAt < nowSeconds - maxAge) deny("stale");
-  const notBefore = numericClaim(claims.nbf);
-  if (notBefore !== undefined && notBefore > nowSeconds + CLOCK_SKEW_SECONDS) deny("not_yet_valid");
+  if (Object.hasOwn(claims, "nbf")) {
+    const notBefore = claims.nbf;
+    if (
+      typeof notBefore !== "number" ||
+      !Number.isFinite(notBefore) ||
+      !Number.isInteger(notBefore) ||
+      notBefore < 0
+    )
+      deny("claims");
+    if (notBefore > expiration) deny("claims");
+    if (notBefore > nowSeconds + CLOCK_SKEW_SECONDS) deny("not_yet_valid");
+  }
 
   return { repositoryId: claims.repository_id, runId, runAttempt };
 }
