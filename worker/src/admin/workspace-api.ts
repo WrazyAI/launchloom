@@ -305,15 +305,21 @@ export async function workspaceApi(
       to: number("to"),
     };
     const combinedHealth = async () => {
-      const [health, projection] = await Promise.all([
+      const [health, projection, acceptance] = await Promise.all([
         ledger.getHealth(),
         coordinator.projectionHealth(),
+        coordinator.acceptanceHealth(),
       ]);
       return {
         ...health,
-        partial: health.partial || projection.partial,
+        partial:
+          health.partial ||
+          projection.partial ||
+          acceptance.attentionCount > 0,
         pendingProjectionCount: projection.pendingProjectionCount,
-        lastError: projection.lastError ?? health.lastError,
+        lastError:
+          projection.lastError ?? acceptance.lastError ?? health.lastError,
+        acceptanceRecovery: acceptance,
       };
     };
     if (suffix === "/health") return json(await combinedHealth());
