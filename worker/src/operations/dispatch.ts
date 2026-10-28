@@ -98,20 +98,46 @@ function isLeapYear(year: number): boolean {
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 }
 
+function addUtcYears(milliseconds: number, years: number): number {
+  const date = new Date(milliseconds);
+  return Date.UTC(
+    date.getUTCFullYear() + years,
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    date.getUTCHours(),
+    date.getUTCMinutes(),
+    date.getUTCSeconds(),
+    date.getUTCMilliseconds(),
+  );
+}
+
 /**
  * RFC 9110 5.6.7: an rfc850-date two-digit year that appears to be more than 50
- * years in the future means the most recent past year with those digits.
+ * years in the future means the most recent past year with those digits. The
+ * window is compared on the full timestamp, not just the year, so a date one day
+ * past the boundary already rolls back. A year from the current century that is
+ * more than 50 years behind rolls forward: 00 in 2099 is 2100, not a stale 2000.
  */
-function resolveTwoDigitYear(twoDigit: number, nowMs: number): number {
+function resolveTwoDigitYear(
+  twoDigit: number,
+  date: { month: number; day: number; hour: number; minute: number; second: number },
+  nowMs: number,
+): number {
   const currentYear = new Date(nowMs).getUTCFullYear();
   const candidate = Math.floor(currentYear / 100) * 100 + twoDigit;
-  return candidate - currentYear > 50 ? candidate - 100 : candidate;
+  const at = (year: number) =>
+    Date.UTC(year, date.month, date.day, date.hour, date.minute, date.second);
+  if (at(candidate) > addUtcYears(nowMs, 50)) return candidate - 100;
+  if (at(candidate) < addUtcYears(nowMs, -50)) return candidate + 100;
+  return candidate;
 }
 
 /**
  * Retry-After dates must be one of the three HTTP-date forms. JavaScript's
  * Date.parse accepts ISO and prose-like dates and silently normalizes impossible
- * calendar days, so the components are matched and validated here instead.
+ * calendar days, so the components are matched and validated here instead. The
+ * year is resolved before the calendar check so a rolled-over 29 February is
+ * measured against the year that will actually be used.
  */
 function httpDateMilliseconds(value: string, nowMs: number): number | undefined {
   for (const form of HTTP_DATE_FORMS) {
@@ -127,26 +153,28 @@ function httpDateMilliseconds(value: string, nowMs: number): number | undefined 
       month as (typeof HTTP_DATE_MONTHS)[number],
     );
     if (monthIndex < 0) return undefined;
+    const dayOfMonth = Number(day.trim());
+    const hours = Number(hour);
+    const minutes = Number(minute);
+    const seconds = Number(second);
     const fullYear = form.twoDigitYear
-      ? resolveTwoDigitYear(Number(year), nowMs)
+      ? resolveTwoDigitYear(Number(year), {
+        month: monthIndex,
+        day: dayOfMonth,
+        hour: hours,
+        minute: minutes,
+        second: seconds,
+      }, nowMs)
       : Number(year);
     // Date.UTC remaps years 0..99 to the 1900s, so require a real calendar year.
     if (!Number.isInteger(fullYear) || fullYear < 100 || fullYear > 9999)
       return undefined;
-    const dayOfMonth = Number(day.trim());
     const daysInMonth =
       monthIndex === 1 && isLeapYear(fullYear)
         ? 29
         : DAYS_PER_MONTH[monthIndex];
     if (dayOfMonth < 1 || dayOfMonth > daysInMonth) return undefined;
-    return Date.UTC(
-      fullYear,
-      monthIndex,
-      dayOfMonth,
-      Number(hour),
-      Number(minute),
-      Number(second),
-    );
+    return Date.UTC(fullYear, monthIndex, dayOfMonth, hours, minutes, seconds);
   }
   return undefined;
 }

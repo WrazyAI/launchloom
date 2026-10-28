@@ -302,24 +302,58 @@ describe("GitHub dispatch boundary", () => {
     expect(await notLeap(item)).toBe("rejected");
   });
 
-  it("resolves RFC850 two-digit years against the supplied clock", async () => {
-    const send = (date: string, nowMs: number) =>
+  it("applies the RFC850 50-year rule to the exact future instant", async () => {
+    const now = Date.UTC(2026, 5, 15); // 2026-06-15T00:00:00Z
+    const send = (date: string) =>
       githubDispatcher(target, async () => new Response(null, {
         status: 429, headers: { "retry-after": date },
-      }), () => nowMs)(item);
+      }), () => now)(item);
 
-    // 2076 is exactly 50 years after 2026, so it stays a future date.
-    expect(await send("Tuesday, 16-Jun-76 00:00:00 GMT", Date.UTC(2026, 5, 15)))
+    // Exactly 50 years ahead is still inside the window.
+    expect(await send("Tuesday, 15-Jun-76 00:00:00 GMT"))
       .toEqual({ outcome: "retryable", retryAfterSeconds: 3_600 });
-    // The same header from 2025 is 51 years ahead, so it means 1976.
-    expect(await send("Tuesday, 16-Jun-76 00:00:00 GMT", Date.UTC(2025, 5, 15)))
-      .toBe("retryable");
-    // 2077 is 51 years after 2026, so it means 1977.
-    expect(await send("Tuesday, 16-Jun-77 00:00:00 GMT", Date.UTC(2026, 5, 15)))
-      .toBe("retryable");
+    // One second past the window means 1976, which is already in the past.
+    expect(await send("Tuesday, 15-Jun-76 00:00:01 GMT")).toBe("retryable");
+    // One day past the window is also 1976.
+    expect(await send("Tuesday, 16-Jun-76 00:00:00 GMT")).toBe("retryable");
+    // 2077 is 51 years ahead, so it means 1977.
+    expect(await send("Tuesday, 16-Jun-77 00:00:00 GMT")).toBe("retryable");
     // 2049 is inside the window and remains a measurable future delay.
-    expect(await send("Tuesday, 16-Jun-49 00:00:00 GMT", Date.UTC(2026, 5, 15)))
+    expect(await send("Tuesday, 15-Jun-49 00:00:00 GMT"))
       .toEqual({ outcome: "retryable", retryAfterSeconds: 3_600 });
+  });
+
+  it("rolls an RFC850 year over at the exact past boundary", async () => {
+    const now = Date.UTC(2050, 5, 15); // 2050-06-15T00:00:00Z
+    const send = (date: string) =>
+      githubDispatcher(target, async () => new Response(null, {
+        status: 429, headers: { "retry-after": date },
+      }), () => now)(item);
+
+    // Exactly 50 years behind stays 2000, already past.
+    expect(await send("Thursday, 15-Jun-00 00:00:00 GMT")).toBe("retryable");
+    // One second further back rolls forward to 2100 and a clamped delay.
+    expect(await send("Thursday, 14-Jun-00 23:59:59 GMT"))
+      .toEqual({ outcome: "retryable", retryAfterSeconds: 3_600 });
+  });
+
+  it("resolves an upcoming RFC850 00 year into the next century", async () => {
+    const now = Date.UTC(2099, 11, 31, 23, 30); // 2099-12-31T23:30:00Z
+    const send = (date: string, status: 403 | 429 = 429) =>
+      githubDispatcher(target, async () => new Response(null, {
+        status,
+        headers: status === 403
+          ? { "retry-after": date, "x-ratelimit-remaining": "0" }
+          : { "retry-after": date },
+      }), () => now)(item);
+
+    // 2100-01-01 is 30 minutes ahead, not 2000-01-01 behind.
+    expect(await send("Friday, 01-Jan-00 00:00:00 GMT"))
+      .toEqual({ outcome: "retryable", retryAfterSeconds: 1_800 });
+    expect(await send("Friday, 01-Jan-00 00:00:00 GMT", 403))
+      .toEqual({ outcome: "retryable", retryAfterSeconds: 1_800 });
+    // 2100 is not a leap year, so 29 February there must not be retryable.
+    expect(await send("Thursday, 29-Feb-00 00:00:00 GMT", 403)).toBe("rejected");
   });
 
   it("refuses unsafe target configuration before sending", () => {

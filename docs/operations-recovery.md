@@ -63,10 +63,14 @@ that a missing response means no run exists.
   secondary limits). An HTTP-date is accepted only in IMF-fixdate, RFC 850 or
   asctime form, and its calendar date must exist: a day such as 31 February or
   29 February in a non-leap year is rejected instead of being normalized. An
-  RFC 850 two-digit year follows the 50-year rule against the dispatcher clock,
-  so it is read as the most recent year with those digits unless that would be
-  more than 50 years in the future. ISO dates and other JavaScript-parseable
-  strings are rejected.
+  RFC 850 two-digit year follows the 50-year rule against the dispatcher clock
+  on the full timestamp, so the date, not just the year, decides the century.
+  The year with those digits resolves inside a 50-year window: it rolls back a
+  century when the timestamp would be more than 50 years ahead and forward when
+  it would be more than 50 years behind, so 00 in 2099 is 2100 rather than a
+  stale 2000. The resolved year then drives the calendar check, which rejects a
+  rolled-over 29 February in a non-leap year. ISO dates and other
+  JavaScript-parseable strings are rejected.
   Empty, zero or malformed `retry-after` establishes nothing. `remaining: 0`
   without a valid reset establishes nothing. A 429 uses any valid retry-after
   or reset because its status already proves the limit; a 403 requires the
