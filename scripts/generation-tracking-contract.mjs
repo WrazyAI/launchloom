@@ -1,4 +1,6 @@
 // Pure wire boundary shared by trusted Node producers and Worker ingestion.
+import { DEFAULT_PREVIEW_HOST_SUFFIX } from "../src/lib/preview-proxy-contract.mjs";
+
 export const TRACKING_REPOSITORY = "WrazyAI/launchloom";
 export const GENERATION_PROFILES = [
   "full",
@@ -81,6 +83,10 @@ export function safeDiagnosticPreviewUrl(value) {
   if (typeof value !== "string") return null;
   try {
     const url = new URL(value);
+    const suffix = `.${DEFAULT_PREVIEW_HOST_SUFFIX}`;
+    const label = url.hostname.endsWith(suffix)
+      ? url.hostname.slice(0, -suffix.length)
+      : "";
     if (
       url.protocol !== "https:" ||
       url.username ||
@@ -89,9 +95,7 @@ export function safeDiagnosticPreviewUrl(value) {
       url.pathname !== "/" ||
       url.search ||
       url.hash ||
-      !/^[a-z0-9-]+\.launchloom-pipeline-preview\.pages\.dev$/u.test(
-        url.hostname,
-      )
+      !/^[a-z0-9-]+$/u.test(label)
     )
       return null;
     return url.href;

@@ -9,12 +9,15 @@ export function GenerationPreview({
 }: {
   attempt: Pick<
     AttemptSummary,
+    | "attemptId"
     | "issueNumber"
     | "clientName"
     | "clientId"
     | "profile"
     | "runId"
     | "runAttempt"
+    | "deliveryStatus"
+    | "previewUrl"
   >;
   large?: boolean;
   className?: string;
@@ -26,7 +29,8 @@ export function GenerationPreview({
     setFailed(false);
   }, [src]);
 
-  const label = attempt.clientName || attempt.clientId || "unlinked client";
+  const client = attempt.clientName || attempt.clientId || "unlinked client";
+  const label = `attempt ${attempt.attemptId}, ${client}`;
 
   if (!src || failed) {
     return (

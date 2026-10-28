@@ -275,16 +275,40 @@ export function previewHref(value: string | null | undefined): string | null {
   }
 }
 
+/**
+ * Focused attempts may only show a preview from the Access-covered diagnostic
+ * project. A generic pages.dev host is not enough to prove the image belongs to
+ * that attempt.
+ */
+export function safeFocusedPreviewUrl(
+  value: string | null | undefined,
+): string | null {
+  const safe = safeSiteUrl(value);
+  if (!safe) return null;
+  try {
+    return isAllowedPreviewHost(new URL(safe).hostname) ? safe : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Focused runs must never fall back to another attempt's issue screenshot. */
 export function generationHeroUrl(
   attempt: Pick<
     AttemptSummary,
-    "issueNumber" | "profile" | "runId" | "runAttempt"
+    | "issueNumber"
+    | "profile"
+    | "runId"
+    | "runAttempt"
+    | "deliveryStatus"
+    | "previewUrl"
   >,
 ): string | null {
   let id: string;
   if (attempt.profile !== "full") {
     if (
+      attempt.deliveryStatus !== "diagnostic" ||
+      !safeFocusedPreviewUrl(attempt.previewUrl) ||
       !attempt.runId ||
       !/^[1-9]\d{0,19}$/u.test(attempt.runId) ||
       !Number.isSafeInteger(attempt.runAttempt) ||

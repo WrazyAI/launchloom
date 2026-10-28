@@ -625,14 +625,8 @@ const writeJson = async (file, value) => {
   await fs.writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
 };
 
-/** Actual cloud adapter. Its only writable client target is the unique QA repository. */
-export function createCloudDependencies(
-  input,
-  {
-    root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
-    work = process.env.RUNNER_TEMP,
-  } = {},
-) {
+/** One slug contract for the isolated workspace and its evidence repository. */
+export function pipelineSitePath(input, work = process.env.RUNNER_TEMP) {
   if (!work)
     throw new Error("RUNNER_TEMP is required for the isolated test workspace.");
   const profileSlug =
@@ -641,8 +635,19 @@ export function createCloudDependencies(
       : input.profile === "creative-only"
         ? "creative"
         : "full";
-  const slug = `llqa-${input.issue}-${profileSlug}-${input.runId}`;
-  const site = path.join(work, slug);
+  return path.join(work, `llqa-${input.issue}-${profileSlug}-${input.runId}`);
+}
+
+/** Actual cloud adapter. Its only writable client target is the unique QA repository. */
+export function createCloudDependencies(
+  input,
+  {
+    root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
+    work = process.env.RUNNER_TEMP,
+  } = {},
+) {
+  const site = pipelineSitePath(input, work);
+  const slug = path.basename(site);
   const evidence = path.join(site, ".launchloom");
   const repo = `WrazyAI/${slug}`;
   const pagesProject = resolveTestPreviewProject(
@@ -844,6 +849,7 @@ export function createCloudDependencies(
     );
   }
   return {
+    site,
     async prepare({ report }) {
       for (const key of [
         "GH_TOKEN",
@@ -1604,6 +1610,7 @@ export function diagnosticScreenshotPath(report, site) {
   return path.join(site, ".launchloom", "screenshots", "desktop.png");
 }
 
+/** Store one verified capture under the run/attempt key. No fallback or backfill. */
 export async function uploadDiagnosticScreenshot({
   report,
   observation,
@@ -1637,7 +1644,8 @@ if (
     candidateRepository: args["candidate-repository"] || "",
   };
   validatePipelineTestInput(input);
-  const report = await runPipelineTest(input, createCloudDependencies(input));
+  const dependencies = createCloudDependencies(input);
+  const report = await runPipelineTest(input, dependencies);
   try {
     const tracking = buildPipelineAttemptTracking(
       report,
@@ -1645,33 +1653,25 @@ if (
       input.issue,
     );
     await postAttemptTracking(tracking);
-    if (
-      tracking.observation.previewUrl &&
-      process.env.GENERATION_TRACKING_SECRET
-    ) {
-      const profileSlug =
-        input.profile === "seo-only"
-          ? "seo"
-          : input.profile === "creative-only"
-            ? "creative"
-            : "full";
-      const site = path.join(
-        process.env.RUNNER_TEMP,
-        `llqa-${input.issue}-${profileSlug}-${input.runId}`,
-      );
-      try {
-        await uploadDiagnosticScreenshot({
+    if (tracking.observation.previewUrl) {
+      if (!process.env.GENERATION_TRACKING_SECRET) {
+        console.warn(
+          "diagnostic_thumbnail=unavailable reason=no_tracking_secret",
+        );
+      } else {
+        const uploaded = await uploadDiagnosticScreenshot({
           report,
           observation: tracking.observation,
-          site,
+          site: dependencies.site,
           api: (
             process.env.LAUNCHLOOM_API_URL ||
             "https://api.launchloom.wrazyos.com"
           ).replace(/\/$/u, ""),
           secret: process.env.GENERATION_TRACKING_SECRET,
-        });
-      } catch {
-        console.warn("diagnostic_thumbnail=unavailable");
+        }).catch(() => false);
+        console.log(
+          `diagnostic_thumbnail=${uploaded ? "uploaded" : "unavailable"}`,
+        );
       }
     }
   } catch {

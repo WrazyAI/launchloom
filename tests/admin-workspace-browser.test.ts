@@ -1316,18 +1316,29 @@ describe("real admin workspace browser behavior", () => {
         await page.locator(".admin-row-action").first().click();
         const dialog = page.getByRole("dialog");
         await visible(dialog);
-        await expect.poll(() => dialog.evaluate((element) => element.getBoundingClientRect().right <= innerWidth + 1)).toBe(true);
+        await expect
+          .poll(() =>
+            dialog.evaluate(
+              (element) =>
+                element.getBoundingClientRect().right <= innerWidth + 1,
+            ),
+          )
+          .toBe(true);
         expect(
           await dialog
             .getByRole("link", { name: "Visit site" })
             .getAttribute("href"),
         ).toBe("/admin/preview/abc123.launchloom-pipeline-preview.pages.dev/");
-      expect(
-        await dialog.locator(".admin-browser__media img").getAttribute("src"),
-      ).toContain("id=github%3A90000%3A2");
-      await expect
-        .poll(() => dialog.locator(".admin-browser__media img").evaluate((image) => (image as HTMLImageElement).naturalWidth))
-        .toBeGreaterThan(0);
+        expect(
+          await dialog.locator(".admin-browser__media img").getAttribute("src"),
+        ).toContain("id=github%3A90000%3A2");
+        await expect
+          .poll(() =>
+            dialog
+              .locator(".admin-browser__media img")
+              .evaluate((image) => (image as HTMLImageElement).naturalWidth),
+          )
+          .toBeGreaterThan(0);
         expect(
           await page.evaluate(
             () => document.documentElement.scrollWidth <= innerWidth,
@@ -1351,7 +1362,6 @@ describe("real admin workspace browser behavior", () => {
       runAttempt: 2,
       previewUrl: null,
     });
-    heroMode = "notFound";
     const { page, errors } = await openPage();
     try {
       await waitForGenerations(page);
@@ -1368,7 +1378,7 @@ describe("real admin workspace browser behavior", () => {
             entry.path === "/generation-hero" &&
             entry.params.id === "github:90000:2",
         ),
-      ).toBe(true);
+      ).toBe(false);
       expect(
         requests.some(
           (entry) =>
@@ -1376,7 +1386,41 @@ describe("real admin workspace browser behavior", () => {
             entry.params.id === "issue:1000",
         ),
       ).toBe(false);
-      autoErrors(errors, { allowResourceStatuses: [404] });
+      autoErrors(errors);
+    } finally {
+      ATTEMPTS[0] = original;
+      await page.close();
+    }
+  });
+
+  it("rejects an arbitrary pages.dev preview on a focused attempt", async () => {
+    const original = { ...ATTEMPTS[0] };
+    Object.assign(ATTEMPTS[0], {
+      profile: "creative-only",
+      executionStatus: "failed",
+      deliveryStatus: "diagnostic",
+      runId: "90000",
+      runAttempt: 2,
+      previewUrl: "https://evil.pages.dev/",
+    });
+    const { page, errors } = await openPage();
+    try {
+      await waitForGenerations(page);
+      await page.locator(".admin-row-action").first().click();
+      const dialog = page.getByRole("dialog");
+      await visible(dialog);
+      expect(
+        await dialog.getByRole("link", { name: "Visit site" }).count(),
+      ).toBe(0);
+      await visible(dialog.getByText("Preview not captured"));
+      expect(
+        requests.some(
+          (entry) =>
+            entry.path === "/generation-hero" &&
+            entry.params.id === "github:90000:2",
+        ),
+      ).toBe(false);
+      autoErrors(errors);
     } finally {
       ATTEMPTS[0] = original;
       await page.close();

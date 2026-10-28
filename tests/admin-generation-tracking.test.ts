@@ -4,9 +4,10 @@ import {
   buildAttemptTrackingPayload,
   buildGenerationTrackingPayload,
 } from "../scripts/record-generation-event.mjs";
-import { buildPipelineAttemptTracking } from "../scripts/run-pipeline-test.mjs";
 import {
+  buildPipelineAttemptTracking,
   diagnosticScreenshotPath,
+  pipelineSitePath,
   uploadDiagnosticScreenshot,
 } from "../scripts/run-pipeline-test.mjs";
 import fs from "node:fs/promises";
@@ -127,8 +128,30 @@ describe("trusted attempt producer", () => {
       ),
     ).toBeNull();
   });
+  it("resolves the exact isolated site path for every profile", () => {
+    const base = { issue: 185, runId: "40553569891-1" };
+    expect(
+      pipelineSitePath({ ...base, profile: "creative-only" }, "/tmp/runner"),
+    ).toBe("/tmp/runner/llqa-185-creative-40553569891-1");
+    expect(
+      pipelineSitePath({ ...base, profile: "seo-only" }, "/tmp/runner"),
+    ).toBe("/tmp/runner/llqa-185-seo-40553569891-1");
+    expect(pipelineSitePath({ ...base, profile: "full" }, "/tmp/runner")).toBe(
+      "/tmp/runner/llqa-185-full-40553569891-1",
+    );
+    expect(
+      pipelineSitePath({ ...base, profile: "full-preview" }, "/tmp/runner"),
+    ).toBe("/tmp/runner/llqa-185-full-40553569891-1");
+    expect(() => pipelineSitePath({ ...base, profile: "full" }, "")).toThrow(
+      "RUNNER_TEMP is required",
+    );
+  });
   it("uploads a verified capture under the exact run and attempt key", async () => {
     const uploads: any[] = [];
+    const site = pipelineSitePath(
+      { profile: "creative-only", issue: 185, runId: "9001-2" },
+      "/tmp/runner",
+    );
     const report = {
       previewDelivered: true,
       stages: {
@@ -150,28 +173,32 @@ describe("trusted attempt producer", () => {
         attempts: [],
       };
     };
-    await uploadDiagnosticScreenshot({
-      report,
-      observation,
-      site: "/tmp/site",
-      api: "https://api.example.test",
-      secret: "secret",
-      upload,
-    });
+    expect(
+      await uploadDiagnosticScreenshot({
+        report,
+        observation,
+        site,
+        api: "https://api.example.test",
+        secret: "secret",
+        upload,
+      }),
+    ).toBe(true);
     expect(uploads).toMatchObject([
       {
         generationId: "github:9001:2",
-        heroFile: "/tmp/site/.launchloom/screenshots/desktop.png",
+        heroFile: `${site}/.launchloom/screenshots/desktop.png`,
       },
     ]);
-    await uploadDiagnosticScreenshot({
-      report: { ...report, previewDelivered: false },
-      observation,
-      site: "/tmp/site",
-      api: "https://api.example.test",
-      secret: "secret",
-      upload,
-    });
+    expect(
+      await uploadDiagnosticScreenshot({
+        report: { ...report, previewDelivered: false },
+        observation,
+        site,
+        api: "https://api.example.test",
+        secret: "secret",
+        upload,
+      }),
+    ).toBe(false);
     expect(uploads).toHaveLength(1);
   });
   it("redacts prefixed quoted credential keys and entire escaped JSON values in object and serialized details", () => {

@@ -18,7 +18,10 @@ import type {
   DispatchRequest,
 } from "../../src/lib/admin-contracts";
 import { pageRecords } from "./admin/pagination";
-import type { AttemptObservation } from "../../scripts/generation-tracking-contract.mjs";
+import {
+  safeDiagnosticPreviewUrl,
+  type AttemptObservation,
+} from "../../scripts/generation-tracking-contract.mjs";
 
 const executions = [
   "queued",
@@ -854,6 +857,7 @@ export class GenerationAttempts {
       .one();
     return {
       ...attempt,
+      previewUrl: safeDiagnosticPreviewUrl(attempt.previewUrl),
       clientName,
       costs: {
         actualUsd: costs.actual,

@@ -19,6 +19,7 @@ import {
   formatTimestamp,
   previewHref,
   safeEvidenceUrl,
+  safeFocusedPreviewUrl,
   safeSiteUrl,
 } from "./format";
 
@@ -221,9 +222,9 @@ export function AttemptInspector({
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const [open, setOpen] = useState(false);
   const focused = attempt && attempt.profile !== "full";
-  const previewUrl = safeSiteUrl(
-    focused ? attempt.previewUrl : client?.previewUrl,
-  );
+  const previewUrl = focused
+    ? safeFocusedPreviewUrl(attempt.previewUrl)
+    : safeSiteUrl(client?.previewUrl);
   const productionUrl = focused ? null : safeSiteUrl(client?.productionUrl);
   const siteUrl = previewUrl || productionUrl;
   const siteHref = previewUrl
