@@ -1758,6 +1758,54 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
     expect(summary.totalUsd).toBe(0.07);
   });
 
+  it("accounts for a failed gate attempt that reported no usage", async () => {
+    const { root, candidates } = await fixture();
+    const outDir = path.join(root, "evidence");
+    const scriptPath = path.join(root, "erroring-visual-gate.mjs");
+    await fs.writeFile(
+      scriptPath,
+      `import fs from "node:fs";
+const index = process.argv.indexOf("--report");
+fs.writeFileSync(process.argv[index + 1], JSON.stringify({
+  version: 1,
+  mode: "verify",
+  model: "openai/gpt-6-luna",
+  status: "error",
+  durationMs: 900,
+  error: "Visual audit failed (502).",
+}));
+process.exit(2);
+`,
+    );
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir,
+        runBakeoffImpl: async (options: any) =>
+          writeBakeoffEvidence(options, report()),
+        runVisualGateImpl: async (options: any) =>
+          runVisualGateProcess({ ...options, visualGateScript: scriptPath }),
+        repairCandidateImpl: async () => {},
+        promoteImpl: async () => ({ candidateId: "candidate-a" }),
+      }),
+    ).rejects.toThrow(/could not run/iu);
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: outDir }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: null,
+      costKind: "unreported",
+      complete: false,
+      detail: { calls: 1, unpricedCalls: 1 },
+    });
+    expect(summary.incomplete).toBe(true);
+  });
+
   it("threads one frozen creative session through repairs and summary evidence", async () => {
     const { root, candidates } = await fixture();
     let gateCalls = 0;

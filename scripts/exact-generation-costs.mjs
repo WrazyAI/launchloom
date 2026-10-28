@@ -100,13 +100,11 @@ export function exactGenerationCosts(input = {}, options = {}) {
       (entry) => entry?.usage?.cost ?? entry?.cost,
     );
     // Copied final evidence restates a round report; count the paid call once.
+    // Every remaining report is a call, and a missing amount is unknown spend.
     for (const file of dedupeRepairGateEvidence(repair.visualGateFiles)
       .evidence) {
-      if (
-        file?.report &&
-        (file.report.usage || file.report.cache?.cost !== undefined)
-      )
-        values.push(file.report.usage?.cost ?? file.report.cache?.cost);
+      if (!file?.report) continue;
+      values.push(file.report.usage?.cost ?? file.report.cache?.cost ?? null);
     }
     if (values.length) record("repair_qa", values);
   }

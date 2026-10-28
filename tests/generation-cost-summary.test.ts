@@ -395,7 +395,12 @@ describe("generation cost summary", () => {
       costUsd: 0.45,
       costKind: "actual",
       complete: true,
-      detail: { calls: 2, pricedCalls: 2, unpricedCalls: 0 },
+      detail: {
+        calls: 2,
+        pricedCalls: 2,
+        unpricedCalls: 0,
+        duplicateReports: 1,
+      },
     });
     expect(repair?.detail.sources).toEqual(["round-01/visual-gate.json"]);
     expect(summary.totalUsd).toBe(0.45);
@@ -575,6 +580,258 @@ describe("generation cost summary", () => {
       costKind: "actual",
     });
     await fs.rm(root, { recursive: true, force: true });
+  });
+});
+
+describe("repair gate accounting", () => {
+  it("counts an attempted gate with no reported amount as unreported", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    await fs.mkdir(path.join(root, "round-00"), { recursive: true });
+    // The gate's own error path writes a report without usage or cache.
+    await fs.writeFile(
+      path.join(root, "round-00", "visual-gate.json"),
+      JSON.stringify({
+        version: 1,
+        mode: "verify",
+        model: "openai/gpt-6-luna",
+        status: "error",
+        durationMs: 900,
+        error: "Visual audit failed (502).",
+      }),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: null,
+      costKind: "unreported",
+      complete: false,
+      detail: {
+        calls: 1,
+        pricedCalls: 0,
+        unpricedCalls: 1,
+        sources: ["round-00/visual-gate.json"],
+      },
+    });
+    expect(summary.exact.stages.repair_qa).toMatchObject({
+      amountUsd: null,
+      costKind: "unreported",
+      coverageComplete: false,
+    });
+    expect(summary.incomplete).toBe(true);
+    expect(summary.totalUsd).toBe(0);
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("keeps known repair totals when another gate amount is unreported", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    await fs.mkdir(path.join(root, "round-00"), { recursive: true });
+    await fs.mkdir(path.join(root, "round-01"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "repair-usage.json"),
+      JSON.stringify({
+        version: 1,
+        model: "openai/gpt-6-luna",
+        records: [{ usage: { cost: 0.4 } }],
+      }),
+    );
+    await fs.writeFile(
+      path.join(root, "round-00", "visual-gate.json"),
+      JSON.stringify({ version: 1, mode: "verify", status: "error" }),
+    );
+    await fs.writeFile(
+      path.join(root, "round-01", "visual-gate.json"),
+      JSON.stringify(visualGateReport()),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: 0.45,
+      costKind: "actual",
+      complete: false,
+      detail: { calls: 3, pricedCalls: 2, unpricedCalls: 1 },
+    });
+    expect(summary.exact.stages.repair_qa).toMatchObject({
+      amountUsd: "0.45",
+      costKind: "actual",
+      coverageComplete: false,
+    });
+    expect(summary.incomplete).toBe(true);
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("does not treat a gate site config as a paid call", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    await fs.mkdir(path.join(root, "round-01"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "round-01", "visual-gate.json"),
+      JSON.stringify(visualGateReport()),
+    );
+    await fs.writeFile(
+      path.join(root, "round-01", "visual-gate-site.config.json"),
+      JSON.stringify({ design: { experience: {} } }),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: 0.05,
+      complete: true,
+      detail: { calls: 1, sources: ["round-01/visual-gate.json"] },
+    });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("keeps a near-miss final copy as the paid gate call", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    const report = visualGateReport({
+      audit: { verdict: "pass", findings: [], operations: [] },
+    });
+    await fs.mkdir(path.join(root, "round-00"), { recursive: true });
+    await fs.mkdir(path.join(root, "final"), { recursive: true });
+    // The near-miss report name is outside the discovered gate pattern, so the
+    // final copy is the only evidence of that paid call and must stay counted.
+    await fs.writeFile(
+      path.join(root, "round-00", "near-miss-visual-gate.json"),
+      JSON.stringify(report),
+    );
+    await fs.copyFile(
+      path.join(root, "round-00", "near-miss-visual-gate.json"),
+      path.join(root, "final", "visual-gate.json"),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: 0.05,
+      complete: true,
+      detail: { calls: 1, sources: ["final/visual-gate.json"] },
+    });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("does not pair a copy with an identical round report from another root", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    const repairRoot = path.join(root, "repair");
+    const revisionRoot = path.join(root, "revision");
+    const report = visualGateReport();
+    await fs.mkdir(path.join(repairRoot, "round-00"), { recursive: true });
+    await fs.mkdir(path.join(revisionRoot, "final"), { recursive: true });
+    await fs.writeFile(
+      path.join(repairRoot, "round-00", "visual-gate.json"),
+      JSON.stringify(report),
+    );
+    await fs.writeFile(
+      path.join(revisionRoot, "final", "visual-gate.json"),
+      JSON.stringify(report),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({
+        repairDir: repairRoot,
+        revisionDir: revisionRoot,
+      }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({ costUsd: 0.1, complete: true, detail: { calls: 2 } });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("does not treat an empty source path as the working directory", () => {
+    const report = visualGateReport();
+    const summary = summarizeGenerationCosts({
+      repair: {
+        visualGateFiles: [
+          { name: "round-01/visual-gate.json", report, sourcePath: "" },
+          { name: "round-02/visual-gate.json", report, sourcePath: "" },
+        ],
+      },
+    });
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({ costUsd: 0.1, detail: { calls: 2 } });
+  });
+
+  it("prefers the provider per-call amount over the cache aggregate", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    await fs.mkdir(path.join(root, "round-00"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "round-00", "visual-gate.json"),
+      JSON.stringify(
+        visualGateReport({
+          usage: { prompt_tokens: 100, completion_tokens: 20, cost: 0.25 },
+          cache: { cost: 0.3 },
+        }),
+      ),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({ costUsd: 0.25, costKind: "actual", complete: true });
+    expect(summary.exact.stages.repair_qa).toMatchObject({
+      amountUsd: "0.25",
+      costKind: "actual",
+    });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("does not price a null review or authoring amount as zero", () => {
+    const summary = summarizeGenerationCosts({
+      generatedAssets: {
+        generationRequests: 0,
+        placements: [
+          {
+            placement: "hero",
+            imageReview: {
+              status: "unavailable",
+              usage: { prompt_tokens: 10, cost: null },
+            },
+          },
+        ],
+        skipped: [{ imageReviews: [{ usage: { cost: 0.001 } }] }],
+      },
+      creativeRun: { usage: [{ usage: { cost: null } }] },
+    });
+    const stages = Object.fromEntries(
+      summary.stages.map((stage: any) => [stage.stage, stage]),
+    );
+    expect(stages.image_review).toMatchObject({
+      costUsd: 0.001,
+      costKind: "actual",
+      complete: false,
+      detail: { pricedCalls: 1, unpricedCalls: 1 },
+    });
+    expect(stages.authoring).toMatchObject({
+      costUsd: null,
+      costKind: "unreported",
+      complete: false,
+    });
+    expect(summary.exact.stages.image_review).toMatchObject({
+      amountUsd: "0.001",
+      coverageComplete: false,
+    });
+    expect(summary.exact.stages.authoring).toMatchObject({
+      amountUsd: null,
+      costKind: "unreported",
+      coverageComplete: false,
+    });
   });
 });
 

@@ -84,7 +84,9 @@ async function listJsonFiles(directory, predicate, options = {}, depth = 0) {
 }
 
 function usageCost(record) {
-  const cost = finiteNumber(record?.usage?.cost);
+  const raw = record?.usage?.cost;
+  if (raw === null || raw === undefined) return null;
+  const cost = finiteNumber(raw);
   return cost !== null && cost >= 0 ? cost : null;
 }
 
@@ -295,8 +297,8 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
         stage: "image_review",
         provider: "openrouter",
         model,
-        costUsd: summed.unpriced === 0 ? summed.cost : null,
-        costKind: summed.unpriced === 0 ? "actual" : "unreported",
+        costUsd: summed.priced ? summed.cost : null,
+        costKind: summed.priced ? "actual" : "unreported",
         complete: summed.unpriced === 0,
         detail: {
           calls: reviewRecords.length,
@@ -346,7 +348,9 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
       model: creative.model || null,
       costUsd: cost === null ? null : round(cost),
       costKind: cost === null ? "unreported" : "actual",
-      complete: cost !== null,
+      // Per-call records must all report an amount before coverage is complete.
+      complete:
+        cost !== null && (usageRecords.length ? summed.unpriced === 0 : true),
       detail: {
         status: creative.status || null,
         candidates: Array.isArray(creative.candidates)
@@ -370,25 +374,26 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
     for (const record of Array.isArray(repair.usage) ? repair.usage : [])
       records.push({ usage: record.usage || record });
     for (const file of repairEvidence.evidence) {
+      // Every discovered gate report is an attempted call. A gate whose error
+      // path wrote no usage is unknown spend, not absent spend.
       if (!file || !file.report) continue;
       const usage = file.report.usage || null;
       const cacheCost = optionalCost(file.report.cache?.cost);
-      if (usage || cacheCost !== null) {
-        records.push({
-          usage,
-          ...(cacheCost !== null ? { cost: cacheCost } : {}),
-          source: file.name || "visual-gate",
-        });
-        sources.push(file.name || "visual-gate");
-      }
+      records.push({
+        usage,
+        ...(cacheCost !== null ? { cost: cacheCost } : {}),
+        source: file.name || "visual-gate",
+      });
+      sources.push(file.name || "visual-gate");
     }
     let cost = 0;
     let priced = 0;
     let unpriced = 0;
     for (const record of records) {
-      // A null amount is unknown evidence, not a priced zero.
+      // Provider per-call usage takes precedence over the cache aggregate, and
+      // a null amount is unknown evidence rather than a priced zero.
       const value =
-        optionalCost(record.cost) ?? optionalCost(record?.usage?.cost);
+        optionalCost(record?.usage?.cost) ?? optionalCost(record.cost);
       if (value === null || value < 0) unpriced += 1;
       else {
         cost += value;
@@ -396,10 +401,12 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
       }
     }
     if (records.length) {
+      const reportedCopies = Number(repair.duplicateReports);
       const ignoredCopies =
-        repairEvidence.duplicates.length ||
-        Number(repair.duplicateReports) ||
-        0;
+        repairEvidence.duplicates.length +
+        (Number.isSafeInteger(reportedCopies) && reportedCopies > 0
+          ? reportedCopies
+          : 0);
       stages.push({
         stage: "repair_qa",
         provider: "openrouter",
@@ -514,8 +521,19 @@ export async function readGenerationCostInputs(paths = {}, options = {}) {
       if (summary?.repairCycles)
         rounds += Object.values(summary.repairCycles).length;
       let candidates;
-      try { candidates = await listJsonFiles(root, (name) => /^visual-gate.*\.json$/u.test(name), options); }
-      catch (error) { if (!options.partial) throw error; options.budget.incomplete = true; candidates = []; }
+      try {
+        candidates = await listJsonFiles(
+          root,
+          (name) =>
+            /^visual-gate.*\.json$/u.test(name) &&
+            !/config\.json$/iu.test(name),
+          options,
+        );
+      } catch (error) {
+        if (!options.partial) throw error;
+        options.budget.incomplete = true;
+        candidates = [];
+      }
       for (const file of candidates) {
         const report = await readJson(file, options);
         if (report)
@@ -523,6 +541,7 @@ export async function readGenerationCostInputs(paths = {}, options = {}) {
             name: path.relative(root, file),
             report,
             sourcePath: file,
+            root,
           });
       }
     }
