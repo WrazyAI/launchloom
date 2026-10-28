@@ -358,10 +358,12 @@ jobs:
           CLIENT_EMAIL: ${{ github.event.client_payload.client_email }}
           SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
         run: |
+          ATTEMPT="${TRACK_ATTEMPT:-github:${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}}"
+          echo "TRACK_ATTEMPT=$ATTEMPT" >> "$GITHUB_ENV"
           node scripts/record-generation-event.mjs \
             --action start \
             --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --profile full \
-            --request-id "$TRACK_REQUEST" --attempt-id "$TRACK_ATTEMPT" --triggering-actor "$TRACK_ACTOR" \
+            --request-id "$TRACK_REQUEST" --attempt-id "$ATTEMPT" --triggering-actor "$TRACK_ACTOR" \
             --execution-status running --delivery-status none --observed-at "$(date +%s%3N)" \
             --issue "${{ github.event.client_payload.issue || inputs.issue }}" \
             --submission-id "$SUBMISSION_ID" \
@@ -427,6 +429,7 @@ jobs:
           fi
           SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
+          echo "submission_id=$(node -e 'const fs=require("fs");const t=fs.readFileSync("/tmp/intake.md","utf8");const m=t.match(/"submissionId"\s*:\s*"([^"]+)"/);console.log(m?m[1]:"")')" >> "$GITHUB_OUTPUT"
           echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
           echo "business_name=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.name)')" >> "$GITHUB_OUTPUT"
           echo "email=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.email)')" >> "$GITHUB_OUTPUT"
@@ -444,7 +447,7 @@ jobs:
       - name: Record SEO research result
         continue-on-error: true
         env:
-          SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
+          SUBMISSION_ID: ${{ github.event.client_payload.submission_id || steps.intake.outputs.submission_id }}
           CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
         run: |
           node scripts/generation-cost-summary.mjs \
@@ -1222,7 +1225,7 @@ jobs:
       - name: Record preview ready
         continue-on-error: true
         env:
-          SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
+          SUBMISSION_ID: ${{ github.event.client_payload.submission_id || steps.intake.outputs.submission_id }}
           CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
         run: |
           STATUS=preview_ready
