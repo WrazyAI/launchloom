@@ -135,6 +135,9 @@ BEGIN
   RETURN 'attention';
 END $$;
 
+-- Reapplication is supported: 006 changes this function's return columns, so a
+-- second 005 pass must drop the prior shape before replacing it.
+DROP FUNCTION IF EXISTS launchloom_operations.attempt_cost_rollup(uuid);
 CREATE OR REPLACE FUNCTION launchloom_operations.attempt_cost_rollup(p_id uuid)
 RETURNS TABLE(currency text, actual text, estimated text, unreported bigint)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, launchloom_operations, pg_temp AS $$

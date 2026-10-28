@@ -3,6 +3,10 @@
 -- functions cannot create, change, dispatch or resolve operational records.
 BEGIN;
 
+-- Global keyset pagination orders by this exact tuple. IF NOT EXISTS keeps the
+-- migration safe when the owner re-applies the sequence.
+CREATE INDEX IF NOT EXISTS attempts_created_recency ON launchloom_operations.generation_attempts(created_at DESC, id DESC);
+
 CREATE OR REPLACE FUNCTION launchloom_operations.operation_record(p_id uuid)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = pg_catalog, launchloom_operations, pg_temp AS $$
@@ -15,11 +19,15 @@ SET search_path = pg_catalog, launchloom_operations, pg_temp AS $$
     'profile', r.profile,
     'attemptNumber', a.attempt_number,
     'status', CASE
+      WHEN i.acceptance_state <> 'confirmed' THEN 'attention'
       WHEN a.state = 'succeeded' AND a.delivery_state = 'preview_ready' THEN 'preview_ready'
       WHEN a.state = 'succeeded' THEN 'attention'
       ELSE a.state END,
     'executionStatus', a.state,
-    'dispatchState', CASE WHEN o.state = 'attention' THEN 'attention' ELSE r.dispatch_state END,
+    'dispatchState', CASE
+      WHEN i.acceptance_state <> 'confirmed' THEN 'attention'
+      WHEN o.state = 'attention' THEN 'attention'
+      ELSE r.dispatch_state END,
     'deliveryStatus', a.delivery_state,
     'createdAt', a.created_at,
     'startedAt', a.started_at,
@@ -56,6 +64,7 @@ SET search_path = pg_catalog, launchloom_operations, pg_temp AS $$
       FROM launchloom_operations.attempt_cost_rollup(a.id) c
     ), '[]'::jsonb),
     'attentionReason', CASE
+      WHEN i.acceptance_state <> 'confirmed' THEN 'acceptance_unconfirmed'
       WHEN a.state = 'attention' THEN coalesce(a.terminal_reason, 'operator_attention')
       WHEN a.state = 'succeeded' AND a.delivery_state <> 'preview_ready' THEN 'missing_handoff'
       WHEN o.state = 'attention' THEN coalesce(o.last_error_code, 'dispatch_attention')
@@ -63,6 +72,7 @@ SET search_path = pg_catalog, launchloom_operations, pg_temp AS $$
       WHEN a.state = 'waiting_to_start' AND a.created_at < now() - interval '10 minutes' THEN 'aging_outbox'
       ELSE NULL END,
     'recoveryReason', CASE
+      WHEN i.acceptance_state <> 'confirmed' THEN 'acceptance_unconfirmed'
       WHEN a.state = 'attention' THEN coalesce(a.terminal_reason, 'operator_attention')
       WHEN a.state = 'succeeded' AND a.delivery_state <> 'preview_ready' THEN 'missing_handoff'
       WHEN o.state = 'attention' THEN coalesce(o.last_error_code, 'dispatch_attention')
@@ -94,11 +104,16 @@ CREATE OR REPLACE FUNCTION launchloom_operations.list_operations(
 )
 RETURNS TABLE(record jsonb) LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = pg_catalog, launchloom_operations, pg_temp AS $$
-  WITH filtered AS (
+  WITH eligible AS (
     SELECT a.id, a.created_at
     FROM launchloom_operations.generation_attempts a
+    JOIN launchloom_operations.generation_requests r ON r.id = a.request_id
+    JOIN launchloom_operations.intakes i ON i.id = r.intake_id
+    JOIN launchloom_operations.dispatch_outbox o ON o.attempt_id = a.id
+  ), filtered AS (
+    SELECT id, created_at FROM eligible
     WHERE p_before_created IS NULL
-      OR (a.created_at, a.id) < (p_before_created, p_before_id)
+      OR (created_at, id) < (p_before_created, p_before_id)
   ), page AS (
     SELECT id, created_at FROM filtered
     ORDER BY created_at DESC, id DESC
@@ -110,11 +125,15 @@ SET search_path = pg_catalog, launchloom_operations, pg_temp AS $$
   )
   SELECT jsonb_build_object(
     'items', coalesce((
-      SELECT jsonb_agg(launchloom_operations.operation_record(visible.id)
-        ORDER BY visible.created_at DESC, visible.id DESC)
-      FROM visible
+      SELECT jsonb_agg(item.record ORDER BY item.created_at DESC, item.id DESC)
+      FROM (
+        SELECT launchloom_operations.operation_record(visible.id) AS record,
+          visible.created_at, visible.id
+        FROM visible
+      ) item
+      WHERE item.record IS NOT NULL
     ), '[]'::jsonb),
-    'total', (SELECT count(*) FROM launchloom_operations.generation_attempts),
+    'total', (SELECT count(*) FROM eligible),
     'hasMore', (SELECT count(*) FROM page) > p_limit
   );
 $$;

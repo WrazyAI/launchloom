@@ -18,6 +18,8 @@ import {
 } from "../operations/store";
 
 const WORKSPACE_PREFIX = "/api/admin/onboarding-invites/workspace";
+const OPERATION_UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 
 /** Deterministic legacy ID derived only from a verified, normalized email. */
 export async function legacyAccessId(verifiedEmail: string): Promise<string> {
@@ -306,7 +308,11 @@ export async function operationsDashboardApi(
     );
   const suffix = new URL(request.url).pathname.slice(WORKSPACE_PREFIX.length);
   const list = suffix === "/operations/records";
-  const detail = /^\/operations\/records\/([0-9a-f-]{36})$/u.exec(suffix)?.[1];
+  const detailMatch = /^\/operations\/records\/(.+)$/u.exec(suffix);
+  const detail =
+    detailMatch && OPERATION_UUID.test(detailMatch[1])
+      ? detailMatch[1]
+      : null;
   if (!list && !detail)
     return workspaceError("not_found", "Route not found.", 404);
   const url = new URL(request.url);
@@ -343,7 +349,7 @@ export async function operationsDashboardApi(
         { "X-LaunchLoom-Record-Source": "operations" },
       );
     }
-    if (!detail || !/^[0-9a-f-]{36}$/u.test(detail))
+    if (!detail)
       return workspaceError("not_found", "Operation not found.", 404);
     const operation = await reader.getOperation(detail);
     if (!operation)

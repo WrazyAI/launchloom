@@ -69,6 +69,13 @@ export function telemetryLabel(incomplete: boolean) {
   return incomplete ? "Telemetry incomplete" : "Telemetry complete";
 }
 
+/** Detail events are capped by the server; never imply a partial list is complete. */
+export function eventListLabel(shown: number, total: number) {
+  const rendered = Number.isSafeInteger(shown) && shown > 0 ? shown : 0;
+  const recorded = Number.isSafeInteger(total) && total > 0 ? total : 0;
+  return `Showing ${rendered} of ${recorded} events`;
+}
+
 export function operationSummary(records: OperationRecord[]) {
   return {
     attention: records.filter(operationNeedsAttention).length,

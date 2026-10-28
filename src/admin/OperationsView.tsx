@@ -10,6 +10,7 @@ import { AdminIcon } from "./AdminIcon";
 import { formatTimestamp, isAbortError, requestErrorMessage } from "./format";
 import {
   costKindLabel,
+  eventListLabel,
   operationCostLabel,
   operationNeedsAttention,
   operationStatusLabel,
@@ -301,7 +302,10 @@ function OperationDetailPanel({
         </div>
       </div>
 
-      <h3>Stage events ({detail.eventCount})</h3>
+      <h3>Stage events</h3>
+      <p className="admin-operations-muted" data-event-coverage>
+        {eventListLabel(detail.events.length, detail.eventCount)}
+      </p>
       <EventList events={detail.events} />
     </section>
   );

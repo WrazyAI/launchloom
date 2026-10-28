@@ -386,6 +386,26 @@ describe("operations dashboard API", () => {
     expect(missing.status).toBe(404);
   });
 
+  it("rejects non-UUID detail routes without calling the store", async () => {
+    const store = readStore();
+    for (const malformed of [
+      "------------------------------------",
+      "../../etc/passwd",
+      "111111111111111111111111111111111111",
+    ]) {
+      const response = await operationsDashboardApi(
+        new Request(
+          `${workspace}/operations/records/${encodeURIComponent(malformed)}`,
+        ),
+        env,
+        admin,
+        store,
+      );
+      expect(response.status).toBe(404);
+    }
+    expect(store.getOperation).not.toHaveBeenCalled();
+  });
+
   it("does not expose provider errors as private data", async () => {
     const store = readStore();
     store.listOperations.mockRejectedValueOnce(

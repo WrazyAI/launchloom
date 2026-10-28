@@ -340,7 +340,7 @@ export function createOperationsStore(
     async getOperation(attemptId): Promise<OperationDetailRecord | null> {
       requireUuid(attemptId);
       const rows = await query<{ record: unknown }>(
-        "select * from launchloom_operations.get_operation($1::uuid)",
+        "select launchloom_operations.get_operation($1::uuid) as record",
         [attemptId],
       );
       const value = rows[0]?.record;

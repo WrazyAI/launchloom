@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiRequestError, createAdminApi } from "../src/admin/api";
 import {
+  eventListLabel,
   operationCostLabel,
   operationSourceLabel,
   operationStatusLabel,
@@ -271,6 +272,12 @@ describe("operations view model", () => {
     expect(operationSourceLabel("legacy")).toBe("Legacy history (read-only)");
   });
 
+  it("states how many events are rendered when the detail is capped", () => {
+    expect(eventListLabel(100, 250)).toBe("Showing 100 of 250 events");
+    expect(eventListLabel(3, 3)).toBe("Showing 3 of 3 events");
+    expect(eventListLabel(0, 0)).toBe("Showing 0 of 0 events");
+  });
+
   it("keeps a bounded previous-page trail for stable pagination", () => {
     let trail: string[] = [];
     for (let index = 0; index < 60; index += 1) {
@@ -296,6 +303,9 @@ describe("dashboard migration structure", () => {
       "SET search_path = pg_catalog, launchloom_operations, pg_temp",
     );
     expect(sql).toContain("TO launchloom_operations_worker");
+    expect(sql).toContain(
+      "CREATE INDEX IF NOT EXISTS attempts_created_recency ON launchloom_operations.generation_attempts(created_at DESC, id DESC)",
+    );
     expect(sql).not.toMatch(/\b(INSERT|UPDATE|DELETE)\b/u);
     expect(sql).not.toMatch(
       /GRANT[^;]*ON ALL TABLES|CREATE ROLE|CREATE DATABASE/iu,
