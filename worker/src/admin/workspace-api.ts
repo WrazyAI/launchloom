@@ -112,6 +112,15 @@ function safeSiteLink(value: unknown): unknown {
 
 const SITE_URL_FIELDS = new Set(["previewUrl", "productionUrl"]);
 
+/** Fixed contract reason codes only. Never surface a raw validation message. */
+function trackingReason(error: unknown) {
+  if (!(error instanceof Error) || !("reason" in error)) return null;
+  const reason = (error as Error & { reason?: unknown }).reason;
+  return typeof reason === "string" && /^[a-z_]{1,32}$/u.test(reason)
+    ? reason
+    : null;
+}
+
 /** The router authenticates the existing tracking secret before this boundary. */
 export async function attemptIngest(
   request: Request,
@@ -231,7 +240,14 @@ export async function attemptIngest(
   } catch (error) {
     if (error instanceof Error && error.message.includes("conflict:"))
       return workspaceError("conflict", "Record evidence conflicts.", 409);
-    return workspaceError("invalid_input", "Invalid tracking evidence.", 400);
+    const reason = trackingReason(error);
+    return workspaceError(
+      "invalid_input",
+      reason
+        ? `Invalid tracking evidence: ${reason}.`
+        : "Invalid tracking evidence.",
+      400,
+    );
   }
 }
 const json = (body: unknown, status = 200) =>

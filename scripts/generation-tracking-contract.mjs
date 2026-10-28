@@ -1,4 +1,6 @@
 // Pure wire boundary shared by trusted Node producers and Worker ingestion.
+import { isAllowedPreviewHost } from "../src/lib/preview-proxy-contract.mjs";
+
 export const TRACKING_REPOSITORY = "WrazyAI/launchloom";
 export const GENERATION_PROFILES = [
   "full",
@@ -23,8 +25,10 @@ const deliveries = [
   "published",
 ];
 const sources = ["callback", "github-reconcile", "legacy-import"];
-const fail = () => {
-  throw new Error("invalid tracking evidence");
+const fail = (reason = "invalid") => {
+  const error = new Error(`invalid tracking evidence: ${reason}`);
+  error.reason = reason;
+  throw error;
 };
 const record = (v) => v && typeof v === "object" && !Array.isArray(v);
 export function strictKeys(value, keys) {
@@ -77,6 +81,26 @@ const ref = (v) => {
     fail();
   return v;
 };
+export function safeDiagnosticPreviewUrl(value) {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.port ||
+      url.pathname !== "/" ||
+      url.search ||
+      url.hash ||
+      !isAllowedPreviewHost(url.hostname)
+    )
+      return null;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
 export function buildAttemptObservation(input) {
   strictKeys(input, [
     "repository",
@@ -89,6 +113,7 @@ export function buildAttemptObservation(input) {
     "triggeringActor",
     "executionStatus",
     "deliveryStatus",
+    "previewUrl",
     "observedAt",
     "source",
     "failure",
@@ -104,13 +129,20 @@ export function buildAttemptObservation(input) {
     input.runAttempt < 1 ||
     input.runAttempt > 1000
   )
-    fail();
-  if (
-    !GENERATION_PROFILES.includes(input.profile) ||
-    !executions.includes(input.executionStatus) ||
-    !deliveries.includes(input.deliveryStatus)
-  )
-    fail();
+    fail("identity");
+  if (!GENERATION_PROFILES.includes(input.profile)) fail("profile");
+  if (!executions.includes(input.executionStatus)) fail("execution_status");
+  if (!deliveries.includes(input.deliveryStatus)) fail("delivery_status");
+  let previewUrl = null;
+  if (input.previewUrl != null) {
+    if (
+      input.deliveryStatus !== "diagnostic" ||
+      !["creative-only", "seo-only", "full-preview"].includes(input.profile)
+    )
+      fail("preview_delivery");
+    previewUrl = safeDiagnosticPreviewUrl(input.previewUrl);
+    if (!previewUrl) fail("preview_url");
+  }
   const source = input.source ?? "callback";
   if (!sources.includes(source)) fail();
   const actor = input.triggeringActor ?? null;
@@ -141,6 +173,7 @@ export function buildAttemptObservation(input) {
     triggeringActor: actor,
     executionStatus: input.executionStatus,
     deliveryStatus: input.deliveryStatus,
+    previewUrl,
     observedAt: time(input.observedAt),
     source,
     createdAt: time(input.createdAt, true),

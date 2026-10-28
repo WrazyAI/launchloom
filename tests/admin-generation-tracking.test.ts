@@ -4,7 +4,15 @@ import {
   buildAttemptTrackingPayload,
   buildGenerationTrackingPayload,
 } from "../scripts/record-generation-event.mjs";
-import { buildPipelineAttemptTracking } from "../scripts/run-pipeline-test.mjs";
+import {
+  buildPipelineAttemptTracking,
+  createCloudDependencies,
+  diagnosticScreenshotPath,
+  diagnosticThumbnailStatus,
+  pipelineSitePath,
+  uploadDiagnosticScreenshot,
+} from "../scripts/run-pipeline-test.mjs";
+import { isAllowedPreviewHost } from "../src/lib/preview-proxy-contract.mjs";
 import fs from "node:fs/promises";
 import YAML from "yaml";
 
@@ -19,6 +27,289 @@ const input = {
   observedAt: 1000,
 };
 describe("trusted attempt producer", () => {
+  it("only accepts a token-free private diagnostic URL for diagnostic delivery", () => {
+    const previewUrl = "https://abc123.launchloom-pipeline-preview.pages.dev/";
+    expect(
+      contract.buildAttemptObservation({ ...input, previewUrl }).previewUrl,
+    ).toBe(previewUrl);
+    for (const invalid of [
+      "https://evil.pages.dev/",
+      `${previewUrl}?review=secret`,
+      "http://abc123.launchloom-pipeline-preview.pages.dev/",
+    ])
+      expect(() =>
+        contract.buildAttemptObservation({ ...input, previewUrl: invalid }),
+      ).toThrow();
+    expect(() =>
+      contract.buildAttemptObservation({
+        ...input,
+        deliveryStatus: "none",
+        previewUrl,
+      }),
+    ).toThrow();
+  });
+  it("uses the shared host validator for diagnostic preview labels", () => {
+    const valid = "https://abc123.launchloom-pipeline-preview.pages.dev/";
+    expect(contract.safeDiagnosticPreviewUrl(valid)).toBe(valid);
+    for (const label of ["-abc", "abc-", "a".repeat(64)]) {
+      const host = `${label}.launchloom-pipeline-preview.pages.dev`;
+      expect(isAllowedPreviewHost(host)).toBe(false);
+      expect(contract.safeDiagnosticPreviewUrl(`https://${host}/`)).toBeNull();
+    }
+  });
+  it("reports a precise reason for rejected preview evidence", () => {
+    const cases: Array<[Record<string, unknown>, string]> = [
+      [
+        {
+          previewUrl: "https://-abc.launchloom-pipeline-preview.pages.dev/",
+        },
+        "preview_url",
+      ],
+      [
+        {
+          profile: "unsupported",
+          previewUrl: "https://-abc.launchloom-pipeline-preview.pages.dev/",
+        },
+        "profile",
+      ],
+      [
+        {
+          deliveryStatus: "none",
+          previewUrl: "https://abc123.launchloom-pipeline-preview.pages.dev/",
+        },
+        "preview_delivery",
+      ],
+    ];
+    for (const [change, reason] of cases) {
+      try {
+        contract.buildAttemptObservation({ ...input, ...change });
+        throw new Error("expected rejection");
+      } catch (error) {
+        expect((error as { reason?: string }).reason).toBe(reason);
+      }
+    }
+  });
+  it("wires cloud dependencies to the shared site path without commands", () => {
+    const siteInput = {
+      profile: "creative-only",
+      issue: 185,
+      runId: "9001-2",
+    };
+    const dependencies = createCloudDependencies(siteInput, {
+      work: "/tmp/runner",
+    });
+    expect(dependencies.site).toBe(pipelineSitePath(siteInput, "/tmp/runner"));
+  });
+  it("reports diagnostic thumbnail outcomes without cloud calls", () => {
+    const report = {
+      previewDelivered: true,
+      previewUrl: "https://abc123.launchloom-pipeline-preview.pages.dev/",
+      stages: {
+        select: { status: "passed", candidate: "candidate-b" },
+        technical: { gates: [{ name: "rendered", passed: true }] },
+      },
+    };
+    const observation = {
+      previewUrl: "https://abc123.launchloom-pipeline-preview.pages.dev/",
+    };
+    const base = { report, observation, site: "/tmp/site", secret: "secret" };
+    expect(diagnosticThumbnailStatus(base)).toMatchObject({
+      status: "ready",
+      heroFile: "/tmp/site/.launchloom/screenshots/desktop.png",
+    });
+    expect(
+      diagnosticThumbnailStatus({
+        ...base,
+        report: { ...report, previewDelivered: false },
+      }),
+    ).toEqual({ status: "unavailable", reason: "not_delivered" });
+    expect(
+      diagnosticThumbnailStatus({
+        ...base,
+        report: { ...report, previewUrl: null },
+        observation: { previewUrl: null },
+      }),
+    ).toEqual({ status: "unavailable", reason: "preview_url_missing" });
+    expect(
+      diagnosticThumbnailStatus({
+        ...base,
+        report: { ...report, previewUrl: "https://evil.pages.dev/" },
+        observation: { previewUrl: null },
+      }),
+    ).toEqual({ status: "unavailable", reason: "preview_url_invalid" });
+    expect(diagnosticThumbnailStatus({ ...base, secret: "" })).toEqual({
+      status: "unavailable",
+      reason: "no_tracking_secret",
+    });
+    expect(
+      diagnosticThumbnailStatus({
+        ...base,
+        report: {
+          ...report,
+          stages: {
+            ...report.stages,
+            technical: { gates: [{ name: "rendered", passed: false }] },
+          },
+        },
+      }),
+    ).toEqual({ status: "unavailable", reason: "screenshot_not_verified" });
+  });
+  it("binds a diagnostic URL to its delivery, never to an undelivered report", () => {
+    const report = {
+      profile: "creative-only",
+      verdict: "failed",
+      previewDelivered: true,
+      previewUrl: "https://abc123.launchloom-pipeline-preview.pages.dev/",
+      startedAt: "2026-10-01T00:00:00Z",
+      finishedAt: "2026-10-01T00:01:00Z",
+      stages: {},
+      costs: null,
+    };
+    const env = {
+      GITHUB_RUN_ID: "9001",
+      GITHUB_RUN_ATTEMPT: "2",
+      GITHUB_REPOSITORY: "WrazyAI/launchloom",
+    };
+    expect(
+      buildPipelineAttemptTracking(report, env, 5).observation.previewUrl,
+    ).toBe(report.previewUrl);
+    expect(
+      buildPipelineAttemptTracking(
+        { ...report, previewDelivered: false },
+        env,
+        5,
+      ).observation.previewUrl,
+    ).toBeNull();
+    const unsupported = buildPipelineAttemptTracking(
+      { ...report, previewUrl: "https://untrusted.pages.dev/" },
+      env,
+      5,
+    ).observation;
+    expect(unsupported.previewUrl).toBeNull();
+    expect(unsupported.executionStatus).toBe("failed");
+    expect(unsupported.deliveryStatus).toBe("diagnostic");
+  });
+  it("only selects the rendered desktop capture after selected build and successful rendered gate", () => {
+    const report = {
+      previewDelivered: true,
+      stages: {
+        select: { status: "passed", candidate: "candidate-b" },
+        technical: {
+          status: "failed",
+          gates: [
+            { name: "rendered", passed: true },
+            { name: "contrast", passed: false },
+          ],
+        },
+      },
+    };
+    expect(diagnosticScreenshotPath(report, "/tmp/site")).toBe(
+      "/tmp/site/.launchloom/screenshots/desktop.png",
+    );
+    expect(
+      diagnosticScreenshotPath(
+        { ...report, previewDelivered: false },
+        "/tmp/site",
+      ),
+    ).toBeNull();
+    expect(
+      diagnosticScreenshotPath(
+        {
+          ...report,
+          stages: {
+            ...report.stages,
+            technical: {
+              status: "failed",
+              gates: [{ name: "rendered", passed: false }],
+            },
+          },
+        },
+        "/tmp/site",
+      ),
+    ).toBeNull();
+    expect(
+      diagnosticScreenshotPath(
+        {
+          ...report,
+          stages: { ...report.stages, select: { status: "failed" } },
+        },
+        "/tmp/site",
+      ),
+    ).toBeNull();
+  });
+  it("resolves the exact isolated site path for every profile", () => {
+    const base = { issue: 185, runId: "40553569891-1" };
+    expect(
+      pipelineSitePath({ ...base, profile: "creative-only" }, "/tmp/runner"),
+    ).toBe("/tmp/runner/llqa-185-creative-40553569891-1");
+    expect(
+      pipelineSitePath({ ...base, profile: "seo-only" }, "/tmp/runner"),
+    ).toBe("/tmp/runner/llqa-185-seo-40553569891-1");
+    expect(pipelineSitePath({ ...base, profile: "full" }, "/tmp/runner")).toBe(
+      "/tmp/runner/llqa-185-full-40553569891-1",
+    );
+    expect(
+      pipelineSitePath({ ...base, profile: "full-preview" }, "/tmp/runner"),
+    ).toBe("/tmp/runner/llqa-185-full-40553569891-1");
+    expect(() => pipelineSitePath({ ...base, profile: "full" }, "")).toThrow(
+      "RUNNER_TEMP is required",
+    );
+  });
+  it("uploads a verified capture under the exact run and attempt key", async () => {
+    const uploads: any[] = [];
+    const site = pipelineSitePath(
+      { profile: "creative-only", issue: 185, runId: "9001-2" },
+      "/tmp/runner",
+    );
+    const report = {
+      previewDelivered: true,
+      stages: {
+        select: { status: "passed", candidate: "candidate-b" },
+        technical: { gates: [{ name: "rendered", passed: true }] },
+      },
+    };
+    const observation = {
+      previewUrl: "https://abc123.launchloom-pipeline-preview.pages.dev/",
+      runId: "9001",
+      runAttempt: 2,
+    };
+    const upload = async (v: any) => {
+      uploads.push(v);
+      return {
+        bytes: 1,
+        width: 1280 as const,
+        quality: 72 as const,
+        attempts: [],
+      };
+    };
+    expect(
+      await uploadDiagnosticScreenshot({
+        report,
+        observation,
+        site,
+        api: "https://api.example.test",
+        secret: "secret",
+        upload,
+      }),
+    ).toBe(true);
+    expect(uploads).toMatchObject([
+      {
+        generationId: "github:9001:2",
+        heroFile: `${site}/.launchloom/screenshots/desktop.png`,
+      },
+    ]);
+    expect(
+      await uploadDiagnosticScreenshot({
+        report: { ...report, previewDelivered: false },
+        observation,
+        site,
+        api: "https://api.example.test",
+        secret: "secret",
+        upload,
+      }),
+    ).toBe(false);
+    expect(uploads).toHaveLength(1);
+  });
   it("redacts prefixed quoted credential keys and entire escaped JSON values in object and serialized details", () => {
     const detail = {
       OPENROUTER_API_KEY: "synthetic-sensitive-value",
