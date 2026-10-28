@@ -330,6 +330,68 @@ describe("site configuration", () => {
     )).toBe(true);
   });
 
+  it("builds route page content from decision support in context-only research", () => {
+    const serviceName = "Emergency dental care";
+    const pageMap = {
+      id: "service:emergency-dental-care",
+      pageType: "service",
+      title: serviceName,
+      slug: "/services/emergency-dental-care/",
+      service: serviceName,
+      primaryKeyword: { keyword: "emergency dental care Portland OR" },
+      supportingKeywords: [],
+      fanOutQuestions: [
+        "What should I have ready when I call?",
+        "How do I know which service to ask about?",
+        "When do I see costs?",
+      ],
+    };
+    const config = normalise(
+      {
+        services: [
+          {
+            name: serviceName,
+            description:
+              "For a sudden toothache, swelling, or broken tooth, call to describe what happened.",
+            decisionSupport: {
+              scope:
+                "For a sudden dental concern, call to describe the symptom and ask what the next step is.",
+              preparation:
+                "Note when the pain started and any swelling before you call.",
+              nextStep:
+                "Call to confirm the urgent visit and ask what to do while you wait.",
+            },
+          },
+        ],
+      },
+      {
+        businessName: "Northline Dental Studio",
+        industry: "wellness",
+        services: serviceName,
+        serviceAreas: "Portland, OR",
+        primaryCity: "Portland, OR",
+        seoResearch: {
+          version: 2,
+          mode: "context-only",
+          publishReady: false,
+          pageMap: [pageMap],
+        },
+      },
+    );
+    expect(config.pageContentContractVersion).toBe(1);
+    const content = config.pageContent["service:emergency dental care"];
+    expect(content.introduction.text).toContain(
+      "Northline Dental Studio serves",
+    );
+    expect(content.faqs.length).toBeGreaterThanOrEqual(2);
+    expect(pageBriefReadiness(config)).toEqual({ allowed: true });
+    const brief = config.pageBriefs.briefs.find(
+      (item: any) => item.pageType === "service",
+    );
+    expect(brief.mode).toBe("supported");
+    expect(brief.ready).toBe(true);
+  });
+
   it("does not let fallback service guidance satisfy researched route-page content", () => {
     const config = normalise({ services: [{ name: "Drain cleaning", description: "A specific description about drain cleaning scope and inspection before work begins." }] }, {
       businessName: "Harbor Plumbing",
