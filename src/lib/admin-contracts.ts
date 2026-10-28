@@ -69,6 +69,8 @@ export type AttemptInput = {
   runAttempt: number | null;
   executionStatus: ExecutionStatus;
   deliveryStatus: DeliveryStatus;
+  /** Verified focused diagnostic URL for this exact execution, when available. */
+  previewUrl?: string | null;
   stale: boolean;
   createdAt: number;
   startedAt: number | null;

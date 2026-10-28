@@ -18,7 +18,10 @@ import type {
   DispatchRequest,
 } from "../../src/lib/admin-contracts";
 import { pageRecords } from "./admin/pagination";
-import type { AttemptObservation } from "../../scripts/generation-tracking-contract.mjs";
+import {
+  safeDiagnosticPreviewUrl,
+  type AttemptObservation,
+} from "../../scripts/generation-tracking-contract.mjs";
 
 const executions = [
   "queued",
@@ -356,6 +359,7 @@ export class GenerationAttempts {
           runAttempt: o.runAttempt,
           executionStatus: o.executionStatus,
           deliveryStatus: o.deliveryStatus,
+          previewUrl: o.previewUrl,
           stale: false,
           createdAt: previous?.createdAt ?? o.createdAt ?? o.observedAt,
           startedAt: o.startedAt,
@@ -707,6 +711,11 @@ export class GenerationAttempts {
       const old: AttemptInput = JSON.parse(existing.data);
       const state: State = JSON.parse(existing.state);
       const merged = { ...old };
+      if (input.previewUrl) {
+        if (old.previewUrl && old.previewUrl !== input.previewUrl)
+          conflict("previewUrl");
+        merged.previewUrl = input.previewUrl;
+      }
       for (const key of [
         "requestId",
         "clientId",
@@ -848,6 +857,7 @@ export class GenerationAttempts {
       .one();
     return {
       ...attempt,
+      previewUrl: safeDiagnosticPreviewUrl(attempt.previewUrl),
       clientName,
       costs: {
         actualUsd: costs.actual,

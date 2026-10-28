@@ -17,6 +17,7 @@ export type AttemptObservation = {
   triggeringActor: string | null;
   executionStatus: ExecutionStatus;
   deliveryStatus: DeliveryStatus;
+  previewUrl: string | null;
   observedAt: number;
   source: AttemptEventSource;
   createdAt: number | null;
@@ -28,6 +29,7 @@ export const TRACKING_REPOSITORY: string;
 export const GENERATION_PROFILES: string[];
 export function strictKeys(value: unknown, keys: string[]): void;
 export function safeEvidenceUrl(value: unknown): string | null;
+export function safeDiagnosticPreviewUrl(value: unknown): string | null;
 export function redactTrackingText(
   value: unknown,
   limit?: number,
@@ -37,9 +39,7 @@ export function buildAttemptEvents(
   events: unknown,
   observation: AttemptObservation,
 ): AttemptEventInput[];
-export function parseGenerationRunName(
-  value: unknown,
-): {
+export function parseGenerationRunName(value: unknown): {
   issueNumber: number;
   profile: GenerationProfile;
   requestId: string | null;

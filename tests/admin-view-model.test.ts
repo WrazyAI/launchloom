@@ -14,11 +14,14 @@ import {
   formatElapsed,
   formatProfile,
   formatTimestamp,
+  focusedDiagnosticPreviewUrl,
   parseDateEnd,
   parseDateStart,
   previewHref,
   safeEvidenceUrl,
+  safeFocusedPreviewUrl,
   safeSiteUrl,
+  generationHeroUrl,
 } from "../src/admin/format";
 import { readRouteState, writeRouteState } from "../src/admin/route-state";
 import {
@@ -43,6 +46,48 @@ afterEach(() => {
 });
 
 describe("admin view model formatting", () => {
+  it("uses only the exact GitHub attempt image for proven focused runs", () => {
+    const attempt = {
+      issueNumber: 185,
+      profile: "creative-only" as const,
+      runId: "9001",
+      runAttempt: 2,
+      deliveryStatus: "diagnostic" as const,
+      previewUrl: "https://abc123.launchloom-pipeline-preview.pages.dev/",
+    };
+    expect(generationHeroUrl(attempt)).toContain("id=github%3A9001%3A2");
+    expect(focusedDiagnosticPreviewUrl(attempt)).toBe(attempt.previewUrl);
+    expect(
+      focusedDiagnosticPreviewUrl({ ...attempt, deliveryStatus: "none" }),
+    ).toBeNull();
+    expect(generationHeroUrl({ ...attempt, previewUrl: null })).toBeNull();
+    expect(
+      generationHeroUrl({ ...attempt, deliveryStatus: "none" }),
+    ).toBeNull();
+    expect(
+      generationHeroUrl({
+        ...attempt,
+        previewUrl: "https://evil.pages.dev/",
+      }),
+    ).toBeNull();
+    expect(
+      generationHeroUrl({
+        ...attempt,
+        deliveryStatus: "published",
+      }),
+    ).toBeNull();
+    expect(generationHeroUrl({ ...attempt, runId: null })).toBeNull();
+    expect(
+      generationHeroUrl({
+        issueNumber: 185,
+        profile: "full",
+        runId: "9001",
+        runAttempt: 2,
+        deliveryStatus: "published",
+        previewUrl: null,
+      }),
+    ).toContain("id=issue%3A185");
+  });
   it("does not manufacture an actor name or a zero price", () => {
     expect(formatActor(unknownActor).label).toBe("Not recorded");
     expect(
@@ -223,6 +268,15 @@ describe("admin view model formatting", () => {
       "https://launchloom.wrazyos.com/about",
     );
     expect(previewHref("javascript:window.alert(1)")).toBeNull();
+
+    expect(
+      safeFocusedPreviewUrl(
+        "https://abc123.launchloom-pipeline-preview.pages.dev/",
+      ),
+    ).toBe("https://abc123.launchloom-pipeline-preview.pages.dev/");
+    expect(safeFocusedPreviewUrl("https://evil.pages.dev/")).toBeNull();
+    expect(safeFocusedPreviewUrl("https://launchloom.wrazyos.com/")).toBeNull();
+    expect(safeFocusedPreviewUrl(null)).toBeNull();
   });
 
   it("does not call a terminal attempt in progress when completion is missing", () => {

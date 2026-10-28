@@ -110,6 +110,43 @@ describe("GenerationLedger attempt history", () => {
     expect((await store.listAttempts({})).total).toBe(2);
     expect((await store.getAttempt("q-1"))?.executionStatus).toBe("failed");
   });
+  it("re-validates diagnostic preview URLs when reading attempts", async () => {
+    const store = ledger();
+    const trusted = "https://abc123.launchloom-pipeline-preview.pages.dev/";
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "unsafe-preview",
+        repository: "WrazyAI/launchloom",
+        runId: "9101",
+        runAttempt: 1,
+        executionStatus: "failed",
+        deliveryStatus: "diagnostic",
+        previewUrl: "https://evil.pages.dev/",
+      }),
+    );
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "trusted-preview",
+        repository: "WrazyAI/launchloom",
+        runId: "9102",
+        runAttempt: 1,
+        executionStatus: "failed",
+        deliveryStatus: "diagnostic",
+        previewUrl: trusted,
+      }),
+    );
+    expect((await store.getAttempt("unsafe-preview"))?.previewUrl).toBeNull();
+    expect((await store.getAttempt("trusted-preview"))?.previewUrl).toBe(
+      trusted,
+    );
+    const items = (await store.listAttempts({})).items;
+    expect(
+      items.find((item) => item.attemptId === "unsafe-preview")?.previewUrl,
+    ).toBeNull();
+    expect(
+      items.find((item) => item.attemptId === "trusted-preview")?.previewUrl,
+    ).toBe(trusted);
+  });
   it("returns one canonical ID for repeated executed identity", async () => {
     const store = ledger();
     const input = attempt({

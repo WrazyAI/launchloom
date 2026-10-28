@@ -36,6 +36,54 @@ const post = (
 const ledger = () =>
   bindings.GENERATION_LEDGER.getByName("launchloom-generations");
 describe("trusted attempt ingestion", () => {
+  it("preserves a diagnostic URL on the exact run attempt after reconciliation", async () => {
+    const previewUrl = "https://abc123.launchloom-pipeline-preview.pages.dev/";
+    expect(
+      (
+        await post({
+          observation: observation({
+            runId: "9099",
+            profile: "creative-only",
+            previewUrl,
+          }),
+          events: [],
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await post({
+          observation: observation({
+            runId: "9099",
+            profile: "creative-only",
+            source: "github-reconcile",
+            observedAt: 2000,
+          }),
+          events: [],
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await post({
+          observation: observation({
+            runId: "9099",
+            runAttempt: 2,
+            profile: "creative-only",
+            deliveryStatus: "none",
+          }),
+          events: [],
+        })
+      ).status,
+    ).toBe(200);
+    const items = (await ledger().listAttempts({})).items.filter(
+      (a) => a.runId === "9099",
+    );
+    expect(items.find((a) => a.runAttempt === 1)?.previewUrl).toBe(previewUrl);
+    expect(
+      items.find((a) => a.runAttempt === 2)?.previewUrl ?? null,
+    ).toBeNull();
+  });
   it("redacts prefixed structured credentials before persistence", async () => {
     const detail = {
       OPENROUTER_API_KEY: "synthetic-persist-value",
@@ -272,6 +320,48 @@ describe("trusted attempt ingestion", () => {
       (await ledger().listAttempts({})).items.some((a) => a.runId === "9050"),
     ).toBe(false);
     expect((await ledger().getHealth()).lastSyncAt).toBeNull();
+  });
+  it("fails a reconciliation page closed with a precise preview reason", async () => {
+    const batch = {
+      attempts: [
+        {
+          observation: observation({
+            runId: "9095",
+            profile: "creative-only",
+            source: "github-reconcile",
+          }),
+          events: [],
+        },
+        {
+          observation: observation({
+            runId: "9096",
+            profile: "creative-only",
+            source: "github-reconcile",
+            previewUrl: "https://-abc.launchloom-pipeline-preview.pages.dev/",
+          }),
+          events: [],
+        },
+      ],
+      checkpoint: null,
+      health: {
+        lastSyncAt: 9000,
+        coverageStart: 1,
+        partial: false,
+        lastError: null,
+      },
+    };
+    const response = await post(
+      batch,
+      "test-secret",
+      "generation-reconciliation",
+    );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body).toMatchObject({ error: { code: "invalid_input" } });
+    expect(JSON.stringify(body)).toContain("preview_url");
+    const items = (await ledger().listAttempts({})).items;
+    expect(items.some((item) => item.runId === "9095")).toBe(false);
+    expect(items.some((item) => item.runId === "9096")).toBe(false);
   });
   it("records one canonical execution and github actor, terminal authority and safe detail", async () => {
     expect(
