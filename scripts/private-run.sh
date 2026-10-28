@@ -14,13 +14,18 @@ fi
 
 umask 077
 log="${RUNNER_TEMP:-/tmp}/launchloom-private-step-$$-${RANDOM}.log"
+summary="${RUNNER_TEMP:-/tmp}/launchloom-private-summary-$$-${RANDOM}.md"
+: > "$summary"
+# Some tools write to the runner-provided step summary. Redirect that channel
+# to a private file in new mode so no script can publish content to the public
+# run page. Legacy mode is untouched.
+export GITHUB_STEP_SUMMARY="$summary"
 bash --noprofile --norc -eo pipefail "$1" >"$log" 2>&1
 status=$?
+rm -f "$log" "$summary"
 if [ "$status" -eq 0 ]; then
-  rm -f "$log"
   echo "private_step=ok"
   exit 0
 fi
-rm -f "$log"
 echo "private_step=failed status=$status"
 exit "$status"

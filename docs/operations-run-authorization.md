@@ -67,6 +67,20 @@ Worker and writes it to a private temporary file; the client never prints the
 payload. Legacy issue-driven dispatches keep their existing issue path and do
 not request an OIDC token.
 
+## Public log boundary
+
+The LaunchLoom repository is public. New-mode `generate` steps run through
+`scripts/private-run.sh`, which redirects every run-step stdout/stderr stream to
+a mode-0600 ephemeral runner file, redirects `GITHUB_STEP_SUMMARY` to another
+private file, and prints only `private_step=ok` or
+`private_step=failed status=N`; both files are deleted immediately and are never
+uploaded. Client values are not written to step outputs, environment variables
+or substituted script text. `::add-mask::` lines are swallowed with stdout in new
+mode and are not relied on as a privacy control. Review and repair capabilities are stored in private
+runner files. The public launch-history record receives a sanitized business
+object containing only a generic label; pack, fingerprint and route rotation
+identity are preserved. Legacy runs pass through the original shell behavior.
+
 ## Activation boundary
 
 Enabling new-mode dispatch still requires all of the following, none of which

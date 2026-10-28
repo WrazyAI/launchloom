@@ -366,6 +366,7 @@ describe("workflow job graph and public-log privacy", () => {
     needs: Record<string, { result: string; outputs: Record<string, string> }>;
     inputs: Record<string, unknown>;
     github: Record<string, unknown>;
+    cancelled?: boolean;
   };
 
   function evaluate(expression: string, context: GuardContext) {
@@ -385,7 +386,7 @@ describe("workflow job graph and public-log privacy", () => {
       context.inputs,
       context.github,
       () => true,
-      () => false,
+      () => context.cancelled === true,
       () => true,
       () => false,
     ) as boolean;
@@ -493,6 +494,8 @@ describe("workflow job graph and public-log privacy", () => {
     expect(jobRuns(generate, newModeContext({ profile_policy: need("failure", { profile: "full" }) }))).toBe(
       false,
     );
+    expect(jobRuns(generate, { ...newModeContext(), cancelled: true })).toBe(false);
+    expect(jobRuns(generate, { ...legacyContext(), cancelled: true })).toBe(false);
   });
 
   it("prevents independent tracking and failure notifications before a new-mode claim", async () => {
@@ -637,6 +640,8 @@ describe("workflow job graph and public-log privacy", () => {
     temporary.push(directory);
     const pii = ["Synthetic Harbor Plumbing", "sam@example.test", "555-0100"];
     const output = path.join(directory, "github-output");
+    const publicSummary = path.join(directory, "public-summary.md");
+    await writeFile(publicSummary, "");
     const script = path.join(directory, "step.sh");
     await writeFile(
       script,
@@ -644,6 +649,7 @@ describe("workflow job graph and public-log privacy", () => {
         "printf 'business=%s\\n' 'Synthetic Harbor Plumbing'",
         "printf 'email=%s\\n' 'sam@example.test' >&2",
         "printf 'phone=%s\\n' '555-0100'",
+        "printf 'summary_business=%s\\n' 'Synthetic Harbor Plumbing' >> \"$GITHUB_STEP_SUMMARY\"",
         'echo "safe=1" >> "$GITHUB_OUTPUT"',
         "exit 0",
       ].join("\n"),
@@ -659,6 +665,7 @@ describe("workflow job graph and public-log privacy", () => {
               OPERATION_ID: operationId,
               RUNNER_TEMP: directory,
               GITHUB_OUTPUT: output,
+              GITHUB_STEP_SUMMARY: publicSummary,
             },
             stdio: ["ignore", "pipe", "pipe"],
           });
@@ -691,6 +698,7 @@ describe("workflow job graph and public-log privacy", () => {
       [
         "printf 'business=%s\\n' 'Synthetic Harbor Plumbing'",
         "printf 'email=%s\\n' 'sam@example.test' >&2",
+        "printf 'summary_business=%s\\n' 'Synthetic Harbor Plumbing' >> \"$GITHUB_STEP_SUMMARY\"",
         "exit 7",
       ].join("\n"),
     );
@@ -704,6 +712,7 @@ describe("workflow job graph and public-log privacy", () => {
     expect(legacy.code).toBe(7);
     expect(legacy.stdout).toContain("Synthetic Harbor Plumbing");
     expect(legacy.stderr).toContain("sam@example.test");
+    expect(await readFile(publicSummary, "utf8")).toContain("Synthetic Harbor Plumbing");
   });
 });
 

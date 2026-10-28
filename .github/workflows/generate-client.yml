@@ -279,7 +279,8 @@ jobs:
   generate:
     needs: [profile_policy, renderer_policy, intake_handoff_check]
     if: >-
-      ${{ always()
+      ${{ !cancelled()
+          && always()
           && needs.profile_policy.result == 'success'
           && needs.renderer_policy.result == 'success'
           && needs.profile_policy.outputs.profile == 'full'
