@@ -99,10 +99,17 @@ export type RunIdentity = {
   runId: string;
   runAttempt: number;
 };
-export type DispatchResult = {
-  outcome: "accepted" | "retryable" | "unknown" | "rejected";
-  now: number;
+export type DispatchOutcome =
+  | "accepted"
+  | "retryable"
+  | "unknown"
+  | "rejected";
+export type DispatchDecision = {
+  outcome: DispatchOutcome;
+  /** Only a validated, capped server delay; absent means exponential backoff. */
+  retryAfterSeconds?: number;
 };
+export type DispatchResult = DispatchDecision & { now: number };
 export type LeasedDispatch = {
   operationId: string;
   fence: number;

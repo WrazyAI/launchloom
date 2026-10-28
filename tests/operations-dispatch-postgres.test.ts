@@ -32,6 +32,8 @@ function psql(text: string): Promise<string> {
   });
 }
 function literal(value: unknown) {
+  if (value === null || value === undefined) return "NULL";
+  if (typeof value === "boolean") return value ? "TRUE" : "FALSE";
   if (typeof value === "number" && Number.isFinite(value)) return String(value);
   return `'${String(value).replaceAll("'", "''")}'`;
 }
@@ -43,6 +45,7 @@ function connection(): OperationsSql {
 }
 const now = () => Date.now();
 const store = () => createOperationsStore(connection());
+const gatedStore = () => createOperationsStore(connection(), { uncertainDispatchRetry: true });
 async function acceptance(confirmed = true) {
   const s = store();
   const id = crypto.randomUUID();
@@ -70,8 +73,8 @@ describe.runIf(enabled)("durable dispatch on real disposable Postgres", () => {
       SELECT role, signature, has_function_privilege(role, signature, 'execute') AS allowed
       FROM unnest(ARRAY['launchloom_operations_worker','launchloom_worker','launchloom_admin']) role
       CROSS JOIN unnest(ARRAY[
-        'launchloom_operations.lease_dispatch(timestamp with time zone)',
-        'launchloom_operations.record_dispatch_result(uuid,bigint,text,timestamp with time zone)',
+        'launchloom_operations.lease_dispatch(timestamp with time zone,boolean)',
+        'launchloom_operations.record_dispatch_result(uuid,bigint,text,timestamp with time zone,boolean,integer)',
         'launchloom_operations.claim_run(uuid,text,text,integer)']) signature
     ) q;`));
     expect(privileges).toHaveLength(9);
@@ -104,6 +107,148 @@ describe.runIf(enabled)("durable dispatch on real disposable Postgres", () => {
     expect(await row(a.operationId)).toMatchObject({ state: "attention", last_error_code: "dispatch_unknown", workflow_run_id: null });
     expect(await store().leaseDispatch(now() + 100_000)).toBeNull();
     expect(await store().claimRun(a.operationId, { repositoryId: "123", runId: "1001", runAttempt: 1 })).toBe("claimed");
+  });
+
+  it("automatically resumes an uncertain outage under the verified gate", async () => {
+    const a = await acceptance();
+    const t = now();
+    await dispatchScheduled({
+      store: gatedStore(),
+      dispatch: async () => { throw new Error("outage before any response"); },
+      now: () => t,
+    });
+    const waiting = await row(a.operationId);
+    expect(waiting).toMatchObject({
+      state: "pending", retry_count: 1, last_error_code: "dispatch_unknown",
+      dispatch_state: "waiting_to_start", attempt_state: "waiting_to_start", workflow_run_id: null,
+    });
+    expect(Date.parse(waiting.next_attempt_at) - t).toBe(60_000);
+    expect(await gatedStore().leaseDispatch(t + 59_999)).toBeNull();
+    let sent = 0;
+    await dispatchScheduled({
+      store: gatedStore(),
+      dispatch: async () => { sent++; return "accepted"; },
+      now: () => t + 60_000,
+    });
+    expect(sent).toBe(1);
+    expect(await row(a.operationId)).toMatchObject({
+      state: "dispatched", workflow_run_id: null, attempt_state: "waiting_to_start",
+    });
+    expect(await gatedStore().claimRun(a.operationId, {
+      repositoryId: "123", runId: "4001", runAttempt: 1,
+    })).toBe("claimed");
+    expect(await row(a.operationId)).toMatchObject({
+      attempt_state: "running", workflow_run_id: "4001",
+    });
+  });
+
+  it("recovers a crashed sender lease under the gate without transferring ownership", async () => {
+    const a = await acceptance();
+    const t = now();
+    const crashed = await gatedStore().leaseDispatch(t);
+    expect(crashed?.operationId).toBe(a.operationId);
+    expect(await gatedStore().leaseDispatch(t + 121_000)).toBeNull();
+    const requeued = await row(a.operationId);
+    expect(requeued).toMatchObject({
+      state: "pending", retry_count: 1, last_error_code: "dispatch_lease_expired",
+      dispatch_state: "waiting_to_start", attempt_state: "waiting_to_start", workflow_run_id: null,
+    });
+    expect(Date.parse(requeued.next_attempt_at) - (t + 121_000)).toBe(60_000);
+    await gatedStore().recordDispatchResult(a.operationId, crashed!.fence, {
+      outcome: "accepted", now: t + 121_000,
+    });
+    expect(await row(a.operationId)).toMatchObject({ state: "pending", workflow_run_id: null });
+    await dispatchScheduled({
+      store: gatedStore(),
+      dispatch: async (retried) => {
+        // Stable operation identity is the duplicate-safety key; fencing moves.
+        expect(retried.operationId).toBe(a.operationId);
+        expect(retried.payload).toEqual(crashed!.payload);
+        expect(retried.fence).toBeGreaterThan(crashed!.fence);
+        return "accepted";
+      },
+      now: () => t + 181_000,
+    });
+    expect(await row(a.operationId)).toMatchObject({ state: "dispatched", workflow_run_id: null });
+    expect(await gatedStore().claimRun(a.operationId, {
+      repositoryId: "123", runId: "4101", runAttempt: 1,
+    })).toBe("claimed");
+    expect(await gatedStore().claimRun(a.operationId, {
+      repositoryId: "123", runId: "4102", runAttempt: 1,
+    })).toBe("duplicate");
+  });
+
+  it("lets the real run from a lost accepted response win while retry is pending, with no replay", async () => {
+    const a = await acceptance();
+    const t = now();
+    await dispatchScheduled({
+      store: gatedStore(),
+      dispatch: async () => { throw new Error("response lost after GitHub accepted"); },
+      now: () => t,
+    });
+    expect(await row(a.operationId)).toMatchObject({
+      state: "pending", last_error_code: "dispatch_unknown", workflow_run_id: null,
+    });
+    expect(await gatedStore().claimRun(a.operationId, {
+      repositoryId: "123", runId: "5001", runAttempt: 1,
+    })).toBe("claimed");
+    expect(await gatedStore().claimRun(a.operationId, {
+      repositoryId: "123", runId: "5002", runAttempt: 1,
+    })).toBe("duplicate");
+    await gatedStore().recordDispatchResult(a.operationId, 1, {
+      outcome: "accepted", now: t + 10_000_000,
+    });
+    expect(await gatedStore().leaseDispatch(t + 10_000_000)).toBeNull();
+    expect(await row(a.operationId)).toMatchObject({
+      state: "dispatched", attempt_state: "running", workflow_run_id: "5001",
+    });
+  });
+
+  it("bounds uncertain recovery and surfaces terminal attention instead of looping forever", async () => {
+    const a = await acceptance();
+    let t = now();
+    const delays = [60, 120, 240, 480, 960, 1920, 3600];
+    for (let i = 0; i < 8; i++) {
+      const leased = await gatedStore().leaseDispatch(t);
+      expect(leased?.operationId).toBe(a.operationId);
+      await gatedStore().recordDispatchResult(a.operationId, leased!.fence, {
+        outcome: "unknown", now: t,
+      });
+      const current = await row(a.operationId);
+      if (i < 7) {
+        expect(current).toMatchObject({ state: "pending", dispatch_state: "waiting_to_start" });
+        expect(Date.parse(current.next_attempt_at) - t).toBe(delays[i] * 1000);
+        expect(await gatedStore().leaseDispatch(t + delays[i] * 1000 - 1)).toBeNull();
+        t += delays[i] * 1000;
+      }
+    }
+    expect(await row(a.operationId)).toMatchObject({
+      state: "attention", retry_count: 8, last_error_code: "dispatch_unknown",
+      dispatch_state: "attention",
+    });
+    expect(await gatedStore().leaseDispatch(t + 10_000_000)).toBeNull();
+  });
+
+  it("honors a capped rate-limit delay and keeps an ordinary forbidden terminal", async () => {
+    const a = await acceptance();
+    const t = now();
+    await dispatchScheduled({
+      store: gatedStore(),
+      dispatch: async () => ({ outcome: "retryable", retryAfterSeconds: 300 }),
+      now: () => t,
+    });
+    const limited = await row(a.operationId);
+    expect(limited).toMatchObject({ state: "pending", dispatch_state: "waiting_to_start" });
+    expect(Date.parse(limited.next_attempt_at) - t).toBe(300_000);
+    expect(await gatedStore().leaseDispatch(t + 299_999)).toBeNull();
+    await dispatchScheduled({
+      store: gatedStore(),
+      dispatch: async () => "rejected",
+      now: () => t + 300_000,
+    });
+    expect(await row(a.operationId)).toMatchObject({
+      state: "attention", last_error_code: "dispatch_rejected", dispatch_state: "attention",
+    });
   });
 
   it("serializes lease races, expires a crashed worker to attention, and ignores stale fence results", async () => {
@@ -142,6 +287,59 @@ describe.runIf(enabled)("durable dispatch on real disposable Postgres", () => {
     expect(await store().claimRun(a.operationId, run)).toBe("claimed");
     expect(await store().claimRun(a.operationId, run)).toBe("duplicate");
     expect(await store().claimRun(a.operationId, { ...run, runAttempt: 2 })).toBe("duplicate");
+  });
+
+  it("does not let a proven non-accepted 429 retry elect a pre-dispatch run", async () => {
+    const a = await acceptance();
+    await dispatchScheduled({ store: gatedStore(), dispatch: async () => "retryable", now });
+    expect(await row(a.operationId)).toMatchObject({
+      state: "pending", last_error_code: "github_rate_limited",
+      dispatch_state: "waiting_to_start",
+    });
+    expect(await gatedStore().claimRun(a.operationId, {
+      repositoryId: "123", runId: "6001", runAttempt: 1,
+    })).toBe("attention");
+    // This case intentionally leaves a due pending row; park it so later
+    // lease-order assertions in this shared persistent fixture stay isolated.
+    await psql(`UPDATE launchloom_operations.dispatch_outbox
+      SET state='attention', last_error_code='test_cleanup' WHERE id='${a.operationId}';`);
+  });
+
+  it("recovers a real 5xx outage through the scheduled handler after a restart", async () => {
+    const a = await acceptance();
+    const sql = vi.spyOn(persistence, "operationsDatabaseSql").mockImplementation(() => connection());
+    let requests = 0;
+    vi.stubGlobal("fetch", async () => {
+      requests++;
+      return new Response(null, { status: requests === 1 ? 503 : 204 });
+    });
+    const env = {
+      OPERATIONS_DATABASE_URL: "synthetic-transport-only",
+      OPERATIONS_DISPATCH_MODE: "claim-gated-v1",
+      OPERATIONS_CLAIM_GATE: "verified-v1",
+      OPERATIONS_DISPATCH_REPOSITORY: "synthetic/test",
+      OPERATIONS_DISPATCH_WORKFLOW: "operations.yml",
+      OPERATIONS_DISPATCH_REF: "fixture",
+      GITHUB_ORG_TOKEN: "synthetic",
+    };
+    try {
+      await scheduledOperations(env);
+      expect(await row(a.operationId)).toMatchObject({
+        state: "pending", last_error_code: "dispatch_unknown",
+        dispatch_state: "waiting_to_start", attempt_state: "waiting_to_start",
+      });
+      // A fresh cron invocation reconstructs the store after the quiet period.
+      await psql(`UPDATE launchloom_operations.dispatch_outbox
+        SET next_attempt_at=clock_timestamp()-interval '1 second' WHERE id='${a.operationId}';`);
+      await scheduledOperations(env);
+      expect(requests).toBe(2);
+      expect(await row(a.operationId)).toMatchObject({
+        state: "dispatched", workflow_run_id: null, attempt_state: "waiting_to_start",
+      });
+    } finally {
+      sql.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 
   it("resumes a quiet-period cron with new store instances over the same persistent database", async () => {

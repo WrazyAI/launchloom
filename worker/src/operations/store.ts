@@ -7,6 +7,15 @@ import type {
 } from "./contracts";
 export type { OperationsStore } from "./contracts";
 
+/**
+ * Uncertain dispatch recovery is opt-in and must only be set after the Task 4
+ * authenticated, pre-effect claim gate is verified. The default is disabled.
+ */
+export type OperationsStoreOptions = {
+  uncertainDispatchRetry?: boolean;
+};
+const MAX_RETRY_AFTER_SECONDS = 3600;
+
 /** Same injectable query surface as the membership store. Never share its credentials. */
 export type OperationsSql = {
   query<T = Record<string, unknown>>(
@@ -51,7 +60,17 @@ export function operationsDatabaseSql(connectionString: string): OperationsSql {
   return neon(connectionString) as unknown as OperationsSql;
 }
 
-export function createOperationsStore(sql: OperationsSql): OperationsStore {
+export function createOperationsStore(
+  sql: OperationsSql,
+  options: OperationsStoreOptions = {},
+): OperationsStore {
+  if (
+    typeof options !== "object" ||
+    (options.uncertainDispatchRetry !== undefined &&
+      typeof options.uncertainDispatchRetry !== "boolean")
+  )
+    invalid();
+  const uncertainDispatchRetry = options.uncertainDispatchRetry === true;
   async function query<T>(text: string, params: unknown[]) {
     try {
       return await sql.query<T>(text, params);
@@ -76,8 +95,8 @@ export function createOperationsStore(sql: OperationsSql): OperationsStore {
         fence: string | number;
         payload: LeasedDispatch["payload"];
       }>(
-        "select * from launchloom_operations.lease_dispatch($1::timestamptz)",
-        [new Date(now).toISOString()],
+        "select * from launchloom_operations.lease_dispatch($1::timestamptz, $2::boolean)",
+        [new Date(now).toISOString(), uncertainDispatchRetry],
       );
       if (!rows.length) return null;
       const row = rows[0];
@@ -93,11 +112,22 @@ export function createOperationsStore(sql: OperationsSql): OperationsStore {
       if (
         !Number.isSafeInteger(fence) || fence < 1 || !object(result) ||
         !["accepted", "retryable", "unknown", "rejected"].includes(result.outcome) ||
-        !Number.isSafeInteger(result.now) || result.now < 0 || result.now > 8640000000000000
+        !Number.isSafeInteger(result.now) || result.now < 0 || result.now > 8640000000000000 ||
+        (result.retryAfterSeconds !== undefined &&
+          (!Number.isSafeInteger(result.retryAfterSeconds) ||
+            result.retryAfterSeconds < 1 ||
+            result.retryAfterSeconds > MAX_RETRY_AFTER_SECONDS))
       ) invalid();
       await query(
-        "select launchloom_operations.record_dispatch_result($1::uuid, $2::bigint, $3, $4::timestamptz)",
-        [operationId, fence, result.outcome, new Date(result.now).toISOString()],
+        "select launchloom_operations.record_dispatch_result($1::uuid, $2::bigint, $3, $4::timestamptz, $5::boolean, $6::integer)",
+        [
+          operationId,
+          fence,
+          result.outcome,
+          new Date(result.now).toISOString(),
+          uncertainDispatchRetry,
+          result.retryAfterSeconds ?? null,
+        ],
       );
     },
     async claimRun(operationId, run) {

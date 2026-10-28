@@ -3,16 +3,33 @@
 -- repository/workflow/ref/audience/expiry and the operation's configured target.
 BEGIN;
 
-CREATE OR REPLACE FUNCTION launchloom_operations.lease_dispatch(p_now timestamptz)
+-- Durable proof that this operation had at least one ambiguous send (a lost
+-- response or a crashed sender lease). Only such a pending replay may be
+-- claimed; a plain 429 retry is proven non-acceptance and cannot elect a run.
+ALTER TABLE launchloom_operations.dispatch_outbox
+  ADD COLUMN IF NOT EXISTS uncertain_replay boolean NOT NULL DEFAULT false;
+
+-- 003 is still unmerged. Remove the earlier one-argument and four-argument
+-- forms so re-applying it cannot leave an ambiguous overload that silently
+-- skips the verified-gate decision.
+DROP FUNCTION IF EXISTS launchloom_operations.lease_dispatch(timestamptz);
+DROP FUNCTION IF EXISTS launchloom_operations.record_dispatch_result(uuid, bigint, text, timestamptz);
+
+CREATE OR REPLACE FUNCTION launchloom_operations.lease_dispatch(
+  p_now timestamptz, p_uncertain_retry boolean DEFAULT false
+)
 RETURNS TABLE (operation_id uuid, fence bigint, payload jsonb)
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = pg_catalog, launchloom_operations, pg_temp
 AS $$
 DECLARE v launchloom_operations.dispatch_outbox%ROWTYPE;
 BEGIN
-  IF p_now IS NULL OR NOT isfinite(p_now) THEN RAISE EXCEPTION 'invalid_dispatch'; END IF;
+  IF p_now IS NULL OR NOT isfinite(p_now) OR p_uncertain_retry IS NULL
+    THEN RAISE EXCEPTION 'invalid_dispatch'; END IF;
   -- Expiry is NOT evidence that GitHub rejected a dispatch. A crashed sender
-  -- may already have started a run. Fence late writes, never blindly re-lease.
+  -- may already have started a run. Under the verified claim gate the entry is
+  -- fenced and re-queued after bounded backoff; otherwise it stays attention.
+  -- A claim that races the retry still wins and fences the late sender.
   FOR v IN SELECT o.* FROM launchloom_operations.dispatch_outbox o
     WHERE (o.state = 'leased' AND o.lease_until <= p_now)
        OR (o.state = 'dispatched' AND o.next_attempt_at <= p_now AND EXISTS (
@@ -20,12 +37,23 @@ BEGIN
          WHERE a.id = o.attempt_id AND a.workflow_run_id IS NULL))
     ORDER BY o.next_attempt_at, o.id LIMIT 50 FOR UPDATE OF o SKIP LOCKED
   LOOP
-    UPDATE launchloom_operations.dispatch_outbox SET state = 'attention', lease_until = NULL,
-      fencing_version = fencing_version + 1,
-      last_error_code = CASE WHEN v.state = 'leased' THEN 'dispatch_lease_expired' ELSE 'run_claim_missing' END
-      WHERE id = v.id;
-    UPDATE launchloom_operations.generation_requests SET dispatch_state = 'attention'
-      WHERE id = v.request_id;
+    IF v.state = 'leased' AND p_uncertain_retry AND v.retry_count + 1 < 8 THEN
+      UPDATE launchloom_operations.dispatch_outbox SET state = 'pending',
+        lease_until = NULL, fencing_version = fencing_version + 1,
+        retry_count = retry_count + 1, uncertain_replay = true,
+        last_error_code = 'dispatch_lease_expired',
+        next_attempt_at = p_now + make_interval(secs =>
+          least(3600, 60 * power(2, v.retry_count)::integer)) WHERE id = v.id;
+      UPDATE launchloom_operations.generation_requests SET dispatch_state = 'waiting_to_start'
+        WHERE id = v.request_id;
+    ELSE
+      UPDATE launchloom_operations.dispatch_outbox SET state = 'attention', lease_until = NULL,
+        fencing_version = fencing_version + 1,
+        last_error_code = CASE WHEN v.state = 'leased' THEN 'dispatch_lease_expired' ELSE 'run_claim_missing' END
+        WHERE id = v.id;
+      UPDATE launchloom_operations.generation_requests SET dispatch_state = 'attention'
+        WHERE id = v.request_id;
+    END IF;
   END LOOP;
 
   SELECT o.* INTO v FROM launchloom_operations.dispatch_outbox o
@@ -45,7 +73,8 @@ END;
 $$;
 
 CREATE OR REPLACE FUNCTION launchloom_operations.record_dispatch_result(
-  p_operation uuid, p_fence bigint, p_outcome text, p_now timestamptz
+  p_operation uuid, p_fence bigint, p_outcome text, p_now timestamptz,
+  p_uncertain_retry boolean DEFAULT false, p_retry_after integer DEFAULT NULL
 ) RETURNS void LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = pg_catalog, launchloom_operations, pg_temp
 AS $$
@@ -53,22 +82,29 @@ DECLARE v launchloom_operations.dispatch_outbox%ROWTYPE; v_state text; v_error t
 BEGIN
   IF p_fence IS NULL OR p_fence < 1 OR p_outcome IS NULL
     OR p_outcome NOT IN ('accepted', 'retryable', 'unknown', 'rejected')
-    OR p_now IS NULL OR NOT isfinite(p_now) THEN RAISE EXCEPTION 'invalid_dispatch'; END IF;
+    OR p_now IS NULL OR NOT isfinite(p_now) OR p_uncertain_retry IS NULL
+    OR (p_retry_after IS NOT NULL AND (p_retry_after < 1 OR p_retry_after > 3600))
+    THEN RAISE EXCEPTION 'invalid_dispatch'; END IF;
   SELECT o.* INTO v FROM launchloom_operations.dispatch_outbox o WHERE o.id = p_operation FOR UPDATE;
   -- A run may claim before the HTTP response is observed. Its election fences
   -- this sender too; no transport result may regress an already running owner.
   IF NOT FOUND OR v.state <> 'leased' OR v.fencing_version <> p_fence
     OR v.lease_until <= p_now THEN RETURN; END IF;
-  v_state := CASE WHEN p_outcome = 'accepted' THEN 'dispatched'
-    WHEN p_outcome = 'retryable' AND v.retry_count + 1 < 8 THEN 'pending' ELSE 'attention' END;
+  v_state := CASE
+    WHEN p_outcome = 'accepted' THEN 'dispatched'
+    WHEN p_outcome = 'unknown' AND p_uncertain_retry AND v.retry_count + 1 < 8 THEN 'pending'
+    WHEN p_outcome = 'retryable' AND v.retry_count + 1 < 8 THEN 'pending'
+    ELSE 'attention' END;
   v_error := CASE WHEN p_outcome = 'unknown' THEN 'dispatch_unknown'
     WHEN p_outcome = 'rejected' THEN 'dispatch_rejected'
     WHEN p_outcome = 'retryable' AND v_state = 'attention' THEN 'dispatch_retries_exhausted'
     WHEN p_outcome = 'retryable' THEN 'github_rate_limited' ELSE NULL END;
   UPDATE launchloom_operations.dispatch_outbox SET state = v_state,
     retry_count = retry_count + 1, lease_until = NULL, last_error_code = v_error,
+    uncertain_replay = uncertain_replay OR (p_outcome = 'unknown' AND p_uncertain_retry),
     next_attempt_at = p_now + CASE WHEN v_state = 'pending'
-      THEN make_interval(secs => least(3600, 60 * power(2, v.retry_count)::integer))
+      THEN make_interval(secs => coalesce(p_retry_after,
+        least(3600, 60 * power(2, v.retry_count)::integer)))
       ELSE interval '10 minutes' END
     WHERE id = v.id;
   UPDATE launchloom_operations.generation_requests SET dispatch_state =
@@ -98,7 +134,14 @@ BEGIN
   -- also stop: a lost claim response requires reconciliation, not re-execution.
   IF a.state = 'attention' THEN RETURN 'attention'; END IF;
   IF a.workflow_run_id IS NOT NULL THEN RETURN 'duplicate'; END IF;
-  IF a.state <> 'waiting_to_start' OR (v.state NOT IN ('leased', 'dispatched')
+  -- A gated uncertain replay may be `pending` while a real run from the earlier
+  -- accept arrives; that run is the rightful first owner. A plain 429 retry is
+  -- proven non-acceptance and is NOT claimable. The row lock and unique run
+  -- identity keep this a single winner; once claimed, the attempt is running and
+  -- cannot be leased again.
+  IF a.state <> 'waiting_to_start' OR (
+    v.state NOT IN ('leased', 'dispatched')
+    AND NOT (v.state = 'pending' AND v.uncertain_replay)
     AND NOT (v.state = 'attention' AND v.last_error_code IN (
       'dispatch_unknown', 'dispatch_lease_expired', 'run_claim_missing')))
     THEN RETURN 'attention'; END IF;
@@ -116,13 +159,13 @@ EXCEPTION WHEN unique_violation THEN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION launchloom_operations.lease_dispatch(timestamptz) FROM PUBLIC;
-REVOKE ALL ON FUNCTION launchloom_operations.record_dispatch_result(uuid, bigint, text, timestamptz) FROM PUBLIC;
+REVOKE ALL ON FUNCTION launchloom_operations.lease_dispatch(timestamptz, boolean) FROM PUBLIC;
+REVOKE ALL ON FUNCTION launchloom_operations.record_dispatch_result(uuid, bigint, text, timestamptz, boolean, integer) FROM PUBLIC;
 REVOKE ALL ON FUNCTION launchloom_operations.claim_run(uuid, text, text, integer) FROM PUBLIC;
 DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'launchloom_operations_worker') THEN
-    GRANT EXECUTE ON FUNCTION launchloom_operations.lease_dispatch(timestamptz) TO launchloom_operations_worker;
-    GRANT EXECUTE ON FUNCTION launchloom_operations.record_dispatch_result(uuid, bigint, text, timestamptz) TO launchloom_operations_worker;
+    GRANT EXECUTE ON FUNCTION launchloom_operations.lease_dispatch(timestamptz, boolean) TO launchloom_operations_worker;
+    GRANT EXECUTE ON FUNCTION launchloom_operations.record_dispatch_result(uuid, bigint, text, timestamptz, boolean, integer) TO launchloom_operations_worker;
     GRANT EXECUTE ON FUNCTION launchloom_operations.claim_run(uuid, text, text, integer) TO launchloom_operations_worker;
   END IF;
 END $$;

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import worker from "../src/index";
 import { dispatchScheduled, githubDispatcher, scheduledOperations } from "../src/operations/dispatch";
 import { createOperationsStore } from "../src/operations/store";
+import * as persistence from "../src/operations/store";
 import type { LeasedDispatch } from "../src/operations/contracts";
 
 const item: LeasedDispatch = {
@@ -48,6 +49,56 @@ describe("scheduled operations dispatch", () => {
     expect(results).toEqual([[item.operationId, 1, { outcome: "unknown", now: 1000 }]]);
   });
 
+  it("passes a capped rate-limit delay for the same stable operation to persistence", async () => {
+    const results: unknown[] = [];
+    const sent: string[] = [];
+    let count = 0;
+    await dispatchScheduled({
+      store: {
+        leaseDispatch: async () => count++ === 0 ? item : null,
+        recordDispatchResult: async (...args) => { results.push(args); },
+      },
+      dispatch: async (leased) => {
+        sent.push(leased.operationId);
+        return { outcome: "retryable", retryAfterSeconds: 7200 };
+      },
+      now: () => 1000,
+    });
+    expect(sent).toEqual([item.operationId]);
+    expect(results).toEqual([[
+      item.operationId,
+      1,
+      { outcome: "retryable", retryAfterSeconds: 3600, now: 1000 },
+    ]]);
+  });
+
+  it("enables uncertain recovery only after both verified gate flags", async () => {
+    const create = vi.spyOn(persistence, "createOperationsStore");
+    create.mockImplementation(() => ({
+      leaseDispatch: async () => null,
+      recordDispatchResult: async () => {},
+    }) as unknown as ReturnType<typeof persistence.createOperationsStore>);
+    try {
+      await scheduledOperations({ OPERATIONS_DISPATCH_MODE: "claim-gated-v1" });
+      await scheduledOperations({ OPERATIONS_CLAIM_GATE: "verified-v1" });
+      expect(create).not.toHaveBeenCalled();
+      await scheduledOperations({
+        OPERATIONS_DISPATCH_MODE: "claim-gated-v1",
+        OPERATIONS_CLAIM_GATE: "verified-v1",
+        OPERATIONS_DATABASE_URL: "postgresql://synthetic:synthetic@127.0.0.1/synthetic",
+        OPERATIONS_DISPATCH_REPOSITORY: "synthetic/operations-test",
+        OPERATIONS_DISPATCH_WORKFLOW: "operations.yml",
+        OPERATIONS_DISPATCH_REF: "fixture",
+        GITHUB_ORG_TOKEN: "synthetic",
+      });
+      expect(create).toHaveBeenCalledWith(expect.anything(), {
+        uncertainDispatchRetry: true,
+      });
+    } finally {
+      create.mockRestore();
+    }
+  });
+
   it("stops a tick on unavailable persistence instead of sending more work", async () => {
     let sent = 0;
     await expect(dispatchScheduled({ store: {
@@ -79,6 +130,45 @@ describe("GitHub dispatch boundary", () => {
       });
       expect(await send(item)).toBe(outcome);
     });
+  it("retries a rate-limited 403 using safe headers but keeps a normal forbidden terminal", async () => {
+    const clock = () => 1_000_000_000;
+    const limited = githubDispatcher(target, async () => new Response(null, {
+      status: 403,
+      headers: { "x-ratelimit-remaining": "0", "x-ratelimit-reset": "1000120" },
+    }), clock);
+    expect(await limited(item)).toEqual({ outcome: "retryable", retryAfterSeconds: 120 });
+
+    const secondary = githubDispatcher(target, async () => new Response(null, {
+      status: 403,
+      headers: { "retry-after": "45" },
+    }), clock);
+    expect(await secondary(item)).toEqual({ outcome: "retryable", retryAfterSeconds: 45 });
+
+    const forbidden = githubDispatcher(target, async () => new Response(null, {
+      status: 403,
+      headers: { "x-ratelimit-remaining": "4999", "x-ratelimit-reset": "1000120" },
+    }), clock);
+    expect(await forbidden(item)).toBe("rejected");
+  });
+
+  it("caps retry-after and ignores malformed rate-limit delays", async () => {
+    const clock = () => 1_000_000;
+    const capped = githubDispatcher(target, async () => new Response(null, {
+      status: 429, headers: { "retry-after": "7200" },
+    }), clock);
+    expect(await capped(item)).toEqual({ outcome: "retryable", retryAfterSeconds: 3600 });
+
+    const zero = githubDispatcher(target, async () => new Response(null, {
+      status: 429, headers: { "retry-after": "0" },
+    }), clock);
+    expect(await zero(item)).toEqual({ outcome: "retryable", retryAfterSeconds: 1 });
+
+    const malformed = githubDispatcher(target, async () => new Response(null, {
+      status: 429, headers: { "retry-after": "soon", "x-ratelimit-reset": "later" },
+    }), clock);
+    expect(await malformed(item)).toBe("retryable");
+  });
+
   it("refuses unsafe target configuration before sending", () => {
     expect(() => githubDispatcher({ ...target, repository: "../../elsewhere" })).toThrow();
     expect(() => githubDispatcher({ ...target, repository: "../elsewhere" })).toThrow();
@@ -94,5 +184,27 @@ describe("dispatch store validation", () => {
     await expect(store.claimRun(item.operationId, { repositoryId: 123 as unknown as string, runId: "123", runAttempt: 1 })).rejects.toMatchObject({ code: "invalid" });
     await expect(store.recordDispatchResult(item.operationId, 1.5, { outcome: "accepted", now: 1000 })).rejects.toMatchObject({ code: "invalid" });
     expect(query).not.toHaveBeenCalled();
+  });
+
+  it("passes the disabled-by-default gate to SQL and bounds retry delays", async () => {
+    const query = vi.fn(async () => []);
+    await createOperationsStore({ query }).leaseDispatch(1000);
+    expect(query).toHaveBeenLastCalledWith(
+      "select * from launchloom_operations.lease_dispatch($1::timestamptz, $2::boolean)",
+      [new Date(1000).toISOString(), false],
+    );
+    await createOperationsStore({ query }, { uncertainDispatchRetry: true }).recordDispatchResult(
+      item.operationId, 1, { outcome: "retryable", retryAfterSeconds: 300, now: 1000 },
+    );
+    expect(query).toHaveBeenLastCalledWith(
+      "select launchloom_operations.record_dispatch_result($1::uuid, $2::bigint, $3, $4::timestamptz, $5::boolean, $6::integer)",
+      [item.operationId, 1, "retryable", new Date(1000).toISOString(), true, 300],
+    );
+    const gated = createOperationsStore({ query }, { uncertainDispatchRetry: true });
+    for (const retryAfterSeconds of [0, 3601, 1.5, "60" as unknown as number]) {
+      await expect(gated.recordDispatchResult(item.operationId, 1, {
+        outcome: "retryable", retryAfterSeconds, now: 1000,
+      })).rejects.toMatchObject({ code: "invalid" });
+    }
   });
 });

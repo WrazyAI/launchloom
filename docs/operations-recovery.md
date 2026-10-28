@@ -49,26 +49,53 @@ its historical column name. The attempt remains waiting until that claim.
 
 ## Retry versus unknown
 
+Automatic retry depends on what the response proved, never on an assumption
+that a missing response means no run exists.
+
 - HTTP 429 is an explicit non-acceptance: retain `waiting_to_start` and retry
   durably after 60, 120, 240, 480, 960, 1920, then 3600 seconds. The eighth
-  rate-limited send goes to `attention` (`dispatch_retries_exhausted`).
-- HTTP 400/401/403/404/422 goes to attention (`dispatch_rejected`): fix the
-  configuration/authorization through a reviewed recovery, not an endless loop.
+  rate-limited send goes to `attention` (`dispatch_retries_exhausted`). A 429
+  never elects a run: `claimRun` rejects a pending entry that has only a
+  `github_rate_limited` history.
+- A rate-limited HTTP 403 is recognized only from safe headers: a
+  `x-ratelimit-remaining: 0` count, a `retry-after` delay, or GitHub's secondary
+  limit form. The delay is parsed from seconds, an HTTP date, or
+  `x-ratelimit-reset`, clamped to 1..3600 seconds. Malformed or absent values
+  fall back to the persisted exponential backoff. An ordinary 403 with a
+  non-zero remaining count remains `attention` (`dispatch_rejected`); it is an
+  authorization/configuration failure, not a temporary limit.
+- HTTP 400/401/404/422 goes to attention (`dispatch_rejected`): fix the
+  configuration through a reviewed recovery, not an endless loop.
 - Network failure, timeout, unexpected response or HTTP 5xx is ambiguous. Even a
-  5xx can follow acceptance. Record `dispatch_unknown`, preserve the unbound run
-  identity and go to attention. **Never automatically redispatch.**
-- A crashed sender's expired lease becomes attention (`dispatch_lease_expired`)
-  on a later cron tick. An accepted dispatch without a claim after ten minutes
-  becomes attention (`run_claim_missing`). Each sweep locks at most fifty rows.
+  5xx can follow acceptance. **Outside the verified gate** it records
+  `dispatch_unknown` and goes to attention, and is never automatically
+  redispatched.
+- **Inside the verified gate only** (`OPERATIONS_DISPATCH_MODE=claim-gated-v1`
+  and `OPERATIONS_CLAIM_GATE=verified-v1`) an ambiguous result or a crashed
+  sender lease is re-queued as `waiting_to_start` with the same stable
+  operation ID and a new fence. The retry uses the same bounded 60, 120, 240,
+  480, 960, 1920, then 3600 second backoff. A gated replay is marked durably
+  (`uncertain_replay`) so a genuine run from the earlier ambiguous send can win
+  the atomic claim during backoff. After eight attempts the entry becomes
+  visible `attention` (`dispatch_unknown` for an ambiguous send,
+  `dispatch_retries_exhausted` for a limit); it never loops forever or hides
+  the terminal state.
+- The gate is what makes a duplicate dispatch safe: the workflow calls
+  `claimRun` before any side effect, exactly one run becomes `claimed`, and all
+  duplicates exit. Until Task 4 implements and independently verifies that
+  pre-effect gate, both flags stay disabled and the conservative attention path
+  above applies.
+- A crashed sender's expired lease becomes `attention`
+  (`dispatch_lease_expired`) outside the gate. Inside the gate it is requeued
+  for automatic recovery, bounded as above. An accepted dispatch without a
+  claim after ten minutes remains `attention` (`run_claim_missing`); that is an
+  accepted run with unknown liveness, not an uncertain send, so it is not
+  auto-replayed. Each sweep locks at most fifty rows.
 - A response lost after acceptance can still yield a first legitimate claim
   from those three specific unknown-dispatch attention states. This is not
   ownership transfer: the attempt must still be waiting and never owned.
-
-This deliberately conservative first release does not automatically resume an
-ambiguous outage, even after GitHub recovers. Only proven non-acceptance (429)
-retries automatically. Improving recovery from 5xx/timeouts requires Task 5's
-trusted run correlation and side-effect reconciliation, not assuming a failed
-HTTP response means no run exists. Unknown is visible as attention, not success.
+  Same-run replay and rerun attempts receive `duplicate`; an attempt marked
+  attention for unknown side effects receives `attention`.
 
 ## Ownership and operator recovery
 
@@ -76,8 +103,11 @@ HTTP response means no run exists. Unknown is visible as attention, not success.
 runs, including a replay of the same run or a GitHub rerun attempt, get
 `duplicate` and **must exit before any intake read or external side effect**.
 An attempt marked attention for unknown prior side effects returns `attention`.
-There is no lease-expiry takeover and no API here that clears/reassigns an owner.
-One trusted run identity cannot own two operations.
+A claimed/running attempt is never taken over: its run ID is already bound, so a
+lease expiry or a late sender cannot replace it. The only additional claimable
+pre-owner state is a gated uncertain replay (`pending` plus `uncertain_replay`),
+where a real run from the ambiguous send may still be the first owner. One
+trusted run identity cannot own two operations.
 
 A lost claim response also fails closed: retrying the election cannot give a
 second permission to execute. The workflow must stop and escalate, not retry
@@ -112,7 +142,10 @@ npx vitest run tests/operations-dispatch-postgres.test.ts
 These tests use `psql` and service-role SQL for application calls. Assertions
 cover locks/fences, retained confirmed state, fresh scheduled-handler store
 instances after a quiet period, concurrent run claims, unknown outcomes and
-bounded backoff. The restart proof reconstructs application stores on the same
+bounded backoff. They also exercise an outage followed by recovery, a lost
+accepted response with a duplicate job, a crashed sender lease, exact retry
+exhaustion, and the rule that a claimed/running attempt is never re-leased or
+repeated. The restart proof reconstructs application stores on the same
 persistent test database; it is a **simulated Worker restart**, not an actual
 Cloudflare deployment/process eviction. The Neon HTTP transport and GitHub API
 are synthetic in that test. Live OIDC/workflow, browser, deployment and production
