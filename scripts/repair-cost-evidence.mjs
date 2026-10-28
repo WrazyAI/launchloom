@@ -3,25 +3,40 @@ import path from "node:path";
 
 /**
  * Repair cost evidence is discovered by walking an evidence root, and the
- * producer deliberately copies a round's `visual-gate.json` into
- * `final/visual-gate.json` after the gate passes. Both files describe one paid
- * gate call, so counting both doubles the repair stage and can falsely mark a
- * fully priced run complete.
+ * producer deliberately copies a round's gate report into
+ * `final/visual-gate.json` after the gate passes or a near-miss candidate is
+ * promoted. Both files describe one paid gate call, so counting both doubles
+ * the repair stage and can falsely mark a fully priced run complete.
  *
  * Identity is content plus explicit provenance, never amount alone:
  * - the same resolved file discovered through two roots is one file;
- * - a `final/visual-gate.json` is a copy only when it lives in the same evidence
- *   root as a discovered `round-NN/visual-gate.json` with identical canonical
- *   content, which is exactly the pairing the producer writes;
+ * - a `final/visual-gate.json` is a copy only when it sits at exactly that
+ *   relative depth under the same evidence root as a discovered
+ *   `round-NN/visual-gate.json` or `round-NN/near-miss-visual-gate.json` with
+ *   identical canonical content, which is exactly the pairing the producer
+ *   writes;
  * - any other report stays a separate paid call, including reports in separate
- *   round directories, the distinct revision gates and a final copy whose round
- *   report was not discovered (for example a near-miss report outside the
- *   discovered name pattern);
+ *   round directories, the distinct revision gates, nested archive copies, and
+ *   a final copy whose round report was not discovered;
+ * - entries without a known root are never paired by name alone;
  * - an empty source path is unknown, never the process working directory;
  * - unreadable reports carry no cost evidence and never suppress a readable one.
  */
 
 const ROUND_DIRECTORY = /^round-\d+$/u;
+const GATE_REPORT_NAME = /^(?:near-miss-)?visual-gate\.json$/u;
+const GATE_EVIDENCE_NAME =
+  /^(?:near-miss-)?visual-gate(?:-[a-z0-9]+)*\.json$/iu;
+const CONFIG_NAME = /config\.json$/iu;
+
+/** Gate report names the cost collector reads, excluding staged config files. */
+export function isGateEvidenceName(name) {
+  return (
+    typeof name === "string" &&
+    GATE_EVIDENCE_NAME.test(name) &&
+    !CONFIG_NAME.test(name)
+  );
+}
 
 function canonical(value) {
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
@@ -42,33 +57,10 @@ export function costEvidenceDigest(report) {
   return createHash("sha256").update(canonical(report)).digest("hex");
 }
 
-function segmentsOf(value) {
+function splitRelative(value) {
   return typeof value === "string"
     ? value.split(/[\\/]+/u).filter(Boolean)
     : [];
-}
-
-function entrySegments(file) {
-  const name = segmentsOf(file?.name);
-  return name.length ? name : segmentsOf(file?.sourcePath);
-}
-
-/**
- * The producer's exact copy destination: `<evidence root>/final/visual-gate.json`.
- * A directory merely named `final` elsewhere is not a copy destination.
- */
-export function isCopiedGateReport(file) {
-  const parts = entrySegments(file);
-  if (parts.length < 2) return false;
-  return parts.at(-1) === "visual-gate.json" && parts.at(-2) === "final";
-}
-
-function isRoundGateReport(file) {
-  const parts = entrySegments(file);
-  if (parts.length < 2) return false;
-  return (
-    parts.at(-1) === "visual-gate.json" && ROUND_DIRECTORY.test(parts.at(-2))
-  );
 }
 
 function resolvedDirectory(value) {
@@ -77,8 +69,37 @@ function resolvedDirectory(value) {
 }
 
 /**
+ * Root-relative name used for provenance. A known root and source path are
+ * authoritative; otherwise the caller-provided name is used as-is.
+ */
+function relativeSegments(file, root) {
+  if (root && typeof file?.sourcePath === "string" && file.sourcePath.trim())
+    return splitRelative(path.relative(root, path.resolve(file.sourcePath)));
+  return splitRelative(file?.name);
+}
+
+/** The producer's exact copy destination: `final/visual-gate.json` at depth 2. */
+export function isCopiedGateReport(file, root = null) {
+  const parts = relativeSegments(file, resolvedDirectory(root ?? file?.root));
+  return (
+    parts.length === 2 &&
+    parts[0] === "final" &&
+    parts[1] === "visual-gate.json"
+  );
+}
+
+function isRoundGateReport(file, root) {
+  const parts = relativeSegments(file, root);
+  return (
+    parts.length === 2 &&
+    ROUND_DIRECTORY.test(parts[0]) &&
+    GATE_REPORT_NAME.test(parts[1])
+  );
+}
+
+/**
  * Drop only cost evidence that provably restates another discovered report.
- * Returns the evidence in discovery order plus the ignored copies for audit.
+ * Returns the evidence in discovery order plus the unique ignored copies.
  */
 export function dedupeRepairGateEvidence(files) {
   const evidence = Array.isArray(files) ? files.slice() : [];
@@ -89,14 +110,15 @@ export function dedupeRepairGateEvidence(files) {
     const report = file?.report;
     const comparable =
       Boolean(report) && typeof report === "object" && !Array.isArray(report);
+    const root = resolvedDirectory(file?.root);
     return {
       index,
       file,
+      root,
       sourcePath: resolvedDirectory(file?.sourcePath),
-      root: resolvedDirectory(file?.root),
       digest: comparable ? costEvidenceDigest(report) : null,
-      copy: isCopiedGateReport(file),
-      round: isRoundGateReport(file),
+      copy: isCopiedGateReport(file, root),
+      round: isRoundGateReport(file, root),
     };
   });
 
@@ -115,13 +137,13 @@ export function dedupeRepairGateEvidence(files) {
     kept.push(entry);
   }
 
-  // Explicit copy provenance: the copy restates a round report in its own
-  // evidence root. Identical content alone never proves a restatement.
+  // Explicit copy provenance: same known root, exact round-report depth, and
+  // identical canonical content. Identical content alone proves nothing.
   const roundReports = kept.filter(
-    (entry) => entry.round && !entry.copy && entry.digest,
+    (entry) => entry.root && entry.round && !entry.copy && entry.digest,
   );
   for (const entry of kept) {
-    if (!entry.copy || !entry.digest) continue;
+    if (!entry.copy || !entry.root || !entry.digest) continue;
     const original = roundReports.find(
       (candidate) =>
         candidate.root === entry.root && candidate.digest === entry.digest,
@@ -130,15 +152,22 @@ export function dedupeRepairGateEvidence(files) {
   }
 
   if (!dropped.size) return { evidence, duplicates: [] };
+  const duplicates = [];
+  const counted = new Set();
+  for (const entry of entries) {
+    if (!dropped.has(entry.index)) continue;
+    const key = entry.sourcePath ?? `${entry.root ?? ""}:${entry.file?.name}`;
+    if (counted.has(key)) continue;
+    counted.add(key);
+    duplicates.push({
+      name: entry.file?.name ?? null,
+      duplicateOf: dropped.get(entry.index),
+    });
+  }
   return {
     evidence: entries
       .filter((entry) => !dropped.has(entry.index))
       .map((entry) => entry.file),
-    duplicates: entries
-      .filter((entry) => dropped.has(entry.index))
-      .map((entry) => ({
-        name: entry.file?.name ?? null,
-        duplicateOf: dropped.get(entry.index),
-      })),
+    duplicates,
   };
 }

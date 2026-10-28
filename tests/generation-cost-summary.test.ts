@@ -692,15 +692,13 @@ describe("repair gate accounting", () => {
     await fs.rm(root, { recursive: true, force: true });
   });
 
-  it("keeps a near-miss final copy as the paid gate call", async () => {
+  it("counts a copied near-miss gate report once from its round report", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
     const report = visualGateReport({
       audit: { verdict: "pass", findings: [], operations: [] },
     });
     await fs.mkdir(path.join(root, "round-00"), { recursive: true });
     await fs.mkdir(path.join(root, "final"), { recursive: true });
-    // The near-miss report name is outside the discovered gate pattern, so the
-    // final copy is the only evidence of that paid call and must stay counted.
     await fs.writeFile(
       path.join(root, "round-00", "near-miss-visual-gate.json"),
       JSON.stringify(report),
@@ -718,7 +716,203 @@ describe("repair gate accounting", () => {
     ).toMatchObject({
       costUsd: 0.05,
       complete: true,
+      detail: {
+        calls: 1,
+        sources: ["round-00/near-miss-visual-gate.json"],
+        duplicateReports: 1,
+      },
+    });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("counts a near-miss gate that failed its audit with no final copy", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    await fs.mkdir(path.join(root, "round-00"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "round-00", "near-miss-visual-gate.json"),
+      JSON.stringify(
+        visualGateReport({
+          status: "quality-blocked",
+          audit: {
+            verdict: "revise",
+            findings: [
+              {
+                severity: "major",
+                category: "hierarchy",
+                viewport: "mobile",
+                evidence: "Fold crowding",
+                recommendation: "Restore spacing",
+              },
+            ],
+            operations: [],
+          },
+        }),
+      ),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: 0.05,
+      complete: true,
+      detail: {
+        calls: 1,
+        sources: ["round-00/near-miss-visual-gate.json"],
+      },
+    });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("counts a near-miss gate whose promotion failed with no final copy", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    await fs.mkdir(path.join(root, "round-00"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "round-00", "near-miss-visual-gate.json"),
+      JSON.stringify(visualGateReport()),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: 0.05,
+      complete: true,
+      detail: { calls: 1 },
+    });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("keeps a preserved final copy when no round report was discovered", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    await fs.mkdir(path.join(root, "final"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "final", "visual-gate.json"),
+      JSON.stringify(visualGateReport()),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: 0.05,
+      complete: true,
       detail: { calls: 1, sources: ["final/visual-gate.json"] },
+    });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("does not treat a nested archive final report as a producer copy", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    const report = visualGateReport();
+    await fs.mkdir(path.join(root, "round-00"), { recursive: true });
+    await fs.mkdir(path.join(root, "archive", "final"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "round-00", "visual-gate.json"),
+      JSON.stringify(report),
+    );
+    await fs.writeFile(
+      path.join(root, "archive", "final", "visual-gate.json"),
+      JSON.stringify(report),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({ costUsd: 0.1, complete: true, detail: { calls: 2 } });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("does not pair a final copy with a deeper round report", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    const report = visualGateReport();
+    await fs.mkdir(path.join(root, "round-00", "archive"), {
+      recursive: true,
+    });
+    await fs.mkdir(path.join(root, "final"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "round-00", "archive", "visual-gate.json"),
+      JSON.stringify(report),
+    );
+    await fs.writeFile(
+      path.join(root, "final", "visual-gate.json"),
+      JSON.stringify(report),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({ costUsd: 0.1, complete: true, detail: { calls: 2 } });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("does not pair copy and round report without a known root", () => {
+    const report = visualGateReport();
+    const summary = summarizeGenerationCosts({
+      repair: {
+        visualGateFiles: [
+          { name: "round-00/visual-gate.json", report },
+          { name: "final/visual-gate.json", report },
+        ],
+      },
+    });
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({ costUsd: 0.1, detail: { calls: 2 } });
+  });
+
+  it("reads a repeated root once", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    await fs.mkdir(path.join(root, "round-01"), { recursive: true });
+    await fs.mkdir(path.join(root, "final"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "round-01", "visual-gate.json"),
+      JSON.stringify(visualGateReport()),
+    );
+    await fs.copyFile(
+      path.join(root, "round-01", "visual-gate.json"),
+      path.join(root, "final", "visual-gate.json"),
+    );
+    await fs.writeFile(
+      path.join(root, "repair-usage.json"),
+      JSON.stringify({
+        version: 1,
+        model: "openai/gpt-6-luna",
+        records: [{ usage: { cost: 0.4 } }],
+      }),
+    );
+    await fs.writeFile(
+      path.join(root, "summary.json"),
+      JSON.stringify({ repairCycles: { "candidate-a": 1 } }),
+    );
+
+    const input = await readGenerationCostInputs({
+      repairDir: root,
+      revisionDir: root,
+    });
+    expect(input.repair.usage).toHaveLength(1);
+    expect(input.repair.visualGateFiles).toHaveLength(1);
+    const summary = summarizeGenerationCosts(input);
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: 0.45,
+      complete: true,
+      detail: {
+        calls: 2,
+        duplicateReports: 1,
+        rounds: 1,
+      },
     });
     await fs.rm(root, { recursive: true, force: true });
   });
@@ -832,6 +1026,182 @@ describe("repair gate accounting", () => {
       costKind: "unreported",
       coverageComplete: false,
     });
+  });
+});
+
+describe("usage cost shapes", () => {
+  const goRecord = (overrides: Record<string, any> = {}) => ({
+    routeId: "home",
+    stage: "hero",
+    provider: "opencode-go",
+    usage: {
+      inputTokens: 1000,
+      outputTokens: 200,
+      cachedInputTokens: 0,
+      cacheWriteTokens: 0,
+      costUsd: null,
+      costKind: "unreported",
+    },
+    cache: {
+      promptTokens: 1000,
+      cachedTokens: 0,
+      cacheWriteTokens: 0,
+      cost: 0.0123,
+      costSource: "computed-from-published-prices",
+    },
+    ...overrides,
+  });
+
+  it("prices an OpenCode Go record from its computed per-call cost", () => {
+    const summary = summarizeGenerationCosts({
+      creativeRun: { status: "authored", usage: [goRecord()] },
+    });
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "authoring"),
+    ).toMatchObject({ costUsd: 0.0123, costKind: "actual", complete: true });
+    expect(summary.exact.stages.authoring).toMatchObject({
+      amountUsd: "0.0123",
+      costKind: "actual",
+      coverageComplete: true,
+    });
+    expect(summary.incomplete).toBe(false);
+  });
+
+  it("prefers the OpenCode Go reported costUsd over its computed cost", () => {
+    const summary = summarizeGenerationCosts({
+      creativeRun: {
+        status: "authored",
+        usage: [
+          goRecord({
+            usage: {
+              inputTokens: 1000,
+              outputTokens: 200,
+              costUsd: 0.5,
+              costKind: "provider-reported",
+            },
+            cache: { promptTokens: 1000, cost: 0.0123 },
+          }),
+        ],
+      },
+    });
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "authoring"),
+    ).toMatchObject({ costUsd: 0.5, costKind: "actual", complete: true });
+    expect(summary.exact.stages.authoring).toMatchObject({
+      amountUsd: "0.5",
+      coverageComplete: true,
+    });
+  });
+
+  it("prices an OpenRouter record from its provider usage cost", () => {
+    const summary = summarizeGenerationCosts({
+      creativeRun: {
+        status: "authored",
+        cacheSummary: { cost: 0.3 },
+        usage: [
+          {
+            provider: "openai",
+            usage: { prompt_tokens: 100, completion_tokens: 20, cost: 0.25 },
+            cache: { promptTokens: 100, cost: 0.25 },
+          },
+        ],
+      },
+    });
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "authoring"),
+    ).toMatchObject({ costUsd: 0.25, costKind: "actual", complete: true });
+    expect(summary.exact.stages.authoring).toMatchObject({
+      amountUsd: "0.25",
+      coverageComplete: true,
+    });
+  });
+
+  it("sums mixed Go and OpenRouter records without marking them incomplete", () => {
+    const summary = summarizeGenerationCosts({
+      creativeRun: {
+        status: "authored",
+        usage: [
+          goRecord(),
+          {
+            provider: "openai",
+            usage: { prompt_tokens: 100, cost: 0.25 },
+            cache: { promptTokens: 100, cost: 0.25 },
+          },
+        ],
+      },
+    });
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "authoring"),
+    ).toMatchObject({
+      costUsd: 0.2623,
+      costKind: "actual",
+      complete: true,
+      detail: { responses: 2 },
+    });
+    expect(summary.exact.stages.authoring).toMatchObject({
+      amountUsd: "0.2623",
+      coverageComplete: true,
+    });
+  });
+
+  it("keeps an unpriced Go record unreported instead of a priced zero", () => {
+    const summary = summarizeGenerationCosts({
+      creativeRun: {
+        status: "authored",
+        usage: [
+          goRecord({
+            usage: {
+              inputTokens: 0,
+              outputTokens: 0,
+              costUsd: null,
+              costKind: "unreported",
+            },
+            cache: { promptTokens: 0, cost: null },
+          }),
+        ],
+      },
+    });
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "authoring"),
+    ).toMatchObject({ costUsd: null, costKind: "unreported", complete: false });
+    expect(summary.exact.stages.authoring).toMatchObject({
+      amountUsd: null,
+      costKind: "unreported",
+      coverageComplete: false,
+    });
+    expect(summary.incomplete).toBe(true);
+  });
+
+  it("prices a Go gate report from its reported costUsd", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    await fs.mkdir(path.join(root, "round-00"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "round-00", "visual-gate.json"),
+      JSON.stringify(
+        visualGateReport({
+          provider: "opencode-go",
+          usage: {
+            inputTokens: 1000,
+            outputTokens: 200,
+            costUsd: 0.04,
+            costKind: "provider-reported",
+          },
+          cache: { promptTokens: 1000, cost: 0.04 },
+        }),
+      ),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({ costUsd: 0.04, costKind: "actual", complete: true });
+    expect(summary.exact.stages.repair_qa).toMatchObject({
+      amountUsd: "0.04",
+      coverageComplete: true,
+    });
+    await fs.rm(root, { recursive: true, force: true });
   });
 });
 

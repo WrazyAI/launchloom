@@ -1,5 +1,6 @@
 import { decimal, addDecimals, multiplyDecimals } from "./exact-money.mjs";
 import { dedupeRepairGateEvidence } from "./repair-cost-evidence.mjs";
+import { usageRecordCost } from "./usage-cost.mjs";
 
 /** Parallel exact-money sidecar; legacy numeric/six-place display fields remain.
  * Never add or round monetary values using JavaScript Number arithmetic here.
@@ -20,10 +21,9 @@ export function exactGenerationCosts(input = {}, options = {}) {
   }
   function usage(stage, records) {
     if (records.length)
-      record(
-        stage,
-        records.map((entry) => entry?.usage?.cost ?? entry?.cost),
-      );
+      // Shared precedence: provider usage (cost or costUsd), explicit cost,
+      // then the per-call computed cache cost.
+      record(stage, records.map(usageRecordCost));
   }
   const seo = input.seoResearch;
   if (seo && typeof seo === "object") {
@@ -97,14 +97,14 @@ export function exactGenerationCosts(input = {}, options = {}) {
   const repair = input.repair;
   if (repair && typeof repair === "object") {
     const values = (Array.isArray(repair.usage) ? repair.usage : []).map(
-      (entry) => entry?.usage?.cost ?? entry?.cost,
+      usageRecordCost,
     );
     // Copied final evidence restates a round report; count the paid call once.
     // Every remaining report is a call, and a missing amount is unknown spend.
     for (const file of dedupeRepairGateEvidence(repair.visualGateFiles)
       .evidence) {
       if (!file?.report) continue;
-      values.push(file.report.usage?.cost ?? file.report.cache?.cost ?? null);
+      values.push(usageRecordCost(file.report));
     }
     if (values.length) record("repair_qa", values);
   }

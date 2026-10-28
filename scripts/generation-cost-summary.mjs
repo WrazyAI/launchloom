@@ -3,7 +3,11 @@ import path from "node:path";
 import { constants } from 'node:fs';
 import { exactGenerationCosts } from './exact-generation-costs.mjs';
 import { addDecimals } from './exact-money.mjs';
-import { dedupeRepairGateEvidence } from './repair-cost-evidence.mjs';
+import {
+  dedupeRepairGateEvidence,
+  isGateEvidenceName,
+} from './repair-cost-evidence.mjs';
+import { usageRecordCost } from './usage-cost.mjs';
 
 const round = (value) => Math.round(Number(value || 0) * 1_000_000) / 1_000_000;
 
@@ -84,9 +88,9 @@ async function listJsonFiles(directory, predicate, options = {}, depth = 0) {
 }
 
 function usageCost(record) {
-  const raw = record?.usage?.cost;
-  if (raw === null || raw === undefined) return null;
-  const cost = finiteNumber(raw);
+  // Provider per-call amounts, explicit cost and per-call computed cache cost
+  // are all priced evidence; an explicit null is unknown, never a priced zero.
+  const cost = optionalCost(usageRecordCost(record));
   return cost !== null && cost >= 0 ? cost : null;
 }
 
@@ -289,9 +293,7 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
       ),
     ];
     if (reviewRecords.length) {
-      const summed = sumUsage(
-        reviewRecords.map((record) => ({ usage: record.usage || {} })),
-      );
+      const summed = sumUsage(reviewRecords);
       const model = reviewRecords.find((record) => record.model)?.model || null;
       stages.push({
         stage: "image_review",
@@ -329,15 +331,15 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
   if (creative && typeof creative === "object") {
     const cacheCost = finiteNumber(creative.cacheSummary?.cost);
     const usageRecords = Array.isArray(creative.usage) ? creative.usage : [];
-    const summed = sumUsage(
-      usageRecords.map((record) => ({ usage: record.usage || record })),
-    );
-    const cost =
-      cacheCost !== null && cacheCost > 0
+    const summed = sumUsage(usageRecords);
+    // Per-call records take precedence over a possibly rounded cache aggregate.
+    const cost = usageRecords.length
+      ? summed.priced
+        ? summed.cost
+        : null
+      : cacheCost !== null && cacheCost > 0
         ? cacheCost
-        : summed.priced
-          ? summed.cost
-          : null;
+        : null;
     stages.push({
       stage: "authoring",
       provider: usageRecords.some(
@@ -372,16 +374,14 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
     // not be counted as a second paid gate call.
     const repairEvidence = dedupeRepairGateEvidence(repair.visualGateFiles);
     for (const record of Array.isArray(repair.usage) ? repair.usage : [])
-      records.push({ usage: record.usage || record });
+      records.push(record);
     for (const file of repairEvidence.evidence) {
       // Every discovered gate report is an attempted call. A gate whose error
       // path wrote no usage is unknown spend, not absent spend.
       if (!file || !file.report) continue;
-      const usage = file.report.usage || null;
-      const cacheCost = optionalCost(file.report.cache?.cost);
       records.push({
-        usage,
-        ...(cacheCost !== null ? { cost: cacheCost } : {}),
+        usage: file.report.usage ?? null,
+        cache: file.report.cache ?? null,
         source: file.name || "visual-gate",
       });
       sources.push(file.name || "visual-gate");
@@ -390,10 +390,9 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
     let priced = 0;
     let unpriced = 0;
     for (const record of records) {
-      // Provider per-call usage takes precedence over the cache aggregate, and
-      // a null amount is unknown evidence rather than a priced zero.
-      const value =
-        optionalCost(record?.usage?.cost) ?? optionalCost(record.cost);
+      // The shared resolver prefers provider usage (cost or costUsd) and then
+      // the per-call computed cache cost; unknown stays unknown.
+      const value = optionalCost(usageRecordCost(record));
       if (value === null || value < 0) unpriced += 1;
       else {
         cost += value;
@@ -508,12 +507,16 @@ export async function readGenerationCostInputs(paths = {}, options = {}) {
   if (paths.repairDir || paths.revisionDir) {
     const usageRecords = [];
     const visualGateFiles = [];
+    const seenRoots = new Set();
     let rounds = 0;
     let repairModel = null;
     for (const directory of [paths.repairDir, paths.revisionDir].filter(
       Boolean,
     )) {
       const root = path.resolve(directory);
+      // A repeated root would read the same usage log and summary twice.
+      if (seenRoots.has(root)) continue;
+      seenRoots.add(root);
       const usage = await readJson(path.join(root, "repair-usage.json"), options);
       if (Array.isArray(usage?.records)) usageRecords.push(...usage.records);
       if (usage?.model) repairModel = usage.model;
@@ -522,13 +525,7 @@ export async function readGenerationCostInputs(paths = {}, options = {}) {
         rounds += Object.values(summary.repairCycles).length;
       let candidates;
       try {
-        candidates = await listJsonFiles(
-          root,
-          (name) =>
-            /^visual-gate.*\.json$/u.test(name) &&
-            !/config\.json$/iu.test(name),
-          options,
-        );
+        candidates = await listJsonFiles(root, isGateEvidenceName, options);
       } catch (error) {
         if (!options.partial) throw error;
         options.budget.incomplete = true;

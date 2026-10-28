@@ -144,36 +144,40 @@ not an overwrite or an extra charge. If preparation/posting fails, the original
 failure observation is still attempted and a fixed incomplete diagnostic emitted.
 
 The rendered repair producer records each gate call in its round directory and
-then copies that same report into `final/visual-gate.json` for downstream review.
-Cost collection ignores that copy only when it can pair it explicitly with a
-discovered `round-NN/visual-gate.json` in the same evidence root that has
-canonicalized identical content; identical content alone, or a directory that
-merely happens to be named `final`, is not treated as proof of a restatement.
-Separate round reports, the distinct `visual-gate-plan.json`/`visual-gate-final.json`
-revision gates and a final copy whose round report was not discovered (for example
-a near-miss report outside the discovered name pattern) stay separate paid calls.
-Every discovered gate report counts as an attempted call: the gate's own error
-path can write a report with no usage, so a missing amount is unreported and
-incomplete while other known amounts are still summed. An unreadable copy is still
-incomplete evidence, a readable report is never suppressed by a malformed one, and
-the ignored copy count is reported as `repair_qa.detail.duplicateReports`. Gate
-site configuration files are not counted as calls. The provider per-call usage
-amount takes precedence over the cache aggregate in both the numeric and exact
-readings, and null amounts stay unknown in image review, authoring and repair
-instead of being priced as zero.
+then copies the passing gate report into `final/visual-gate.json` for downstream
+review. Discovery reads `visual-gate*.json` and `near-miss-visual-gate.json` and
+ignores staged `*.config.json` files. Cost collection ignores a final copy only
+when it sits at exactly `final/visual-gate.json` under the same known evidence root
+as a discovered report at exactly `round-NN/visual-gate.json` or
+`round-NN/near-miss-visual-gate.json` with canonicalized identical content.
+Identical content alone, a nested archive path and an entry without a known root
+are not treated as proof of a restatement, so separately paid calls stay separate.
+Near-miss gate calls are counted from their round report whether the audit failed,
+the promotion failed or the promotion copied them to final; the copy adds no second
+charge. Every discovered gate report counts as an attempted call: the gate's own
+error path can write a report with no usage, so a missing amount is unreported and
+incomplete while other known amounts are still summed. An unreadable report is
+still incomplete evidence, a readable report is never suppressed by a malformed
+one, and the ignored copy count is reported as
+`repair_qa.detail.duplicateReports`. Per-call cost resolution is shared by the
+numeric and exact readings: OpenRouter `usage.cost` or OpenCode Go `usage.costUsd`
+first, then an explicit `cost`, then the per-call computed `cache.cost`. A null
+amount stays unknown in image review, authoring and repair instead of being priced
+as zero.
 
-This path deduplication applies only to discovered visual-gate evidence. The
-repair usage log and repair summary are read once per supplied root, so calling
-collection with overlapping roots can still repeat those records; the production
-workflows pass disjoint repair and revision roots. Unbounded mode (the legacy CLI
-without `--operations`) also skips malformed artifacts without setting the
-incomplete marker; only bounded operations collection distinguishes unreadable
-evidence from absent evidence. Treat unbounded output as legacy display evidence,
-not a complete bill.
+A repeated evidence root is read once. Only discovered gate evidence is
+path-deduplicated across overlapping roots; the repair usage log and summary are
+read once per distinct supplied root, and the production workflows pass disjoint
+repair and revision roots. Unbounded mode (the legacy CLI without `--operations`)
+has no byte, file, entry or subprocess bounds, and it skips malformed artifacts
+without setting the incomplete marker. Incomplete/unknown coverage, symlink
+refusal and the artifact limits below apply only to bounded operations collection;
+treat unbounded output as legacy display evidence, not a complete bill.
 
-Collection is bounded: 2 MB per file, 8 MB total bytes, 512 items per array,
-50,000 JSON nodes, 512 discovered directory entries, 64 discovered QA report
-files, four nested directory levels and a 15-second summary subprocess timeout.
+In bounded operations mode, collection is bounded: 2 MB per file, 8 MB total
+bytes, 512 items per array, 50,000 JSON nodes, 512 discovered directory entries,
+64 discovered QA report files, four nested directory levels and a 15-second
+summary subprocess timeout.
 Symlinked artifacts are refused. Raw subprocess stdout/stderr is not exposed.
 
 **Remaining staging gate:** URL-to-selected-SHA readiness is inherited from the

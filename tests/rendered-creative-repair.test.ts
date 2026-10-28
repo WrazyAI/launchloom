@@ -2992,6 +2992,85 @@ process.exit(2);
     expect(finalReport.nearMissSelection).toBe(true);
   });
 
+  it("counts the near-miss paid gate once after promotion copies it to final", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const outDir = path.join(root, "evidence");
+    const gateReport = {
+      version: 1,
+      mode: "verify",
+      status: "quality-blocked",
+      blockers: [],
+      model: "openai/gpt-6-luna",
+      audit: {
+        verdict: "revise",
+        findings: [
+          {
+            severity: "major",
+            category: "spatial-rhythm",
+            viewport: "both",
+            evidence: "section pacing",
+            recommendation: "tighten pacing",
+          },
+        ],
+        operations: [],
+      },
+      usage: { prompt_tokens: 100, completion_tokens: 20, cost: 0.05 },
+      cache: { cost: 0.05 },
+    };
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir,
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) =>
+        writeBakeoffEvidence(
+          options,
+          report({
+            selectedCandidateId: null,
+            candidates: [nearMissCandidate()],
+          }),
+        ),
+      runVisualGateImpl: async (options: any) => {
+        await fs.mkdir(path.dirname(options.reportPath), { recursive: true });
+        await fs.writeFile(options.reportPath, JSON.stringify(gateReport));
+        return gateReport;
+      },
+      repairCandidateImpl: async () => {},
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+    expect(result.status).toBe("previewed-with-open-findings");
+    const reportFiles = await fs.readdir(outDir, { recursive: true });
+    expect(
+      reportFiles.filter((name) => String(name).endsWith("visual-gate.json")),
+    ).toEqual([
+      expect.stringMatching(/^round-0\d\/near-miss-visual-gate\.json$/u),
+      "final/visual-gate.json",
+    ]);
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: outDir }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: 0.05,
+      costKind: "actual",
+      complete: true,
+      detail: {
+        calls: 1,
+        duplicateReports: 1,
+        sources: [
+          expect.stringMatching(/^round-0\d\/near-miss-visual-gate\.json$/u),
+        ],
+      },
+    });
+    expect(summary.exact.stages.repair_qa).toMatchObject({
+      amountUsd: "0.05",
+      coverageComplete: true,
+    });
+  });
+
   it("repairs the candidate with the fewest hard failures first", async () => {
     const { root, candidates } = await fixture(["candidate-a", "candidate-b"]);
     const repairs: string[] = [];
