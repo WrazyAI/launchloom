@@ -487,4 +487,20 @@ describe("operations claim and intake API", () => {
     expect(wrong.status).toBe(409);
     expect(await wrong.json()).toEqual({ status: "attention" });
   });
+  it('accepts SHA-bound handoff but rejects free text, forged identity and malformed transitions', async () => {
+    const { store, calls } = fakeStore();
+    const event = { attemptId, eventKey: `${attemptId}:handoff:completed:1`, stage: 'handoff', transition: 'completed', buildSha: 'a'.repeat(40) };
+    const valid = await operationsEvent(request('/api/internal/operations/events', event, await token()), apiEnv, { store, policy: policy() });
+    expect(valid.status).toBe(200);
+    for (const change of [
+      { buildSha: undefined }, { buildSha: 'not-a-sha' }, { transition: 'preview_ready' },
+      { detail: 'private@example.test Bearer secret' }, { runId: '777777' },
+      { eventKey: 'private@example.test' },
+    ]) {
+      const response = await operationsEvent(request('/api/internal/operations/events', { ...event, ...change }, await token()), apiEnv, { store, policy: policy() });
+      expect(response.status).toBe(400);
+      expect(await response.text()).not.toMatch(/private|secret|777777/);
+    }
+    expect(calls.events).toHaveLength(1);
+  });
 });

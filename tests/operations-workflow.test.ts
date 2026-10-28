@@ -511,7 +511,7 @@ describe("workflow job graph and public-log privacy", () => {
     };
     const generate = workflow.jobs.generate;
     expect(workflow.jobs.track_execution.if).toContain(
-      "needs.generate.outputs.claimed == 'true'",
+      "always() && inputs.operation_id == '' &&",
     );
     expect(workflow.jobs.track_execution.if).toContain("inputs.operation_id == ''");
     expect(generate.outputs?.claimed).toContain("steps.claim.outputs.claimed");

@@ -491,6 +491,7 @@ export async function operationsIntake(
 /* -------------------------------------------------------------------------- */
 
 export type RunStageEvent = {
+  buildSha?: string;
   eventKey: string;
   stage: string;
   transition: string;
@@ -507,10 +508,16 @@ function stageEvent(value: Record<string, unknown>): RunStageEvent | undefined {
   const eventKey = exactString(value.eventKey);
   const stage = exactString(value.stage);
   const transition = exactString(value.transition);
-  if (!eventKey || eventKey.length > 200 || /[\u0000-\u001f\u007f]/u.test(eventKey)) return undefined;
+  if (!eventKey || !/^[A-Za-z0-9:._/-]{1,200}$/u.test(eventKey)) return undefined;
   if (!stage || !EVENT_FIELD.test(stage) || !transition || !EVENT_FIELD.test(transition))
     return undefined;
+  if (!['started', 'completed', 'failed', 'cancelled', 'observed'].includes(transition)) return undefined;
   const event: RunStageEvent = { eventKey, stage, transition };
+  if (value.buildSha !== undefined) {
+    if (typeof value.buildSha !== 'string' || !/^[a-f0-9]{40}$/u.test(value.buildSha) || stage !== 'handoff' || transition !== 'completed') return undefined;
+    event.buildSha = value.buildSha;
+  }
+  if (stage === 'handoff' && (!event.buildSha || transition !== 'completed')) return undefined;
   if (value.occurredAt !== undefined) {
     const occurredAt = exactString(value.occurredAt);
     if (!occurredAt || !Number.isFinite(Date.parse(occurredAt))) return undefined;
@@ -572,6 +579,7 @@ export async function operationsEvent(
   const allowed = new Set([
     "attemptId", "eventKey", "stage", "transition", "occurredAt",
     "detailCode", "provider", "model", "costKind", "amount", "currency",
+    "buildSha",
   ]);
   if (
     !attemptId ||

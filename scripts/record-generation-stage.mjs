@@ -1,6 +1,7 @@
 import {
   buildAttemptTrackingPayload,
   postAttemptTracking,
+  postOperationsEvent,
 } from "./record-generation-event.mjs";
 
 function argsFrom(values) {
@@ -39,6 +40,10 @@ export async function recordGenerationStage({
   env = process.env,
   fetchImpl = fetch,
 } = {}) {
+  if (env.OPERATION_ID) {
+    await postOperationsEvent({ stage, 'stage-status': status }, { env, fetchImpl });
+    return { ok: true };
+  }
   const secret = clean(env.GENERATION_TRACKING_SECRET, 500);
   if (!secret) return { ok: true, disabled: true };
   const runId = clean(env.GITHUB_RUN_ID, 40);
@@ -87,8 +92,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       );
     }
   } catch (error) {
+    if (process.env.OPERATION_ID) {
+      console.error('operations_event=unavailable');
+      process.exitCode = 1;
+    } else {
     console.warn(
       `generation_stage=skipped reason=${String(error?.message || error).slice(0, 160)}`,
     );
+    }
   }
 }

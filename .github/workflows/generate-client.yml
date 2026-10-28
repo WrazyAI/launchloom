@@ -107,7 +107,7 @@ jobs:
         focused_test,
         intake_handoff_check,
       ]
-    if: ${{ always() && (github.event_name == 'repository_dispatch' || inputs.test_profile != 'access-only') && (inputs.operation_id == '' || needs.generate.outputs.claimed == 'true') }}
+    if: ${{ always() && inputs.operation_id == '' && (github.event_name == 'repository_dispatch' || inputs.test_profile != 'access-only') }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -322,6 +322,8 @@ jobs:
         shell: bash scripts/private-run.sh {0}
     env:
       OPERATION_ID: ${{ inputs.operation_id }}
+      OPERATIONS_API_URL: ${{ vars.LAUNCHLOOM_OPERATIONS_API_URL || vars.LAUNCHLOOM_API_URL || 'https://api.launchloom.wrazyos.com' }}
+      OPERATIONS_OIDC_AUDIENCE: ${{ vars.OPERATIONS_OIDC_AUDIENCE || 'launchloom-operations' }}
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -428,10 +430,10 @@ jobs:
         run: |
           for key in GITHUB_ORG_TOKEN OPENROUTER_API_KEY REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_DEVELOPER_EMAIL; do test -n "${!key}" || { echo "Missing: $key"; exit 1; }; done
           if [ "$CREATIVE_EXPERIENCE_PROVIDER" = "opencode-go" ] || [ "$SITE_COPY_PROVIDER" = "opencode-go" ]; then test -n "$OPENCODE_GO_API_KEY" || { echo "Missing: OPENCODE_GO_API_KEY"; exit 1; }; fi
-      # Best-effort tracking. Never blocks or fails generation; disabled until
-      # GENERATION_TRACKING_SECRET is configured.
+      # Legacy tracking stays best-effort. New-mode telemetry is mandatory and
+      # uses the claiming workload identity, never the legacy tracking secret.
       - name: Record generation started
-        continue-on-error: true
+        continue-on-error: ${{ inputs.operation_id == '' }}
         env:
           CLIENT_EMAIL: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.client_email || '' }}
           SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
@@ -1398,6 +1400,16 @@ jobs:
           node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-initial-email:$DEPLOY_SHA -->"
           gh pr edit "$REVIEW_PR" --repo "$CLIENT_REPO" --remove-label launchloom-delivery-pending
+      # This is the only new-mode preview handoff attestation. It runs after all
+      # existing build, deployment, rendered verification and delivery gates and
+      # binds the selected client build, not the workflow's source revision.
+      - name: Record authenticated operations handoff
+        if: ${{ inputs.operation_id != '' && steps.claim.outputs.claimed == 'true' }}
+        env:
+          SELECTED_BUILD_SHA: ${{ steps.deploy.outputs.sha }}
+        run: |
+          node scripts/record-generation-event.mjs \
+            --stage handoff --stage-status completed --sha "$SELECTED_BUILD_SHA"
       - name: Mark intake handoff complete
         if: ${{ inputs.operation_id == '' }}
         env:

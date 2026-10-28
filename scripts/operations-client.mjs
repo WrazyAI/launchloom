@@ -253,17 +253,19 @@ export async function appendGenerationEvent({
   fetchImpl = fetch,
 }) {
   let response;
-  try {
-    response = await post(
-      api,
-      "/api/internal/operations/events",
-      token,
-      { attemptId, ...event },
-      fetchImpl,
-    );
-  } catch {
-    fail("event_unavailable", EXIT.unavailable);
+  // Stable body/key across bounded retries, including a lost accepted response.
+  const body = { ...event, attemptId };
+  for (let retry = 0; retry < 3; retry += 1) {
+    try {
+      response = await post(api, "/api/internal/operations/events", token, body, fetchImpl);
+      if (response.status !== 429 && response.status < 500) break;
+      if (retry < 2) await response.body?.cancel();
+    } catch {
+      if (retry === 2) fail("event_unavailable", EXIT.unavailable);
+    }
+    if (retry < 2) await new Promise(resolve => setTimeout(resolve, 100 * 2 ** retry));
   }
+  if (!response) fail("event_unavailable", EXIT.unavailable);
   if (response.status === 401) fail("event_unauthorized", EXIT.unauthorized);
   if (response.status === 409) fail("event_attention", EXIT.attention);
   if (response.status !== 200) fail("event_unavailable", EXIT.unavailable);
@@ -288,6 +290,9 @@ function eventFrom(options) {
   if (options["occurred-at"] !== undefined) {
     if (!Number.isFinite(Date.parse(options["occurred-at"]))) fail("invalid_occurred_at", EXIT.usage);
     event.occurredAt = options["occurred-at"];
+  }
+  if (options["build-sha"] !== undefined) {
+    event.buildSha = cleanLabel(options['build-sha'], 'build_sha', /^[a-f0-9]{40}$/u);
   }
   if (options["cost-kind"] !== undefined) {
     if (!["actual", "estimated", "unreported"].includes(options["cost-kind"]))

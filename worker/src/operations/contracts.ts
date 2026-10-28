@@ -57,6 +57,9 @@ export type GenerationAttemptRecord = {
   finishedAt: string | null;
   terminalReason: string | null;
   artifactReferences: string[];
+  deliveryState: "none" | "preview_ready";
+  githubConclusion: string | null;
+  reconciledAt: string | null;
 };
 /** Decimal strings avoid binary floating point rounding in accounting. */
 export type EventCost =
@@ -73,6 +76,7 @@ export type StageEventRecord = EventCost & {
   detailCode: string | null;
   provider: string | null;
   model: string | null;
+  buildSha: string | null;
 };
 export type DispatchOutboxRecord = {
   operationId: string;
@@ -110,6 +114,8 @@ export type ClaimedOperation = {
   attemptId: string;
 };
 export type RunStageEvent = {
+  /** Selected verified build, required for the post-gate handoff only. */
+  buildSha?: string;
   eventKey: string;
   stage: string;
   transition: string;
@@ -161,7 +167,9 @@ export interface OperationsStore {
     intakeId: string,
     run: RunIdentity,
   ): Promise<IntakeRecord | null>;
-  /** Writes a stable stage key only for the owning, still-running run. */
+  /** Retains stable-key evidence only for the exact owner, including late events.
+   * Events alone never regress or establish an execution terminal outcome.
+   */
   appendEvent(
     attemptId: string,
     run: RunIdentity,

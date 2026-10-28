@@ -33,7 +33,12 @@ import {
 } from "./seo-readiness";
 import type { PublicationCommand } from "./publication";
 import { OnboardingInvites } from "./onboarding-invites";
-import { workspaceApi, workspaceError, attemptIngest } from "./admin/workspace-api";
+import {
+  workspaceApi, workspaceError, attemptIngest, legacyAccessPrincipal,
+} from "./admin/workspace-api";
+import {
+  operationsAdminApi, scheduledReconciliation, type ReconciliationEnvironment,
+} from "./operations/reconcile";
 import {
   authAttemptRateLimit,
   proxyAdminAuth,
@@ -127,6 +132,8 @@ export interface Env {
   ADMIN_PUBLIC_ORIGIN?: string;
   ADMIN_DATABASE_URL?: string;
   OPERATIONS_DATABASE_URL?: string;
+  OPERATIONS_RECONCILE_MODE?: string;
+  OPERATIONS_DISPATCH_REPOSITORY?: string;
   OPERATIONS_INTAKE_MODE?: string;
   OPERATIONS_OIDC_AUDIENCE?: string;
   OPERATIONS_OIDC_REPOSITORY_ID?: string;
@@ -404,7 +411,9 @@ async function authenticatedWorkspace(
             store: guard.store!,
             principal: guard.principal,
           })
-        : workspaceApi(request, env, guard.principal.email),
+        : suffix.startsWith("/operations/")
+          ? operationsAdminApi(request, env, guard.principal)
+          : workspaceApi(request, env, guard.principal.email),
     );
   }
 
@@ -441,6 +450,8 @@ async function authenticatedWorkspace(
       "Membership management requires a Neon account.",
       403,
     );
+  if (suffix.startsWith("/operations/"))
+    return operationsAdminApi(request, env, await legacyAccessPrincipal(verifiedEmail));
   return workspaceApi(request, env, verifiedEmail);
 }
 
@@ -3952,10 +3963,23 @@ async function aiChat(request: Request, env: Env) {
 export default {
   async scheduled(
     _controller: ScheduledController,
-    env: DispatchEnvironment,
+    env: DispatchEnvironment & ReconciliationEnvironment,
     _ctx: ExecutionContext,
   ): Promise<void> {
-    await scheduledOperations(env);
+    // Independent observation can run even while dispatch is disabled or fails.
+    const results = await Promise.allSettled([
+      scheduledOperations(env), scheduledReconciliation(env),
+    ]);
+    if (results.some(result => result.status === "rejected")) {
+      console.error("operations_alert=scheduled_dependency_unavailable");
+      // Preserve the existing safe configuration diagnostic, never raw database
+      // or provider errors (which can contain connection strings or responses).
+      if (results.some(result => result.status === "rejected" &&
+        result.reason instanceof Error &&
+        result.reason.message === "Operations dispatch storage is not configured."))
+        throw new Error("Operations dispatch storage is not configured.");
+      throw new Error("Scheduled operations unavailable.");
+    }
   },
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const requestUrl = new URL(request.url);
