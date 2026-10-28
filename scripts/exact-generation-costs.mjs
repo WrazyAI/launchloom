@@ -1,4 +1,5 @@
 import { decimal, addDecimals, multiplyDecimals } from "./exact-money.mjs";
+import { dedupeRepairGateEvidence } from "./repair-cost-evidence.mjs";
 
 /** Parallel exact-money sidecar; legacy numeric/six-place display fields remain.
  * Never add or round monetary values using JavaScript Number arithmetic here.
@@ -98,9 +99,9 @@ export function exactGenerationCosts(input = {}, options = {}) {
     const values = (Array.isArray(repair.usage) ? repair.usage : []).map(
       (entry) => entry?.usage?.cost ?? entry?.cost,
     );
-    for (const file of Array.isArray(repair.visualGateFiles)
-      ? repair.visualGateFiles
-      : []) {
+    // Copied final evidence restates a round report; count the paid call once.
+    for (const file of dedupeRepairGateEvidence(repair.visualGateFiles)
+      .evidence) {
       if (
         file?.report &&
         (file.report.usage || file.report.cache?.cost !== undefined)

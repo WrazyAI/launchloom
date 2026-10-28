@@ -3,12 +3,18 @@ import path from "node:path";
 import { constants } from 'node:fs';
 import { exactGenerationCosts } from './exact-generation-costs.mjs';
 import { addDecimals } from './exact-money.mjs';
+import { dedupeRepairGateEvidence } from './repair-cost-evidence.mjs';
 
 const round = (value) => Math.round(Number(value || 0) * 1_000_000) / 1_000_000;
 
 function finiteNumber(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+/** A missing or null amount is unknown evidence, never a priced zero. */
+function optionalCost(value) {
+  return value === null || value === undefined ? null : finiteNumber(value);
 }
 
 async function readJson(file, options = {}) {
@@ -358,18 +364,19 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
   if (repair && typeof repair === "object") {
     const records = [];
     const sources = [];
+    // A copied `final/visual-gate.json` restates its round report, so it must
+    // not be counted as a second paid gate call.
+    const repairEvidence = dedupeRepairGateEvidence(repair.visualGateFiles);
     for (const record of Array.isArray(repair.usage) ? repair.usage : [])
       records.push({ usage: record.usage || record });
-    for (const file of Array.isArray(repair.visualGateFiles)
-      ? repair.visualGateFiles
-      : []) {
+    for (const file of repairEvidence.evidence) {
       if (!file || !file.report) continue;
       const usage = file.report.usage || null;
-      const cacheCost = finiteNumber(file.report.cache?.cost);
+      const cacheCost = optionalCost(file.report.cache?.cost);
       if (usage || cacheCost !== null) {
         records.push({
           usage,
-          cost: cacheCost,
+          ...(cacheCost !== null ? { cost: cacheCost } : {}),
           source: file.name || "visual-gate",
         });
         sources.push(file.name || "visual-gate");
@@ -379,8 +386,9 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
     let priced = 0;
     let unpriced = 0;
     for (const record of records) {
+      // A null amount is unknown evidence, not a priced zero.
       const value =
-        finiteNumber(record.cost) ?? finiteNumber(record?.usage?.cost);
+        optionalCost(record.cost) ?? optionalCost(record?.usage?.cost);
       if (value === null || value < 0) unpriced += 1;
       else {
         cost += value;
@@ -388,6 +396,10 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
       }
     }
     if (records.length) {
+      const ignoredCopies =
+        repairEvidence.duplicates.length ||
+        Number(repair.duplicateReports) ||
+        0;
       stages.push({
         stage: "repair_qa",
         provider: "openrouter",
@@ -400,6 +412,7 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
           pricedCalls: priced,
           unpricedCalls: unpriced,
           sources: sources.slice(0, 12),
+          ...(ignoredCopies ? { duplicateReports: ignoredCopies } : {}),
           rounds: Number(input.repair.rounds) || 0,
         },
       });
@@ -506,11 +519,21 @@ export async function readGenerationCostInputs(paths = {}, options = {}) {
       for (const file of candidates) {
         const report = await readJson(file, options);
         if (report)
-          visualGateFiles.push({ name: path.relative(root, file), report });
+          visualGateFiles.push({
+            name: path.relative(root, file),
+            report,
+            sourcePath: file,
+          });
       }
     }
-    if (usageRecords.length || visualGateFiles.length)
-      input.repair = { usage: usageRecords, visualGateFiles, rounds };
+    const repairEvidence = dedupeRepairGateEvidence(visualGateFiles);
+    if (usageRecords.length || repairEvidence.evidence.length)
+      input.repair = {
+        usage: usageRecords,
+        visualGateFiles: repairEvidence.evidence,
+        rounds,
+        duplicateReports: repairEvidence.duplicates.length,
+      };
     input.repairModel = repairModel;
   }
   input.collectionIncomplete = options.budget.incomplete;

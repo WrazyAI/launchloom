@@ -19,6 +19,10 @@ import { requestRepair, privateRepairRejectionEvidence } from "../scripts/creati
 import { RENDERED_REFERENCE_THRESHOLDS } from "../scripts/rendered-reference-fidelity.mjs";
 import { validateProductionCandidateFiles } from "../scripts/production-experience-author.mjs";
 import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
+import {
+  readGenerationCostInputs,
+  summarizeGenerationCosts,
+} from "../scripts/generation-cost-summary.mjs";
 
 const roots: string[] = [];
 const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
@@ -1689,6 +1693,69 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
       status: "ok",
       details: { gate: true, reason: "selected-visual-gate" },
     });
+  });
+
+  it("counts one paid gate call after copying the round report into final evidence", async () => {
+    const { root, candidates } = await fixture();
+    const outDir = path.join(root, "evidence");
+    const gateReport = {
+      version: 1,
+      mode: "verify",
+      status: "ok",
+      model: "openai/gpt-6-luna",
+      durationMs: 900,
+      changed: false,
+      appliedOperations: [],
+      blockers: [],
+      audit: { verdict: "pass", findings: [], operations: [] },
+      usage: { prompt_tokens: 120, completion_tokens: 20, cost: 0.07 },
+      cache: { cost: 0.07 },
+      responseCache: null,
+      sessionId: "launchloom:visual-quality-gate:selected",
+      provider: "openai",
+      attempt: 1,
+    };
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir,
+      runBakeoffImpl: async (options: any) =>
+        writeBakeoffEvidence(options, report()),
+      runVisualGateImpl: async (options: any) => {
+        await fs.mkdir(path.dirname(options.reportPath), { recursive: true });
+        await fs.writeFile(options.reportPath, JSON.stringify(gateReport));
+        return gateReport;
+      },
+      repairCandidateImpl: async () => {},
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+    expect(result.status).toBe("passed");
+    const roundReport = await fs.readFile(
+      path.join(outDir, "round-00", "visual-gate.json"),
+      "utf8",
+    );
+    // The producer copies the round report rather than paying for a new gate.
+    expect(
+      await fs.readFile(path.join(outDir, "final", "visual-gate.json"), "utf8"),
+    ).toBe(roundReport);
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: outDir }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: 0.07,
+      costKind: "actual",
+      complete: true,
+      detail: { calls: 1, pricedCalls: 1, unpricedCalls: 0 },
+    });
+    expect(summary.exact.stages.repair_qa).toMatchObject({
+      amountUsd: "0.07",
+      costKind: "actual",
+      coverageComplete: true,
+    });
+    expect(summary.totalUsd).toBe(0.07);
   });
 
   it("threads one frozen creative session through repairs and summary evidence", async () => {

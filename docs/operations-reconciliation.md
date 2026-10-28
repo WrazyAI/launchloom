@@ -143,6 +143,17 @@ delivery state. Conflicting evidence for the same occurrence remains a conflict,
 not an overwrite or an extra charge. If preparation/posting fails, the original
 failure observation is still attempted and a fixed incomplete diagnostic emitted.
 
+The rendered repair producer records each gate call in its round directory and
+then copies that same report into `final/visual-gate.json` for downstream review.
+Cost collection ignores the copied destination when a canonicalized, identical
+round report was already discovered, and ignores a file reached twice through
+overlapping roots. Reports in separate round directories, and the distinct
+`visual-gate-plan.json`/`visual-gate-final.json` revision gates, stay separate paid
+calls. An unreadable copy is still incomplete evidence, and a readable report is
+never suppressed by a malformed one. Unknown gate amounts stay unknown instead of
+being counted as a priced zero, and the ignored copy count is reported as
+`repair_qa.detail.duplicateReports`.
+
 Collection is bounded: 2 MB per file, 8 MB total bytes, 512 items per array,
 50,000 JSON nodes, 512 discovered directory entries, 64 discovered QA report
 files, four nested directory levels and a 15-second summary subprocess timeout.

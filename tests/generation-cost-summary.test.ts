@@ -8,6 +8,27 @@ import {
 } from "../scripts/generation-cost-summary.mjs";
 import { buildGenerationTrackingPayload } from "../scripts/record-generation-event.mjs";
 
+function visualGateReport(overrides: Record<string, unknown> = {}) {
+  return {
+    version: 1,
+    mode: "verify",
+    status: "ok",
+    model: "openai/gpt-6-luna",
+    durationMs: 1200,
+    changed: false,
+    appliedOperations: [],
+    blockers: [],
+    audit: { verdict: "pass", findings: [], operations: [] },
+    usage: { prompt_tokens: 100, completion_tokens: 20, cost: 0.05 },
+    cache: { cost: 0.05 },
+    responseCache: null,
+    sessionId: "launchloom:visual-quality-gate:round-gate",
+    provider: "openai",
+    attempt: 1,
+    ...overrides,
+  };
+}
+
 describe("generation cost summary", () => {
   it("includes query-planner cost and cache telemetry in measured SEO spend", () => {
     const summary = summarizeGenerationCosts({
@@ -339,6 +360,191 @@ describe("generation cost summary", () => {
     expect(summary.stages).toEqual([]);
     expect(summary.totalUsd).toBe(0);
     expect(summary.incomplete).toBe(false);
+  });
+
+  it("counts a copied final gate report once instead of twice", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    const report = visualGateReport();
+    await fs.mkdir(path.join(root, "round-01"), { recursive: true });
+    await fs.mkdir(path.join(root, "final"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "round-01", "visual-gate.json"),
+      JSON.stringify(report, null, 2),
+    );
+    // The producer copies the round report byte for byte into final evidence.
+    await fs.copyFile(
+      path.join(root, "round-01", "visual-gate.json"),
+      path.join(root, "final", "visual-gate.json"),
+    );
+    await fs.writeFile(
+      path.join(root, "repair-usage.json"),
+      JSON.stringify({
+        version: 1,
+        model: "openai/gpt-6-luna",
+        records: [{ usage: { cost: 0.4 } }],
+      }),
+    );
+
+    const input = await readGenerationCostInputs({ repairDir: root });
+    const summary = summarizeGenerationCosts(input);
+    const repair = summary.stages.find(
+      (stage: any) => stage.stage === "repair_qa",
+    );
+    expect(input.repair.visualGateFiles).toHaveLength(1);
+    expect(repair).toMatchObject({
+      costUsd: 0.45,
+      costKind: "actual",
+      complete: true,
+      detail: { calls: 2, pricedCalls: 2, unpricedCalls: 0 },
+    });
+    expect(repair?.detail.sources).toEqual(["round-01/visual-gate.json"]);
+    expect(summary.totalUsd).toBe(0.45);
+    expect(summary.exact.stages.repair_qa).toMatchObject({
+      amountUsd: "0.45",
+      costKind: "actual",
+      coverageComplete: true,
+    });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("counts the same evidence file once when two roots reach it", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    const evidence = path.join(root, "creative-repair");
+    await fs.mkdir(path.join(evidence, "round-01"), { recursive: true });
+    await fs.writeFile(
+      path.join(evidence, "round-01", "visual-gate.json"),
+      JSON.stringify(visualGateReport()),
+    );
+
+    // Broad revision roots and the repair root can both discover one file.
+    const input = await readGenerationCostInputs({
+      repairDir: evidence,
+      revisionDir: root,
+    });
+    const summary = summarizeGenerationCosts(input);
+    expect(
+      input.repair.visualGateFiles.map((file: any) => file.name),
+    ).toHaveLength(1);
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({ costUsd: 0.05, complete: true, detail: { calls: 1 } });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("recognizes a final copy written with a different key order", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    const report = visualGateReport();
+    const reordered = Object.fromEntries(Object.entries(report).reverse());
+    await fs.mkdir(path.join(root, "round-01"), { recursive: true });
+    await fs.mkdir(path.join(root, "final"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "round-01", "visual-gate.json"),
+      JSON.stringify(report, null, 2),
+    );
+    await fs.writeFile(
+      path.join(root, "final", "visual-gate.json"),
+      JSON.stringify(reordered),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({ costUsd: 0.05, complete: true, detail: { calls: 1 } });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("keeps identical-looking gate calls from separate rounds", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    const report = visualGateReport();
+    for (const round of ["round-01", "round-02"]) {
+      await fs.mkdir(path.join(root, round), { recursive: true });
+      // Two paid gate invocations can report the same amount and, in a
+      // synthetic run, even the same bytes. They are still separate calls.
+      await fs.writeFile(
+        path.join(root, round, "visual-gate.json"),
+        JSON.stringify(report),
+      );
+    }
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({ costUsd: 0.1, complete: true, detail: { calls: 2 } });
+    expect(summary.exact.stages.repair_qa).toMatchObject({
+      amountUsd: "0.1",
+      coverageComplete: true,
+    });
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("keeps an unreported gate call unreported after removing its copy", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    const report = visualGateReport({
+      usage: { prompt_tokens: 100 },
+      cache: {},
+    });
+    await fs.mkdir(path.join(root, "round-01"), { recursive: true });
+    await fs.mkdir(path.join(root, "final"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "round-01", "visual-gate.json"),
+      JSON.stringify(report),
+    );
+    await fs.copyFile(
+      path.join(root, "round-01", "visual-gate.json"),
+      path.join(root, "final", "visual-gate.json"),
+    );
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: root }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: null,
+      costKind: "unreported",
+      complete: false,
+      detail: { calls: 1, unpricedCalls: 1 },
+    });
+    expect(summary.exact.stages.repair_qa).toMatchObject({
+      amountUsd: null,
+      costKind: "unreported",
+      coverageComplete: false,
+    });
+    expect(summary.incomplete).toBe(true);
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it("keeps the paid round report when its copied final report is malformed", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-cost-"));
+    await fs.mkdir(path.join(root, "round-01"), { recursive: true });
+    await fs.mkdir(path.join(root, "final"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "round-01", "visual-gate.json"),
+      JSON.stringify(visualGateReport()),
+    );
+    await fs.writeFile(
+      path.join(root, "final", "visual-gate.json"),
+      '{"usage": {"cost": 0.05',
+    );
+
+    const input = await readGenerationCostInputs(
+      { repairDir: root },
+      { bounded: true, partial: true },
+    );
+    const summary = summarizeGenerationCosts(input);
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({ costUsd: 0.05, complete: true, detail: { calls: 1 } });
+    // The unreadable copy is still unknown evidence, not a silent zero.
+    expect(input.collectionIncomplete).toBe(true);
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "usage_collection"),
+    ).toMatchObject({ costKind: "unreported", complete: false });
+    await fs.rm(root, { recursive: true, force: true });
   });
 
   it("reads repair and visual gate evidence from disk", async () => {
