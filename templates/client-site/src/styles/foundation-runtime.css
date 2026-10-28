@@ -128,6 +128,7 @@
 .xp-foundation.xp-foundation-shell [data-foundation-repeat="services.items"] {
   display: flex !important;
   flex-direction: column;
+  justify-content: space-between;
   height: auto !important;
   min-height: 220px;
   padding: 1.5rem;
@@ -135,6 +136,14 @@
   background: #ffffff !important;
   grid-row: auto !important;
   grid-column: auto !important;
+}
+
+/* The source hero paints its image at 45 percent, which reads as an empty
+   cream block once client photography replaces the demo shot. Raise it for the
+   pilot foundation only so other foundations keep their own treatment. */
+.xp-foundation.xp-foundation-shell[data-foundation-dossier="spicer-landscaping-season-wheel"]
+  [data-foundation-image="hero.image"] {
+  opacity: 0.72;
 }
 
 .xp-foundation.xp-foundation-shell

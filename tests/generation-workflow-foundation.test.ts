@@ -16,7 +16,7 @@ const step = (name: string) => {
 describe("generation workflow foundation renderer", () => {
   it("exposes an explicit renderer and foundation policy", () => {
     const inputs = workflow.on.workflow_dispatch.inputs;
-    expect(inputs.renderer.options).toEqual(["creative", "foundation"]);
+    expect(inputs.renderer.options).toEqual(["creative", "foundation", "pack"]);
     expect(inputs.renderer.default).toBe("creative");
     expect(inputs.foundation_id.type).toBe("string");
     expect(inputs.foundation_policy.options).toEqual([
@@ -88,9 +88,7 @@ describe("generation workflow foundation renderer", () => {
     expect(preview.run).toContain("data-experience-pack");
     expect(preview.run).toContain("data-foundation-contact");
     expect(preview.run).toContain("Foundation license credit missing");
-    expect(preview.run).toContain(
-      "data-creative-candidate|legacy-design-family",
-    );
+    expect(preview.run).toContain('data-creative-renderer="creative-candidate"');
     expect(preview.run).toContain("verify-rendered-revision.mjs");
     expect(preview.run).toContain("seo-release-gate.mjs");
   });
@@ -165,5 +163,66 @@ describe("generation workflow foundation renderer", () => {
     );
     expect(page).toContain("foundationRenderer");
     expect(page).toContain("<FoundationExperience");
+  });
+});
+
+describe("generation workflow pack renderer", () => {
+  it("exposes a pack renderer with an explicit pack and variant", () => {
+    const inputs = workflow.on.workflow_dispatch.inputs;
+    expect(inputs.renderer.options).toEqual(["creative", "foundation", "pack"]);
+    expect(inputs.pack_id.type).toBe("string");
+    expect(inputs.pack_variant.type).toBe("string");
+    expect(workflow.jobs.renderer_policy.outputs).toMatchObject({
+      pack_id: "${{ steps.policy.outputs.pack_id }}",
+      pack_variant: "${{ steps.policy.outputs.pack_variant }}",
+    });
+  });
+
+  it("requires a pack id and the full profile for the pack renderer", () => {
+    const policy = workflow.jobs.renderer_policy.steps.find(
+      (candidate: any) => candidate.name === "Resolve generation renderer",
+    );
+    expect(policy.run).toContain('creative|foundation|pack');
+    expect(policy.run).toContain(
+      'test -n "$REQUESTED_PACK" || { echo "pack_id is required for the pack renderer"',
+    );
+    expect(policy.run).toContain(
+      'test "$PROFILE" = "full" || { echo "The pack renderer is only supported for the full profile"',
+    );
+  });
+
+  it("selects the pack and records its stage before preview", () => {
+    const select = step("Select experience pack");
+    expect(select.if).toBe("needs.renderer_policy.outputs.renderer == 'pack'");
+    expect(select.run).toContain("selectionMode:\"pack-preview\"");
+    expect(select.run).toContain("Select experience pack $PACK_ID");
+    expect(step("Record pack select stage").if).toBe(
+      "needs.renderer_policy.outputs.renderer == 'pack'",
+    );
+    expect(step("Record pack render started").if).toBe(
+      "needs.renderer_policy.outputs.renderer == 'pack'",
+    );
+    expect(step("Record pack render stage").if).toBe(
+      "needs.renderer_policy.outputs.renderer == 'pack'",
+    );
+  });
+
+  it("branches the preview build for packs", () => {
+    const preview = step("Build and direct-upload public preview");
+    expect(preview.run).toContain('if [ "$GENERATION_RENDERER" = "pack" ]');
+    expect(preview.run).toContain('data-experience-pack=\\"$PACK_ID\\"');
+    expect(preview.run).toContain("Pack lead form missing");
+    expect(preview.run).toContain("Creative host marker found in pack preview");
+    expect(preview.run).toContain("Foundation marker found in pack preview");
+    expect(preview.run).toContain("Initial LaunchLoom pack preview");
+  });
+
+  it("records pack render failures with the pack stage", () => {
+    const failure = step("Record generation failure");
+    expect(failure.run).toContain(
+      'elif [ "$GENERATION_RENDERER" = "pack" ] && [ "${{ steps.pack.outcome }}" = "success" ]; then',
+    );
+    expect(failure.run).toContain("FAILURE_STAGE=pack_render");
+    expect(failure.run).toContain("FAILURE_CATEGORY=pack_render");
   });
 });
