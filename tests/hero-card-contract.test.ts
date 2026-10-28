@@ -48,7 +48,7 @@ const desktopCard = evidence({
 });
 
 describe("hero-card fidelity contract", () => {
-  it("applies to image-led routes whose copy floats over media", () => {
+  it("applies only to media-overlay routes whose copy sits over the image", () => {
     expect(
       routeRequiresFloatingHeroCopy({
         compositionTopology: {
@@ -57,14 +57,26 @@ describe("hero-card fidelity contract", () => {
         },
       }),
     ).toBe(true);
+    // media-leads-copy means the image leads and the copy follows, so a
+    // framed copy field below the image is faithful, not a floating hero.
     expect(
       routeRequiresFloatingHeroCopy({
         compositionTopology: {
           hero: "image-led-stage",
           mediaRelation: "media-leads-copy",
         },
+        heroGeometry:
+          "a full-bleed evening exterior photograph above a dark editorial canvas",
       }),
-    ).toBe(true);
+    ).toBe(false);
+    expect(
+      routeRequiresFloatingHeroCopy({
+        compositionTopology: {
+          hero: "centered-field",
+          mediaRelation: "copy-over-media",
+        },
+      }),
+    ).toBe(false);
   });
 
   it("does not apply to split, utility-panel, or text-led references", () => {
@@ -80,16 +92,21 @@ describe("hero-card fidelity contract", () => {
   });
 
   it("does not apply when the reference explicitly frames its copy", () => {
-    expect(
-      routeRequiresFloatingHeroCopy({
-        compositionTopology: {
-          hero: "media-overlay",
-          mediaRelation: "copy-over-media",
-        },
-        heroGeometry:
-          "full-bleed photograph with a bordered card holding the promise",
-      }),
-    ).toBe(false);
+    for (const geometry of [
+      "full-bleed photograph with a bordered card holding the promise",
+      "a city panorama behind a centered translucent text panel",
+      "a framed editorial statement beside a multi-window image mosaic",
+      "a bordered dispatch-status console",
+    ])
+      expect(
+        routeRequiresFloatingHeroCopy({
+          compositionTopology: {
+            hero: "media-overlay",
+            mediaRelation: "copy-over-media",
+          },
+          heroGeometry: geometry,
+        }),
+      ).toBe(false);
   });
 
   it("flags the observed desktop and mobile bordered cards", () => {
@@ -107,20 +124,30 @@ describe("hero-card fidelity contract", () => {
     ).toContain("large bordered card");
   });
 
-  it("passes a compact scrim behind text only", () => {
-    expect(
-      heroCardCoverageFinding(
-        evidence({
-          heroCopyAreaRatio: 0.149,
-          heroCopyWidthRatio: 0.769,
-          heroCopyHeightRatio: 0.194,
-          heroCopyMobileAreaRatio: 0.149,
-          heroCopyHasBorder: false,
-          heroCopyHasOpaqueBackground: false,
-        }),
-        { mobile: true, requiresFloatingCopy: true },
-      ),
-    ).toBe("");
+  it("passes a compact scrim behind text only, even when it is opaque", () => {
+    for (const hasOpaqueBackground of [false, true])
+      expect(
+        heroCardCoverageFinding(
+          evidence({
+            heroCopyAreaRatio: 0.149,
+            heroCopyWidthRatio: 0.769,
+            heroCopyHeightRatio: 0.194,
+            heroCopyMobileAreaRatio: 0.149,
+            heroCopyHasBorder: false,
+            heroCopyHasOpaqueBackground: hasOpaqueBackground,
+          }),
+          { mobile: true, requiresFloatingCopy: true },
+        ),
+      ).toBe("");
+  });
+
+  it("names an opaque card when no border is present", () => {
+    const finding = heroCardCoverageFinding(
+      evidence({ heroCopyHasBorder: false, heroCopyHasOpaqueBackground: true }),
+      { mobile: true, requiresFloatingCopy: true },
+    );
+    expect(finding).toContain("large opaque card");
+    expect(finding).not.toContain("large bordered card");
   });
 
   it("does not flag a bordered card on a text-led or split route", () => {

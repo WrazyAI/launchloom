@@ -61,7 +61,10 @@ import {
  * Bump when capture or render behavior changes so evidence cached under an
  * earlier behavior version can never be reused.
  */
-export const BAKEOFF_RENDER_EVIDENCE_VERSION = 1;
+// Version 2 adds hero-copy coverage evidence and the route-scoped
+// large-card hard failure, so cached render bundles from version 1 cannot
+// bypass the new gate.
+export const BAKEOFF_RENDER_EVIDENCE_VERSION = 2;
 const HOMEPAGE_VIEWPORTS = [
   { name: "desktop", width: 1536, height: 864 },
   { name: "compact", width: 1366, height: 768 },
@@ -214,6 +217,29 @@ async function inspect(page) {
       const parts = match[1].split(/[,\s/]+/u).filter(Boolean);
       return parts.length >= 4 ? Number(parts[3]) : 1;
     };
+    const borderVisible = (style) =>
+      ["Top", "Right", "Bottom", "Left"].some((side) => {
+        const width = parseFloat(style[`border${side}Width`]) || 0;
+        const borderStyle = style[`border${side}Style`];
+        return width > 0 && borderStyle !== "none" && alphaOf(style[`border${side}Color`]) > 0;
+      });
+    const backgroundVisible = (style) =>
+      alphaOf(style.backgroundColor) >= 0.5 ||
+      Boolean(style.backgroundImage && style.backgroundImage !== "none");
+    const pseudoBackgroundVisible = (element) =>
+      ["::before", "::after"].some((pseudo) => {
+        const style = window.getComputedStyle(element, pseudo);
+        if (!style || style.content === "none") return false;
+        return backgroundVisible(style);
+      });
+    const cardTreatment = (
+      element,
+      style = window.getComputedStyle(element),
+    ) => ({
+      hasBorder: borderVisible(style),
+      hasOpaqueBackground:
+        backgroundVisible(style) || pseudoBackgroundVisible(element),
+    });
     const smallestCommonAncestor = (elements) => {
       if (!elements.length) return null;
       let ancestor = elements[0];
@@ -224,33 +250,53 @@ async function inspect(page) {
       }
       return ancestor;
     };
-    const copyElements = (() => {
-      if (!hero) return [];
-      const marked = [...hero.querySelectorAll("[data-hero-copy]")].filter(
-        visible,
-      );
-      if (marked.length) return marked;
-      const heading = hero.querySelector("h1");
-      const action = hero.querySelector(
-        'a[href], button, [role="button"], input[type="submit"]',
-      );
-      if (!heading || !action) return [];
+    // A marked copy group can sit inside a card. Walk a bounded ancestor
+    // chain so the card's bounds are measured, but never treat a huge wrapper
+    // or the hero stage itself as the card.
+    const cardFor = (element) => {
+      const bounds = rect(element);
+      if (!bounds) return null;
+      const limit = bounds.width * bounds.height * 2.5;
+      for (let node = element; node && node !== hero; node = node.parentElement) {
+        const treatment = cardTreatment(node);
+        if (!treatment.hasBorder && !treatment.hasOpaqueBackground) continue;
+        const nodeBounds = rect(node);
+        if (!nodeBounds) continue;
+        if (node !== element && nodeBounds.width * nodeBounds.height > limit)
+          continue;
+        return { bounds: nodeBounds, ...treatment };
+      }
+      return null;
+    };
+    const markedCopyElements = hero
+      ? [...hero.querySelectorAll("[data-hero-copy]")].filter(visible)
+      : [];
+    const fallbackCopyElement = (() => {
+      if (!hero || markedCopyElements.length) return null;
+      const heading = [...hero.querySelectorAll("h1")].find(visible);
+      if (!heading) return null;
+      const container = heading.parentElement;
+      if (!container) return null;
+      const action = [
+        ...container.querySelectorAll(
+          'a[href], button, [role="button"], input[type="submit"]',
+        ),
+      ].find(visible);
+      if (!action) return null;
       const ancestor = smallestCommonAncestor([heading, action]);
       return ancestor && ancestor !== hero && visible(ancestor)
-        ? [ancestor]
-        : [];
+        ? ancestor
+        : null;
     })();
-    const copyRegions = copyElements.map(rect);
-    const copyCards = copyElements.map((element) => {
-      const style = window.getComputedStyle(element);
-      return {
-        bounds: rect(element),
-        hasBorder: ["Top", "Right", "Bottom", "Left"].some(
-          (side) => (parseFloat(style[`border${side}Width`]) || 0) > 0,
-        ),
-        hasOpaqueBackground: alphaOf(style.backgroundColor) >= 0.5,
-      };
-    });
+    const copyElements = markedCopyElements.length
+      ? markedCopyElements
+      : fallbackCopyElement
+        ? [fallbackCopyElement]
+        : [];
+    // The composition gate still requires the explicit marker. The fallback
+    // only feeds hero-card coverage evidence, never compositionEvidence.copy.
+    const copyRegions = markedCopyElements.map(rect);
+    const copyCards = copyElements.map(cardFor).filter(Boolean);
     const largestCopy = [...copyCards].sort(
       (left, right) =>
         right.bounds.width * right.bounds.height -
@@ -262,7 +308,9 @@ async function inspect(page) {
       : 0;
     const heroCopyAreaRatio = heroArea > 0 ? copyArea / heroArea : 0;
     const heroCopyWidthRatio =
-      heroBounds && largestCopy ? largestCopy.bounds.width / heroBounds.width : 0;
+      heroBounds && largestCopy
+        ? largestCopy.bounds.width / heroBounds.width
+        : 0;
     const heroCopyHeightRatio =
       heroBounds && largestCopy
         ? largestCopy.bounds.height / heroBounds.height

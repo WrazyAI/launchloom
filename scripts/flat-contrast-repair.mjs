@@ -33,10 +33,16 @@ export function wcagContrast(foreground, background) {
  * neutral black.
  */
 export function darkenToContrast(foreground, background, required = 4.5) {
-  const current = wcagContrast(foreground, background);
-  if (Number.isFinite(current) && current >= required)
-    return rgbHex(parseRgba(foreground));
-  return ensureContrast(foreground, background, required);
+  try {
+    const current = wcagContrast(foreground, background);
+    if (Number.isFinite(current) && current >= required)
+      return rgbHex(parseRgba(foreground));
+    return ensureContrast(foreground, background, required);
+  } catch {
+    // No readable foreground exists at this threshold; the caller defers to
+    // author repair instead of crashing the sweep.
+    return "";
+  }
 }
 
 /**
@@ -51,14 +57,30 @@ export function parseFlatContrastFindings(findings = []) {
   for (const finding of Array.isArray(findings) ? findings : []) {
     if (!finding || finding.status !== "fail") continue;
     if (finding.kind !== "text") continue;
-    if (finding.variable === true) continue;
-    if (Array.isArray(finding.issues) && finding.issues.length) continue;
+    if (finding.variable) continue;
+    if (
+      finding.issues &&
+      (!Array.isArray(finding.issues) || finding.issues.length)
+    )
+      continue;
     const backgrounds = Array.isArray(finding.backgrounds)
       ? finding.backgrounds
       : [];
     if (backgrounds.length !== 1) continue;
-    const foreground = opaqueHex(finding.color ?? finding.foreground);
-    const background = opaqueHex(finding.background ?? backgrounds[0]);
+    const foregroundRgba = Array.isArray(finding.foreground)
+      ? finding.foreground
+      : null;
+    if (foregroundRgba && Number(foregroundRgba[3]) !== 1) continue;
+    const backgroundRgba = backgrounds[0];
+    if (Array.isArray(backgroundRgba) && Number(backgroundRgba[3]) !== 1)
+      continue;
+    const foreground = opaqueHex(finding.color ?? foregroundRgba);
+    const background = opaqueHex(
+      finding.background ??
+        (Array.isArray(backgroundRgba)
+          ? rgbHex(backgroundRgba)
+          : backgroundRgba),
+    );
     if (!foreground || !background) continue;
     const required = Number(finding.minimum);
     if (!Number.isFinite(required) || required < 1 || required > 21) continue;

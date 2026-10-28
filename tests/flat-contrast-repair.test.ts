@@ -61,6 +61,22 @@ describe("flat contrast repair", () => {
     });
   });
 
+  it("defers translucent text and backgrounds to author repair", () => {
+    expect(
+      parseFlatContrastFindings([
+        flatFinding({ foreground: [107, 113, 109, 0.6] }),
+        flatFinding({
+          background: null,
+          backgrounds: [[236, 231, 220, 0.5]],
+        }),
+      ]),
+    ).toEqual([]);
+  });
+
+  it("returns no color instead of throwing when no foreground can pass", () => {
+    expect(darkenToContrast("#777777", "#777777", 21)).toBe("");
+  });
+
   it("ignores variable backgrounds and overlapping-surface findings", () => {
     expect(
       parseFlatContrastFindings([
@@ -70,7 +86,7 @@ describe("flat contrast repair", () => {
           issues: ["overlapping non-ancestor paint requires rendered review"],
         }),
         flatFinding({ status: "pass" }),
-        flatFinding({ background: null }),
+        flatFinding({ background: null, backgrounds: [] }),
       ]),
     ).toEqual([]);
   });

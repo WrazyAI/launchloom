@@ -427,6 +427,8 @@ export function planContrastRepairs(
         page.viewport.name,
         f.selector,
         stateScope,
+        focusScoped ? "indicator" : f.kind,
+        focusScoped ? "outline" : f.paintProperty,
       ]);
       const previous = groups.get(key);
       groups.set(key, {
@@ -481,13 +483,24 @@ const FOCUSABLE_SELECTOR_SEGMENT =
  * A text descendant of a focused link inherits the link's focus paint; a
  * `:focus-visible` rule on the descendant itself never matches.
  */
-function stateScopedSelector(selector, stateScope = "") {
+function stateScopedSelector(
+  selector,
+  stateScope = "",
+  { targetIsControl = false } = {},
+) {
   if (stateScope !== ":focus-visible" && stateScope !== ":hover")
     return `${selector}${stateScope}`;
   const parts = String(selector).split(" > ");
   for (let index = parts.length - 1; index >= 0; index -= 1) {
     if (!FOCUSABLE_SELECTOR_SEGMENT.test(parts[index])) continue;
     parts[index] = `${parts[index]}${stateScope}`;
+    return parts.join(" > ");
+  }
+  // A text descendant of a non-native control (for example a div with
+  // role="button") inherits the parent's focus paint. Scope the rule to the
+  // parent when the target is not itself the control.
+  if (!targetIsControl && parts.length > 1) {
+    parts[parts.length - 2] = `${parts[parts.length - 2]}${stateScope}`;
     return parts.join(" > ");
   }
   return `${selector}${stateScope}`;
@@ -503,7 +516,14 @@ export function contrastRepairCss(repairs) {
   for (const r of repairs) {
     if (r.kind === "plate") continue;
     latest.set(
-      JSON.stringify([r.mediaConditions ?? r.viewport?.name, r.route, r.selector, r.stateScope]),
+      JSON.stringify([
+        r.mediaConditions ?? r.viewport?.name,
+        r.route,
+        r.selector,
+        r.stateScope,
+        r.kind,
+        r.paintProperty,
+      ]),
       r,
     );
   }
@@ -522,6 +542,10 @@ export function contrastRepairCss(repairs) {
         `body[data-ll-route=${JSON.stringify(r.route)}]`,
       ),
       r.stateScope || "",
+      {
+        targetIsControl:
+          r.kind === "indicator" || r.paintProperty === "outline",
+      },
     );
     const indicator = r.kind === "indicator";
     const property = r.paintProperty || "color";
@@ -663,6 +687,7 @@ export async function enforceBuiltContrast({
           repair.selector,
           repair.color,
           repair.surface,
+          repair.paintProperty,
         ]);
         if (applied.has(signature)) return false;
         applied.add(signature);

@@ -378,6 +378,13 @@ describe("rendered creative repair orchestration", () => {
         "Rendered-reference measurements already at their thresholds must not regress during this repair: paletteAdherence 91, imagery 88.",
       ]),
     ).toBe(false);
+    // Removing the failing hero card's fill is the requested structural
+    // change, not an unprompted repaint.
+    expect(
+      findingsRequirePaletteChange([
+        "hero copy is a large bordered card covering 47% of the hero area (90% width, 52% height); the assigned image-led reference floats the headline in the image's negative space.",
+      ]),
+    ).toBe(true);
     expect(
       colorLiterals("a { color: #FFF; background: rgb(1, 2, 3); }"),
     ).toEqual(["#fff", "rgb(1,2,3)"]);

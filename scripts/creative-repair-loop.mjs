@@ -375,7 +375,7 @@ The rendered capture put the header plus hero taller than the first viewport (de
 const IMAGE_OVERLAY_HERO_REPAIR_GUIDANCE = `IMAGE-OVERLAY HERO REPAIR (hard gate)
 The assigned hero is an image-led stage and the rendered hero lost that composition. Fix it structurally in this repair:
 - Do not solve viewport fit by shrinking the image into a narrow banner above a separate copy field. The hero media must fill the hero stage.
-- Use a full-stage media container (absolute inset or a full-stage grid) with object-fit: cover. Place the promise group over the image or on a solid/scrim panel inside the stage.
+- Use a full-stage media container (absolute inset or a full-stage grid) with object-fit: cover. Place the promise group over the image on a compact scrim; do not box it in a full-height card.
 - Keep the header plus hero within 1536x864, 1366x768, and 390x844. At 390x844, the primary and secondary actions must both be visible.
 - Group the secondary action with the primary action; do not leave it as a bare underlined word at the fold.
 - If the copy cannot fit over the image, reduce the copy or use a compact scrim; never delete the image or flatten the stage into a band.`;
@@ -383,7 +383,7 @@ The assigned hero is an image-led stage and the rendered hero lost that composit
 const HERO_CARD_FIDELITY_REPAIR_GUIDANCE = `HERO CARD FIDELITY (hard gate)
 The assigned reference floats the headline in the image's negative space, but the render puts the promise group in a large bordered card. Fix it structurally in this repair:
 - Replace the card with a floating promise group over the image. Do not keep a boxed copy panel and only change its color.
-- Use a compact gradient scrim or a narrow solid strip behind the text only. Do not cover more than about 25 percent of the desktop image or 35 percent of the mobile hero with the copy field.
+- Use a compact gradient scrim or a narrow solid strip behind the text only. Keep the copy group under about 25 percent of the desktop hero area and under about 50 percent of its height; keep it under 35 percent of the mobile hero area.
 - Keep the full-bleed image stage and both actions visible at 390x844.
 - Do not remove the image, flatten the stage into a band, or hide an action.`;
 
