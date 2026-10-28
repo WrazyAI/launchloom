@@ -66,6 +66,7 @@ export type EventCost =
   | { costKind: "unreported"; amount: null; currency: null }
   | { costKind: "actual" | "estimated"; amount: string; currency: string };
 export type StageEventRecord = EventCost & {
+  coverageComplete: boolean | null;
   eventId: string;
   attemptId: string;
   eventKey: string;
@@ -114,6 +115,8 @@ export type ClaimedOperation = {
   attemptId: string;
 };
 export type RunStageEvent = {
+  /** Cost coverage, independent of a known actual/estimated subtotal. */
+  coverageComplete?: boolean;
   /** Selected verified build, required for the post-gate handoff only. */
   buildSha?: string;
   eventKey: string;

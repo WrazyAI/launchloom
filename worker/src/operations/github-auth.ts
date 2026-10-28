@@ -26,7 +26,7 @@ const KEY_CACHE_MILLISECONDS = 5 * 60 * 1000;
 const DEFAULT_MAX_TOKEN_AGE_SECONDS = 600;
 const CLOCK_SKEW_SECONDS = 60;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
-const DECIMAL = /^(0|[1-9][0-9]{0,11})(\.[0-9]{1,8})?$/u;
+const DECIMAL = /^(0|[1-9][0-9]{0,19})(\.[0-9]{1,30})?$/u;
 const EVENT_FIELD = /^[a-z0-9_]{1,80}$/u;
 const SAFE_LABEL = /^[A-Za-z0-9._:/-]{1,120}$/u;
 
@@ -491,6 +491,7 @@ export async function operationsIntake(
 /* -------------------------------------------------------------------------- */
 
 export type RunStageEvent = {
+  coverageComplete?: boolean;
   buildSha?: string;
   eventKey: string;
   stage: string;
@@ -513,6 +514,10 @@ function stageEvent(value: Record<string, unknown>): RunStageEvent | undefined {
     return undefined;
   if (!['started', 'completed', 'failed', 'cancelled', 'observed'].includes(transition)) return undefined;
   const event: RunStageEvent = { eventKey, stage, transition };
+  if (value.coverageComplete !== undefined) {
+    if (typeof value.coverageComplete !== 'boolean') return undefined;
+    event.coverageComplete = value.coverageComplete;
+  }
   if (value.buildSha !== undefined) {
     if (typeof value.buildSha !== 'string' || !/^[a-f0-9]{40}$/u.test(value.buildSha) || stage !== 'handoff' || transition !== 'completed') return undefined;
     event.buildSha = value.buildSha;
@@ -538,6 +543,7 @@ function stageEvent(value: Record<string, unknown>): RunStageEvent | undefined {
   if (!["actual", "estimated", "unreported"].includes(String(costKind))) return undefined;
   event.costKind = costKind as RunStageEvent["costKind"];
   if (costKind === "unreported") {
+    if (event.coverageComplete === true) return undefined;
     if (value.amount !== undefined || value.currency !== undefined) return undefined;
     return event;
   }
@@ -580,6 +586,7 @@ export async function operationsEvent(
     "attemptId", "eventKey", "stage", "transition", "occurredAt",
     "detailCode", "provider", "model", "costKind", "amount", "currency",
     "buildSha",
+    "coverageComplete",
   ]);
   if (
     !attemptId ||

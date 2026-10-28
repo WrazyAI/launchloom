@@ -328,6 +328,8 @@ export function createOperationsStore(
       requireRun(run);
       if (
         !object(event) ||
+        (event.coverageComplete !== undefined && typeof event.coverageComplete !== 'boolean') ||
+        (event.coverageComplete === true && (event.costKind ?? 'unreported') === 'unreported') ||
         typeof event.eventKey !== "string" ||
         event.eventKey.length < 1 ||
         !/^[A-Za-z0-9:._/-]{1,200}$/u.test(event.eventKey) ||
@@ -356,7 +358,7 @@ export function createOperationsStore(
       const rows = await query<{
         result: "inserted" | "duplicate" | "attention";
       }>(
-        "select launchloom_operations.append_run_event($1::uuid, $2, $3, $4::integer, $5, $6, $7, $8::timestamptz, $9, $10, $11, $12, $13::numeric, $14, $15) as result",
+        "select launchloom_operations.append_run_event($1::uuid, $2, $3, $4::integer, $5, $6, $7, $8::timestamptz, $9, $10, $11, $12, $13::numeric, $14, $15, $16::boolean) as result",
         [
           attemptId,
           run.repositoryId,
@@ -373,6 +375,7 @@ export function createOperationsStore(
           event.amount ?? null,
           event.currency ?? null,
           event.buildSha ?? null,
+          event.coverageComplete ?? null,
         ],
       );
       if (!["inserted", "duplicate", "attention"].includes(rows[0]?.result))

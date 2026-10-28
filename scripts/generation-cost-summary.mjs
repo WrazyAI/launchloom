@@ -1,5 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { constants } from 'node:fs';
+import { exactGenerationCosts } from './exact-generation-costs.mjs';
+import { addDecimals } from './exact-money.mjs';
 
 const round = (value) => Math.round(Number(value || 0) * 1_000_000) / 1_000_000;
 
@@ -8,26 +11,66 @@ function finiteNumber(value) {
   return Number.isFinite(number) ? number : null;
 }
 
-function readJson(file) {
+async function readJson(file, options = {}) {
   if (!file) return null;
-  return fs
-    .readFile(path.resolve(file), "utf8")
-    .then((value) => JSON.parse(value))
-    .catch(() => null);
+  try {
+    let value;
+    if (options.bounded) {
+      const handle = await fs.open(path.resolve(file), constants.O_RDONLY | constants.O_NOFOLLOW);
+      try {
+        const stat = await handle.stat();
+        options.budget.bytes += stat.size;
+        if (!stat.isFile() || stat.size > 2_000_000 || options.budget.bytes > 8_000_000) throw Error('Artifact bounds exceeded.');
+        // Explicit byte bound also covers a file growing between stat and read.
+        const bytes = Buffer.alloc(Math.min(stat.size + 1, 2_000_001));
+        const { bytesRead } = await handle.read(bytes, 0, bytes.length, 0);
+        if (bytesRead > stat.size) throw Error('Artifact changed during read.');
+        value = bytes.subarray(0, bytesRead).toString('utf8');
+      } finally { await handle.close(); }
+    } else value = await fs.readFile(path.resolve(file), 'utf8');
+    const parsed = JSON.parse(value, options.exactDecimals || options.bounded ? (_key, item, context) => {
+      if (options.bounded && (++options.budget.nodes > 50000 || (Array.isArray(item) && item.length > 512))) throw Error('Artifact structure bounds exceeded.');
+      return options.exactDecimals && typeof item === 'number' ? context.source : item;
+    } : undefined);
+    if (options.bounded && ['records', 'usage', 'placements', 'skipped'].some(key => Array.isArray(parsed?.[key]) && parsed[key].length > 512)) throw Error('Artifact records exceed bounds.');
+    return parsed;
+  } catch (error) {
+    if (!options.bounded || error.code === 'ENOENT') return null;
+    if (options.partial) { options.budget.incomplete = true; return null; }
+    throw Error('Cost artifact unavailable.');
+  }
 }
 
-async function listJsonFiles(directory, predicate) {
+async function listJsonFiles(directory, predicate, options = {}, depth = 0) {
   if (!directory) return [];
   const root = path.resolve(directory);
-  const entries = await fs
-    .readdir(root, { withFileTypes: true })
-    .catch(() => []);
+  if (options.bounded) {
+    const stat = await fs.lstat(root).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
+    if (!stat) return [];
+    if (!stat.isDirectory() || stat.isSymbolicLink() || depth > 4) throw Error('Artifact directory bounds exceeded.');
+  }
+  let entries;
+  if (options.bounded) {
+    entries = [];
+    const directory = await fs.opendir(root);
+    try {
+      for await (const entry of directory) {
+        if (++options.budget.entries > 512 || entries.length >= 256) throw Error('Artifact directory bounds exceeded.');
+        entries.push(entry);
+      }
+    } finally { await directory.close().catch(() => {}); }
+  } else entries = await fs.readdir(root, { withFileTypes: true }).catch(() => []);
   const files = [];
+  if (options.bounded && entries.length > 256) throw Error('Artifact directory bounds exceeded.');
   for (const entry of entries) {
     const full = path.join(root, entry.name);
-    if (entry.isFile() && predicate(entry.name)) files.push(full);
+    if (options.bounded && entry.isSymbolicLink()) throw Error('Symlink artifact refused.');
+    if (entry.isFile() && predicate(entry.name)) {
+      if (options.bounded && ++options.budget.files > 64) throw Error('Artifact file bounds exceeded.');
+      files.push(full);
+    }
     else if (entry.isDirectory()) {
-      const nested = await listJsonFiles(full, predicate);
+      const nested = await listJsonFiles(full, predicate, options, depth + 1);
       files.push(...nested);
     }
   }
@@ -64,6 +107,7 @@ function sumUsage(records) {
  */
 export function summarizeGenerationCosts(input = {}, options = {}) {
   const stages = [];
+  if (input.collectionIncomplete) stages.push({ stage: 'usage_collection', costUsd: null, costKind: 'unreported', complete: false, detail: {} });
 
   const seo = input.seoResearch;
   if (seo && typeof seo === "object") {
@@ -392,6 +436,8 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
   const estimatedUsd = stages
     .filter((stage) => stage.costKind === "estimated")
     .reduce((total, stage) => total + (stage.costUsd || 0), 0);
+  const exactCosts = exactGenerationCosts(input, options);
+  const exactStages = Object.fromEntries(stages.map(stage => [stage.stage, exactCosts.get(stage.stage) ?? { amountUsd: null, costKind: 'unreported', coverageComplete: false }]));
   const events = stages.map((stage) => ({
     eventKey: `cost:${stage.stage}`,
     stage: stage.stage,
@@ -420,18 +466,25 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
     actualUsd: round(actualUsd),
     estimatedUsd: round(estimatedUsd),
     incomplete: stages.some((stage) => !stage.complete),
+    exact: {
+      stages: exactStages,
+      actualUsd: addDecimals([...exactCosts.values()].filter(cost => cost.costKind === 'actual' && cost.amountUsd !== null).map(cost => cost.amountUsd)),
+      estimatedUsd: addDecimals([...exactCosts.values()].filter(cost => cost.costKind === 'estimated' && cost.amountUsd !== null).map(cost => cost.amountUsd)),
+      incomplete: Object.values(exactStages).some(cost => !cost.coverageComplete),
+    },
   };
 }
 
 /** Read the on-disk artifacts a generation or revision run leaves behind. */
-export async function readGenerationCostInputs(paths = {}) {
+export async function readGenerationCostInputs(paths = {}, options = {}) {
+  options = { ...options, budget: { bytes: 0, files: 0, entries: 0, nodes: 0, incomplete: false } };
   const input = {};
-  input.seoResearch = await readJson(paths.seo);
-  input.siteConfigUsage = await readJson(paths.siteConfigUsage);
-  input.referenceDnaUsage = await readJson(paths.referenceDnaUsage);
-  input.preflight = await readJson(paths.preflight);
-  input.generatedAssets = await readJson(paths.assets);
-  input.creativeRun = await readJson(paths.creativeRun);
+  input.seoResearch = await readJson(paths.seo, options);
+  input.siteConfigUsage = await readJson(paths.siteConfigUsage, options);
+  input.referenceDnaUsage = await readJson(paths.referenceDnaUsage, options);
+  input.preflight = await readJson(paths.preflight, options);
+  input.generatedAssets = await readJson(paths.assets, options);
+  input.creativeRun = await readJson(paths.creativeRun, options);
   if (paths.repairDir || paths.revisionDir) {
     const usageRecords = [];
     const visualGateFiles = [];
@@ -441,17 +494,17 @@ export async function readGenerationCostInputs(paths = {}) {
       Boolean,
     )) {
       const root = path.resolve(directory);
-      const usage = await readJson(path.join(root, "repair-usage.json"));
+      const usage = await readJson(path.join(root, "repair-usage.json"), options);
       if (Array.isArray(usage?.records)) usageRecords.push(...usage.records);
       if (usage?.model) repairModel = usage.model;
-      const summary = await readJson(path.join(root, "summary.json"));
+      const summary = await readJson(path.join(root, "summary.json"), options);
       if (summary?.repairCycles)
         rounds += Object.values(summary.repairCycles).length;
-      const candidates = await listJsonFiles(root, (name) =>
-        /^visual-gate.*\.json$/u.test(name),
-      );
+      let candidates;
+      try { candidates = await listJsonFiles(root, (name) => /^visual-gate.*\.json$/u.test(name), options); }
+      catch (error) { if (!options.partial) throw error; options.budget.incomplete = true; candidates = []; }
       for (const file of candidates) {
-        const report = await readJson(file);
+        const report = await readJson(file, options);
         if (report)
           visualGateFiles.push({ name: path.relative(root, file), report });
       }
@@ -460,6 +513,7 @@ export async function readGenerationCostInputs(paths = {}) {
       input.repair = { usage: usageRecords, visualGateFiles, rounds };
     input.repairModel = repairModel;
   }
+  input.collectionIncomplete = options.budget.incomplete;
   return input;
 }
 
@@ -497,17 +551,18 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     creativeRun: args["creative-run"],
     repairDir: args["repair-dir"],
     revisionDir: args["revision-dir"],
-  });
+  }, args.operations === 'true' ? { exactDecimals: true, bounded: true, partial: args.partial === 'true' } : {});
   if (runnerMinutes !== null)
-    input.runner = { minutes: runnerMinutes, usdPerMinute: runnerPrice };
+    input.runner = args.operations === 'true' ? { minutes: args['runner-minutes'], usdPerMinute: args['runner-usd-per-minute'] ?? process.env.RUNNER_USD_PER_MINUTE } : { minutes: runnerMinutes, usdPerMinute: runnerPrice };
   const summary = summarizeGenerationCosts(input, {
-    falImageUsdPerImage: falPrice !== null && falPrice > 0 ? falPrice : null,
+    falImageUsdPerImage: args.operations === 'true' ? args['fal-image-usd'] ?? process.env.FAL_IMAGE_USD_PER_IMAGE ?? null : falPrice !== null && falPrice > 0 ? falPrice : null,
   });
   await fs.writeFile(
     path.resolve(output),
-    `${JSON.stringify(summary, null, 2)}\n`,
+    `${JSON.stringify(summary, null, 2)}\n`, { mode: 0o600 },
   );
-  console.log(
+  if (args.operations === 'true') console.log(`operations_cost_summary=prepared incomplete=${summary.exact.incomplete}`);
+  else console.log(
     `generation_cost_total=${summary.totalUsd} actual=${summary.actualUsd} estimated=${summary.estimatedUsd} incomplete=${summary.incomplete} stages=${summary.stages.length}`,
   );
 }

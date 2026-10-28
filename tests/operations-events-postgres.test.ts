@@ -6,6 +6,8 @@ import {
   type OperationsSql,
 } from "../worker/src/operations/store";
 import { createAttemptReconciler } from "../worker/src/operations/reconcile";
+import { summarizeGenerationCosts } from "../scripts/generation-cost-summary.mjs";
+import { buildOperationsCostEvents } from "../scripts/record-generation-event.mjs";
 
 const url = process.env.OPERATIONS_TEST_DATABASE_URL;
 if (url) {
@@ -95,6 +97,7 @@ describe.skipIf(!url)(
         "003-dispatch",
         "004-run-ownership",
         "005-reconciliation",
+        "006-cost-coverage",
       ])
         await sql(await readFile(`db/operations/${name}.sql`, "utf8"));
     });
@@ -197,6 +200,8 @@ describe.skipIf(!url)(
         actual: "0.20000002",
         estimated: "0.10000001",
         unreported: 1,
+        incomplete: 0,
+        unknown_coverage: 3,
       });
     });
     it("unknown run correlation remains attention and never queues a retry", async () => {
@@ -269,6 +274,76 @@ describe.skipIf(!url)(
         ),
       ).toBe("attention");
       expect(await state()).toBe("failed:github_failure:none");
+    });
+    it("retains exact known subtotals and incomplete coverage independently in event and rollup", async () => {
+      const store = createOperationsStore(connection);
+      const identity = { repositoryId: "123", runId: "456", runAttempt: 1 };
+      const [event] = buildOperationsCostEvents(
+        attempt,
+        summarizeGenerationCosts({
+          siteConfigUsage: {
+            records: [
+              { usage: { cost: "0.100000000000000001" } },
+              { usage: {} },
+            ],
+          },
+        }),
+      );
+      await store.appendEvent(attempt, identity, event);
+      expect(await store.appendEvent(attempt, identity, event)).toBe(
+        "duplicate",
+      );
+      const row = JSON.parse(
+        await sql(
+          "select row_to_json(r) from launchloom_operations.stage_events r",
+        ),
+      );
+      expect(row.coverage_complete).toBe(false);
+      const rollup = JSON.parse(
+        await asWorker(
+          `select row_to_json(r) from launchloom_operations.attempt_cost_rollup('${attempt}') r`,
+        ),
+      );
+      expect(rollup).toMatchObject({
+        actual: "0.100000000000000001",
+        estimated: "0",
+        incomplete: 1,
+        unknown_coverage: 0,
+      });
+      await expect(
+        store.appendEvent(attempt, identity, {
+          ...event,
+          coverageComplete: true,
+        }),
+      ).rejects.toMatchObject({ code: "conflict" });
+    });
+    it("records paid usage after a terminal failure without changing execution or delivery", async () => {
+      await observe("failure");
+      const [event] = buildOperationsCostEvents(
+        attempt,
+        summarizeGenerationCosts({
+          creativeRun: {
+            status: "failed",
+            usage: [{ usage: { cost: "0.10000001" } }],
+          },
+        }),
+      );
+      await createOperationsStore(connection).appendEvent(
+        attempt,
+        { repositoryId: "123", runId: "456", runAttempt: 1 },
+        event,
+      );
+      expect(await state()).toBe("failed:github_failure:none");
+      const rollup = JSON.parse(
+        await asWorker(
+          `select row_to_json(r) from launchloom_operations.attempt_cost_rollup('${attempt}') r`,
+        ),
+      );
+      expect(rollup).toMatchObject({
+        actual: "0.10000001",
+        incomplete: 0,
+        unknown_coverage: 0,
+      });
     });
   },
 );

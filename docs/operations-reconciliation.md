@@ -90,3 +90,68 @@ dedicated operations role. Signed synthetic JWT tests prove the HTTP identity
 boundary; they are not a live GitHub OIDC exchange. Live user-visible staging,
 production DB permissions/restore policy and deployed cron/alert delivery remain
 separate gates.
+
+## Reviewed cost and preparation contract (migration 006)
+
+Apply `006-cost-coverage.sql` only to the approved isolated target after 005.
+It removes the implicit eight-place monetary typemod, adds nullable
+`coverage_complete`, and extends `attempt_cost_rollup` with `incomplete` and
+`unknown_coverage` counts. `actual` is a **known actual subtotal**, not a complete
+bill: it can be nonzero while coverage is incomplete. `estimated` remains a
+separate subtotal. Unknown legacy coverage is not upgraded to complete. Coverage
+counts are attempt-wide and repeat across currency rows; do not add those counts
+across currencies. Rollup amounts remain exact decimal text, without rounding.
+The return-shape change deliberately has no `CASCADE`: unexpected dependent
+views/functions must stop migration for operator review, not be dropped silently.
+
+Operations money supports up to 20 integer digits and 30 fractional digits. The
+CLI's operations reader preserves original JSON numeric lexemes before parsing
+money, including exponent notation. Decimal parsing, addition and multiplication
+use BigInt-backed decimal arithmetic, not binary floating-point addition. Per-call
+provider usage takes precedence over possibly rounded cache aggregates. Amounts
+outside these explicit bounds are incomplete/unrepresentable evidence, never
+silently rounded. Already-rounded upstream artifacts cannot have lost digits
+reconstructed; the exact subtotal reflects the available source evidence.
+
+The summary's `exact.stages` sidecar contains decimal strings, cost kind and
+coverage. Existing numeric six-place legacy summary/event fields remain unchanged;
+no new properties are added to strict legacy event objects. The operations
+converter consumes the exact sidecar and emits `coverageComplete` separately from
+the amount. Contradictory `recorded-incomplete` or `detail.complete=false` evidence
+always wins over a claim of complete coverage. Summary detail, prompts, arbitrary
+model/provider labels and artifact paths are not copied into operations events.
+
+`record-operations-telemetry.mjs` owns the entire summary subprocess and posting
+boundary. Preview handoff requires all of the following:
+
+1. The preview telemetry step's raw outcome is success.
+2. No incomplete or preparing marker exists.
+3. A successful preparation receipt matches the current attempt and selected SHA.
+
+The receipt is written only after the real summary command and all event posts
+succeed. A skipped, killed, failed-to-load or failed-to-prepare command cannot
+pass merely because a negative marker is absent. Deleting the negative marker
+does not manufacture a positive preparation receipt. A previously failed stage
+write's incomplete marker is never cleared by later summary success.
+
+On generation failure, the same boundary collects available SEO/config/authoring,
+image and rendered repair usage from the known artifact paths. It tolerates absent
+files without inventing a zero-cost stage. Malformed/capped evidence is explicitly
+incomplete; valid evidence from other sources can still be retained. Failure events
+and cost observations use stable keys on retry and cannot change execution or
+delivery state. Conflicting evidence for the same occurrence remains a conflict,
+not an overwrite or an extra charge. If preparation/posting fails, the original
+failure observation is still attempted and a fixed incomplete diagnostic emitted.
+
+Collection is bounded: 2 MB per file, 8 MB total bytes, 512 items per array,
+50,000 JSON nodes, 512 discovered directory entries, 64 discovered QA report
+files, four nested directory levels and a 15-second summary subprocess timeout.
+Symlinked artifacts are refused. Raw subprocess stdout/stderr is not exposed.
+
+**Remaining staging gate:** URL-to-selected-SHA readiness is inherited from the
+existing deployment/readiness path, not newly proved by these telemetry tests.
+An authenticated source-build SHA attestation alone does not prove the bytes
+served by the deployed URL. Verify that binding and the real OIDC/scheduled flow
+in separately authorized user-visible staging before activation. The four
+pre-Task-5 baseline app failures are migration regressions to resolve during later
+integration, not unrelated failures or permission to weaken preview gates.

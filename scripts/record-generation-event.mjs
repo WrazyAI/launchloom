@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
+import { decimal } from './exact-money.mjs';
 import { appendGenerationEvent, requestOidcToken, apiOrigin } from './operations-client.mjs';
 import {
   buildAttemptObservation,
@@ -31,11 +32,15 @@ export function buildOperationsCostEvents(attemptId, summary) {
     if (seen.has(base.stage)) throw Error('Duplicate cost evidence.');
     seen.add(base.stage);
     const event = { ...base, eventKey: `${attemptId}:cost:${base.stage}:1` };
-    if (!['actual', 'estimated', 'unreported'].includes(source.costKind)) throw Error('Invalid cost evidence.');
-    event.costKind = source.costKind;
-    if (source.costKind !== 'unreported') {
-      const amount = typeof source.costUsd === 'number' || typeof source.costUsd === 'string' ? String(source.costUsd) : '';
-      if (!/^(0|[1-9][0-9]{0,11})(\.[0-9]{1,8})?$/u.test(amount)) throw Error('Invalid cost evidence.');
+    const exact = summary.exact?.stages?.[source.stage] ?? source.exactCost;
+    const kind = exact?.costKind ?? source.costKind;
+    if (!['actual', 'estimated', 'unreported'].includes(kind)) throw Error('Invalid cost evidence.');
+    event.costKind = kind;
+    event.coverageComplete = source.status !== 'recorded-incomplete' && source.detail?.complete !== false &&
+      (exact ? exact.coverageComplete === true : source.status === 'recorded' && source.detail?.complete === true);
+    if (kind !== 'unreported') {
+      const amount = decimal(exact ? exact.amountUsd : source.costUsd);
+      if (amount === null) throw Error('Invalid cost evidence.');
       event.amount = amount;
       event.currency = 'USD'; // The source contract explicitly names costUsd.
     }
@@ -47,7 +52,12 @@ export async function postOperationsEvent(args, { env = process.env, fetchImpl =
   const marker = env.RUNNER_TEMP ? path.join(env.RUNNER_TEMP, 'operations-telemetry-incomplete') : null;
   try {
     const event = buildOperationsEvent(env.TRACK_ATTEMPT, args);
-    if (event.stage === 'handoff' && marker && await fs.access(marker).then(() => true, () => false)) throw Error('Incomplete operations telemetry.');
+    if (event.stage === 'handoff') {
+      if (!marker || await fs.access(marker).then(() => true, () => false) ||
+        await fs.access(path.join(env.RUNNER_TEMP, 'operations-telemetry-preparing')).then(() => true, () => false)) throw Error('Incomplete operations telemetry.');
+      const ready = await readJson(path.join(env.RUNNER_TEMP, 'operations-preview-telemetry-ready'));
+      if (ready?.attemptId !== env.TRACK_ATTEMPT || ready?.buildSha !== event.buildSha) throw Error('Incomplete operations telemetry.');
+    }
     const api = apiOrigin(env.OPERATIONS_API_URL || env.LAUNCHLOOM_API_URL || DEFAULT_API_URL);
     const workload = token ?? await requestOidcToken({ audience: env.OPERATIONS_OIDC_AUDIENCE || 'launchloom-operations', env, fetchImpl });
     if (args['cost-summary']) {

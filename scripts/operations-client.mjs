@@ -281,6 +281,10 @@ function eventFrom(options) {
     stage: cleanLabel(options.stage, "stage", /^[a-z0-9_]{1,80}$/u),
     transition: cleanLabel(options.transition, "transition", /^[a-z0-9_]{1,80}$/u),
   };
+  if (options['coverage-complete'] !== undefined) {
+    if (!['true', 'false'].includes(options['coverage-complete'])) fail('invalid_coverage', EXIT.usage);
+    event.coverageComplete = options['coverage-complete'] === 'true';
+  }
   if (options["detail-code"] !== undefined)
     event.detailCode = cleanLabel(options["detail-code"], "detail_code", /^[a-z0-9_]{1,80}$/u);
   if (options.provider !== undefined)
@@ -303,7 +307,7 @@ function eventFrom(options) {
     fail("invalid_cost", EXIT.usage);
   if (options.amount !== undefined || options.currency !== undefined) {
     if (!event.costKind || event.costKind === "unreported") fail("invalid_cost", EXIT.usage);
-    if (!/^(0|[1-9][0-9]{0,11})(\.[0-9]{1,8})?$/u.test(options.amount || ""))
+    if (!/^(0|[1-9][0-9]{0,19})(\.[0-9]{1,30})?$/u.test(options.amount || ""))
       fail("invalid_amount", EXIT.usage);
     if (!/^[A-Z]{3}$/u.test(options.currency || "")) fail("invalid_currency", EXIT.usage);
     event.amount = options.amount;

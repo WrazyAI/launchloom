@@ -503,4 +503,16 @@ describe("operations claim and intake API", () => {
     }
     expect(calls.events).toHaveLength(1);
   });
+  it('preserves exact cost and incomplete coverage through the authenticated API', async () => {
+    const { store } = fakeStore();
+    let saved: unknown;
+    const append = store.appendEvent.bind(store);
+    store.appendEvent = async (id, run, event) => { saved = event; return append(id, run, event); };
+    const event = { attemptId, eventKey: `${attemptId}:cost:authoring:1`, stage: 'authoring', transition: 'observed', costKind: 'actual', amount: '0.100000000000000001', currency: 'USD', coverageComplete: false };
+    const valid = await operationsEvent(request('/api/internal/operations/events', event, await token()), apiEnv, { store, policy: policy() });
+    expect(valid.status).toBe(200);
+    expect(saved).toMatchObject({ amount: '0.100000000000000001', coverageComplete: false });
+    const invalid = await operationsEvent(request('/api/internal/operations/events', { ...event, costKind: 'unreported', amount: undefined, currency: undefined, coverageComplete: true }, await token()), apiEnv, { store, policy: policy() });
+    expect(invalid.status).toBe(400);
+  });
 });

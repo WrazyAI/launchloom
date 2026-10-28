@@ -1317,10 +1317,19 @@ jobs:
       - name: Wait for secure preview URL
         run: node scripts/wait-for-pages-preview.mjs --url "${{ steps.deploy.outputs.preview }}"
       - name: Record preview ready
+        id: preview_telemetry
         continue-on-error: true
         env:
           SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
         run: |
+          if [ -n "$OPERATION_ID" ]; then
+            # One guarded process owns the entire summary command and posting.
+            # Missing/failed preparation cannot leave a valid handoff receipt.
+            node scripts/record-operations-telemetry.mjs \
+              --mode preview --build-sha "${{ steps.deploy.outputs.sha }}" \
+              --client-dir "${{ steps.branch.outputs.dir }}"
+            exit 0
+          fi
           CLIENT_EMAIL=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.email || ""))')
           BUSINESS=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.name || ""))')
           SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
@@ -1404,7 +1413,7 @@ jobs:
       # existing build, deployment, rendered verification and delivery gates and
       # binds the selected client build, not the workflow's source revision.
       - name: Record authenticated operations handoff
-        if: ${{ inputs.operation_id != '' && steps.claim.outputs.claimed == 'true' }}
+        if: ${{ inputs.operation_id != '' && steps.claim.outputs.claimed == 'true' && steps.preview_telemetry.outcome == 'success' }}
         env:
           SELECTED_BUILD_SHA: ${{ steps.deploy.outputs.sha }}
         run: |
@@ -1500,6 +1509,12 @@ jobs:
           elif [ "${{ steps.deploy.outcome }}" = "success" ]; then
             FAILURE_STAGE=preview_ready
             FAILURE_CATEGORY=preview_delivery
+          fi
+          if [ -n "$OPERATION_ID" ]; then
+            node scripts/record-operations-telemetry.mjs \
+              --mode failure --stage "$FAILURE_STAGE" \
+              --client-dir "${{ steps.branch.outputs.dir }}"
+            exit 0
           fi
           node scripts/record-generation-event.mjs \
             --action complete \
