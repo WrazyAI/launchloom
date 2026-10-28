@@ -12,6 +12,10 @@ import {
   parseRgba,
 } from "./color-contrast.mjs";
 import { inspectContrastPage } from "./rendered-contrast.mjs";
+import {
+  darkenToContrast,
+  parseFlatContrastFindings,
+} from "./flat-contrast-repair.mjs";
 
 export const CONTRAST_VIEWPORTS = [
   { name: "desktop", width: 1536, height: 864, min: 1440, max: null },
@@ -335,16 +339,15 @@ export function planContrastRepairs(
       // Default-state repairs keep the cross-state foreground guard: a static
       // rule may not override a state that paints a different color.
       const focusScoped =
-        f.paintProperty === "outline-color" ||
-        f.kind === "focus" ||
-        f.state === "focus";
-      const stateScope = focusScoped
-        ? ":focus-visible"
-        : f.state === "hover"
-          ? ":hover"
-          : f.state === "default"
-            ? ""
-            : null;
+        f.paintProperty === "outline-color" || f.kind === "focus";
+      const stateScope =
+        f.state === "focus"
+          ? ":focus-visible"
+          : f.state === "hover"
+            ? ":hover"
+            : f.state === "default"
+              ? ""
+              : null;
       if (
         stateScope === null ||
         (!focusScoped && f.kind !== "text" && f.kind !== "icon")
@@ -405,10 +408,19 @@ export function planContrastRepairs(
             }
           : { min: dark, max: light };
       }
-      const color = proveForegroundAgainst(effective, backdrops, minimum, {
-        provable,
-        extremes: provable ? null : extremes,
-      });
+      const flatPair = parseFlatContrastFindings([f])[0];
+      const flat =
+        flatPair &&
+        backdrops.length === 1 &&
+        String(backdrops[0]).toLowerCase() === flatPair.background
+          ? flatPair
+          : null;
+      const color = flat
+        ? darkenToContrast(flat.foreground, flat.background, minimum)
+        : proveForegroundAgainst(effective, backdrops, minimum, {
+            provable,
+            extremes: provable ? null : extremes,
+          });
       if (!color) continue;
       const key = JSON.stringify([
         page.route,
@@ -461,6 +473,26 @@ export function planContrastRepairs(
   }
   return fitted;
 }
+const FOCUSABLE_SELECTOR_SEGMENT =
+  /^(?:a|button|input|select|textarea|summary)(?::nth-of-type\(\d+\))?$/u;
+
+/**
+ * Move a state pseudo-class to the control that actually owns the state.
+ * A text descendant of a focused link inherits the link's focus paint; a
+ * `:focus-visible` rule on the descendant itself never matches.
+ */
+function stateScopedSelector(selector, stateScope = "") {
+  if (stateScope !== ":focus-visible" && stateScope !== ":hover")
+    return `${selector}${stateScope}`;
+  const parts = String(selector).split(" > ");
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    if (!FOCUSABLE_SELECTOR_SEGMENT.test(parts[index])) continue;
+    parts[index] = `${parts[index]}${stateScope}`;
+    return parts.join(" > ");
+  }
+  return `${selector}${stateScope}`;
+}
+
 export function contrastRepairCss(repairs) {
   const groups = new Map();
   // Accumulated passes can hold several generations of a correction for the
@@ -484,11 +516,13 @@ export function contrastRepairCss(repairs) {
         .filter(Boolean)
         .join(" and "),
     ];
-    const scopedSelector =
+    const scopedSelector = stateScopedSelector(
       r.selector.replace(
         /^body/,
         `body[data-ll-route=${JSON.stringify(r.route)}]`,
-      ) + (r.stateScope || "");
+      ),
+      r.stateScope || "",
+    );
     const indicator = r.kind === "indicator";
     const property = r.paintProperty || "color";
     const key = JSON.stringify([

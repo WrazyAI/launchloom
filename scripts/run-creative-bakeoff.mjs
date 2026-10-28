@@ -10,6 +10,10 @@ import http from "node:http";
 import path from "node:path";
 import { builtRoutes, enforceBuiltContrast } from "./contrast-sweep.mjs";
 import {
+  heroCardCoverageFinding,
+  routeRequiresFloatingHeroCopy,
+} from "./hero-card-contract.mjs";
+import {
   captureRenderedInteractionEvidence,
   interactionSourceDigest,
   requiresPurposefulInteraction,
@@ -204,9 +208,65 @@ async function inspect(page) {
       return { left, top, width: right - left, height: bottom - top };
     };
     const visible = (element) => Boolean(rect(element));
-    const copyRegions = hero
-      ? [...hero.querySelectorAll("[data-hero-copy]")].filter(visible).map(rect)
-      : [];
+    const alphaOf = (value) => {
+      const match = String(value || "").match(/rgba?\(([^)]+)\)/u);
+      if (!match) return value === "transparent" ? 0 : 1;
+      const parts = match[1].split(/[,\s/]+/u).filter(Boolean);
+      return parts.length >= 4 ? Number(parts[3]) : 1;
+    };
+    const smallestCommonAncestor = (elements) => {
+      if (!elements.length) return null;
+      let ancestor = elements[0];
+      for (const element of elements.slice(1)) {
+        while (ancestor && !ancestor.contains(element))
+          ancestor = ancestor.parentElement;
+        if (!ancestor) return null;
+      }
+      return ancestor;
+    };
+    const copyElements = (() => {
+      if (!hero) return [];
+      const marked = [...hero.querySelectorAll("[data-hero-copy]")].filter(
+        visible,
+      );
+      if (marked.length) return marked;
+      const heading = hero.querySelector("h1");
+      const action = hero.querySelector(
+        'a[href], button, [role="button"], input[type="submit"]',
+      );
+      if (!heading || !action) return [];
+      const ancestor = smallestCommonAncestor([heading, action]);
+      return ancestor && ancestor !== hero && visible(ancestor)
+        ? [ancestor]
+        : [];
+    })();
+    const copyRegions = copyElements.map(rect);
+    const copyCards = copyElements.map((element) => {
+      const style = window.getComputedStyle(element);
+      return {
+        bounds: rect(element),
+        hasBorder: ["Top", "Right", "Bottom", "Left"].some(
+          (side) => (parseFloat(style[`border${side}Width`]) || 0) > 0,
+        ),
+        hasOpaqueBackground: alphaOf(style.backgroundColor) >= 0.5,
+      };
+    });
+    const largestCopy = [...copyCards].sort(
+      (left, right) =>
+        right.bounds.width * right.bounds.height -
+        left.bounds.width * left.bounds.height,
+    )[0];
+    const heroArea = heroBounds ? heroBounds.width * heroBounds.height : 0;
+    const copyArea = largestCopy
+      ? largestCopy.bounds.width * largestCopy.bounds.height
+      : 0;
+    const heroCopyAreaRatio = heroArea > 0 ? copyArea / heroArea : 0;
+    const heroCopyWidthRatio =
+      heroBounds && largestCopy ? largestCopy.bounds.width / heroBounds.width : 0;
+    const heroCopyHeightRatio =
+      heroBounds && largestCopy
+        ? largestCopy.bounds.height / heroBounds.height
+        : 0;
     const mediaRegions = hero
       ? [...hero.querySelectorAll("[data-hero-media]")]
           .filter(visible)
@@ -296,6 +356,15 @@ async function inspect(page) {
       ).length,
       heroBottom: Math.round(heroBounds?.bottom || 0),
       heroActionBottom: Math.round(heroActionBottom),
+      heroCopyAreaRatio,
+      heroCopyWidthRatio,
+      heroCopyHeightRatio,
+      heroCopyMobileAreaRatio:
+        window.innerWidth <= 767 ? heroCopyAreaRatio : 0,
+      heroCopyHasBorder: Boolean(largestCopy?.hasBorder),
+      heroCopyHasOpaqueBackground: Boolean(
+        largestCopy?.hasOpaqueBackground,
+      ),
       viewportHeight: window.innerHeight,
       overflow:
         document.documentElement.scrollWidth >
@@ -347,6 +416,16 @@ async function inspect(page) {
       compositionEvidence: {
         hero: heroBounds ? rect(hero) : null,
         copy: copyRegions,
+        copyCards: copyCards.map((card) => ({
+          ...card.bounds,
+          hasBorder: card.hasBorder,
+          hasOpaqueBackground: card.hasOpaqueBackground,
+        })),
+        copyCoverage: {
+          areaRatio: heroCopyAreaRatio,
+          widthRatio: heroCopyWidthRatio,
+          heightRatio: heroCopyHeightRatio,
+        },
         media: mediaRegions,
         utilityCount:
           hero?.querySelectorAll(
@@ -360,7 +439,7 @@ async function inspect(page) {
 export function hardFailures(
   evidence,
   viewport,
-  { requiresImageOverlay = false } = {},
+  { requiresImageOverlay = false, requiresFloatingCopy = false } = {},
 ) {
   return [
     evidence.h1Count !== 1 && "expected one H1",
@@ -383,6 +462,11 @@ export function hardFailures(
       requiresImageOverlay &&
       evidence.heroActionBottom > evidence.viewportHeight + 1 &&
       "hero action exceeds mobile viewport for an image-overlay route",
+    requiresFloatingCopy &&
+      heroCardCoverageFinding(evidence, {
+        mobile: viewport.name === "mobile",
+        requiresFloatingCopy,
+      }),
     evidence.overflow && "horizontal overflow",
     evidence.brokenImages > 0 && "broken image",
     evidence.emDashes > 0 && "em dash found",
@@ -836,6 +920,14 @@ export async function runCreativeBakeoff({
       const requiresImageOverlay = routeRequiresHeroImage(
         candidate.metadata.heroArchetype || candidate.metadata.heroGeometry,
       );
+      const requiresFloatingCopy = routeRequiresFloatingHeroCopy({
+        compositionTopology:
+          candidate.manifest.referenceDna?.compositionTopology ||
+          candidate.metadata.referenceDna?.compositionTopology,
+        heroGeometry:
+          candidate.metadata.heroGeometry ||
+          candidate.manifest.referenceDna?.heroGeometry?.mode,
+      });
       candidateResult.timings = {};
       /** Record one render phase; used per candidate and per run. */
       const recordPhase = (name, startedAt, category = "render") => {
@@ -1111,7 +1203,10 @@ export async function runCreativeBakeoff({
               await page.waitForTimeout(VIEWPORT_SETTLE_MS);
               const evidence = await inspect(page);
               const failures = [
-                ...hardFailures(evidence, viewport, { requiresImageOverlay }),
+                ...hardFailures(evidence, viewport, {
+                  requiresImageOverlay,
+                  requiresFloatingCopy,
+                }),
                 browserErrors.length > 0 && "browser error",
               ].filter(Boolean);
               const compositionTopology =

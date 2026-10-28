@@ -1546,8 +1546,7 @@ export function measure(target) {
     ...target,
     ratio,
     status: pass ? "pass" : variable ? "unresolved" : "fail",
-    repairEligible:
-      !variable && target.kind === "text" && target.state === "default",
+    repairEligible: !variable && target.kind === "text",
     color: rgbHex(foreground),
     background: backgrounds.length === 1 ? rgbHex(backgrounds[0]) : null,
   };

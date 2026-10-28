@@ -380,6 +380,40 @@ The assigned hero is an image-led stage and the rendered hero lost that composit
 - Group the secondary action with the primary action; do not leave it as a bare underlined word at the fold.
 - If the copy cannot fit over the image, reduce the copy or use a compact scrim; never delete the image or flatten the stage into a band.`;
 
+const HERO_CARD_FIDELITY_REPAIR_GUIDANCE = `HERO CARD FIDELITY (hard gate)
+The assigned reference floats the headline in the image's negative space, but the render puts the promise group in a large bordered card. Fix it structurally in this repair:
+- Replace the card with a floating promise group over the image. Do not keep a boxed copy panel and only change its color.
+- Use a compact gradient scrim or a narrow solid strip behind the text only. Do not cover more than about 25 percent of the desktop image or 35 percent of the mobile hero with the copy field.
+- Keep the full-bleed image stage and both actions visible at 390x844.
+- Do not remove the image, flatten the stage into a band, or hide an action.`;
+
+/** Targeted repair directives for the finding classes in this request. */
+export function targetedRepairGuidance(findings = []) {
+  const guidance = [];
+  const heroFit = hasFinding(findings, /hero exceeds .*viewport/iu);
+  if (heroFit) guidance.push(HERO_VIEWPORT_FIT_REPAIR_GUIDANCE);
+  if (
+    heroFit &&
+    hasFinding(findings, /image|media|band|full-bleed|overlay/iu)
+  )
+    guidance.push(IMAGE_OVERLAY_HERO_REPAIR_GUIDANCE);
+  if (
+    hasFinding(
+      findings,
+      /large bordered card|bordered hero card|hero copy is a large/iu,
+    )
+  )
+    guidance.push(HERO_CARD_FIDELITY_REPAIR_GUIDANCE);
+  if (
+    hasFinding(
+      findings,
+      /overlapping non-ancestor paint|background plate only partially covers|filter, blend, backdrop-filter|pseudo-element backdrop/iu,
+    )
+  )
+    guidance.push(CONTRAST_STRUCTURE_REPAIR_GUIDANCE);
+  return guidance;
+}
+
 export function privateRepairRejectionEvidence(value) {
   return value && typeof value === "object" ? privateRepairOutputs.get(value) || null : null;
 }
@@ -1161,13 +1195,7 @@ ${
 
   const buildRepairContent = (
     currentFiles,
-    {
-      targetFile = null,
-      editsOnly = false,
-      heroFit = false,
-      imageOverlayHero = false,
-      contrastStructure = false,
-    } = {},
+    { targetFile = null, editsOnly = false, guidance = [] } = {},
   ) => {
     const requestContent = [
       ...referenceContext,
@@ -1194,15 +1222,8 @@ Return only trusted span IDs and replacements described below. Select the exact 
 TARGET CANDIDATE FILE: ${targetFile}
 Return a complete replacement for only this requested file. Keep source non-empty, at most ${MAX_REPAIR_FILE_SOURCE_CHARS} characters, and free of inline image data. All other files remain immutable; the combined bundle must pass source validation, rebuild, and rendered gates.`,
       });
-    if (heroFit)
-      requestContent.push({ type: "text", text: HERO_VIEWPORT_FIT_REPAIR_GUIDANCE });
-    if (imageOverlayHero)
-      requestContent.push({ type: "text", text: IMAGE_OVERLAY_HERO_REPAIR_GUIDANCE });
-    if (contrastStructure)
-      requestContent.push({
-        type: "text",
-        text: CONTRAST_STRUCTURE_REPAIR_GUIDANCE,
-      });
+    for (const text of guidance)
+      requestContent.push({ type: "text", text });
     assertModelPromptTextBudget(requestContent);
     return requestContent;
   };
@@ -1239,14 +1260,7 @@ Return a complete replacement for only this requested file. Keep source non-empt
     const requestContent = buildRepairContent(currentFiles, {
       targetFile,
       editsOnly,
-      heroFit: hasFinding(findings, /hero exceeds .*viewport/iu),
-      imageOverlayHero:
-        hasFinding(findings, /hero exceeds .*viewport/iu) &&
-        hasFinding(findings, /image|media|band|full-bleed|overlay/iu),
-      contrastStructure: hasFinding(
-        findings,
-        /overlapping non-ancestor paint|background plate only partially covers|filter, blend, backdrop-filter|pseudo-element backdrop/iu,
-      ),
+      guidance: targetedRepairGuidance(findings),
     });
     if (spanCatalog) {
       requestContent.push({ type: "text", text: "TRUSTED SOURCE SPANS\n" + JSON.stringify(spanCatalog) +
