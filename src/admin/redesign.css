@@ -2199,7 +2199,6 @@
   color: var(--admin-forest);
   font-size: 12px;
   letter-spacing: 0.02em;
-  text-transform: uppercase;
 }
 
 .admin-operations-facts {
@@ -2289,7 +2288,6 @@
     content: attr(data-label);
     color: var(--admin-muted);
     font-size: 10.5px;
-    text-transform: uppercase;
   }
 
   .admin-page .admin-operations-table td:last-child {
@@ -2371,6 +2369,5 @@
     content: attr(data-label);
     color: var(--admin-muted);
     font-size: 10.5px;
-    text-transform: uppercase;
   }
 }
