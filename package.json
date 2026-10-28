@@ -45,7 +45,9 @@
     "preflight:reasoning": "node scripts/run-reasoning-preflight.mjs",
     "quality:contrast": "node scripts/verify-contrast.mjs",
     "report:creative-timings": "node scripts/report-creative-timings.mjs",
-    "verify:site-route-fixtures": "node scripts/verify-site-route-fixtures.mjs"
+    "verify:site-route-fixtures": "node scripts/verify-site-route-fixtures.mjs",
+    "report:generation-success": "node scripts/generation-success-rate.mjs",
+    "verify:local-release": "node scripts/local-release-check.mjs"
   },
   "dependencies": {
     "@astrojs/react": "latest",

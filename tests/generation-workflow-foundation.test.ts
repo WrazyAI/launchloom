@@ -217,6 +217,24 @@ describe("generation workflow pack renderer", () => {
     expect(preview.run).toContain("Initial LaunchLoom pack preview");
   });
 
+  it("falls back to a noindex diagnostic preview when the SEO gate blocks", () => {
+    const preview = step("Build and direct-upload public preview");
+    expect(preview.run).toContain("run_seo_gate()");
+    expect(preview.run).toContain("seo-release-gate.mjs");
+    expect(preview.run).toContain("review-diagnostic");
+    expect(preview.run).toContain('echo "diagnostic=true"');
+    expect(preview.run).toContain("X-Robots-Tag: noindex");
+    expect(step("Record preview ready").run).toContain(
+      'if [ "${{ steps.deploy.outputs.diagnostic }}" = "true" ]; then STATUS=attention; fi',
+    );
+    expect(step("Post handoff links").run).toContain(
+      "Diagnostic developer preview (noindex)",
+    );
+    expect(step("Mark intake handoff complete").if).toBe(
+      "${{ steps.deploy.outputs.diagnostic != 'true' }}",
+    );
+  });
+
   it("records pack render failures with the pack stage", () => {
     const failure = step("Record generation failure");
     expect(failure.run).toContain(
