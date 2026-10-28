@@ -188,27 +188,45 @@ jobs:
           PROFILE: ${{ needs.profile_policy.outputs.profile }}
         run: |
           RENDERER=creative
+          FOUNDATION_ID=""
+          PACK_ID=""
+          PACK_VARIANT=""
           case "$REQUESTED_RENDERER" in
             creative|foundation|pack) RENDERER="$REQUESTED_RENDERER" ;;
-            *) echo "Unknown renderer: $REQUESTED_RENDERER" >&2; exit 1 ;;
+            *) echo "Unknown renderer" >&2; exit 1 ;;
+          esac
+          case "$REQUESTED_POLICY" in
+            renderable-only|allow-partial|allow-adaptation) ;;
+            *) echo "Unknown foundation policy" >&2; exit 1 ;;
           esac
           if [ "$RENDERER" = "foundation" ]; then
             test -n "$REQUESTED_FOUNDATION" || { echo "foundation_id is required for the foundation renderer" >&2; exit 1; }
             test "$PROFILE" = "full" || { echo "The foundation renderer is only supported for the full profile" >&2; exit 1; }
+            case "$REQUESTED_FOUNDATION" in
+              ""|-*|*-|*[!a-z0-9-]*) echo "foundation_id must be a lowercase dossier slug" >&2; exit 1 ;;
+            esac
+            test "${#REQUESTED_FOUNDATION}" -le 80 || { echo "foundation_id is too long" >&2; exit 1; }
+            FOUNDATION_ID="$REQUESTED_FOUNDATION"
           fi
           if [ "$RENDERER" = "pack" ]; then
             test -n "$REQUESTED_PACK" || { echo "pack_id is required for the pack renderer" >&2; exit 1; }
             test "$PROFILE" = "full" || { echo "The pack renderer is only supported for the full profile" >&2; exit 1; }
+            case "$REQUESTED_PACK" in
+              cinematic-narrative|bold-utility|kinetic-poster|stage-index|editorial-ledger|results-ledger|season-wheel)
+                PACK_ID="$REQUESTED_PACK" ;;
+              *) echo "Unsupported pack_id" >&2; exit 1 ;;
+            esac
+            case "$PACK_ID:$REQUESTED_VARIANT" in
+              cinematic-narrative:|cinematic-narrative:standard|cinematic-narrative:monument|bold-utility:|bold-utility:standard|bold-utility:portrait|kinetic-poster:|kinetic-poster:standard|kinetic-poster:full-bleed|stage-index:|stage-index:standard|editorial-ledger:|editorial-ledger:standard|results-ledger:|results-ledger:standard|season-wheel:|season-wheel:standard)
+                PACK_VARIANT="$REQUESTED_VARIANT" ;;
+              *) echo "Unsupported pack_variant" >&2; exit 1 ;;
+            esac
           fi
-          case "$REQUESTED_POLICY" in
-            renderable-only|allow-partial|allow-adaptation) ;;
-            *) echo "Unknown foundation policy: $REQUESTED_POLICY" >&2; exit 1 ;;
-          esac
-          echo "renderer=$RENDERER" >> "$GITHUB_OUTPUT"
-          echo "foundation_id=$REQUESTED_FOUNDATION" >> "$GITHUB_OUTPUT"
-          echo "foundation_policy=$REQUESTED_POLICY" >> "$GITHUB_OUTPUT"
-          echo "pack_id=$REQUESTED_PACK" >> "$GITHUB_OUTPUT"
-          echo "pack_variant=$REQUESTED_VARIANT" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "renderer=$RENDERER" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "foundation_id=$FOUNDATION_ID" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "foundation_policy=$REQUESTED_POLICY" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "pack_id=$PACK_ID" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "pack_variant=$PACK_VARIANT" >> "$GITHUB_OUTPUT"
 
   focused_test:
     needs: profile_policy
@@ -829,10 +847,13 @@ jobs:
       - name: Select experience pack
         id: pack
         if: needs.renderer_policy.outputs.renderer == 'pack'
+        env:
+          RENDERER_PACK_ID: ${{ needs.renderer_policy.outputs.pack_id }}
+          RENDERER_PACK_VARIANT: ${{ needs.renderer_policy.outputs.pack_variant }}
         run: |
           cd "${{ steps.branch.outputs.dir }}"
-          PACK_ID="${{ needs.renderer_policy.outputs.pack_id }}"
-          PACK_VARIANT="${{ needs.renderer_policy.outputs.pack_variant }}"
+          PACK_ID="$RENDERER_PACK_ID"
+          PACK_VARIANT="$RENDERER_PACK_VARIANT"
           jq --arg pack "$PACK_ID" --arg variant "$PACK_VARIANT" \
             '.design.experience = ({packId:$pack, selectionMode:"pack-preview"} + (if $variant != "" then {variantId:$variant} else {} end))' \
             src/site.config.json > /tmp/site.config.pack.json
@@ -846,14 +867,14 @@ jobs:
       - name: Record pack select stage
         if: needs.renderer_policy.outputs.renderer == 'pack'
         continue-on-error: true
-        run: node scripts/record-generation-stage.mjs --stage pack_select --status completed --detail "Experience pack selected ${{ needs.renderer_policy.outputs.pack_id }}."
+        env:
+          PACK_ID: ${{ needs.renderer_policy.outputs.pack_id }}
+        run: node scripts/record-generation-stage.mjs --stage pack_select --status completed --detail "Experience pack selected $PACK_ID."
       - name: Select source foundation
         id: foundation
         if: needs.renderer_policy.outputs.renderer == 'foundation'
         run: |
           cd "${{ steps.branch.outputs.dir }}"
-          FOUNDATION_ID="${{ needs.renderer_policy.outputs.foundation_id }}"
-          FOUNDATION_POLICY="${{ needs.renderer_policy.outputs.foundation_policy }}"
           FOUNDATION_SOURCE="$GITHUB_WORKSPACE/data/reference-library/dossiers/$FOUNDATION_ID/foundation"
           test -f "$FOUNDATION_SOURCE/manifest.json" || { echo "Foundation not found: $FOUNDATION_ID" >&2; exit 1; }
           COMPAT=$(jq -r '.compatibility' "$FOUNDATION_SOURCE/manifest.json")
@@ -884,7 +905,10 @@ jobs:
       - name: Record foundation select stage
         if: needs.renderer_policy.outputs.renderer == 'foundation'
         continue-on-error: true
-        run: node scripts/record-generation-stage.mjs --stage foundation_select --status completed --detail "Source foundation selected ${{ needs.renderer_policy.outputs.foundation_id }} (${{ steps.foundation.outputs.compatibility }})."
+        env:
+          FOUNDATION_ID: ${{ needs.renderer_policy.outputs.foundation_id }}
+          FOUNDATION_COMPATIBILITY: ${{ steps.foundation.outputs.compatibility }}
+        run: node scripts/record-generation-stage.mjs --stage foundation_select --status completed --detail "Source foundation selected $FOUNDATION_ID ($FOUNDATION_COMPATIBILITY)."
       - name: Record authoring started
         if: needs.renderer_policy.outputs.renderer == 'creative'
         continue-on-error: true
@@ -1187,6 +1211,11 @@ jobs:
             FINAL_BUILD_SHA=$(git rev-parse HEAD)
             PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
             node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/route-technical-report.json"
+            git fetch --no-tags origin refs/heads/review/initial:refs/remotes/origin/review/initial
+            if ! git diff --quiet "$FINAL_BUILD_SHA" origin/review/initial -- . ':(exclude).launchloom/**'; then
+              echo "Review source changed during the pack build; refusing to deploy stale preview output from $FINAL_BUILD_SHA." >&2
+              exit 1
+            fi
             if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
             npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$FINAL_BUILD_SHA" --commit-message "Initial LaunchLoom pack preview"
             echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
