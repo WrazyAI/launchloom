@@ -19,6 +19,7 @@ import {
   formatProfile,
   formatTimestamp,
   previewHref,
+  relatedPreviewLink,
   safeEvidenceUrl,
   safeSiteUrl,
 } from "./format";
@@ -38,6 +39,7 @@ export type AttemptInspectorProps = {
   onRetry: () => void;
   onLoadMoreEvents: () => void;
   onOpenClient: (clientId: string) => void;
+  onOpenAttempt: (attemptId: string) => void;
 };
 
 function WorkflowLinks({ attempt }: { attempt: AttemptDetail }) {
@@ -218,6 +220,7 @@ export function AttemptInspector({
   onRetry,
   onLoadMoreEvents,
   onOpenClient,
+  onOpenAttempt,
 }: AttemptInspectorProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const [open, setOpen] = useState(false);
@@ -230,6 +233,13 @@ export function AttemptInspector({
   const siteHref = previewUrl
     ? previewHref(previewUrl) || previewUrl
     : productionUrl;
+  // The server only resolves this for full attempts that delivered nothing of
+  // their own; the UI repeats that boundary so a focused attempt can never
+  // inherit another attempt's preview.
+  const relatedPreview =
+    attempt && attempt.profile === "full"
+      ? relatedPreviewLink(attempt.relatedPreview, siteHref)
+      : null;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -350,9 +360,59 @@ export function AttemptInspector({
                 <strong>Generation screenshot.</strong>{" "}
                 {focused
                   ? "A capture for this attempt, when available."
-                  : "This is the captured site for this generation issue. It may predate later revisions; use Visit site for the current preview."}
+                  : relatedPreview
+                    ? "This is the captured site for this generation issue. Use Visit related preview for the latest successful preview of this issue."
+                    : "This is the captured site for this generation issue. It may predate later revisions; use Visit site for the current preview."}
               </p>
             </section>
+
+            {relatedPreview ? (
+              <section
+                className="admin-inspector__block"
+                aria-labelledby="attempt-related-preview-title"
+                data-related-preview
+              >
+                <h3 id="attempt-related-preview-title">
+                  Preview from another attempt
+                </h3>
+                <p className="admin-inspector__summary">
+                  No preview delivery is recorded for this attempt. The latest
+                  successful generation for issue {relatedPreview.issueNumber}{" "}
+                  was attempt {relatedPreview.attemptId}
+                  {relatedPreview.runId
+                    ? ` (run ${relatedPreview.runId}${
+                        relatedPreview.runAttempt
+                          ? `, attempt ${relatedPreview.runAttempt}`
+                          : ""
+                      })`
+                    : ""}
+                  , completed {formatTimestamp(relatedPreview.completedAt)}. The
+                  verified preview recorded for this issue is still available.
+                </p>
+                <div className="admin-inspector__related-actions">
+                  <a
+                    className="admin-button admin-button--quiet"
+                    href={relatedPreview.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-related-preview-link
+                    aria-label={`Open the verified preview for issue ${relatedPreview.issueNumber} delivered by attempt ${relatedPreview.attemptId}`}
+                  >
+                    Visit related preview
+                  </a>
+                  <button
+                    type="button"
+                    className="admin-link-button"
+                    onClick={() => onOpenAttempt(relatedPreview.attemptId)}
+                  >
+                    Open related attempt
+                  </button>
+                </div>
+                <p className="admin-muted">
+                  This link is not this attempt's own preview.
+                </p>
+              </section>
+            ) : null}
 
             <section
               className="admin-inspector__block"

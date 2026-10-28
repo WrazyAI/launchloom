@@ -840,6 +840,9 @@ export function GenerationsView({
               { cursorTrail: [] },
             )
           }
+          onOpenAttempt={(attemptId) =>
+            navigate({ ...state, attemptId, clientId: null })
+          }
         />
       ) : null}
     </div>

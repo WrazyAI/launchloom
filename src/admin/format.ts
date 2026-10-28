@@ -5,6 +5,7 @@ import type {
   DeliveryStatus,
   ExecutionStatus,
   GenerationProfile,
+  RelatedIssuePreview,
 } from "../lib/admin-contracts";
 import {
   isAllowedPreviewHost,
@@ -299,6 +300,35 @@ export function focusedDiagnosticPreviewUrl(
   return attempt.deliveryStatus === "diagnostic"
     ? safeFocusedPreviewUrl(attempt.previewUrl)
     : null;
+}
+
+/**
+ * A clearly separate, verified preview delivered for the same issue by another
+ * attempt. It is never shown when this attempt already has its own site link,
+ * never for focused attempts, and never for a focused/diagnostic preview host.
+ */
+export function relatedPreviewLink(
+  related: RelatedIssuePreview | null | undefined,
+  ownSiteHref: string | null,
+): (RelatedIssuePreview & { href: string }) | null {
+  if (!related || ownSiteHref) return null;
+  if (
+    typeof related.attemptId !== "string" ||
+    !/^[A-Za-z0-9][A-Za-z0-9:_-]{0,119}$/u.test(related.attemptId) ||
+    !Number.isSafeInteger(related.issueNumber) ||
+    related.issueNumber < 1
+  )
+    return null;
+  const safe = safeSiteUrl(related.previewUrl);
+  if (!safe) return null;
+  try {
+    if (isAllowedPreviewHost(new URL(safe).hostname)) return null;
+  } catch {
+    return null;
+  }
+  const href = previewHref(safe);
+  if (!href) return null;
+  return { ...related, href };
 }
 
 /** Focused runs must never fall back to another attempt's issue screenshot. */

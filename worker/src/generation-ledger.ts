@@ -1,6 +1,8 @@
 import { DurableObject } from "cloudflare:workers";
 import { GenerationAttempts } from "./generation-attempts";
+import { safeClientSiteUrl } from "../../src/lib/preview-proxy-contract.mjs";
 import type {
+  AttemptDetail,
   AttemptInput,
   AttemptEventInput,
   AttemptFilters,
@@ -8,6 +10,7 @@ import type {
   ClientInput,
   ClientFilters,
   DispatchRequest,
+  RelatedIssuePreview,
 } from "../../src/lib/admin-contracts";
 
 export type GenerationCostKind = "actual" | "estimated" | "unreported";
@@ -325,7 +328,73 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
   }
 
   async getAttempt(id: string) {
-    return this.attempts.getAttempt(id);
+    const attempt = this.attempts.getAttempt(id);
+    if (!attempt) return null;
+    return { ...attempt, relatedPreview: this.relatedPreview(attempt) };
+  }
+
+  /**
+   * Resolve a delivered preview for the exact same issue only when this full
+   * attempt recorded no delivery of its own. The related attempt is the latest
+   * other full attempt with a verified successful preview delivery. The URL is
+   * the latest verified issue-scoped preview recorded by trusted completion
+   * ingest, so a failed run with delivery 'none' cannot have recorded it.
+   * Focused attempts stay strictly attempt-specific.
+   */
+  private relatedPreview(attempt: AttemptDetail): RelatedIssuePreview | null {
+    if (attempt.profile !== "full") return null;
+    if (attempt.deliveryStatus !== "none") return null;
+    if (
+      !["failed", "cancelled", "unknown", "skipped"].includes(
+        attempt.executionStatus,
+      )
+    )
+      return null;
+    const issueNumber = attempt.issueNumber;
+    if (
+      issueNumber === null ||
+      !Number.isSafeInteger(issueNumber) ||
+      issueNumber < 1
+    )
+      return null;
+    const client = attempt.clientId
+      ? this.attempts.getClient(attempt.clientId)
+      : null;
+    // Any own site link already answers the visitor's question; never
+    // substitute another attempt for it.
+    if (safeClientSiteUrl(client?.previewUrl)) return null;
+    if (safeClientSiteUrl(client?.productionUrl)) return null;
+    const related = this.attempts.latestDeliveredAttempt(
+      issueNumber,
+      attempt.attemptId,
+    );
+    if (!related) return null;
+    const previewUrl = this.issuePreviewUrl(issueNumber);
+    if (!previewUrl) return null;
+    return {
+      attemptId: related.attemptId,
+      issueNumber,
+      runId: related.runId,
+      runAttempt: related.runAttempt,
+      completedAt: related.completedAt,
+      deliveryStatus: related.deliveryStatus as "preview_ready" | "published",
+      previewUrl,
+    };
+  }
+
+  /** Verified issue-scoped preview recorded by the trusted completion ingest. */
+  private issuePreviewUrl(issueNumber: number): string | null {
+    const row = this.ctx.storage.sql
+      .exec<{
+        issue_number: number | null;
+        preview_url: string | null;
+      }>(
+        "SELECT issue_number, preview_url FROM generations WHERE generation_id = ? LIMIT 1",
+        `issue:${issueNumber}`,
+      )
+      .toArray()[0];
+    if (!row || row.issue_number !== issueNumber) return null;
+    return safeClientSiteUrl(row.preview_url);
   }
 
   async listAttempts(filters: AttemptFilters) {

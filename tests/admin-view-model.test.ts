@@ -18,6 +18,7 @@ import {
   parseDateEnd,
   parseDateStart,
   previewHref,
+  relatedPreviewLink,
   safeEvidenceUrl,
   safeFocusedPreviewUrl,
   safeSiteUrl,
@@ -87,6 +88,63 @@ describe("admin view model formatting", () => {
         previewUrl: null,
       }),
     ).toContain("id=issue%3A185");
+  });
+  it("links a related preview only when it is proven and not already the own link", () => {
+    const related = {
+      attemptId: "github:40737253021:1",
+      issueNumber: 202,
+      runId: "40737253021",
+      runAttempt: 1,
+      completedAt: Date.UTC(2026, 9, 28, 18, 0, 0),
+      deliveryStatus: "preview_ready" as const,
+      previewUrl:
+        "https://review-initial.launchloom-202-northline-dental-studio.pages.dev/",
+    };
+    expect(relatedPreviewLink(related, null)).toEqual({
+      ...related,
+      href: related.previewUrl,
+    });
+    expect(relatedPreviewLink(related, "/admin/preview/x/")).toBeNull();
+    expect(relatedPreviewLink(null, null)).toBeNull();
+    expect(
+      relatedPreviewLink(
+        { ...related, previewUrl: "https://preview.pages.dev/?token=secret" },
+        null,
+      ),
+    ).toBeNull();
+    expect(
+      relatedPreviewLink(
+        { ...related, previewUrl: "https://evil.example/" },
+        null,
+      ),
+    ).toBeNull();
+    expect(
+      relatedPreviewLink(
+        {
+          ...related,
+          previewUrl: "https://abc.launchloom-pipeline-preview.pages.dev/",
+        },
+        null,
+      ),
+    ).toBeNull();
+    expect(
+      relatedPreviewLink(
+        { ...related, previewUrl: "http://review.pages.dev/" },
+        null,
+      ),
+    ).toBeNull();
+    expect(
+      relatedPreviewLink({ ...related, attemptId: "bad id/<script>" }, null),
+    ).toBeNull();
+    expect(
+      relatedPreviewLink(
+        {
+          ...related,
+          previewUrl: "https://review-initial.client.wrazyos.com/services/",
+        },
+        null,
+      )?.href,
+    ).toBe("https://review-initial.client.wrazyos.com/services/");
   });
   it("does not manufacture an actor name or a zero price", () => {
     expect(formatActor(unknownActor).label).toBe("Not recorded");

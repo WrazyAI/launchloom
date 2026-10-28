@@ -1082,6 +1082,7 @@
 
 .admin-inspector__sheet {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   align-content: start;
   max-height: 88dvh;
@@ -1161,6 +1162,14 @@
   color: #1c4d3e;
   font-weight: 700;
   text-underline-offset: 2px;
+}
+
+/* Stacked so two labeled controls never force the sheet wider than mobile. */
+.admin-inspector__related-actions {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  min-width: 0;
 }
 
 .admin-detail-grid,

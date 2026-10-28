@@ -5,6 +5,14 @@ export function isAllowedPreviewHost(
   host: string,
   suffixes?: string[],
 ): boolean;
+export function isAllowedClientSiteHost(
+  host: string,
+  suffixes?: string[],
+): boolean;
+export function safeClientSiteUrl(
+  value: string | null | undefined,
+  suffixes?: string[],
+): string | null;
 export function previewProxyPath(
   target: URL | string,
   suffixes?: string[],
