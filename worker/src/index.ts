@@ -68,6 +68,11 @@ import {
   type DispatchEnvironment,
 } from "./operations/dispatch";
 import {
+  operationsClaim,
+  operationsEvent,
+  operationsIntake,
+} from "./operations/github-auth";
+import {
   GenerationLedger,
   type GenerationCostKind,
   type GenerationEventInput,
@@ -123,6 +128,8 @@ export interface Env {
   ADMIN_DATABASE_URL?: string;
   OPERATIONS_DATABASE_URL?: string;
   OPERATIONS_INTAKE_MODE?: string;
+  OPERATIONS_OIDC_AUDIENCE?: string;
+  OPERATIONS_OIDC_REPOSITORY_ID?: string;
   CLOUDFLARE_ACCESS_CLIENT_ID?: string;
   CLOUDFLARE_ACCESS_CLIENT_SECRET?: string;
   PREVIEW_PROXY_HOSTS?: string;
@@ -3997,6 +4004,16 @@ export default {
       return creativeRepairCoordinator(request, env);
     if (path === "/api/internal/generations")
       return generationIngest(request, env);
+    if (path === "/api/internal/operations/claim")
+      return operationsClaim(request, env);
+    if (path.startsWith("/api/internal/operations/intakes/"))
+      return operationsIntake(
+        request,
+        env,
+        path.slice("/api/internal/operations/intakes/".length),
+      );
+    if (path === "/api/internal/operations/events")
+      return operationsEvent(request, env);
     if (path === '/api/internal/generation-attempts' || path === '/api/internal/generation-reconciliation') {
       if (!env.GENERATION_TRACKING_SECRET) return workspaceError('unavailable','Generation tracking is not configured.',503);
       if (!internalSecretAuthorized(request,env.GENERATION_TRACKING_SECRET)) return workspaceError('unauthorized','Unauthorized.',401);

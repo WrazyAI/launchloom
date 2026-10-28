@@ -1,9 +1,12 @@
 import { neon } from "@neondatabase/serverless";
 import type {
   AcceptanceResult,
+  ClaimedOperation,
   IntakeRecord,
   LeasedDispatch,
   OperationsStore,
+  RunIdentity,
+  RunStageEvent,
 } from "./contracts";
 export type { OperationsStore } from "./contracts";
 
@@ -49,6 +52,19 @@ function requireKey(value: unknown): string {
 }
 function object(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
+}
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+function requireUuid(value: unknown): string {
+  if (typeof value !== "string" || !UUID.test(value)) invalid();
+  return value;
+}
+function requireRun(run: RunIdentity): RunIdentity {
+  if (
+    !object(run) || typeof run.repositoryId !== "string" || typeof run.runId !== "string" ||
+    !/^[1-9][0-9]{0,19}$/u.test(run.repositoryId) || !/^[1-9][0-9]{0,19}$/u.test(run.runId) ||
+    !Number.isSafeInteger(run.runAttempt) || run.runAttempt < 1 || run.runAttempt > 2147483647
+  ) invalid();
+  return run;
 }
 function unavailable(): never {
   throw new OperationsError(
@@ -131,17 +147,83 @@ export function createOperationsStore(
       );
     },
     async claimRun(operationId, run) {
-      requireKey(operationId);
-      if (
-        !object(run) || typeof run.repositoryId !== "string" || typeof run.runId !== "string" ||
-        !/^[1-9][0-9]{0,19}$/u.test(run.repositoryId) || !/^[1-9][0-9]{0,19}$/u.test(run.runId) ||
-        !Number.isSafeInteger(run.runAttempt) || run.runAttempt < 1 || run.runAttempt > 2147483647
-      ) invalid();
+      requireUuid(operationId);
+      requireRun(run);
       const rows = await query<{ result: "claimed" | "duplicate" | "attention" }>(
         "select launchloom_operations.claim_run($1::uuid, $2, $3, $4::integer) as result",
         [operationId, run.repositoryId, run.runId, run.runAttempt],
       );
       if (!["claimed", "duplicate", "attention"].includes(rows[0]?.result)) unavailable();
+      return rows[0].result;
+    },
+    async getClaimedOperation(operationId, run) {
+      requireUuid(operationId);
+      requireRun(run);
+      const rows = await query<{
+        operation_id: string;
+        intake_id: string;
+        request_id: string;
+        attempt_id: string;
+      }>(
+        "select * from launchloom_operations.get_claimed_operation($1::uuid, $2, $3, $4::integer)",
+        [operationId, run.repositoryId, run.runId, run.runAttempt],
+      );
+      const row = rows[0];
+      if (!row) return null;
+      if (
+        !UUID.test(row.operation_id) || !UUID.test(row.intake_id) ||
+        !UUID.test(row.request_id) || !UUID.test(row.attempt_id)
+      ) unavailable();
+      return {
+        operationId: row.operation_id,
+        intakeId: row.intake_id,
+        requestId: row.request_id,
+        attemptId: row.attempt_id,
+      };
+    },
+    async getIntakeForRun(intakeId, run) {
+      requireUuid(intakeId);
+      requireRun(run);
+      const rows = await query<{ record: IntakeRecord }>(
+        "select * from launchloom_operations.get_claimed_intake($1::uuid, $2, $3, $4::integer)",
+        [intakeId, run.repositoryId, run.runId, run.runAttempt],
+      );
+      const record = rows[0]?.record;
+      if (record === undefined || record === null) return null;
+      if (!object(record) || record.intakeId !== intakeId || record.acceptanceState !== "confirmed")
+        unavailable();
+      return record;
+    },
+    async appendEvent(attemptId, run, event) {
+      requireUuid(attemptId);
+      requireRun(run);
+      if (
+        !object(event) || typeof event.eventKey !== "string" || event.eventKey.length < 1 ||
+        event.eventKey.length > 200 || typeof event.stage !== "string" ||
+        typeof event.transition !== "string" ||
+        (event.costKind !== undefined &&
+          !["actual", "estimated", "unreported"].includes(event.costKind))
+      ) invalid();
+      const rows = await query<{ result: "inserted" | "duplicate" | "attention" }>(
+        "select launchloom_operations.append_run_event($1::uuid, $2, $3, $4::integer, $5, $6, $7, $8::timestamptz, $9, $10, $11, $12, $13::numeric, $14) as result",
+        [
+          attemptId,
+          run.repositoryId,
+          run.runId,
+          run.runAttempt,
+          event.eventKey,
+          event.stage,
+          event.transition,
+          event.occurredAt ?? null,
+          event.detailCode ?? null,
+          event.provider ?? null,
+          event.model ?? null,
+          event.costKind ?? "unreported",
+          event.amount ?? null,
+          event.currency ?? null,
+        ],
+      );
+      if (!["inserted", "duplicate", "attention"].includes(rows[0]?.result)) unavailable();
       return rows[0].result;
     },
     async createAcceptance(input) {

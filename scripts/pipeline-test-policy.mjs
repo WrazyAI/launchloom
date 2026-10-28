@@ -30,27 +30,35 @@ export function resolvePipelineTestPolicy({ profile, skipCreativeAuthorChecks = 
 
 /**
  * Resolve the manual Generate-client dispatch without allowing the access
- * smoke to enter any generation lane.
- * @param {{profile?: string, eventName?: string, issue?: string}} [input]
+ * smoke to enter any generation lane. A new-mode dispatch identifies an opaque
+ * Postgres operation instead of an intake issue.
+ * @param {{profile?: string, eventName?: string, issue?: string, operationId?: string}} [input]
  */
 export function resolveWorkflowTestDispatch({
   profile = "full",
   eventName = "workflow_dispatch",
   issue = "",
+  operationId = "",
 } = {}) {
+  const opaque = String(operationId || "").trim();
   if (profile === "access-only") {
-    if (eventName !== "workflow_dispatch")
+    if (eventName !== "workflow_dispatch" || opaque)
       throw new Error(
-        "The access-only preview check requires a manual workflow dispatch.",
+        "The access-only preview check requires a manual workflow dispatch without an operations identifier.",
       );
     return Object.freeze({ profile, requiresIntakeIssue: false });
   }
   const resolved = resolvePipelineTestPolicy({ profile, eventName });
-  if (!String(issue || "").trim())
+  if (opaque && resolved.profile !== "full")
+    throw new Error("New-mode operations dispatch requires the full profile.");
+  if (!String(issue || "").trim() && !opaque)
     throw new Error(
-      "An intake issue is required for generation workflow dispatches.",
+      "An intake issue or operations identifier is required for generation workflow dispatches.",
     );
-  return Object.freeze({ profile: resolved.profile, requiresIntakeIssue: true });
+  return Object.freeze({
+    profile: resolved.profile,
+    requiresIntakeIssue: !opaque,
+  });
 }
 
 export function parsePipelineTestArgs(argv = []) {

@@ -192,6 +192,9 @@ class FakeStore implements OperationsStore {
   async leaseDispatch() { return null; }
   async recordDispatchResult() {}
   async claimRun() { return "attention" as const; }
+  async getClaimedOperation() { return null; }
+  async getIntakeForRun() { return null; }
+  async appendEvent() { return "attention" as const; }
   readonly committed = result();
   createCalls = 0;
   confirmCalls = 0;

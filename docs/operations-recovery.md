@@ -23,10 +23,11 @@ asserts readiness; it cannot prove that the remote workflow contains a claim gat
 
 ## Durable scheduling
 
-Apply `001-operations.sql`, `002-acceptance-recovery.sql`, then `003-dispatch.sql`
-only to an approved isolated fixture/staging target as its schema owner. Migration
-003 grants only function execution to the pre-existing operations service role;
-it provisions no login and gives workflows no direct database access.
+Apply `001-operations.sql`, `002-acceptance-recovery.sql`, `003-dispatch.sql`, then
+`004-run-ownership.sql` only to an approved isolated fixture/staging target as its
+schema owner. Migration 003 grants only function execution to the pre-existing
+operations service role; migration 004 adds identity-bound intake reads and stage
+writes without provisioning a login or giving workflows direct database access.
 
 Each tick handles at most ten entries. Each lease is a separate committed SQL
 statement using `FOR UPDATE SKIP LOCKED`, explicit confirmed-intake eligibility,

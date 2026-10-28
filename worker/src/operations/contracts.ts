@@ -103,6 +103,24 @@ export type RunIdentity = {
   runId: string;
   runAttempt: number;
 };
+export type ClaimedOperation = {
+  operationId: string;
+  intakeId: string;
+  requestId: string;
+  attemptId: string;
+};
+export type RunStageEvent = {
+  eventKey: string;
+  stage: string;
+  transition: string;
+  occurredAt?: string;
+  detailCode?: string;
+  provider?: string;
+  model?: string;
+  costKind?: "actual" | "estimated" | "unreported";
+  amount?: string;
+  currency?: string;
+};
 export type DispatchOutcome =
   | "accepted"
   | "retryable"
@@ -133,6 +151,22 @@ export interface OperationsStore {
     operationId: string,
     run: RunIdentity,
   ): Promise<"claimed" | "duplicate" | "attention">;
+  /** Returns IDs only after the same verified run owns the operation. */
+  getClaimedOperation(
+    operationId: string,
+    run: RunIdentity,
+  ): Promise<ClaimedOperation | null>;
+  /** Returns private intake content only to the attempt's winning run. */
+  getIntakeForRun(
+    intakeId: string,
+    run: RunIdentity,
+  ): Promise<IntakeRecord | null>;
+  /** Writes a stable stage key only for the owning, still-running run. */
+  appendEvent(
+    attemptId: string,
+    run: RunIdentity,
+    event: RunStageEvent,
+  ): Promise<"inserted" | "duplicate" | "attention">;
   createAcceptance(input: AcceptanceInput): Promise<AcceptanceResult>;
   /** Caller must first durably confirm the matching invite reservation in the DO. */
   confirmAcceptance(intakeId: string): Promise<void>;
