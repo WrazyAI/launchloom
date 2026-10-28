@@ -530,19 +530,6 @@ jobs:
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
           echo "intake_ref=$INTAKE_REF" >> "$GITHUB_OUTPUT"
           echo "intake_key=$INTAKE_KEY" >> "$GITHUB_OUTPUT"
-          echo "submission_id=$(node -e 'const fs=require("fs");const t=fs.readFileSync("/tmp/intake.md","utf8");const m=t.match(/"submissionId"\s*:\s*"([^"]+)"/);console.log(m?m[1]:"")')" >> "$GITHUB_OUTPUT"
-          if [ -z "$OPERATION_ID" ]; then
-            echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
-            echo "business_name=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.name)')" >> "$GITHUB_OUTPUT"
-            echo "email=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.email)')" >> "$GITHUB_OUTPUT"
-            echo "lead_email=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.leadEmail)')" >> "$GITHUB_OUTPUT"
-            echo "assets=$(node -e 'const x=require("/tmp/site.config.json"); console.log(JSON.stringify(x.assets || {}))')" >> "$GITHUB_OUTPUT"
-            echo "layout=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.conversion?.layout || "editorial-authority")')" >> "$GITHUB_OUTPUT"
-            echo "asset_summary=$(node -e 'const x=require("/tmp/site.config.json"); console.log((x.assetReport?.used || []).map(a => a.asset + " → " + a.placement).join(", ") || "No supplied image used; approved contextual fallback or brand art selected.")')" >> "$GITHUB_OUTPUT"
-            echo "research_mode=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(x.mode)')" >> "$GITHUB_OUTPUT"
-            echo "research_cost=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')" >> "$GITHUB_OUTPUT"
-            echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "No measured queries")')" >> "$GITHUB_OUTPUT"
-          fi
           node -e 'const x=require("/tmp/seo-research.json"); const web=x.fallbackSearch || {}; const observed=(x.externalSearchEvidence || []).length; const state=x.publishReady ? "Measured SEO research is complete. Production approval is available." : observed ? "Cited web observations are available for review, but measured SEO is incomplete. Production approval remains blocked." : "SEO research is incomplete. This preview can be reviewed; production approval remains blocked until measured research completes."; const fallback=web.status && web.status !== "unavailable" ? `\nFallback web search: ${web.status}; ${observed} cited observation(s) from ${web.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(web.costUsd || 0).toFixed(5)} / USD ${Number(web.maxUsd || 0).toFixed(2)} cap${web.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}.` : "\nFallback web search: unavailable."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}${fallback}\nMeasured queries: ${(x.validatedQueries || []).filter(item => item.volume !== null || item.kd !== null || item.intent !== null).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "None"}\nRecorded DataForSEO cost: ${Number(x.cost?.usd || 0).toFixed(5)}`)'
       - name: Record intake stage
         continue-on-error: true
@@ -550,8 +537,11 @@ jobs:
       - name: Record SEO research result
         continue-on-error: true
         env:
-          SUBMISSION_ID: ${{ github.event.client_payload.submission_id || steps.intake.outputs.submission_id }}
+          SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
         run: |
+          if [ -z "$SUBMISSION_ID" ]; then
+            SUBMISSION_ID=$(node -e 'const fs=require("fs");const t=fs.readFileSync("/tmp/intake.md","utf8");const m=t.match(/"submissionId"\s*:\s*"([^"]+)"/);console.log(m?m[1]:"")')
+          fi
           CLIENT_EMAIL=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.email || ""))')
           BUSINESS=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.name || ""))')
           SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
@@ -1362,7 +1352,7 @@ jobs:
         id: preview_telemetry
         continue-on-error: true
         env:
-          SUBMISSION_ID: ${{ github.event.client_payload.submission_id || steps.intake.outputs.submission_id }}
+          SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
         run: |
           if [ -n "$OPERATION_ID" ]; then
             # One guarded process owns the entire summary command and posting.
@@ -1371,6 +1361,9 @@ jobs:
               --mode preview --build-sha "${{ steps.deploy.outputs.sha }}" \
               --client-dir "${{ steps.branch.outputs.dir }}"
             exit 0
+          fi
+          if [ -z "$SUBMISSION_ID" ]; then
+            SUBMISSION_ID=$(node -e 'const fs=require("fs");const t=fs.readFileSync("/tmp/intake.md","utf8");const m=t.match(/"submissionId"\s*:\s*"([^"]+)"/);console.log(m?m[1]:"")')
           fi
           CLIENT_EMAIL=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.email || ""))')
           BUSINESS=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.name || ""))')

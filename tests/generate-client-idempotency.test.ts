@@ -6,7 +6,7 @@ const workflow = readFileSync(".github/workflows/generate-client.yml", "utf8");
 describe("client generation handoff idempotency", () => {
   it("serializes runs per intake and checks the completion marker before generation", () => {
     expect(workflow).toContain(
-      "group: launchloom-intake-${{ github.event.client_payload.issue || inputs.issue || github.run_id }}",
+      "group: launchloom-intake-${{ github.event.client_payload.issue || inputs.issue || inputs.operation_id || github.run_id }}",
     );
     expect(workflow).toContain("cancel-in-progress: false");
     expect(workflow).toContain("intake_handoff_check:");
