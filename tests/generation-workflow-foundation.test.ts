@@ -248,6 +248,28 @@ describe("generation workflow pack renderer", () => {
     expect(valid.output).toContain("pack_id=bold-utility");
     expect(valid.output).toContain("pack_variant=portrait");
 
+    for (const [pack, variant] of [
+      ["cinematic-narrative", "standard"],
+      ["cinematic-narrative", "monument"],
+      ["bold-utility", "standard"],
+      ["bold-utility", "portrait"],
+      ["kinetic-poster", "standard"],
+      ["kinetic-poster", "full-bleed"],
+      ["stage-index", "standard"],
+      ["editorial-ledger", "standard"],
+      ["results-ledger", "standard"],
+      ["season-wheel", "standard"],
+    ]) {
+      const selection = await runPolicy({
+        REQUESTED_RENDERER: "pack",
+        REQUESTED_PACK: pack,
+        REQUESTED_VARIANT: variant,
+      });
+      expect(selection.status, `${pack}:${variant}`).toBe(0);
+      expect(selection.output).toContain(`pack_id=${pack}`);
+      expect(selection.output).toContain(`pack_variant=${variant}`);
+    }
+
     const defaultVariant = await runPolicy({
       REQUESTED_RENDERER: "pack",
       REQUESTED_PACK: "season-wheel",
