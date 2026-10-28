@@ -2893,7 +2893,13 @@ export function normalise(candidate, intake) {
       ? {
           pageContentContractVersion: Number(intake.pageContentContractVersion),
         }
-      : seoResearch?.version >= 2 && seoResearch.mode === "researched"
+      : seoResearch?.version >= 2 &&
+          (services.length ? services : base.services).every(
+            (service) =>
+              service?.decisionSupport?.scope &&
+              service?.decisionSupport?.preparation &&
+              service?.decisionSupport?.nextStep,
+          )
         ? { pageContentContractVersion: 1 }
         : {}),
     excludedServices: lines(intake.excludedServices),
@@ -3044,6 +3050,9 @@ export function normalise(candidate, intake) {
       ];
       const rawSections = rawService?.pageSections || {};
       const rawSupport = rawService?.decisionSupport || {};
+      const searchQuestions = Array.isArray(map.fanOutQuestions)
+        ? map.fanOutQuestions
+        : [];
       const sections = {};
       for (const field of ["scope", "preparation", "nextStep"]) {
         const sectionText = rawSections[field] || rawSupport[field];
@@ -3060,28 +3069,59 @@ export function normalise(candidate, intake) {
         );
         if (result) sections[field] = [result];
       }
+      const introductionText =
+        rawService?.pageIntroduction ||
+        [
+          service.description,
+          `${business.name} serves ${business.serviceAreas[0] || "the local area"} and nearby communities.`,
+        ]
+          .filter(Boolean)
+          .join(" ");
       const introduction = copyClaim(
-        rawService?.pageIntroduction,
+        introductionText,
         routeId,
         "introduction-0",
-        [...baseRefs, mapRef("fanOutQuestions.0")],
+        [
+          ...baseRefs,
+          "business.serviceAreas.0",
+          mapRef("fanOutQuestions.0"),
+        ],
         680,
       );
       const metadataDescription = copyClaim(
-        rawService?.pageMetaDescription,
+        rawService?.pageMetaDescription || service.description,
         routeId,
         "metadata-description-0",
         baseRefs,
         240,
       );
       const faqs = [];
-      const searchQuestions = Array.isArray(map.fanOutQuestions)
-        ? map.fanOutQuestions
+      // Route FAQs are structural: when the copy model omits them, answer the
+      // measured fan-out questions from the confirmed decision support so each
+      // service page carries its own substance instead of template filler.
+      const rawFaqs = Array.isArray(rawService?.pageFaqs)
+        ? [...rawService.pageFaqs]
         : [];
-      for (const [faqIndex, faq] of (Array.isArray(rawService?.pageFaqs)
-        ? rawService.pageFaqs
-        : []
-      ).entries()) {
+      if (rawFaqs.length < 2) {
+        const answers = [
+          rawSupport.scope,
+          rawSupport.preparation,
+          rawSupport.nextStep,
+        ];
+        for (const [index, question] of searchQuestions
+          .slice(0, 3)
+          .entries()) {
+          if (!answers[index]) continue;
+          if (
+            rawFaqs.some(
+              (faq) => routeName(faq?.question) === routeName(question),
+            )
+          )
+            continue;
+          rawFaqs.push({ question, answer: answers[index] });
+        }
+      }
+      for (const [faqIndex, faq] of rawFaqs.entries()) {
         const question = text(faq?.question, 180);
         const questionIndex = searchQuestions.findIndex(
           (item) => routeName(item) === routeName(question),

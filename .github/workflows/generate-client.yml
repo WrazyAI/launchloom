@@ -1,6 +1,6 @@
 name: Generate client site
 run-name: >-
-  LLGEN issue=${{ github.event.client_payload.issue || inputs.issue || 0 }} profile=${{ github.event_name == 'repository_dispatch' && 'full' || (contains(fromJSON('["full","full-preview","creative-only","seo-only"]'), inputs.test_profile) && inputs.test_profile) || 'excluded' }} request=none
+  LLGEN issue=${{ github.event.client_payload.issue || inputs.issue || 0 }} profile=${{ github.event_name == 'repository_dispatch' && 'full' || (contains(fromJSON('["full","full-preview","creative-only","seo-only"]'), inputs.test_profile) && inputs.test_profile) || 'excluded' }} renderer=${{ github.event.client_payload.renderer || inputs.renderer || 'creative' }} request=none
 
 on:
   repository_dispatch:
@@ -1060,6 +1060,30 @@ jobs:
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
+          # A content-gate failure must not hide the design. Safety gates
+          # (facts, licensing, forms, contrast) still fail the run; SEO substance
+          # falls back to a noindex diagnostic preview for developer review.
+          deploy_review_preview() {
+            local branch="$1" message="$2"
+            npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch "$branch" --commit-hash "$FINAL_BUILD_SHA" --commit-message "$message"
+            if [ "$branch" = "review-diagnostic" ]; then
+              echo "preview=https://review-diagnostic.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
+              echo "diagnostic=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
+              echo "diagnostic=false" >> "$GITHUB_OUTPUT"
+            fi
+            echo "sha=$FINAL_BUILD_SHA" >> "$GITHUB_OUTPUT"
+          }
+          run_seo_gate() {
+            if node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/route-technical-report.json"; then
+              return 0
+            fi
+            echo "SEO review gate blocked; preparing a noindex diagnostic preview."
+            find dist -name '*.html' -print0 | xargs -0 sed -i 's#</head>#<meta name="robots" content="noindex">\n</head>#'
+            printf '/*\n  X-Robots-Tag: noindex\n' > dist/_headers
+            return 1
+          }
           if [ "$GENERATION_RENDERER" = "foundation" ]; then
             jq -e '(.design.experience.renderer == "foundation") and (.design.experience.foundationId != null) and (.design.experience.selectionMode == "foundation-preview")' src/site.config.json >/dev/null || { echo "Foundation renderer was not selected"; exit 1; }
             FOUNDATION_ID=$(jq -r '.design.experience.foundationId' src/site.config.json)
@@ -1077,16 +1101,17 @@ jobs:
             grep -I -F -q 'Template adapted from' dist/index.html || { echo "Foundation license credit missing"; exit 1; }
             if grep -I -F -q 'data-creative-renderer="creative-candidate"' dist/index.html; then echo "Creative host marker found in foundation preview"; exit 1; fi
             PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
-            node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/route-technical-report.json"
             git fetch --no-tags origin refs/heads/review/initial:refs/remotes/origin/review/initial
             if ! git diff --quiet "$FINAL_BUILD_SHA" origin/review/initial -- . ':(exclude).launchloom/**'; then
               echo "Review source changed during the foundation build; refusing to deploy stale preview output from $FINAL_BUILD_SHA." >&2
               exit 1
             fi
             if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
-            npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$FINAL_BUILD_SHA" --commit-message "Initial LaunchLoom foundation preview"
-            echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
-            echo "sha=$FINAL_BUILD_SHA" >> "$GITHUB_OUTPUT"
+            if run_seo_gate; then
+              deploy_review_preview review-initial "Initial LaunchLoom foundation preview"
+            else
+              deploy_review_preview review-diagnostic "Diagnostic LaunchLoom foundation preview"
+            fi
             exit 0
           fi
           if [ "$GENERATION_RENDERER" = "pack" ]; then
@@ -1099,11 +1124,12 @@ jobs:
             if grep -I -F -q 'data-foundation-dossier=' dist/index.html; then echo "Foundation marker found in pack preview"; exit 1; fi
             FINAL_BUILD_SHA=$(git rev-parse HEAD)
             PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
-            node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/route-technical-report.json"
             if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
-            npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$FINAL_BUILD_SHA" --commit-message "Initial LaunchLoom pack preview"
-            echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
-            echo "sha=$FINAL_BUILD_SHA" >> "$GITHUB_OUTPUT"
+            if run_seo_gate; then
+              deploy_review_preview review-initial "Initial LaunchLoom pack preview"
+            else
+              deploy_review_preview review-diagnostic "Diagnostic LaunchLoom pack preview"
+            fi
             exit 0
           fi
           test -f .launchloom/creative-bakeoff.json || { echo "Creative promotion report missing"; exit 1; }
@@ -1201,6 +1227,7 @@ jobs:
         run: |
           STATUS=preview_ready
           if [ "${{ steps.creative_recovery.outputs.repair_available }}" = "true" ]; then STATUS=attention; fi
+          if [ "${{ steps.deploy.outputs.diagnostic }}" = "true" ]; then STATUS=attention; fi
           node scripts/generation-cost-summary.mjs \
             --seo /tmp/seo-research.json \
             --site-config-usage /tmp/site-config-usage.json \
@@ -1254,8 +1281,14 @@ jobs:
           RESEARCH_QUERIES: ${{ steps.intake.outputs.research_queries }}
           REVIEW_PR: ${{ steps.branch.outputs.pr }}
         run: |
-          gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nLayout: %s\nClient assets used: %s\nSEO research mode: %s\nValidated queries: %s\nRecorded research cost: $%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Initial developer preview' "$LAYOUT" "$CLIENT_ASSET_SUMMARY" "$RESEARCH_MODE" "$RESEARCH_QUERIES" "$RESEARCH_COST" "$PREVIEW_URL" "$DEVELOPER_REVIEW_LINK")"
-          gh issue comment "$INTAKE_ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s' '<!-- launchloom-developer-review-ready -->' '## Awaiting developer approval' "$CLIENT_REPO" "$CLIENT_PROJECT" "$PREVIEW_URL")"
+          TITLE="## Initial developer preview"
+          ISSUE_TITLE="## Awaiting developer approval"
+          if [ "${{ steps.deploy.outputs.diagnostic }}" = "true" ]; then
+            TITLE="## Diagnostic developer preview (noindex)"
+            ISSUE_TITLE="## Diagnostic preview ready for developer review"
+          fi
+          gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nLayout: %s\nClient assets used: %s\nSEO research mode: %s\nValidated queries: %s\nRecorded research cost: $%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' "$TITLE" "$LAYOUT" "$CLIENT_ASSET_SUMMARY" "$RESEARCH_MODE" "$RESEARCH_QUERIES" "$RESEARCH_COST" "$PREVIEW_URL" "$DEVELOPER_REVIEW_LINK")"
+          gh issue comment "$INTAKE_ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s' '<!-- launchloom-developer-review-ready -->' "$ISSUE_TITLE" "$CLIENT_REPO" "$CLIENT_PROJECT" "$PREVIEW_URL")"
       - name: Send developer preview email
         env:
           BUSINESS_NAME: ${{ steps.intake.outputs.business_name }}
