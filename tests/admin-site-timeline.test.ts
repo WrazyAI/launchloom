@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupBySite } from "../src/admin/site-groups";
+import { groupBySite, siteStatus } from "../src/admin/site-groups";
 
 function attempt(overrides: Record<string, unknown>) {
   return {
@@ -100,6 +100,36 @@ describe("site timeline grouping", () => {
     expect(groups[0].name).toBe("Harbor & Pine");
     expect(groups[0].clientId).toBe("submission:one");
     expect(groups[0].issues).toEqual([197, 183]);
+  });
+
+  it("keeps a site's best delivery ahead of a later failed attempt", () => {
+    const preview = attempt({
+      attemptId: "preview",
+      deliveryStatus: "preview_ready",
+      createdAt: 1_000,
+    });
+    const failed = attempt({
+      attemptId: "failed",
+      deliveryStatus: "none",
+      executionStatus: "failed",
+      createdAt: 3_000,
+    });
+    expect(siteStatus([failed, preview]).attemptId).toBe("preview");
+    expect(siteStatus([failed]).attemptId).toBe("failed");
+  });
+
+  it("prefers published over preview ready", () => {
+    const published = attempt({
+      attemptId: "published",
+      deliveryStatus: "published",
+      createdAt: 1_000,
+    });
+    const preview = attempt({
+      attemptId: "preview",
+      deliveryStatus: "preview_ready",
+      createdAt: 2_000,
+    });
+    expect(siteStatus([preview, published]).attemptId).toBe("published");
   });
 
   it("keeps unrelated unlinked attempts separate and sorts sites by latest activity", () => {

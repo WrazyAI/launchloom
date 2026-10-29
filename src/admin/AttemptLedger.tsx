@@ -3,7 +3,7 @@ import type {
   DeliveryStatus,
   ExecutionStatus,
 } from "../lib/admin-contracts";
-import { groupBySite } from "./site-groups";
+import { groupBySite, siteStatus } from "./site-groups";
 import { GenerationPreview } from "./GenerationPreview";
 import { describeAttempt, formatProfile } from "./format";
 import type { KeyboardEvent, MouseEvent } from "react";
@@ -345,8 +345,27 @@ export function SiteTimeline({
     <div className="admin-site-groups">
       {groups.map((group) => {
         const latest = group.attempts[0];
-        const latestState = describeAttempt(latest);
-        const tone = TONE[latest.executionStatus] || "neutral";
+        const status = siteStatus(group.attempts);
+        const statusLabel =
+          status.deliveryStatus === "published"
+            ? "Published"
+            : status.deliveryStatus === "preview_ready"
+              ? "Preview ready"
+              : status.deliveryStatus === "attention"
+                ? "Needs attention"
+                : status.deliveryStatus === "diagnostic"
+                  ? "Diagnostic preview"
+                  : describeAttempt(status).executionLabel;
+        const tone =
+          status.deliveryStatus === "published"
+            ? "success"
+            : status.deliveryStatus === "preview_ready"
+              ? "running"
+              : status.deliveryStatus === "attention"
+                ? "failure"
+                : status.deliveryStatus === "diagnostic"
+                  ? "warning"
+                  : TONE[status.executionStatus] || "neutral";
         return (
           <section
             key={group.key}
@@ -372,7 +391,7 @@ export function SiteTimeline({
                   <span
                     className={`admin-status__dot admin-status__dot--${tone}`}
                   />
-                  {latestState.executionLabel}
+                  {statusLabel}
                 </span>
                 {group.clientId && onOpenClient ? (
                   <button

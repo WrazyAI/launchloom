@@ -1715,13 +1715,15 @@ describe("real admin workspace browser behavior", () => {
         await expect
           .poll(() => placeholder.textContent())
           .toContain("Preview not captured");
-        expect(
-          await page
-            .locator(".admin-ledger .admin-preview")
-            .first()
-            .locator("img")
-            .count(),
-        ).toBe(0);
+        await expect
+          .poll(() =>
+            page
+              .locator(".admin-ledger .admin-preview")
+              .first()
+              .locator("img")
+              .count(),
+          )
+          .toBe(0);
 
         await page.locator(".admin-row-action").first().click();
         const dialog = page.getByRole("dialog");
