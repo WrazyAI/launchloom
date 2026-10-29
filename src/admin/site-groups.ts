@@ -56,3 +56,17 @@ export function groupBySite(attempts: AttemptSummary[]): SiteGroup[] {
     }))
     .sort((a, b) => b.attempts[0].createdAt - a.attempts[0].createdAt);
 }
+
+/**
+ * A site's status is its best delivered outcome, not the latest attempt.
+ * A later failed attempt must not demote an earlier live preview.
+ */
+export function siteStatus(attempts: AttemptSummary[]): AttemptSummary {
+  return (
+    attempts.find((attempt) => attempt.deliveryStatus === "published") ??
+    attempts.find((attempt) => attempt.deliveryStatus === "preview_ready") ??
+    attempts.find((attempt) => attempt.deliveryStatus === "attention") ??
+    attempts.find((attempt) => attempt.deliveryStatus === "diagnostic") ??
+    attempts[0]
+  );
+}
