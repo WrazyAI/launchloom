@@ -50,6 +50,61 @@ export function isAllowedPreviewHost(
   );
 }
 
+/**
+ * Client sites and their review previews live on the client's own Pages
+ * project or a connected custom domain, not on the focused pipeline preview
+ * project. The admin dashboard may present these only as plain https links,
+ * and the focused project must never be presented as a client delivery.
+ */
+export function isAllowedClientSiteHost(
+  host,
+  suffixes = [DEFAULT_PREVIEW_HOST_SUFFIX],
+) {
+  const normalized = String(host || "")
+    .trim()
+    .toLowerCase();
+  if (!normalized || normalized.length > 253) return false;
+  if (
+    normalized.includes("/") ||
+    normalized.includes("\\") ||
+    normalized.includes("@") ||
+    normalized.includes(":") ||
+    normalized.includes("..")
+  )
+    return false;
+  if (isAllowedPreviewHost(normalized, suffixes)) return false;
+  return (
+    normalized === "launchloom.wrazyos.com" ||
+    normalized.endsWith(".wrazyos.com") ||
+    normalized.endsWith(".pages.dev")
+  );
+}
+
+/** Absolute, token-free https client site link, or null when unproven. */
+export function safeClientSiteUrl(
+  value,
+  suffixes = [DEFAULT_PREVIEW_HOST_SUFFIX],
+) {
+  if (typeof value !== "string") return null;
+  const raw = value.trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash ||
+      !isAllowedClientSiteHost(url.hostname, suffixes)
+    )
+      return null;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
+
 /** Build `/admin/preview/<pages-host>/<path>` for one absolute preview URL. */
 export function previewProxyPath(
   target,

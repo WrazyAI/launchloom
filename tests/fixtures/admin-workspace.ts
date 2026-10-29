@@ -241,6 +241,35 @@ function publishedEarlierAttempt(): AttemptSummary {
   };
 }
 
+function fullFailedNoPreviewAttempt(): AttemptSummary {
+  return {
+    ...baseAttempt(12),
+    attemptId: "attempt-related-preview",
+    requestId: "request-related-preview",
+    clientId: null,
+    issueNumber: 1910,
+    profile: "full",
+    executionStatus: "failed",
+    deliveryStatus: "none",
+    initiator: adminInitiator,
+    runId: "40745664388",
+    runAttempt: 1,
+    createdAt: BASE_TIME - 600 * 60_000,
+    startedAt: BASE_TIME - 599 * 60_000,
+    completedAt: BASE_TIME - 590 * 60_000,
+    updatedAt: BASE_TIME - 590 * 60_000,
+    failure: {
+      category: "creative_authoring",
+      stage: "authoring",
+      summary: "The copy stage stopped before deploy.",
+      evidenceUrl:
+        "https://github.com/WrazyAI/launchloom/actions/runs/40745664388",
+      nextStep: "Open the related successful attempt for this issue.",
+    },
+    costs: { actualUsd: 0.18, estimatedUsd: null, unreportedCount: 0 },
+  };
+}
+
 export function syntheticAttempts(): AttemptSummary[] {
   const generated = Array.from({ length: 280 }, (_value, index) =>
     baseAttempt(index),
@@ -250,6 +279,7 @@ export function syntheticAttempts(): AttemptSummary[] {
     unsafeAttempt(),
     diagnosticAttempt(),
     publishedEarlierAttempt(),
+    fullFailedNoPreviewAttempt(),
   ];
   return [...generated, ...specials].sort(
     (left, right) => right.createdAt - left.createdAt,
@@ -414,6 +444,7 @@ export function attemptDetail(attempt: AttemptSummary): AttemptDetail {
     events,
     eventsNextCursor: null,
     eventCount: events.length,
+    relatedPreview: null,
   };
 }
 

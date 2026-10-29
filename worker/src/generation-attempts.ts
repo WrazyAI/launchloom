@@ -875,7 +875,42 @@ export class GenerationAttempts {
       events: page.items,
       eventsNextCursor: page.nextCursor,
       eventCount: page.total,
+      relatedPreview: null,
     };
+  }
+  /**
+   * Latest other full attempt for the exact issue whose execution succeeded
+   * and whose delivery reached preview_ready or published. Focused profiles
+   * are excluded: they are diagnostic evidence, not approved client delivery.
+   */
+  latestDeliveredAttempt(
+    issueNumber: number,
+    excludeAttemptId: string,
+  ): AttemptInput | null {
+    if (!Number.isSafeInteger(issueNumber) || issueNumber < 1)
+      invalid("issueNumber");
+    if (!nonempty(excludeAttemptId)) invalid("attemptId");
+    const rows = this.storage.sql
+      .exec<AttemptRow>(
+        `SELECT attempt_id, data, state FROM generation_attempts
+        WHERE issue_number = ? AND profile = 'full' AND attempt_id <> ?
+        ORDER BY created_at DESC, attempt_id DESC`,
+        issueNumber,
+        excludeAttemptId,
+      )
+      .toArray();
+    for (const row of rows) {
+      const attempt = JSON.parse(row.data) as AttemptInput;
+      if (attempt.issueNumber !== issueNumber || attempt.stale) continue;
+      if (attempt.executionStatus !== "succeeded") continue;
+      if (
+        attempt.deliveryStatus !== "preview_ready" &&
+        attempt.deliveryStatus !== "published"
+      )
+        continue;
+      return attempt;
+    }
+    return null;
   }
   listAttempts(filters: AttemptFilters): Page<AttemptSummary> {
     const normalized = {
