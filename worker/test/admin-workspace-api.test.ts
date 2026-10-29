@@ -7,7 +7,7 @@ import {
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import worker, { type Env } from "../src/index";
-import type { ClientInput } from "../../src/lib/admin-contracts";
+import type { ClientInput, AttemptInput } from "../../src/lib/admin-contracts";
 import type { GenerationLedger } from "../src/generation-ledger";
 import type { OnboardingInvites } from "../src/onboarding-invites";
 import { network } from "./network";
@@ -45,6 +45,46 @@ const ledger = () =>
   bindings.GENERATION_LEDGER.getByName("launchloom-generations");
 const invites = () =>
   bindings.ONBOARDING_INVITES.getByName("launchloom-onboarding-invites");
+
+function attemptSeed(
+  overrides: Pick<AttemptInput, "attemptId" | "issueNumber"> &
+    Partial<AttemptInput>,
+): AttemptInput {
+  const createdAt = overrides.createdAt ?? 10_000;
+  return {
+    requestId: null,
+    clientId: null,
+    profile: "full",
+    initiator: creator,
+    invitationCreator: creator,
+    repository: "WrazyAI/launchloom",
+    runId: null,
+    runAttempt: null,
+    executionStatus: "failed",
+    deliveryStatus: "none",
+    stale: false,
+    createdAt,
+    startedAt: createdAt,
+    completedAt: createdAt + 1_000,
+    updatedAt: createdAt + 1_000,
+    failure: {
+      category: null,
+      stage: null,
+      summary: null,
+      evidenceUrl: null,
+      nextStep: null,
+    },
+    ...overrides,
+  };
+}
+const relatedDetail = (attemptId: string) =>
+  worker.fetch(
+    new Request(`${base}/attempts/${encodeURIComponent(attemptId)}`, {
+      headers: { Origin: origin },
+    }),
+    bindings,
+    context(),
+  );
 
 describe("shared workspace", () => {
   it("assigns stable correlation to migrated pending operations on alarm recovery without a queue RPC", async () => {
@@ -585,6 +625,280 @@ describe("shared workspace", () => {
     );
     expect(response.status).toBe(200);
     expect(await response.text()).not.toContain("private-token");
+  });
+
+  it("links a failed full attempt to the latest verified preview for the exact issue", async () => {
+    const issue = 7401;
+    await ledger().upsertAttempt(
+      attemptSeed({
+        attemptId: "related-older-success",
+        issueNumber: issue,
+        runId: "40737000000",
+        runAttempt: 1,
+        executionStatus: "succeeded",
+        deliveryStatus: "preview_ready",
+        createdAt: 8_000,
+        completedAt: 9_000,
+        updatedAt: 9_000,
+      }),
+    );
+    await ledger().upsertAttempt(
+      attemptSeed({
+        attemptId: "related-latest-success",
+        issueNumber: issue,
+        runId: "40737253021",
+        runAttempt: 2,
+        executionStatus: "succeeded",
+        deliveryStatus: "preview_ready",
+        createdAt: 9_000,
+        completedAt: 9_500,
+        updatedAt: 9_500,
+      }),
+    );
+    await ledger().upsertAttempt(
+      attemptSeed({
+        attemptId: "related-failed-attempt",
+        issueNumber: issue,
+        runId: "40745664388",
+        runAttempt: 1,
+        executionStatus: "failed",
+        deliveryStatus: "none",
+        createdAt: 10_000,
+        completedAt: 10_500,
+        updatedAt: 10_500,
+      }),
+    );
+    await ledger().upsertGeneration({
+      generationId: `issue:${issue}`,
+      issueNumber: issue,
+      status: "failed",
+      previewUrl: "https://review-initial.launchloom-7401-test.pages.dev/",
+      startedAt: 9_000,
+      updatedAt: 10_500,
+    });
+
+    const response = await relatedDetail("related-failed-attempt");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(response.headers.get("Content-Type")).toContain("application/json");
+    const body = (await response.json()) as {
+      attempt: {
+        relatedPreview: Record<string, unknown> | null;
+        clientId: string | null;
+      };
+    };
+    expect(body.attempt.clientId).toBeNull();
+    expect(body.attempt.relatedPreview).toEqual({
+      attemptId: "related-latest-success",
+      issueNumber: issue,
+      runId: "40737253021",
+      runAttempt: 2,
+      completedAt: 9_500,
+      deliveryStatus: "preview_ready",
+      previewUrl: "https://review-initial.launchloom-7401-test.pages.dev/",
+    });
+  });
+
+  const seedDelivered = (
+    attemptId: string,
+    issueNumber: number,
+    overrides: Partial<AttemptInput> = {},
+  ) =>
+    ledger().upsertAttempt(
+      attemptSeed({
+        attemptId,
+        issueNumber,
+        runId: `run-${attemptId}`,
+        runAttempt: 1,
+        executionStatus: "succeeded",
+        deliveryStatus: "preview_ready",
+        createdAt: 8_000,
+        completedAt: 9_000,
+        updatedAt: 9_000,
+        ...overrides,
+      }),
+    );
+  const seedGeneration = (issueNumber: number, previewUrl: string | null) =>
+    ledger().upsertGeneration({
+      generationId: `issue:${issueNumber}`,
+      issueNumber,
+      status: "failed",
+      previewUrl,
+      startedAt: 8_000,
+      updatedAt: 9_000,
+    });
+  const expectNoRelated = async (attemptId: string) => {
+    const response = await relatedDetail(attemptId);
+    expect(response.status, attemptId).toBe(200);
+    const body = (await response.json()) as {
+      attempt: { relatedPreview: unknown };
+    };
+    expect(body.attempt.relatedPreview, attemptId).toBeNull();
+  };
+
+  it("never substitutes another attempt when delivery, issue or URL evidence is unproven", async () => {
+    // Focused attempts are diagnostic evidence only, even with a complete
+    // successful full attempt for the same issue.
+    await seedDelivered("focused-related-success", 7410);
+    await seedGeneration(
+      7410,
+      "https://review-initial.launchloom-7410-test.pages.dev/",
+    );
+    await ledger().upsertAttempt(
+      attemptSeed({
+        attemptId: "focused-failed-attempt",
+        issueNumber: 7410,
+        profile: "creative-only",
+        executionStatus: "failed",
+        deliveryStatus: "diagnostic",
+        createdAt: 10_000,
+      }),
+    );
+
+    // A succeeded execution without preview delivery is not a verified preview.
+    await seedDelivered("unverified-delivery-success", 7411, {
+      deliveryStatus: "attention",
+    });
+    await seedGeneration(
+      7411,
+      "https://review-initial.launchloom-7411-test.pages.dev/",
+    );
+    await ledger().upsertAttempt(
+      attemptSeed({
+        attemptId: "unverified-delivery-failed",
+        issueNumber: 7411,
+        createdAt: 10_000,
+      }),
+    );
+
+    // A success for a different issue is never a fallback.
+    await seedDelivered("other-issue-success", 7413);
+    await ledger().upsertAttempt(
+      attemptSeed({
+        attemptId: "other-issue-failed",
+        issueNumber: 7412,
+        createdAt: 10_000,
+      }),
+    );
+
+    // No recorded issue preview means no link, even with a delivered attempt.
+    await seedDelivered("missing-url-success", 7414);
+    await ledger().upsertAttempt(
+      attemptSeed({
+        attemptId: "missing-url-failed",
+        issueNumber: 7414,
+        createdAt: 10_000,
+      }),
+    );
+
+    for (const attemptId of [
+      "focused-failed-attempt",
+      "unverified-delivery-failed",
+      "other-issue-failed",
+      "missing-url-failed",
+    ])
+      await expectNoRelated(attemptId);
+  }, 15_000);
+
+  it("rejects unsafe, stale, published and superseded delivery evidence", async () => {
+    // Unsafe, tokenized and focused-preview URLs are never presented as an
+    // approved client delivery.
+    const unsafeIssues: Array<[number, string]> = [
+      [7415, "https://evil.example/"],
+      [7416, "https://abc.launchloom-pipeline-preview.pages.dev/"],
+      [7417, "https://review-initial.launchloom-7417.pages.dev/?token=secret"],
+    ];
+    for (const [issueNumber, previewUrl] of unsafeIssues) {
+      await seedDelivered(`unsafe-success-${issueNumber}`, issueNumber);
+      await seedGeneration(issueNumber, previewUrl);
+      await ledger().upsertAttempt(
+        attemptSeed({
+          attemptId: `unsafe-failed-${issueNumber}`,
+          issueNumber,
+          createdAt: 10_000,
+        }),
+      );
+    }
+    for (const [issueNumber] of unsafeIssues)
+      await expectNoRelated(`unsafe-failed-${issueNumber}`);
+
+    // A published attempt delivered its own preview; never relabel another
+    // attempt's preview as the answer.
+    await seedDelivered("published-related-success", 7418);
+    await seedGeneration(
+      7418,
+      "https://review-initial.launchloom-7418-test.pages.dev/",
+    );
+    await ledger().upsertAttempt(
+      attemptSeed({
+        attemptId: "published-own-attempt",
+        issueNumber: 7418,
+        executionStatus: "succeeded",
+        deliveryStatus: "published",
+        createdAt: 10_000,
+      }),
+    );
+    await expectNoRelated("published-own-attempt");
+
+    // Stale outcomes are not verified delivery evidence.
+    await seedDelivered("stale-related-success", 7419, { stale: true });
+    await seedGeneration(
+      7419,
+      "https://review-initial.launchloom-7419-test.pages.dev/",
+    );
+    await ledger().upsertAttempt(
+      attemptSeed({
+        attemptId: "stale-related-failed",
+        issueNumber: 7419,
+        createdAt: 10_000,
+      }),
+    );
+    await expectNoRelated("stale-related-failed");
+  }, 15_000);
+
+  it("suppresses the related preview when the client already has its own site link", async () => {
+    const ownClient = await ledger().upsertClient(client(7420));
+    await runInDurableObject(ledger(), (_instance, state) => {
+      state.storage.sql.exec(
+        "UPDATE admin_clients SET data=? WHERE client_id=?",
+        JSON.stringify({
+          ...ownClient,
+          previewUrl: "https://own-preview.pages.dev/",
+        }),
+        ownClient.clientId,
+      );
+    });
+    await seedDelivered("own-link-related-success", ownClient.issueNumber);
+    await seedGeneration(
+      ownClient.issueNumber,
+      "https://review-initial.launchloom-own-test.pages.dev/",
+    );
+    await ledger().upsertAttempt(
+      attemptSeed({
+        attemptId: "own-link-failed",
+        issueNumber: ownClient.issueNumber,
+        clientId: ownClient.clientId,
+        createdAt: 10_000,
+      }),
+    );
+    await expectNoRelated("own-link-failed");
+  }, 15_000);
+
+  it("requires admin authorization for related preview detail and keeps it uncached", async () => {
+    const denied = await worker.fetch(
+      new Request(`${base}/attempts/related-failed-attempt`),
+      bindings,
+      {} as ExecutionContext,
+    );
+    expect(denied.status).toBe(401);
+    expect(denied.headers.get("Cache-Control")).toBe("no-store");
+    const body = (await denied.json()) as {
+      error?: { code?: string };
+      attempt?: unknown;
+    };
+    expect(body.attempt).toBeUndefined();
+    expect(body.error?.code).toBe("signed_out");
   });
 
   it("recovers accepted legacy source gaps after restart without inventing actors, timestamps or dispatches", async () => {

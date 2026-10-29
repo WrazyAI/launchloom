@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
+  applyDeterministicHeroOverlay,
   collectAvailableScreenshots,
   colorLiterals,
   defaultRepairCandidate,
@@ -392,6 +393,36 @@ describe("rendered creative repair orchestration", () => {
     expect(
       colorLiterals("a { color: #FFF; background: rgb(1, 2, 3); }"),
     ).toEqual(["#fff", "rgb(1,2,3)"]);
+  });
+
+  it("applies the deterministic hero overlay once for a large-card finding", async () => {
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-hero-overlay-"),
+    );
+    try {
+      await fs.writeFile(
+        path.join(dir, "styles.css"),
+        "body { color: #111; }",
+      );
+      const finding =
+        "hero copy is a large bordered card covering 50% of the hero area";
+      const first = await applyDeterministicHeroOverlay({
+        candidateDir: dir,
+        findings: [finding],
+      });
+      expect(first.applied).toBe(true);
+      const css = await fs.readFile(path.join(dir, "styles.css"), "utf8");
+      expect(css).toContain("bounded hero overlay correction");
+      expect(css).toContain("[data-hero-copy]");
+      expect(css).toContain("body { color: #111; }");
+      const second = await applyDeterministicHeroOverlay({
+        candidateDir: dir,
+        findings: [finding],
+      });
+      expect(second.applied).toBe(false);
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
   });
 
   it("rejects an automated repair that repaints a passing palette", async () => {

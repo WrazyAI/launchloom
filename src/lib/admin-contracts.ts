@@ -128,10 +128,33 @@ export type AttemptEventRecord = AttemptEventInput & {
   createdAt: number;
   updatedAt: number;
 };
+/**
+ * A verified preview delivered for the exact same issue by another attempt.
+ * It is never this attempt's own preview and never crosses issues or clients.
+ */
+export type RelatedIssuePreview = {
+  attemptId: string;
+  issueNumber: number;
+  runId: string | null;
+  runAttempt: number | null;
+  completedAt: number | null;
+  deliveryStatus: "preview_ready" | "published";
+  /**
+   * Latest verified preview recorded for this exact issue by the trusted
+   * completion ingest. A later approved revision may refresh the same URL.
+   */
+  previewUrl: string;
+};
 export type AttemptDetail = AttemptSummary & {
   events: AttemptEventRecord[];
   eventsNextCursor: string | null;
   eventCount: number;
+  /**
+   * Present only for full attempts that delivered no preview of their own and
+   * have a verified delivered preview for the same issue. Focused attempts are
+   * always attempt-specific, so this stays null for them.
+   */
+  relatedPreview: RelatedIssuePreview | null;
 };
 
 export type ClientInput = {

@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
+import { withHeroOverlayCorrection } from "./hero-overlay-repair.mjs";
 import {
   assertCodeAuthoringModel,
   creativeLaneProvider,
@@ -1007,6 +1008,49 @@ function reportCandidate(report, candidateId) {
   );
 }
 
+const HERO_CARD_FINDING_PATTERN =
+  /large bordered card|bordered hero card|hero copy is a large/iu;
+
+function heroCardFindingText(finding) {
+  if (typeof finding === "string") return finding;
+  if (!finding || typeof finding !== "object") return "";
+  return [
+    finding.category,
+    finding.message,
+    finding.evidence,
+    finding.recommendation,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/**
+ * Apply the deterministic hero overlay correction once when a candidate's
+ * rendered evidence says its promise group is a large bordered or opaque
+ * card. The model repair loop can keep returning the same stacked plate; this
+ * makes the structural change and lets the next rendered round decide.
+ */
+/**
+ * @param {{candidateDir: string, findings?: Array<string | Record<string, any>>}} options
+ */
+export async function applyDeterministicHeroOverlay({
+  candidateDir,
+  findings = [],
+}) {
+  if (
+    !findings.some((finding) =>
+      HERO_CARD_FINDING_PATTERN.test(heroCardFindingText(finding)),
+    )
+  )
+    return { applied: false };
+  const stylesPath = path.join(candidateDir, "styles.css");
+  const existing = await fs.readFile(stylesPath, "utf8");
+  const next = withHeroOverlayCorrection(existing);
+  if (next === existing) return { applied: false };
+  await fs.writeFile(stylesPath, next);
+  return { applied: true };
+}
+
 function resolveCandidateDirectory(candidateRoot, directory) {
   if (typeof directory !== "string" || !directory.trim())
     throw new Error("Creative repair report omitted a candidate directory.");
@@ -1403,6 +1447,25 @@ export async function runRenderedCreativeRepair({
       candidateRoot,
       candidateDirectory,
     );
+    const deterministicHero = await applyDeterministicHeroOverlay({
+      candidateDir,
+      findings,
+    });
+    if (deterministicHero.applied) {
+      await persistRepairEvidence({
+        outDir: evidenceRoot,
+        round,
+        candidateId,
+        reason,
+        findings,
+        cyclesUsed: appliedSoFar,
+        attempts: [{ cycle: 0, status: "deterministic-hero-overlay" }],
+      });
+      return {
+        status: "repaired",
+        attempts: [{ cycle: 0, status: "deterministic-hero-overlay" }],
+      };
+    }
     // Show Luna the real browser-scale desktop/mobile compositions first, then
     // the full page for section rhythm. Older evidence sets fall back to the
     // original full-page captures.

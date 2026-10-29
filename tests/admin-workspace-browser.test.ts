@@ -15,7 +15,11 @@ import {
 import { chromium, type Browser, type Locator, type Page } from "playwright";
 import sharp from "sharp";
 import { buildAdminWorkspace } from "../scripts/build-admin-workspace.mjs";
-import type { AttemptSummary, Health } from "../src/lib/admin-contracts";
+import type {
+  AttemptSummary,
+  Health,
+  RelatedIssuePreview,
+} from "../src/lib/admin-contracts";
 import {
   attemptDetail,
   fixtureHealth,
@@ -60,6 +64,7 @@ let delays = new Map<string, number>();
 let failAttemptListOnce = false;
 let failHealth = false;
 let attemptListDelay = 0;
+let relatedPreviews = new Map<string, RelatedIssuePreview>();
 type HeroMode = "ok" | "notFound" | "unauthorized";
 let heroMode: HeroMode = "ok";
 let heroPng: Buffer;
@@ -373,7 +378,12 @@ async function serve(
       response,
       attemptMatch[2]
         ? eventPage(attempt, params)
-        : { attempt: attemptDetail(attempt) },
+        : {
+            attempt: {
+              ...attemptDetail(attempt),
+              relatedPreview: relatedPreviews.get(id) ?? null,
+            },
+          },
     );
     return;
   }
@@ -422,6 +432,7 @@ beforeEach(() => {
   failHealth = false;
   attemptListDelay = 0;
   heroMode = "ok";
+  relatedPreviews = new Map();
 });
 
 type OpenOptions = {
@@ -1457,6 +1468,205 @@ describe("real admin workspace browser behavior", () => {
       autoErrors(errors);
     } finally {
       ATTEMPTS[0] = original;
+      await page.close();
+    }
+  });
+
+  it.each([
+    {
+      label: "desktop",
+      width: 1512,
+      height: 960,
+      file: "/tmp/opencode/related-preview-desktop.png",
+    },
+    {
+      label: "mobile",
+      width: 390,
+      height: 844,
+      file: "/tmp/opencode/related-preview-mobile.png",
+    },
+  ])(
+    "labels a related preview as another attempt's at $label size",
+    async ({ width, height, file }) => {
+      relatedPreviews.set("attempt-related-preview", {
+        attemptId: "attempt-published-earlier",
+        issueNumber: 1910,
+        runId: "40737253021",
+        runAttempt: 1,
+        completedAt: Date.UTC(2026, 9, 28, 18, 0, 0),
+        deliveryStatus: "preview_ready",
+        previewUrl:
+          "https://review-initial.launchloom-1910-northline-dental.pages.dev/",
+      });
+      const { page, errors } = await openPage({
+        viewport: { width, height },
+        path: "/admin/onboarding-invites?view=generations&attempt=attempt-related-preview",
+      });
+      try {
+        await waitForGenerations(page);
+        const dialog = page.getByRole("dialog", {
+          name: "Attempt attempt-related-preview",
+        });
+        await visible(dialog);
+        await visible(
+          dialog.getByRole("heading", {
+            name: "Preview from another attempt",
+          }),
+        );
+        const link = dialog.getByRole("link", {
+          name: "Open the verified preview for issue 1910 delivered by attempt attempt-published-earlier",
+        });
+        await visible(link);
+        expect(await link.getAttribute("href")).toBe(
+          "https://review-initial.launchloom-1910-northline-dental.pages.dev/",
+        );
+        expect(await link.getAttribute("target")).toBe("_blank");
+        expect(await link.getAttribute("rel")).toContain("noreferrer");
+        await visible(
+          dialog.getByText(/latest successful generation for issue 1910/u),
+        );
+        await visible(
+          dialog.getByText(/verified preview recorded for this issue/u),
+        );
+        await visible(dialog.getByText(/not this attempt's own preview/u));
+        await visible(
+          dialog.getByRole("button", { name: "Open related attempt" }),
+        );
+        expect(
+          await dialog.getByRole("link", { name: "Visit site" }).count(),
+        ).toBe(0);
+
+        const metrics = await page.evaluate(() => ({
+          documentWidth: document.documentElement.scrollWidth,
+          bodyWidth: document.body.scrollWidth,
+          viewport: window.innerWidth,
+        }));
+        expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewport);
+        expect(metrics.bodyWidth).toBeLessThanOrEqual(metrics.viewport);
+        await page.waitForTimeout(300);
+        await dialog.locator("[data-related-preview]").scrollIntoViewIfNeeded();
+        await page.waitForTimeout(200);
+        await dialog.screenshot({ path: file });
+        autoErrors(errors);
+      } finally {
+        relatedPreviews.clear();
+        await page.close();
+      }
+    },
+    60_000,
+  );
+
+  it("keeps this attempt's own client preview ahead of any related preview", async () => {
+    relatedPreviews.set("attempt-0000", {
+      attemptId: "attempt-related-preview",
+      issueNumber: 1910,
+      runId: "40737253021",
+      runAttempt: 1,
+      completedAt: Date.UTC(2026, 9, 28, 18, 0, 0),
+      deliveryStatus: "published",
+      previewUrl:
+        "https://review-initial.launchloom-1910-northline-dental.pages.dev/",
+    });
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-0000",
+    });
+    try {
+      await waitForGenerations(page);
+      const dialog = page.getByRole("dialog", {
+        name: "Attempt attempt-0000",
+      });
+      await visible(dialog);
+      await expect
+        .poll(() =>
+          dialog.getByRole("link", { name: "Visit site" }).getAttribute("href"),
+        )
+        .toBe("https://preview-0.pages.dev/");
+      expect(
+        await dialog
+          .getByRole("heading", { name: "Preview from another attempt" })
+          .count(),
+      ).toBe(0);
+      expect(await dialog.locator("[data-related-preview]").count()).toBe(0);
+      autoErrors(errors);
+    } finally {
+      relatedPreviews.clear();
+      await page.close();
+    }
+  });
+
+  it("shows no related preview when none is proven and never an unsafe one", async () => {
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-related-preview",
+    });
+    try {
+      await waitForGenerations(page);
+      const dialog = page.getByRole("dialog", {
+        name: "Attempt attempt-related-preview",
+      });
+      await visible(dialog);
+      expect(await dialog.locator("[data-related-preview]").count()).toBe(0);
+
+      for (const previewUrl of [
+        "https://preview.pages.dev/?token=secret",
+        "https://abc.launchloom-pipeline-preview.pages.dev/",
+        "https://evil.example/",
+      ]) {
+        relatedPreviews.set("attempt-related-preview", {
+          attemptId: "attempt-published-earlier",
+          issueNumber: 1910,
+          runId: "40737253021",
+          runAttempt: 1,
+          completedAt: Date.UTC(2026, 9, 28, 18, 0, 0),
+          deliveryStatus: "preview_ready",
+          previewUrl,
+        });
+        await page.reload({ waitUntil: "domcontentloaded" });
+        const reloaded = page.getByRole("dialog", {
+          name: "Attempt attempt-related-preview",
+        });
+        await visible(reloaded);
+        await expect
+          .poll(() => reloaded.locator("[data-related-preview]").count())
+          .toBe(0);
+      }
+      autoErrors(errors);
+    } finally {
+      relatedPreviews.clear();
+      await page.close();
+    }
+  }, 60_000);
+
+  it("opens the related attempt from its clearly labeled control", async () => {
+    relatedPreviews.set("attempt-related-preview", {
+      attemptId: "attempt-published-earlier",
+      issueNumber: 1910,
+      runId: "40737253021",
+      runAttempt: 1,
+      completedAt: Date.UTC(2026, 9, 28, 18, 0, 0),
+      deliveryStatus: "preview_ready",
+      previewUrl:
+        "https://review-initial.launchloom-1910-northline-dental.pages.dev/",
+    });
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-related-preview",
+    });
+    try {
+      await waitForGenerations(page);
+      const dialog = page.getByRole("dialog", {
+        name: "Attempt attempt-related-preview",
+      });
+      await visible(dialog);
+      await dialog
+        .getByRole("button", { name: "Open related attempt" })
+        .click();
+      await visible(
+        page.getByRole("dialog", { name: "Attempt attempt-published-earlier" }),
+      );
+      expect(page.url()).toContain("attempt=attempt-published-earlier");
+      expect(await page.locator("[data-related-preview]").count()).toBe(0);
+      autoErrors(errors);
+    } finally {
+      relatedPreviews.clear();
       await page.close();
     }
   });
