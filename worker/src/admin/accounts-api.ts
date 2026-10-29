@@ -1,4 +1,4 @@
-import type { AdminPrincipal } from "../../../src/lib/admin-contracts";
+import type { AdminPrincipal, WorkspaceCapabilities } from "../../../src/lib/admin-contracts";
 import type { VerifiedSession } from "./neon-auth";
 import {
   MembershipError,
@@ -24,6 +24,7 @@ const NO_STORE_HEADERS = {
 export type AccountsApiDependencies = {
   store: MembershipStore;
   principal: AdminPrincipal;
+  capabilities?: WorkspaceCapabilities;
 };
 
 function json(body: unknown, status = 200) {
@@ -115,7 +116,7 @@ export async function accountsApi(
       const member = await deps.store.get(deps.principal.id);
       if (!member || !member.active)
         throw new MembershipError("forbidden", "This membership is inactive.");
-      return json({ principal: member });
+      return json({ principal: member, capabilities: deps.capabilities ?? { operationsRead: false } });
     }
 
     if (suffix === "/me" && method === "PATCH") {

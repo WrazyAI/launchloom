@@ -49,7 +49,7 @@ it.each(["true", "false"])("runs the actual workflow enrichment command with fro
   expect(command).toBeDefined();
   const boundedCommand = command!.trim().replace("--file /tmp/site.config.json", '--file "$QA_FIXTURE_CONFIG"').replace("${{ steps.intake.outputs.assets }}", JSON.stringify({ photoOne: "", photoTwo: "" }));
   expect(boundedCommand).not.toContain("${{");
-  execFileSync("bash", ["-c", boundedCommand], { env: { ...process.env, QA_FIXTURE_CONFIG: file, REUSE_AUTHORED_CANDIDATES: reuse, LAUNCHLOOM_API_URL: "https://api.example.test", LEAD_TOKEN: "synthetic-workflow-token" } });
+  execFileSync("bash", ["-c", boundedCommand], { env: { ...process.env, QA_FIXTURE_CONFIG: file, REUSE_AUTHORED_CANDIDATES: reuse, ASSETS: JSON.stringify({ photoOne: "", photoTwo: "" }), LAUNCHLOOM_API_URL: "https://api.example.test", LEAD_TOKEN: "synthetic-workflow-token" } });
   const actual = JSON.parse(fs.readFileSync(file, "utf8"));
   expect(actual.images.hero).toBe(reuse === "true" ? config.images.hero : "");
   if (reuse === "true") expect(buildCreativeContentManifest(actual)).toEqual(buildCreativeContentManifest(config));

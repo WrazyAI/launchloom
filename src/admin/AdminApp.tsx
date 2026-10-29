@@ -4,6 +4,7 @@ import { ClientsView } from "./ClientsView";
 import { GenerationsView } from "./GenerationsView";
 import { IntegrationsView } from "./IntegrationsView";
 import { InvitationsView } from "./InvitationsView";
+import { OperationsView } from "./OperationsView";
 import { ProfileView } from "./ProfileView";
 import { TeamView } from "./TeamView";
 import { WorkspaceShell } from "./WorkspaceShell";
@@ -40,11 +41,17 @@ const VIEW_COPY: Record<
   AdminView,
   { label: string; title: string; description: string }
 > = {
-  generations: {
-    label: "Generations",
-    title: "Recent generations",
+  operations: {
+    label: "Operations",
+    title: "Current operations",
     description:
-      "Every generation attempt across the shared workspace, newest first. All admins see the same records.",
+      "Postgres-backed intake and generation records, with dispatch, execution, delivery, cost and telemetry reported separately.",
+  },
+  generations: {
+    label: "Legacy history",
+    title: "Legacy history",
+    description:
+      "Read-only generation history from the existing ledger. New operations appear under Operations; nothing on this page changes a record.",
   },
   clients: {
     label: "Clients",
@@ -105,7 +112,39 @@ function useRouteState() {
 export function AdminApp() {
   const [state, setState, cursorTrail, setCursorTrail] = useRouteState();
   const [api] = useState(createAdminApi);
-  const copy = VIEW_COPY[state.view];
+  const [operationsRead, setOperationsRead] = useState<boolean | null>(null);
+  const view =
+    state.view === "operations" && operationsRead !== true
+      ? "generations"
+      : state.view;
+  const visibleState = view === state.view ? state : DEFAULT_STATE;
+  const copy = VIEW_COPY[view];
+
+  useEffect(() => {
+    const controller = new AbortController();
+    api
+      .getWorkspace({ signal: controller.signal })
+      .then((workspace) => {
+        if (!controller.signal.aborted)
+          setOperationsRead(workspace.capabilities.operationsRead);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setOperationsRead(false);
+      });
+    return () => controller.abort();
+  }, [api]);
+
+  useEffect(() => {
+    if (operationsRead !== false || state.view !== "operations") return;
+    const url = writeRouteState(DEFAULT_STATE);
+    window.history.replaceState(
+      { cursorTrail: [] },
+      "",
+      `${url.pathname}${url.search}`,
+    );
+    setCursorTrail([]);
+    setState(DEFAULT_STATE);
+  }, [operationsRead, state.view, setCursorTrail, setState]);
 
   useEffect(() => {
     const onUnauthorized = () => {
@@ -135,6 +174,7 @@ export function AdminApp() {
   }
 
   function selectView(view: AdminView) {
+    if (view === "operations" && operationsRead !== true) return;
     if (view === state.view) return;
     commit(
       {
@@ -147,16 +187,26 @@ export function AdminApp() {
 
   return (
     <WorkspaceShell
-      active={state.view}
+      active={view}
+      operationsRead={operationsRead === true}
       onNavigate={selectView}
       eyebrow={copy.label}
       title={copy.title}
       description={copy.description}
     >
-      {state.view === "generations" ? (
-        <GenerationsView
+      {state.view === "operations" && operationsRead === null ? (
+        <p role="status">Loading workspace…</p>
+      ) : view === "operations" ? (
+        <OperationsView
           api={api}
           state={state}
+          cursorTrail={cursorTrail}
+          onNavigate={commit}
+        />
+      ) : view === "generations" ? (
+        <GenerationsView
+          api={api}
+          state={visibleState}
           cursorTrail={cursorTrail}
           onNavigate={commit}
         />

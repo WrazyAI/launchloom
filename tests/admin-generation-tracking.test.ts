@@ -402,7 +402,13 @@ describe("trusted attempt producer", () => {
     for (const name of ["generate-client", "test-generation"]) {
       const source = await fs.readFile(`.github/workflows/${name}.yml`, "utf8");
       expect(source).toContain("run-name:");
-      expect(source).toContain("LLGEN issue=");
+      expect(source).toContain("LLGEN");
+      if (name === "generate-client") {
+        expect(source).toContain("issue={0}");
+        expect(source).toContain("op={0}");
+      } else {
+        expect(source).toContain("LLGEN issue=");
+      }
       expect(source).toContain("GENERATION_TRACKING_SECRET");
     }
     for (const name of [

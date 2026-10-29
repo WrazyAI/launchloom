@@ -212,6 +212,16 @@ async function serve(
     return;
   }
 
+  // Workspace bootstrap is a read-only capability lookup, separate from the
+  // invitation action requests tracked by this fixture.
+  if (pathname === "/api/admin/onboarding-invites/workspace/me") {
+    sendJson(response, {
+      principal: { id: `access:${"d".repeat(64)}`, email: "admin@example.test", displayName: null, role: "admin", authSource: "cloudflare-access" },
+      capabilities: { operationsRead: false },
+    });
+    return;
+  }
+
   if (pathname !== "/api/admin/onboarding-invites") {
     sendText(response, "Not found", 404);
     return;

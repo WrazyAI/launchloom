@@ -1,4 +1,8 @@
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import YAML from "yaml";
 import { buildSafeVisualManifest } from "../scripts/visual-quality-gate-lib.mjs";
@@ -12,6 +16,38 @@ const step = (name: string) => {
   if (!found) throw new Error(`Missing workflow step: ${name}`);
   return found;
 };
+const policyStep = workflow.jobs.renderer_policy.steps.find(
+  (candidate: any) => candidate.name === "Resolve generation renderer",
+);
+
+async function runPolicy(overrides: Record<string, string>) {
+  const directory = await mkdtemp(path.join(tmpdir(), "launchloom-policy-"));
+  const output = path.join(directory, "github-output");
+  try {
+    const result = spawnSync("bash", ["-c", policyStep.run], {
+      env: {
+        ...process.env,
+        GITHUB_OUTPUT: output,
+        REQUESTED_RENDERER: "creative",
+        REQUESTED_FOUNDATION: "",
+        REQUESTED_POLICY: "renderable-only",
+        REQUESTED_PACK: "",
+        REQUESTED_VARIANT: "",
+        PROFILE: "full",
+        ...overrides,
+      },
+      encoding: "utf8",
+    });
+    return {
+      status: result.status,
+      stdout: result.stdout,
+      stderr: result.stderr,
+      output: await readFile(output, "utf8").catch(() => ""),
+    };
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
 
 describe("generation workflow foundation renderer", () => {
   it("exposes an explicit renderer and foundation policy", () => {
@@ -76,6 +112,15 @@ describe("generation workflow foundation renderer", () => {
     );
     expect(step("Record foundation render stage").run).toContain(
       "--stage foundation_render --status completed",
+    );
+  });
+
+  it("passes foundation selectors through env, not shell source", () => {
+    const select = step("Select source foundation");
+    expect(select.run).not.toContain("${{ needs.renderer_policy.outputs");
+    expect(select.run).not.toContain("${{ steps.foundation.outputs.compatibility }}");
+    expect(step("Record foundation select stage").env?.FOUNDATION_COMPATIBILITY).toBe(
+      "${{ steps.foundation.outputs.compatibility }}",
     );
   });
 
@@ -191,6 +236,89 @@ describe("generation workflow pack renderer", () => {
     );
   });
 
+  it("accepts only registered pack IDs and their variants", async () => {
+    fs.rmSync("/tmp/launchloom-pack-pwn", { force: true });
+    const valid = await runPolicy({
+      REQUESTED_RENDERER: "pack",
+      REQUESTED_PACK: "bold-utility",
+      REQUESTED_VARIANT: "portrait",
+    });
+    expect(valid.status).toBe(0);
+    expect(valid.output).toContain("renderer=pack");
+    expect(valid.output).toContain("pack_id=bold-utility");
+    expect(valid.output).toContain("pack_variant=portrait");
+
+    for (const [pack, variant] of [
+      ["cinematic-narrative", "standard"],
+      ["cinematic-narrative", "monument"],
+      ["bold-utility", "standard"],
+      ["bold-utility", "portrait"],
+      ["kinetic-poster", "standard"],
+      ["kinetic-poster", "full-bleed"],
+      ["stage-index", "standard"],
+      ["editorial-ledger", "standard"],
+      ["results-ledger", "standard"],
+      ["season-wheel", "standard"],
+    ]) {
+      const selection = await runPolicy({
+        REQUESTED_RENDERER: "pack",
+        REQUESTED_PACK: pack,
+        REQUESTED_VARIANT: variant,
+      });
+      expect(selection.status, `${pack}:${variant}`).toBe(0);
+      expect(selection.output).toContain(`pack_id=${pack}`);
+      expect(selection.output).toContain(`pack_variant=${variant}`);
+    }
+
+    const defaultVariant = await runPolicy({
+      REQUESTED_RENDERER: "pack",
+      REQUESTED_PACK: "season-wheel",
+      REQUESTED_VARIANT: "",
+    });
+    expect(defaultVariant.status).toBe(0);
+    expect(defaultVariant.output).toContain("pack_variant=\n");
+
+    for (const request of [
+      { REQUESTED_PACK: "unknown-pack", REQUESTED_VARIANT: "" },
+      { REQUESTED_PACK: "bold-utility", REQUESTED_VARIANT: "monument" },
+      { REQUESTED_PACK: "$(touch /tmp/launchloom-pack-pwn)", REQUESTED_VARIANT: "standard" },
+      { REQUESTED_PACK: "cinematic-narrative\npack_variant=injected", REQUESTED_VARIANT: "standard" },
+      { REQUESTED_PACK: "cinematic-narrative", REQUESTED_VARIANT: "standard\ninjected=1" },
+      { REQUESTED_PACK: "cinematic-narrative", REQUESTED_VARIANT: "standard; id" },
+    ]) {
+      const result = await runPolicy({ REQUESTED_RENDERER: "pack", ...request });
+      expect(result.status, JSON.stringify(request)).toBe(1);
+      expect(result.output, JSON.stringify(request)).toBe("");
+    }
+    expect(fs.existsSync("/tmp/launchloom-pack-pwn")).toBe(false);
+  });
+
+  it("rejects unknown or newline-injected foundation selectors", async () => {
+    const valid = await runPolicy({
+      REQUESTED_RENDERER: "foundation",
+      REQUESTED_FOUNDATION: "care-concierge-cinematic",
+      REQUESTED_POLICY: "renderable-only",
+    });
+    expect(valid.status).toBe(0);
+    expect(valid.output).toContain("foundation_id=care-concierge-cinematic");
+
+    for (const foundation of [
+      "care-concierge-cinematic\nfoundation_policy=allow-partial",
+      "care-concierge-cinematic; id",
+      "$(id)",
+      "../care-concierge-cinematic",
+      "Care-Concierge-Cinematic",
+      "care_conscierge",
+    ]) {
+      const result = await runPolicy({
+        REQUESTED_RENDERER: "foundation",
+        REQUESTED_FOUNDATION: foundation,
+      });
+      expect(result.status, foundation).toBe(1);
+      expect(result.output, foundation).toBe("");
+    }
+  });
+
   it("selects the pack and records its stage before preview", () => {
     const select = step("Select experience pack");
     expect(select.if).toBe("needs.renderer_policy.outputs.renderer == 'pack'");
@@ -217,6 +345,31 @@ describe("generation workflow pack renderer", () => {
     expect(preview.run).toContain("Initial LaunchLoom pack preview");
   });
 
+  it("passes validated pack selectors through env, not shell source", () => {
+    const select = step("Select experience pack");
+    expect(select.run).not.toContain("${{ needs.renderer_policy.outputs");
+    expect(select.run).toContain('PACK_ID="$RENDERER_PACK_ID"');
+    expect(select.run).toContain('PACK_VARIANT="$RENDERER_PACK_VARIANT"');
+    const record = step("Record pack select stage");
+    expect(record.run).not.toContain("${{ needs.renderer_policy.outputs");
+    expect(record.env?.PACK_ID).toBe("${{ needs.renderer_policy.outputs.pack_id }}");
+  });
+
+  it("rejects a stale pack preview before upload", () => {
+    const preview = step("Build and direct-upload public preview");
+    const packBlock = preview.run.slice(
+      preview.run.indexOf('if [ "$GENERATION_RENDERER" = "pack" ]'),
+      preview.run.indexOf('test -f .launchloom/creative-bakeoff.json'),
+    );
+    expect(packBlock).toContain(
+      "git fetch --no-tags origin refs/heads/review/initial:refs/remotes/origin/review/initial",
+    );
+    expect(packBlock).toContain(
+      'if ! git diff --quiet "$FINAL_BUILD_SHA" origin/review/initial -- . \':(exclude).launchloom/**\'; then',
+    );
+    expect(packBlock).toContain("refusing to deploy stale preview output");
+  });
+
   it("falls back to a noindex diagnostic preview when the SEO gate blocks", () => {
     const preview = step("Build and direct-upload public preview");
     expect(preview.run).toContain("run_seo_gate()");
@@ -231,7 +384,7 @@ describe("generation workflow pack renderer", () => {
       "Diagnostic developer preview (noindex)",
     );
     expect(step("Mark intake handoff complete").if).toBe(
-      "${{ steps.deploy.outputs.diagnostic != 'true' }}",
+      "${{ inputs.operation_id == '' && steps.deploy.outputs.diagnostic != 'true' }}",
     );
   });
 

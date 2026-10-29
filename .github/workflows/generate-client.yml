@@ -1,6 +1,6 @@
 name: Generate client site
 run-name: >-
-  LLGEN issue=${{ github.event.client_payload.issue || inputs.issue || 0 }} profile=${{ github.event_name == 'repository_dispatch' && 'full' || (contains(fromJSON('["full","full-preview","creative-only","seo-only"]'), inputs.test_profile) && inputs.test_profile) || 'excluded' }} renderer=${{ github.event.client_payload.renderer || inputs.renderer || 'creative' }} request=none
+  LLGEN ${{ (github.event.client_payload.operation_id || inputs.operation_id) && format('op={0}', github.event.client_payload.operation_id || inputs.operation_id) || format('issue={0}', github.event.client_payload.issue || inputs.issue || 0) }} profile=${{ github.event_name == 'repository_dispatch' && 'full' || (contains(fromJSON('["full","full-preview","creative-only","seo-only"]'), inputs.test_profile) && inputs.test_profile) || 'excluded' }} renderer=${{ github.event.client_payload.renderer || inputs.renderer || 'creative' }} request=none
 
 on:
   repository_dispatch:
@@ -9,6 +9,18 @@ on:
     inputs:
       issue:
         description: Intake issue number (not needed for access-only)
+        required: false
+        type: string
+      operation_id:
+        description: Opaque operations dispatch ID for new-mode Postgres generation
+        required: false
+        type: string
+      request_id:
+        description: Opaque generation request ID supplied with operation_id
+        required: false
+        type: string
+      attempt_id:
+        description: Opaque generation attempt ID supplied with operation_id
         required: false
         type: string
       test_profile:
@@ -79,7 +91,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: launchloom-intake-${{ github.event.client_payload.issue || inputs.issue || github.run_id }}${{ github.event_name == 'workflow_dispatch' && (inputs.test_profile == 'full-preview' || inputs.test_profile == 'seo-only' || inputs.test_profile == 'creative-only') && format('-test-{0}-{1}', inputs.test_profile, github.run_id) || '' }}
+  group: launchloom-intake-${{ github.event.client_payload.issue || inputs.issue || inputs.operation_id || github.run_id }}${{ github.event_name == 'workflow_dispatch' && (inputs.test_profile == 'full-preview' || inputs.test_profile == 'seo-only' || inputs.test_profile == 'creative-only') && format('-test-{0}-{1}', inputs.test_profile, github.run_id) || '' }}
   cancel-in-progress: false
 
 jobs:
@@ -95,7 +107,7 @@ jobs:
         focused_test,
         intake_handoff_check,
       ]
-    if: ${{ always() && (github.event_name == 'repository_dispatch' || inputs.test_profile != 'access-only') }}
+    if: ${{ always() && inputs.operation_id == '' && (github.event_name == 'repository_dispatch' || inputs.test_profile != 'access-only') }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -110,8 +122,8 @@ jobs:
           GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
           TRACK_ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
           TRACK_PROFILE: ${{ needs.profile_policy.outputs.profile || inputs.test_profile || 'full' }}
-          TRACK_REQUEST: ${{ github.event.client_payload.request_id }}
-          TRACK_ATTEMPT: ${{ github.event.client_payload.attempt_id }}
+          TRACK_REQUEST: ${{ github.event.client_payload.request_id || inputs.request_id }}
+          TRACK_ATTEMPT: ${{ github.run_attempt == 1 && (github.event.client_payload.attempt_id || inputs.attempt_id) || '' }}
           TRACK_ACTOR: ${{ github.triggering_actor }}
           TRACK_RESULTS: ${{ toJSON(needs) }}
         run: |
@@ -141,6 +153,7 @@ jobs:
         env:
           REQUESTED_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.test_profile || 'full' }}
           REQUESTED_ISSUE: ${{ github.event.client_payload.issue || inputs.issue || '' }}
+          REQUESTED_OPERATION: ${{ github.event.client_payload.operation_id || inputs.operation_id || '' }}
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
@@ -149,6 +162,7 @@ jobs:
             profile: process.env.REQUESTED_PROFILE,
             eventName: process.env.GITHUB_EVENT_NAME,
             issue: process.env.REQUESTED_ISSUE,
+            operationId: process.env.REQUESTED_OPERATION,
           });
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `profile=${policy.profile}\n`);
           NODE
@@ -174,27 +188,45 @@ jobs:
           PROFILE: ${{ needs.profile_policy.outputs.profile }}
         run: |
           RENDERER=creative
+          FOUNDATION_ID=""
+          PACK_ID=""
+          PACK_VARIANT=""
           case "$REQUESTED_RENDERER" in
             creative|foundation|pack) RENDERER="$REQUESTED_RENDERER" ;;
-            *) echo "Unknown renderer: $REQUESTED_RENDERER" >&2; exit 1 ;;
+            *) echo "Unknown renderer" >&2; exit 1 ;;
+          esac
+          case "$REQUESTED_POLICY" in
+            renderable-only|allow-partial|allow-adaptation) ;;
+            *) echo "Unknown foundation policy" >&2; exit 1 ;;
           esac
           if [ "$RENDERER" = "foundation" ]; then
             test -n "$REQUESTED_FOUNDATION" || { echo "foundation_id is required for the foundation renderer" >&2; exit 1; }
             test "$PROFILE" = "full" || { echo "The foundation renderer is only supported for the full profile" >&2; exit 1; }
+            case "$REQUESTED_FOUNDATION" in
+              ""|-*|*-|*[!a-z0-9-]*) echo "foundation_id must be a lowercase dossier slug" >&2; exit 1 ;;
+            esac
+            test "${#REQUESTED_FOUNDATION}" -le 80 || { echo "foundation_id is too long" >&2; exit 1; }
+            FOUNDATION_ID="$REQUESTED_FOUNDATION"
           fi
           if [ "$RENDERER" = "pack" ]; then
             test -n "$REQUESTED_PACK" || { echo "pack_id is required for the pack renderer" >&2; exit 1; }
             test "$PROFILE" = "full" || { echo "The pack renderer is only supported for the full profile" >&2; exit 1; }
+            case "$REQUESTED_PACK" in
+              cinematic-narrative|bold-utility|kinetic-poster|stage-index|editorial-ledger|results-ledger|season-wheel)
+                PACK_ID="$REQUESTED_PACK" ;;
+              *) echo "Unsupported pack_id" >&2; exit 1 ;;
+            esac
+            case "$PACK_ID:$REQUESTED_VARIANT" in
+              cinematic-narrative:|cinematic-narrative:standard|cinematic-narrative:monument|bold-utility:|bold-utility:standard|bold-utility:portrait|kinetic-poster:|kinetic-poster:standard|kinetic-poster:full-bleed|stage-index:|stage-index:standard|editorial-ledger:|editorial-ledger:standard|results-ledger:|results-ledger:standard|season-wheel:|season-wheel:standard)
+                PACK_VARIANT="$REQUESTED_VARIANT" ;;
+              *) echo "Unsupported pack_variant" >&2; exit 1 ;;
+            esac
           fi
-          case "$REQUESTED_POLICY" in
-            renderable-only|allow-partial|allow-adaptation) ;;
-            *) echo "Unknown foundation policy: $REQUESTED_POLICY" >&2; exit 1 ;;
-          esac
-          echo "renderer=$RENDERER" >> "$GITHUB_OUTPUT"
-          echo "foundation_id=$REQUESTED_FOUNDATION" >> "$GITHUB_OUTPUT"
-          echo "foundation_policy=$REQUESTED_POLICY" >> "$GITHUB_OUTPUT"
-          echo "pack_id=$REQUESTED_PACK" >> "$GITHUB_OUTPUT"
-          echo "pack_variant=$REQUESTED_VARIANT" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "renderer=$RENDERER" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "foundation_id=$FOUNDATION_ID" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "foundation_policy=$REQUESTED_POLICY" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "pack_id=$PACK_ID" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "pack_variant=$PACK_VARIANT" >> "$GITHUB_OUTPUT"
 
   focused_test:
     needs: profile_policy
@@ -241,7 +273,7 @@ jobs:
 
   intake_handoff_check:
     needs: profile_policy
-    if: ${{ needs.profile_policy.outputs.profile == 'full' }}
+    if: ${{ needs.profile_policy.outputs.profile == 'full' && !inputs.operation_id }}
     runs-on: ubuntu-24.04
     outputs:
       completed: ${{ steps.marker.outputs.completed }}
@@ -264,9 +296,34 @@ jobs:
 
   generate:
     needs: [profile_policy, renderer_policy, intake_handoff_check]
-    if: ${{ needs.profile_policy.outputs.profile == 'full' && (needs.intake_handoff_check.outputs.completed != 'true' || (github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates)) }}
+    if: >-
+      ${{ !cancelled()
+          && always()
+          && needs.profile_policy.result == 'success'
+          && needs.renderer_policy.result == 'success'
+          && needs.profile_policy.outputs.profile == 'full'
+          && (inputs.operation_id != ''
+              || (needs.intake_handoff_check.result == 'success'
+                  && (needs.intake_handoff_check.outputs.completed != 'true'
+                      || (github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates)))) }}
     runs-on: ubuntu-24.04
+    outputs:
+      claimed: ${{ steps.claim.outputs.claimed }}
+    # The OIDC token is exposed only to this job. It claims the operation before
+    # dependency installation, payload fetch, model calls or client effects.
+    permissions:
+      contents: write
+      issues: write
+      id-token: write
+    # New-mode run output is private by default; legacy mode passes through the
+    # existing shell behavior unchanged (see scripts/private-run.sh).
+    defaults:
+      run:
+        shell: bash scripts/private-run.sh {0}
     env:
+      OPERATION_ID: ${{ inputs.operation_id }}
+      OPERATIONS_API_URL: ${{ vars.LAUNCHLOOM_OPERATIONS_API_URL || vars.LAUNCHLOOM_API_URL || 'https://api.launchloom.wrazyos.com' }}
+      OPERATIONS_OIDC_AUDIENCE: ${{ vars.OPERATIONS_OIDC_AUDIENCE || 'launchloom-operations' }}
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -322,8 +379,8 @@ jobs:
       QA_REPAIR_EXPERIMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.qa_repair_experiment || false }}
       INTERNAL_QA_DELIVERY: ${{ github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery || false }}
       GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
-      TRACK_REQUEST: ${{ github.event.client_payload.request_id }}
-      TRACK_ATTEMPT: ${{ github.run_attempt == 1 && github.event.client_payload.attempt_id || '' }}
+      TRACK_REQUEST: ${{ github.event.client_payload.request_id || inputs.request_id }}
+      TRACK_ATTEMPT: ${{ github.run_attempt == 1 && (github.event.client_payload.attempt_id || inputs.attempt_id) || '' }}
       TRACK_ACTOR: ${{ github.triggering_actor }}
       TRACK_ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
       FAL_IMAGE_USD_PER_IMAGE: ${{ vars.FAL_IMAGE_USD_PER_IMAGE }}
@@ -339,6 +396,29 @@ jobs:
       FOUNDATION_POLICY: ${{ needs.renderer_policy.outputs.foundation_policy }}
     steps:
       - uses: actions/checkout@v5
+      # New-mode authorization is deliberately the first run step after checkout
+      # and before npm install, payload fetch, model calls or client effects.
+      # A duplicate/non-owning dispatch exits here without touching intake data.
+      - name: Claim this generation operation
+        id: claim
+        if: ${{ inputs.operation_id != '' }}
+        env:
+          OPERATIONS_API_URL: ${{ vars.LAUNCHLOOM_OPERATIONS_API_URL || vars.LAUNCHLOOM_API_URL || 'https://api.launchloom.wrazyos.com' }}
+          OPERATIONS_OIDC_AUDIENCE: ${{ vars.OPERATIONS_OIDC_AUDIENCE || 'launchloom-operations' }}
+          OPERATION_ID: ${{ inputs.operation_id }}
+          REQUEST_ID: ${{ inputs.request_id }}
+          ATTEMPT_ID: ${{ inputs.attempt_id }}
+          ISSUE_INPUT: ${{ inputs.issue }}
+        run: |
+          test -n "$OPERATION_ID" -a -n "$REQUEST_ID" -a -n "$ATTEMPT_ID" || { echo "Missing operations identifiers" >&2; exit 1; }
+          test -z "$ISSUE_INPUT" || { echo "Mixed issue and operations identifiers are not allowed" >&2; exit 1; }
+          node scripts/operations-client.mjs claim \
+            --api "$OPERATIONS_API_URL" \
+            --audience "$OPERATIONS_OIDC_AUDIENCE" \
+            --operation "$OPERATION_ID" \
+            --request "$REQUEST_ID" \
+            --attempt "$ATTEMPT_ID" \
+            --github-output "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -350,12 +430,12 @@ jobs:
         run: |
           for key in GITHUB_ORG_TOKEN OPENROUTER_API_KEY REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_DEVELOPER_EMAIL; do test -n "${!key}" || { echo "Missing: $key"; exit 1; }; done
           if [ "$CREATIVE_EXPERIENCE_PROVIDER" = "opencode-go" ] || [ "$SITE_COPY_PROVIDER" = "opencode-go" ]; then test -n "$OPENCODE_GO_API_KEY" || { echo "Missing: OPENCODE_GO_API_KEY"; exit 1; }; fi
-      # Best-effort tracking. Never blocks or fails generation; disabled until
-      # GENERATION_TRACKING_SECRET is configured.
+      # Legacy tracking stays best-effort. New-mode telemetry is mandatory and
+      # uses the claiming workload identity, never the legacy tracking secret.
       - name: Record generation started
-        continue-on-error: true
+        continue-on-error: ${{ inputs.operation_id == '' }}
         env:
-          CLIENT_EMAIL: ${{ github.event.client_payload.client_email }}
+          CLIENT_EMAIL: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.client_email || '' }}
           SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
         run: |
           ATTEMPT="${TRACK_ATTEMPT:-github:${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}}"
@@ -377,8 +457,28 @@ jobs:
           DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
           LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
+          OPERATION_ID: ${{ inputs.operation_id }}
+          INTAKE_ID: ${{ steps.claim.outputs.intake_id }}
+          OPERATIONS_API_URL: ${{ vars.LAUNCHLOOM_OPERATIONS_API_URL || vars.LAUNCHLOOM_API_URL || 'https://api.launchloom.wrazyos.com' }}
+          OPERATIONS_OIDC_AUDIENCE: ${{ vars.OPERATIONS_OIDC_AUDIENCE || 'launchloom-operations' }}
         run: |
-          gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
+          if [ -n "$OPERATION_ID" ]; then
+            node scripts/operations-client.mjs intake \
+              --api "$OPERATIONS_API_URL" \
+              --audience "$OPERATIONS_OIDC_AUDIENCE" \
+              --intake "$INTAKE_ID" \
+              --out /tmp/intake.md
+            INTAKE_REF="${INTAKE_ID:0:12}"
+            INTAKE_KEY="$INTAKE_ID"
+          else
+            gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
+            INTAKE_REF="$ISSUE"
+            INTAKE_KEY="$ISSUE"
+          fi
+          # Bind initial config/research to the same persisted intake reference
+          # as later steps. Never substitute a numeric issue in Postgres mode.
+          export LAUNCHLOOM_INTAKE_ID="$INTAKE_KEY"
+          test -s /tmp/intake.md || { echo "Missing intake payload" >&2; exit 1; }
           if [ "$REUSE_AUTHORED_CANDIDATES" != "true" ]; then
             node scripts/internal-qa-intake.mjs /tmp/intake.md
             node scripts/assert-client-generation-mode.mjs --intake /tmp/intake.md --profile full
@@ -428,18 +528,11 @@ jobs:
             rm -f /tmp/reasoning-preflight.json
           fi
           SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
+          # Only opaque identifiers become step outputs. Client values stay in
+          # the private intake/config files and are read by the step that uses them.
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
-          echo "submission_id=$(node -e 'const fs=require("fs");const t=fs.readFileSync("/tmp/intake.md","utf8");const m=t.match(/"submissionId"\s*:\s*"([^"]+)"/);console.log(m?m[1]:"")')" >> "$GITHUB_OUTPUT"
-          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
-          echo "business_name=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.name)')" >> "$GITHUB_OUTPUT"
-          echo "email=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.email)')" >> "$GITHUB_OUTPUT"
-          echo "lead_email=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.leadEmail)')" >> "$GITHUB_OUTPUT"
-          echo "assets=$(node -e 'const x=require("/tmp/site.config.json"); console.log(JSON.stringify(x.assets || {}))')" >> "$GITHUB_OUTPUT"
-          echo "layout=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.conversion?.layout || "editorial-authority")')" >> "$GITHUB_OUTPUT"
-          echo "asset_summary=$(node -e 'const x=require("/tmp/site.config.json"); console.log((x.assetReport?.used || []).map(a => a.asset + " → " + a.placement).join(", ") || "No supplied image used; approved contextual fallback or brand art selected.")')" >> "$GITHUB_OUTPUT"
-          echo "research_mode=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(x.mode)')" >> "$GITHUB_OUTPUT"
-          echo "research_cost=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')" >> "$GITHUB_OUTPUT"
-          echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "No measured queries")')" >> "$GITHUB_OUTPUT"
+          echo "intake_ref=$INTAKE_REF" >> "$GITHUB_OUTPUT"
+          echo "intake_key=$INTAKE_KEY" >> "$GITHUB_OUTPUT"
           node -e 'const x=require("/tmp/seo-research.json"); const web=x.fallbackSearch || {}; const observed=(x.externalSearchEvidence || []).length; const state=x.publishReady ? "Measured SEO research is complete. Production approval is available." : observed ? "Cited web observations are available for review, but measured SEO is incomplete. Production approval remains blocked." : "SEO research is incomplete. This preview can be reviewed; production approval remains blocked until measured research completes."; const fallback=web.status && web.status !== "unavailable" ? `\nFallback web search: ${web.status}; ${observed} cited observation(s) from ${web.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(web.costUsd || 0).toFixed(5)} / USD ${Number(web.maxUsd || 0).toFixed(2)} cap${web.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}.` : "\nFallback web search: unavailable."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}${fallback}\nMeasured queries: ${(x.validatedQueries || []).filter(item => item.volume !== null || item.kd !== null || item.intent !== null).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "None"}\nRecorded DataForSEO cost: ${Number(x.cost?.usd || 0).toFixed(5)}`)'
       - name: Record intake stage
         continue-on-error: true
@@ -447,9 +540,14 @@ jobs:
       - name: Record SEO research result
         continue-on-error: true
         env:
-          SUBMISSION_ID: ${{ github.event.client_payload.submission_id || steps.intake.outputs.submission_id }}
-          CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
+          SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
         run: |
+          if [ -z "$SUBMISSION_ID" ]; then
+            SUBMISSION_ID=$(node -e 'const fs=require("fs");const t=fs.readFileSync("/tmp/intake.md","utf8");const m=t.match(/"submissionId"\s*:\s*"([^"]+)"/);console.log(m?m[1]:"")')
+          fi
+          CLIENT_EMAIL=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.email || ""))')
+          BUSINESS=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.name || ""))')
+          SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
           node scripts/generation-cost-summary.mjs \
             --seo /tmp/seo-research.json \
             --output /tmp/seo-cost.json
@@ -461,8 +559,8 @@ jobs:
             --issue "${{ steps.intake.outputs.issue }}" \
             --submission-id "$SUBMISSION_ID" \
             --client-email "$CLIENT_EMAIL" \
-            --business "${{ steps.intake.outputs.business_name }}" \
-            --slug "${{ steps.intake.outputs.slug }}" \
+            --business "$BUSINESS" \
+            --slug "$SLUG" \
             --status generating \
             --cost-summary /tmp/seo-cost.json
       - name: Record seo research stage
@@ -480,7 +578,7 @@ jobs:
           (github.event_name == 'workflow_dispatch' && inputs.preview_only)) &&
           env.REUSE_AUTHORED_CANDIDATES != 'true'
         env:
-          LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
+          LAUNCHLOOM_INTAKE_ID: ${{ steps.intake.outputs.intake_key }}
           LAUNCHLOOM_READ_ONLY_HISTORY: ${{ github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main' && inputs.preview_only || false }}
         run: |
           git config user.name "LaunchLoom"
@@ -506,8 +604,13 @@ jobs:
               HISTORY_READY=true
               break
             fi
+            HISTORY_CONFIG=/tmp/site.config.json
+            if [ -n "$OPERATION_ID" ]; then
+              HISTORY_CONFIG="$RUNNER_TEMP/public-launch-config.json"
+              node "$GITHUB_WORKSPACE/scripts/public-launch-config.mjs" /tmp/site.config.json "$HISTORY_CONFIG"
+            fi
             if ! node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
-              --config /tmp/site.config.json \
+              --config "$HISTORY_CONFIG" \
               --inspiration /tmp/inspiration-pack.json \
               --stage attempt \
               --record-key "$LAUNCHLOOM_INTAKE_ID-run-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
@@ -543,7 +646,7 @@ jobs:
       - name: Analyze reserved inspiration and freeze creative session
         if: needs.renderer_policy.outputs.renderer == 'creative'
         env:
-          LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
+          LAUNCHLOOM_INTAKE_ID: ${{ steps.intake.outputs.intake_key }}
         run: |
           if [ "$REUSE_AUTHORED_CANDIDATES" != "true" ]; then
             node scripts/analyze-reference-dna.mjs \
@@ -586,7 +689,13 @@ jobs:
       - name: Create private repository and Cloudflare Pages project
         id: client
         run: |
-          PROJECT="launchloom-${{ steps.intake.outputs.issue }}-${{ steps.intake.outputs.slug }}"
+          INTAKE_REF="${{ steps.intake.outputs.intake_ref }}"
+          if [ -n "${{ inputs.operation_id }}" ]; then
+            PROJECT="launchloom-$INTAKE_REF"
+          else
+            LEGACY_SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
+            PROJECT="launchloom-$INTAKE_REF-$LEGACY_SLUG"
+          fi
           # Keep preview hostnames within the length proven to receive a
           # Pages preview certificate. Branch aliases add `review-initial.`
           # before this project label, so the normal Pages project maximum is
@@ -629,7 +738,8 @@ jobs:
           ORIGINS="$PREVIEW,$PRODUCTION"
           LEAD_CONFIRM_VISITOR=$(jq -r '.leadForm.confirmVisitor // false' /tmp/site.config.json 2>/dev/null || echo false)
           LEAD_BUSINESS_PHONE=$(jq -r '.business.phone // ""' /tmp/site.config.json 2>/dev/null || echo "")
-          LEAD_TOKEN=$(node scripts/create-lead-token.mjs --project "$PROJECT" --recipient "${{ steps.intake.outputs.lead_email }}" --origins "$ORIGINS" --confirm-visitor "$LEAD_CONFIRM_VISITOR" --business-phone "$LEAD_BUSINESS_PHONE")
+          LEAD_EMAIL=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.leadEmail || ""))')
+          LEAD_TOKEN=$(node scripts/create-lead-token.mjs --project "$PROJECT" --recipient "$LEAD_EMAIL" --origins "$ORIGINS" --confirm-visitor "$LEAD_CONFIRM_VISITOR" --business-phone "$LEAD_BUSINESS_PHONE")
           PLACE_ID=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.placeId || "")')
           REVIEW_ARGS=()
           if [ -n "$PLACE_ID" ]; then
@@ -642,7 +752,8 @@ jobs:
             CHAT_TOKEN=$(node scripts/create-ai-chat-token.mjs --project "$PROJECT" --file /tmp/site.config.json --origins "$ORIGINS")
             CHAT_ARGS=(--chatToken "$CHAT_TOKEN")
           fi
-          node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --preserve-assets "$REUSE_AUTHORED_CANDIDATES" --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}" "${CHAT_ARGS[@]}"
+          ASSETS=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(JSON.stringify(x.assets || {}))')
+          node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets "$ASSETS" --preserve-assets "$REUSE_AUTHORED_CANDIDATES" --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}" "${CHAT_ARGS[@]}"
           REMOTE="https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git"
           # A newly-created private repository can be available through the
           # REST API several seconds before GitHub's Smart HTTP endpoint. Use
@@ -739,17 +850,20 @@ jobs:
             git commit -m "Add contextual image assets"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
-          node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
+          node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`)'
       - name: Record imagery stage
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage imagery --status completed --detail "Contextual imagery generated or reviewed fallback retained."
       - name: Select experience pack
         id: pack
         if: needs.renderer_policy.outputs.renderer == 'pack'
+        env:
+          RENDERER_PACK_ID: ${{ needs.renderer_policy.outputs.pack_id }}
+          RENDERER_PACK_VARIANT: ${{ needs.renderer_policy.outputs.pack_variant }}
         run: |
           cd "${{ steps.branch.outputs.dir }}"
-          PACK_ID="${{ needs.renderer_policy.outputs.pack_id }}"
-          PACK_VARIANT="${{ needs.renderer_policy.outputs.pack_variant }}"
+          PACK_ID="$RENDERER_PACK_ID"
+          PACK_VARIANT="$RENDERER_PACK_VARIANT"
           jq --arg pack "$PACK_ID" --arg variant "$PACK_VARIANT" \
             '.design.experience = ({packId:$pack, selectionMode:"pack-preview"} + (if $variant != "" then {variantId:$variant} else {} end))' \
             src/site.config.json > /tmp/site.config.pack.json
@@ -763,14 +877,14 @@ jobs:
       - name: Record pack select stage
         if: needs.renderer_policy.outputs.renderer == 'pack'
         continue-on-error: true
-        run: node scripts/record-generation-stage.mjs --stage pack_select --status completed --detail "Experience pack selected ${{ needs.renderer_policy.outputs.pack_id }}."
+        env:
+          PACK_ID: ${{ needs.renderer_policy.outputs.pack_id }}
+        run: node scripts/record-generation-stage.mjs --stage pack_select --status completed --detail "Experience pack selected $PACK_ID."
       - name: Select source foundation
         id: foundation
         if: needs.renderer_policy.outputs.renderer == 'foundation'
         run: |
           cd "${{ steps.branch.outputs.dir }}"
-          FOUNDATION_ID="${{ needs.renderer_policy.outputs.foundation_id }}"
-          FOUNDATION_POLICY="${{ needs.renderer_policy.outputs.foundation_policy }}"
           FOUNDATION_SOURCE="$GITHUB_WORKSPACE/data/reference-library/dossiers/$FOUNDATION_ID/foundation"
           test -f "$FOUNDATION_SOURCE/manifest.json" || { echo "Foundation not found: $FOUNDATION_ID" >&2; exit 1; }
           COMPAT=$(jq -r '.compatibility' "$FOUNDATION_SOURCE/manifest.json")
@@ -801,7 +915,10 @@ jobs:
       - name: Record foundation select stage
         if: needs.renderer_policy.outputs.renderer == 'foundation'
         continue-on-error: true
-        run: node scripts/record-generation-stage.mjs --stage foundation_select --status completed --detail "Source foundation selected ${{ needs.renderer_policy.outputs.foundation_id }} (${{ steps.foundation.outputs.compatibility }})."
+        env:
+          FOUNDATION_ID: ${{ needs.renderer_policy.outputs.foundation_id }}
+          FOUNDATION_COMPATIBILITY: ${{ steps.foundation.outputs.compatibility }}
+        run: node scripts/record-generation-stage.mjs --stage foundation_select --status completed --detail "Source foundation selected $FOUNDATION_ID ($FOUNDATION_COMPATIBILITY)."
       - name: Record authoring started
         if: needs.renderer_policy.outputs.renderer == 'creative'
         continue-on-error: true
@@ -907,7 +1024,7 @@ jobs:
         run: node scripts/record-generation-stage.mjs --stage creative_render --status completed --detail "Creative candidates rendered and repaired."
       - name: Prepare private creative-recovery report
         id: creative_recovery
-        if: needs.renderer_policy.outputs.renderer == 'creative' && failure() && steps.branch.outputs.dir != '' && (steps.authoring.outcome == 'failure' || steps.creative_render.outcome == 'failure' || steps.authored_evidence.outcome == 'failure')
+        if: needs.renderer_policy.outputs.renderer == 'creative' && failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') && steps.branch.outputs.dir != '' && (steps.authoring.outcome == 'failure' || steps.creative_render.outcome == 'failure' || steps.authored_evidence.outcome == 'failure')
         continue-on-error: true
         run: |
           cd "${{ steps.branch.outputs.dir }}"
@@ -998,11 +1115,11 @@ jobs:
           CLIENT_REPO: ${{ steps.client.outputs.repo }}
           CLIENT_PR: ${{ steps.branch.outputs.pr }}
           CLIENT_SITE: ${{ steps.client.outputs.project }}
-          CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
           FEEDBACK_ISSUE: ${{ steps.client.outputs.feedback_issue }}
           DIAGNOSTIC_PREVIEW_URL: ${{ steps.diagnostic_preview.outputs.preview }}
         run: |
           test -n "$REVISION_COORDINATOR_SECRET" || { echo "Missing recovery coordinator credential" >&2; exit 1; }
+          CLIENT_EMAIL=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.email || ""))')
           CLIENT_DIR="${{ steps.branch.outputs.dir }}"
           HEAD_SHA=$(git -C "$CLIENT_DIR" rev-parse HEAD)
           CANDIDATE="${{ steps.creative_recovery.outputs.candidate }}"
@@ -1024,10 +1141,13 @@ jobs:
             --token-only true)
           echo "::add-mask::$TOKEN"
           REVIEW_LINK="${LAUNCHLOOM_PLATFORM_URL:-https://launchloom.wrazyos.com}/review?token=$TOKEN"
+          umask 077
+          printf '%s' "$REVIEW_LINK" > "$RUNNER_TEMP/creative-repair-link"
+          printf '%s' "$DIAGNOSTIC_PREVIEW_URL" > "$RUNNER_TEMP/creative-repair-preview"
           if [ -n "$DIAGNOSTIC_PREVIEW_URL" ]; then
-            echo "send_anyway_url=$DIAGNOSTIC_PREVIEW_URL?review=$TOKEN" >> "$GITHUB_OUTPUT"
+            printf '%s' "$DIAGNOSTIC_PREVIEW_URL?review=$TOKEN" > "$RUNNER_TEMP/creative-repair-send-anyway"
           else
-            echo "send_anyway_url=" >> "$GITHUB_OUTPUT"
+            : > "$RUNNER_TEMP/creative-repair-send-anyway"
           fi
           SESSION_JSON=$(jq --arg session "$SESSION_ID" \
             --arg repo "$CLIENT_REPO" \
@@ -1045,8 +1165,6 @@ jobs:
             --data "$SESSION_JSON" > "$RUNNER_TEMP/creative-repair-registration.json"
           jq -e '.status == "available" and .repairAvailable == true' "$RUNNER_TEMP/creative-repair-registration.json" >/dev/null
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-creative-recovery -->' '## Creative preview needs another pass' 'The authored candidate did not clear all quality checks. Review the rendered findings and request the single final repair here:' "$REVIEW_LINK")"
-          echo "link=$REVIEW_LINK" >> "$GITHUB_OUTPUT"
-          echo "preview=$DIAGNOSTIC_PREVIEW_URL" >> "$GITHUB_OUTPUT"
       - name: Record foundation render started
         if: needs.renderer_policy.outputs.renderer == 'foundation'
         continue-on-error: true
@@ -1127,6 +1245,12 @@ jobs:
             if grep -I -F -q 'data-foundation-dossier=' dist/index.html; then echo "Foundation marker found in pack preview"; exit 1; fi
             FINAL_BUILD_SHA=$(git rev-parse HEAD)
             PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
+            node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/route-technical-report.json"
+            git fetch --no-tags origin refs/heads/review/initial:refs/remotes/origin/review/initial
+            if ! git diff --quiet "$FINAL_BUILD_SHA" origin/review/initial -- . ':(exclude).launchloom/**'; then
+              echo "Review source changed during the pack build; refusing to deploy stale preview output from $FINAL_BUILD_SHA." >&2
+              exit 1
+            fi
             if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
             if run_seo_gate; then
               deploy_review_preview review-initial "Initial LaunchLoom pack preview"
@@ -1197,13 +1321,18 @@ jobs:
       - name: Record launch signature for rotation
         if: github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main'
         env:
-          LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
+          LAUNCHLOOM_INTAKE_ID: ${{ steps.intake.outputs.intake_key }}
         continue-on-error: true
         run: |
           git config user.name "LaunchLoom"
           git config user.email "automation@launchloom.app"
+          HISTORY_CONFIG="${{ steps.branch.outputs.dir }}/src/site.config.json"
+          if [ -n "$OPERATION_ID" ]; then
+            HISTORY_CONFIG="$RUNNER_TEMP/public-launch-config-final.json"
+            node "$GITHUB_WORKSPACE/scripts/public-launch-config.mjs" "${{ steps.branch.outputs.dir }}/src/site.config.json" "$HISTORY_CONFIG"
+          fi
           node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
-            --config "${{ steps.branch.outputs.dir }}/src/site.config.json" \
+            --config "$HISTORY_CONFIG" \
             --inspiration "${{ steps.branch.outputs.dir }}/.launchloom/inspiration-pack.json" \
             --stage preview \
             --record-key "$LAUNCHLOOM_INTAKE_ID-run-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"
@@ -1223,11 +1352,25 @@ jobs:
       - name: Wait for secure preview URL
         run: node scripts/wait-for-pages-preview.mjs --url "${{ steps.deploy.outputs.preview }}"
       - name: Record preview ready
+        id: preview_telemetry
         continue-on-error: true
         env:
-          SUBMISSION_ID: ${{ github.event.client_payload.submission_id || steps.intake.outputs.submission_id }}
-          CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
+          SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
         run: |
+          if [ -n "$OPERATION_ID" ]; then
+            # One guarded process owns the entire summary command and posting.
+            # Missing/failed preparation cannot leave a valid handoff receipt.
+            node scripts/record-operations-telemetry.mjs \
+              --mode preview --build-sha "${{ steps.deploy.outputs.sha }}" \
+              --client-dir "${{ steps.branch.outputs.dir }}"
+            exit 0
+          fi
+          if [ -z "$SUBMISSION_ID" ]; then
+            SUBMISSION_ID=$(node -e 'const fs=require("fs");const t=fs.readFileSync("/tmp/intake.md","utf8");const m=t.match(/"submissionId"\s*:\s*"([^"]+)"/);console.log(m?m[1]:"")')
+          fi
+          CLIENT_EMAIL=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.email || ""))')
+          BUSINESS=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.name || ""))')
+          SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
           STATUS=preview_ready
           if [ "${{ steps.creative_recovery.outputs.repair_available }}" = "true" ]; then STATUS=attention; fi
           if [ "${{ steps.deploy.outputs.diagnostic }}" = "true" ]; then STATUS=attention; fi
@@ -1248,8 +1391,8 @@ jobs:
             --issue "${{ steps.intake.outputs.issue }}" \
             --submission-id "$SUBMISSION_ID" \
             --client-email "$CLIENT_EMAIL" \
-            --business "${{ steps.intake.outputs.business_name }}" \
-            --slug "${{ steps.intake.outputs.slug }}" \
+            --business "$BUSINESS" \
+            --slug "$SLUG" \
             --site "${{ steps.client.outputs.project }}" \
             --repo "${{ steps.client.outputs.repo }}" \
             --pr "${{ steps.branch.outputs.pr }}" \
@@ -1267,83 +1410,115 @@ jobs:
         run: |
           PREVIEW="${{ steps.deploy.outputs.preview }}"
           ORIGINS="$PREVIEW,https://${{ steps.client.outputs.project }}.pages.dev"
-          TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "${{ steps.client.outputs.repo }}" --pr "${{ steps.branch.outputs.pr }}" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.client.outputs.project }}" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "${{ steps.intake.outputs.email }}" --feedback-issue "${{ steps.client.outputs.feedback_issue }}" --origins "$ORIGINS" --token-only true)
+          CLIENT_EMAIL=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.email || ""))')
+          TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "${{ steps.client.outputs.repo }}" --pr "${{ steps.branch.outputs.pr }}" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.client.outputs.project }}" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "${{ steps.client.outputs.feedback_issue }}" --origins "$ORIGINS" --token-only true)
           echo "::add-mask::$TOKEN"
-          echo "link=$PREVIEW?review=$TOKEN" >> "$GITHUB_OUTPUT"
+          umask 077
+          printf '%s' "$PREVIEW?review=$TOKEN" > "$RUNNER_TEMP/developer-review-link"
       - name: Post handoff links
         env:
-          CLIENT_ASSET_SUMMARY: ${{ steps.assets.outputs.summary || steps.intake.outputs.asset_summary }}
           CLIENT_PROJECT: ${{ steps.client.outputs.project }}
           CLIENT_REPO: ${{ steps.client.outputs.repo }}
-          DEVELOPER_REVIEW_LINK: ${{ steps.review.outputs.link }}
           INTAKE_ISSUE: ${{ steps.intake.outputs.issue }}
-          LAYOUT: ${{ steps.intake.outputs.layout }}
           PREVIEW_URL: ${{ steps.deploy.outputs.preview }}
-          RESEARCH_COST: ${{ steps.intake.outputs.research_cost }}
-          RESEARCH_MODE: ${{ steps.intake.outputs.research_mode }}
-          RESEARCH_QUERIES: ${{ steps.intake.outputs.research_queries }}
           REVIEW_PR: ${{ steps.branch.outputs.pr }}
         run: |
+          DEVELOPER_REVIEW_LINK=$(cat "$RUNNER_TEMP/developer-review-link")
           TITLE="## Initial developer preview"
           ISSUE_TITLE="## Awaiting developer approval"
           if [ "${{ steps.deploy.outputs.diagnostic }}" = "true" ]; then
             TITLE="## Diagnostic developer preview (noindex)"
             ISSUE_TITLE="## Diagnostic preview ready for developer review"
           fi
+          LAYOUT=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.conversion?.layout || "editorial-authority")')
+          CLIENT_ASSET_SUMMARY=$(node -e 'const x=require("/tmp/site.config.json"); console.log((x.assetReport?.used || []).map(a => a.asset + " -> " + a.placement).join(", ") || "No supplied image used; approved contextual fallback or brand art selected.")')
+          RESEARCH_MODE=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(x.mode)')
+          RESEARCH_COST=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')
+          RESEARCH_QUERIES=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "No measured queries")')
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nLayout: %s\nClient assets used: %s\nSEO research mode: %s\nValidated queries: %s\nRecorded research cost: $%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' "$TITLE" "$LAYOUT" "$CLIENT_ASSET_SUMMARY" "$RESEARCH_MODE" "$RESEARCH_QUERIES" "$RESEARCH_COST" "$PREVIEW_URL" "$DEVELOPER_REVIEW_LINK")"
-          gh issue comment "$INTAKE_ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s' '<!-- launchloom-developer-review-ready -->' "$ISSUE_TITLE" "$CLIENT_REPO" "$CLIENT_PROJECT" "$PREVIEW_URL")"
+          if [ -n "$INTAKE_ISSUE" ]; then
+            gh issue comment "$INTAKE_ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s' '<!-- launchloom-developer-review-ready -->' "$ISSUE_TITLE" "$CLIENT_REPO" "$CLIENT_PROJECT" "$PREVIEW_URL")"
+          else
+            echo "New-mode generation has no intake issue; private review and email carry the handoff."
+          fi
       - name: Send developer preview email
         env:
-          BUSINESS_NAME: ${{ steps.intake.outputs.business_name }}
           CLIENT_PROJECT: ${{ steps.client.outputs.project }}
           CLIENT_REPO: ${{ steps.client.outputs.repo }}
           DEPLOY_SHA: ${{ steps.deploy.outputs.sha }}
-          DEVELOPER_REVIEW_LINK: ${{ steps.review.outputs.link }}
           PREVIEW_URL: ${{ steps.deploy.outputs.preview }}
           REVIEW_PR: ${{ steps.branch.outputs.pr }}
         run: |
+          DEVELOPER_REVIEW_LINK=$(cat "$RUNNER_TEMP/developer-review-link")
+          BUSINESS_NAME=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.name || "LaunchLoom client"))')
           node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-initial-email:$DEPLOY_SHA -->"
           if [ "${{ steps.deploy.outputs.diagnostic }}" != "true" ]; then
             gh pr edit "$REVIEW_PR" --repo "$CLIENT_REPO" --remove-label launchloom-delivery-pending
           fi
+      # This is the only new-mode preview handoff attestation. It runs after all
+      # existing build, deployment, rendered verification and delivery gates and
+      # binds the selected client build, not the workflow's source revision.
+      - name: Record authenticated operations handoff
+        if: ${{ inputs.operation_id != '' && steps.claim.outputs.claimed == 'true' && steps.preview_telemetry.outcome == 'success' }}
+        env:
+          SELECTED_BUILD_SHA: ${{ steps.deploy.outputs.sha }}
+        run: |
+          node scripts/record-generation-event.mjs \
+            --stage handoff --stage-status completed --sha "$SELECTED_BUILD_SHA"
       - name: Mark intake handoff complete
-        if: ${{ steps.deploy.outputs.diagnostic != 'true' }}
+        if: ${{ inputs.operation_id == '' && steps.deploy.outputs.diagnostic != 'true' }}
         env:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
         run: |
           gh issue comment "$ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s' '<!-- launchloom-generation-handoff:complete -->' 'Initial developer preview handoff completed.')"
       - name: Notify developer when generation stops
-        if: failure()
+        if: ${{ failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') }}
         env:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
-          REPAIR_LINK: ${{ steps.creative_repair_link.outputs.link }}
-          DIAGNOSTIC_PREVIEW: ${{ steps.creative_repair_link.outputs.preview }}
-          SEND_ANYWAY_URL: ${{ steps.creative_repair_link.outputs.send_anyway_url }}
+          INTAKE_REF: ${{ steps.intake.outputs.intake_ref }}
           CLIENT_REPO: ${{ steps.client.outputs.repo }}
           EVIDENCE_BRANCH: ${{ steps.creative_recovery.outputs.evidence_branch }}
         run: |
-          NAME=$(gh issue view "$ISSUE" --repo WrazyAI/launchloom --json title --jq '.title | sub("^Intake: "; "")')
+          REPAIR_LINK=$(cat "$RUNNER_TEMP/creative-repair-link" 2>/dev/null || true)
+          DIAGNOSTIC_PREVIEW=$(cat "$RUNNER_TEMP/creative-repair-preview" 2>/dev/null || true)
+          SEND_ANYWAY_URL=$(cat "$RUNNER_TEMP/creative-repair-send-anyway" 2>/dev/null || true)
+          if [ -n "$ISSUE" ]; then
+            NAME=$(gh issue view "$ISSUE" --repo WrazyAI/launchloom --json title --jq '.title | sub("^Intake: "; "")')
+            ISSUE_URL="https://github.com/WrazyAI/launchloom/issues/$ISSUE"
+          else
+            NAME=$(node -e 'try { const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.name || "LaunchLoom client")); } catch { process.stdout.write("LaunchLoom client"); }')
+            ISSUE_URL="https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}"
+          fi
           if [ -n "$REPAIR_LINK" ]; then
             printf 'The authored design missed one or more quality checks. Review the findings and request its single final repair here:\n%s\n' "$REPAIR_LINK" > "$RUNNER_TEMP/generation-failure-feedback.txt"
             if [ -n "$DIAGNOSTIC_PREVIEW" ]; then printf 'Diagnostic-only preview (not approved for publication): %s\n' "$DIAGNOSTIC_PREVIEW" >> "$RUNNER_TEMP/generation-failure-feedback.txt"; fi
             printf 'The original generation was not promoted. The final repair is one-shot and will be checked again before a new review link is issued.\n' > "$RUNNER_TEMP/generation-failure-outcome.txt"
-            node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "${DIAGNOSTIC_PREVIEW:-https://github.com/WrazyAI/launchloom/issues/$ISSUE}" --review "$REPAIR_LINK" --send-anyway-url "$SEND_ANYWAY_URL" --kind revision --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-repair-ready-$ISSUE-${{ github.run_id }}"
+            node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "${DIAGNOSTIC_PREVIEW:-$ISSUE_URL}" --review "$REPAIR_LINK" --send-anyway-url "$SEND_ANYWAY_URL" --kind revision --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-repair-ready-$INTAKE_REF-${{ github.run_id }}"
           else
-            printf 'Intake #%s could not be completed automatically. No client site or completion email should be assumed.\n' "$ISSUE" > "$RUNNER_TEMP/generation-failure-feedback.txt"
+            if [ -n "$ISSUE" ]; then
+              printf 'Intake #%s could not be completed automatically. No client site or completion email should be assumed.\n' "$ISSUE" > "$RUNNER_TEMP/generation-failure-feedback.txt"
+            else
+              printf 'Generation for %s could not be completed automatically. No client site or completion email should be assumed.\n' "$NAME" > "$RUNNER_TEMP/generation-failure-feedback.txt"
+            fi
             if [ -n "$EVIDENCE_BRANCH" ]; then printf 'Private candidate evidence was preserved on: https://github.com/%s/tree/%s\n' "$CLIENT_REPO" "$EVIDENCE_BRANCH" >> "$RUNNER_TEMP/generation-failure-feedback.txt"; fi
-            printf 'Inspect GitHub Actions run %s, correct the failure, then rerun this exact intake.\n' '${{ github.run_id }}' > "$RUNNER_TEMP/generation-failure-outcome.txt"
-            node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/WrazyAI/launchloom/issues/$ISSUE" --review "https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}" --kind generation-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-failed-$ISSUE-${{ github.run_id }}"
+            if [ -n "$ISSUE" ]; then
+              printf 'Inspect GitHub Actions run %s, correct the failure, then rerun this exact intake.\n' '${{ github.run_id }}' > "$RUNNER_TEMP/generation-failure-outcome.txt"
+            else
+              printf 'Inspect GitHub Actions run %s, reconcile the operation, then retry only through the authorized recovery path.\n' '${{ github.run_id }}' > "$RUNNER_TEMP/generation-failure-outcome.txt"
+            fi
+            node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "$ISSUE_URL" --review "https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}" --kind generation-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-failed-$INTAKE_REF-${{ github.run_id }}"
           fi
       - name: Record generation failure
-        if: failure()
+        if: ${{ failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') }}
         continue-on-error: true
         env:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
           SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
-          REPAIR_AVAILABLE: ${{ steps.creative_repair_link.outputs.link != '' }}
-          CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
         run: |
+          REPAIR_AVAILABLE=false
+          if [ -s "$RUNNER_TEMP/creative-repair-link" ]; then REPAIR_AVAILABLE=true; fi
+          CLIENT_EMAIL=$(node -e 'try { const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.email || "")); } catch { process.stdout.write(""); }')
           STATUS=failed
           DELIVERY=none
           FAILURE="Generation workflow ${{ github.run_id }} stopped before a preview was ready. Inspect the Actions run and the intake issue."
@@ -1381,6 +1556,12 @@ jobs:
           elif [ "${{ steps.deploy.outcome }}" = "success" ]; then
             FAILURE_STAGE=preview_ready
             FAILURE_CATEGORY=preview_delivery
+          fi
+          if [ -n "$OPERATION_ID" ]; then
+            node scripts/record-operations-telemetry.mjs \
+              --mode failure --stage "$FAILURE_STAGE" \
+              --client-dir "${{ steps.branch.outputs.dir }}"
+            exit 0
           fi
           node scripts/record-generation-event.mjs \
             --action complete \

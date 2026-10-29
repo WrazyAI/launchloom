@@ -582,7 +582,20 @@ export function GenerationsView({
     value === undefined ? "–" : value.toLocaleString("en-GB");
 
   return (
-    <div id="generations-view" className="admin-view" data-route="generations">
+    <div
+      id="generations-view"
+      className="admin-view"
+      data-route="generations"
+      data-record-source="legacy"
+    >
+      <div className="admin-notice" role="status" data-record-source-label>
+        <strong>Legacy history is read-only</strong>
+        <span>
+          These attempts come from the existing generation ledger. New intake
+          and generation records appear under Operations. No control on this
+          page changes legacy records, revisions or publications.
+        </span>
+      </div>
       <div
         className="admin-pulse"
         aria-label="Workspace summary"

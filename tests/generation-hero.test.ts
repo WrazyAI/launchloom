@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -275,6 +275,8 @@ describe("hero failure status", () => {
       .png()
       .toBuffer();
     await writeFile(heroFile, heroPng);
+    const summaryFile = path.join(directory, "summary.md");
+    await writeFile(summaryFile, "");
     const captured: Array<{ path: string; body: unknown }> = [];
     const server = http.createServer(async (request, response) => {
       let body = "";
@@ -302,7 +304,7 @@ describe("hero failure status", () => {
         env: {
           ...process.env,
           GITHUB_REPOSITORY: "WrazyAI/launchloom",
-          GITHUB_STEP_SUMMARY: "",
+          GITHUB_STEP_SUMMARY: summaryFile,
         },
       });
       let stderr = "";
@@ -311,6 +313,11 @@ describe("hero failure status", () => {
       });
       const [code] = await once(child, "close");
       expect(code).toBe(1);
+      const summary = await readFile(summaryFile, "utf8");
+      expect(summary).toContain("Generation thumbnail failed");
+      expect(summary).toContain("Hero upload was rejected (503).");
+      expect(summary).not.toContain(directory);
+      expect(summary).not.toMatch(/sam@example|Harbor Plumbing|555-0100/iu);
 
       const attempt = captured.find(
         (entry) => entry.path === "/api/internal/generation-attempts",

@@ -37,7 +37,7 @@ export function redactTrackingText(
 export function buildAttemptObservation(input: unknown): AttemptObservation;
 export function buildAttemptEvents(
   events: unknown,
-  observation: AttemptObservation,
+  observation: Pick<AttemptObservation, "source" | "observedAt">,
 ): AttemptEventInput[];
 export function parseGenerationRunName(value: unknown): {
   issueNumber: number;

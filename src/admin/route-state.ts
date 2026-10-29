@@ -5,6 +5,7 @@ import type {
 } from "../lib/admin-contracts";
 
 export const ADMIN_VIEWS = [
+  "operations",
   "generations",
   "clients",
   "invitations",

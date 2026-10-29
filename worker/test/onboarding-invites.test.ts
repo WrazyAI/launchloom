@@ -706,6 +706,795 @@ describe("private onboarding invitations", () => {
       .resolves.toMatchObject({ accepted: false, reason: "revoked" });
   });
 
+  it("persists the Postgres routing mode at reservation and never switches on retry", async () => {
+    const inviteId = "invite-postgres-routing-001";
+    const submissionId = "submission-postgres-routing-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({
+      inviteId,
+      expiresAt,
+      allowedOrigins: [origin],
+    });
+    const digest = new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)),
+    );
+    const tokenHash = [...digest]
+      .map((part) => part.toString(16).padStart(2, "0"))
+      .join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-routing-flow");
+    await coordinator.register({
+      inviteId,
+      clientEmail: null,
+      expiresAt,
+      allowedOrigin: origin,
+      tokenHash,
+      now,
+    });
+
+    await expect(
+      coordinator.reserveSubmission(
+        inviteId,
+        tokenHash,
+        expiresAt,
+        origin,
+        submissionId,
+        "payload-hash-a",
+        "owner@example.test",
+        now,
+        "postgres",
+      ),
+    ).resolves.toMatchObject({
+      accepted: true,
+      mode: "postgres",
+      state: "unconfirmed",
+      expired: false,
+    });
+    // A later deployment may default the flag off. The persisted reservation wins.
+    await expect(
+      coordinator.reserveSubmission(
+        inviteId,
+        tokenHash,
+        expiresAt,
+        origin,
+        submissionId,
+        "payload-hash-a",
+        "owner@example.test",
+        now + 1,
+        "legacy",
+      ),
+    ).resolves.toMatchObject({
+      accepted: true,
+      mode: "postgres",
+      state: "unconfirmed",
+    });
+    await expect(
+      coordinator.acceptanceRoutingMode(inviteId, submissionId),
+    ).resolves.toBe("postgres");
+    await expect(
+      coordinator.acceptanceReservation(inviteId, submissionId),
+    ).resolves.toMatchObject({
+      mode: "postgres",
+      state: "unconfirmed",
+      fingerprint: "payload-hash-a",
+    });
+  });
+
+  it("confirms an exact Postgres reservation idempotently without consuming the invite", async () => {
+    const inviteId = "invite-postgres-confirm-001";
+    const submissionId = "submission-postgres-confirm-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({
+      inviteId,
+      expiresAt,
+      allowedOrigins: [origin],
+    });
+    const digest = new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)),
+    );
+    const tokenHash = [...digest]
+      .map((part) => part.toString(16).padStart(2, "0"))
+      .join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-confirm-flow");
+    await coordinator.register({
+      inviteId,
+      clientEmail: null,
+      expiresAt,
+      allowedOrigin: origin,
+      tokenHash,
+      now,
+    });
+    await coordinator.reserveSubmission(
+      inviteId,
+      tokenHash,
+      expiresAt,
+      origin,
+      submissionId,
+      "payload-hash-a",
+      "owner@example.test",
+      now,
+      "postgres",
+    );
+    const acceptance = {
+      intakeId: "11111111-1111-4111-8111-111111111111",
+      requestId: "22222222-2222-4222-8222-222222222222",
+      attemptId: "33333333-3333-4333-8333-333333333333",
+      operationId: "44444444-4444-4444-8444-444444444444",
+    };
+
+    await expect(
+      coordinator.confirmPostgresAcceptance({
+        inviteId,
+        submissionId,
+        fingerprint: "payload-hash-a",
+        acceptance,
+        now,
+      }),
+    ).resolves.toEqual({ confirmed: true, duplicate: false });
+    await expect(
+      coordinator.confirmPostgresAcceptance({
+        inviteId,
+        submissionId,
+        fingerprint: "payload-hash-a",
+        acceptance,
+        now: now + 1,
+      }),
+    ).resolves.toEqual({ confirmed: true, duplicate: true });
+    await expect(
+      coordinator.confirmPostgresAcceptance({
+        inviteId,
+        submissionId,
+        fingerprint: "payload-hash-a",
+        acceptance: {
+          ...acceptance,
+          intakeId: "55555555-5555-4555-8555-555555555555",
+        },
+        now: now + 2,
+      }),
+    ).resolves.toEqual({ confirmed: false, reason: "identity" });
+    await expect(
+      coordinator.confirmPostgresAcceptance({
+        inviteId,
+        submissionId,
+        fingerprint: "payload-hash-b",
+        acceptance,
+        now: now + 3,
+      }),
+    ).resolves.toEqual({ confirmed: false, reason: "reservation" });
+
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      const row = state.storage.sql
+        .exec<{
+          status: string;
+          issue_number: number | null;
+          reservation_phase: string;
+          acceptance_state: string;
+          accepted_intake_id: string;
+          accepted_operation_id: string;
+          operation_id: string;
+        }>(
+          "SELECT status, issue_number, reservation_phase, acceptance_state, accepted_intake_id, accepted_operation_id, operation_id FROM onboarding_invites WHERE invite_id = ?",
+          inviteId,
+        )
+        .toArray()[0];
+      expect(row).toMatchObject({
+        status: "unused",
+        issue_number: null,
+        acceptance_state: "confirmed",
+        accepted_intake_id: acceptance.intakeId,
+        accepted_operation_id: acceptance.operationId,
+        operation_id: acceptance.operationId,
+      });
+    });
+  });
+
+  it("keeps an expired Postgres reservation recoverable and refuses to release it", async () => {
+    const inviteId = "invite-postgres-expired-001";
+    const submissionId = "submission-postgres-expired-001";
+    const now = Date.now();
+    const expiresAt = now + 1_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({
+      inviteId,
+      expiresAt,
+      allowedOrigins: [origin],
+    });
+    const digest = new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)),
+    );
+    const tokenHash = [...digest]
+      .map((part) => part.toString(16).padStart(2, "0"))
+      .join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-expired-flow");
+    await coordinator.register({
+      inviteId,
+      clientEmail: null,
+      expiresAt,
+      allowedOrigin: origin,
+      tokenHash,
+      now,
+    });
+    await coordinator.reserveSubmission(
+      inviteId,
+      tokenHash,
+      expiresAt,
+      origin,
+      submissionId,
+      "payload-hash-a",
+      "owner@example.test",
+      now,
+      "postgres",
+    );
+
+    await expect(
+      coordinator.reserveSubmission(
+        inviteId,
+        tokenHash,
+        expiresAt,
+        origin,
+        submissionId,
+        "payload-hash-a",
+        "owner@example.test",
+        now + 5_000,
+        "legacy",
+      ),
+    ).resolves.toMatchObject({
+      accepted: true,
+      mode: "postgres",
+      state: "unconfirmed",
+      expired: true,
+    });
+    await expect(
+      coordinator.reserveSubmission(
+        inviteId,
+        tokenHash,
+        expiresAt,
+        origin,
+        submissionId,
+        "payload-hash-b",
+        "owner@example.test",
+        now + 5_000,
+        "postgres",
+      ),
+    ).resolves.toMatchObject({
+      accepted: false,
+      reason: "submission_mismatch",
+      mode: "postgres",
+    });
+    await expect(
+      coordinator.reopenFailedSubmission(
+        inviteId,
+        submissionId,
+        "payload-hash-a",
+        now + 5_000,
+      ),
+    ).resolves.toBe(false);
+    await expect(coordinator.revoke(inviteId, now + 5_000)).resolves.toBe(
+      false,
+    );
+    await expect(
+      coordinator.acceptanceReservation(inviteId, submissionId, now + 5_000),
+    ).resolves.toMatchObject({
+      mode: "postgres",
+      state: "unconfirmed",
+      expired: true,
+    });
+  });
+
+  it("queues the idempotent receipt after Postgres confirmation without any workflow dispatch or issue", async () => {
+    const inviteId = "invite-postgres-receipt-001";
+    const submissionId = "submission-postgres-receipt-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({
+      inviteId,
+      expiresAt,
+      allowedOrigins: [origin],
+    });
+    const digest = new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)),
+    );
+    const tokenHash = [...digest]
+      .map((part) => part.toString(16).padStart(2, "0"))
+      .join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-receipt-flow");
+    await coordinator.register({
+      inviteId,
+      clientEmail: null,
+      expiresAt,
+      allowedOrigin: origin,
+      tokenHash,
+      now,
+    });
+    await coordinator.reserveSubmission(
+      inviteId,
+      tokenHash,
+      expiresAt,
+      origin,
+      submissionId,
+      "payload-hash-a",
+      "owner@example.test",
+      now,
+      "postgres",
+    );
+    const acceptance = {
+      intakeId: "11111111-1111-4111-8111-111111111111",
+      requestId: "22222222-2222-4222-8222-222222222222",
+      attemptId: "33333333-3333-4333-8333-333333333333",
+      operationId: "44444444-4444-4444-8444-444444444444",
+    };
+    const receiptKeys: Array<string | null> = [];
+    network.use(
+      http.post("https://api.resend.com/emails", ({ request }) => {
+        receiptKeys.push(request.headers.get("Idempotency-Key"));
+        return HttpResponse.json(
+          { id: "email-postgres-receipt" },
+          { status: 200 },
+        );
+      }),
+    );
+
+    await coordinator.confirmPostgresAcceptance({
+      inviteId,
+      submissionId,
+      fingerprint: "payload-hash-a",
+      acceptance,
+      now,
+    });
+    await coordinator.queueIntakeReceipt(
+      inviteId,
+      submissionId,
+      "sam@example.test",
+      "Harbor Plumbing",
+      now,
+    );
+    await coordinator.queueIntakeReceipt(
+      inviteId,
+      submissionId,
+      "sam@example.test",
+      "Harbor Plumbing",
+      now + 1,
+    );
+
+    expect(receiptKeys).toHaveLength(1);
+    expect(receiptKeys[0]).toBe(
+      `client-intake-received-${acceptance.operationId}`,
+    );
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      const tasks = state.storage.sql
+        .exec<{ task_type: string }>(
+          "SELECT task_type FROM intake_outbox WHERE invite_id = ? AND submission_id = ?",
+          inviteId,
+          submissionId,
+        )
+        .toArray();
+      expect(tasks).toEqual([{ task_type: "receipt" }]);
+      const invite = state.storage.sql
+        .exec<{ issue_number: number | null; status: string }>(
+          "SELECT issue_number, status FROM onboarding_invites WHERE invite_id = ?",
+          inviteId,
+        )
+        .toArray()[0];
+      expect(invite).toEqual({ issue_number: null, status: "unused" });
+    });
+  });
+
+  it("blocks every legacy mutator from a Postgres-owned reservation", async () => {
+    const inviteId = "invite-postgres-legacy-mutators-001";
+    const submissionId = "submission-postgres-legacy-mutators-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({ inviteId, expiresAt, allowedOrigins: [origin] });
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    const tokenHash = [...digest].map((part) => part.toString(16).padStart(2, "0")).join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-legacy-mutators");
+    await coordinator.register({ inviteId, clientEmail: null, expiresAt, allowedOrigin: origin, tokenHash, now });
+    await coordinator.reserveSubmission(inviteId, tokenHash, expiresAt, origin, submissionId, "payload-hash-a", "owner@example.test", now, "postgres");
+    const acceptance = {
+      intakeId: "11111111-1111-4111-8111-111111111111",
+      requestId: "22222222-2222-4222-8222-222222222222",
+      attemptId: "33333333-3333-4333-8333-333333333333",
+      operationId: "44444444-4444-4444-8444-444444444444",
+    };
+    await coordinator.confirmPostgresAcceptance({ inviteId, submissionId, fingerprint: "payload-hash-a", acceptance, now });
+
+    await expect(
+      coordinator.rebindStaleReservation(inviteId, submissionId, "payload-hash-a", "payload-hash-b", now + 121_000),
+    ).resolves.toBe(false);
+    await expect(coordinator.recoveryReservation(inviteId)).resolves.toBeNull();
+    await expect(
+      coordinator.reconcileIssue({
+        inviteId,
+        submissionId,
+        submissionHash: "payload-hash-a",
+        operationId: acceptance.operationId,
+        issueNumber: 77,
+        reviewerEmail: "reviewer@example.test",
+        recipient: "sam@example.test",
+        businessName: "Harbor Plumbing",
+      }, now + 121_000),
+    ).resolves.toBe(false);
+    await expect(
+      coordinator.claimIssueCreation(inviteId, submissionId, "payload-hash-a", now),
+    ).resolves.toBe(false);
+    await expect(
+      coordinator.recordIssue(inviteId, submissionId, "payload-hash-a", 77, now),
+    ).resolves.toBe(false);
+    await expect(
+      coordinator.claimRecovery(inviteId, acceptance.operationId, now),
+    ).resolves.toBeNull();
+    await expect(
+      coordinator.checkpointRecovery(inviteId, acceptance.operationId, "lease", 1, true),
+    ).resolves.toBe(false);
+
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        status: string;
+        issue_number: number | null;
+        acceptance_state: string;
+        reserved_submission_hash: string;
+        reservation_phase: string;
+      }>(
+        "SELECT status, issue_number, acceptance_state, reserved_submission_hash, reservation_phase FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row).toEqual({
+        status: "unused",
+        issue_number: null,
+        acceptance_state: "confirmed",
+        reserved_submission_hash: "payload-hash-a",
+        reservation_phase: "reserved",
+      });
+    });
+  });
+
+  it("keeps receipt intent durable and wakes recovery after a quiet period", async () => {
+    const inviteId = "invite-postgres-recovery-wake-001";
+    const submissionId = "submission-postgres-recovery-wake-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({ inviteId, expiresAt, allowedOrigins: [origin] });
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    const tokenHash = [...digest].map((part) => part.toString(16).padStart(2, "0")).join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-recovery-wake");
+    await coordinator.register({ inviteId, clientEmail: null, expiresAt, allowedOrigin: origin, tokenHash, now });
+    await coordinator.reserveSubmission(
+      inviteId, tokenHash, expiresAt, origin, submissionId, "payload-hash-a",
+      "sam@example.test", now, "postgres",
+      { recipient: "sam@example.test", businessName: "Harbor Plumbing" },
+    );
+    await coordinator.markAcceptanceCommitStarted(inviteId, submissionId, "payload-hash-a", now);
+
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        receipt_recipient: string;
+        receipt_business_name: string;
+        receipt_queued_at: number | null;
+        acceptance_commit_started: number;
+        acceptance_recovery_at: number;
+      }>(
+        "SELECT receipt_recipient, receipt_business_name, receipt_queued_at, acceptance_commit_started, acceptance_recovery_at FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row).toMatchObject({
+        receipt_recipient: "sam@example.test",
+        receipt_business_name: "Harbor Plumbing",
+        receipt_queued_at: null,
+        acceptance_commit_started: 1,
+      });
+      expect(row.acceptance_recovery_at).toBeGreaterThan(now);
+      state.storage.sql.exec(
+        "UPDATE onboarding_invites SET acceptance_recovery_at = ? WHERE invite_id = ?",
+        Date.now() - 1,
+        inviteId,
+      );
+    });
+    await expect(
+      runDurableObjectAlarm(coordinator),
+    ).resolves.toBe(true);
+
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        acceptance_recovery_at: number;
+        acceptance_recovery_attempts: number;
+        acceptance_last_error: string;
+        receipt_queued_at: number | null;
+      }>(
+        "SELECT acceptance_recovery_at, acceptance_recovery_attempts, acceptance_last_error, receipt_queued_at FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row.acceptance_recovery_attempts).toBe(1);
+      expect(row.acceptance_last_error).toBe("operations_storage_unavailable");
+      expect(row.acceptance_recovery_at).toBeGreaterThan(Date.now());
+      expect(row.receipt_queued_at).toBeNull();
+      expect(await state.storage.getAlarm()).not.toBeNull();
+    });
+  });
+
+  it("completes an interrupted Postgres handshake from the alarm using committed data", async () => {
+    const inviteId = "invite-postgres-recovery-alarm-001";
+    const submissionId = "submission-postgres-recovery-alarm-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({ inviteId, expiresAt, allowedOrigins: [origin] });
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    const tokenHash = [...digest].map((part) => part.toString(16).padStart(2, "0")).join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-recovery-alarm");
+    await coordinator.register({ inviteId, clientEmail: null, expiresAt, allowedOrigin: origin, tokenHash, now });
+    await coordinator.reserveSubmission(
+      inviteId, tokenHash, expiresAt, origin, submissionId, "payload-hash-a",
+      "sam@example.test", now, "postgres",
+      { recipient: "sam@example.test", businessName: "Harbor Plumbing" },
+    );
+    await coordinator.markAcceptanceCommitStarted(inviteId, submissionId, "payload-hash-a", now);
+    const committed = {
+      intakeId: "11111111-1111-4111-8111-111111111111",
+      requestId: "22222222-2222-4222-8222-222222222222",
+      attemptId: "33333333-3333-4333-8333-333333333333",
+      operationId: "44444444-4444-4444-8444-444444444444",
+    };
+    let confirmations = 0;
+    const store = {
+      async getIntakeByBinding() {
+        return {
+          ...committed,
+          inviteId,
+          submissionId,
+          fingerprint: "payload-hash-a",
+          payloadVersion: 2,
+          payload: { businessName: "Harbor Plumbing" },
+          consent: { termsVersion: "client-intake-v2", rightsConfirmed: true },
+          profile: "home-services",
+          schemaVersion: 1,
+          clientId: "55555555-5555-4555-8555-555555555555",
+          acceptanceState: "unconfirmed",
+          receivedAt: new Date(now).toISOString(),
+          confirmedAt: null,
+        };
+      },
+      async confirmAcceptance() {
+        confirmations += 1;
+      },
+      async createAcceptance() {
+        throw new Error("recovery must not create");
+      },
+      async getIntake() {
+        return null;
+      },
+    };
+    await runInDurableObject(coordinator, (instance) => {
+      (instance as unknown as {
+        env: { OPERATIONS_STORE?: typeof store };
+      }).env.OPERATIONS_STORE = store;
+    });
+    network.use(
+      http.post("https://api.resend.com/emails", () =>
+        HttpResponse.json({ id: "email-alarm-recovery" }, { status: 200 }),
+      ),
+    );
+    await runInDurableObject(coordinator, (_instance, state) => {
+      state.storage.sql.exec(
+        "UPDATE onboarding_invites SET acceptance_recovery_at = ? WHERE invite_id = ?",
+        Date.now() - 1,
+        inviteId,
+      );
+    });
+
+    await expect(runDurableObjectAlarm(coordinator)).resolves.toBe(true);
+
+    expect(confirmations).toBe(1);
+    await runInDurableObject(coordinator, (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        acceptance_state: string;
+        accepted_intake_id: string;
+        accepted_operation_id: string;
+        acceptance_recovery_at: number | null;
+        receipt_queued_at: number | null;
+      }>(
+        "SELECT acceptance_state, accepted_intake_id, accepted_operation_id, acceptance_recovery_at, receipt_queued_at FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row).toEqual({
+        acceptance_state: "confirmed",
+        accepted_intake_id: committed.intakeId,
+        accepted_operation_id: committed.operationId,
+        acceptance_recovery_at: null,
+        receipt_queued_at: expect.any(Number),
+      });
+      const tasks = state.storage.sql.exec<{ task_type: string }>(
+        "SELECT task_type FROM intake_outbox WHERE invite_id = ? AND submission_id = ?",
+        inviteId,
+        submissionId,
+      ).toArray();
+      expect(tasks).toEqual([{ task_type: "receipt" }]);
+    });
+  });
+
+  it("keeps low-frequency recovery alive after repeated empty checks and a later commit", async () => {
+    const inviteId = "invite-postgres-uncertain-commit-001";
+    const submissionId = "submission-postgres-uncertain-commit-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const origin = onboardingOrigin;
+    const token = await signedInvite({ inviteId, expiresAt, allowedOrigins: [origin] });
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    const tokenHash = [...digest].map((part) => part.toString(16).padStart(2, "0")).join("");
+    const coordinator = inviteNamespace.getByName("test-postgres-uncertain-commit");
+    await coordinator.register({ inviteId, clientEmail: null, expiresAt, allowedOrigin: origin, tokenHash, now });
+    await coordinator.reserveSubmission(
+      inviteId, tokenHash, expiresAt, origin, submissionId, "payload-hash-a",
+      "sam@example.test", now, "postgres",
+      { recipient: "sam@example.test", businessName: "Harbor Plumbing" },
+    );
+    await coordinator.markAcceptanceCommitStarted(inviteId, submissionId, "payload-hash-a", now);
+    const committed = {
+      intakeId: "11111111-1111-4111-8111-111111111111",
+      requestId: "22222222-2222-4222-8222-222222222222",
+      attemptId: "33333333-3333-4333-8333-333333333333",
+      operationId: "44444444-4444-4444-8444-444444444444",
+      inviteId,
+      submissionId,
+      fingerprint: "payload-hash-a",
+      payloadVersion: 2,
+      payload: { businessName: "Harbor Plumbing" },
+      consent: { termsVersion: "client-intake-v2", rightsConfirmed: true },
+      profile: "home-services",
+      schemaVersion: 1,
+      clientId: "55555555-5555-4555-8555-555555555555",
+      acceptanceState: "unconfirmed",
+      receivedAt: new Date(now).toISOString(),
+      confirmedAt: null,
+    };
+    let committedRecord: typeof committed | null = null;
+    let confirmations = 0;
+    let emails = 0;
+    const store = {
+      async getIntakeByBinding() {
+        return committedRecord;
+      },
+      async confirmAcceptance() {
+        confirmations += 1;
+      },
+      async createAcceptance() {
+        throw new Error("recovery must not create");
+      },
+      async getIntake() {
+        return null;
+      },
+    };
+    await runInDurableObject(coordinator, (instance) => {
+      (instance as unknown as {
+        env: { OPERATIONS_STORE?: typeof store };
+      }).env.OPERATIONS_STORE = store;
+    });
+    network.use(
+      http.post("https://api.resend.com/emails", () => {
+        emails += 1;
+        return HttpResponse.json({ id: "email-uncertain-commit" }, { status: 200 });
+      }),
+    );
+
+    const runDueAlarm = async () => {
+      await runInDurableObject(coordinator, (_instance, state) => {
+        state.storage.sql.exec(
+          "UPDATE onboarding_invites SET acceptance_recovery_at = ? WHERE invite_id = ?",
+          Date.now() - 1,
+          inviteId,
+        );
+      });
+      await expect(runDurableObjectAlarm(coordinator)).resolves.toBe(true);
+    };
+
+    for (let attempt = 0; attempt < 9; attempt += 1) await runDueAlarm();
+
+    await runInDurableObject(coordinator, (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        acceptance_recovery_attempts: number;
+        acceptance_attention: number;
+        acceptance_recovery_at: number | null;
+        acceptance_last_error: string;
+        acceptance_state: string;
+      }>(
+        "SELECT acceptance_recovery_attempts, acceptance_attention, acceptance_recovery_at, acceptance_last_error, acceptance_state FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row.acceptance_recovery_attempts).toBeGreaterThanOrEqual(9);
+      expect(row.acceptance_attention).toBe(1);
+      expect(row.acceptance_last_error).toBe("no_committed_intake");
+      expect(row.acceptance_state).toBe("unconfirmed");
+      expect(row.acceptance_recovery_at).not.toBeNull();
+      // Low frequency is bounded even while recovery remains active forever.
+      expect(row.acceptance_recovery_at!).toBeLessThanOrEqual(
+        Date.now() + 30 * 60_000 + 2_000,
+      );
+    });
+
+    // A client retry resets the backoff window but must not stop recovery.
+    await coordinator.markAcceptanceCommitStarted(inviteId, submissionId, "payload-hash-a");
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        acceptance_recovery_attempts: number;
+        acceptance_attention: number;
+        acceptance_recovery_at: number;
+      }>(
+        "SELECT acceptance_recovery_attempts, acceptance_attention, acceptance_recovery_at FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row.acceptance_recovery_attempts).toBe(0);
+      expect(row.acceptance_attention).toBe(0);
+      expect(row.acceptance_recovery_at).toBeGreaterThan(Date.now());
+    });
+    await runDueAlarm();
+    await runInDurableObject(coordinator, (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        acceptance_recovery_attempts: number;
+        acceptance_recovery_at: number;
+      }>(
+        "SELECT acceptance_recovery_attempts, acceptance_recovery_at FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row.acceptance_recovery_attempts).toBe(1);
+      expect(row.acceptance_recovery_at).toBeGreaterThan(Date.now());
+    });
+
+    // The commit becomes visible later. No HTTP retry occurs; the alarm alone
+    // must finish the exact handshake and enqueue the receipt once.
+    committedRecord = committed;
+    await runDueAlarm();
+
+    expect(confirmations).toBe(1);
+    expect(emails).toBe(1);
+    await runInDurableObject(coordinator, (_instance, state) => {
+      const row = state.storage.sql.exec<{
+        acceptance_state: string;
+        accepted_intake_id: string;
+        accepted_operation_id: string;
+        acceptance_recovery_at: number | null;
+        acceptance_attention: number;
+        receipt_queued_at: number | null;
+      }>(
+        "SELECT acceptance_state, accepted_intake_id, accepted_operation_id, acceptance_recovery_at, acceptance_attention, receipt_queued_at FROM onboarding_invites WHERE invite_id = ?",
+        inviteId,
+      ).toArray()[0];
+      expect(row).toEqual({
+        acceptance_state: "confirmed",
+        accepted_intake_id: committed.intakeId,
+        accepted_operation_id: committed.operationId,
+        acceptance_recovery_at: null,
+        acceptance_attention: 0,
+        receipt_queued_at: expect.any(Number),
+      });
+      const tasks = state.storage.sql.exec<{ task_type: string }>(
+        "SELECT task_type FROM intake_outbox WHERE invite_id = ? AND submission_id = ?",
+        inviteId,
+        submissionId,
+      ).toArray();
+      expect(tasks).toEqual([{ task_type: "receipt" }]);
+    });
+
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      state.storage.sql.exec(
+        "UPDATE intake_outbox SET next_attempt_at = ? WHERE invite_id = ? AND submission_id = ? AND task_type = 'receipt'",
+        Date.now() - 1,
+        inviteId,
+        submissionId,
+      );
+    });
+    await runDurableObjectAlarm(coordinator);
+    expect(emails).toBe(1);
+    await expect(coordinator.acceptanceHealth()).resolves.toMatchObject({
+      pendingCount: 0,
+      attentionCount: 0,
+    });
+  });
+
   it("attributes a link-only invite to the email submitted with the intake", async () => {
     const inviteId = "invite-attribution-001";
     const submissionId = "submission-attribution-001";

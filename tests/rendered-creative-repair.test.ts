@@ -20,6 +20,10 @@ import { requestRepair, privateRepairRejectionEvidence } from "../scripts/creati
 import { RENDERED_REFERENCE_THRESHOLDS } from "../scripts/rendered-reference-fidelity.mjs";
 import { validateProductionCandidateFiles } from "../scripts/production-experience-author.mjs";
 import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
+import {
+  readGenerationCostInputs,
+  summarizeGenerationCosts,
+} from "../scripts/generation-cost-summary.mjs";
 
 const roots: string[] = [];
 const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
@@ -1722,6 +1726,117 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
     });
   });
 
+  it("counts one paid gate call after copying the round report into final evidence", async () => {
+    const { root, candidates } = await fixture();
+    const outDir = path.join(root, "evidence");
+    const gateReport = {
+      version: 1,
+      mode: "verify",
+      status: "ok",
+      model: "openai/gpt-6-luna",
+      durationMs: 900,
+      changed: false,
+      appliedOperations: [],
+      blockers: [],
+      audit: { verdict: "pass", findings: [], operations: [] },
+      usage: { prompt_tokens: 120, completion_tokens: 20, cost: 0.07 },
+      cache: { cost: 0.07 },
+      responseCache: null,
+      sessionId: "launchloom:visual-quality-gate:selected",
+      provider: "openai",
+      attempt: 1,
+    };
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir,
+      runBakeoffImpl: async (options: any) =>
+        writeBakeoffEvidence(options, report()),
+      runVisualGateImpl: async (options: any) => {
+        await fs.mkdir(path.dirname(options.reportPath), { recursive: true });
+        await fs.writeFile(options.reportPath, JSON.stringify(gateReport));
+        return gateReport;
+      },
+      repairCandidateImpl: async () => {},
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+    expect(result.status).toBe("passed");
+    const roundReport = await fs.readFile(
+      path.join(outDir, "round-00", "visual-gate.json"),
+      "utf8",
+    );
+    // The producer copies the round report rather than paying for a new gate.
+    expect(
+      await fs.readFile(path.join(outDir, "final", "visual-gate.json"), "utf8"),
+    ).toBe(roundReport);
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: outDir }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: 0.07,
+      costKind: "actual",
+      complete: true,
+      detail: { calls: 1, pricedCalls: 1, unpricedCalls: 0 },
+    });
+    expect(summary.exact.stages.repair_qa).toMatchObject({
+      amountUsd: "0.07",
+      costKind: "actual",
+      coverageComplete: true,
+    });
+    expect(summary.totalUsd).toBe(0.07);
+  });
+
+  it("accounts for a failed gate attempt that reported no usage", async () => {
+    const { root, candidates } = await fixture();
+    const outDir = path.join(root, "evidence");
+    const scriptPath = path.join(root, "erroring-visual-gate.mjs");
+    await fs.writeFile(
+      scriptPath,
+      `import fs from "node:fs";
+const index = process.argv.indexOf("--report");
+fs.writeFileSync(process.argv[index + 1], JSON.stringify({
+  version: 1,
+  mode: "verify",
+  model: "openai/gpt-6-luna",
+  status: "error",
+  durationMs: 900,
+  error: "Visual audit failed (502).",
+}));
+process.exit(2);
+`,
+    );
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir,
+        runBakeoffImpl: async (options: any) =>
+          writeBakeoffEvidence(options, report()),
+        runVisualGateImpl: async (options: any) =>
+          runVisualGateProcess({ ...options, visualGateScript: scriptPath }),
+        repairCandidateImpl: async () => {},
+        promoteImpl: async () => ({ candidateId: "candidate-a" }),
+      }),
+    ).rejects.toThrow(/could not run/iu);
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: outDir }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: null,
+      costKind: "unreported",
+      complete: false,
+      detail: { calls: 1, unpricedCalls: 1 },
+    });
+    expect(summary.incomplete).toBe(true);
+  });
+
   it("threads one frozen creative session through repairs and summary evidence", async () => {
     const { root, candidates } = await fixture();
     let gateCalls = 0;
@@ -2906,6 +3021,85 @@ process.exit(${gateCalls === 1 ? 2 : 0});`);
     );
     expect(finalReport.selectedCandidateId).toBe("candidate-a");
     expect(finalReport.nearMissSelection).toBe(true);
+  });
+
+  it("counts the near-miss paid gate once after promotion copies it to final", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const outDir = path.join(root, "evidence");
+    const gateReport = {
+      version: 1,
+      mode: "verify",
+      status: "quality-blocked",
+      blockers: [],
+      model: "openai/gpt-6-luna",
+      audit: {
+        verdict: "revise",
+        findings: [
+          {
+            severity: "major",
+            category: "spatial-rhythm",
+            viewport: "both",
+            evidence: "section pacing",
+            recommendation: "tighten pacing",
+          },
+        ],
+        operations: [],
+      },
+      usage: { prompt_tokens: 100, completion_tokens: 20, cost: 0.05 },
+      cache: { cost: 0.05 },
+    };
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir,
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) =>
+        writeBakeoffEvidence(
+          options,
+          report({
+            selectedCandidateId: null,
+            candidates: [nearMissCandidate()],
+          }),
+        ),
+      runVisualGateImpl: async (options: any) => {
+        await fs.mkdir(path.dirname(options.reportPath), { recursive: true });
+        await fs.writeFile(options.reportPath, JSON.stringify(gateReport));
+        return gateReport;
+      },
+      repairCandidateImpl: async () => {},
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+    expect(result.status).toBe("previewed-with-open-findings");
+    const reportFiles = await fs.readdir(outDir, { recursive: true });
+    expect(
+      reportFiles.filter((name) => String(name).endsWith("visual-gate.json")),
+    ).toEqual([
+      expect.stringMatching(/^round-0\d\/near-miss-visual-gate\.json$/u),
+      "final/visual-gate.json",
+    ]);
+
+    const summary = summarizeGenerationCosts(
+      await readGenerationCostInputs({ repairDir: outDir }),
+    );
+    expect(
+      summary.stages.find((stage: any) => stage.stage === "repair_qa"),
+    ).toMatchObject({
+      costUsd: 0.05,
+      costKind: "actual",
+      complete: true,
+      detail: {
+        calls: 1,
+        duplicateReports: 1,
+        sources: [
+          expect.stringMatching(/^round-0\d\/near-miss-visual-gate\.json$/u),
+        ],
+      },
+    });
+    expect(summary.exact.stages.repair_qa).toMatchObject({
+      amountUsd: "0.05",
+      coverageComplete: true,
+    });
   });
 
   it("repairs the candidate with the fewest hard failures first", async () => {

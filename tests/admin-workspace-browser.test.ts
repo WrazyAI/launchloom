@@ -40,7 +40,7 @@ const ATTENTION_ATTEMPTS = ATTEMPTS.filter(
     attempt.deliveryStatus === "diagnostic",
 ).length;
 const adminPrincipal = {
-  id: "admin:browser",
+  id: `access:${"a".repeat(64)}`,
   email: "admin@example.test",
   displayName: "Browser Admin",
   role: "admin",
@@ -68,6 +68,7 @@ let relatedPreviews = new Map<string, RelatedIssuePreview>();
 type HeroMode = "ok" | "notFound" | "unauthorized";
 let heroMode: HeroMode = "ok";
 let heroPng: Buffer;
+let operationsReadCapability = false;
 
 function sendJson(response: http.ServerResponse, body: unknown, status = 200) {
   response.writeHead(status, {
@@ -315,7 +316,7 @@ async function serve(
     return;
   }
   if (suffix === "/me") {
-    sendJson(response, adminPrincipal);
+    sendJson(response, { principal: adminPrincipal, capabilities: { operationsRead: operationsReadCapability } });
     return;
   }
   if (suffix === "/attempts") {
@@ -425,6 +426,7 @@ afterAll(async () => {
 });
 
 beforeEach(() => {
+  operationsReadCapability = false;
   requests = [];
   health = fixtureHealth();
   delays = new Map();
@@ -1187,6 +1189,44 @@ describe("real admin workspace browser behavior", () => {
     }
   });
 
+  it("hides disabled Operations by default without requesting its API and keeps Legacy history reachable", async () => {
+    const { page, errors } = await openPage();
+    try {
+      await waitForGenerations(page);
+      const nav = page.getByRole("navigation", { name: "Workspace sections" });
+      await expect.poll(() => requests.some(r => r.path === "/me")).toBe(true);
+      expect(await nav.getByRole("link", { name: "Operations", exact: true }).count()).toBe(0);
+      await nav.getByRole("link", { name: "Legacy history", exact: true }).click();
+      await waitForGenerations(page);
+      expect(requests.some(r => r.path.startsWith("/operations/"))).toBe(false);
+      autoErrors(errors);
+    } finally { await page.close(); }
+  });
+
+  it("shows Operations only after server bootstrap explicitly enables reads", async () => {
+    operationsReadCapability = true;
+    const { page, errors } = await openPage();
+    try {
+      await waitForGenerations(page);
+      const nav = page.getByRole("navigation", { name: "Workspace sections" });
+      await visible(nav.getByRole("link", { name: "Operations", exact: true }));
+      expect(requests.some(r => r.path.startsWith("/operations/"))).toBe(false);
+      autoErrors(errors);
+    } finally { await page.close(); }
+  });
+
+  it("falls back a disabled Operations direct URL to Legacy history before any operations API call", async () => {
+    const { page, errors } = await openPage({ path: "/admin/onboarding-invites?view=operations&attemptId=11111111-1111-4111-8111-111111111111" });
+    try {
+      await waitForGenerations(page);
+      await expect.poll(() => new URL(page.url()).searchParams.get("view")).toBe("generations");
+      expect(await page.getByRole("link", { name: "Operations", exact: true }).count()).toBe(0);
+      expect(requests.some(r => r.path.startsWith("/operations/"))).toBe(false);
+      expect(await page.locator("body").innerText()).not.toContain("temporarily unavailable");
+      autoErrors(errors);
+    } finally { await page.close(); }
+  });
+
   it("renders six quiet navigation items and reserves lime for focus", async () => {
     const { page, errors } = await openPage();
     try {
@@ -1198,7 +1238,7 @@ describe("real admin workspace browser behavior", () => {
       await expect.poll(() => nav.getByRole("link").count()).toBe(6);
       const active = nav.locator('[aria-current="page"]');
       await expect.poll(() => active.count()).toBe(1);
-      await expect.poll(() => active.textContent()).toBe("Generations");
+      await expect.poll(() => active.textContent()).toBe("Legacy history");
 
       const tone = await active.evaluate((element) => {
         const style = getComputedStyle(element);
@@ -1219,7 +1259,7 @@ describe("real admin workspace browser behavior", () => {
         text: element.textContent?.trim() || "",
         outline: getComputedStyle(element).outlineColor,
       }));
-      expect(focus.text).toBe("Generations");
+      expect(focus.text).toBe("Legacy history");
       expect(focus.outline).toBe("rgb(217, 240, 107)");
       autoErrors(errors);
     } finally {
@@ -1751,7 +1791,7 @@ describe("real admin workspace browser behavior", () => {
         .poll(() => page.locator(".admin-shell").getAttribute("class"))
         .toContain("admin-shell--collapsed");
       await visible(
-        page.getByRole("link", { name: "Generations", exact: true }),
+        page.getByRole("link", { name: "Legacy history", exact: true }),
       );
       await page.getByRole("button", { name: "Expand sidebar" }).click();
       await expect

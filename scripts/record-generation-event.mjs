@@ -1,12 +1,92 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
+import { decimal } from './exact-money.mjs';
+import { appendGenerationEvent, requestOidcToken, apiOrigin } from './operations-client.mjs';
 import {
   buildAttemptObservation,
   buildAttemptEvents,
 } from "./generation-tracking-contract.mjs";
 
 const DEFAULT_API_URL = "https://api.launchloom.wrazyos.com";
+/**
+ * Opaque stable keys, controlled fields only. Legacy content is never forwarded.
+ * @param {string} attemptId
+ * @param {Record<string, string | undefined>} [args]
+ * @returns {import('../worker/src/operations/contracts').RunStageEvent}
+ */
+export function buildOperationsEvent(attemptId, args = {}) {
+  if (!/^[a-f0-9-]{36}$/u.test(attemptId || '')) throw Error('Invalid operations event.');
+  const stage = args.stage || 'workflow';
+  const transition = args['stage-status'] || (args['execution-status'] === 'failed' ? 'failed' : 'observed');
+  const occurrence = String(args.occurrence || '1');
+  if (!/^[a-z0-9_]{1,80}$/u.test(stage) || !['started', 'completed', 'failed', 'cancelled', 'observed'].includes(transition) || !/^[1-9][0-9]{0,5}$/u.test(occurrence)) throw Error('Invalid operations event.');
+  const event = { eventKey: `${attemptId}:${stage}:${transition}:${occurrence}`, stage, transition, costKind: 'unreported' };
+  if (stage === 'handoff') {
+    if (transition !== 'completed' || !/^[a-f0-9]{40}$/u.test(args.sha || '')) throw Error('Invalid handoff evidence.');
+    event.buildSha = args.sha;
+  }
+  return event;
+}
+
+/**
+ * Validate untrusted summary input and return only the controlled wire fields.
+ * @param {string} attemptId
+ * @param {unknown} summary
+ * @returns {import('../worker/src/operations/contracts').RunStageEvent[]}
+ */
+export function buildOperationsCostEvents(attemptId, summary) {
+  if (!summary || !Array.isArray(summary.events) || summary.events.length > 200) throw Error('Invalid cost evidence.');
+  const seen = new Set();
+  return summary.events.map(source => {
+    const base = buildOperationsEvent(attemptId, { stage: source.stage, 'stage-status': 'observed' });
+    if (seen.has(base.stage)) throw Error('Duplicate cost evidence.');
+    seen.add(base.stage);
+    const event = { ...base, eventKey: `${attemptId}:cost:${base.stage}:1` };
+    const exact = summary.exact?.stages?.[source.stage] ?? source.exactCost;
+    const kind = exact?.costKind ?? source.costKind;
+    if (!['actual', 'estimated', 'unreported'].includes(kind)) throw Error('Invalid cost evidence.');
+    event.costKind = kind;
+    event.coverageComplete = source.status !== 'recorded-incomplete' && source.detail?.complete !== false &&
+      (exact ? exact.coverageComplete === true : source.status === 'recorded' && source.detail?.complete === true);
+    if (kind !== 'unreported') {
+      const amount = decimal(exact ? exact.amountUsd : source.costUsd);
+      if (amount === null) throw Error('Invalid cost evidence.');
+      event.amount = amount;
+      event.currency = 'USD'; // The source contract explicitly names costUsd.
+    }
+    return event;
+  });
+}
+
+/**
+ * @param {Record<string, string | undefined>} args
+ * @param {import('./operations-client.mjs').OperationsDependencies} [dependencies]
+ * @returns {Promise<'inserted' | 'duplicate'>}
+ */
+export async function postOperationsEvent(args, { env = process.env, fetchImpl = fetch, token } = {}) {
+  const marker = env.RUNNER_TEMP ? path.join(env.RUNNER_TEMP, 'operations-telemetry-incomplete') : null;
+  try {
+    const event = buildOperationsEvent(env.TRACK_ATTEMPT, args);
+    if (event.stage === 'handoff') {
+      if (!marker || await fs.access(marker).then(() => true, () => false) ||
+        await fs.access(path.join(env.RUNNER_TEMP, 'operations-telemetry-preparing')).then(() => true, () => false)) throw Error('Incomplete operations telemetry.');
+      const ready = await readJson(path.join(env.RUNNER_TEMP, 'operations-preview-telemetry-ready'));
+      if (ready?.attemptId !== env.TRACK_ATTEMPT || ready?.buildSha !== event.buildSha) throw Error('Incomplete operations telemetry.');
+    }
+    const api = apiOrigin(env.OPERATIONS_API_URL || env.LAUNCHLOOM_API_URL || DEFAULT_API_URL);
+    const workload = token ?? await requestOidcToken({ audience: env.OPERATIONS_OIDC_AUDIENCE || 'launchloom-operations', env, fetchImpl });
+    if (args['cost-summary']) {
+      for (const costEvent of buildOperationsCostEvents(env.TRACK_ATTEMPT, await readJson(args['cost-summary']))) {
+        await appendGenerationEvent({ api, attemptId: env.TRACK_ATTEMPT, event: costEvent, token: workload, fetchImpl });
+      }
+    }
+    return await appendGenerationEvent({ api, attemptId: env.TRACK_ATTEMPT, event, token: workload, fetchImpl });
+  } catch (error) {
+    if (marker) await fs.writeFile(marker, 'incomplete\n', { mode: 0o600 });
+    throw error;
+  }
+}
 export const MAX_HERO_BYTES = 1_800_000;
 
 /**
@@ -359,6 +439,12 @@ export async function uploadGenerationHero({
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const args = argsFrom(process.argv.slice(2));
+  // The new authority must never fall through to legacy secret-based ingestion,
+  // upload private thumbnails publicly, or print an intake-derived exception.
+  if (process.env.OPERATION_ID) {
+    try { await postOperationsEvent(args); console.log('operations_event=recorded'); }
+    catch { console.error('operations_event=unavailable'); process.exitCode = 1; }
+  } else {
   const required = args.required === "true";
   const secret = clean(
     args.secret || process.env.GENERATION_TRACKING_SECRET,
@@ -476,5 +562,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (required) throw error;
     console.warn(`generation_tracking=skipped reason=${message.slice(0, 200)}`);
     if (heroFailure) process.exitCode = 1;
+  }
   }
 }

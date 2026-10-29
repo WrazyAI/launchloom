@@ -165,6 +165,9 @@ describe("developer-triggered creative repair workflow", () => {
     expect(maskGeneratedToken).toBeGreaterThan(generatedToken);
     expect(maskGeneratedToken).toBeLessThan(exposeGeneratedToken);
     expect(initialWorkflow).toContain(
+      'printf \'%s\' "$DIAGNOSTIC_PREVIEW_URL?review=$TOKEN" > "$RUNNER_TEMP/creative-repair-send-anyway"',
+    );
+    expect(initialWorkflow).not.toContain(
       'echo "send_anyway_url=$DIAGNOSTIC_PREVIEW_URL?review=$TOKEN"',
     );
     expect(initialWorkflow).toContain('--send-anyway-url "$SEND_ANYWAY_URL"');
