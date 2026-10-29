@@ -12,6 +12,15 @@ import { appendFile, chmod, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+/**
+ * Injectable workload transport; token is only for trusted caller/test injection.
+ * The normal workflow obtains its own short-lived OIDC token.
+ * @typedef {object} OperationsDependencies
+ * @property {NodeJS.ProcessEnv} [env]
+ * @property {typeof fetch} [fetchImpl]
+ * @property {string} [token]
+ */
+
 export const OPERATIONS_DEFAULT_AUDIENCE = "launchloom-operations";
 export const EXIT = Object.freeze({
   ok: 0,
@@ -244,7 +253,11 @@ export async function fetchGenerationIntake({ api, intakeId, token, fetchImpl = 
   return result;
 }
 
-/** Appends one stage event to the claiming run. */
+/**
+ * Appends one stage event to the claiming run.
+ * @param {{api: string, attemptId: string, event: import('../worker/src/operations/contracts').RunStageEvent, token: string, fetchImpl?: typeof fetch}} options
+ * @returns {Promise<'inserted' | 'duplicate'>}
+ */
 export async function appendGenerationEvent({
   api,
   attemptId,
@@ -340,6 +353,9 @@ async function writeIntake(out, payload) {
 
 /**
  * Runs one client command. Returns a process exit code; injectable for tests.
+ * @param {string[]} argv
+ * @param {OperationsDependencies & {stdout?: (line: string) => void, stderr?: (line: string) => void}} [dependencies]
+ * @returns {Promise<number>}
  */
 export async function runOperationsClient(argv, dependencies = {}) {
   const {

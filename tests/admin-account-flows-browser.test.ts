@@ -662,13 +662,12 @@ describe("interim Access identity and unavailable account surfaces", () => {
       const reference = details.locator("[data-identity-reference]");
       await visible(reference);
       await expect(reference.textContent()).resolves.toBe("access:abababab");
-      expect(requests).toEqual([
-        {
+      // One capability bootstrap plus the profile's own verified identity read.
+      expect(requests).toEqual(Array.from({ length: 2 }, () => ({
           method: "GET",
           path: "/api/admin/onboarding-invites/workspace/me",
           body: null,
-        },
-      ]);
+      })));
       expect(
         await page.evaluate(() => ({
           local: Object.keys(localStorage),
@@ -764,6 +763,7 @@ describe("interim Access identity and unavailable account surfaces", () => {
       ).toBe(0);
       expect(requests.map((request) => request.path)).toEqual([
         "/api/admin/onboarding-invites/workspace/me",
+        "/api/admin/onboarding-invites/workspace/me",
       ]);
       unexpectedErrors(errors);
     } finally {
@@ -801,7 +801,9 @@ describe("interim Access identity and unavailable account surfaces", () => {
           /gohighlevel|leadconnector|ghl\./iu.test(url),
         ),
       ).toEqual([]);
-      expect(requests).toEqual([]);
+      expect(requests).toEqual([{
+        method: "GET", path: "/api/admin/onboarding-invites/workspace/me", body: null,
+      }]);
       unexpectedErrors(errors);
     } finally {
       await page.close();

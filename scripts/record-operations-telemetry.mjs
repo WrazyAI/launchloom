@@ -45,8 +45,15 @@ async function prepareSummary(paths, output, mode, env) {
     throw Error("Summary bounds exceeded.");
 }
 
+/**
+ * @typedef {Partial<Record<'seo' | 'siteConfigUsage' | 'referenceDnaUsage' | 'preflight' | 'generatedAssets' | 'assets' | 'creativeRun' | 'repairDir', string>>} TelemetryPaths
+ */
+
 /** One boundary owns preparation AND posting. A killed/skipped command cannot
  * produce the positive attempt/build receipt required by the later handoff.
+ * @param {({mode: 'failure', buildSha?: string} | {mode: 'preview', buildSha: string}) & {stage?: string, paths?: TelemetryPaths}} options
+ * @param {import('./operations-client.mjs').OperationsDependencies} [dependencies]
+ * @returns {Promise<void>}
  */
 export async function recordOperationsTelemetry(
   { mode, stage = "workflow", buildSha, paths = {} },

@@ -14,6 +14,7 @@ import type {
   OperationPage,
   OperationRecord,
   Page,
+  WorkspaceCapabilities,
 } from "../lib/admin-contracts";
 
 const ADMIN_API_PREFIX = "/api/admin/";
@@ -224,6 +225,10 @@ export type NeonMember = NeonIdentity & {
 
 /** The principal shape differs by the server's configured auth mode. */
 export type WorkspacePrincipal = AccessModePrincipal | NeonMember;
+export type WorkspaceBootstrap = {
+  principal: WorkspacePrincipal;
+  capabilities: WorkspaceCapabilities;
+};
 
 export type EnrollmentLink = {
   id: string;
@@ -287,6 +292,7 @@ export type RecoveryResult = { issue: number; duplicate: boolean };
  */
 export type AdminApi = {
   getMe(options?: AdminRequestOptions): Promise<WorkspacePrincipal>;
+  getWorkspace(options?: AdminRequestOptions): Promise<WorkspaceBootstrap>;
   listInvites(options?: AdminRequestOptions): Promise<LegacyInvite[]>;
   createInvite(
     clientEmail: string | null,
@@ -947,6 +953,23 @@ export function createAdminApi(
   };
 
   return {
+    async getWorkspace(options) {
+      const payload = await fetcher<{
+        principal: WorkspacePrincipal;
+        capabilities?: unknown;
+      }>(`${WORKSPACE_PREFIX}/me`, {
+        signal: options?.signal,
+        validate: isPrincipalEnvelope,
+      });
+      return {
+        principal: payload.principal,
+        capabilities: {
+          operationsRead:
+            isRecord(payload.capabilities) &&
+            payload.capabilities.operationsRead === true,
+        },
+      };
+    },
     async getMe(options) {
       const payload = await fetcher<{ principal: WorkspacePrincipal }>(
         `${WORKSPACE_PREFIX}/me`,

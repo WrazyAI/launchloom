@@ -1,7 +1,57 @@
 # Generation tracking
 
-The admin dashboard at `/admin/onboarding-invites` opens on the **Invitations**
-tab and has two tabs:
+## Current operations versus Legacy History
+
+New-mode Postgres operations use opaque `{ intakeId, requestId, attemptId, operationId }`
+references and the authenticated **Operations** view. The Worker never exposes the
+private payload, consent or client email in its list/detail projection. Workflow
+dispatch inputs carry operation/request/attempt IDs only; claim supplies the intake
+ID before a TLS/OIDC-protected read. Numeric intake issues are not created or invented.
+
+The older DO/issue reporting described below is **Legacy History**. Keep it readable
+and separate, without bulk migration or redelivery. Legacy producers and in-flight
+legacy recovery may still write their original authority; read-only describes the
+history UI/API, not a shutdown of legacy execution. Private client PR/feedback issue
+numbers used by review/revision/publication are real artifacts, not intake IDs.
+
+The authenticated workspace `/me` bootstrap returns only the server-derived
+`capabilities.operationsRead` boolean. Operations navigation and rendering are
+disabled by default, including for older responses with no capability. Reads are
+advertised only with `OPERATIONS_RECONCILE_MODE=observe-v1` and a nonblank operations
+connection configured on the server; no connection details cross the response.
+Disabled direct Operations URLs fall back to Legacy History without requesting the
+operations API. The capability is availability metadata, not authorization, health
+proof or a flag switch; the API independently enforces the same configuration and
+existing admin authorization.
+
+New-mode telemetry is mandatory: callbacks are fenced to the authenticated elected
+run and stable event keys. Callback failure marks telemetry incomplete and blocks the
+handoff attestation even when a workflow step was best-effort for legacy compatibility.
+GitHub success alone cannot show preview-ready: the authenticated handoff must bind
+the selected client build after the existing build/deployment/rendered/delivery gates.
+Costs retain actual/estimated/unreported kind and incomplete coverage; a known subtotal
+is not a complete bill. Diagnostics cannot claim client delivery.
+
+The intake mode flag only chooses a new reservation. Persisted routing owns retries
+across forward cutover and rollback; a DB outage never falls back to issue creation.
+See [operations recovery](operations-recovery.md) for the exact dependency inventory,
+stalled/unknown-owner handling, retention/restore approval gates, staging evidence and
+rollback that preserves accepted Postgres work. This implementation does not authorize
+database provisioning, activation, dispatch, deployment or cutover.
+
+Local synthetic integration evidence is provided by
+`tests/operations-integration.test.ts`. Its shell tests run without a DB; its cross-layer
+cases require an explicitly disposable loopback `OPERATIONS_TEST_DATABASE_URL` and
+`OPERATIONS_TEST_DISPOSABLE=1`. Skipped DB cases are not a pass. That proof uses real
+PostgreSQL migrations/service-role calls and real RSA verification with synthetic
+keys, plus desktop/mobile Chromium against a loopback dashboard API backed by that
+database. The browser admin principal, invitation persistence and GitHub/cron/provider
+behavior are simulated, not staging or production evidence.
+
+## Legacy reporting contract
+
+The original admin dashboard at `/admin/onboarding-invites` used two tabs.
+These describe the legacy data contract, not the current workspace navigation:
 
 - **Invitations** creates and revokes private invite links. Each row shows the
   client email and, once the invite is consumed, the linked intake issue.
@@ -53,7 +103,10 @@ recorded as `attention` with a bounded failure reason. The tracking step also
 exits nonzero so the Actions run shows a visible warning; the preview handoff
 continues because thumbnail capture is diagnostic, not a release gate.
 
-## Setup
+## Existing legacy setup (not activation authorization)
+
+The following records the existing legacy configuration. It does not authorize
+secret changes, provisioning or Postgres activation as part of this migration.
 
 1. Create the repository secret `GENERATION_TRACKING_SECRET` with a unique
    high-entropy value. `deploy-platform.yml` pushes it to the Worker when

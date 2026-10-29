@@ -24,6 +24,26 @@ const intakeId = "33333333-3333-4333-8333-333333333333";
 const clientId = "44444444-4444-4444-8444-444444444444";
 const operationId = "55555555-5555-4555-8555-555555555555";
 
+describe("server-driven workspace operations capability", () => {
+  it.each([
+    [{}, false],
+    [{ OPERATIONS_RECONCILE_MODE: "observe-v1" }, false],
+    [{ OPERATIONS_DATABASE_URL: "synthetic-private-connection" }, false],
+    [{ OPERATIONS_RECONCILE_MODE: "observe-v1", OPERATIONS_DATABASE_URL: "   " }, false],
+    [{ OPERATIONS_RECONCILE_MODE: "observe-v1", OPERATIONS_DATABASE_URL: "synthetic-private-connection" }, true],
+  ])("advertises reads only when both read settings are configured: %j", async (settings, enabled) => {
+    const response = await workspaceApi(new Request(`${workspace}/me`), {
+      ...(testEnv as unknown as Env), OPERATIONS_RECONCILE_MODE: undefined,
+      OPERATIONS_DATABASE_URL: undefined, ...settings,
+    }, "admin@example.test");
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    expect(payload).toMatchObject({ capabilities: { operationsRead: enabled } });
+    expect(JSON.stringify(payload)).not.toContain("synthetic-private-connection");
+    expect(JSON.stringify(payload)).not.toContain("OPERATIONS_DATABASE_URL");
+  });
+});
+
 function iso(ms: number) {
   return new Date(ms).toISOString();
 }

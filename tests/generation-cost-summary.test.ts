@@ -402,7 +402,7 @@ describe("generation cost summary", () => {
         duplicateReports: 1,
       },
     });
-    expect(repair?.detail.sources).toEqual(["round-01/visual-gate.json"]);
+    expect(repair?.detail).toHaveProperty("sources", ["round-01/visual-gate.json"]);
     expect(summary.totalUsd).toBe(0.45);
     expect(summary.exact.stages.repair_qa).toMatchObject({
       amountUsd: "0.45",

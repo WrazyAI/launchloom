@@ -1,4 +1,5 @@
 import type { Env } from "../index";
+import { workspaceCapabilities } from "./workspace-capabilities";
 import {
   buildAttemptObservation,
   buildAttemptEvents,
@@ -297,10 +298,7 @@ export async function operationsDashboardApi(
     return workspaceError("forbidden", "Admin access required.", 403);
   if (request.method !== "GET")
     return workspaceError("method_not_allowed", "Use GET.", 405);
-  if (
-    env.OPERATIONS_RECONCILE_MODE !== "observe-v1" ||
-    !env.OPERATIONS_DATABASE_URL
-  )
+  if (!workspaceCapabilities(env).operationsRead)
     return workspaceError(
       "not_enabled",
       "Current operations are not enabled in this environment.",
@@ -406,7 +404,7 @@ export async function workspaceApi(
       );
     if (!verifiedEmail)
       return workspaceError("signed_out", "Sign in required.", 401);
-    return json({ principal: await accessModePrincipal(verifiedEmail) });
+    return json({ principal: await accessModePrincipal(verifiedEmail), capabilities: workspaceCapabilities(env) });
   }
   try {
     const ledger = env.GENERATION_LEDGER.getByName("launchloom-generations");

@@ -28,8 +28,10 @@ function clean(value, limit = 500) {
 }
 
 /**
- * Emit one explicit pipeline stage transition through the existing trusted
- * attempt producer. Tracking is best effort and must never block generation.
+ * Emit one explicit pipeline stage transition through the trusted producer.
+ * Legacy tracking is best effort; new-mode telemetry failures throw instead of
+ * falling back to legacy authority.
+ * @param {{stage?: string, status?: string, detail?: string, issue?: string, observedAt?: number, env?: NodeJS.ProcessEnv, fetchImpl?: typeof fetch}} [options]
  */
 export async function recordGenerationStage({
   stage,

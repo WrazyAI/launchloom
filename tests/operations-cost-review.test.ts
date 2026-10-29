@@ -138,7 +138,7 @@ describe("review: production cost evidence", () => {
     });
     expect(() =>
       buildAttemptEvents(summary.events, {
-        source: "workflow",
+        source: "callback",
         observedAt: Date.now(),
       }),
     ).not.toThrow();
@@ -148,7 +148,7 @@ describe("review: production cost evidence", () => {
     );
   });
   it("manual operations event CLI preserves decimal text and explicit incomplete coverage", async () => {
-    let saved: any;
+    let saved: unknown;
     const exit = await runOperationsClient(
       [
         "event",

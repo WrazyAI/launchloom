@@ -77,6 +77,30 @@ const page: OperationPage = {
 };
 
 describe("operations API client", () => {
+  it.each([
+    [undefined, false],
+    [{ operationsRead: false }, false],
+    [{ operationsRead: "true" }, false],
+    [{ operationsRead: true, database: "must-not-pass-through" }, true],
+  ])(
+    "normalizes workspace bootstrap capability without exposing configuration: %j",
+    async (capabilities, enabled) => {
+      const principal = {
+        id: `access:${"b".repeat(64)}`,
+        email: "admin@example.test",
+        displayName: "Synthetic Admin",
+        role: "admin",
+        authSource: "cloudflare-access",
+      };
+      respond(json({ principal, capabilities }));
+      const workspace = await createAdminApi().getWorkspace();
+      expect(workspace).toEqual({
+        principal,
+        capabilities: { operationsRead: enabled },
+      });
+      expect(JSON.stringify(workspace)).not.toContain("must-not-pass-through");
+    },
+  );
   it("requests the authenticated paginated operations endpoint", async () => {
     const mock = respond(json(page));
     const api = createAdminApi();
