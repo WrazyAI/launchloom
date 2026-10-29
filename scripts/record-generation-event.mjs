@@ -9,7 +9,12 @@ import {
 } from "./generation-tracking-contract.mjs";
 
 const DEFAULT_API_URL = "https://api.launchloom.wrazyos.com";
-/** Opaque stable keys, controlled fields only. Legacy content is never forwarded. */
+/**
+ * Opaque stable keys, controlled fields only. Legacy content is never forwarded.
+ * @param {string} attemptId
+ * @param {Record<string, string | undefined>} [args]
+ * @returns {import('../worker/src/operations/contracts').RunStageEvent}
+ */
 export function buildOperationsEvent(attemptId, args = {}) {
   if (!/^[a-f0-9-]{36}$/u.test(attemptId || '')) throw Error('Invalid operations event.');
   const stage = args.stage || 'workflow';
@@ -24,6 +29,12 @@ export function buildOperationsEvent(attemptId, args = {}) {
   return event;
 }
 
+/**
+ * Validate untrusted summary input and return only the controlled wire fields.
+ * @param {string} attemptId
+ * @param {unknown} summary
+ * @returns {import('../worker/src/operations/contracts').RunStageEvent[]}
+ */
 export function buildOperationsCostEvents(attemptId, summary) {
   if (!summary || !Array.isArray(summary.events) || summary.events.length > 200) throw Error('Invalid cost evidence.');
   const seen = new Set();
@@ -48,6 +59,11 @@ export function buildOperationsCostEvents(attemptId, summary) {
   });
 }
 
+/**
+ * @param {Record<string, string | undefined>} args
+ * @param {import('./operations-client.mjs').OperationsDependencies} [dependencies]
+ * @returns {Promise<'inserted' | 'duplicate'>}
+ */
 export async function postOperationsEvent(args, { env = process.env, fetchImpl = fetch, token } = {}) {
   const marker = env.RUNNER_TEMP ? path.join(env.RUNNER_TEMP, 'operations-telemetry-incomplete') : null;
   try {

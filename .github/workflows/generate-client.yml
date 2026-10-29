@@ -475,6 +475,9 @@ jobs:
             INTAKE_REF="$ISSUE"
             INTAKE_KEY="$ISSUE"
           fi
+          # Bind initial config/research to the same persisted intake reference
+          # as later steps. Never substitute a numeric issue in Postgres mode.
+          export LAUNCHLOOM_INTAKE_ID="$INTAKE_KEY"
           test -s /tmp/intake.md || { echo "Missing intake payload" >&2; exit 1; }
           if [ "$REUSE_AUTHORED_CANDIDATES" != "true" ]; then
             node scripts/internal-qa-intake.mjs /tmp/intake.md

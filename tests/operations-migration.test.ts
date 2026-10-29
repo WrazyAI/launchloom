@@ -118,7 +118,7 @@ function psql(sql: string): Promise<string> {
 }
 const suffix = crypto.randomUUID();
 const invite = `synthetic-${suffix}`;
-const create = (fingerprint = "a".repeat(64), submission = suffix) =>
+const create = (fingerprint = "a".repeat(64), submission: string = suffix) =>
   `select row_to_json(r) from launchloom_operations.create_acceptance('${invite}', '${submission}', '${fingerprint}', 1, '{"synthetic":true}', '{"termsVersion":"v1","rightsConfirmed":true}', 'care') r;`;
 const asOperations = (sql: string, commit = false) =>
   psql(

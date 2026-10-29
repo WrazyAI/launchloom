@@ -112,7 +112,39 @@ function useRouteState() {
 export function AdminApp() {
   const [state, setState, cursorTrail, setCursorTrail] = useRouteState();
   const [api] = useState(createAdminApi);
-  const copy = VIEW_COPY[state.view];
+  const [operationsRead, setOperationsRead] = useState<boolean | null>(null);
+  const view =
+    state.view === "operations" && operationsRead !== true
+      ? "generations"
+      : state.view;
+  const visibleState = view === state.view ? state : DEFAULT_STATE;
+  const copy = VIEW_COPY[view];
+
+  useEffect(() => {
+    const controller = new AbortController();
+    api
+      .getWorkspace({ signal: controller.signal })
+      .then((workspace) => {
+        if (!controller.signal.aborted)
+          setOperationsRead(workspace.capabilities.operationsRead);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setOperationsRead(false);
+      });
+    return () => controller.abort();
+  }, [api]);
+
+  useEffect(() => {
+    if (operationsRead !== false || state.view !== "operations") return;
+    const url = writeRouteState(DEFAULT_STATE);
+    window.history.replaceState(
+      { cursorTrail: [] },
+      "",
+      `${url.pathname}${url.search}`,
+    );
+    setCursorTrail([]);
+    setState(DEFAULT_STATE);
+  }, [operationsRead, state.view, setCursorTrail, setState]);
 
   useEffect(() => {
     const onUnauthorized = () => {
@@ -142,6 +174,7 @@ export function AdminApp() {
   }
 
   function selectView(view: AdminView) {
+    if (view === "operations" && operationsRead !== true) return;
     if (view === state.view) return;
     commit(
       {
@@ -154,23 +187,26 @@ export function AdminApp() {
 
   return (
     <WorkspaceShell
-      active={state.view}
+      active={view}
+      operationsRead={operationsRead === true}
       onNavigate={selectView}
       eyebrow={copy.label}
       title={copy.title}
       description={copy.description}
     >
-      {state.view === "operations" ? (
+      {state.view === "operations" && operationsRead === null ? (
+        <p role="status">Loading workspace…</p>
+      ) : view === "operations" ? (
         <OperationsView
           api={api}
           state={state}
           cursorTrail={cursorTrail}
           onNavigate={commit}
         />
-      ) : state.view === "generations" ? (
+      ) : view === "generations" ? (
         <GenerationsView
           api={api}
-          state={state}
+          state={visibleState}
           cursorTrail={cursorTrail}
           onNavigate={commit}
         />

@@ -36,19 +36,19 @@ export function WorkspaceNav({
   onNavigate,
   onNavigateComplete,
   navRef,
+  operationsRead = false,
 }: {
   active: AdminView;
   onNavigate: (view: AdminView) => void;
   onNavigateComplete?: () => void;
   navRef?: RefObject<HTMLElement | null>;
+  operationsRead?: boolean;
 }) {
   return (
-    <nav
-      className="admin-nav"
-      aria-label="Workspace sections"
-      ref={navRef}
-    >
-      {ADMIN_VIEWS.map((view) => (
+    <nav className="admin-nav" aria-label="Workspace sections" ref={navRef}>
+      {ADMIN_VIEWS.filter(
+        (view) => view !== "operations" || operationsRead,
+      ).map((view) => (
         <a
           key={view}
           href={`/admin/onboarding-invites?view=${view}`}
@@ -86,6 +86,7 @@ export function WorkspaceShell({
   description,
   titleId = "admin-view-title",
   children,
+  operationsRead = false,
 }: {
   active: AdminView;
   onNavigate: (view: AdminView) => void;
@@ -94,6 +95,7 @@ export function WorkspaceShell({
   description: string;
   titleId?: string;
   children: ReactNode;
+  operationsRead?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -193,6 +195,7 @@ export function WorkspaceShell({
         </div>
 
         <WorkspaceNav
+          operationsRead={operationsRead}
           active={active}
           onNavigate={navigate}
           onNavigateComplete={closeMobile}

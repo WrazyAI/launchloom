@@ -282,6 +282,19 @@ describe("accounts API authorization and profiles", () => {
     principal: AdminPrincipal,
   ): AccountsApiDependencies => ({ store, principal });
 
+  it.each([false, true])("includes the server-provided read capability on Neon bootstrap: %s", async enabled => {
+    const response = await accountsApi(jsonRequest("/me", "GET"), {
+      ...deps(fakeStore(), admin), capabilities: { operationsRead: enabled },
+    });
+    expect(response.status).toBe(200);
+    expect(await body(response)).toMatchObject({ capabilities: { operationsRead: enabled } });
+  });
+
+  it("defaults Neon bootstrap to operations reads disabled", async () => {
+    const response = await accountsApi(jsonRequest("/me", "GET"), deps(fakeStore(), admin));
+    expect(await body(response)).toMatchObject({ capabilities: { operationsRead: false } });
+  });
+
   it("lets only an owner create an enrollment", async () => {
     const store = fakeStore();
     const denied = await accountsApi(

@@ -69,6 +69,7 @@ import {
   type InviteAcceptanceAdapter,
 } from "./operations/acceptance";
 import type { AcceptanceInput } from "./operations/contracts";
+import { workspaceCapabilities } from "./admin/workspace-capabilities";
 import {
   scheduledOperations,
   type DispatchEnvironment,
@@ -411,6 +412,7 @@ async function authenticatedWorkspace(
         ? accountsApi(request, {
             store: guard.store!,
             principal: guard.principal,
+            capabilities: workspaceCapabilities(env),
           })
         : suffix === "/operations/records" ||
             suffix.startsWith("/operations/records/")

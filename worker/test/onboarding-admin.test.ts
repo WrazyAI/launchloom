@@ -349,9 +349,9 @@ describe("interim Access principal", () => {
       .join("")}`;
   }
 
-  it("returns only the verified Access principal and ignores browser identity", async () => {
+  it("returns the verified Access principal and server capability, ignoring browser identity and capability", async () => {
     const response = await worker.fetch(
-      new Request(`${meUrl}?email=forged@example.test`, {
+      new Request(`${meUrl}?email=forged@example.test&operationsRead=true`, {
         headers: {
           Origin: apiOrigin,
           "X-Admin-Email": "forged@example.test",
@@ -368,6 +368,7 @@ describe("interim Access principal", () => {
       principal: Record<string, unknown>;
     };
     expect(payload).toEqual({
+      capabilities: { operationsRead: false },
       principal: {
         id: await expectedId("admin@example.test"),
         email: "admin@example.test",
