@@ -464,6 +464,12 @@ async function visible(locator: Locator, timeout = 8_000) {
 
 async function waitForGenerations(page: Page) {
   await visible(page.getByText(new RegExp(`${ATTEMPTS.length} attempts`, "u")));
+  // Most existing assertions describe the attempt ledger; the default view is
+  // the site timeline, so switch to the ledger before returning. Deep-linked
+  // attempts open a dialog and must keep their current view.
+  if ((await page.getByRole("dialog").count()) === 0) {
+    await page.getByRole("button", { name: "Ledger" }).click();
+  }
 }
 
 async function openFilters(page: Page) {
@@ -982,6 +988,9 @@ describe("real admin workspace browser behavior", () => {
         expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewport);
         expect(metrics.bodyWidth).toBeLessThanOrEqual(metrics.viewport);
 
+        await page.keyboard.press("Escape");
+        await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
+        await page.getByRole("button", { name: "Ledger" }).click();
         const table = await page
           .locator(".admin-table-wrap")
           .first()
@@ -990,9 +999,6 @@ describe("real admin workspace browser behavior", () => {
             clientWidth: element.clientWidth,
           }));
         expect(table.scrollWidth).toBeLessThanOrEqual(table.clientWidth + 1);
-
-        await page.keyboard.press("Escape");
-        await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
         await page.getByRole("button", { name: "Open navigation" }).click();
         await page.getByRole("link", { name: "Clients", exact: true }).click();
         await waitForClients(page);
@@ -1282,6 +1288,27 @@ describe("real admin workspace browser behavior", () => {
       await expect
         .poll(() => page.locator(".admin-ledger").count())
         .toBeGreaterThan(0);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("shows the site timeline by default and opens the site", async () => {
+    const { page, errors } = await openPage();
+    try {
+      await visible(
+        page.getByText(new RegExp(`${ATTEMPTS.length} attempts`, "u")),
+      );
+      await expect
+        .poll(() => page.locator(".admin-site-group").count())
+        .toBeGreaterThan(0);
+      await visible(page.locator(".admin-site-name").first());
+      const openSite = page.getByRole("button", { name: "View site" }).first();
+      if (await openSite.count()) {
+        await openSite.click();
+        await visible(page.locator("#client-inspector-title"));
+      }
       autoErrors(errors);
     } finally {
       await page.close();
@@ -1728,13 +1755,15 @@ describe("real admin workspace browser behavior", () => {
         await expect
           .poll(() => placeholder.textContent())
           .toContain("Preview not captured");
-        expect(
-          await page
-            .locator(".admin-ledger .admin-preview")
-            .first()
-            .locator("img")
-            .count(),
-        ).toBe(0);
+        await expect
+          .poll(() =>
+            page
+              .locator(".admin-ledger .admin-preview")
+              .first()
+              .locator("img")
+              .count(),
+          )
+          .toBe(0);
 
         await page.locator(".admin-row-action").first().click();
         const dialog = page.getByRole("dialog");

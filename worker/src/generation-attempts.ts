@@ -315,7 +315,16 @@ export class GenerationAttempts {
           o.attemptId === initial.initial_attempt_id &&
           o.runAttempt === 1
         );
-        if (o.attemptId && !bindsInitial && o.attemptId !== existing?.attemptId)
+        // A manual dispatch has no registered initial attempt. Its canonical
+        // derived id is deterministic and safe to accept; any other supplied id
+        // still requires explicit dispatch registration.
+        const canonicalId = `github:${o.runId}:${o.runAttempt}`;
+        if (
+          o.attemptId &&
+          !bindsInitial &&
+          o.attemptId !== existing?.attemptId &&
+          o.attemptId !== canonicalId
+        )
           conflict("unverified attempt id");
         const id = bindsInitial
           ? initial!.initial_attempt_id
@@ -820,14 +829,24 @@ export class GenerationAttempts {
             attempt.clientId,
           )
           .toArray()[0]
-      : undefined;
+      : attempt.issueNumber
+        ? this.storage.sql
+            .exec<{ data: string }>(
+              "SELECT data FROM admin_clients WHERE issue_number=? LIMIT 1",
+              attempt.issueNumber,
+            )
+            .toArray()[0]
+        : undefined;
     let clientName: string | null = null;
+    let clientId = attempt.clientId;
     if (clientRow) {
       try {
         const client = JSON.parse(clientRow.data) as {
+          clientId?: string | null;
           businessName?: string | null;
           contactName?: string | null;
         };
+        clientId ??= client.clientId ?? null;
         const business =
           typeof client.businessName === "string"
             ? client.businessName.trim()
@@ -857,6 +876,7 @@ export class GenerationAttempts {
       .one();
     return {
       ...attempt,
+      clientId,
       previewUrl: safeDiagnosticPreviewUrl(attempt.previewUrl),
       clientName,
       costs: {

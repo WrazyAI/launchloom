@@ -540,7 +540,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
           );
       } catch (error) {
         if (required) throw error;
-        console.warn("attempt_tracking=skipped reason=unavailable");
+        const reason =
+          error instanceof Error
+            ? error.message.replace(/\s+/gu, " ").slice(0, 160)
+            : "unavailable";
+        console.warn(`attempt_tracking=skipped reason=${reason}`);
       }
     }
     if (payload) {
