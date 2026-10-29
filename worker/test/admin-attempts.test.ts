@@ -147,6 +147,41 @@ describe("GenerationLedger attempt history", () => {
       items.find((item) => item.attemptId === "trusted-preview")?.previewUrl,
     ).toBe(trusted);
   });
+  it("enriches an unlinked attempt from its intake issue", async () => {
+    const store = ledger();
+    await store.upsertClient({
+      clientId: "submission:s1",
+      inviteId: "i1",
+      submissionId: "s1",
+      issueNumber: 202,
+      businessName: "Northline Dental Studio",
+      contactName: "Priya Raman",
+      email: "northline@example.test",
+      phone: null,
+      creator: {
+        kind: "admin",
+        id: "a1",
+        name: "Admin",
+        email: null,
+        source: "neon",
+      },
+      submittedAt: 100,
+    });
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "github:1:1",
+        issueNumber: 202,
+        clientId: null,
+        executionStatus: "succeeded",
+      }),
+    );
+    const item = (await store.listAttempts({})).items.find(
+      (entry) => entry.attemptId === "github:1:1",
+    );
+    expect(item?.clientId).toBe("submission:s1");
+    expect(item?.clientName).toBe("Northline Dental Studio");
+  });
+
   it("returns one canonical ID for repeated executed identity", async () => {
     const store = ledger();
     const input = attempt({
