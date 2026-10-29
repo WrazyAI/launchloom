@@ -315,7 +315,16 @@ export class GenerationAttempts {
           o.attemptId === initial.initial_attempt_id &&
           o.runAttempt === 1
         );
-        if (o.attemptId && !bindsInitial && o.attemptId !== existing?.attemptId)
+        // A manual dispatch has no registered initial attempt. Its canonical
+        // derived id is deterministic and safe to accept; any other supplied id
+        // still requires explicit dispatch registration.
+        const canonicalId = `github:${o.runId}:${o.runAttempt}`;
+        if (
+          o.attemptId &&
+          !bindsInitial &&
+          o.attemptId !== existing?.attemptId &&
+          o.attemptId !== canonicalId
+        )
           conflict("unverified attempt id");
         const id = bindsInitial
           ? initial!.initial_attempt_id
