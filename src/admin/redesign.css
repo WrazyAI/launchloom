@@ -2058,3 +2058,172 @@
     padding-left: 18px;
   }
 }
+
+/* Site-grouped generation timeline. One row per site, attempts underneath. */
+.admin-site-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-site-group {
+  overflow: hidden;
+  border: 1px solid var(--admin-line);
+  border-radius: 12px;
+  background: var(--admin-paper);
+}
+
+.admin-site-head {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--admin-line);
+  background: #fbfaf4;
+}
+
+.admin-site-identity {
+  min-width: 0;
+}
+
+.admin-site-name {
+  margin: 0;
+  overflow: hidden;
+  color: var(--admin-ink);
+  font-family: "Manrope", "Avenir Next", system-ui, sans-serif;
+  font-size: 15.5px;
+  font-weight: 780;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-site-meta {
+  margin: 3px 0 0;
+  color: var(--admin-muted);
+  font-family: "Manrope", "Avenir Next", system-ui, sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.admin-site-head__actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.admin-site-open {
+  padding: 6px 10px;
+  font-size: 11.5px;
+}
+
+.admin-site-timeline {
+  margin: 0;
+  padding: 4px 18px 10px;
+  list-style: none;
+}
+
+.admin-site-timeline__item {
+  position: relative;
+}
+
+.admin-site-timeline__row {
+  display: grid;
+  grid-template-columns: 14px 96px minmax(0, 1.4fr) minmax(0, 1fr) 104px 48px;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid var(--admin-line);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-site-timeline__item:first-child .admin-site-timeline__row {
+  border-top: 0;
+}
+
+.admin-site-timeline__row:hover,
+.admin-site-timeline__row:focus-visible {
+  background: #faf8f0;
+}
+
+.admin-site-timeline__row:focus-visible {
+  outline: 2px solid var(--admin-forest);
+  outline-offset: -2px;
+}
+
+.admin-site-timeline__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9aa79f;
+}
+
+.admin-site-timeline__dot--success {
+  background: #2f6b3f;
+}
+.admin-site-timeline__dot--running {
+  background: #b7791f;
+}
+.admin-site-timeline__dot--failure {
+  background: #b42318;
+}
+.admin-site-timeline__dot--warning {
+  background: #b7791f;
+}
+
+.admin-site-timeline__when,
+.admin-site-timeline__what,
+.admin-site-timeline__status {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.admin-site-timeline__when strong,
+.admin-site-timeline__what strong {
+  color: var(--admin-ink);
+  font-family: "Manrope", "Avenir Next", system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 750;
+}
+
+.admin-site-timeline__when span,
+.admin-site-timeline__what span,
+.admin-site-timeline__time {
+  overflow: hidden;
+  color: var(--admin-muted);
+  font-family: "Manrope", "Avenir Next", system-ui, sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-site-timeline__preview {
+  width: 104px;
+}
+
+.admin-site-timeline__time {
+  text-align: right;
+}
+
+@media (max-width: 900px) {
+  .admin-site-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-site-timeline__row {
+    grid-template-columns: 14px minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .admin-site-timeline__preview,
+  .admin-site-timeline__time {
+    display: none;
+  }
+}
