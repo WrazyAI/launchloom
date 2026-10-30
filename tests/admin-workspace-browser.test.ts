@@ -316,7 +316,10 @@ async function serve(
     return;
   }
   if (suffix === "/me") {
-    sendJson(response, { principal: adminPrincipal, capabilities: { operationsRead: operationsReadCapability } });
+    sendJson(response, {
+      principal: adminPrincipal,
+      capabilities: { operationsRead: operationsReadCapability },
+    });
     return;
   }
   if (suffix === "/attempts") {
@@ -1194,13 +1197,25 @@ describe("real admin workspace browser behavior", () => {
     try {
       await waitForGenerations(page);
       const nav = page.getByRole("navigation", { name: "Workspace sections" });
-      await expect.poll(() => requests.some(r => r.path === "/me")).toBe(true);
-      expect(await nav.getByRole("link", { name: "Operations", exact: true }).count()).toBe(0);
-      await nav.getByRole("link", { name: "Legacy history", exact: true }).click();
+      await expect
+        .poll(() => requests.some((r) => r.path === "/me"))
+        .toBe(true);
+      expect(
+        await nav
+          .getByRole("link", { name: "Operations", exact: true })
+          .count(),
+      ).toBe(0);
+      await nav
+        .getByRole("link", { name: "Legacy history", exact: true })
+        .click();
       await waitForGenerations(page);
-      expect(requests.some(r => r.path.startsWith("/operations/"))).toBe(false);
+      expect(requests.some((r) => r.path.startsWith("/operations/"))).toBe(
+        false,
+      );
       autoErrors(errors);
-    } finally { await page.close(); }
+    } finally {
+      await page.close();
+    }
   });
 
   it("shows Operations only after server bootstrap explicitly enables reads", async () => {
@@ -1210,21 +1225,39 @@ describe("real admin workspace browser behavior", () => {
       await waitForGenerations(page);
       const nav = page.getByRole("navigation", { name: "Workspace sections" });
       await visible(nav.getByRole("link", { name: "Operations", exact: true }));
-      expect(requests.some(r => r.path.startsWith("/operations/"))).toBe(false);
+      expect(requests.some((r) => r.path.startsWith("/operations/"))).toBe(
+        false,
+      );
       autoErrors(errors);
-    } finally { await page.close(); }
+    } finally {
+      await page.close();
+    }
   });
 
   it("falls back a disabled Operations direct URL to Legacy history before any operations API call", async () => {
-    const { page, errors } = await openPage({ path: "/admin/onboarding-invites?view=operations&attemptId=11111111-1111-4111-8111-111111111111" });
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=operations&attemptId=11111111-1111-4111-8111-111111111111",
+    });
     try {
       await waitForGenerations(page);
-      await expect.poll(() => new URL(page.url()).searchParams.get("view")).toBe("generations");
-      expect(await page.getByRole("link", { name: "Operations", exact: true }).count()).toBe(0);
-      expect(requests.some(r => r.path.startsWith("/operations/"))).toBe(false);
-      expect(await page.locator("body").innerText()).not.toContain("temporarily unavailable");
+      await expect
+        .poll(() => new URL(page.url()).searchParams.get("view"))
+        .toBe("generations");
+      expect(
+        await page
+          .getByRole("link", { name: "Operations", exact: true })
+          .count(),
+      ).toBe(0);
+      expect(requests.some((r) => r.path.startsWith("/operations/"))).toBe(
+        false,
+      );
+      expect(await page.locator("body").innerText()).not.toContain(
+        "temporarily unavailable",
+      );
       autoErrors(errors);
-    } finally { await page.close(); }
+    } finally {
+      await page.close();
+    }
   });
 
   it("renders six quiet navigation items and reserves lime for focus", async () => {
@@ -1304,9 +1337,17 @@ describe("real admin workspace browser behavior", () => {
         .poll(() => page.locator(".admin-site-group").count())
         .toBeGreaterThan(0);
       await visible(page.locator(".admin-site-name").first());
-      const openSite = page.getByRole("button", { name: "View site" }).first();
-      if (await openSite.count()) {
-        await openSite.click();
+      const viewSite = page.getByRole("link", { name: "View site" }).first();
+      await visible(viewSite);
+      expect(await viewSite.getAttribute("href")).toMatch(
+        /^https:\/\/business-\d+\.pages\.dev\/$/u,
+      );
+      expect(await viewSite.getAttribute("target")).toBe("_blank");
+      const openClient = page
+        .getByRole("button", { name: "Open client" })
+        .first();
+      if (await openClient.count()) {
+        await openClient.click();
         await visible(page.locator("#client-inspector-title"));
       }
       autoErrors(errors);

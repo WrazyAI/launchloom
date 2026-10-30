@@ -95,6 +95,8 @@ export type AttemptSummary = AttemptInput & {
   };
   /** Display-only client identity enriched from the attempt's client record. */
   clientName?: string | null;
+  /** Display-only verified issue preview or client site URL. */
+  siteUrl?: string | null;
 };
 export type AttemptEventSource =
   "callback" | "github-reconcile" | "legacy-import";
