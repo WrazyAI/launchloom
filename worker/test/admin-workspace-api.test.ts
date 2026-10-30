@@ -970,6 +970,37 @@ describe("shared workspace", () => {
     expect(body.client.productionUrl).toBe("[link redacted]");
   });
 
+  it("preserves the verified site URL on attempt summaries", async () => {
+    await ledger().upsertGeneration({
+      generationId: "issue:9102",
+      issueNumber: 9102,
+      previewUrl: "https://review-initial.demo.pages.dev/",
+    });
+    await ledger().upsertAttempt(
+      attemptSeed({
+        attemptId: "site-url-attempt",
+        issueNumber: 9102,
+        executionStatus: "succeeded",
+        deliveryStatus: "preview_ready",
+      }),
+    );
+    const response = await worker.fetch(
+      new Request(`${base}/attempts?limit=20`, {
+        headers: { Origin: origin },
+      }),
+      bindings,
+      context(),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      items: Array<{ attemptId: string; siteUrl?: string | null }>;
+    };
+    const item = body.items.find(
+      (entry) => entry.attemptId === "site-url-attempt",
+    );
+    expect(item?.siteUrl).toBe("https://review-initial.demo.pages.dev/");
+  });
+
   it("enforces an enriched invitation binding on later client writes", async () => {
     await ledger().upsertClient({ ...client(300), inviteId: null });
     await ledger().upsertClient(client(300));
