@@ -3,6 +3,11 @@ name: Validate LaunchLoom changes
 on:
   pull_request:
     branches: [main]
+  schedule:
+    # Full rendered-route coverage once a day. PRs only run it when the
+    # changed paths can affect client-site rendering or route verification.
+    - cron: "0 5 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,6 +20,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       runtime: ${{ steps.paths.outputs.runtime }}
+      routes: ${{ steps.paths.outputs.routes }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -27,11 +33,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ] || [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "runtime=true" >> "$GITHUB_OUTPUT"
+            echo "routes=true" >> "$GITHUB_OUTPUT"
+            echo "Scheduled or manual run: full validation and rendered-route coverage." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           # Disable rename detection: changes moving files out of runtime
           # directories must retain the removed source path in the diff.
           git diff --no-renames --name-only -z HEAD^1 HEAD > "$RUNNER_TEMP/changed-paths"
           count=0
           runtime=false
+          routes=false
           while IFS= read -r -d '' path; do
             count=$((count + 1))
             case "$path" in
@@ -41,21 +54,35 @@ jobs:
               *)
                 printf 'Runtime or CI: %s\n' "$path"
                 runtime=true
+                case "$path" in
+                  templates/client-site/*|src/*|data/*|\
+                  scripts/verify-site-route-fixtures.mjs|scripts/verify-site-routes.mjs|\
+                  scripts/run-rendered-*|scripts/visual-quality-gate.mjs|\
+                  scripts/verify-contrast.mjs|scripts/seo-release-gate.mjs|\
+                  tests/fixtures/*|tests/route-*.test.ts|tests/rendered-*.test.ts|\
+                  package.json|package-lock.json|astro.config.*|tsconfig*.json|\
+                  playwright.config.*|.github/workflows/validate.yml)
+                    routes=true
+                    ;;
+                esac
                 ;;
             esac
           done < "$RUNNER_TEMP/changed-paths"
           # Fail closed if the checkout/diff unexpectedly reports no changes.
-          if [ "$count" -eq 0 ]; then runtime=true; fi
+          if [ "$count" -eq 0 ]; then runtime=true; routes=true; fi
           echo "runtime=$runtime" >> "$GITHUB_OUTPUT"
+          echo "routes=$routes" >> "$GITHUB_OUTPUT"
           if [ "$runtime" = "false" ]; then
             echo "Documentation-only PR: skipping application and rendered-route suites." >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$routes" = "true" ]; then
+            echo "Runtime changes affecting client-site routes: running full validation." >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "Runtime/CI changes detected: running all required validation suites." >> "$GITHUB_STEP_SUMMARY"
+            echo "Runtime changes without client-site route impact: application validation runs; rendered routes run nightly." >> "$GITHUB_STEP_SUMMARY"
           fi
 
   validate:
     needs: classify
-    if: needs.classify.outputs.runtime == 'true'
+    if: github.event_name != 'schedule' && needs.classify.outputs.runtime == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -81,26 +108,40 @@ jobs:
           npm run check:worker
       - name: Build production bundle
         run: npm run build
+
   route-fixtures:
     needs: classify
-    if: needs.classify.outputs.runtime == 'true'
+    # Keep this required check green on unrelated PRs without spending the
+    # twelve-minute rendered-route suite. The job still appears and passes.
+    if: always() && needs.classify.result == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
+        if: needs.classify.outputs.routes == 'true'
         with:
           persist-credentials: false
       - uses: actions/setup-node@v5
+        if: needs.classify.outputs.routes == 'true'
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - name: Install dependencies
+        if: needs.classify.outputs.routes == 'true'
+        run: npm ci
       - name: Install browser runtime
+        if: needs.classify.outputs.routes == 'true'
         run: npx playwright install --with-deps chromium
       - name: Verify synthetic approved-route matrix
+        if: needs.classify.outputs.routes == 'true'
         run: npm run verify:site-route-fixtures
+      - name: Record deferred route verification
+        if: needs.classify.outputs.routes != 'true'
+        run: |
+          echo "Rendered-route fixtures are not required for the changed paths." >> "$GITHUB_STEP_SUMMARY"
+          echo "The full suite runs nightly at 05:00 UTC and on manual dispatch." >> "$GITHUB_STEP_SUMMARY"
       - name: Retain private fixture route evidence
-        if: always()
+        if: always() && needs.classify.outputs.routes == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: synthetic-route-verification
