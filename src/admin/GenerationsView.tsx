@@ -422,14 +422,16 @@ export function GenerationsView({
   );
 
   useEffect(() => {
-    if (!hasActiveRun) return;
+    // Poll faster while a run is active, but keep a slower baseline poll so a
+    // newly dispatched intake appears without a manual refresh.
+    const interval = hasActiveRun ? 15_000 : 30_000;
     const timer = window.setInterval(() => {
       if (document.visibilityState !== "visible") return;
       silentRefreshRef.current = true;
       silentDetailRef.current = Boolean(selectedId);
       setRefreshToken((value) => value + 1);
       if (selectedId) setDetailToken((value) => value + 1);
-    }, 15_000);
+    }, interval);
     return () => window.clearInterval(timer);
   }, [hasActiveRun, selectedId]);
 

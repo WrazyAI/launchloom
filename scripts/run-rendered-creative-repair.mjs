@@ -1,9 +1,12 @@
 import { createQaRepairCallBudget, initializeQaRepairReceipt } from "./creative-repair-experiment.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
+import { uploadGenerationHero } from "./record-generation-event.mjs";
+import { recordGenerationStage } from "./record-generation-stage.mjs";
 import { withHeroOverlayCorrection } from "./hero-overlay-repair.mjs";
 import {
   assertCodeAuthoringModel,
@@ -1051,6 +1054,91 @@ export async function applyDeterministicHeroOverlay({
   return { applied: true };
 }
 
+/**
+ * The dashboard's generation hero id for the active run. Focused attempts use
+ * the exact GitHub attempt, full attempts use the issue.
+ */
+export function liveGenerationId(env = process.env) {
+  const profile = String(env.TRACK_PROFILE || "full").trim();
+  if (profile === "full" || profile === "full-preview") {
+    const issue = String(env.TRACK_ISSUE || "").trim();
+    return /^[1-9]\d*$/u.test(issue) ? `issue:${issue}` : "";
+  }
+  const runId = String(env.GITHUB_RUN_ID || "").trim();
+  const runAttempt = String(env.GITHUB_RUN_ATTEMPT || "").trim();
+  return /^[1-9]\d{0,19}$/u.test(runId) && /^[1-9]\d{0,5}$/u.test(runAttempt)
+    ? `github:${runId}:${runAttempt}`
+    : "";
+}
+
+/** Prefer the selected candidate, then the strongest rendered candidate. */
+export function selectLiveCandidateScreenshot(report, screenshotsDir) {
+  const candidates = Array.isArray(report?.candidates) ? report.candidates : [];
+  const selected = String(report?.selectedCandidateId || "");
+  const ordered = [
+    ...candidates.filter((candidate) => candidate.candidateId === selected),
+    ...candidates
+      .filter((candidate) => candidate.candidateId !== selected)
+      .sort(
+        (left, right) =>
+          Number(right.visualScore || right.score || 0) -
+            Number(left.visualScore || left.score || 0) ||
+          String(left.candidateId).localeCompare(String(right.candidateId)),
+      ),
+  ];
+  for (const candidate of ordered) {
+    const id = String(candidate.candidateId || "");
+    if (!id) continue;
+    for (const suffix of ["desktop-viewport.png", "desktop.png"]) {
+      const file = path.join(screenshotsDir, `${id}-${suffix}`);
+      if (existsSync(file)) return { candidateId: id, file };
+    }
+  }
+  return null;
+}
+
+/**
+ * Publish the latest rendered candidate to the generation hero store so the
+ * admin dashboard can show progress before the final preview exists. Tracking
+ * is best effort and never blocks the repair loop.
+ */
+/**
+ * @param {{ report?: any, screenshotsDir?: string, env?: Record<string, string | undefined>, upload?: (input: any) => Promise<any>, record?: (input: any) => Promise<any> }} [options]
+ */
+export async function uploadLiveCandidatePreview({
+  report,
+  screenshotsDir,
+  env = process.env,
+  upload = uploadGenerationHero,
+  record = recordGenerationStage,
+} = {}) {
+  const secret = String(env.GENERATION_TRACKING_SECRET || "").trim();
+  const api = String(env.LAUNCHLOOM_API_URL || "").trim();
+  if (!secret || !api) return { uploaded: false, reason: "tracking-disabled" };
+  const generationId = liveGenerationId(env);
+  if (!generationId) return { uploaded: false, reason: "no-generation-id" };
+  const candidate = selectLiveCandidateScreenshot(report, screenshotsDir);
+  if (!candidate)
+    return { uploaded: false, reason: "no-candidate-screenshot" };
+  try {
+    await upload({ api, secret, generationId, heroFile: candidate.file });
+  } catch (error) {
+    return {
+      uploaded: false,
+      reason: String(error?.message || error).slice(0, 160),
+    };
+  }
+  await Promise.resolve(
+    record({
+      stage: "creative_render",
+      status: "running",
+      detail: `Live candidate preview: ${candidate.candidateId}.`,
+      env,
+    }),
+  ).catch(() => {});
+  return { uploaded: true, generationId, candidateId: candidate.candidateId };
+}
+
 function resolveCandidateDirectory(candidateRoot, directory) {
   if (typeof directory !== "string" || !directory.trim())
     throw new Error("Creative repair report omitted a candidate directory.");
@@ -1931,6 +2019,9 @@ export async function runRenderedCreativeRepair({
           : {}),
       });
       finalRoundContext = { round, roundLabel, report, roundDir, screenshotsDir };
+      await uploadLiveCandidatePreview({ report, screenshotsDir }).catch(
+        () => {},
+      );
       recordRunTiming({
         category: "bakeoff",
         name: roundLabel,

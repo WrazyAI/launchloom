@@ -7,6 +7,9 @@ import path from "node:path";
 import {
   applyDeterministicHeroOverlay,
   collectAvailableScreenshots,
+  liveGenerationId,
+  selectLiveCandidateScreenshot,
+  uploadLiveCandidatePreview,
   colorLiterals,
   defaultRepairCandidate,
   normalizeRepair,
@@ -393,6 +396,108 @@ describe("rendered creative repair orchestration", () => {
     expect(
       colorLiterals("a { color: #FFF; background: rgb(1, 2, 3); }"),
     ).toEqual(["#fff", "rgb(1,2,3)"]);
+  });
+
+  it("uses the issue id for full runs and the exact attempt for focused runs", () => {
+    expect(
+      liveGenerationId({ TRACK_PROFILE: "full", TRACK_ISSUE: "217" }),
+    ).toBe("issue:217");
+    expect(
+      liveGenerationId({
+        TRACK_PROFILE: "creative-only",
+        GITHUB_RUN_ID: "9001",
+        GITHUB_RUN_ATTEMPT: "2",
+      }),
+    ).toBe("github:9001:2");
+    expect(liveGenerationId({ TRACK_PROFILE: "full" })).toBe("");
+  });
+
+  it("selects the strongest rendered candidate with a viewport capture", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "ll-live-hero-"));
+    try {
+      await fs.writeFile(
+        path.join(dir, "candidate-b-desktop-viewport.png"),
+        "image",
+      );
+      const selected = selectLiveCandidateScreenshot(
+        {
+          selectedCandidateId: null,
+          candidates: [
+            { candidateId: "candidate-a", visualScore: 40 },
+            { candidateId: "candidate-b", visualScore: 60 },
+          ],
+        },
+        dir,
+      );
+      expect(selected).toEqual({
+        candidateId: "candidate-b",
+        file: path.join(dir, "candidate-b-desktop-viewport.png"),
+      });
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("uploads the live candidate hero and records a refreshing stage event", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "ll-live-hero-"));
+    try {
+      await fs.writeFile(
+        path.join(dir, "candidate-b-desktop-viewport.png"),
+        "image",
+      );
+      const uploads: any[] = [];
+      const records: any[] = [];
+      const result = await uploadLiveCandidatePreview({
+        report: {
+          selectedCandidateId: null,
+          candidates: [
+            { candidateId: "candidate-a", visualScore: 40 },
+            { candidateId: "candidate-b", visualScore: 60 },
+          ],
+        },
+        screenshotsDir: dir,
+        env: {
+          GENERATION_TRACKING_SECRET: "secret",
+          LAUNCHLOOM_API_URL: "https://api.example.test",
+          TRACK_PROFILE: "creative-only",
+          GITHUB_RUN_ID: "9001",
+          GITHUB_RUN_ATTEMPT: "2",
+        },
+        upload: async (input: any) => {
+          uploads.push(input);
+        },
+        record: async (input: any) => {
+          records.push(input);
+        },
+      });
+      expect(result).toEqual({
+        uploaded: true,
+        generationId: "github:9001:2",
+        candidateId: "candidate-b",
+      });
+      expect(uploads).toHaveLength(1);
+      expect(uploads[0]).toMatchObject({
+        api: "https://api.example.test",
+        generationId: "github:9001:2",
+        heroFile: path.join(dir, "candidate-b-desktop-viewport.png"),
+      });
+      expect(records[0]).toMatchObject({
+        stage: "creative_render",
+        status: "running",
+      });
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("skips the live hero upload when tracking is not configured", async () => {
+    expect(
+      await uploadLiveCandidatePreview({
+        report: { candidates: [] },
+        screenshotsDir: "/tmp",
+        env: {},
+      }),
+    ).toEqual({ uploaded: false, reason: "tracking-disabled" });
   });
 
   it("applies the deterministic hero overlay once for a large-card finding", async () => {

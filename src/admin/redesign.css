@@ -699,6 +699,26 @@
 .admin-status__dot--running {
   background: #7d8e20;
   box-shadow: 0 0 0 3px rgba(217, 240, 107, 0.28);
+  animation: admin-live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes admin-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.admin-live-stage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 16px;
+  color: var(--admin-muted);
+  font-size: 12px;
 }
 .admin-status__dot--failure {
   background: var(--failure);

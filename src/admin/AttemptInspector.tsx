@@ -258,6 +258,14 @@ export function AttemptInspector({
     };
   }, []);
 
+  const latestEvent = [...(attempt?.events || []), ...events].reduce<
+    AttemptEventRecord | null
+  >(
+    (latest, event) =>
+      !latest || event.createdAt > latest.createdAt ? event : latest,
+    null,
+  );
+
   const body = (
     <>
       <div className="admin-sheet__header">
@@ -322,6 +330,25 @@ export function AttemptInspector({
               />
               <DeliveryStatusBadge status={attempt.deliveryStatus} />
             </div>
+
+            {attempt.executionStatus === "running" ||
+            attempt.executionStatus === "queued" ? (
+              <div
+                className="admin-live-stage"
+                role="status"
+                aria-live="polite"
+              >
+                <span
+                  className="admin-status__dot admin-status__dot--running"
+                  aria-hidden="true"
+                />
+                <span>
+                  {latestEvent
+                    ? `Current stage: ${latestEvent.stage} (${latestEvent.status})`
+                    : "Waiting for the first stage event"}
+                </span>
+              </div>
+            ) : null}
 
             <section
               className="admin-sheet__preview"

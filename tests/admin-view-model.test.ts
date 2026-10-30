@@ -53,10 +53,19 @@ describe("admin view model formatting", () => {
       profile: "creative-only" as const,
       runId: "9001",
       runAttempt: 2,
+      executionStatus: "succeeded" as const,
       deliveryStatus: "diagnostic" as const,
       previewUrl: "https://abc123.launchloom-pipeline-preview.pages.dev/",
     };
     expect(generationHeroUrl(attempt)).toContain("id=github%3A9001%3A2");
+    expect(
+      generationHeroUrl({
+        ...attempt,
+        executionStatus: "running",
+        deliveryStatus: "none",
+        previewUrl: null,
+      }),
+    ).toContain("id=github%3A9001%3A2");
     expect(focusedDiagnosticPreviewUrl(attempt)).toBe(attempt.previewUrl);
     expect(
       focusedDiagnosticPreviewUrl({ ...attempt, deliveryStatus: "none" }),
@@ -84,6 +93,7 @@ describe("admin view model formatting", () => {
         profile: "full",
         runId: "9001",
         runAttempt: 2,
+        executionStatus: "succeeded",
         deliveryStatus: "published",
         previewUrl: null,
       }),

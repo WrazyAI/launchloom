@@ -16,13 +16,20 @@ export function GenerationPreview({
     | "profile"
     | "runId"
     | "runAttempt"
+    | "executionStatus"
     | "deliveryStatus"
     | "previewUrl"
+    | "updatedAt"
   >;
   large?: boolean;
   className?: string;
 }) {
-  const src = generationHeroUrl(attempt);
+  const hero = generationHeroUrl(attempt);
+  // The live candidate image can be replaced between polling passes without a
+  // new attempt id. Version the URL so the browser fetches the newest capture.
+  const src = hero
+    ? `${hero}&v=${encodeURIComponent(String(attempt.updatedAt ?? 0))}`
+    : null;
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {

@@ -339,14 +339,21 @@ export function generationHeroUrl(
     | "profile"
     | "runId"
     | "runAttempt"
+    | "executionStatus"
     | "deliveryStatus"
     | "previewUrl"
   >,
 ): string | null {
   let id: string;
   if (attempt.profile !== "full" && attempt.profile !== "full-preview") {
+    // A running focused attempt can show the latest candidate capture before
+    // any diagnostic preview exists. Once the run settles, keep the stricter
+    // diagnostic-preview proof.
+    const live =
+      attempt.executionStatus === "queued" ||
+      attempt.executionStatus === "running";
     if (
-      !focusedDiagnosticPreviewUrl(attempt) ||
+      (!live && !focusedDiagnosticPreviewUrl(attempt)) ||
       !attempt.runId ||
       !/^[1-9]\d{0,19}$/u.test(attempt.runId) ||
       !Number.isSafeInteger(attempt.runAttempt) ||
