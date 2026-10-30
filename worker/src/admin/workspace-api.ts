@@ -121,7 +121,7 @@ function safeSiteLink(value: unknown): unknown {
   }
 }
 
-const SITE_URL_FIELDS = new Set(["previewUrl", "productionUrl"]);
+const SITE_URL_FIELDS = new Set(["previewUrl", "productionUrl", "siteUrl"]);
 
 /** Fixed contract reason codes only. Never surface a raw validation message. */
 function trackingReason(error: unknown) {
@@ -308,9 +308,7 @@ export async function operationsDashboardApi(
   const list = suffix === "/operations/records";
   const detailMatch = /^\/operations\/records\/(.+)$/u.exec(suffix);
   const detail =
-    detailMatch && OPERATION_UUID.test(detailMatch[1])
-      ? detailMatch[1]
-      : null;
+    detailMatch && OPERATION_UUID.test(detailMatch[1]) ? detailMatch[1] : null;
   if (!list && !detail)
     return workspaceError("not_found", "Route not found.", 404);
   const url = new URL(request.url);
@@ -404,7 +402,10 @@ export async function workspaceApi(
       );
     if (!verifiedEmail)
       return workspaceError("signed_out", "Sign in required.", 401);
-    return json({ principal: await accessModePrincipal(verifiedEmail), capabilities: workspaceCapabilities(env) });
+    return json({
+      principal: await accessModePrincipal(verifiedEmail),
+      capabilities: workspaceCapabilities(env),
+    });
   }
   try {
     const ledger = env.GENERATION_LEDGER.getByName("launchloom-generations");
@@ -445,9 +446,7 @@ export async function workspaceApi(
       return {
         ...health,
         partial:
-          health.partial ||
-          projection.partial ||
-          acceptance.attentionCount > 0,
+          health.partial || projection.partial || acceptance.attentionCount > 0,
         pendingProjectionCount: projection.pendingProjectionCount,
         lastError:
           projection.lastError ?? acceptance.lastError ?? health.lastError,
