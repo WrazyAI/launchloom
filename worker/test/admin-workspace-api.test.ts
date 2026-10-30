@@ -974,7 +974,13 @@ describe("shared workspace", () => {
     await ledger().upsertGeneration({
       generationId: "issue:9102",
       issueNumber: 9102,
+      businessName: "Site URL Demo",
       previewUrl: "https://review-initial.demo.pages.dev/",
+    });
+    await ledger().upsertClient({
+      ...client(9101),
+      issueNumber: 9102,
+      businessName: "Site URL Demo",
     });
     await ledger().upsertAttempt(
       attemptSeed({
@@ -985,7 +991,7 @@ describe("shared workspace", () => {
       }),
     );
     const response = await worker.fetch(
-      new Request(`${base}/attempts?limit=20`, {
+      new Request(`${base}/attempts?issueNumber=9102`, {
         headers: { Origin: origin },
       }),
       bindings,
@@ -999,6 +1005,21 @@ describe("shared workspace", () => {
       (entry) => entry.attemptId === "site-url-attempt",
     );
     expect(item?.siteUrl).toBe("https://review-initial.demo.pages.dev/");
+
+    const clients = await worker.fetch(
+      new Request(`${base}/clients?limit=20`, {
+        headers: { Origin: origin },
+      }),
+      bindings,
+      context(),
+    );
+    expect(clients.status).toBe(200);
+    const directory = (await clients.json()) as {
+      items: Array<{ issueNumber: number; siteUrl?: string | null }>;
+    };
+    expect(
+      directory.items.find((entry) => entry.issueNumber === 9102)?.siteUrl,
+    ).toBe("https://review-initial.demo.pages.dev/");
   });
 
   it("enforces an enriched invitation binding on later client writes", async () => {

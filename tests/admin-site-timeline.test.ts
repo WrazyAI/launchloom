@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { groupBySite, siteStatus } from "../src/admin/site-groups";
+import {
+  groupBySite,
+  isSiteGeneration,
+  siteStatus,
+} from "../src/admin/site-groups";
 
 function attempt(overrides: Record<string, unknown>) {
   return {
@@ -39,6 +43,13 @@ function attempt(overrides: Record<string, unknown>) {
 }
 
 describe("site timeline grouping", () => {
+  it("treats only full generations as sites", () => {
+    expect(isSiteGeneration(attempt({ profile: "full" }))).toBe(true);
+    expect(isSiteGeneration(attempt({ profile: "full-preview" }))).toBe(true);
+    expect(isSiteGeneration(attempt({ profile: "creative-only" }))).toBe(false);
+    expect(isSiteGeneration(attempt({ profile: "seo-only" }))).toBe(false);
+  });
+
   it("groups every attempt for the same client into one site", () => {
     const groups = groupBySite([
       attempt({
@@ -130,6 +141,31 @@ describe("site timeline grouping", () => {
       createdAt: 2_000,
     });
     expect(siteStatus([preview, published]).attemptId).toBe("published");
+  });
+
+  it("keeps each linked client for a merged business group", () => {
+    const groups = groupBySite([
+      attempt({
+        attemptId: "a",
+        clientId: "submission:old",
+        clientName: "Harbor & Pine",
+        issueNumber: 183,
+        createdAt: 1_000,
+      }),
+      attempt({
+        attemptId: "b",
+        clientId: "submission:new",
+        clientName: "Harbor & Pine",
+        issueNumber: 197,
+        createdAt: 2_000,
+      }),
+    ]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].clients).toEqual([
+      { clientId: "submission:new", issueNumber: 197 },
+      { clientId: "submission:old", issueNumber: 183 },
+    ]);
+    expect(groups[0].issues).toEqual([197, 183]);
   });
 
   it("keeps unrelated unlinked attempts separate and sorts sites by latest activity", () => {

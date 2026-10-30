@@ -11,7 +11,7 @@ import { ADMIN_VIEWS, type AdminView } from "./route-state";
 
 const VIEW_LABELS: Record<AdminView, string> = {
   operations: "Operations",
-  generations: "Legacy history",
+  generations: "Sites",
   clients: "Clients",
   invitations: "Invitations",
   team: "Team",
@@ -166,7 +166,7 @@ export function WorkspaceShell({
           <a
             className="admin-brand"
             href="/admin/onboarding-invites?view=generations"
-            aria-label="LaunchLoom operations home"
+            aria-label="LaunchLoom Operations workspace, sites home"
           >
             <BrandMark compact={collapsed && !mobile} />
           </a>

@@ -10,11 +10,12 @@ import type { AdminRouteState } from "./route-state";
 import { ActorLabel } from "./ActorLabel";
 import { AdminIcon } from "./AdminIcon";
 import { ClientDossier } from "./ClientDossier";
+import { groupClients } from "./client-groups";
+import { HealthNotice } from "./HealthNotice";
 import {
   dateInputValue,
   formatClientName,
   formatDate,
-  formatTimestamp,
   isAbortError,
   parseDateEnd,
   parseDateStart,
@@ -76,52 +77,6 @@ function clientInitials(record: ClientRecord) {
 
 function emailIsPrimary(record: ClientRecord) {
   return !record.businessName && !record.contactName && Boolean(record.email);
-}
-
-function DirectoryHealth({
-  health,
-  error,
-}: {
-  health: Health | null;
-  error: string | null;
-}) {
-  if (error)
-    return (
-      <div className="admin-notice admin-notice--error" role="alert">
-        Client directory health could not be loaded. The directory may be
-        incomplete.
-      </div>
-    );
-  if (!health) return null;
-  const partial = health.partial || health.pendingProjectionCount > 0;
-  if (!partial && !health.lastError) return null;
-  return (
-    <div
-      className="admin-notice admin-notice--attention"
-      role="status"
-      data-health-state={partial ? "partial" : "current"}
-    >
-      <strong>
-        {partial
-          ? "Client directory may be incomplete"
-          : "Client directory health warning"}
-      </strong>
-      {partial ? (
-        <span>
-          {health.pendingProjectionCount} pending projections
-          {health.partial ? " and partial coverage" : ""}. Counts only include
-          records already accepted into the shared ledger.
-        </span>
-      ) : null}
-      {health.lastError ? <span>{health.lastError}</span> : null}
-      {health.coverageStart !== null ? (
-        <span>Coverage starts {formatDate(health.coverageStart)}.</span>
-      ) : (
-        <span>Historical coverage start is not recorded.</span>
-      )}
-      <span>Last synchronized {formatTimestamp(health.lastSyncAt)}.</span>
-    </div>
-  );
 }
 
 export function ClientsView({
@@ -285,26 +240,36 @@ export function ClientsView({
   }, [api, selectedId, clientToken]);
 
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId || !client?.issueNumber) return;
     const requestId = ++attemptsRequest.current;
     const controller = new AbortController();
     setAttemptsLoading(true);
     setAttemptsError(null);
-    api
-      .listAttempts(
+    Promise.all([
+      api.listAttempts(
         { clientId: selectedId, limit: 100 },
         { signal: controller.signal },
-      )
-      .then((page) => {
+      ),
+      api.listAttempts(
+        { issueNumber: client.issueNumber, limit: 100 },
+        { signal: controller.signal },
+      ),
+    ])
+      .then(([byClient, byIssue]) => {
         if (
           controller.signal.aborted ||
           attemptsRequest.current !== requestId ||
           detailIdRef.current !== selectedId
         )
           return;
-        setAttempts(page.items);
-        setAttemptTotal(page.total);
-        setAttemptsNextCursor(page.nextCursor);
+        const seen = new Set(byIssue.items.map((item) => item.attemptId));
+        const items = [
+          ...byIssue.items,
+          ...byClient.items.filter((item) => !seen.has(item.attemptId)),
+        ].sort((a, b) => b.createdAt - a.createdAt);
+        setAttempts(items);
+        setAttemptTotal(Math.max(byClient.total, byIssue.total, items.length));
+        setAttemptsNextCursor(byIssue.nextCursor ?? byClient.nextCursor);
         setAttemptsLoading(false);
       })
       .catch((failure) => {
@@ -318,7 +283,7 @@ export function ClientsView({
         setAttemptsLoading(false);
       });
     return () => controller.abort();
-  }, [api, selectedId, clientToken]);
+  }, [api, selectedId, client?.issueNumber, clientToken]);
 
   useEffect(() => {
     if (selectedId) {
@@ -390,7 +355,10 @@ export function ClientsView({
     event: MouseEvent<HTMLTableRowElement>,
   ) {
     const target = event.target as HTMLElement;
-    if (target.closest("a,button") && !target.closest("[data-row-action]"))
+    if (
+      target.closest("a,button,summary") &&
+      !target.closest("[data-row-action]")
+    )
       return;
     const trigger =
       target.closest<HTMLButtonElement>("[data-row-action]") ||
@@ -416,14 +384,20 @@ export function ClientsView({
   }
 
   function loadMoreAttempts() {
-    if (!selectedId || !attemptsNextCursor || attemptsLoading) return;
+    if (
+      !selectedId ||
+      !client?.issueNumber ||
+      !attemptsNextCursor ||
+      attemptsLoading
+    )
+      return;
     const requestId = ++attemptsRequest.current;
     const activeId = selectedId;
     setAttemptsLoading(true);
     setAttemptsError(null);
     api
       .listAttempts({
-        clientId: activeId,
+        issueNumber: client.issueNumber,
         cursor: attemptsNextCursor,
         limit: 100,
       })
@@ -452,16 +426,24 @@ export function ClientsView({
   }
 
   const activeFilterCount = advancedFilterCount(filters);
+  const clientGroups = groupClients(clients);
+  const selectedGroupKey = clientGroups.find((group) =>
+    group.clients.some((record) => record.clientId === selectedId),
+  )?.key;
   const directoryState = healthError
     ? "Coverage unavailable"
     : health
-      ? health.partial || health.pendingProjectionCount > 0
-        ? "Partial coverage"
-        : "Directory current"
+      ? health.pendingProjectionCount > 0 ||
+        (health.acceptanceAttentionCount ?? 0) > 0 ||
+        health.lastError
+        ? "Needs attention"
+        : health.coverageStart === null
+          ? "Coverage unknown"
+          : "Directory current"
       : "Checking coverage";
   const showing =
     clients.length > 0
-      ? `Showing ${clients.length} of ${total} clients`
+      ? `${clientGroups.length} ${clientGroups.length === 1 ? "site" : "sites"} · ${clients.length} of ${total} clients`
       : loading
         ? "Loading clients"
         : "No clients to show";
@@ -480,13 +462,18 @@ export function ClientsView({
             ? "unavailable"
             : !health
               ? "loading"
-              : health.partial || health.pendingProjectionCount > 0
-                ? "partial"
-                : "current"
+              : health.pendingProjectionCount > 0 ||
+                  (health.acceptanceAttentionCount ?? 0) > 0 ||
+                  health.lastError
+                ? "attention"
+                : health.coverageStart === null
+                  ? "coverage"
+                  : "current"
         }
       >
         <span>
-          <strong>{clients.length}</strong> in view
+          <strong>{clientGroups.length}</strong>{" "}
+          {clientGroups.length === 1 ? "site" : "sites"}
         </span>
         <span className="admin-pulse__sep" />
         <span>
@@ -615,7 +602,11 @@ export function ClientsView({
         ) : null}
       </form>
 
-      <DirectoryHealth health={health} error={healthError} />
+      <HealthNotice
+        health={health}
+        error={healthError}
+        subject="Client directory"
+      />
 
       {error && clients.length > 0 ? (
         <div className="admin-notice admin-notice--error" role="alert">
@@ -669,87 +660,142 @@ export function ClientsView({
               </tr>
             </thead>
             <tbody>
-              {clients.map((record) => (
-                <tr
-                  key={record.clientId}
-                  data-client-id={record.clientId}
-                  tabIndex={0}
-                  aria-selected={selectedId === record.clientId || undefined}
-                  onClick={(event) => selectClientRow(record, event)}
-                  onKeyDown={(event) => {
-                    if (event.target !== event.currentTarget) return;
-                    if (event.key !== "Enter" && event.key !== " ") return;
-                    event.preventDefault();
-                    const trigger =
-                      event.currentTarget.querySelector<HTMLButtonElement>(
-                        "[data-row-action]",
-                      );
-                    if (trigger) selectClient(record, trigger);
-                  }}
-                >
-                  <td data-label="Client">
-                    <div className="admin-client-cell">
-                      <span
-                        className="admin-client-monogram"
-                        aria-hidden="true"
-                      >
-                        {clientInitials(record)}
-                      </span>
-                      <span className="admin-client-copy">
-                        <span className="admin-client-name">
-                          {formatClientName(record)}
-                        </span>
-                        <span className="admin-client-meta">
-                          Issue #{record.issueNumber}
-                        </span>
-                      </span>
-                    </div>
-                  </td>
-                  <td data-label="Contact">
-                    <span className="admin-client-contact-name">
-                      {record.contactName ||
-                        (emailIsPrimary(record) ? "Email only" : "Not recorded")}
-                    </span>
-                    {emailIsPrimary(record) ? null : (
-                      <span className="admin-client-contact-email">
-                        {record.email || "Email not recorded"}
-                      </span>
-                    )}
-                  </td>
-                  <td data-label="Submitted">
-                    <span className="admin-client-date">
-                      {formatDate(record.submittedAt)}
-                    </span>
-                  </td>
-                  <td data-label="Inviting admin">
-                    <ActorLabel actor={record.creator} showSource={false} />
-                  </td>
-                  <td
-                    data-label="Client dossier"
-                    className="admin-client-action"
+              {clientGroups.map((group) => {
+                const record = group.clients[0];
+                const siteUrl = group.clients.find(
+                  (client) => client.siteUrl,
+                )?.siteUrl;
+                const issues = [
+                  ...new Set(group.clients.map((c) => c.issueNumber)),
+                ].sort((a, b) => b - a);
+                const selected = group.key === selectedGroupKey;
+                return (
+                  <tr
+                    key={group.key}
+                    data-client-id={record.clientId}
+                    data-client-group={group.key}
+                    tabIndex={0}
+                    aria-selected={selected || undefined}
+                    onClick={(event) => selectClientRow(record, event)}
+                    onKeyDown={(event) => {
+                      if (event.target !== event.currentTarget) return;
+                      if (event.key !== "Enter" && event.key !== " ") return;
+                      event.preventDefault();
+                      const trigger =
+                        event.currentTarget.querySelector<HTMLButtonElement>(
+                          "[data-row-action]",
+                        );
+                      if (trigger) selectClient(record, trigger);
+                    }}
                   >
-                    <button
-                      type="button"
-                      className="admin-row-action"
-                      data-row-action
-                      aria-label={`Open client ${record.clientId} for ${formatClientName(record)}`}
-                      aria-haspopup="dialog"
-                      aria-expanded={selectedId === record.clientId}
-                      aria-controls={
-                        selectedId === record.clientId
-                          ? "client-inspector"
-                          : undefined
-                      }
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        selectClient(record, event.currentTarget);
-                      }}
+                    <td data-label="Client">
+                      <div className="admin-client-cell">
+                        <span
+                          className="admin-client-monogram"
+                          aria-hidden="true"
+                        >
+                          {clientInitials(record)}
+                        </span>
+                        <div className="admin-client-copy">
+                          <span className="admin-client-name">
+                            {formatClientName(record)}
+                          </span>
+                          <span className="admin-client-meta">
+                            {issues.length === 1
+                              ? `Issue #${issues[0]}`
+                              : `Intakes ${issues
+                                  .map((issue) => `#${issue}`)
+                                  .join(", ")}`}
+                          </span>
+                          {group.clients.length > 1 ? (
+                            <details className="admin-client-intakes">
+                              <summary>{group.clients.length} intakes</summary>
+                              <ul>
+                                {group.clients.map((client) => (
+                                  <li key={client.clientId}>
+                                    <button
+                                      type="button"
+                                      className="admin-link-button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        selectClient(
+                                          client,
+                                          event.currentTarget,
+                                        );
+                                      }}
+                                    >
+                                      Intake #{client.issueNumber} ·{" "}
+                                      {formatDate(client.submittedAt)}
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            </details>
+                          ) : null}
+                          {siteUrl ? (
+                            <a
+                              className="admin-client-site-link"
+                              href={siteUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              View site
+                            </a>
+                          ) : null}
+                        </div>
+                      </div>
+                    </td>
+                    <td data-label="Contact">
+                      <span className="admin-client-contact-name">
+                        {record.contactName ||
+                          (emailIsPrimary(record)
+                            ? "Email only"
+                            : "Not recorded")}
+                      </span>
+                      {emailIsPrimary(record) ? null : (
+                        <span className="admin-client-contact-email">
+                          {record.email || "Email not recorded"}
+                        </span>
+                      )}
+                    </td>
+                    <td data-label="Submitted">
+                      <span className="admin-client-date">
+                        {formatDate(record.submittedAt)}
+                      </span>
+                    </td>
+                    <td data-label="Inviting admin">
+                      <ActorLabel actor={record.creator} showSource={false} />
+                    </td>
+                    <td
+                      data-label="Client dossier"
+                      className="admin-client-action"
                     >
-                      Open
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                      <button
+                        type="button"
+                        className="admin-row-action"
+                        data-row-action
+                        aria-label={
+                          group.clients.length > 1
+                            ? `Open latest intake for ${formatClientName(record)}`
+                            : `Open client ${record.clientId} for ${formatClientName(record)}`
+                        }
+                        aria-haspopup="dialog"
+                        aria-expanded={selected}
+                        aria-controls={
+                          selected ? "client-inspector" : undefined
+                        }
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          selectClient(record, event.currentTarget);
+                        }}
+                      >
+                        Open
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

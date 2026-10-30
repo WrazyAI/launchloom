@@ -10,6 +10,7 @@ import type {
   AdminPrincipal,
   ActorSnapshot,
   AttemptFilters,
+  OperationRecord,
 } from "../../../src/lib/admin-contracts";
 import type { OperationsReadStore } from "../operations/contracts";
 import {
@@ -333,11 +334,35 @@ export async function operationsDashboardApi(
       createOperationsStore(
         operationsDatabaseSql(env.OPERATIONS_DATABASE_URL!),
       );
+    const ledger =
+      env.GENERATION_LEDGER?.getByName("launchloom-generations") ?? null;
+    /** Best-effort display identity for the same attempt in the legacy ledger. */
+    const enrich = async <T extends OperationRecord>(
+      records: T[],
+    ): Promise<T[]> => {
+      if (!ledger) return records;
+      try {
+        const page = await ledger.listAttempts({ limit: 100 });
+        const byId = new Map(page.items.map((item) => [item.attemptId, item]));
+        return records.map((record) => {
+          const attempt = byId.get(record.attemptId);
+          if (!attempt) return record;
+          return {
+            ...record,
+            ...(attempt.clientName ? { clientName: attempt.clientName } : {}),
+            ...(attempt.siteUrl ? { siteUrl: attempt.siteUrl } : {}),
+          };
+        });
+      } catch {
+        return records;
+      }
+    };
     if (list) {
       const page = await reader.listOperations(limit, cursor);
       return json(
         {
           ...page,
+          items: await enrich(page.items),
           recordSource: "operations",
           readOnly: true,
         },
@@ -350,9 +375,10 @@ export async function operationsDashboardApi(
     const operation = await reader.getOperation(detail);
     if (!operation)
       return workspaceError("not_found", "Operation not found.", 404);
+    const [enriched] = await enrich([operation]);
     return json(
       {
-        operation,
+        operation: enriched ?? operation,
         recordSource: "operations",
         readOnly: true,
       },
@@ -430,9 +456,21 @@ export async function workspaceApi(
             : (() => {
                 throw new Error("invalid attention");
               })();
+    const siteOnly =
+      query.siteOnly === undefined
+        ? undefined
+        : query.siteOnly === "true"
+          ? true
+          : query.siteOnly === "false"
+            ? false
+            : (() => {
+                throw new Error("invalid siteOnly");
+              })();
     const filters = {
       ...query,
       attention,
+      siteOnly,
+      issueNumber: number("issueNumber"),
       limit: number("limit"),
       from: number("from"),
       to: number("to"),
@@ -448,6 +486,7 @@ export async function workspaceApi(
         partial:
           health.partial || projection.partial || acceptance.attentionCount > 0,
         pendingProjectionCount: projection.pendingProjectionCount,
+        acceptanceAttentionCount: acceptance.attentionCount,
         lastError:
           projection.lastError ?? acceptance.lastError ?? health.lastError,
         acceptanceRecovery: acceptance,

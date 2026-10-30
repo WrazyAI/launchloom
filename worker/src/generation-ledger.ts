@@ -10,6 +10,7 @@ import type {
   InitialDispatchRegistration,
   ClientInput,
   ClientFilters,
+  ClientRecord,
   DispatchRequest,
   RelatedIssuePreview,
 } from "../../src/lib/admin-contracts";
@@ -300,10 +301,15 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
     return this.attempts.upsertClient(input);
   }
   async listClients(query: ClientFilters) {
-    return this.attempts.listClients(query);
+    const page = await this.attempts.listClients(query);
+    return {
+      ...page,
+      items: page.items.map((client) => this.withClientSiteUrl(client)),
+    };
   }
   async getClient(id: string) {
-    return this.attempts.getClient(id);
+    const client = await this.attempts.getClient(id);
+    return client ? this.withClientSiteUrl(client) : client;
   }
   async registerDispatch(input: DispatchRequest) {
     return this.attempts.registerDispatch(input);
@@ -343,14 +349,26 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
    * timeline does not borrow it.
    */
   private withSiteUrl<T extends AttemptSummary>(attempt: T): T {
-    if (attempt.siteUrl) return attempt;
-    if (!attempt.issueNumber) return attempt;
-    if (!["preview_ready", "published"].includes(attempt.deliveryStatus))
+    const issueNumber = attempt.issueNumber;
+    if (!issueNumber || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
       return attempt;
+    const row = this.issueGeneration(issueNumber);
+    let next = attempt;
+    const business = row?.business_name?.trim();
+    if (!next.clientName && business && !/^your business$/iu.test(business))
+      next = { ...next, clientName: business.slice(0, 120) };
+    if (next.siteUrl) return next;
+    if (!["preview_ready", "published"].includes(next.deliveryStatus))
+      return next;
     const siteUrl =
-      this.issuePreviewUrl(attempt.issueNumber) ??
-      safeClientSiteUrl(attempt.previewUrl);
-    return siteUrl ? { ...attempt, siteUrl } : attempt;
+      this.issueSiteUrl(issueNumber) ?? safeClientSiteUrl(next.previewUrl);
+    return siteUrl ? { ...next, siteUrl } : next;
+  }
+
+  /** Display-only verified site resolved from the trusted issue generation. */
+  private withClientSiteUrl<T extends ClientRecord>(client: T): T {
+    const siteUrl = this.issueSiteUrl(client.issueNumber);
+    return siteUrl ? { ...client, siteUrl } : client;
   }
 
   /**
@@ -362,7 +380,7 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
    * Focused attempts stay strictly attempt-specific.
    */
   private relatedPreview(attempt: AttemptDetail): RelatedIssuePreview | null {
-    if (attempt.profile !== "full") return null;
+    if (!["full", "full-preview"].includes(attempt.profile)) return null;
     if (attempt.deliveryStatus !== "none") return null;
     if (
       !["failed", "cancelled", "unknown", "skipped"].includes(
@@ -402,19 +420,36 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
     };
   }
 
-  /** Verified issue-scoped preview recorded by the trusted completion ingest. */
-  private issuePreviewUrl(issueNumber: number): string | null {
+  /** Generation row for an intake issue, if the trusted ingest recorded one. */
+  private issueGeneration(issueNumber: number) {
     const row = this.ctx.storage.sql
       .exec<{
         issue_number: number | null;
+        business_name: string | null;
         preview_url: string | null;
+        production_url: string | null;
       }>(
-        "SELECT issue_number, preview_url FROM generations WHERE generation_id = ? LIMIT 1",
+        "SELECT issue_number, business_name, preview_url, production_url FROM generations WHERE generation_id = ? LIMIT 1",
         `issue:${issueNumber}`,
       )
       .toArray()[0];
-    if (!row || row.issue_number !== issueNumber) return null;
-    return safeClientSiteUrl(row.preview_url);
+    return row && row.issue_number === issueNumber ? row : null;
+  }
+
+  /** Verified issue-scoped preview recorded by the trusted completion ingest. */
+  private issuePreviewUrl(issueNumber: number): string | null {
+    const row = this.issueGeneration(issueNumber);
+    return row ? safeClientSiteUrl(row.preview_url) : null;
+  }
+
+  /** Published site when available, otherwise the verified issue preview. */
+  private issueSiteUrl(issueNumber: number): string | null {
+    const row = this.issueGeneration(issueNumber);
+    if (!row) return null;
+    return (
+      safeClientSiteUrl(row.production_url) ??
+      safeClientSiteUrl(row.preview_url)
+    );
   }
 
   async listAttempts(filters: AttemptFilters) {

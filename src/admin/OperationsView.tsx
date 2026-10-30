@@ -191,6 +191,22 @@ function OperationDetailPanel({
           </p>
           <dl className="admin-operations-facts">
             <div>
+              <dt>Client</dt>
+              <dd>{detail.clientName ?? "Not linked"}</dd>
+            </div>
+            <div>
+              <dt>Site</dt>
+              <dd>
+                {detail.siteUrl ? (
+                  <a href={detail.siteUrl} target="_blank" rel="noreferrer">
+                    View site
+                  </a>
+                ) : (
+                  "No verified site"
+                )}
+              </dd>
+            </div>
+            <div>
               <dt>Dispatch</dt>
               <dd>{detail.dispatchState}</dd>
             </div>
@@ -459,7 +475,7 @@ export function OperationsView({
           className="admin-button admin-button--quiet"
           onClick={openLegacyHistory}
         >
-          Open Legacy history
+          Open sites
         </button>
       </div>
 
@@ -488,14 +504,14 @@ export function OperationsView({
           <strong>Current operations are not enabled here</strong>
           <span>
             The Postgres operations store is not configured for this
-            environment. Existing records remain available in Legacy history.
+            environment. Existing records remain available under Sites.
           </span>
           <button
             type="button"
             className="admin-button admin-button--quiet"
             onClick={openLegacyHistory}
           >
-            Open Legacy history
+            Open sites
           </button>
         </div>
       ) : null}
@@ -537,6 +553,7 @@ export function OperationsView({
               <thead>
                 <tr>
                   <th scope="col">Operation</th>
+                  <th scope="col">Site</th>
                   <th scope="col">Status</th>
                   <th scope="col">Dispatch</th>
                   <th scope="col">Last observed</th>
@@ -571,6 +588,25 @@ export function OperationsView({
                           Attempt {record.attemptNumber} ·{" "}
                           {formatTimestamp(record.createdAt)}
                         </span>
+                      </td>
+                      <td data-label="Site">
+                        <span className="admin-operations-primary">
+                          {record.clientName || "Not linked"}
+                        </span>
+                        {record.siteUrl ? (
+                          <a
+                            className="admin-site-open"
+                            href={record.siteUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View site
+                          </a>
+                        ) : (
+                          <span className="admin-operations-muted">
+                            No verified site
+                          </span>
+                        )}
                       </td>
                       <td data-label="Status">
                         <span
@@ -629,7 +665,7 @@ export function OperationsView({
             <div className="admin-notice" role="status">
               <strong>No current operations</strong>
               <span>
-                Postgres has no recorded attempts yet. Legacy records remain
+                Postgres has no recorded attempts yet. Site history remains
                 separate and read-only.
               </span>
             </div>

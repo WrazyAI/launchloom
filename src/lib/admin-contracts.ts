@@ -34,6 +34,10 @@ export type AttemptFilters = {
   creatorId?: string;
   profile?: GenerationProfile;
   clientId?: string;
+  /** Exact intake issue, used to include issue-linked attempts in a client dossier. */
+  issueNumber?: number;
+  /** Full and full-preview generations only, used by the Sites view. */
+  siteOnly?: boolean;
   /** Failed, unknown, stale, diagnostic or delivery-attention attempts. */
   attention?: boolean;
   from?: number;
@@ -42,11 +46,16 @@ export type AttemptFilters = {
   limit?: number;
 };
 export type Health = {
+  /** Last reconciliation pass, not the last attempt received. */
   lastSyncAt: number | null;
+  /** Most recent attempt observation, independent of reconciliation. */
+  latestAttemptAt?: number | null;
   coverageStart: number | null;
   partial: boolean;
   lastError: string | null;
   pendingProjectionCount: number;
+  /** Intake acceptances awaiting recovery review, added by the workspace API. */
+  acceptanceAttentionCount?: number;
 };
 export type CheckResult = { name: string; passed: boolean; detail: string };
 export type Failure = {
@@ -176,6 +185,8 @@ export type ClientRecord = ClientInput & {
   updatedAt: number;
   previewUrl: string | null;
   productionUrl: string | null;
+  /** Display-only verified site resolved from the trusted issue generation. */
+  siteUrl?: string | null;
 };
 export type ClientFilters = {
   search?: string;
@@ -230,6 +241,9 @@ export type OperationRecord = {
   attentionReason: string | null;
   recoveryReason: string | null;
   operatorAction: OperationOperatorAction | null;
+  /** Display-only legacy ledger identity for the same attempt, when present. */
+  clientName?: string | null;
+  siteUrl?: string | null;
 };
 export type OperationEvent = {
   eventId: string;

@@ -843,6 +843,9 @@ export function buildAttemptQuery(filters: AttemptFilters = {}) {
   add(params, "creatorId", filters.creatorId);
   add(params, "profile", filters.profile);
   add(params, "clientId", filters.clientId);
+  if (filters.siteOnly === true) add(params, "siteOnly", "true");
+  if (Number.isSafeInteger(filters.issueNumber))
+    add(params, "issueNumber", filters.issueNumber);
   if (Number.isSafeInteger(filters.from)) add(params, "from", filters.from);
   if (Number.isSafeInteger(filters.to)) add(params, "to", filters.to);
   add(params, "cursor", filters.cursor);

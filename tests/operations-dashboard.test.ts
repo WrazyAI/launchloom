@@ -293,7 +293,7 @@ describe("operations view model", () => {
 
   it("labels the two record sources separately", () => {
     expect(operationSourceLabel("operations")).toBe("Current operations");
-    expect(operationSourceLabel("legacy")).toBe("Legacy history (read-only)");
+    expect(operationSourceLabel("legacy")).toBe("Sites (read-only)");
   });
 
   it("states how many events are rendered when the detail is capped", () => {

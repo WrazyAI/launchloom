@@ -344,7 +344,7 @@ export function generationHeroUrl(
   >,
 ): string | null {
   let id: string;
-  if (attempt.profile !== "full") {
+  if (attempt.profile !== "full" && attempt.profile !== "full-preview") {
     if (
       !focusedDiagnosticPreviewUrl(attempt) ||
       !attempt.runId ||
@@ -431,4 +431,19 @@ export function requestErrorMessage(error: unknown) {
   if (error instanceof Error && error.message.trim())
     return error.message.trim().slice(0, 300);
   return "The workspace request failed.";
+}
+
+/** Short relative age for a successful load or observation. */
+export function formatRelativeTime(
+  value: number | null | undefined,
+  now = Date.now(),
+) {
+  if (typeof value !== "number" || !Number.isFinite(value))
+    return "not recorded";
+  const elapsed = Math.max(0, now - value);
+  if (elapsed < 10_000) return "just now";
+  if (elapsed < 60_000) return `${Math.floor(elapsed / 1_000)}s ago`;
+  if (elapsed < 3_600_000) return `${Math.floor(elapsed / 60_000)}m ago`;
+  if (elapsed < 86_400_000) return `${Math.floor(elapsed / 3_600_000)}h ago`;
+  return `${Math.floor(elapsed / 86_400_000)}d ago`;
 }

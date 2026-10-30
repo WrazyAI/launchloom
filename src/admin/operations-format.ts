@@ -89,9 +89,7 @@ export function operationSummary(records: OperationRecord[]) {
 }
 
 export function operationSourceLabel(source: "operations" | "legacy") {
-  return source === "operations"
-    ? "Current operations"
-    : "Legacy history (read-only)";
+  return source === "operations" ? "Current operations" : "Sites (read-only)";
 }
 
 const MAX_CURSOR_TRAIL = 50;

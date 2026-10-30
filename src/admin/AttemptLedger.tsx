@@ -7,6 +7,7 @@ import { groupBySite, siteStatus } from "./site-groups";
 import { GenerationPreview } from "./GenerationPreview";
 import { describeAttempt, formatProfile } from "./format";
 import type { KeyboardEvent, MouseEvent } from "react";
+import { useState } from "react";
 
 type Tone = "success" | "running" | "failure" | "warning" | "neutral";
 
@@ -341,6 +342,15 @@ export function SiteTimeline({
   onOpenClient?: (clientId: string) => void;
 }) {
   const groups = groupBySite(attempts);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  function toggleExpanded(key: string) {
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
   return (
     <div className="admin-site-groups">
       {groups.map((group) => {
@@ -350,6 +360,20 @@ export function SiteTimeline({
           status.siteUrl ||
           group.attempts.find((attempt) => attempt.siteUrl)?.siteUrl ||
           null;
+        const repository =
+          latest.repository &&
+          /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(latest.repository)
+            ? latest.repository
+            : null;
+        const showAll = expanded.has(group.key);
+        const visibleAttempts = showAll
+          ? group.attempts
+          : group.attempts.slice(0, 3);
+        const fallbackName = group.issueNumber
+          ? `Intake #${group.issueNumber}`
+          : "Unlinked generation";
+        const showIssueSuffix =
+          group.name !== fallbackName || group.issues.length > 1;
         const statusLabel =
           status.deliveryStatus === "published"
             ? "Published"
@@ -379,15 +403,34 @@ export function SiteTimeline({
           >
             <header className="admin-site-head">
               <div className="admin-site-identity">
-                <h3 className="admin-site-name">{group.name}</h3>
+                <h2 className="admin-site-name">{group.name}</h2>
                 <p className="admin-site-meta">
                   {group.attempts.length}{" "}
                   {group.attempts.length === 1 ? "generation" : "generations"}
-                  {" · last "}
+                  {" · last activity "}
                   {dayLabel(latest.createdAt)} {localTime(latest.createdAt)}
-                  {group.issues.length
-                    ? ` · ${group.issues.length === 1 ? "Intake" : "Intakes"} ${group.issues.map((issue) => `#${issue}`).join(", ")}`
-                    : ""}
+                  {group.issues.length && showIssueSuffix ? (
+                    <>
+                      {" · "}
+                      {group.issues.length === 1 ? "Intake " : "Intakes "}
+                      {group.issues.map((issue, index) => (
+                        <span key={issue}>
+                          {index ? ", " : ""}
+                          {repository ? (
+                            <a
+                              href={`https://github.com/${repository}/issues/${issue}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              #{issue}
+                            </a>
+                          ) : (
+                            `#${issue}`
+                          )}
+                        </span>
+                      ))}
+                    </>
+                  ) : null}
                 </p>
               </div>
               <div className="admin-site-head__actions">
@@ -406,19 +449,40 @@ export function SiteTimeline({
                   >
                     View site
                   </a>
-                ) : group.clientId && onOpenClient ? (
+                ) : group.clients.length === 1 && onOpenClient ? (
                   <button
                     type="button"
                     className="admin-button admin-button--quiet admin-site-open"
-                    onClick={() => onOpenClient(group.clientId as string)}
+                    onClick={() => onOpenClient(group.clients[0].clientId)}
                   >
                     Open client
                   </button>
+                ) : group.clients.length > 1 && onOpenClient ? (
+                  <details className="admin-site-clients">
+                    <summary className="admin-button admin-button--quiet admin-site-open">
+                      Open client
+                    </summary>
+                    <ul>
+                      {group.clients.map((client) => (
+                        <li key={client.clientId}>
+                          <button
+                            type="button"
+                            className="admin-link-button"
+                            onClick={() => onOpenClient(client.clientId)}
+                          >
+                            {client.issueNumber
+                              ? `Intake #${client.issueNumber}`
+                              : "Client record"}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
                 ) : null}
               </div>
             </header>
             <ol className="admin-site-timeline">
-              {group.attempts.map((attempt) => {
+              {visibleAttempts.map((attempt) => {
                 const { executionLabel, deliveryLabel } =
                   describeAttempt(attempt);
                 const itemTone = TONE[attempt.executionStatus] || "neutral";
@@ -476,6 +540,18 @@ export function SiteTimeline({
                 );
               })}
             </ol>
+            {group.attempts.length > 3 ? (
+              <button
+                type="button"
+                className="admin-site-expand"
+                aria-expanded={showAll}
+                onClick={() => toggleExpanded(group.key)}
+              >
+                {showAll
+                  ? "Show latest 3"
+                  : `Show all ${group.attempts.length} generations`}
+              </button>
+            ) : null}
           </section>
         );
       })}

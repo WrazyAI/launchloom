@@ -182,6 +182,76 @@ describe("GenerationLedger attempt history", () => {
     expect(item?.clientName).toBe("Northline Dental Studio");
   });
 
+  it("filters the Sites view to full generations", async () => {
+    const store = ledger();
+    await store.upsertAttempt(attempt({ attemptId: "full", profile: "full" }));
+    await store.upsertAttempt(
+      attempt({ attemptId: "preview", profile: "full-preview" }),
+    );
+    await store.upsertAttempt(
+      attempt({ attemptId: "creative", profile: "creative-only" }),
+    );
+    const page = await store.listAttempts({ siteOnly: true });
+    expect(page.items.map((item) => item.attemptId).sort()).toEqual([
+      "full",
+      "preview",
+    ]);
+  });
+
+  it("resolves one verified site for the directory and issue-linked attempts", async () => {
+    const store = ledger();
+    const siteUrl =
+      "https://review-initial.launchloom-202-northline.pages.dev/";
+    await store.upsertGeneration({
+      generationId: "issue:202",
+      issueNumber: 202,
+      businessName: "Northline Dental Studio",
+      previewUrl: siteUrl,
+    });
+    await store.upsertClient({
+      clientId: "submission:s1",
+      inviteId: "i1",
+      submissionId: "s1",
+      issueNumber: 202,
+      businessName: "Northline Dental Studio",
+      contactName: "Priya Raman",
+      email: "northline@example.test",
+      phone: null,
+      creator: {
+        kind: "admin",
+        id: "a1",
+        name: "Admin",
+        email: null,
+        source: "neon",
+      },
+      submittedAt: 100,
+    });
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "issue-linked",
+        issueNumber: 202,
+        clientId: null,
+        executionStatus: "succeeded",
+        deliveryStatus: "preview_ready",
+      }),
+    );
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "other-issue",
+        issueNumber: 999,
+        clientId: null,
+        executionStatus: "failed",
+      }),
+    );
+
+    expect((await store.getClient("submission:s1"))?.siteUrl).toBe(siteUrl);
+    expect((await store.listClients({})).items[0].siteUrl).toBe(siteUrl);
+    const page = await store.listAttempts({ issueNumber: 202 });
+    expect(page.items.map((item) => item.attemptId)).toEqual(["issue-linked"]);
+    expect(page.items[0].siteUrl).toBe(siteUrl);
+    expect(page.items[0].clientName).toBe("Northline Dental Studio");
+  });
+
   it("exposes the verified issue preview URL only on delivered attempts", async () => {
     const store = ledger();
     const previewUrl =
@@ -563,11 +633,20 @@ describe("GenerationLedger attempt history", () => {
     const store = ledger();
     expect(await store.getHealth()).toEqual({
       lastSyncAt: null,
+      latestAttemptAt: null,
       coverageStart: null,
       partial: true,
       lastError: null,
       pendingProjectionCount: 0,
     });
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "health-attempt",
+        issueNumber: 1,
+        updatedAt: 5000,
+      }),
+    );
+    expect((await store.getHealth()).latestAttemptAt).toBe(5000);
     expect(await store.getAttempt("missing")).toBeNull();
     expect(await store.getAttemptEvents("missing")).toEqual({
       items: [],

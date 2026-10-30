@@ -6,6 +6,7 @@ import type {
 } from "../lib/admin-contracts";
 import { ActorLabel } from "./ActorLabel";
 import { AdminIcon } from "./AdminIcon";
+import { isSiteGeneration } from "./site-groups";
 import { GenerationPreview } from "./GenerationPreview";
 import {
   DeliveryStatusBadge,
@@ -224,10 +225,12 @@ export function AttemptInspector({
 }: AttemptInspectorProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const [open, setOpen] = useState(false);
-  const focused = attempt && attempt.profile !== "full";
-  const previewUrl = focused
-    ? focusedDiagnosticPreviewUrl(attempt)
-    : safeSiteUrl(client?.previewUrl);
+  const focused = attempt ? !isSiteGeneration(attempt) : false;
+  const attemptSiteUrl = attempt ? safeSiteUrl(attempt.siteUrl) : null;
+  const previewUrl =
+    focused && attempt
+      ? focusedDiagnosticPreviewUrl(attempt)
+      : safeSiteUrl(client?.previewUrl) || attemptSiteUrl;
   const productionUrl = focused ? null : safeSiteUrl(client?.productionUrl);
   const siteUrl = previewUrl || productionUrl;
   const siteHref = previewUrl
@@ -237,7 +240,7 @@ export function AttemptInspector({
   // their own; the UI repeats that boundary so a focused attempt can never
   // inherit another attempt's preview.
   const relatedPreview =
-    attempt && attempt.profile === "full"
+    attempt && isSiteGeneration(attempt)
       ? relatedPreviewLink(attempt.relatedPreview, siteHref)
       : null;
 
@@ -429,7 +432,9 @@ export function AttemptInspector({
                         ? client.businessName ||
                           client.contactName ||
                           client.clientId
-                        : attempt.clientId || "Not recorded"}
+                        : attempt.clientName ||
+                          attempt.clientId ||
+                          "Not recorded"}
                     </span>
                     {client && attempt.clientId ? (
                       <span className="admin-mono admin-block">
