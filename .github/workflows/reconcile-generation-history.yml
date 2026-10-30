@@ -1,8 +1,10 @@
 name: Reconcile generation history
 
-# Task 11 rollout gate: no scheduled or workflow_run write path is enabled.
-# Operator-authorized retained-history read/backfill is separate from generation.
+# Scheduled and manual reconciliation write only retained run metadata, health
+# and checkpoints. They never dispatch or publish a generation.
 on:
+  schedule:
+    - cron: "17 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -46,11 +48,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           LAUNCHLOOM_API_URL: ${{ vars.ADMIN_PUBLIC_ORIGIN || 'https://api.launchloom.wrazyos.com' }}
-          GENERATION_TRACKING_SECRET: ${{ !inputs.dry_run && secrets.GENERATION_TRACKING_SECRET || '' }}
-          RECONCILE_DRY_RUN: ${{ inputs.dry_run }}
-          RECONCILE_MODE: ${{ inputs.mode }}
-          RECONCILE_FROM: ${{ inputs.from }}
-          RECONCILE_CHECKPOINT: ${{ inputs.checkpoint }}
+          GENERATION_TRACKING_SECRET: ${{ (github.event_name == 'schedule' || !inputs.dry_run) && secrets.GENERATION_TRACKING_SECRET || '' }}
+          RECONCILE_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          RECONCILE_MODE: ${{ inputs.mode || 'incremental' }}
+          RECONCILE_FROM: ${{ inputs.from || '' }}
+          RECONCILE_CHECKPOINT: ${{ inputs.checkpoint || '' }}
         run: |
           ARGS=(--mode "$RECONCILE_MODE" --page-budget 10)
           if [ "$RECONCILE_DRY_RUN" = "true" ]; then ARGS+=(--dry-run); else ARGS+=(--write); fi

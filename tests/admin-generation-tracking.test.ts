@@ -384,16 +384,20 @@ describe("trusted attempt producer", () => {
     });
     expect(JSON.stringify(payload)).not.toContain("private intake");
   });
-  it("keeps reconciliation manual/default-dry and uses trusted default-branch code", async () => {
+  it("schedules metadata reconciliation and keeps generation dispatches manual", async () => {
     const yaml = await fs.readFile(
       ".github/workflows/reconcile-generation-history.yml",
       "utf8",
     );
     expect(yaml).toContain("workflow_dispatch:");
-    expect(yaml).not.toMatch(/^  (schedule|workflow_run):/mu);
+    expect(yaml).toContain("schedule:");
+    expect(yaml).toContain('cron: "17 * * * *"');
     expect(yaml).toContain("default: true");
     expect(yaml).toContain(
-      "!inputs.dry_run && secrets.GENERATION_TRACKING_SECRET",
+      "github.event_name == 'schedule' || !inputs.dry_run",
+    );
+    expect(yaml).toContain(
+      "github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false'",
     );
     expect(yaml).toContain("github.event.repository.default_branch");
     expect(yaml).toContain("actions: read");
@@ -401,6 +405,7 @@ describe("trusted attempt producer", () => {
     expect(yaml).not.toContain("head_sha");
     for (const name of ["generate-client", "test-generation"]) {
       const source = await fs.readFile(`.github/workflows/${name}.yml`, "utf8");
+      expect(source).not.toMatch(/^  (schedule|workflow_run):/mu);
       expect(source).toContain("run-name:");
       expect(source).toContain("LLGEN");
       if (name === "generate-client") {
