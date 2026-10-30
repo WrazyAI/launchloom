@@ -14,10 +14,11 @@ import type { AdminRouteState } from "./route-state";
 import { AttemptInspector } from "./AttemptInspector";
 import { AttemptGallery, AttemptLedger, SiteTimeline } from "./AttemptLedger";
 import { AdminIcon } from "./AdminIcon";
+import { HealthNotice } from "./HealthNotice";
+import { groupBySite, isSiteGeneration } from "./site-groups";
 import {
   dateInputValue,
-  formatDate,
-  formatTimestamp,
+  formatRelativeTime,
   isAbortError,
   parseDateEnd,
   parseDateStart,
@@ -86,49 +87,6 @@ function filtersFromDraft(draft: Draft): AttemptFilters {
   return filters;
 }
 
-function HealthNotice({
-  health,
-  error,
-}: {
-  health: Health | null;
-  error: string | null;
-}) {
-  if (error)
-    return (
-      <div className="admin-notice admin-notice--error" role="alert">
-        Tracking health could not be loaded. Counts may be incomplete.
-      </div>
-    );
-  if (!health) return null;
-  const partial = health.partial || health.pendingProjectionCount > 0;
-  return (
-    <div
-      className={`admin-notice${partial ? " admin-notice--attention" : ""}`}
-      role="status"
-      data-health-state={partial ? "partial" : "current"}
-    >
-      <strong>
-        {partial ? "Tracking history may be incomplete" : "Tracking health"}
-      </strong>
-      {partial ? (
-        <span>
-          {health.pendingProjectionCount} pending projections
-          {health.partial ? " and partial coverage" : ""}.
-        </span>
-      ) : (
-        <span>No tracking backlog is reported.</span>
-      )}
-      {health.lastError ? <span>{health.lastError}</span> : null}
-      {health.coverageStart !== null ? (
-        <span>Coverage starts {formatDate(health.coverageStart)}.</span>
-      ) : (
-        <span>Historical coverage start is not recorded.</span>
-      )}
-      <span>Last synchronized {formatTimestamp(health.lastSyncAt)}.</span>
-    </div>
-  );
-}
-
 export function GenerationsView({
   api,
   state,
@@ -151,6 +109,7 @@ export function GenerationsView({
   const limit = filters.limit || DEFAULT_LIMIT;
   const requestLimit = viewMode === "gallery" ? Math.min(limit, 24) : limit;
   const filterSignature = JSON.stringify(filters);
+  const siteOnly = viewMode === "sites";
 
   const [draft, setDraft] = useState<Draft>(() => draftFromState(state));
   const [attempts, setAttempts] = useState<AttemptSummary[]>([]);
@@ -160,9 +119,12 @@ export function GenerationsView({
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const [health, setHealth] = useState<Health | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
   const [counts, setCounts] = useState<{
+    all: number;
     succeeded: number;
     running: number;
     attention: number;
@@ -183,10 +145,12 @@ export function GenerationsView({
   const listRequest = useRef(0);
   const queryKeyRef = useRef("");
   const loadedRef = useRef(false);
+  const silentRefreshRef = useRef(false);
   const healthRequest = useRef(0);
   const attentionRequest = useRef(0);
   const detailRequest = useRef(0);
   const detailIdRef = useRef<string | null>(null);
+  const silentDetailRef = useRef(false);
   const clientRequest = useRef(0);
   const eventsRequest = useRef(0);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
@@ -194,7 +158,7 @@ export function GenerationsView({
   const focusOnOpenRef = useRef(false);
   const hadSelectionRef = useRef(Boolean(state.attemptId));
 
-  const queryKey = `${filterSignature}|${cursor || ""}|${requestLimit}`;
+  const queryKey = `${filterSignature}|${cursor || ""}|${requestLimit}|${siteOnly}`;
 
   useEffect(() => {
     setDraft(draftFromState(state));
@@ -211,12 +175,18 @@ export function GenerationsView({
       setTotal(0);
       setNextCursor(null);
     }
-    if (loadedRef.current) setRefreshing(true);
-    else setLoading(true);
+    if (loadedRef.current) {
+      if (!silentRefreshRef.current) setRefreshing(true);
+    } else setLoading(true);
     setError(null);
     api
       .listAttempts(
-        { ...filters, cursor: cursor || undefined, limit: requestLimit },
+        {
+          ...filters,
+          siteOnly,
+          cursor: cursor || undefined,
+          limit: requestLimit,
+        },
         { signal: controller.signal },
       )
       .then((page) => {
@@ -225,6 +195,7 @@ export function GenerationsView({
         setAttempts(page.items);
         setTotal(page.total);
         setNextCursor(page.nextCursor);
+        setUpdatedAt(Date.now());
         setLoading(false);
         setRefreshing(false);
       })
@@ -238,9 +209,12 @@ export function GenerationsView({
         setError(requestErrorMessage(failure));
         setLoading(false);
         setRefreshing(false);
+      })
+      .finally(() => {
+        silentRefreshRef.current = false;
       });
     return () => controller.abort();
-  }, [api, filterSignature, cursor, requestLimit, refreshToken]);
+  }, [api, filterSignature, cursor, requestLimit, refreshToken, siteOnly]);
 
   useEffect(() => {
     const requestId = ++healthRequest.current;
@@ -273,11 +247,14 @@ export function GenerationsView({
       profile: filters.profile,
       initiatorId: filters.initiatorId,
       creatorId: filters.creatorId,
+      clientId: filters.clientId,
+      siteOnly,
       from: filters.from,
       to: filters.to,
       limit: 1,
     };
     Promise.all([
+      api.listAttempts({ ...scope }, { signal: controller.signal }),
       api.listAttempts(
         { ...scope, executionStatus: "succeeded" },
         { signal: controller.signal },
@@ -291,9 +268,10 @@ export function GenerationsView({
         { signal: controller.signal },
       ),
     ])
-      .then(([succeeded, running, attention]) => {
+      .then(([all, succeeded, running, attention]) => {
         if (attentionRequest.current !== requestId) return;
         setCounts({
+          all: all.total,
           succeeded: succeeded.total,
           running: running.total,
           attention: attention.total,
@@ -317,8 +295,10 @@ export function GenerationsView({
     filters.profile,
     filters.initiatorId,
     filters.creatorId,
+    filters.clientId,
     filters.from,
     filters.to,
+    siteOnly,
   ]);
 
   const selectedId = state.attemptId;
@@ -327,6 +307,7 @@ export function GenerationsView({
     const controller = new AbortController();
     if (!selectedId) {
       detailIdRef.current = null;
+      silentDetailRef.current = false;
       setDetail(null);
       setDetailClient(null);
       setDetailLoading(false);
@@ -350,7 +331,7 @@ export function GenerationsView({
       setEventsLoading(false);
       setEventsError(null);
     }
-    setDetailLoading(true);
+    if (!silentDetailRef.current) setDetailLoading(true);
     setDetailError(null);
     api
       .getAttempt(selectedId, { signal: controller.signal })
@@ -377,6 +358,9 @@ export function GenerationsView({
           return;
         setDetailError(requestErrorMessage(failure));
         setDetailLoading(false);
+      })
+      .finally(() => {
+        silentDetailRef.current = false;
       });
     return () => controller.abort();
   }, [api, selectedId, detailToken]);
@@ -431,16 +415,41 @@ export function GenerationsView({
     window.requestAnimationFrame(() => headingRef.current?.focus());
   }, [detail, selectedId]);
 
+  const hasActiveRun = attempts.some(
+    (attempt) =>
+      attempt.executionStatus === "queued" ||
+      attempt.executionStatus === "running",
+  );
+
+  useEffect(() => {
+    if (!hasActiveRun) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      silentRefreshRef.current = true;
+      silentDetailRef.current = Boolean(selectedId);
+      setRefreshToken((value) => value + 1);
+      if (selectedId) setDetailToken((value) => value + 1);
+    }, 15_000);
+    return () => window.clearInterval(timer);
+  }, [hasActiveRun, selectedId]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   function navigate(next: AdminRouteState) {
     onNavigate(next);
   }
 
   function applyFilters(event: { preventDefault: () => void }) {
     event.preventDefault();
+    const next = filtersFromDraft(draft);
+    if (filters.clientId) next.clientId = filters.clientId;
     onNavigate(
       {
         ...state,
-        filters: filtersFromDraft(draft),
+        filters: next,
         cursor: null,
         attemptId: null,
         clientId: null,
@@ -477,7 +486,6 @@ export function GenerationsView({
       ...filters,
       executionStatus: status,
       attention: undefined,
-      clientId: undefined,
     };
     setDraft((current) => ({ ...current, status: status || "" }));
     onNavigate(
@@ -497,7 +505,6 @@ export function GenerationsView({
       ...filters,
       executionStatus: undefined,
       attention: true,
-      clientId: undefined,
     };
     setDraft((current) => ({ ...current, status: "" }));
     onNavigate(
@@ -563,16 +570,25 @@ export function GenerationsView({
   }
 
   function refresh() {
+    silentRefreshRef.current = false;
+    silentDetailRef.current = false;
     setRefreshToken((token) => token + 1);
     if (selectedId) setDetailToken((token) => token + 1);
   }
 
+  const siteAttempts = attempts.filter(isSiteGeneration);
+  const siteCount = groupBySite(siteAttempts).length;
+  const attemptWord = attempts.length === 1 ? "attempt" : "attempts";
   const showing =
-    attempts.length > 0
-      ? `Showing ${attempts.length} of ${total} attempts`
-      : loading
-        ? "Loading attempts"
-        : "No attempts to show";
+    viewMode === "sites"
+      ? `${siteCount} ${siteCount === 1 ? "site" : "sites"} · ${siteAttempts.length} full ${
+          siteAttempts.length === 1 ? "generation" : "generations"
+        }`
+      : attempts.length > 0
+        ? `Showing ${attempts.length} of ${total} attempts`
+        : loading
+          ? "Loading attempts"
+          : "No attempts to show";
   const attentionCount = counts?.attention ?? null;
   const allActive = !filters.executionStatus && !filters.attention;
   const succeededActive = filters.executionStatus === "succeeded";
@@ -580,6 +596,9 @@ export function GenerationsView({
   const attentionActive = Boolean(filters.attention);
   const countLabel = (value: number | undefined) =>
     value === undefined ? "–" : value.toLocaleString("en-GB");
+  const clientFilterName =
+    attempts.find((attempt) => attempt.clientId === filters.clientId)
+      ?.clientName ?? null;
 
   return (
     <div
@@ -588,14 +607,6 @@ export function GenerationsView({
       data-route="generations"
       data-record-source="legacy"
     >
-      <div className="admin-notice" role="status" data-record-source-label>
-        <strong>Legacy history is read-only</strong>
-        <span>
-          These attempts come from the existing generation ledger. New intake
-          and generation records appear under Operations. No control on this
-          page changes legacy records, revisions or publications.
-        </span>
-      </div>
       <div
         className="admin-pulse"
         aria-label="Workspace summary"
@@ -605,19 +616,37 @@ export function GenerationsView({
         }
       >
         <span>
-          <strong>{attempts.length}</strong> generations in view
+          <strong>{viewMode === "sites" ? siteCount : attempts.length}</strong>{" "}
+          {viewMode === "sites"
+            ? siteCount === 1
+              ? "site"
+              : "sites"
+            : attemptWord}{" "}
+          in view
         </span>
         <span className="admin-pulse__sep" />
         <span>
-          <strong>{attentionCount === null ? "–" : attentionCount}</strong> need
-          attention
+          <strong>{attentionCount === null ? "–" : attentionCount}</strong>{" "}
+          {attentionCount === 1 ? "attempt needs" : "attempts need"} attention
         </span>
         <span className="admin-pulse__sep" />
         <button type="button" onClick={applyAttentionFilter} disabled={loading}>
           Review attention
         </button>
         <span className="admin-pulse__sep" />
-        <span>Updated just now</span>
+        <span
+          title={
+            updatedAt ? new Date(updatedAt).toLocaleString() : "Not loaded yet"
+          }
+        >
+          Updated {formatRelativeTime(updatedAt, now)}
+        </span>
+        {hasActiveRun ? (
+          <>
+            <span className="admin-pulse__sep" />
+            <span>Auto-refreshing active runs</span>
+          </>
+        ) : null}
       </div>
 
       <form onSubmit={applyFilters} aria-label="Generation filters">
@@ -650,7 +679,7 @@ export function GenerationsView({
                 aria-pressed={allActive}
                 onClick={() => applyStatusFilter()}
               >
-                All <small>{total.toLocaleString("en-GB")}</small>
+                All <small>{countLabel(counts?.all)}</small>
               </button>
               <button
                 className="admin-chip"
@@ -853,7 +882,7 @@ export function GenerationsView({
       {filters.clientId ? (
         <div className="admin-notice">
           <strong>Client filter</strong>
-          <span className="admin-mono">{filters.clientId}</span>
+          <span>{clientFilterName ?? "Linked client"}</span>
           <button
             type="button"
             className="admin-link-button"
@@ -874,7 +903,7 @@ export function GenerationsView({
         </div>
       ) : null}
 
-      <HealthNotice health={health} error={healthError} />
+      <HealthNotice health={health} error={healthError} subject="Tracking" />
       {countsError ? (
         <div className="admin-notice admin-notice--attention" role="status">
           Attention counts could not be loaded. No estimate is shown.
@@ -915,25 +944,47 @@ export function GenerationsView({
         </div>
       ) : null}
 
+      {!loading &&
+      viewMode === "sites" &&
+      attempts.length > 0 &&
+      siteAttempts.length === 0 ? (
+        <div className="admin-empty" role="status">
+          <h3>No full site generations match these filters</h3>
+          <p>
+            Creative analysis runs are available in the Ledger view. Sites only
+            shows full and full-preview generations.
+          </p>
+          <button
+            type="button"
+            className="admin-button admin-button--quiet"
+            onClick={() => setViewMode("ledger")}
+          >
+            Open Ledger
+          </button>
+        </div>
+      ) : null}
+
       {attempts.length > 0 ? (
         viewMode === "sites" ? (
-          <SiteTimeline
-            attempts={attempts}
-            selectedId={selectedId}
-            onSelect={selectAttempt}
-            onOpenClient={(clientId) =>
-              onNavigate(
-                {
-                  view: "clients",
-                  clientId,
-                  attemptId: null,
-                  filters: {},
-                  cursor: null,
-                },
-                { cursorTrail: [] },
-              )
-            }
-          />
+          siteAttempts.length > 0 ? (
+            <SiteTimeline
+              attempts={siteAttempts}
+              selectedId={selectedId}
+              onSelect={selectAttempt}
+              onOpenClient={(clientId) =>
+                onNavigate(
+                  {
+                    view: "clients",
+                    clientId,
+                    attemptId: null,
+                    filters: {},
+                    cursor: null,
+                  },
+                  { cursorTrail: [] },
+                )
+              }
+            />
+          ) : null
         ) : viewMode === "ledger" ? (
           <AttemptLedger
             attempts={attempts}

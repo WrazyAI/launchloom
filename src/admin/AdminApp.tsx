@@ -48,10 +48,10 @@ const VIEW_COPY: Record<
       "Postgres-backed intake and generation records, with dispatch, execution, delivery, cost and telemetry reported separately.",
   },
   generations: {
-    label: "Legacy history",
-    title: "Legacy history",
+    label: "Sites",
+    title: "Client sites",
     description:
-      "Read-only generation history from the existing ledger. New operations appear under Operations; nothing on this page changes a record.",
+      "Verified site status and generation history, grouped by business. Read-only.",
   },
   clients: {
     label: "Clients",
@@ -113,8 +113,11 @@ export function AdminApp() {
   const [state, setState, cursorTrail, setCursorTrail] = useRouteState();
   const [api] = useState(createAdminApi);
   const [operationsRead, setOperationsRead] = useState<boolean | null>(null);
-  const view =
-    state.view === "operations" && operationsRead !== true
+  const pendingOperations =
+    state.view === "operations" && operationsRead === null;
+  const view = pendingOperations
+    ? "operations"
+    : state.view === "operations" && operationsRead !== true
       ? "generations"
       : state.view;
   const visibleState = view === state.view ? state : DEFAULT_STATE;

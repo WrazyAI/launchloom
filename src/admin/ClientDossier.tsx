@@ -28,9 +28,12 @@ export type ClientDossierProps = {
 
 function SiteLinks({ client }: { client: ClientRecord }) {
   const production = safeSiteUrl(client.productionUrl);
-  const preview = previewHref(client.previewUrl);
+  const verified = previewHref(client.siteUrl);
+  const preview = verified ? null : previewHref(client.previewUrl);
   const hasUnsafe = Boolean(
-    (client.productionUrl && !production) || (client.previewUrl && !preview),
+    (client.productionUrl && !production) ||
+    (client.siteUrl && !verified) ||
+    (client.previewUrl && !preview),
   );
   return (
     <section
@@ -39,7 +42,12 @@ function SiteLinks({ client }: { client: ClientRecord }) {
     >
       <h3 id="client-sites-title">Site links</h3>
       <div className="admin-inspector__links">
-        {production ? (
+        {verified ? (
+          <a href={verified} target="_blank" rel="noreferrer">
+            Verified site
+          </a>
+        ) : null}
+        {production && production !== verified ? (
           <a href={production} target="_blank" rel="noreferrer">
             Published site
           </a>
@@ -49,7 +57,7 @@ function SiteLinks({ client }: { client: ClientRecord }) {
             Preview site
           </a>
         ) : null}
-        {!production && !preview ? (
+        {!production && !verified && !preview ? (
           <span className="admin-muted">No site links recorded.</span>
         ) : null}
         {hasUnsafe ? (

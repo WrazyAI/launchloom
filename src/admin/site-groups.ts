@@ -6,8 +6,16 @@ export type SiteGroup = {
   clientId: string | null;
   issueNumber: number | null;
   issues: number[];
+  clients: Array<{ clientId: string; issueNumber: number | null }>;
   attempts: AttemptSummary[];
 };
+
+/** Only full generations produce a client site. Analysis probes stay in the ledger. */
+export function isSiteGeneration(
+  attempt: Pick<AttemptSummary, "profile">,
+): boolean {
+  return attempt.profile === "full" || attempt.profile === "full-preview";
+}
 
 function siteNameKey(name: string | null | undefined) {
   return String(name || "")
@@ -33,11 +41,20 @@ export function groupBySite(attempts: AttemptSummary[]): SiteGroup[] {
       clientId: null,
       issueNumber: null,
       issues: [],
+      clients: [],
       attempts: [],
     };
     group.attempts.push(attempt);
     if (!group.name && attempt.clientName) group.name = attempt.clientName;
     group.clientId ??= attempt.clientId;
+    if (
+      attempt.clientId &&
+      !group.clients.some((client) => client.clientId === attempt.clientId)
+    )
+      group.clients.push({
+        clientId: attempt.clientId,
+        issueNumber: attempt.issueNumber,
+      });
     if (attempt.issueNumber && !group.issues.includes(attempt.issueNumber))
       group.issues.push(attempt.issueNumber);
     group.issueNumber ??= attempt.issueNumber;
@@ -52,6 +69,9 @@ export function groupBySite(attempts: AttemptSummary[]): SiteGroup[] {
           ? `Intake #${group.issueNumber}`
           : "Unlinked generation"),
       issues: [...group.issues].sort((a, b) => b - a),
+      clients: [...group.clients].sort(
+        (a, b) => (b.issueNumber ?? 0) - (a.issueNumber ?? 0),
+      ),
       attempts: [...group.attempts].sort((a, b) => b.createdAt - a.createdAt),
     }))
     .sort((a, b) => b.attempts[0].createdAt - a.attempts[0].createdAt);

@@ -304,6 +304,12 @@ describe("admin account API contracts", () => {
   it("encodes the additive attention filter", () => {
     expect(buildAttemptQuery({ attention: true }).get("attention")).toBe("true");
     expect(buildAttemptQuery({ attention: false }).get("attention")).toBeNull();
+    expect(buildAttemptQuery({ issueNumber: 202 }).get("issueNumber")).toBe(
+      "202",
+    );
+    expect(
+      buildAttemptQuery({ issueNumber: Number.NaN }).get("issueNumber"),
+    ).toBeNull();
   });
 
   it("rejects malformed membership and auth responses", async () => {

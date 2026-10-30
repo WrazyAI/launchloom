@@ -56,6 +56,7 @@ export const unknownActor: ActorSnapshot = {
 
 export const baseHealth: Health = {
   lastSyncAt: BASE_TIME - 60_000,
+  latestAttemptAt: BASE_TIME - 30_000,
   coverageStart: Date.UTC(2026, 8, 1),
   partial: false,
   lastError: null,
@@ -323,6 +324,7 @@ function sharedEmailClients(): ClientRecord[] {
       updatedAt: BASE_TIME - 80_000,
       previewUrl: "https://acme-preview.pages.dev/",
       productionUrl: "https://acme.pages.dev/",
+      siteUrl: "https://acme-verified.pages.dev/",
     },
     {
       ...baseClient(1),

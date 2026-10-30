@@ -120,6 +120,8 @@ function attemptPage(params: URLSearchParams) {
   const creator = params.get("creatorId");
   const profile = params.get("profile");
   const clientId = params.get("clientId");
+  const issueNumber = Number(params.get("issueNumber") || 0);
+  const siteOnly = params.get("siteOnly") === "true";
   const from = Number(params.get("from") || 0);
   const to = Number(params.get("to") || 0);
   const attention = params.get("attention") === "true";
@@ -146,6 +148,10 @@ function attemptPage(params: URLSearchParams) {
       (!creator || attempt.invitationCreator.id === creator) &&
       (!profile || attempt.profile === profile) &&
       (!clientId || attempt.clientId === clientId) &&
+      (!issueNumber || attempt.issueNumber === issueNumber) &&
+      (!siteOnly ||
+        attempt.profile === "full" ||
+        attempt.profile === "full-preview") &&
       (!attention ||
         attempt.executionStatus === "failed" ||
         attempt.executionStatus === "unknown" ||
@@ -466,12 +472,15 @@ async function visible(locator: Locator, timeout = 8_000) {
 }
 
 async function waitForGenerations(page: Page) {
-  await visible(page.getByText(new RegExp(`${ATTEMPTS.length} attempts`, "u")));
+  await visible(page.locator("#generations-view"));
   // Most existing assertions describe the attempt ledger; the default view is
   // the site timeline, so switch to the ledger before returning. Deep-linked
   // attempts open a dialog and must keep their current view.
   if ((await page.getByRole("dialog").count()) === 0) {
     await page.getByRole("button", { name: "Ledger" }).click();
+    await visible(
+      page.getByText(new RegExp(`${ATTEMPTS.length} attempts`, "u")),
+    );
   }
 }
 
@@ -881,6 +890,13 @@ describe("real admin workspace browser behavior", () => {
           .getByRole("link", { name: /Published site/u })
           .getAttribute("href"),
       ).toBe("https://acme.pages.dev/");
+      const verifiedSite = inspector.getByRole("link", {
+        name: /Verified site/u,
+      });
+      await visible(verifiedSite);
+      expect(await verifiedSite.getAttribute("href")).toBe(
+        "https://acme-verified.pages.dev/",
+      );
       await visible(
         inspector.getByText(/diagnostic delivery is for review only/iu),
       );
@@ -936,9 +952,9 @@ describe("real admin workspace browser behavior", () => {
     try {
       await waitForClients(page);
       await visible(page.getByText(/Client directory may be incomplete/u));
-      await visible(page.getByText(/3 pending projections/u));
+      await visible(page.getByText(/3 records are waiting to project/u));
       await visible(page.getByText(/GitHub reconciliation is delayed\./u));
-      await visible(page.getByText(/Coverage starts 01 Sep 2026/u));
+      await visible(page.getByText(/History coverage starts 01 Sep 2026/u));
       autoErrors(errors);
     } finally {
       await page.close();
@@ -1205,9 +1221,7 @@ describe("real admin workspace browser behavior", () => {
           .getByRole("link", { name: "Operations", exact: true })
           .count(),
       ).toBe(0);
-      await nav
-        .getByRole("link", { name: "Legacy history", exact: true })
-        .click();
+      await nav.getByRole("link", { name: "Sites", exact: true }).click();
       await waitForGenerations(page);
       expect(requests.some((r) => r.path.startsWith("/operations/"))).toBe(
         false,
@@ -1271,7 +1285,7 @@ describe("real admin workspace browser behavior", () => {
       await expect.poll(() => nav.getByRole("link").count()).toBe(6);
       const active = nav.locator('[aria-current="page"]');
       await expect.poll(() => active.count()).toBe(1);
-      await expect.poll(() => active.textContent()).toBe("Legacy history");
+      await expect.poll(() => active.textContent()).toBe("Sites");
 
       const tone = await active.evaluate((element) => {
         const style = getComputedStyle(element);
@@ -1292,7 +1306,7 @@ describe("real admin workspace browser behavior", () => {
         text: element.textContent?.trim() || "",
         outline: getComputedStyle(element).outlineColor,
       }));
-      expect(focus.text).toBe("Legacy history");
+      expect(focus.text).toBe("Sites");
       expect(focus.outline).toBe("rgb(217, 240, 107)");
       autoErrors(errors);
     } finally {
@@ -1330,9 +1344,6 @@ describe("real admin workspace browser behavior", () => {
   it("shows the site timeline by default and opens the site", async () => {
     const { page, errors } = await openPage();
     try {
-      await visible(
-        page.getByText(new RegExp(`${ATTEMPTS.length} attempts`, "u")),
-      );
       await expect
         .poll(() => page.locator(".admin-site-group").count())
         .toBeGreaterThan(0);
@@ -1350,6 +1361,84 @@ describe("real admin workspace browser behavior", () => {
         await openClient.click();
         await visible(page.locator("#client-inspector-title"));
       }
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps the site status in a readable column at 390px", async () => {
+    const { page, errors } = await openPage({
+      viewport: { width: 390, height: 844 },
+    });
+    try {
+      await expect
+        .poll(() => page.locator(".admin-site-group").count())
+        .toBeGreaterThan(0);
+      const status = page.locator(".admin-site-timeline__status").first();
+      await visible(status);
+      const box = await status.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.width).toBeGreaterThan(120);
+      expect(box!.x).toBeGreaterThan(40);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps the client filter when a status chip is selected", async () => {
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=generations&clientFilter=submission:client-a",
+    });
+    try {
+      await visible(page.locator("#generations-view"));
+      await page.getByRole("button", { name: /^Succeeded/u }).click();
+      await expect
+        .poll(() => new URL(page.url()).searchParams.get("clientFilter"))
+        .toBe("submission:client-a");
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("opens the verified attempt site when the client has no stored preview", async () => {
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-0001",
+    });
+    try {
+      await visible(page.locator("#attempt-inspector-title"), 15_000);
+      const dialog = page.getByRole("dialog");
+      await expect
+        .poll(() =>
+          dialog.getByRole("link", { name: "Visit site" }).getAttribute("href"),
+        )
+        .toBe("https://business-1.pages.dev/");
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("separates the latest attempt from the last reconciliation", async () => {
+    health = fixtureHealth({
+      partial: true,
+      pendingProjectionCount: 0,
+      coverageStart: null,
+      lastError: null,
+      lastSyncAt: Date.UTC(2026, 9, 21, 17, 29),
+      latestAttemptAt: Date.UTC(2026, 9, 30, 16, 20),
+    });
+    const { page, errors } = await openPage();
+    try {
+      await waitForGenerations(page);
+      const details = page.locator("details.admin-data-health");
+      await visible(details.locator("summary"));
+      await details.locator("summary").click();
+      await visible(details.getByText(/Latest attempt received 30 Oct 2026/u));
+      await visible(details.getByText(/Last reconciled 21 Oct 2026/u));
+      expect(await page.getByText(/0 pending projections/u).count()).toBe(0);
       autoErrors(errors);
     } finally {
       await page.close();
@@ -1831,9 +1920,7 @@ describe("real admin workspace browser behavior", () => {
       await expect
         .poll(() => page.locator(".admin-shell").getAttribute("class"))
         .toContain("admin-shell--collapsed");
-      await visible(
-        page.getByRole("link", { name: "Legacy history", exact: true }),
-      );
+      await visible(page.getByRole("link", { name: "Sites", exact: true }));
       await page.getByRole("button", { name: "Expand sidebar" }).click();
       await expect
         .poll(() => page.locator(".admin-shell").getAttribute("class"))

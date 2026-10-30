@@ -913,7 +913,7 @@ export class GenerationAttempts {
     const rows = this.storage.sql
       .exec<AttemptRow>(
         `SELECT attempt_id, data, state FROM generation_attempts
-        WHERE issue_number = ? AND profile = 'full' AND attempt_id <> ?
+        WHERE issue_number = ? AND profile IN ('full','full-preview') AND attempt_id <> ?
         ORDER BY created_at DESC, attempt_id DESC`,
         issueNumber,
         excludeAttemptId,
@@ -940,6 +940,8 @@ export class GenerationAttempts {
       creatorId: filters.creatorId ?? null,
       profile: filters.profile ?? null,
       clientId: filters.clientId ?? null,
+      issueNumber: filters.issueNumber ?? null,
+      siteOnly: filters.siteOnly === true,
       attention: filters.attention === true,
       from: filters.from ?? null,
       to: filters.to ?? null,
@@ -951,6 +953,12 @@ export class GenerationAttempts {
       invalid("executionStatus");
     if (normalized.profile !== null && !profiles.includes(normalized.profile))
       invalid("profile");
+    if (
+      normalized.issueNumber !== null &&
+      (!Number.isSafeInteger(normalized.issueNumber) ||
+        normalized.issueNumber < 1)
+    )
+      invalid("issueNumber");
     for (const time of [normalized.from, normalized.to])
       if (time !== null && !timestamp(time)) invalid("date filter");
     const scope = JSON.stringify(["attempts", normalized]);
@@ -963,6 +971,7 @@ export class GenerationAttempts {
       ["creatorId", "creator_id"],
       ["profile", "profile"],
       ["clientId", "client_id"],
+      ["issueNumber", "issue_number"],
     ] as const) {
       if (normalized[key] !== null) {
         clauses.push(`${column} = ?`);
@@ -975,6 +984,9 @@ export class GenerationAttempts {
           OR json_extract(data,'$.deliveryStatus') IN ('attention','diagnostic')
           OR json_extract(data,'$.stale')=1)`,
       );
+    }
+    if (normalized.siteOnly) {
+      clauses.push("profile IN ('full','full-preview')");
     }
     if (normalized.search !== null) {
       clauses.push(
@@ -1187,8 +1199,14 @@ export class GenerationAttempts {
         pending_projection_count: number;
       }>("SELECT * FROM admin_sync_state WHERE id=1")
       .one();
+    const latest = this.storage.sql
+      .exec<{ latest: number | null }>(
+        "SELECT MAX(json_extract(data,'$.updatedAt')) AS latest FROM generation_attempts",
+      )
+      .one();
     return {
       lastSyncAt: row.last_sync_at,
+      latestAttemptAt: latest.latest,
       coverageStart: row.coverage_start,
       partial: Boolean(row.partial),
       lastError: row.last_error,
