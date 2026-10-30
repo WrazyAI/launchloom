@@ -90,3 +90,4 @@
 2026-10-28T21:57:05Z | branch=codex/launchloom-postgres-ops-task6 | sha=f004bec0 | Task 6 real PostgreSQL proof passed on two fresh loopback 18.4 fixtures with migrations 001-007 twice; review findings fixed and focused checks green
 2026-10-28T23:55:59Z | branch=codex/launchloom-related-preview | sha=ee786f17 | Green reconciled related-preview branch: full root suite 0 failed (2626 passed, 13 skipped), Worker 362/362, admin browser 44/44, check/check:worker clean, build 4 pages; no push or deploy
 2026-10-30T18:33:16Z | branch=codex/launchloom-dashboard-verify-docs | sha=53921442 | Dashboard site truth, Sites scoping, freshness, and primary view fixes deployed as 12ca7745 and verified live
+2026-10-30T18:59:49Z | branch=codex/launchloom-dashboard-login-ledger | sha=a80234f1 | Dashboard test login documented and generation tracking reconciled; live health now current through 30 Oct 18:52 UTC with coverage from 21 Oct
