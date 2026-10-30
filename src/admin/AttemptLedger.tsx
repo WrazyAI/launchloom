@@ -346,6 +346,10 @@ export function SiteTimeline({
       {groups.map((group) => {
         const latest = group.attempts[0];
         const status = siteStatus(group.attempts);
+        const siteUrl =
+          status.siteUrl ||
+          group.attempts.find((attempt) => attempt.siteUrl)?.siteUrl ||
+          null;
         const statusLabel =
           status.deliveryStatus === "published"
             ? "Published"
@@ -393,13 +397,22 @@ export function SiteTimeline({
                   />
                   {statusLabel}
                 </span>
-                {group.clientId && onOpenClient ? (
+                {siteUrl ? (
+                  <a
+                    className="admin-button admin-button--quiet admin-site-open"
+                    href={siteUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View site
+                  </a>
+                ) : group.clientId && onOpenClient ? (
                   <button
                     type="button"
                     className="admin-button admin-button--quiet admin-site-open"
                     onClick={() => onOpenClient(group.clientId as string)}
                   >
-                    View site
+                    Open client
                   </button>
                 ) : null}
               </div>

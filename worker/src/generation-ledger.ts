@@ -4,6 +4,7 @@ import { safeClientSiteUrl } from "../../src/lib/preview-proxy-contract.mjs";
 import type {
   AttemptDetail,
   AttemptInput,
+  AttemptSummary,
   AttemptEventInput,
   AttemptFilters,
   InitialDispatchRegistration,
@@ -330,7 +331,26 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
   async getAttempt(id: string) {
     const attempt = this.attempts.getAttempt(id);
     if (!attempt) return null;
-    return { ...attempt, relatedPreview: this.relatedPreview(attempt) };
+    return {
+      ...this.withSiteUrl(attempt),
+      relatedPreview: this.relatedPreview(attempt),
+    };
+  }
+
+  /**
+   * Display-only verified site URL for a delivered attempt. The URL comes from
+   * the trusted issue completion record, so a failed attempt in the same site
+   * timeline does not borrow it.
+   */
+  private withSiteUrl<T extends AttemptSummary>(attempt: T): T {
+    if (attempt.siteUrl) return attempt;
+    if (!attempt.issueNumber) return attempt;
+    if (!["preview_ready", "published"].includes(attempt.deliveryStatus))
+      return attempt;
+    const siteUrl =
+      this.issuePreviewUrl(attempt.issueNumber) ??
+      safeClientSiteUrl(attempt.previewUrl);
+    return siteUrl ? { ...attempt, siteUrl } : attempt;
   }
 
   /**
@@ -398,7 +418,8 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
   }
 
   async listAttempts(filters: AttemptFilters) {
-    return this.attempts.listAttempts(filters);
+    const page = await this.attempts.listAttempts(filters);
+    return { ...page, items: page.items.map((item) => this.withSiteUrl(item)) };
   }
 
   async recordAttemptEvents(id: string, events: AttemptEventInput[]) {

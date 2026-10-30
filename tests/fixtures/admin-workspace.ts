@@ -66,12 +66,7 @@ export function fixtureHealth(overrides: Partial<Health> = {}): Health {
   return { ...baseHealth, ...overrides };
 }
 
-const profiles = [
-  "full",
-  "full-preview",
-  "creative-only",
-  "seo-only",
-] as const;
+const profiles = ["full", "full-preview", "creative-only", "seo-only"] as const;
 const executions = [
   "succeeded",
   "succeeded",
@@ -102,13 +97,21 @@ function baseAttempt(n: number): AttemptSummary {
     issueNumber: 1000 + n,
     profile: profiles[n % profiles.length],
     initiator:
-      n % 5 === 0 ? clientInitiator : n % 7 === 0 ? systemInitiator : adminInitiator,
+      n % 5 === 0
+        ? clientInitiator
+        : n % 7 === 0
+          ? systemInitiator
+          : adminInitiator,
     invitationCreator: adminCreator,
     repository: "WrazyAI/launchloom",
     runId: String(90000 + n),
     runAttempt: 1,
     executionStatus,
     deliveryStatus: statusDelivery(executionStatus),
+    ...(statusDelivery(executionStatus) === "published" ||
+    statusDelivery(executionStatus) === "preview_ready"
+      ? { siteUrl: `https://business-${n}.pages.dev/` }
+      : {}),
     stale: executionStatus === "running" && n % 11 === 0,
     createdAt,
     startedAt: createdAt + 1_000,
@@ -209,8 +212,7 @@ function diagnosticAttempt(): AttemptSummary {
       category: "prerequisite",
       stage: "setup",
       summary: "The workflow could not verify its required inputs.",
-      evidenceUrl:
-        "https://github.com/WrazyAI/launchloom/actions/runs/90123",
+      evidenceUrl: "https://github.com/WrazyAI/launchloom/actions/runs/90123",
       nextStep: "Review the run log and confirm the missing input.",
     },
     costs: { actualUsd: 0.42, estimatedUsd: 0.5, unreportedCount: 0 },
@@ -448,16 +450,13 @@ export function attemptDetail(attempt: AttemptSummary): AttemptDetail {
   };
 }
 
-export function pageOf<T>(
-  items: T[],
-  offset = 0,
-  limit = 50,
-): Page<T> {
+export function pageOf<T>(items: T[], offset = 0, limit = 50): Page<T> {
   const bounded = Math.min(Math.max(limit, 1), 100);
   const start = Math.max(offset, 0);
   return {
     items: items.slice(start, start + bounded),
     total: items.length,
-    nextCursor: start + bounded < items.length ? `offset:${start + bounded}` : null,
+    nextCursor:
+      start + bounded < items.length ? `offset:${start + bounded}` : null,
   };
 }

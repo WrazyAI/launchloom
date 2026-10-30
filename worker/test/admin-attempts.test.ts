@@ -182,6 +182,41 @@ describe("GenerationLedger attempt history", () => {
     expect(item?.clientName).toBe("Northline Dental Studio");
   });
 
+  it("exposes the verified issue preview URL only on delivered attempts", async () => {
+    const store = ledger();
+    const previewUrl =
+      "https://review-initial.launchloom-202-northline.pages.dev/";
+    await store.upsertGeneration({
+      generationId: "issue:202",
+      issueNumber: 202,
+      previewUrl,
+    });
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "delivered",
+        issueNumber: 202,
+        executionStatus: "succeeded",
+        deliveryStatus: "preview_ready",
+      }),
+    );
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "failed-later",
+        issueNumber: 202,
+        executionStatus: "failed",
+        deliveryStatus: "none",
+        createdAt: 2000,
+      }),
+    );
+    const page = await store.listAttempts({});
+    expect(
+      page.items.find((item) => item.attemptId === "delivered")?.siteUrl,
+    ).toBe(previewUrl);
+    expect(
+      page.items.find((item) => item.attemptId === "failed-later")?.siteUrl,
+    ).toBeUndefined();
+  });
+
   it("returns one canonical ID for repeated executed identity", async () => {
     const store = ledger();
     const input = attempt({
