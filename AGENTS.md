@@ -257,6 +257,23 @@ forced to `production` and release is the GitHub deployment SHA. Do not replace
 those production values with local `.env` values such as `development` or
 `local`.
 
+## LaunchLoom dashboard test login
+
+For live dashboard verification, use the owner's personal admin account stored
+in the ignored local file `/home/maigreeks/projects/launchloom/.env`:
+
+- `LAUNCHLOOM_ADMIN_USERNAME`
+- `LAUNCHLOOM_ADMIN_PASSWORD`
+
+Read these values only inside the verification process. Never print, paste,
+screenshot, commit, or send them, and never copy the file into a worktree. Use
+the account to sign in at `https://api.launchloom.wrazyos.com/admin/login` when
+a live admin session is required. Prefer an existing signed-in browser tab; if
+the session expired, sign in again and preserve the `returnTo` path.
+
+The account is an owner identity. Use it for read-only dashboard verification
+unless the user explicitly authorizes the write being tested.
+
 ## Repository progress and completion ledger
 
 Before non-trivial work, inspect the branch/worktree and recent commits, read
