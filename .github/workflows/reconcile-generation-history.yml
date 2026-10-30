@@ -1,8 +1,12 @@
 name: Reconcile generation history
 
-# Scheduled and manual reconciliation write only retained run metadata, health
-# and checkpoints. They never dispatch or publish a generation.
+# Reconciliation writes only retained run metadata, health and checkpoints.
+# It runs after a full site generation and hourly as a fallback. It never
+# dispatches or publishes a generation.
 on:
+  workflow_run:
+    workflows: ["Generate client site"]
+    types: [completed]
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
@@ -34,7 +38,7 @@ concurrency:
 
 jobs:
   reconcile:
-    if: ${{ github.repository == 'WrazyAI/launchloom' }}
+    if: ${{ github.repository == 'WrazyAI/launchloom' && (github.event_name != 'workflow_run' || contains(github.event.workflow_run.name, 'profile=full')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -48,11 +52,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           LAUNCHLOOM_API_URL: ${{ vars.ADMIN_PUBLIC_ORIGIN || 'https://api.launchloom.wrazyos.com' }}
-          GENERATION_TRACKING_SECRET: ${{ (github.event_name == 'schedule' || !inputs.dry_run) && secrets.GENERATION_TRACKING_SECRET || '' }}
-          RECONCILE_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
-          RECONCILE_MODE: ${{ inputs.mode || 'incremental' }}
-          RECONCILE_FROM: ${{ inputs.from || '' }}
-          RECONCILE_CHECKPOINT: ${{ inputs.checkpoint || '' }}
+          GENERATION_TRACKING_SECRET: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_run' || github.event.inputs.dry_run == 'false') && secrets.GENERATION_TRACKING_SECRET || '' }}
+          RECONCILE_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run || 'false' }}
+          RECONCILE_MODE: ${{ github.event.inputs.mode || 'incremental' }}
+          RECONCILE_FROM: ${{ github.event.inputs.from || '' }}
+          RECONCILE_CHECKPOINT: ${{ github.event.inputs.checkpoint || '' }}
         run: |
           ARGS=(--mode "$RECONCILE_MODE" --page-budget 10)
           if [ "$RECONCILE_DRY_RUN" = "true" ]; then ARGS+=(--dry-run); else ARGS+=(--write); fi
