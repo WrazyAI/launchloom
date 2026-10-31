@@ -384,20 +384,25 @@ describe("trusted attempt producer", () => {
     });
     expect(JSON.stringify(payload)).not.toContain("private intake");
   });
-  it("schedules metadata reconciliation and keeps generation dispatches manual", async () => {
+  it("reconciles after full site generations and hourly as a fallback", async () => {
     const yaml = await fs.readFile(
       ".github/workflows/reconcile-generation-history.yml",
       "utf8",
     );
     expect(yaml).toContain("workflow_dispatch:");
+    expect(yaml).toContain("workflow_run:");
+    expect(yaml).toContain('workflows: ["Generate client site"]');
+    expect(yaml).toContain(
+      "contains(github.event.workflow_run.name, 'profile=full')",
+    );
     expect(yaml).toContain("schedule:");
     expect(yaml).toContain('cron: "17 * * * *"');
     expect(yaml).toContain("default: true");
     expect(yaml).toContain(
-      "github.event_name == 'schedule' || !inputs.dry_run",
+      "github.event_name == 'schedule' || github.event_name == 'workflow_run' || github.event.inputs.dry_run == 'false'",
     );
     expect(yaml).toContain(
-      "github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false'",
+      "github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run || 'false'",
     );
     expect(yaml).toContain("github.event.repository.default_branch");
     expect(yaml).toContain("actions: read");
