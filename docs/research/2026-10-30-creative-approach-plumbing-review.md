@@ -125,31 +125,104 @@ problem.
 
 ## Run evidence
 
-To be filled from run `41083094486`:
+Run `41114829311` (issue #217, OpenRouter, DeepSeek V4.1 Flash) completed
+with `verdict: failed` and delivered a preview at
+`https://23a385d0.launchloom-pipeline-preview.pages.dev`.
 
-- Author result and stage durations
-- Selected route, family, and reference dossier
-- Candidate scores and dimension scores
-- Technical gate results
-- Creative gate results and findings
-- Hero composition at desktop, compact, and mobile
-- Both mobile actions at 390x844
-- Preview URL
-- Asset placements and review reasons
+- `prepare` and `configure` passed; `author` passed; `creative` failed after
+  the near-miss budget; `select` passed; `technical` failed; `deploy` passed.
+- Selected fallback: `candidate-a` / `route-01` (Fixwell Quote-first Service
+  Desk, utility-diagnostic, hero-integrated quote form). No candidate was
+  eligible.
+- Candidate scores:
+  - candidate-a (route-01 Fixwell): reference 63, visual 58. Dimension
+    scores: imagery 25, typography 50, hero geometry 55, service
+    presentation 60, mobile recomposition 62, CTA 72, art direction 75,
+    navigation 78, palette 90.
+  - candidate-b (route-02 Roto-Rooter): reference 74, visual 72. Imagery 55,
+    mobile 64, hero 70, service 74, typography 78, spatial 80, navigation 80,
+    art direction 80, CTA 85, palette 90.
+  - candidate-c (route-03 Morris-Jenkins): reference 74, visual 71. Imagery
+    55, mobile 70, hero 72, typography 74, service 86, art direction 84,
+    palette 88.
+- Imagery: 15 requests, 0 placements. Every route skipped its hero, secondary,
+  and tertiary assets. The reviewer returned `visible_text`,
+  `logo_or_watermark`, `not_standalone_image`, and `review_unavailable`.
+  The selected candidate has no photograph at all; its hero is a flat sage
+  field. Candidate-b uses a line-art pipe diagram; candidate-c uses a
+  line-art valve icon.
+- Near-miss gate: candidate-c was blocked with four findings: truncated
+  About and water-heater sentences, a bare plus sign appended to each FAQ
+  question, and a duplicated `Portland` entry in the service-area list.
+- Technical: 36 unresolved contrast findings and 6 hard failures. The
+  reported flat pair `#6b716d` on `#e6efe5` measured 4.240 against 4.5 and
+  was not repaired (`repairs=0`).
+- Hero composition: candidate-b's desktop hero is a split stage with a
+  line-art grid; its mobile hero bottom is 1226px, 1.45 viewports, with the
+  media starting near y=690.
+- The preview is Access-gated and noindex, as expected.
 
 ## Findings
 
-To be written after inspection.
+1. **The utility layout language generalizes better than the ornate café
+   reference.** Candidate-b reached reference 74 and visual 72, with strong
+   palette (90), CTA (85), navigation (80), spatial rhythm (80), typography
+   (78), and art direction (80). That is close to the dimension floors, not
+   the 20 to 30 point gap seen on the café.
+2. **Imagery is the dominant blocker.** Zero of fifteen requested assets
+   were accepted, so every candidate substituted flat fields or line-art
+   diagrams. The imagery score is 25 to 55 against a floor of 72. The
+   references lead with a bright work-context image, a technician, a van,
+   or a campaign poster; the candidates have none of that.
+3. **The people-free policy conflicts with the technician-led references.**
+   Roto-Rooter and Morris-Jenkins use a uniformed technician or a service
+   van as the opening subject. The pipeline rejects any person in generated
+   imagery, correctly, but the current fallback (a line-art pipe diagram)
+   does not carry the reference's trust signal. A people-free photography
+   strategy is needed: tools, pipes, workbenches, hands-off still lifes,
+   service-van details without people or text.
+4. **The image reviewer is also failing closed on some assets.** Several
+   reviews returned `review_unavailable`, not a content rejection. That is
+   a reliability failure in the review path, separate from the policy.
+5. **Mobile recomposition is the second blocker.** Candidate-b's mobile
+   hero is 1.45 viewports with the media below the fold; its mobile score
+   is 64 against a floor of 78. The desktop layout is close; the mobile
+   chapter is not.
+6. **Copy integrity is a separate critical failure.** The copy lane
+   truncated the About paragraph and the water-heater description mid
+   sentence, and the FAQ control rendered the plus inside the question
+   string. Those are content-integrity and control-affordance defects, not
+   visual taste.
+7. **Selection picked the weakest candidate.** The selected fallback is
+   candidate-a (reference 63, visual 58) even though candidate-b scored
+   74/72 and candidate-c 74/71. With no image-complete candidate, the
+   fallback ranking should prefer the strongest visual score; the current
+   `preferred` flag overrode it. This is a selection bug.
+8. **The flat contrast repair did not apply.** The technical report shows
+   a flat pair at 4.240 with zero repairs. The bounded repair path either
+   was not reached on the selected candidate or did not cover the service
+   pages. This is the same class as the café focus-state issue and needs a
+   direct investigation, not another model repair.
 
 ## Recommendations
 
-To be written after inspection. The recommendations will distinguish:
-
-- reference-selection problems
-- authoring-prompt problems
-- gate or measurement problems
-- imagery-policy problems that are intentional and need a design response
-- genuine model-capability limits
+- Fix the image path before another creative run. The 0/15 placement rate
+  is the dominant cause of the imagery floor failure. Separate the
+  `review_unavailable` reliability failure from content rejections, and
+  add a people-free plumbing still-life prompt set: pipe assemblies,
+  tools, a workbench, a water heater detail, a van detail without livery.
+- Make the fallback selection prefer the highest visual score when no
+  candidate has image coverage. Candidate-b should have been selected.
+- Add a mobile hero-fit contract for utility and poster routes: the media
+  or diagnostic field must sit within the first viewport, not below the
+  fold.
+- Fix the copy truncation and the FAQ affordance in the copy lane. Treat
+  truncated sentences as a hard authoring failure, not a visual finding.
+- Investigate why the flat contrast repair applied zero repairs to the
+  selected candidate's service pages.
+- Re-run the plumbing review after the image and selection fixes. The
+  layout is close enough that a pass is plausible; another run without the
+  image fix will fail on imagery again.
 
 ## Boundaries
 
