@@ -6,6 +6,7 @@ import sharp from "sharp";
 import {
   DEFAULT_MAX_PROMPT_LENGTH,
   generateContextualAssets,
+  promptFor,
   reviewGeneratedAsset,
 } from "../scripts/generate-contextual-assets.mjs";
 import { CREATIVE_FAMILIES } from "../scripts/creative-compiler.mjs";
@@ -20,6 +21,45 @@ const generate = (options: any): Promise<any> =>
     }),
     ...options,
   } as any) as Promise<any>;
+
+describe("home-services image prompts", () => {
+  it("uses a people-free plumbing still life instead of technician cues", () => {
+    const prompt = promptFor(
+      {
+        industry: "home-services",
+        businessKind: "plumbing",
+        services: [{ name: "Drain cleaning" }],
+      },
+      {
+        referenceDna: {
+          familyId: "typographic-poster",
+          heroGeometry: { mode: "a service van and technician" },
+          imageTreatment: { mode: "full-bleed documentary" },
+          palette: { contrastIntent: "deep teal and sand" },
+        },
+      },
+      {
+        id: "hero",
+        focal: "Keep the main subject in the central safe crop.",
+      },
+    );
+    expect(prompt).toContain("copper and brass pipe fittings");
+    expect(prompt).not.toContain("service van and technician");
+    expect(prompt).toContain("No people");
+  });
+
+  it("does not apply the plumbing still life to a non-plumbing home-services site", () => {
+    const prompt = promptFor(
+      fixture(),
+      { referenceDna: { familyId: "typographic-poster" } },
+      {
+        id: "hero",
+        focal: "Keep the main subject in the central safe crop.",
+      },
+    );
+    expect(prompt).not.toContain("copper and brass pipe fittings");
+  });
+});
 
 function fixture(): any {
   return {

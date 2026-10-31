@@ -14,6 +14,10 @@ import {
   routeRequiresFloatingHeroCopy,
 } from "./hero-card-contract.mjs";
 import {
+  MOBILE_HERO_MEDIA_MIN_VISIBLE,
+  routeRequiresMobileMedia,
+} from "./mobile-hero-contract.mjs";
+import {
   captureRenderedInteractionEvidence,
   interactionSourceDigest,
   requiresPurposefulInteraction,
@@ -350,6 +354,25 @@ async function inspect(page) {
             .map((bounds) => bounds.top + bounds.height),
         )
       : 0;
+    const mediaVisibleHeight = (region) => {
+      const box = region?.container;
+      if (!box) return 0;
+      return Math.max(
+        0,
+        Math.min(box.top + box.height, window.innerHeight) -
+          Math.max(box.top, 0),
+      );
+    };
+    const heroMediaTop = mediaRegions.length
+      ? Math.min(
+          ...mediaRegions.map(
+            (region) => region.container?.top ?? Number.POSITIVE_INFINITY,
+          ),
+        )
+      : 0;
+    const heroMediaVisibleHeight = mediaRegions.length
+      ? Math.max(...mediaRegions.map(mediaVisibleHeight))
+      : 0;
     const anchors = [...document.querySelectorAll("nav a")];
     const requiredTargets = ["#services", "#faqs", "#contact"];
     const identityHeading =
@@ -404,6 +427,8 @@ async function inspect(page) {
       ).length,
       heroBottom: Math.round(heroBounds?.bottom || 0),
       heroActionBottom: Math.round(heroActionBottom),
+      heroMediaTop: Math.round(heroMediaTop),
+      heroMediaVisibleHeight: Math.round(heroMediaVisibleHeight),
       heroCopyAreaRatio,
       heroCopyWidthRatio,
       heroCopyHeightRatio,
@@ -474,6 +499,10 @@ async function inspect(page) {
           widthRatio: heroCopyWidthRatio,
           heightRatio: heroCopyHeightRatio,
         },
+        mediaCoverage: {
+          top: heroMediaTop,
+          visibleHeight: heroMediaVisibleHeight,
+        },
         media: mediaRegions,
         utilityCount:
           hero?.querySelectorAll(
@@ -487,7 +516,11 @@ async function inspect(page) {
 export function hardFailures(
   evidence,
   viewport,
-  { requiresImageOverlay = false, requiresFloatingCopy = false } = {},
+  {
+    requiresImageOverlay = false,
+    requiresFloatingCopy = false,
+    requiresMobileMedia = false,
+  } = {},
 ) {
   return [
     evidence.h1Count !== 1 && "expected one H1",
@@ -515,6 +548,14 @@ export function hardFailures(
         mobile: viewport.name === "mobile",
         requiresFloatingCopy,
       }),
+    viewport.name === "mobile" &&
+      requiresMobileMedia &&
+      evidence.heroActionBottom > evidence.viewportHeight + 1 &&
+      "hero action exceeds mobile viewport for a utility or poster route",
+    viewport.name === "mobile" &&
+      requiresMobileMedia &&
+      evidence.heroMediaVisibleHeight < MOBILE_HERO_MEDIA_MIN_VISIBLE &&
+      "hero media is not visible enough in the mobile first viewport",
     evidence.overflow && "horizontal overflow",
     evidence.brokenImages > 0 && "broken image",
     evidence.emDashes > 0 && "em dash found",
@@ -976,6 +1017,12 @@ export async function runCreativeBakeoff({
           candidate.metadata.heroGeometry ||
           candidate.manifest.referenceDna?.heroGeometry?.mode,
       });
+      const requiresMobileMedia = routeRequiresMobileMedia({
+        familyId: candidate.manifest.familyId,
+        compositionTopology:
+          candidate.manifest.referenceDna?.compositionTopology ||
+          candidate.metadata.referenceDna?.compositionTopology,
+      });
       candidateResult.timings = {};
       /** Record one render phase; used per candidate and per run. */
       const recordPhase = (name, startedAt, category = "render") => {
@@ -1254,6 +1301,7 @@ export async function runCreativeBakeoff({
                 ...hardFailures(evidence, viewport, {
                   requiresImageOverlay,
                   requiresFloatingCopy,
+                  requiresMobileMedia,
                 }),
                 browserErrors.length > 0 && "browser error",
               ].filter(Boolean);

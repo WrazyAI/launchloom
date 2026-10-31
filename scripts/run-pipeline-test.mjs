@@ -1293,6 +1293,12 @@ export function createCloudDependencies(
             Number(candidate.visualScore) || 0,
           ]),
         );
+        const bakeoffByCandidate = new Map(
+          (bakeoff?.candidates || []).map((candidate) => [
+            candidate.candidateId,
+            candidate,
+          ]),
+        );
         const safeCandidates = [];
         for (const name of names) {
           if (!/^candidate-[abc]$/u.test(name)) continue;
@@ -1328,6 +1334,13 @@ export function createCloudDependencies(
               preferred: name === preferred,
               imageCompleteness: imageCompletenessScore(coverage),
               visualScore: visualScoreByCandidate.get(name) || 0,
+              contrastPass:
+                bakeoffByCandidate.get(name)?.contrast?.pass === true,
+              hardFailureCount: Array.isArray(
+                bakeoffByCandidate.get(name)?.failures,
+              )
+                ? bakeoffByCandidate.get(name).failures.length
+                : 0,
             });
           } catch {
             /* Try the next source-safe candidate; never fall back to legacy. */

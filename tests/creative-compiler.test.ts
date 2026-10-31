@@ -255,6 +255,59 @@ describe("creative compiler", () => {
     ]);
   });
 
+  it("prefers the strongest visual fallback when no candidate has imagery", () => {
+    const ranked = rankFallbackCandidates([
+      {
+        candidateId: "candidate-a",
+        imageCompleteness: 1,
+        preferred: true,
+        visualScore: 58,
+      },
+      {
+        candidateId: "candidate-b",
+        imageCompleteness: 1,
+        preferred: false,
+        visualScore: 72,
+      },
+      {
+        candidateId: "candidate-c",
+        imageCompleteness: 1,
+        preferred: false,
+        visualScore: 71,
+      },
+    ]);
+    expect(ranked.map((candidate) => candidate.candidateId)).toEqual([
+      "candidate-b",
+      "candidate-c",
+      "candidate-a",
+    ]);
+  });
+
+  it("prefers a contrast-passing fallback over a higher visual score that fails contrast", () => {
+    const ranked = rankFallbackCandidates([
+      {
+        candidateId: "candidate-a",
+        imageCompleteness: 1,
+        preferred: true,
+        visualScore: 72,
+        contrastPass: false,
+        hardFailureCount: 4,
+      },
+      {
+        candidateId: "candidate-c",
+        imageCompleteness: 1,
+        preferred: false,
+        visualScore: 71,
+        contrastPass: true,
+        hardFailureCount: 2,
+      },
+    ]);
+    expect(ranked.map((candidate) => candidate.candidateId)).toEqual([
+      "candidate-c",
+      "candidate-a",
+    ]);
+  });
+
   it("keeps the approved 2026-10-17 promotion calibration", () => {
     expect(CREATIVE_PROMOTION_THRESHOLDS).toEqual({
       visualScore: 50,

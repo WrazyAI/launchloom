@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AUTHORING_STAGE_BUDGETS,
   CLIENT_PALETTE_ROLE_CONTRACT,
+  FAQ_DISCLOSURE_OUTPUT_CONTRACT,
   HERO_MEDIA_FOCUS_CONTRACT,
   authoringCompletionDiagnostics,
   appendReferencePersonnelCue,
@@ -251,6 +252,11 @@ describe("creative authoring output budgets", () => {
       "Never solve contrast with opaque per-line background boxes behind text",
     );
     expect(CLIENT_PALETTE_ROLE_CONTRACT).toContain("HERO MEDIA FOCUS CONTRACT");
+  });
+
+  it("requires the FAQ disclosure marker to be separate from the question", () => {
+    expect(FAQ_DISCLOSURE_OUTPUT_CONTRACT).toContain("separate element");
+    expect(FAQ_DISCLOSURE_OUTPUT_CONTRACT).toContain("Never append a plus");
   });
 
   it("states distinct desktop and mobile hero topologies as separate layout contracts", () => {

@@ -19,6 +19,12 @@ export const SERVICE_PAGE_DIRECT_BINDING_CONTRACT = [
   "PageBriefSections renders optional brief sections only and does not satisfy these bindings.",
 ].join("\n");
 
+export const FAQ_DISCLOSURE_OUTPUT_CONTRACT = [
+  "FAQ DISCLOSURE CONTRACT",
+  "The FAQ disclosure indicator must be a separate element or a CSS pseudo-element.",
+  "Never append a plus or minus to the question text.",
+].join("\n");
+
 export const EARLY_CONVERSION_OUTPUT_CONTRACT = [
   "EARLY CONVERSION INVARIANT",
   "The element marked data-early-conversion must be a compact native anchor to #contact whose visible label is supplied by content.hero.primaryLabel. Keep the marker on that same contact-bound anchor and preserve the assigned Reference DNA CTA placement.",

@@ -583,7 +583,7 @@ function visualDirection(site) {
     .join(", ");
 }
 
-function promptFor(site, route, placement) {
+export function promptFor(site, route, placement) {
   const business = site.business || {};
   const seo = site.seoResearch || {};
   const services = list((site.services || []).map((service) => service?.name));
@@ -806,14 +806,29 @@ function promptFor(site, route, placement) {
         "Create a close still life of bread, herbs, paper, or serving details with a tactile handmade feeling and an intentional crop for a graphic visit or order band.",
     },
   };
-  const familyBrief = familyAssetBriefs[dna.familyId] || {
-    medium: "commercial editorial photography",
-    hero: "Create a distinctive, service-relevant scene using the assigned reference's physical subject cues.",
+  const homeServices = /plumb|drain|water heater|repip|pipe|leak repair/iu.test(
+    `${site.industry || ""} ${site.businessKind || ""} ${(site.services || [])
+      .map((service) => service?.name)
+      .join(" ")}`,
+  );
+  const homeServicesBrief = {
+    medium: "tactile trade still-life photography",
+    hero: "Create a close, tactile still life of copper and brass pipe fittings, a well-used wrench, and a clean workbench surface in soft daylight. Leave a calm negative-space field for type. No people, vans, uniforms, clothing, signage, labels, or readable text.",
     secondary:
-      "Create a distinct supporting service scene using the assigned reference's physical subject cues.",
+      "Create a supporting service detail such as a water-heater valve, drain cleanout, or pipe assembly on a clean work surface, without people, vans, labels, or readable text.",
     tertiary:
-      "Create a tactile material or service detail using the assigned reference's physical subject cues.",
+      "Create a tight material detail of copper pipe, brass fittings, or a work glove with no person, labels, or readable text.",
   };
+  const familyBrief = homeServices
+    ? homeServicesBrief
+    : familyAssetBriefs[dna.familyId] || {
+        medium: "commercial editorial photography",
+        hero: "Create a distinctive, service-relevant scene using the assigned reference's physical subject cues.",
+        secondary:
+          "Create a distinct supporting service scene using the assigned reference's physical subject cues.",
+        tertiary:
+          "Create a tactile material or service detail using the assigned reference's physical subject cues.",
+      };
   const subject = services.length
     ? services.join(", ")
     : safePromptPart(
@@ -829,15 +844,19 @@ function promptFor(site, route, placement) {
   const problemContext = problems.length
     ? `Customer concerns to understand visually, without adding claims: ${problems.join("; ")}.`
     : "";
-  const referenceScene = sceneOnlyDirection(
-    `${dna.heroGeometry?.mode || ""}. ${dna.imageTreatment?.mode || ""}`,
-  );
+  const referenceScene = homeServices
+    ? ""
+    : sceneOnlyDirection(
+        `${dna.heroGeometry?.mode || ""}. ${dna.imageTreatment?.mode || ""}`,
+      );
   const referenceSceneContext = referenceScene
     ? `Reference-specific physical scene cues: ${referenceScene}. Use only subject and material cues; do not reproduce its layout, interface, or exact source image.`
     : "";
-  const dnaContext = dna.familyId
-    ? `Reference family: ${dna.familyId}. Image art direction: ${familyImageDirection[dna.familyId] || "Follow the assigned reference's visual mood and materials without copying a brand."} Image treatment: ${sceneOnlyDirection(dna.imageTreatment?.mode, 120)}. Crop strategy: ${imageOnlyDirection(dna.imageTreatment?.crop, 140)}. Palette intent: ${imageOnlyDirection(dna.palette?.contrastIntent, 140)}.`
-    : "";
+  const dnaContext = homeServices
+    ? "Reference family: home-services trade still life. Preserve the reference's practical materials and palette only. Do not depict people, technicians, service vans, uniforms, livery, signage, or readable text."
+    : dna.familyId
+      ? `Reference family: ${dna.familyId}. Image art direction: ${familyImageDirection[dna.familyId] || "Follow the assigned reference's visual mood and materials without copying a brand."} Image treatment: ${sceneOnlyDirection(dna.imageTreatment?.mode, 120)}. Crop strategy: ${imageOnlyDirection(dna.imageTreatment?.crop, 140)}. Palette intent: ${imageOnlyDirection(dna.palette?.contrastIntent, 140)}.`
+      : "";
   const directionContext = direction ? `Visual direction: ${direction}.` : "";
   const placementBrief =
     placement.id === "hero"
@@ -1195,34 +1214,40 @@ async function generateContextualAssetsForRoute({
         );
         const normalized = await normalizeImage(downloaded.data, placement);
         let review;
-        try {
-          review = await imageReviewer({
-            imageData: normalized.data,
-            placement: placement.id,
-            businessKind:
-              site.businessKind || site.industry || "local business",
-            services: (site.services || [])
-              .map((service) => service?.name)
-              .filter(Boolean)
-              .slice(0, 4),
-            familyId: routeContract.familyId,
-            attempt: attempt + 1,
-          });
-        } catch {
-          review = {
-            available: false,
-            approved: false,
-            reasonCodes: ["review_unavailable"],
-            failureCode: "review_callback_error",
-            imageBytes: normalized.bytes,
-          };
+        let reviewSummary;
+        // A reviewer outage is not a content rejection. Retry the same
+        // normalized image once before failing closed; reserve generation
+        // retries for images the reviewer actually rejected.
+        for (let reviewAttempt = 0; reviewAttempt < 2; reviewAttempt += 1) {
+          try {
+            review = await imageReviewer({
+              imageData: normalized.data,
+              placement: placement.id,
+              businessKind:
+                site.businessKind || site.industry || "local business",
+              services: (site.services || [])
+                .map((service) => service?.name)
+                .filter(Boolean)
+                .slice(0, 4),
+              familyId: routeContract.familyId,
+              attempt: attempt + 1,
+            });
+          } catch {
+            review = {
+              available: false,
+              approved: false,
+              reasonCodes: ["review_unavailable"],
+              failureCode: "review_callback_error",
+              imageBytes: normalized.bytes,
+            };
+          }
+          reviewSummary = normalizeImageReview(review);
+          if (reviewSummary.status !== "unavailable") break;
         }
-        const reviewSummary = normalizeImageReview(review);
         imageReviews.push(reviewSummary);
         finalReview = reviewSummary;
         if (reviewSummary.status === "unavailable") {
           failure = "image-review-unavailable";
-          if (attempt === 0 && requests < placementRequestLimit) continue;
           break;
         }
         if (reviewSummary.status !== "approved") {

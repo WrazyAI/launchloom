@@ -384,7 +384,7 @@ function contentShape(site, route) {
   const images = site.images || {};
   const routeImages = route?.id ? site.creativeAssets?.[route.id] || {} : {};
   const serviceAreas = Array.isArray(business.serviceAreas)
-    ? business.serviceAreas.map(String)
+    ? dedupePlaces(business.serviceAreas.map(String))
     : [];
   const socialProofPoints = (site.socialProof?.points || []).filter(Boolean);
   const fallbackProofPoints = (site.socialProof?.fallback?.points || []).filter(
@@ -483,7 +483,7 @@ function contentShape(site, route) {
     proof: (site.differentiators || []).slice(0, 3).map(String),
     process: (site.conversion?.process || []).slice(0, 4).map(String),
     faqs: (site.conversion?.faqs || []).slice(0, 8),
-    locations: site.locations || [],
+    locations: dedupeLocations(site.locations),
     copy,
     businessDescription: String(business.description || ""),
     showLocationMap:
@@ -518,6 +518,35 @@ function contentShape(site, route) {
         }
       : null,
   };
+}
+
+function placeKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .split(",")[0]
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
+function dedupePlaces(values) {
+  const seen = new Set();
+  return (Array.isArray(values) ? values : []).filter((value) => {
+    const key = placeKey(value);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function dedupeLocations(locations) {
+  const seen = new Set();
+  return (Array.isArray(locations) ? locations : []).filter((location) => {
+    const key = placeKey(location?.name || location?.slug || "");
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export function buildCreativeContentManifest(site, route) {
@@ -3652,6 +3681,19 @@ export function validateProductionCandidateFiles({
   );
   if (!experience || !styles || !motion)
     throw new Error("A complete creative candidate file bundle is required.");
+  const faqMarkerAppended = (source) =>
+    /<summary\b[^>]*>[\s\S]*?\}\s*[+-]\s*<\/summary>/u.test(source) ||
+    /<summary\b[^>]*>[^<]*[?？]\s*[+-]\s*<\/summary>/u.test(source);
+  for (const [file, source] of [
+    ["Experience.jsx", experience],
+    ["ServicePage.jsx", servicePage],
+    ["LocationPage.jsx", locationPage],
+    ["ServicesIndexPage.jsx", servicesIndexPage],
+  ])
+    if (source && faqMarkerAppended(source))
+      throw new Error(
+        `Candidate ${route.id || "candidate"} ${file} appends a disclosure marker to the FAQ question text. Render the marker as a separate element or CSS pseudo-element.`,
+      );
   const referenceDna = route.referenceDna
     ? validateReferenceDna(route.referenceDna, { requireEvidence: true })
     : null;

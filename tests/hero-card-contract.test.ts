@@ -182,6 +182,14 @@ describe("hero-card fidelity contract", () => {
     expect(textLed.join("\n")).not.toContain("large bordered card");
   });
 
+  it("sends the utility mobile hero guidance for a mobile media finding", () => {
+    const guidance = targetedRepairGuidance([
+      "hero media is not visible enough in the mobile first viewport",
+    ]);
+    expect(guidance.join("\n")).toContain("UTILITY MOBILE HERO FIT");
+    expect(guidance.join("\n")).toContain("at least 200px");
+  });
+
   it("sends the hero-card repair guidance only for a hero-card finding", () => {
     const guidance = targetedRepairGuidance([
       "hero copy is a large bordered card covering 47% of the hero area",

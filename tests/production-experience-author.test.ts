@@ -1425,6 +1425,34 @@ export default function Experience`,
     expect(manifest.values).not.toHaveProperty("style");
   });
 
+  it("dedupes service areas that differ only by state suffix", () => {
+    const manifest = buildCreativeContentManifest({
+      ...site,
+      business: {
+        ...site.business,
+        serviceAreas: ["Portland, OR", "Portland"],
+      },
+      locations: [{ name: "Portland, OR" }, { name: "Portland" }],
+    });
+    expect(manifest.values.brand.serviceAreas).toEqual(["Portland, OR"]);
+    expect(manifest.values.locations).toHaveLength(1);
+  });
+
+  it("rejects a disclosure marker appended to the FAQ question text", () => {
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience:
+            "<main><details><summary>{content.faqs[0].question}+</summary><p>{content.faqs[0].answer}</p></details></main>",
+          styles: ".x{color:#111}",
+          motion:
+            "export function mountExperienceMotion(){ return () => {}; }",
+        },
+        route: { id: "route-faq-marker" },
+      }),
+    ).toThrow(/disclosure marker/);
+  });
+
   it("rejects silent hero-image reuse across distinct image roles", () => {
     const route = { id: "route-image-role-reuse" };
     const request = {

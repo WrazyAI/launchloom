@@ -516,16 +516,42 @@ export function imageCompletenessScore(coverage = {}) {
  * and visual score then order candidates with equivalent image coverage.
  */
 export function rankFallbackCandidates(candidates = []) {
-  return [...candidates].sort(
-    (left, right) =>
+  const list = [...candidates];
+  const hasImages = (candidate) =>
+    Number(candidate?.imageCoverage?.count || 0) > 0 ||
+    Number(candidate?.imageCompleteness || 0) > 1;
+  const anyImages = list.some(hasImages);
+  const contrastRank = (candidate) =>
+    candidate?.contrastPass === false ? 1 : 0;
+  const hardRank = (candidate) => Number(candidate?.hardFailureCount || 0);
+  return list.sort((left, right) => {
+    const imageDiff =
       Number(right.imageCompleteness || 0) -
-        Number(left.imageCompleteness || 0) ||
-      Number(right.preferred) - Number(left.preferred) ||
-      Number(right.visualScore || 0) - Number(left.visualScore || 0) ||
-      String(left.candidateId || "").localeCompare(
-        String(right.candidateId || ""),
-      ),
-  );
+      Number(left.imageCompleteness || 0);
+    if (imageDiff) return imageDiff;
+    // A contrast-passing fallback is closer to shippable than a visually
+    // stronger candidate that already fails the technical gate.
+    const contrastDiff = contrastRank(left) - contrastRank(right);
+    if (contrastDiff) return contrastDiff;
+    const hardDiff = hardRank(left) - hardRank(right);
+    if (hardDiff) return hardDiff;
+    // With no imagery anywhere, preference cannot compensate for a visibly
+    // weaker candidate. Choose the strongest rendered composition instead.
+    if (!anyImages) {
+      const visualDiff =
+        Number(right.visualScore || 0) - Number(left.visualScore || 0);
+      if (visualDiff) return visualDiff;
+    }
+    const preferredDiff =
+      Number(right.preferred) - Number(left.preferred);
+    if (preferredDiff) return preferredDiff;
+    const visualDiff =
+      Number(right.visualScore || 0) - Number(left.visualScore || 0);
+    if (visualDiff) return visualDiff;
+    return String(left.candidateId || "").localeCompare(
+      String(right.candidateId || ""),
+    );
+  });
 }
 
 export function scoreCreativeCandidate({ hardPass, visual = {}, technical = {}, distinctiveness = 0 }) {

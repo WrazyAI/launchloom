@@ -167,7 +167,7 @@ const SITE_COPY_REFINEMENT_RETRY_MAX_COMPLETION_TOKENS = 24_576;
 const MAX_CORE_SERVICES = 5;
 
 const SHARED_CREATIVE_DIRECTION =
-  "Build a specific local-business decision journey. Near the opening, make clear who the business helps, what it provides, where it operates when location matters, and the next action. The hero headline must be a memorable 4-10 word promise, not a list of services. The hero body must be one useful sentence under 28 words. Service-card descriptions must be one distinct sentence under 22 words. Give each section a distinct job; do not repeat one claim across the hero, proof, services, and About copy. Use one primary action and one useful secondary action. Prefer client assets. Mention no person in a stock image as an employee, customer, patient, or client. Treat an area served as coverage, not a physical office. Never write same-day, 24/7, emergency service or response, available today or now, or response-time promises unless the verified brief states that exact fact. Do not use em dashes.";
+  "Build a specific local-business decision journey. Near the opening, make clear who the business helps, what it provides, where it operates when location matters, and the next action. The hero headline must be a memorable 4-10 word promise, not a list of services. The hero body must be one useful sentence under 28 words. Service-card descriptions must be one distinct sentence under 22 words. Give each section a distinct job; do not repeat one claim across the hero, proof, services, and About copy. Use one primary action and one useful secondary action. Prefer client assets. Mention no person in a stock image as an employee, customer, patient, or client. Treat an area served as coverage, not a physical office. Never write same-day, 24/7, emergency service or response, available today or now, or response-time promises unless the verified brief states that exact fact. Every sentence must be complete and self-contained; never end a sentence with a determiner, preposition, conjunction, or auxiliary such as a, the, and, so, to, be, can be, or will be. Do not use em dashes.";
 
 const RECIPE_CREATIVE_DIRECTION =
   "For home care and care businesses, write for the person and family making a trust-sensitive decision: calm editorial language, routines and concerns, a clear first conversation, practical preparation, and reassurance without medical promises. Keep home care language distinct from treatment or aesthetics language. For local trades, use direct problem-led language: identify recognizable symptoms, coverage, what the customer should prepare, and the next service step. Do not promise price, arrival time, warranty, or availability unless supplied.";
@@ -2392,6 +2392,25 @@ export function leadFormFor(config = {}, intake = {}) {
   };
 }
 
+function placeKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .split(",")[0]
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
+function dedupePlaces(values) {
+  const seen = new Set();
+  return (Array.isArray(values) ? values : []).filter((value) => {
+    const key = placeKey(value);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function fallback(intake) {
   const industry = industryFor(intake);
   const preset =
@@ -2400,12 +2419,10 @@ function fallback(intake) {
       : "wellness";
   const businessKind = businessKindFor(intake, industry);
   const areas = Array.isArray(intake.coverageAreas)
-    ? [
-        ...new Set(
-          intake.coverageAreas.map((area) => text(area, 160)).filter(Boolean),
-        ),
-      ]
-    : lines(intake.serviceAreas);
+    ? dedupePlaces(
+        intake.coverageAreas.map((area) => text(area, 160)).filter(Boolean),
+      )
+    : dedupePlaces(lines(intake.serviceAreas));
   const services = lines(intake.services)
     .slice(0, 8)
     .map((name) => ({

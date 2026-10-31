@@ -387,6 +387,13 @@ The assigned reference floats the headline in the image's negative space, but th
 - Keep the full-bleed image stage and both actions visible at 390x844.
 - Do not remove the image, flatten the stage into a band, or hide an action.`;
 
+const UTILITY_MOBILE_HERO_FIT_REPAIR_GUIDANCE = `UTILITY MOBILE HERO FIT (hard gate)
+At 390x844 the opening is missing the media field: less than 200px of the hero media is visible in the first viewport, or the primary action is below the fold. Fix it structurally in this repair:
+- Put the media or diagnostic field first in the mobile order, above or beside the promise group.
+- Compress the mobile header and hero copy; do not grow the hero beyond the viewport.
+- Keep at least 200px of the media field and the primary action visible at 390x844.
+- Do not hide the media or shrink it to a thin strip.`;
+
 /** Targeted repair directives for the finding classes in this request. */
 export function targetedRepairGuidance(findings = []) {
   const guidance = [];
@@ -404,6 +411,13 @@ export function targetedRepairGuidance(findings = []) {
     )
   )
     guidance.push(HERO_CARD_FIDELITY_REPAIR_GUIDANCE);
+  if (
+    hasFinding(
+      findings,
+      /hero media is not visible enough|hero action exceeds mobile viewport for a utility or poster route/iu,
+    )
+  )
+    guidance.push(UTILITY_MOBILE_HERO_FIT_REPAIR_GUIDANCE);
   if (
     hasFinding(
       findings,
