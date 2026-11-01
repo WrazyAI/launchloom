@@ -201,6 +201,25 @@ describe("bounded rendered interaction evidence", () => {
     expect(contacted.filter((path) => path !== "/")).toEqual([]);
   });
 
+  it.each([1, 2])(
+    "switches and restores an exclusive pressed selector when option %i is selected",
+    async (selected) => {
+      const result = await capture(
+        `<section data-purposeful-interaction="care-steps-selector"><div class="steps"><button type="button" aria-pressed="${selected === 1}" aria-controls="step-one">One</button><button type="button" aria-pressed="${selected === 2}" aria-controls="step-two">Two</button><button type="button" aria-pressed="${selected === 3}" aria-controls="step-three">Three</button></div><div id="step-one" ${selected === 1 ? "" : "hidden"}>First step details</div><div id="step-two" ${selected === 2 ? "" : "hidden"}>Second step details</div><div id="step-three" ${selected === 3 ? "" : "hidden"}>Third step details</div></section><script>const buttons=[...document.querySelectorAll('button[aria-pressed]')];for(const button of buttons)button.addEventListener('click',()=>{if(button.getAttribute('aria-pressed')==='true')return;buttons.forEach(peer=>peer.setAttribute('aria-pressed',String(peer===button)));document.querySelectorAll('[id^=step-]').forEach(panel=>{panel.hidden=panel.id!==button.getAttribute('aria-controls');});});</script>`,
+      );
+      expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+      expect(result.observation.restored).toBe(true);
+    },
+  );
+
+  it("still restores an independent pressed toggle", async () => {
+    const result = await capture(
+      `<section data-purposeful-interaction><button type="button" aria-pressed="false">Show detail</button><p id="detail">Summary only</p><script>const button=document.querySelector('button');const detail=document.getElementById('detail');button.addEventListener('click',()=>{const next=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(next));detail.textContent=next?'Expanded detail':'Summary only';});</script></section>`,
+    );
+    expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+    expect(result.observation.restored).toBe(true);
+  });
+
   it("exercises a safe local menu and restores it", async () => {
     const result = await capture(
       `<nav><button type="button" aria-expanded="false" aria-controls="menu">Menu</button><div id="menu" hidden><a href="/services/">Services</a></div></nav><script>document.querySelector('button').onclick=e=>{const b=e.target;b.setAttribute('aria-expanded',String(b.getAttribute('aria-expanded')!=='true'));document.querySelector('#menu').hidden=b.getAttribute('aria-expanded')!=='true';}</script>`,

@@ -98,7 +98,28 @@ async function snapshot(control) {
       detail ||
       el.closest("nav") ||
       el.parentElement;
-    const panelId = el.getAttribute("aria-controls");
+    const group = el.closest("[data-purposeful-interaction]") || el.parentElement;
+    const peers = [...(group?.querySelectorAll("button[aria-pressed]") || [])];
+    const selected = peers.filter(
+      (peer) => peer.getAttribute("aria-pressed") === "true",
+    );
+    const declaredSelector = /(?:^|-)selector$/u.test(
+      group?.getAttribute("data-purposeful-interaction") || "",
+    );
+    const sharedControls = peers.some(
+      (peer) =>
+        peer !== el &&
+        el.getAttribute("aria-controls") &&
+        peer.getAttribute("aria-controls") === el.getAttribute("aria-controls"),
+    );
+    const exclusive =
+      peers.length > 1 &&
+      selected.length === 1 &&
+      (declaredSelector || sharedControls);
+    const panelId =
+      exclusive && selected[0]
+        ? selected[0].getAttribute("aria-controls")
+        : el.getAttribute("aria-controls");
     const panel = panelId ? document.getElementById(panelId) : null;
     const contentScope = scope?.querySelector('[role="tablist"]')
       ? scope
@@ -401,6 +422,32 @@ export async function captureRenderedInteractionEvidence({
           el.getAttribute("aria-selected") === "true"
         )
           return false;
+        if (el.getAttribute("aria-pressed") === "true") {
+          const group =
+            el.closest("[data-purposeful-interaction]") || el.parentElement;
+          const peers = [
+            ...(group?.querySelectorAll("button[aria-pressed]") || []),
+          ];
+          const selected = peers.filter(
+            (peer) => peer.getAttribute("aria-pressed") === "true",
+          );
+          const declaredSelector = /(?:^|-)selector$/u.test(
+            group?.getAttribute("data-purposeful-interaction") || "",
+          );
+          const sharedControls = peers.some(
+            (peer) =>
+              peer !== el &&
+              el.getAttribute("aria-controls") &&
+              peer.getAttribute("aria-controls") ===
+                el.getAttribute("aria-controls"),
+          );
+          if (
+            peers.length > 1 &&
+            selected.length === 1 &&
+            (declaredSelector || sharedControls)
+          )
+            return false;
+        }
         if (el.tagName === "SELECT" && el.options.length < 2) return false;
         const id = el.getAttribute("aria-controls");
         return !id || Boolean(document.getElementById(id));
@@ -426,6 +473,35 @@ export async function captureRenderedInteractionEvidence({
       observation.before = before;
       let restoreControl = control;
       let option;
+      if (kind === "toggle") {
+        const original = await control.evaluateHandle((el) => {
+          if (!el.hasAttribute("aria-pressed")) return el;
+          const group =
+            el.closest("[data-purposeful-interaction]") || el.parentElement;
+          const peers = [
+            ...(group?.querySelectorAll("button[aria-pressed]") || []),
+          ];
+          const selected = peers.filter(
+            (peer) => peer.getAttribute("aria-pressed") === "true",
+          );
+          const declaredSelector = /(?:^|-)selector$/u.test(
+            group?.getAttribute("data-purposeful-interaction") || "",
+          );
+          const sharedControls = peers.some(
+            (peer) =>
+              peer !== el &&
+              el.getAttribute("aria-controls") &&
+              peer.getAttribute("aria-controls") ===
+                el.getAttribute("aria-controls"),
+          );
+          return peers.length > 1 &&
+            selected.length === 1 &&
+            (declaredSelector || sharedControls)
+            ? selected[0]
+            : el;
+        });
+        restoreControl = original.asElement() || control;
+      }
       if (kind === "tab") {
         const original = await control.evaluateHandle((el) =>
           (
