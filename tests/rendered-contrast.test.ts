@@ -667,6 +667,13 @@ it("proves a square outward focus ring around an image-bearing logo from outside
   expect(report.pass, JSON.stringify(report.findings)).toBe(true);
 });
 
+it("proves a logo ring crossing a wrapper with the same opaque paint as its surface", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.wrap{width:150px;padding:12px 0;background:#fff}</style><div class="wrap">${logoButton()}</div>`,
+  );
+  expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+});
+
 it("does not false-pass a rounded outward ring of the same color as its surface", async () => {
   const report = await scan(
     `<style>body{margin:0;background:#fff;color:#111}${logoCss}.logo{border-radius:24px}.logo:focus-visible{outline-color:#fff}</style>${logoButton("round")}`,

@@ -212,6 +212,34 @@ describe("bounded rendered interaction evidence", () => {
     },
   );
 
+  it("does not mistake independent pressed buttons without a shared panel for an exclusive selector", async () => {
+    const result = await capture(
+      `<section data-purposeful-interaction><button type="button" aria-pressed="true">First</button><button type="button" aria-pressed="false">Second</button><p>First enabled</p><script>document.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{const enabled=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(enabled));document.querySelector('p').textContent=button.textContent+(enabled?' enabled':' disabled');}));</script></section>`,
+    );
+    expect(result.observation.before?.state).toBe("true");
+    expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+    expect(result.observation.restored).toBe(true);
+  });
+
+  it("rejects an image beacon even on the snapshotted client asset host", async () => {
+    const url =
+      "https://assets.launchloom.wrazyos.com/intakes/synthetic/photo.webp";
+    const body = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=",
+      "base64",
+    );
+    const result = await capture(
+      disclosure +
+        `<script>document.querySelector('summary').addEventListener('click',()=>{new Image().src='${url}?visitor=private';});</script>`,
+      {
+        imageSnapshots: new Map([[url, { body, contentType: "image/png" }]]),
+      },
+    );
+    expect(result.observation.status).toBe("failed");
+    expect(result.observation.unsafeEffects?.length).toBeGreaterThan(0);
+    expect(contacted.filter((path) => path !== "/")).toEqual([]);
+  });
+
   it("still restores an independent pressed toggle", async () => {
     const result = await capture(
       `<section data-purposeful-interaction><button type="button" aria-pressed="false">Show detail</button><p id="detail">Summary only</p><script>const button=document.querySelector('button');const detail=document.getElementById('detail');button.addEventListener('click',()=>{const next=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(next));detail.textContent=next?'Expanded detail':'Summary only';});</script></section>`,
