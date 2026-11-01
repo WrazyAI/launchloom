@@ -52,3 +52,10 @@ Recover and reconcile useful work from the 15 remaining extra LaunchLoom worktre
 - DeepSeek phase 2: bounded Juniper safety/preview port covering the same `4d77edc1` commit found in happy-engine. Sol phase 3: 17 reference dossiers, rights/hash validation, current-registry/index regeneration and current foundation compatibility. File ownership is disjoint; shared provider-free test belongs to controller.
 - Controller recovered inert historical creative docs/tooling and source-first supersession record; no active craft/source-first mode or private preview output introduced.
 - Next: inspect returned bounded code/data diffs, resolve shared test bindings/count without weakening coverage, cross-review high-risk changes, run combined validation, then ship and delete only preserved/reconciled originals. Source originals and excluded reliability worktree remain untouched.
+
+## 22:32 UTC restart checkpoint
+
+- WSL shutdown interrupted local work, not an active GitHub run. Main controller `b61171c7` and creative `8f4bd117` are clean; ops phase-3 work survives uncommitted atop `bf3e78b9` with 611 untracked files.
+- Before resuming, controller captured verified private restart snapshots at `recovery-20261101T223235Z/` under the preservation root. Old temp logs are unavailable; require fresh final verification and persistent final receipts.
+- Same DeepSeek/Sol sessions resumed from their saved code, not from the start. DeepSeek finishes creative tests/rendered review/report. Sol owns the minimal supplemental selector correction and refine-reference inventory assertion updates, investigates unplanned old foundation CSS drift, and commits its recovered data/code after validation.
+- Controller owns `tests/provider-free-reference-integration.test.ts`, final combining/cross-review/validation/merge/deploy/cleanup. No paid workflow rerun is implicit in recovery, and no original or excluded worktree may be reset or deleted before final gates.
