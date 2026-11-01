@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "id": "html5up-tessellate",
+  "productionEligible": true,
+  "referenceName": "Tessellate by HTML5 UP: cinematic image-led chapters",
+  "familyId": "html5up-tessellate-family",
+  "source": {
+    "name": "Tessellate by HTML5 UP / AJ",
+    "url": "https://html5up.net/tessellate",
+    "sourceType": "pinned HTML5 UP template source, CC BY 3.0",
+    "repository": "https://github.com/zce/html5up",
+    "commit": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "tessellate/",
+    "rights": "licensed",
+    "license": "CC BY 3.0",
+    "rightsEvidence": "The pinned source template is licensed under Creative Commons Attribution 3.0. The license text is retained in rights/HTML5UP-CC-BY-3.0.txt, and the template attribution to HTML5 UP / AJ is retained in the source README.",
+    "rightsEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "photography",
+    "architecture",
+    "interior-design",
+    "hospitality"
+  ],
+  "tags": {
+    "business": [
+      "photography",
+      "architecture",
+      "interior design",
+      "hospitality"
+    ],
+    "style": [
+      "cinematic",
+      "thin sans",
+      "warm photography"
+    ],
+    "composition": [
+      "full-bleed hero",
+      "feature rows",
+      "modular grid"
+    ],
+    "conversion": [
+      "outlined hero action",
+      "feature links"
+    ],
+    "motion": [
+      "restrained fade"
+    ],
+    "imagery": [
+      "full-bleed cinematic photograph",
+      "coordinated feature images"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "45dfd3cd36a414b89b888921cb6858ee55ead902bb95b50457620bd8907e2eaa",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "584d2498e4674395c1be80f79f5129cc568d06d3e2773cbd5dc63b36fb8d89a5",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A cinematic full-bleed photograph opens the page with a centered light title, a short line, and an outlined action. A white intro section follows with a centered statement and a short paragraph. Feature chapters use coordinated image-and-copy rows, then a dark geometric band and an elements showcase close the page. The type is a thin humanist sans. Warm sunset photography, white surfaces, and deep purple-gray bands create a calm, image-led rhythm.",
+    "heroGeometry": {
+      "mode": "full-bleed photographic opening with centered copy",
+      "alignment": "centered",
+      "viewport": "photograph fills the first screen"
+    },
+    "navigationGeometry": {
+      "mode": "overlay top navigation",
+      "placement": "top of page",
+      "mobile": "compact menu"
+    },
+    "typography": {
+      "display": "thin humanist sans",
+      "body": "same humanist sans",
+      "scale": "light large display with generous spacing"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "deep purple-gray",
+        "warm photograph"
+      ],
+      "ink": "near-black on light, white on dark",
+      "accents": [
+        "muted sand"
+      ],
+      "contrastIntent": "calm readable contrast"
+    },
+    "imageTreatment": {
+      "mode": "full-bleed cinematic hero and coordinated feature images",
+      "crop": "wide cover",
+      "focalPoint": "subject-safe"
+    },
+    "sectionSequence": [
+      "full-bleed image hero",
+      "centered intro",
+      "feature rows",
+      "dark geometric band",
+      "element showcase",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "feature rows with short copy",
+      "interaction": "reading-led"
+    },
+    "ctaPlacement": {
+      "primary": "outlined hero action",
+      "secondary": "feature links",
+      "early": "in the hero"
+    },
+    "motion": {
+      "primitive": "restrained fade",
+      "library": "CSS transitions",
+      "reducedMotion": "static"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack hero, intro, feature rows, then the closing band",
+      "rules": [
+        "preserve the cinematic crop",
+        "keep the first action visible",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "modular feature grid"
+      ],
+      "mobileTreatmentChanged": false
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "cinematic-hero",
+        "selector": "[data-reference-signature=cinematic-hero]",
+        "description": "full-bleed photograph with centered light copy and one outlined action"
+      },
+      {
+        "id": "feature-rows",
+        "selector": "[data-reference-signature=feature-rows]",
+        "description": "coordinated image-and-copy feature rows"
+      },
+      {
+        "id": "modular-grid",
+        "selector": "[data-reference-signature=modular-grid]",
+        "description": "modular image or content grid after the intro"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse source photography, copy, or trade dress",
+      "invent services, prices, or claims",
+      "copy source code into a client site",
+      "replace the cinematic opening with a flat text hero",
+      "low-contrast overlaid copy"
+    ],
+    "acceptanceChecks": [
+      "The opening is a full-bleed photograph with readable centered copy.",
+      "Feature chapters use coordinated image-and-copy rows.",
+      "The closing band is visually distinct from the white intro.",
+      "At 390 px the page stacks without horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Pinned HTML5 UP source captured locally at both viewports. CC BY 3.0 attribution is retained in the source and license record."
+  }
+}

@@ -1,0 +1,329 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ember Roast Coffee Co. - Artisan coffee roasters in Portland, OR. Specialty coffee roasted with care, focusing on quality, complexity, and balance in the cup.">
+    <title>Ember Roast Coffee Co. - Artisan Coffee Roasters | Portland, OR</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:wght@600;700;800&amp;display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <a href="/">Ember Roast</a>
+                </div>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/shop">Shop</a></li>
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/guides">Brew Guides</a></li>
+                    <li><a href="#locations">Locations</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+                <div class="nav-toggle" id="navToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <div class="hero-badge">Limited Release</div>
+            <h1>Ethiopian Yirgacheffe Natural</h1>
+            <p class="hero-subtitle">Jasmine blossoms, wild blueberry, and honeycomb sweetness from the Gedeb region</p>
+            <div class="hero-details">
+                <span class="detail-item"><i class="fas fa-map-marker-alt"></i> Gedeb, Ethiopia</span>
+                <span class="detail-item"><i class="fas fa-mountain"></i> 1900-2100m</span>
+            </div>
+            <a class="btn-primary" href="/shop">Order Now - $19.50</a>
+        </div>
+        <div class="hero-image">
+            <img src="images/hero-coffee.jpg" alt="Ethiopian Yirgacheffe coffee beans being roasted">
+        </div>
+    </section>
+
+    <!-- Trust Badges -->
+    <section class="trust-badges">
+        <div class="container">
+            <div class="badges-grid">
+                <div class="badge-item" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s, transform 0.6s;">
+                    <i class="fas fa-award"></i>
+                    <p>2024 Good Food Award Winner</p>
+                </div>
+                <div class="badge-item" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s 0.1s, transform 0.6s;">
+                    <i class="fas fa-leaf"></i>
+                    <p>Certified Organic</p>
+                </div>
+                <div class="badge-item" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s 0.2s, transform 0.6s;">
+                    <i class="fas fa-handshake"></i>
+                    <p>Direct Trade Partners</p>
+                </div>
+                <div class="badge-item" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s 0.3s, transform 0.6s;">
+                    <i class="fas fa-users"></i>
+                    <p>10+ Years Roasting</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Philosophy Section -->
+    <section class="philosophy" id="about">
+        <div class="container">
+            <div class="philosophy-intro">
+                <p class="section-label">Our Story</p>
+                <h2>Roasting Exceptional Coffee Since 2014</h2>
+                <p class="intro-text">Founded in Portland's vibrant coffee scene, we've dedicated a decade to perfecting our craft and building relationships with farmers across the globe.</p>
+            </div>
+            <div class="philosophy-grid">
+                <div class="philosophy-item" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s, transform 0.6s;">
+                    <h3>Sourcing</h3>
+                    <p>We build lasting relationships with coffee farmers and importers who share our commitment to quality and sustainability. Every bean is carefully selected from farms that prioritize environmental stewardship and fair labor practices.</p>
+                </div>
+                <div class="philosophy-item" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s 0.1s, transform 0.6s;">
+                    <h3>Roasting</h3>
+                    <p>Our small-batch roasting process brings out the unique characteristics of each origin. We roast to highlight the natural flavors of the bean, creating a balanced cup that honors the work of everyone who touched the coffee before us.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="categories" id="coffee">
+        <div class="container">
+            <div class="categories-grid">
+                <div class="category-card" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s 0.2s, transform 0.6s;">
+                    <div class="category-image">
+                        <img src="images/coffee-beans.jpg" alt="Fresh roasted specialty coffee beans">
+                    </div>
+                    <div class="category-content">
+                        <h3>Specialty Coffee</h3>
+                        <p>Rotating selection of single-origin beans and house blends. All coffee roasted weekly to order.</p>
+                        <div class="category-price">From $16.50 / 12oz</div>
+                        <a class="btn-secondary" href="/shop">Browse Selection</a>
+                    </div>
+                </div>
+                <div class="category-card" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s 0.3s, transform 0.6s;">
+                    <div class="category-image">
+                        <img src="images/equipment.jpg" alt="Premium coffee brewing equipment">
+                    </div>
+                    <div class="category-content">
+                        <h3>Brewing Equipment</h3>
+                        <p>Chemex, Hario, Fellow kettles, and hand grinders. Curated tools for home baristas.</p>
+                        <div class="category-price">From $28</div>
+                        <a class="btn-secondary" href="/shop">View Equipment</a>
+                    </div>
+                </div>
+                <div class="category-card" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s, transform 0.6s;">
+                    <div class="category-image">
+                        <img src="images/merchandise.jpg" alt="Ember Roast branded merchandise">
+                    </div>
+                    <div class="category-content">
+                        <h3>Goods &amp; Gifts</h3>
+                        <p>Portland-designed mugs, enamel pins, tote bags, and limited-edition collaborations.</p>
+                        <div class="category-price">From $12</div>
+                        <a class="btn-secondary" href="/shop">Shop Goods</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Subscription Section -->
+    <section class="subscription" id="subscription">
+        <div class="container">
+            <div class="subscription-content">
+                <div class="subscription-text">
+                    <h2>Never Run Out of Great Coffee</h2>
+                    <p>Get fresh-roasted coffee delivered to your door every two weeks or monthly. Choose your preferred roast level and we'll send you a rotating selection of our finest coffees.</p>
+                    <ul class="subscription-benefits">
+                        <li><i class="fas fa-check"></i> Free shipping on all subscriptions</li>
+                        <li><i class="fas fa-check"></i> 10% off every order</li>
+                        <li><i class="fas fa-check"></i> Cancel anytime</li>
+                        <li><i class="fas fa-check"></i> Customize your delivery schedule</li>
+                    </ul>
+                    <a href="#subscribe" class="btn-primary">Start Subscription</a>
+                </div>
+                <div class="subscription-image">
+                    <img src="images/subscription-box.jpg" alt="Ember Roast subscription box">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Locations Section -->
+    <section class="locations" id="locations">
+        <div class="container">
+            <h2>Visit Us</h2>
+            <div class="locations-grid">
+                <div class="location-card" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s 0.1s, transform 0.6s;">
+                    <h3>Downtown Portland</h3>
+                    <p class="location-address">
+                        <i class="fas fa-map-marker-alt"></i>
+                        524 SW 3rd Ave<br>
+                        Portland, OR 97204
+                    </p>
+                    <p class="location-hours">
+                        <i class="fas fa-clock"></i>
+                        Mon-Fri: 6:30am - 6pm<br>
+                        Sat-Sun: 7am - 7pm
+                    </p>
+                </div>
+                <div class="location-card" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s 0.2s, transform 0.6s;">
+                    <h3>Pearl District</h3>
+                    <p class="location-address">
+                        <i class="fas fa-map-marker-alt"></i>
+                        1120 NW Couch St<br>
+                        Portland, OR 97209
+                    </p>
+                    <p class="location-hours">
+                        <i class="fas fa-clock"></i>
+                        Mon-Fri: 7am - 5pm<br>
+                        Sat-Sun: 8am - 6pm
+                    </p>
+                </div>
+                <div class="location-card" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s 0.3s, transform 0.6s;">
+                    <h3>Roastery &amp; Cafe</h3>
+                    <p class="location-address">
+                        <i class="fas fa-map-marker-alt"></i>
+                        2890 SE Division St<br>
+                        Portland, OR 97202
+                    </p>
+                    <p class="location-hours">
+                        <i class="fas fa-clock"></i>
+                        Mon-Sun: 7am - 6pm<br>
+                        Roastery Tours: Sat 10am
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials">
+        <div class="container">
+            <p class="section-label">What Our Customers Say</p>
+            <h2>Trusted by Coffee Lovers</h2>
+            <div class="testimonials-grid">
+                <div class="testimonial-card" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s, transform 0.6s;">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">"Hands down the best coffee in Portland. Their Ethiopian roasts are incredible – bright, complex, and perfectly balanced. The roastery tour was eye-opening!"</p>
+                    <div class="testimonial-author">
+                        <strong>Sarah Mitchell</strong>
+                        <span>Pearl District Regular</span>
+                    </div>
+                </div>
+                <div class="testimonial-card" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s 0.1s, transform 0.6s;">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">"We've been sourcing from Ember Roast for our restaurant for three years. Consistent quality, reliable delivery, and the team really knows their coffee."</p>
+                    <div class="testimonial-author">
+                        <strong>James Chen</strong>
+                        <span>Owner, Luma Cafe</span>
+                    </div>
+                </div>
+                <div class="testimonial-card" style="opacity: 0; transform: translateY(30px); transition: opacity 0.6s 0.2s, transform 0.6s;">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">"The subscription service is a game-changer. I get fresh beans delivered every two weeks, and I've discovered so many amazing coffees I would have never tried otherwise."</p>
+                    <div class="testimonial-author">
+                        <strong>Maya Rodriguez</strong>
+                        <span>Subscription Member Since 2022</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter">
+        <div class="container">
+            <div class="newsletter-content">
+                <h2>Join Our Coffee Community</h2>
+                <p>Be the first to know about new releases, brewing guides, and exclusive subscriber discounts</p>
+                <form class="newsletter-form" id="newsletterForm">
+                    <input type="email" placeholder="Enter your email" required="" style="">
+                    <button type="submit" class="btn-primary">Subscribe</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer" id="contact">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-column">
+                    <h4>Ember Roast Coffee Co.</h4>
+                    <p>Small-batch specialty coffee roasted in Portland since 2014</p>
+                    <p class="footer-certifications">
+                        <small>Certified Organic • Direct Trade • Women-Owned</small>
+                    </p>
+                </div>
+                <div class="footer-column">
+                    <h4>Shop</h4>
+                    <ul>
+                        <li><a href="/shop">Coffee</a></li>
+                        <li><a href="/shop">Equipment</a></li>
+                        <li><a href="/shop">Merchandise</a></li>
+                        <li><a href="#subscription">Subscriptions</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="/about">About Us</a></li>
+                        <li><a href="/guides">Brew Guides</a></li>
+                        <li><a href="#locations">Locations</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Contact</h4>
+                    <p>
+                        <i class="fas fa-envelope"></i>
+                        <a href="mailto:hello@emberroastcoffee.com">hello@emberroastcoffee.com</a>
+                    </p>
+                    <p>
+                        <i class="fas fa-phone"></i>
+                        <a href="tel:+15039266183">(503) 926-6183</a>
+                    </p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 Ember Roast Coffee Co. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    
+
+
+</body></html>

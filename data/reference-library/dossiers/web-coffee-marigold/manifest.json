@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "id": "web-coffee-marigold",
+  "productionEligible": true,
+  "referenceName": "Marigold Coffee: image-led storefront with product grid",
+  "familyId": "web-coffee-marigold-family",
+  "source": {
+    "name": "Marigold Coffee official website",
+    "url": "https://marigoldcoffee.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "On 2026-11-01 the requester confirmed reuse authorization for emberroastcoffee.com and marigoldcoffee.com. This is requester testimony, not independent verification of ownership or operation. Retain existing screenshots and extracted source for internal design-mechanics study; no source brand, copy, imagery, products, prices, or trade dress transfers to client sites.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "coffee-shop",
+    "cafe",
+    "specialty-coffee",
+    "coffee-roaster",
+    "ecommerce"
+  ],
+  "tags": {
+    "business": [
+      "coffee shop",
+      "specialty coffee",
+      "ecommerce"
+    ],
+    "style": [
+      "friendly sans",
+      "warm off-white",
+      "rounded UI"
+    ],
+    "composition": [
+      "announcement bar",
+      "image-led hero",
+      "product grid"
+    ],
+    "conversion": [
+      "shop",
+      "subscribe",
+      "join newsletter"
+    ],
+    "motion": [
+      "restrained",
+      "static-first"
+    ],
+    "imagery": [
+      "product photography grid",
+      "lifestyle hero",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "4387904d0a003ef3152830d388c332a74a96320ff1ac59a78679be7c44bfc619",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "4d82eb8098a64eee2a03268df9a7b560797b2448fa65b58afbdc37e3ddcf717b",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The reference is a specialty coffee e-commerce store. A slim announcement bar sits above a transparent header. The opening is an image-led hero with a short headline and a shop action. A featured blends grid shows product cards with imagery and prices. Single-origin and subscription sections follow. A bestsellers band and a customer quote reinforce trust. A footer newsletter captures email for offers and local events. Warm off-white surfaces with a friendly rounded sans define the look.",
+    "heroGeometry": {
+      "mode": "image-led hero with short headline and shop action",
+      "alignment": "centered or left editorial",
+      "viewport": "opens with brand promise and primary shop action"
+    },
+    "navigationGeometry": {
+      "mode": "inline shop-forward top nav plus announcement bar",
+      "placement": "top of page",
+      "mobile": "drawer menu"
+    },
+    "typography": {
+      "display": "rounded friendly sans for headings and body",
+      "body": "same sans family",
+      "scale": "bold product titles with compact UI labels"
+    },
+    "palette": {
+      "surfaces": [
+        "warm off-white"
+      ],
+      "ink": "near-black",
+      "accents": [
+        "warm marigold"
+      ],
+      "contrastIntent": "legible product text and actions"
+    },
+    "imageTreatment": {
+      "mode": "product photography grid with a lifestyle hero",
+      "crop": "square product thumbnails and a wide hero",
+      "focalPoint": "product-centered"
+    },
+    "sectionSequence": [
+      "announcement bar",
+      "image-led hero",
+      "featured blends grid",
+      "single origins",
+      "subscription",
+      "bestsellers",
+      "customer quote",
+      "newsletter footer"
+    ],
+    "servicePresentation": {
+      "pattern": "product grid with clear buy and subscribe actions",
+      "interaction": "each card leads to a product or subscription destination"
+    },
+    "ctaPlacement": {
+      "primary": "shop",
+      "secondary": "subscribe",
+      "early": "in the hero and announcement bar"
+    },
+    "motion": {
+      "primitive": "restrained or static-first",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack product grids into a single column and keep actions touch-safe",
+      "rules": [
+        "keep the first action visible",
+        "preserve square product crops",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "image-led-stage",
+      "mobileHero": "image-led-stage",
+      "mediaRelation": "media-leads-copy",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "announcement-bar",
+        "selector": "[data-reference-signature=announcement-bar]",
+        "description": "Translate the slim announcement bar with a single offer."
+      },
+      {
+        "id": "product-grid",
+        "selector": "[data-reference-signature=product-grid]",
+        "description": "Translate the product card grid with client-cleared items."
+      },
+      {
+        "id": "subscription-band",
+        "selector": "[data-reference-signature=subscription-band]",
+        "description": "Translate the subscription band with one clear action."
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse Marigold brand, words, logo, photographs, prices or trade dress",
+      "invent awards, prices, locations, staff or outcomes",
+      "copy a source section or source code",
+      "generic repeated cards that erase the storefront rhythm",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "acceptanceChecks": [
+      "Opening is image-led with a visible primary shop action.",
+      "Featured blends read as a product grid, not a generic card wall.",
+      "Subscription and bestsellers each keep one decisive action.",
+      "At 390 px product grids stack without horizontal overflow.",
+      "No source brand, photograph, review, or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Official business page rendered HTTP 200 at both viewports. Recaptured with the supported scroll-settled full-page capture; desktop and mobile images verified to show product grids and all sections. Owned source; retained as internal design-mechanics reference only."
+  }
+}

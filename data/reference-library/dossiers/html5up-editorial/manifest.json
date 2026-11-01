@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "id": "html5up-editorial",
+  "productionEligible": true,
+  "referenceName": "Editorial by HTML5 UP: fixed sidebar with split editorial hero",
+  "familyId": "html5up-editorial-family",
+  "source": {
+    "name": "Editorial by HTML5 UP / AJ",
+    "url": "https://html5up.net/editorial",
+    "sourceType": "pinned HTML5 UP template source, CC BY 3.0",
+    "repository": "https://github.com/zce/html5up",
+    "commit": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "editorial/",
+    "rights": "licensed",
+    "license": "CC BY 3.0",
+    "rightsEvidence": "The pinned source template is licensed under Creative Commons Attribution 3.0. The license text is retained in rights/HTML5UP-CC-BY-3.0.txt, and the template attribution to HTML5 UP / AJ is retained in the source README.",
+    "rightsEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "dental",
+    "home-care",
+    "hospitality",
+    "roofing",
+    "veterinary",
+    "professional-services"
+  ],
+  "tags": {
+    "business": [
+      "dental",
+      "home care",
+      "hospitality",
+      "roofing",
+      "veterinary",
+      "professional services"
+    ],
+    "style": [
+      "editorial",
+      "serif display",
+      "coral accent"
+    ],
+    "composition": [
+      "fixed sidebar",
+      "split hero",
+      "article grid"
+    ],
+    "conversion": [
+      "learn more",
+      "article actions"
+    ],
+    "motion": [
+      "static-first"
+    ],
+    "imagery": [
+      "portrait hero",
+      "article thumbnails"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "15e9636082440255f13a1ebe2f8b3d124a814f41da7e15aef6c41de6798f14e4",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "d3a9bf71999fcaf44c0728c5a2a71ebd771d8688a3f672e589ef27c12a8aeea7",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A fixed left sidebar with search, section links, thumbnails, contact details, and a copyright line. The main column opens with a split editorial hero: a serif headline and short paragraph on the left, a portrait photograph on the right, and an outlined action. A four-icon feature grid follows, then a two-column article grid with images and outlined More actions. The palette is white, warm gray, and coral red; the display face is a high-contrast serif with a neutral sans body.",
+    "heroGeometry": {
+      "mode": "split editorial hero beside a fixed sidebar",
+      "alignment": "copy-left, portrait-right",
+      "viewport": "sidebar persists while the main column opens with a split hero"
+    },
+    "navigationGeometry": {
+      "mode": "fixed left sidebar with search and section links",
+      "placement": "left edge",
+      "mobile": "top bar with menu"
+    },
+    "typography": {
+      "display": "high-contrast serif display",
+      "body": "neutral sans",
+      "scale": "large editorial headline with small labels"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "warm gray",
+        "coral red"
+      ],
+      "ink": "near-black",
+      "accents": [
+        "coral red"
+      ],
+      "contrastIntent": "clean editorial contrast"
+    },
+    "imageTreatment": {
+      "mode": "portrait hero and article thumbnails",
+      "crop": "editorial crops",
+      "focalPoint": "subject-safe"
+    },
+    "sectionSequence": [
+      "fixed sidebar",
+      "split editorial hero",
+      "feature icon grid",
+      "two-column article grid",
+      "contact and footer"
+    ],
+    "servicePresentation": {
+      "pattern": "article grid with outlined actions",
+      "interaction": "browse-led"
+    },
+    "ctaPlacement": {
+      "primary": "Learn More",
+      "secondary": "More article actions",
+      "early": "in the hero"
+    },
+    "motion": {
+      "primitive": "static-first",
+      "library": "CSS",
+      "reducedMotion": "static"
+    },
+    "mobileRecomposition": {
+      "strategy": "collapse the sidebar, stack the hero image and copy, then the article cards",
+      "rules": [
+        "keep the hero action visible",
+        "preserve article image crops",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "utility-panel",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "task-panel-in-opening",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "article grid",
+        "feature icon grid"
+      ],
+      "mobileTreatmentChanged": true
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "fixed-sidebar",
+        "selector": "[data-reference-signature=fixed-sidebar]",
+        "description": "fixed left sidebar with search and section links"
+      },
+      {
+        "id": "split-editorial-hero",
+        "selector": "[data-reference-signature=split-editorial-hero]",
+        "description": "serif headline and copy beside a portrait photograph"
+      },
+      {
+        "id": "article-grid",
+        "selector": "[data-reference-signature=article-grid]",
+        "description": "two-column article grid with outlined actions"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse source photography, copy, or trade dress",
+      "invent services, credentials, or outcomes",
+      "copy source code into a client site",
+      "replace the sidebar with a generic top bar",
+      "low-contrast actions"
+    ],
+    "acceptanceChecks": [
+      "Desktop keeps a fixed sidebar and a split editorial hero.",
+      "The article grid reads as editorial content, not generic cards.",
+      "At 390 px the sidebar collapses and the hero stacks without horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Pinned HTML5 UP source captured from the direct demo at both viewports. CC BY 3.0 attribution is retained in the source and license record."
+  }
+}

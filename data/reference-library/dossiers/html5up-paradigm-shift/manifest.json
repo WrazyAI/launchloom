@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "id": "html5up-paradigm-shift",
+  "productionEligible": true,
+  "referenceName": "Paradigm Shift by HTML5 UP: split type-and-photo statement",
+  "familyId": "html5up-paradigm-shift-family",
+  "source": {
+    "name": "Paradigm Shift by HTML5 UP / AJ",
+    "url": "https://html5up.net/paradigm-shift",
+    "sourceType": "pinned HTML5 UP template source, CC BY 3.0",
+    "repository": "https://github.com/zce/html5up",
+    "commit": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "paradigm-shift/",
+    "rights": "licensed",
+    "license": "CC BY 3.0",
+    "rightsEvidence": "The pinned source template is licensed under Creative Commons Attribution 3.0. The license text is retained in rights/HTML5UP-CC-BY-3.0.txt, and the template attribution to HTML5 UP / AJ is retained in the source README.",
+    "rightsEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "creative-studio",
+    "agency",
+    "architecture",
+    "interior-design"
+  ],
+  "tags": {
+    "business": [
+      "creative studio",
+      "agency",
+      "architecture",
+      "interior design"
+    ],
+    "style": [
+      "mint accent",
+      "oversized type",
+      "black and white"
+    ],
+    "composition": [
+      "split statement",
+      "full-height photo",
+      "stacked chapters"
+    ],
+    "conversion": [
+      "scroll cue",
+      "contact link"
+    ],
+    "motion": [
+      "restrained reveal"
+    ],
+    "imagery": [
+      "full-height portrait photograph"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "cb3232daa0f575188215330e56671d384c5af4aaff339eb12cce9566b2672ea2",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "7cb40372dbcbe7be94beb07e7d63c5bbd4a42d6e459bc0a32805f01773a53e36",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A two-field opening. A saturated mint panel carries an oversized black title, a small all-caps descriptor, a credit line, and a downward arrow; a full-height photograph fills the opposite half. Below, stacked chapters use short headings and text columns, followed by an elements demonstration and a contact block. The typography is a bold geometric sans with tight display leading. Mint, black, and white dominate, with photography supplying the only texture.",
+    "heroGeometry": {
+      "mode": "split statement-and-photo opening",
+      "alignment": "statement-left photo-right",
+      "viewport": "half mint type field, half full-height photograph"
+    },
+    "navigationGeometry": {
+      "mode": "minimal inline top navigation",
+      "placement": "top of page",
+      "mobile": "compact menu"
+    },
+    "typography": {
+      "display": "bold geometric sans with tight leading",
+      "body": "same geometric sans",
+      "scale": "oversized display against small caps labels"
+    },
+    "palette": {
+      "surfaces": [
+        "mint green",
+        "white",
+        "black"
+      ],
+      "ink": "black",
+      "accents": [
+        "mint green"
+      ],
+      "contrastIntent": "high-contrast black on mint"
+    },
+    "imageTreatment": {
+      "mode": "full-height portrait photograph",
+      "crop": "cover, subject-safe",
+      "focalPoint": "face-safe"
+    },
+    "sectionSequence": [
+      "split statement hero",
+      "feature chapters",
+      "element showcase",
+      "contact block",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "stacked feature chapters",
+      "interaction": "scroll-led reading"
+    },
+    "ctaPlacement": {
+      "primary": "down arrow into content",
+      "secondary": "contact link",
+      "early": "in the opening"
+    },
+    "motion": {
+      "primitive": "restrained reveal",
+      "library": "CSS transitions",
+      "reducedMotion": "static"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the statement, then the photograph, then chapters",
+      "rules": [
+        "keep the oversized title readable",
+        "preserve a subject-safe photo crop",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "stacked feature chapters"
+      ],
+      "mobileTreatmentChanged": true
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "split-statement-hero",
+        "selector": "[data-reference-signature=split-statement-hero]",
+        "description": "half type field and half full-height photograph"
+      },
+      {
+        "id": "feature-chapters",
+        "selector": "[data-reference-signature=feature-chapters]",
+        "description": "stacked short chapters with headings and text columns"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse the source mint-and-photo composition as a brand",
+      "reuse source copy, photography, or trade dress",
+      "invent services, prices, or claims",
+      "copy source code into a client site",
+      "flatten the split opening into a generic card grid"
+    ],
+    "acceptanceChecks": [
+      "Desktop opening reads as a split type-and-photo field.",
+      "The oversized statement remains legible on mobile.",
+      "Chapters stack without horizontal overflow.",
+      "Photography keeps a subject-safe crop."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Pinned HTML5 UP source captured locally at both viewports. CC BY 3.0 attribution is retained in the source and license record."
+  }
+}

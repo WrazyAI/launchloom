@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "startbootstrap-agency",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://startbootstrap.github.io/startbootstrap-agency/",
+    "finalUrl": "https://startbootstrap.github.io/startbootstrap-agency/",
+    "httpStatus": 200,
+    "pageTitle": "Agency - Start Bootstrap Theme",
+    "retrievedAt": "2026-10-23T16:40:16.519Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "license": "MIT",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/LICENSE",
+    "licenseEvidencePath": "rights/LICENSE"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 74954,
+      "sha256": "b0eba931a163fc28ae05f85345fc9263fd38ab29a2b0e7134ae29bda703a7924"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 3554,
+      "sha256": "8208ed55c82853787f3c81177f6a29059043c925fe5eec9eae976339f6def79a"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 9324,
+      "sha256": "b3d1ef739c1eaf10e695bd22553c0b878095530638ea6ec12cf1b028e5af921a"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 250501,
+      "sha256": "36e30dedf27c9a8bd3db4dd71fc074f343d16ff74dfa5fc66c7340408c528fae"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/navbar-logo.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/5.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/6.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/about/1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/about/2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/about/3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/about/4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/team/1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/team/2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/team/3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/logos/microsoft.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/logos/google.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/logos/facebook.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/logos/ibm.svg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-agency/assets/img/close-icon.svg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "23b1cda3ca4fa69d5d6106585f245db51ff3cab06136be498a3f722022b38eb8"
+}

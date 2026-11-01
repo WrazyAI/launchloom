@@ -1,5 +1,330 @@
 # Operational/evidence worktree reconciliation: audit and recovery
 
+## Phase 3 final local handoff: 2026-11-01 23:20 UTC
+
+Recovered work is committed locally, not pushed, merged into main, deployed or
+marked complete in Work OS. New commits above `bf3e78b9`:
+
+- `12f785f7b01775b5781e879b007667c0de5077c0`: the 17 authorized dossier roots,
+  truthful rights/provenance corrections, current reference briefs, deterministic
+  foundations, and three no-loss regenerated indexes (614 data files).
+- `0cf72a444e9b12df7556694c8cf2d4e2f7a70f48`: bounded supplemental registration/
+  selection and reference tests (five files). Ordinary canonical core selection
+  is unchanged. Matched supplements are available through specifically named
+  existing reference intent or coverage of a supplied pool below six, without
+  an alias/new mode, weakened rights checks, or unrelated industry filler.
+- The final documentation commit records this handoff; it changes no validated
+  implementation input. Frozen validation file hashes match the committed code,
+  tests, shared provider-free test and lockfile exactly.
+
+### Fresh terminal results
+
+| Verification | Actual result |
+| --- | --- |
+| Full `npm test -- --maxWorkers=2`, after core-preserving fix | **2,821 passed, 101 existing skips, 1 failed** across 181 files; no all-green full-suite claim |
+| Sole remaining full-suite failure | `tests/provider-free-reference-integration.test.ts` → `provider-free reference prompt integration` → `covers the expanded 98 production dossiers`: expected 98, actual 115 |
+| Existing/new canonical and supplemental regressions | 13 passed |
+| Serial reference-template/dossier/brief suites | 196 passed |
+| Serial targeted registration/rights/selection checks | 15 passed, unchanged limits |
+| Real provider-free selection dry runs | All 17 additions actually selected in validated independent three-route packs; `fetch` forbidden |
+| Coverage/style guards | Five core records plus a cleared supplement reach six without a named hint; generic family wording does not expand a complete canonical pool |
+| Creative-only proof | Both coffee references select and revalidate in a private fixture containing no `foundation/` or `template/` directories; network forbidden |
+| Retained extraction verifier | 150 dossiers, 148 extracted, two pre-existing failed, zero validation problems |
+| Fresh isolated foundation checks | All 17 agree with index projections/blockers; all 118 persisted new source files match fresh outputs byte-for-byte |
+| Final `npm run check` | 493 files, 0 errors, 0 warnings, 11 existing hints |
+| Final `npm run build` | Passed |
+| Index/privacy/rights proof | 146 registry records, 150 dossiers/index entries, 115 approved, 98 core; zero lost or changed old entries; 34 screenshot hashes verified; no private ignored payload imported |
+| Code/test/documentation whitespace | Passed; retained-data source whitespace is separately disclosed below |
+
+The controller alone owns the remaining provider-free inventory assertion:
+change its deliberate 98-production expectation/title to **115**, retain every
+per-dossier assertion and the separate canonical-core **98** invariants, then
+rerun the combined suite after Juniper integration and its real prompt-VM
+bindings. This worker did not edit that file. The 11 initial canonical failures
+listed below were corrected in application selection, not by relaxing tests.
+
+Fresh read-only generation-success reporting remains overall 5/100, creative
+0/5, pack 3/4. The convergence freeze is not satisfied or bypassed. No paid
+generation, external TestSprite run, new renderer, original-worktree access on
+resume, shared dependency write, production write, push, merge, branch deletion
+or worktree deletion was performed. Neither new reference eligibility nor a
+compiler `renderable` label establishes client-ready rendered acceptance; 16
+new foundations still need adaptation and no pack was promoted.
+
+### Persistent evidence and remaining controller responsibilities
+
+Evidence root:
+`/home/zahemen/worktree-reconciliation-2026-11-01/validation/ops/`.
+All directories were checked/set 0700 and files 0600, with no symlinks. The
+top-level evidence manifest hashes 45 evidence files, including diagnostic source copies:
+`evidence-manifest-final.json`, SHA-256
+`b39a0fe8701ff351759bcde7ba9fe33f8fcd3f3870686f72f188d49a35247fd1`.
+Important files: `validation-summary.json`, `data-integrity.json`,
+`validation-source-state.json`, `full-tests-after-core-fix.log`,
+`selection-dry-runs-after-core-fix.log`, `selection-dry-runs.json`,
+`creative-only-coffee.log`, `new-foundations-results.json`,
+`veterinary-drift-resolution.json`, final check/build logs, and serial focused
+logs. Earlier failed attempts are retained and distinguished, not overwritten
+as passing. The controller's shutdown recovery archive remains untouched.
+
+Two explicit non-green diagnostics remain in addition to the shared count test:
+the unchanged old landscaping manifests fail byte-formatting `sync --check`,
+and retained/derived source bytes produce whitespace diagnostics in 206 paths.
+No validator, test limit or gate was weakened to conceal either. The controller
+must preserve their context and handle any required integration-gate disposition;
+this is not a claim that every repository/release check is green.
+
+Coffee-source disposition mapping is now bounded and explicit: 17 dossier roots
+and supplemental registration are recovered; stale source-branch indexes were
+rejected in favor of regeneration preserving both #191 landscaping records;
+five proposed healthcare-tag removals remain intentionally archived; unsupported
+ownership assertions were replaced with November 1 reuse testimony, not invented
+ownership evidence. The source's dirty receipt/private artifacts were not copied
+into this port. Before removing
+`/home/maigreeks/projects/.worktrees/launchloom-dossier-coffee`, the controller
+must ship/verify the recovered range, record that mapping and preserve/dispose
+of its dirty receipt with the existing snapshot/ref safeguards. No original
+source state was inspected again on resume.
+
+Work OS subtask `5d9f09d2-731c-4957-b835-47dbb6e3ac9b` remains open pending
+controller integration, final verification and source dispositions. Existing
+live-thumbnail/visual acceptance tasks remain open under controller ownership,
+without new paid proof runs. The ops task worktree/branch remains retained for
+that handoff and the subsequent independent Juniper review; no parent completion
+or final shipping receipt is issued.
+
+## Recovery continuation: 2026-11-01 22:51 UTC
+
+The machine shutdown interrupted the existing work, not a new audit. All
+uncommitted recovery data remains preserved; controller backup
+`/home/zahemen/worktree-reconciliation-2026-11-01/recovery-20261101T223235Z/ops/`
+was not overwritten. The earlier checkpoint below is retained as history;
+its volatile `/tmp/opencode` logs disappeared and its outcomes are not used as
+fresh final evidence.
+
+The controller now explicitly authorized the minimal selector fix and the
+reference-brief inventory test update. `scripts/inspiration-registry.mjs`
+retains canonical core/niche behavior, rejects generic/unsupported kinds as
+before, and admits supplemental references only with dossier-backed selection.
+Validated dossier business kinds/tags determine supplemental business matching;
+registry labels cannot manufacture eligibility. Existing rights validation,
+six-reference minimum, independence and thin-category failure remain in force.
+`tests/provider-free-reference-integration.test.ts` remains controller-owned.
+
+### Veterinary CSS drift: explained and precisely restored
+
+Five existing `web-veterinary-lap-of-love/foundation/source/styles/02.css`
+through `06.css` files had lost their foundation selector scopes. First,
+complete isolated compilation was tested: it reproduced **baseline**, not the
+incoming bytes. The next isolated test reproduced the compiler's normalization
+stage only: all five outputs matched **incoming bytes exactly**. This establishes
+the partial-stage provenance, rather than assuming that any generator output is
+safe to discard. `compileSourceFoundation` unconditionally rewrites source HTML/
+CSS before its final `write` guard; the prior all-library index/check invocation
+was interrupted after normalization, before completion of scoping.
+
+Only those five proven incidental own outputs were restored to exact `bf3e78b9`
+bytes. Both incoming copies and per-file baseline/incoming hashes are retained
+in the persistent validation directory as `incoming-vet-{2..6}.css` and
+`veterinary-drift-resolution.json`; the controller's recovery patch also retains
+them. No source-original, shared dependency, or other agent worktree was touched.
+Future foundation checks run in isolated outputs because `write:false` is not
+a read-only guarantee. No compiler/runtime change is part of this data port.
+
+Fresh foundation verification compiled only the 17 additions into isolated
+private outputs and matched their current index projections and blockers. All
+17 passed this check. An earlier all-library private-sandbox check exceeded the
+tool deadline; that partial sandbox is retained, not counted as passing and not
+copied back into task data. Existing old-index and old-source equality are
+checked separately, without regenerating old foundations.
+
+Fresh logs and diagnostic artifacts now live under
+`/home/zahemen/worktree-reconciliation-2026-11-01/validation/ops/`; final results
+and evidence hashes will supersede the historical checkpoint below. Full tests,
+fresh checks/build, no-loss/privacy proofs and final commits remain pending at
+this continuation entry. No task completion or shipping receipt is issued.
+
+### Core-preserving selector correction and fresh local evidence
+
+The first resumed full run exposed 11 real canonical-behavior regressions from
+admitting every matching supplement by default, plus the expected controller-owned
+count failure: 2,810 passed, 101 skipped, 12 failed. They were not dismissed as
+inventory updates. The application predicate was corrected, without changing the
+existing core assertions: ordinary requests retain their canonical core pool;
+cleared matching supplements are admitted when specifically named using existing
+reference-intent input, or when the supplied core pool contains fewer than six
+records. A generic family/style phrase alone does not request a supplemental
+source. Rights, production approval, business validation, minimum coverage and
+route-independence checks still apply after admission. No alias, renderer, mode,
+provider setting or public API input was added.
+
+The 11 initial failures, all retained in `full-tests-final.log`, were:
+
+- `compile-inspiration-pack.test.ts`: "routes an inferred roofing business into
+  its dedicated canonical niche"; "scores positive visual direction without
+  promoting negated patterns or factual disclaimers".
+- `inspiration-registry.test.ts`: "rotates at least two rendered families across
+  the recent history of every core niche"; "keeps affirmative brand direction
+  from collapsing seeded reference rotation"; "uses the maximum feasible
+  rendered-family diversity when a niche has fewer than nine diverse trios";
+  "balances cumulative exposure ahead of one latest-trio overlap"; "selects a
+  business-matched route trio from the six-reference roofing niche"; "defines an
+  exact 98-dossier core with at least six verified references per niche and
+  production-randomizer coverage"; "keeps style-conditioned production selection
+  varied and dossier-backed across all core niches"; "compiles the selected core
+  niche without requiring archived dossier assets"; "records when history must
+  be relaxed to satisfy the three-route contract".
+
+Targeted existing/new core and supplemental regressions now pass **13/13**.
+Serial reference-template/dossier/brief suites pass **196/196**. Serial targeted
+registration/rights/selection checks pass **15/15** with unchanged test limits;
+the earlier concurrent timeout is preserved as failed diagnostic evidence.
+All 17 supplemental references were then **actually selected** in individually
+requested, validated three-route packs with `fetch` forbidden; fresh dossier
+pack and route-independence assertions passed. `coffee-shop` remains rejected
+at three references and generic-kind rejection remains intact. This proves the
+supported creative/reference path, not default core replacement or a paid site
+generation outcome.
+
+Data commit: `12f785f7b01775b5781e879b007667c0de5077c0` (614 data/index files).
+Fresh integrity proof confirms registry 146, dossiers/indexes 150, approved 115,
+canonical core 98, **zero lost IDs and zero changed old index/registry entries**,
+all 34 new screenshot digests, and all 118 persisted new foundation source files
+byte-identical to isolated fresh compilation. The two pre-existing failed source
+extractions remain `direct-mahala-desert-boutique-hotel` and
+`web-accounting-taxace`; no new extraction failure was hidden. Original license,
+template and screenshot bytes match the private original-file receipt except
+the 33 explicitly documented metadata/brief/permission corrections.
+
+`git diff --cached --check` for the data commit reported whitespace in 206
+retained/derived source paths (133 under `template/source`, 73 under
+`foundation/source`). These captured/licensed bytes and deterministic outputs
+were not reformatted to conceal the findings or invalidate their hashes. The
+diagnostic is preserved in `retained-data-whitespace.log`; it is not a clean
+whole-data whitespace claim. The unchanged two-landscaping-manifest formatting
+drift still fails `sync --check` and remains outside this recovery's formatting
+scope. Final source/check/build/full-suite results are recorded below when the
+post-core-fix run reaches its terminal verdict; controller integration and its
+shared 98-to-115 count update remain pending.
+
+## Phase 3 checkpoint: coffee data recovered, selectability blocked on ownership
+
+The controller additionally authorized read-only access to
+`/home/maigreeks/projects/.worktrees/launchloom-dossier-coffee`, exact HEAD
+`b51eb48a0bd8859c552dbd71d7a801407a51b41f`. Only its 17 new dossier roots were
+imported from the committed tree: 455 original files, 65,641,092 bytes. No old
+registry/index wholesale replacement, private ignored payload, source receipt,
+or existing care-manifest delta was imported. Original-byte hashes are retained
+privately in `ops/coffee-import-originals.json` under the snapshot root below.
+
+### Rights, integrity and current-contract decisions
+
+- Five HTML5 UP templates retain CC BY 3.0 license/attribution records and pinned
+  source provenance; seven Start Bootstrap templates retain MIT records and
+  source notices; three TemplateMo templates retain the captured commercial-use
+  terms and source provenance. These are retained license records, not a fresh
+  external legal or domain-ownership verification. Explicit supported `source.license`
+  metadata ensures newly compiled HTML5 UP/TemplateMo foundations name the actual
+  retained license/terms rather than the generic `licensed` category.
+- The two coffee sources now use supported `permission-cleared` rights with local
+  `rights/requester-attestation.md`. Exact November 1 testimony: when asked whether
+  the requester owns OR has reuse permission for both domains, the response was
+  "Yes, both are authorized". This confirms reuse authorization, **not independent
+  evidence that LaunchLoom owns or operates either business**. Unsupported ownership
+  assertions in manifests, business verification and capture records were replaced
+  with this narrower truth. Local template-retention attestations and extraction
+  evidence paths were added; extraction digests recomputed without changing
+  retained HTML/CSS bytes. No new license or source-owner verification was invented.
+- All five existing proposed `healthcare` removals were left archived. Each source
+  dossier currently has `productionEligible: false`; dropping that tag would narrow
+  generic business matching/future eligibility, not fix an active approved core
+  mismatch. There is no verified reclassification basis to silently remove it.
+- Existing deterministic reference-brief refinement was applied only to the 17
+  imported `design-prompt.md` files. Full tests exposed their missing current
+  `Agent implementation brief` guidance; the targeted 17 brief tests now pass.
+  No current prompt/renderer contract implementation was edited.
+
+### Regenerated inventory and foundation coverage
+
+| Artifact | Before | Recovered state | Preservation proof |
+| --- | --- | --- | --- |
+| Registry | 129 | 146 | Zero lost IDs; every old record structurally identical, including both current landscaping additions |
+| Template index | 133 | 150 | Zero lost IDs or changed old entries; 148 extracted, 2 existing failed, 0 pending/unavailable |
+| Foundation index | 133 | 150 | Zero lost IDs or changed old entries; 2 compiler-renderable, 146 needs-adaptation, 2 existing blocked |
+| Production-approved dossiers | 98 | 115 | Exactly the 17 additions; canonical core remains 98 across 16 niches |
+
+All 17 new foundations were compiled with the existing deterministic compiler,
+without rewriting existing foundations. Of the additions, only
+`startbootstrap-grayscale` is compiler-renderable; 16 require adaptation, with
+specific blockers recorded in their manifests. This is **not foundation release
+acceptance**. A direct Grayscale content-binding smoke succeeds in substituting
+synthetic content but reports `missing-lead-form`; the existing Astro shell
+always inserts `LeadForm` even without an embedded marker. No rendered browser
+or production foundation-promotion claim is made from this compiler result.
+
+### Exact selectability blocker requiring controller coordination
+
+`scripts/inspiration-registry.mjs:1030-1038` restricts the input registry to
+`referenceIdsForBusinessKind` canonical core IDs **before** validating production
+dossiers. Therefore the recovered registry alone cannot make any supplemental
+dossier selectable. This file is outside this worker's ownership and remains
+unmodified pending explicit controller authorization.
+
+Four new real provider-free tests prove the blocker: a pool of five current
+matched core references plus one cleared supplemental cafe/accounting/dental/
+fitness reference is reduced to five and rejected. Fixing registration alone
+does not fulfill the requested outcome. A bounded selector change must preserve
+explicit unsupported/generic-kind rejection, current core records, cleared rights,
+business matching, six-reference minimum and three structurally independent
+routes. The controller must authorize that module or own its fix.
+
+Potential matched counts in the recovered data are cafe 9, accounting 8, dental
+11, home-care 11, fitness 10. These are **not successful supplemental selection
+proof** while the core-only filter remains. Literal `coffee-shop` has only three
+matched retained references and must remain fail-closed below six; no new alias
+or business-mode expansion is inferred from the recovery authorization.
+
+### Validation so far and remaining cross-stream gates
+
+- Registration RED: two expected failures (missing supplemental discovery,
+  duplicate-source rejection), then GREEN 3/3; the new fixture setup audits the
+  real 98-core library and has its own 30-second test budget, not changed existing
+  limits. Rights RED: two `owned` versus `permission-cleared` failures, then GREEN.
+- `node scripts/verify-reference-templates.mjs`: 150 dossiers, 148 extracted,
+  2 existing failed, zero problems. `compile-source-foundations.mjs --all --check`
+  passed. Reference-template and dossier suites passed 33/33. Targeted current
+  brief propagation checks passed for all 17 additions.
+- `npm run check` initially exposed two wrong test-property paths; corrected to
+  `pack.request.heroInventory`, then the final check passed. `npm run build`
+  passed. Own locked dependencies were installed with Node 22; no shared install
+  or lockfile changed. Existing peer/deprecation warnings were recorded.
+- Full `npm test -- --maxWorkers=2` completed: 2,794 passed, 101 skipped, 19 failed.
+  Seventeen failures were the now-corrected new brief guidance. The remaining
+  intentional inventory assertions require controller-owned updates:
+  `provider-free-reference-integration.test.ts` / `covers the expanded 98
+  production dossiers` expects 98, now 115;
+  `refine-reference-design-prompts.test.ts` / `keeps the 133-dossier inventory
+  and 98 production eligibility decisions` requires 150/115. Neither test file
+  was modified. This full run predates the final data refinements and four new
+  RED selection tests; a fresh full run is required after ownership/count fixes.
+- `sync-reference-library.mjs --check` reports pre-existing formatting-only
+  drift in `htmlcodex-gardener-garden-services` and `orgarden-gardening-services`
+  manifests (compact arrays versus JSON.stringify). The writer's incidental
+  formatting changes were restored byte-for-byte because existing dossier files
+  are outside scope. Their data/registry/index entries are preserved unchanged.
+- Remaining: authorize/fix supplemental selection, coordinate both count-test
+  updates, rerun selection/focused/full verification on the final merged tree,
+  resolve any retained-source whitespace diagnostics without corrupting capture
+  hashes, and let the controller verify final source dispositions. No completion
+  receipt or task closure is justified at this checkpoint.
+
+Logs: `/tmp/opencode/ops-coffee-registration-{red,green}.log`,
+`ops-coffee-rights-red.log`, `ops-coffee-selection-red.log`,
+`ops-coffee-focused-data.log`, `ops-coffee-brief-green.log`,
+`ops-coffee-full-tests.log`, `ops-coffee-astro-check-final.log`,
+`ops-coffee-build.log`, `ops-coffee-sync-check.log`,
+`ops-coffee-foundation-check.log`.
+
 ## Phase 2 status: approved records recovered, not shipped
 
 As of 2026-11-01, the controller approved and this worker recovered the bounded

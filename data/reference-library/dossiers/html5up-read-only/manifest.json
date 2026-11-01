@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "id": "html5up-read-only",
+  "productionEligible": true,
+  "referenceName": "Read Only by HTML5 UP: serif editorial stack with identity sidebar",
+  "familyId": "html5up-read-only-family",
+  "source": {
+    "name": "Read Only by HTML5 UP / AJ",
+    "url": "https://html5up.net/read-only",
+    "sourceType": "pinned HTML5 UP template source, CC BY 3.0",
+    "repository": "https://github.com/zce/html5up",
+    "commit": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "read-only/",
+    "rights": "licensed",
+    "license": "CC BY 3.0",
+    "rightsEvidence": "The pinned source template is licensed under Creative Commons Attribution 3.0. The license text is retained in rights/HTML5UP-CC-BY-3.0.txt, and the template attribution to HTML5 UP / AJ is retained in the source README.",
+    "rightsEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "dental",
+    "home-care",
+    "veterinary",
+    "roofing"
+  ],
+  "tags": {
+    "business": [
+      "dental",
+      "home care",
+      "veterinary",
+      "roofing"
+    ],
+    "style": [
+      "minimal editorial",
+      "serif display",
+      "green accent"
+    ],
+    "composition": [
+      "full-width landscape",
+      "serif intro",
+      "accomplishment rows"
+    ],
+    "conversion": [
+      "send message",
+      "contact form"
+    ],
+    "motion": [
+      "static-first"
+    ],
+    "imagery": [
+      "full-width landscape",
+      "accomplishment images"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "7593d5194ce2bcfe32457763e91aaf216208bb5f0e8e2a1a94898c2790dea93e",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "bfd5e08d776216f3a875ac26c8bfd3402d9126c90e0a640b47bcaab192cce762",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A full-width landscape photograph at the top, then a large green Read Only heading, a short standfirst, and a paragraph. A right sidebar carries an avatar, name, role, section links, and social icons. The main column continues with a two-column icon list, three accomplishment rows with images, and a contact form. The palette is white, near-black, and green. The typography is a large serif display with a neutral sans body.",
+    "heroGeometry": {
+      "mode": "full-width landscape with a large serif heading below",
+      "alignment": "left-aligned editorial",
+      "viewport": "landscape photograph above a large serif intro"
+    },
+    "navigationGeometry": {
+      "mode": "right sidebar with section links",
+      "placement": "right edge",
+      "mobile": "top bar with menu"
+    },
+    "typography": {
+      "display": "large serif display",
+      "body": "neutral sans",
+      "scale": "large serif heading with compact body"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "near-black",
+        "green"
+      ],
+      "ink": "near-black",
+      "accents": [
+        "green"
+      ],
+      "contrastIntent": "minimal editorial contrast"
+    },
+    "imageTreatment": {
+      "mode": "full-width landscape and accomplishment images",
+      "crop": "wide cover",
+      "focalPoint": "atmospheric"
+    },
+    "sectionSequence": [
+      "full-width landscape",
+      "large serif intro",
+      "right sidebar identity",
+      "icon list",
+      "accomplishment rows",
+      "contact form",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "accomplishment rows with images",
+      "interaction": "reading-led"
+    },
+    "ctaPlacement": {
+      "primary": "Send Message",
+      "secondary": "section links",
+      "early": "in the contact form"
+    },
+    "motion": {
+      "primitive": "static-first",
+      "library": "CSS",
+      "reducedMotion": "static"
+    },
+    "mobileRecomposition": {
+      "strategy": "collapse the sidebar, stack the landscape, intro, icon list, accomplishment rows, and contact form",
+      "rules": [
+        "preserve landscape crop",
+        "keep the contact form legible",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "editorial-stack",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "vertical-copy-media-stack",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "accomplishment rows",
+        "identity sidebar"
+      ],
+      "mobileTreatmentChanged": false
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "full-width-landscape",
+        "selector": "[data-reference-signature=full-width-landscape]",
+        "description": "wide landscape photograph above the serif intro"
+      },
+      {
+        "id": "serif-intro",
+        "selector": "[data-reference-signature=serif-intro]",
+        "description": "large serif heading with a short standfirst"
+      },
+      {
+        "id": "accomplishment-rows",
+        "selector": "[data-reference-signature=accomplishment-rows]",
+        "description": "image-and-copy accomplishment rows"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse source photography, copy, or trade dress",
+      "invent credentials, clients, or outcomes",
+      "copy source code into a client site",
+      "replace the serif intro with a generic card grid",
+      "low-contrast actions"
+    ],
+    "acceptanceChecks": [
+      "The opening is a full-width landscape above a large serif intro.",
+      "Accomplishment rows pair one image with one idea.",
+      "At 390 px the sidebar collapses and the content stacks without horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Pinned HTML5 UP source captured from the direct demo at both viewports. CC BY 3.0 attribution is retained in the source and license record."
+  }
+}

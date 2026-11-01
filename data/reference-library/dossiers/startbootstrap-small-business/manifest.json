@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "id": "startbootstrap-small-business",
+  "productionEligible": true,
+  "referenceName": "Start Bootstrap Small Business: split image-and-copy business page",
+  "familyId": "startbootstrap-small-business-family",
+  "source": {
+    "name": "Small Business by Start Bootstrap",
+    "url": "https://startbootstrap.github.io/startbootstrap-small-business/",
+    "sourceType": "official Start Bootstrap demo, MIT licensed",
+    "repository": "https://github.com/StartBootstrap/startbootstrap-small-business",
+    "commit": "9c5ef57a25c2c8e1223b274ef7312375925e281c",
+    "rights": "licensed",
+    "rightsEvidence": "The official Start Bootstrap repository is licensed under the MIT License (copyright 2013-2023 Start Bootstrap LLC). The license text is retained in rights/LICENSE.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "home-services",
+    "local-trades",
+    "landscaping",
+    "contractor",
+    "small-business"
+  ],
+  "tags": {
+    "business": [
+      "small business",
+      "home services",
+      "local trades",
+      "landscaping"
+    ],
+    "style": [
+      "plain bootstrap",
+      "neutral sans",
+      "blue accent",
+      "light surfaces"
+    ],
+    "composition": [
+      "split hero",
+      "full-width callout",
+      "three-card row"
+    ],
+    "conversion": [
+      "call to action",
+      "service enquiry"
+    ],
+    "motion": [
+      "static-first"
+    ],
+    "imagery": [
+      "wide image slot",
+      "no retained source photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "f4af2816b0a849b14e898f6bb64d38e1af771cf3e42c2c5dd367ea0271fe22f4",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "cf29e55cf18a34be7d463cb7e0fe9af77451a44443e10aaeac9163f4677ef057",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A straightforward small-business template. A dark top bar carries the brand and four text links. The opening is a split field: a wide image slot on the left and a short business promise, supporting paragraph, and single primary button on the right. A full-width muted callout band follows with one sentence. Three equal service cards each hold a title, short paragraph, and small action. A dark footer closes the page. Neutral system sans, white and light gray surfaces, charcoal bands, and a blue action color keep the hierarchy plain and legible.",
+    "heroGeometry": {
+      "mode": "split image-and-copy opening",
+      "alignment": "image-left copy-right",
+      "viewport": "wide image slot beside a short promise and one action"
+    },
+    "navigationGeometry": {
+      "mode": "dark inline top bar",
+      "placement": "top of page",
+      "mobile": "collapsed hamburger"
+    },
+    "typography": {
+      "display": "Bootstrap default neutral sans, semibold headings",
+      "body": "same neutral sans",
+      "scale": "compact heading scale with generous body measure"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "light gray",
+        "charcoal"
+      ],
+      "ink": "near-black",
+      "accents": [
+        "bright blue"
+      ],
+      "contrastIntent": "plain high-contrast business readability"
+    },
+    "imageTreatment": {
+      "mode": "wide rectangular image slot",
+      "crop": "landscape 3:2 slot",
+      "focalPoint": "subject-safe; replace the slot with client photography"
+    },
+    "sectionSequence": [
+      "dark top navigation",
+      "split image-and-copy hero",
+      "full-width callout band",
+      "three service cards",
+      "dark footer"
+    ],
+    "servicePresentation": {
+      "pattern": "three equal service cards",
+      "interaction": "one small action per card"
+    },
+    "ctaPlacement": {
+      "primary": "hero button",
+      "secondary": "card actions",
+      "early": "in the opening field"
+    },
+    "motion": {
+      "primitive": "static-first",
+      "library": "none retained",
+      "reducedMotion": "no scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack image, copy, callout, then cards in one column",
+      "rules": [
+        "keep the primary action above the fold",
+        "preserve card order",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "full-width callout band"
+      ],
+      "mobileTreatmentChanged": true
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "split-image-hero",
+        "selector": "[data-reference-signature=split-image-hero]",
+        "description": "wide image slot beside a short promise and one primary action"
+      },
+      {
+        "id": "callout-band",
+        "selector": "[data-reference-signature=callout-band]",
+        "description": "single full-width statement band between hero and services"
+      },
+      {
+        "id": "service-card-row",
+        "selector": "[data-reference-signature=service-card-row]",
+        "description": "three equal service cards with short copy and one action each"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse Start Bootstrap demo copy or placeholder graphics as client content",
+      "invent services, prices, or claims",
+      "copy source code into a client site",
+      "replace the split opening with an unrelated full-bleed carousel",
+      "low-contrast or inaccessible actions"
+    ],
+    "acceptanceChecks": [
+      "Opening keeps a wide image slot beside a short promise and one primary action.",
+      "The callout band remains a single full-width statement.",
+      "Three service cards stay scannable and equal in weight.",
+      "At 390 px the page stacks without horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Official Start Bootstrap demo captured at both viewports. The demo uses a neutral placeholder image slot; the dossier records the layout mechanics, not the placeholder asset."
+  }
+}
