@@ -59,3 +59,9 @@ Recover and reconcile useful work from the 15 remaining extra LaunchLoom worktre
 - Before resuming, controller captured verified private restart snapshots at `recovery-20261101T223235Z/` under the preservation root. Old temp logs are unavailable; require fresh final verification and persistent final receipts.
 - Same DeepSeek/Sol sessions resumed from their saved code, not from the start. DeepSeek finishes creative tests/rendered review/report. Sol owns the minimal supplemental selector correction and refine-reference inventory assertion updates, investigates unplanned old foundation CSS drift, and commits its recovered data/code after validation.
 - Controller owns `tests/provider-free-reference-integration.test.ts`, final combining/cross-review/validation/merge/deploy/cleanup. No paid workflow rerun is implicit in recovery, and no original or excluded worktree may be reset or deleted before final gates.
+
+## 23:27 UTC checkpoint
+
+- Sol phase 3 complete at `c5c99a48` and merged locally as `62306385`; final independent review/combined validation still pending. Controller's RED inventory mismatch was corrected to 115 with all 120 provider-free tests passing and canonical core 98 kept unchanged.
+- Independent controller index checks: all 129 old registry and 133 old index entries remain unchanged; current totals 146/150/115 approved, both landscaping IDs retained, coffee rights permission-cleared. Code formatting applied only to four recovered code/test files; raw source bytes preserved despite 206 disclosed whitespace paths.
+- Sol is now read-only reviewing creative range `2f7e8d51..8f4bd117`; DeepSeek finishes its saved port verification/report. Next: act on independent findings, merge creative code, reconcile shared bindings if needed, run final combined suite/checks/build/rendered gates, then review latest main and ship. Originals remain in place.
