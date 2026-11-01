@@ -13,8 +13,8 @@ Recover and reconcile useful work from the 15 remaining extra LaunchLoom worktre
 
 ## Ordered gates
 
-- [ ] Each worker reads current instructions and relevant history; captures per-source HEAD, status, unique commits/patches, ignored user artifacts, and runtime/dependency references without modifying originals.
-- [ ] Preserve unique committed and dirty/untracked work in retained refs and private verified snapshots before any integration/removal. No secrets/private assets enter reports or commits.
+- [x] Each worker reads current instructions and relevant history; captures per-source HEAD, status, unique commits/patches, ignored user artifacts, and runtime/dependency references without modifying originals.
+- [x] Preserve unique committed and dirty/untracked work in retained refs and private verified snapshots before any integration/removal. No secrets/private assets enter reports or commits.
 - [ ] Produce one reviewed disposition for every source: integrate bounded changes, document exact current-main equivalent, or flag genuine unresolved behavior for a decision. Never label incomplete work merged merely because an archive exists.
 - [ ] Reconcile independent changes in worker branches after audit review; controller handles overlap and canonical ledger entries. No workers push or merge main.
 - [ ] Test changed behavior with RED/GREEN evidence where applicable; run full relevant application/Worker/config/recipe/build checks and rendered desktop/mobile checks for generated-site changes. Do not weaken gates or use paid generation without permission.
@@ -44,3 +44,11 @@ Recover and reconcile useful work from the 15 remaining extra LaunchLoom worktre
 - DeepSeek phase 1 remains active. Controller must compare its Juniper findings with the detached happy-engine commit before assigning any overlapping creative/runtime port.
 - Outstanding visual and live-thumbnail acceptance tasks remain open, now owned against current-main project records/shared checkout rather than stale workspaces. Do not dispatch a paid run merely to remove directories.
 - Controller's next action: read creative report when delivered, reconcile per-source dispositions, then assign non-overlapping bounded integration. Retain every original until preservation and integration checks pass.
+
+## 15:20 UTC checkpoint
+
+- Both audits delivered and merged locally (`19013fbd` ops recovery, `1db02e61` creative audit). All 15 HEAD pins and both workers' private manifests independently verified by controller.
+- User chose source-first archive-as-superseded; PR #168 closed without deleting its branch. User confirmed coffee reuse permissions; no independently verified owned/operated claim is implied.
+- DeepSeek phase 2: bounded Juniper safety/preview port covering the same `4d77edc1` commit found in happy-engine. Sol phase 3: 17 reference dossiers, rights/hash validation, current-registry/index regeneration and current foundation compatibility. File ownership is disjoint; shared provider-free test belongs to controller.
+- Controller recovered inert historical creative docs/tooling and source-first supersession record; no active craft/source-first mode or private preview output introduced.
+- Next: inspect returned bounded code/data diffs, resolve shared test bindings/count without weakening coverage, cross-review high-risk changes, run combined validation, then ship and delete only preserved/reconciled originals. Source originals and excluded reliability worktree remain untouched.
