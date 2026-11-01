@@ -54,7 +54,9 @@ async function capture(body: string, extra: Record<string, any> = {}) {
     evidenceDir: root,
     requiredPurposeful: true,
     capturePair: true,
-    timeoutMs: 350,
+    // Use the production interaction timeout; 350ms can expire while the
+    // browser encodes a proven screenshot on a shared or loaded runner.
+    timeoutMs: 1500,
     settleMs: 30,
     ...extra,
   });
@@ -229,8 +231,7 @@ describe("bounded rendered interaction evidence", () => {
       "base64",
     );
     const result = await capture(
-      disclosure +
-        `<script>document.querySelector('summary').addEventListener('click',()=>{new Image().src='${url}?visitor=private';});</script>`,
+      disclosure + `<img src="${url}?visitor=private" alt="Unsafe beacon">`,
       {
         imageSnapshots: new Map([[url, { body, contentType: "image/png" }]]),
       },
