@@ -1,4 +1,76 @@
-# Operational/evidence worktree reconciliation: phase 1
+# Operational/evidence worktree reconciliation: audit and recovery
+
+## Phase 2 status: approved records recovered, not shipped
+
+As of 2026-11-01, the controller approved and this worker recovered the bounded
+documentation/evidence below on `codex/launchloom-reconcile-ops-20261101`.
+The original phase 1 audit follows and remains historical evidence of the
+unchanged source worktrees. **Recovered on this branch does not mean integrated
+into main, deployed, or safe to delete originals yet.** No happy-engine
+application/test/prompt/runtime changes are included; the controller owns those
+after creative-worker overlap review.
+
+| Source record | Recovery on this branch | Current limitation |
+| --- | --- | --- |
+| Pipeline `75a491a5`, `019b46a9` | Appended original October 26 merge/deploy section and receipt; dated historical context precedes the progress section | PR193 remains OPEN at `019b46a9`; controller will close/supersede only after equivalent content ships |
+| Assessment `a6a4be2d` | Added `docs/research/2026-10-27-project-assessment.md` with historical baseline notice; appended original progress and receipt | Assessment body preserved verbatim; not present-day architecture/privacy/readiness verification |
+| PR169 private snapshot | Added `docs/reviews/2026-10-16-pr169-merge-readiness.md` with archival notice; appended original historical progress and receipt | PR169 remains OPEN/DRAFT at `6a304793`; no implementation imported; temporary evidence paths not revalidated |
+| Rate-limit private snapshot | Archived fixture and plan with README in `docs/archive/worktree-reconciliation-2026-11-01/rate-limit-lead-coverage/` | Synthetic implementation, historical project ID, no TestSprite registration/run; fixture trailing whitespace removed, exact original retained privately |
+| Visual ignored scratch evidence | Existing four-file private snapshot retained and hash-verified | Internal scratch diff not imported into active source or documentation archive |
+
+Historical `.collab/task-complete.log` lines retain their original timestamps,
+branches and checkout-context SHAs. They are recovered past receipts, not new
+completion assertions. No new `task_complete` receipt is issued while overall
+reconciliation remains unverified.
+
+### Acceptance-task handoff to controller
+
+- Live dashboard: Work OS `7a9cf29a-5196-46f1-8a19-2fd8773db6d3` maps to
+  already-integrated implementation at `a27ec01a`; that SHA and the original
+  workspace HEAD `922149b9` both pass ancestry checks against main `65cae064`.
+  Outstanding outcome remains exact-attempt live candidate-thumbnail proof.
+- Visual follow-up: Work OS `80327069-f5fa-487c-8f0f-c5d127dc6ac6` maps to
+  already-integrated implementation including `e5d0cdd8`; that SHA and original
+  workspace HEAD `05b53c33` both pass ancestry checks. Its cited run
+  `40916150316` is failed, not still validating. Outstanding rendered desktop/
+  mobile/gated-pipeline acceptance is not established by code ancestry.
+- The controller will update ownership and failed/stale run status and retain
+  these proof tasks open in its current workstream, without requiring dedicated
+  stale worktrees. This worker has not changed either acceptance task, started
+  another paid run, or claimed their outcomes complete.
+
+### Exact remaining per-source cleanup conditions
+
+All paths, HEADs, retained refs and private hashes in the inventory below still
+apply. No source files were removed. Immediately before removal the controller
+must recheck source HEAD/status, refs, integration, artifact preservation and
+allowed dependency/process references without entering the excluded worktree.
+
+| Original source | Remaining condition after approved records recovery |
+| --- | --- |
+| `/home/maigreeks/projects/.worktrees/launchloom-pipeline-observability` | Ship equivalent recovered receipts; coordinate PR193 supersession; confirm the two untracked plan/spec copies still match main and retained snapshot before controller-authorized disposal; keep refs |
+| `/home/maigreeks/projects/.worktrees/launchloom-pr169-review` | Ship recovered review/progress/receipt; confirm the dirty original records match retained snapshots/recovered bodies; controller owns original disposal, without closing or merging PR169 |
+| `/home/maigreeks/projects/.worktrees/launchloom-project-assessment-20261027` | Ship recovered assessment/progress/receipt with historical notice; establish squash/content-equivalence evidence for original documentation commit, or explicitly retain its ref as preserved superseded history |
+| `/home/maigreeks/projects/.worktrees/launchloom-rate-limit-lead-coverage` | Ship labelled archive; retain original exact-byte private snapshot and branch; confirm dirty fixture/plan unchanged before controller-authorized disposal; no production limiter or TestSprite verdict required for archive-only disposition |
+| `/home/maigreeks/projects/.worktrees/launchloom-live-dashboard` | Record controller-owned transfer of open acceptance task/progress context; recheck clean integrated HEAD and dependencies/processes; do not mark thumbnail outcome complete to remove workspace |
+| `/home/maigreeks/projects/.worktrees/launchloom-visual-followup` | Record controller-owned transfer of open rendered-proof task and failed run state; verify four private scratch files and clean integrated HEAD; clear dependency/process use without inspecting excluded consumers |
+| `/home/zahemen/.local/share/opencode/worktree/1582b5/happy-engine` | Controller reconciles/validates selected application hunks after creative overlap review or explicitly records preserved abandonment; retain pinned ref; this phase makes no behavioral integration claim |
+
+### Phase 2 validation scope
+
+Validated historical body fidelity against retained assessment commit and PR169
+snapshot, exact historical receipt recovery, append-only preservation of existing
+daily ledgers, archive equivalence with only documented trailing-whitespace
+normalization, JSON parsing, bounded file scope and private-content exclusion.
+`git diff --check`, archived-file syntax checking with the resolved local Node
+binary, and final post-recovery checks passed and are recorded in the November 1
+progress entry. No dependencies installed; no archived server executed; no
+application tests/build/browser/deployment undertaken. PR169/PR193 state was
+read again and remains unchanged. At 14:59 UTC, all seven original HEAD/status/
+patch sets and private artifact hashes matched the initial snapshots again.
+These checks must still be repeated immediately before any future deletion.
+
+## Phase 1 audit (preserved findings)
 
 Audit date: 2026-11-01 UTC. Comparison baseline: `origin/main` =
 `65cae064` (full object ID recorded in each private `audit.json`).

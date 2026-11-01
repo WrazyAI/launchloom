@@ -1,0 +1,65 @@
+{
+  "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
+  "type": "frontend",
+  "name": "Lead form displays rate limit message when submission quota is exceeded",
+  "description": "A visitor filling out the client inquiry form receives normal submission confirmation, but when the connection limit is reached, the form displays the rate-limit message advising them to call directly.",
+  "priority": "p1",
+  "planSteps": [
+    {
+      "type": "action",
+      "description": "Navigate to the homepage."
+    },
+    {
+      "type": "action",
+      "description": "Fill in the name field with Jane Smith."
+    },
+    {
+      "type": "action",
+      "description": "Fill in the phone field with 555-0123."
+    },
+    {
+      "type": "action",
+      "description": "Fill in the email field with jane@example.test."
+    },
+    {
+      "type": "action",
+      "description": "Fill in the message field with Need emergency roof repair."
+    },
+    {
+      "type": "action",
+      "description": "Click the Send request button."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the status message displays Thank you. We will be in touch shortly."
+    },
+    {
+      "type": "action",
+      "description": "Click the Trigger Rate Limit button."
+    },
+    {
+      "type": "action",
+      "description": "Fill in the name field with Jane Smith."
+    },
+    {
+      "type": "action",
+      "description": "Fill in the phone field with 555-0123."
+    },
+    {
+      "type": "action",
+      "description": "Fill in the email field with jane@example.test."
+    },
+    {
+      "type": "action",
+      "description": "Fill in the message field with Second inquiry."
+    },
+    {
+      "type": "action",
+      "description": "Click the Send request button."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the status message displays Too many requests from your connection. Please try again later or call the business directly."
+    }
+  ]
+}
