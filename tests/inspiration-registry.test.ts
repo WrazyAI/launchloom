@@ -8,6 +8,7 @@ import {
   referenceStructuralDistance,
 } from "../scripts/inspiration-registry.mjs";
 import { assertIndependentRoutes } from "../scripts/creative-compiler.mjs";
+import { buildSyncedLibraryState } from "../scripts/sync-reference-library.mjs";
 import {
   assertReferenceDossierMatchesRecord,
   assertReferenceDossierPack,
@@ -29,6 +30,118 @@ const baseRequest = {
 const temporaryRoots: string[] = [];
 
 describe("inspiration registry", () => {
+  function supplementalFixture() {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "launchloom-supplemental-"));
+    temporaryRoots.push(root);
+    const dossiers = path.join(root, "data/reference-library/dossiers");
+    fs.mkdirSync(dossiers, { recursive: true });
+    for (const entry of fs.readdirSync("data/reference-library/dossiers")) {
+      fs.symlinkSync(path.resolve("data/reference-library/dossiers", entry), path.join(dossiers, entry));
+    }
+    const id = "supplemental-coffee-study";
+    const directory = path.join(dossiers, id);
+    fs.cpSync(path.resolve("data/reference-library/dossiers/colorlib-tavola-restaurant"), directory, { recursive: true });
+    const manifestPath = path.join(directory, "manifest.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    manifest.id = id;
+    manifest.productionEligible = true;
+    manifest.source.url = "https://example.test/supplemental-coffee";
+    manifest.businessKinds = ["coffee-shop"];
+    manifest.tags.business = ["coffee-shop", "cafe"];
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+    const core = JSON.parse(fs.readFileSync("data/reference-library/core-collection.json", "utf8"));
+    return { root, id, manifest, manifestPath, core };
+  }
+
+  it("discovers eligible supplemental dossiers without losing current landscaping records or changing the core", () => {
+    const fixture = supplementalFixture();
+    const before = structuredClone(registry);
+    const state = buildSyncedLibraryState({ core: fixture.core, registry, repositoryRoot: fixture.root });
+    expect(state.registry.records.map((record: any) => record.id)).toEqual([
+      ...registry.records.map((record: any) => record.id), fixture.id,
+    ]);
+    expect(state.registry.records.find((record: any) => record.id === fixture.id)).toMatchObject({
+      rights: "licensed", industries: ["coffee-shop", "cafe"],
+      dossierPath: `data/reference-library/dossiers/${fixture.id}`,
+    });
+    for (const id of ["htmlcodex-gardener-garden-services", "orgarden-gardening-services"])
+      expect(state.registry.records.find((record: any) => record.id === id)).toEqual(before.records.find((record: any) => record.id === id));
+    expect(registry).toEqual(before);
+    expect(new Set(fixture.core.niches.flatMap((niche: any) => niche.referenceIds)).size).toBe(98);
+    expect(buildSyncedLibraryState({ core: fixture.core, registry: state.registry, repositoryRoot: fixture.root }).registry).toEqual(state.registry);
+  }, 30_000);
+
+  it("does not register supplemental dossiers without production approval", () => {
+    const fixture = supplementalFixture();
+    fixture.manifest.productionEligible = false;
+    fs.writeFileSync(fixture.manifestPath, JSON.stringify(fixture.manifest));
+    const state = buildSyncedLibraryState({ core: fixture.core, registry, repositoryRoot: fixture.root });
+    expect(state.registry.records.some((record: any) => record.id === fixture.id)).toBe(false);
+  }, 30_000);
+
+  it("rejects supplemental source reuse rather than claiming another independent reference", () => {
+    const fixture = supplementalFixture();
+    // Use an actual core URL, normalizing www/query/trailing slash identically.
+    const coreId = fixture.core.niches[0].referenceIds[0];
+    const coreManifest = JSON.parse(fs.readFileSync(`data/reference-library/dossiers/${coreId}/manifest.json`, "utf8"));
+    const url = new URL(coreManifest.source.url);
+    url.search = "duplicate=true";
+    fixture.manifest.source.url = url.toString();
+    fs.writeFileSync(fixture.manifestPath, JSON.stringify(fixture.manifest));
+    expect(() => buildSyncedLibraryState({ core: fixture.core, registry, repositoryRoot: fixture.root })).toThrow(/reuse.*source URL/iu);
+  }, 30_000);
+
+  it.each([
+    ["cafe", "restaurant", "startbootstrap-business-casual"],
+    ["accounting", "accounting", "templatemo-finance-business"],
+    ["dental", "dental", "templatemo-medic-care"],
+    ["fitness", "fitness", "templatemo-training-studio"],
+  ])("uses cleared supplemental %s references in the actual provider-free selection path", (industry, coreKind, supplementalId) => {
+    const core = JSON.parse(fs.readFileSync("data/reference-library/core-collection.json", "utf8"));
+    const niche = core.niches.find((item: any) => item.businessKind === coreKind);
+    const ids = [...niche.referenceIds.slice(0, 5), supplementalId];
+    const pack = buildInspirationPack(
+      { ...baseRequest, industry, seed: `supplemental-${industry}`, styleText: `Use ${supplementalId} as a visual reference.` },
+      { ...registry, records: registry.records.filter((record: any) => ids.includes(record.id)) },
+      { repositoryRoot: path.resolve("."), requireDossiers: true },
+    );
+    expect(pack.request.heroInventory.eligibleReferenceCount).toBe(6);
+    expect(Object.values(pack.request.heroInventory.byArchetype).flat()).toContain(supplementalId);
+    expect(pack.routes).toHaveLength(3);
+    expect(pack.routes.map((route: any) => route.referenceDossier.id)).toContain(supplementalId);
+    expect(assertReferenceDossierPack(pack, { repositoryRoot: path.resolve(".") })).toBe(pack);
+  });
+
+  it.each(["web-coffee-ember-roast", "web-coffee-marigold"])("selects the permission-cleared %s reference without a foundation or provider call", (id) => {
+    const pack = buildInspirationPack(
+      { ...baseRequest, industry: "cafe", seed: `authorized-${id}`, styleText: `Use ${id} as a visual reference.` },
+      registry,
+      { repositoryRoot: path.resolve("."), requireDossiers: true },
+    );
+    const route = pack.routes.find((item: any) => item.referenceDossier.id === id);
+    if (!route?.referenceDossier) throw new Error(`Supplemental reference '${id}' was not selected.`);
+    expect(route.referenceDossier.source.rights).toBe("permission-cleared");
+    expect(route.referenceDossier.designPrompt).toContain("## Agent implementation brief");
+    expect(assertReferenceDossierPack(pack, { repositoryRoot: path.resolve(".") })).toBe(pack);
+  });
+
+  it("does not use supplemental registry labels to spoof business eligibility", () => {
+    const core = JSON.parse(fs.readFileSync("data/reference-library/core-collection.json", "utf8"));
+    const ids = core.niches.find((item: any) => item.businessKind === "restaurant").referenceIds.slice(0, 5);
+    const supplemental = registry.records.find((item: any) => item.id === "templatemo-finance-business");
+    const records = [...registry.records.filter((record: any) => ids.includes(record.id)), { ...supplemental, industries: ["cafe"] }];
+    expect(() => buildInspirationPack({ ...baseRequest, industry: "cafe" }, { ...registry, records }, { requireDossiers: true })).toThrow(/5 eligible dossier\(s\) matched to 'cafe'/u);
+  });
+
+  it("validates supplemental rights before selecting its reference", () => {
+    const tampered = { ...registry, records: registry.records.map((record: any) => record.id === "startbootstrap-business-casual" ? { ...record, rights: "owned" } : record) };
+    expect(() => buildInspirationPack({ ...baseRequest, industry: "cafe", styleText: "Use startbootstrap-business-casual as a visual reference." }, tampered, { requireDossiers: true })).toThrow(/disagree on rights/u);
+  });
+
+  it("keeps the literal coffee-shop category fail-closed below six matched references", () => {
+    expect(() => buildInspirationPack({ ...baseRequest, industry: "coffee-shop" }, registry, { requireDossiers: true })).toThrow(/3 eligible dossier\(s\).*six distinct production-eligible business-matched dossiers are required/iu);
+  });
+
   it("uses verified service-focus tags instead of unrelated broad trade references", () => {
     const pack = buildInspirationPack(
       {

@@ -11,6 +11,25 @@ import {
 
 const temporaryRoots: string[] = [];
 
+describe("recovered coffee reuse permission", () => {
+  it.each(["web-coffee-ember-roast", "web-coffee-marigold"])(
+    "loads %s as permission-cleared without certifying business ownership",
+    (id) => {
+      const dossierPath = `data/reference-library/dossiers/${id}`;
+      const dossier = loadReferenceDossier(dossierPath);
+      expect(dossier.source.rights).toBe("permission-cleared");
+      expect(dossier.source.rightsEvidencePath).toBe("rights/requester-attestation.md");
+      expect(dossier.evidenceDigests.rightsEvidence).toMatch(/^[a-f0-9]{64}$/u);
+      const attestation = fs.readFileSync(path.join(dossierPath, "rights/requester-attestation.md"), "utf8");
+      expect(attestation).toContain("2026-11-01");
+      expect(attestation).toContain("reuse authorization");
+      expect(attestation).toContain("not independent verification");
+      for (const file of ["rights/business-verification.md", "rights/capture-record.md"])
+        expect(fs.readFileSync(path.join(dossierPath, file), "utf8")).not.toMatch(/owned and operated by LaunchLoom|owner and operator of the referenced business|business is our own/iu);
+    },
+  );
+});
+
 function png(width: number, height: number) {
   const value = Buffer.alloc(24);
   Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(value);

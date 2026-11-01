@@ -237,6 +237,40 @@ export function buildSyncedLibraryState({ core, registry, repositoryRoot = root 
     }
   }
 
+  // Discover supplemental data without replacing the current registry or the
+  // canonical core. Ineligible studies remain retained but never get promoted
+  // merely because a directory exists.
+  const coreIdSet = new Set(coreIds);
+  const dossiersRoot = path.join(repositoryRoot, "data/reference-library/dossiers");
+  const supplementalDirectories = fs.readdirSync(dossiersRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !coreIdSet.has(entry.name))
+    .sort((left, right) => left.name.localeCompare(right.name));
+  for (const entry of supplementalDirectories) {
+    const dossierPath = `data/reference-library/dossiers/${entry.name}`;
+    const directory = path.join(dossiersRoot, entry.name);
+    const manifestPath = path.join(directory, "manifest.json");
+    if (!fs.existsSync(manifestPath)) continue;
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    if (manifest.productionEligible !== true) continue;
+    normalizeManifestEvidence(manifest, directory);
+    const dossier = validateReferenceDossier(manifest, { dossierDirectory: directory });
+    if (dossier.id !== entry.name)
+      throw new Error(`Supplemental directory '${entry.name}' has mismatched dossier '${dossier.id}'.`);
+    const sourceKey = normalizedSourceUrl(dossier.source.url);
+    const previousSource = sourceByUrl.get(sourceKey);
+    if (previousSource && previousSource !== dossier.id)
+      throw new Error(`Supplemental reference '${dossier.id}' reuses source URL ${sourceKey} from '${previousSource}'.`);
+    sourceByUrl.set(sourceKey, dossier.id);
+    manifests.set(dossier.id, { manifest, directory, dossierPath });
+    if (existingById.has(dossier.id)) continue;
+    const record = makeRecord(
+      { ...dossier, path: dossierPath },
+      { businessKind: "", label: "supplemental design study" },
+    );
+    record.notes = `${dossier.source.rights} supplemental reference. Transfer design mechanics only.`;
+    records.push(record);
+  }
+
   for (let index = 0; index < records.length; index += 1) {
     const record = records[index];
     if (!record.dossierPath)
