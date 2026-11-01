@@ -1274,7 +1274,7 @@ describe("real admin workspace browser behavior", () => {
     }
   });
 
-  it("renders six quiet navigation items and reserves lime for focus", async () => {
+  it("renders six navigation items with a distinct active state and accessible focus", async () => {
     const { page, errors } = await openPage();
     try {
       await waitForGenerations(page);
@@ -1295,8 +1295,7 @@ describe("real admin workspace browser behavior", () => {
           border: style.borderTopColor,
         };
       });
-      expect(tone.background).not.toBe("rgb(217, 240, 107)");
-      expect(relativeLuminance(tone.background)).toBeGreaterThan(0.5);
+      expect(tone.background).toBe("rgb(51, 92, 255)");
       expect(contrastRatio(tone.color, tone.background)).toBeGreaterThanOrEqual(
         4.5,
       );
@@ -1307,7 +1306,10 @@ describe("real admin workspace browser behavior", () => {
         outline: getComputedStyle(element).outlineColor,
       }));
       expect(focus.text).toBe("Sites");
-      expect(focus.outline).toBe("rgb(217, 240, 107)");
+      expect(focus.outline).toBe("rgb(217, 228, 255)");
+      expect(
+        contrastRatio(focus.outline, tone.background),
+      ).toBeGreaterThanOrEqual(3);
       autoErrors(errors);
     } finally {
       await page.close();

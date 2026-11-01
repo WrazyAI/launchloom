@@ -745,3 +745,7 @@
     box-shadow: 18px 0 50px #18243b33;
   }
 }
+.admin-page .admin-inspector__links a,
+.admin-page .admin-facts__details summary {
+  color: #2446c8;
+}
