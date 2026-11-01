@@ -21,6 +21,7 @@ import {
 import { inspect } from "node:util";
 import { requestRepair, privateRepairRejectionEvidence } from "../scripts/creative-repair-loop.mjs";
 import { RENDERED_REFERENCE_THRESHOLDS } from "../scripts/rendered-reference-fidelity.mjs";
+import { contrastFailureMessages } from "../scripts/rendered-contrast.mjs";
 import { validateProductionCandidateFiles } from "../scripts/production-experience-author.mjs";
 import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
 import {
@@ -396,6 +397,43 @@ describe("rendered creative repair orchestration", () => {
     expect(
       colorLiterals("a { color: #FFF; background: rgb(1, 2, 3); }"),
     ).toEqual(["#fff", "rgb(1,2,3)"]);
+  });
+
+  it("recognizes the exact contrast findings emitted by the current bakeoff producer", () => {
+    const base = {
+      route: "/",
+      viewport: "desktop",
+      state: "default",
+      selector: "body > main:nth-of-type(1) > p:nth-of-type(1)",
+      kind: "text",
+      text: "Low contrast copy",
+      minimum: 4.5,
+      ratio: 2.1,
+      color: "#777777",
+      background: "#eeeeee",
+      issues: [],
+    };
+    const failed = contrastFailureMessages({
+      findings: [{ ...base, status: "fail" }],
+    });
+    expect(failed[0]).toMatch(/^contrast fail: \/ desktop default body > main/u);
+    expect(findingsRequirePaletteChange(failed)).toBe(true);
+    const unresolved = contrastFailureMessages({
+      findings: [{ ...base, status: "unresolved", ratio: null }],
+    });
+    expect(unresolved[0]).toMatch(/^contrast unresolved: \//u);
+    expect(findingsRequirePaletteChange(unresolved)).toBe(true);
+    const control = contrastFailureMessages({
+      findings: [
+        {
+          ...base,
+          selector: "control",
+          kind: "focus",
+          status: "fail",
+        },
+      ],
+    });
+    expect(findingsRequirePaletteChange(control)).toBe(false);
   });
 
   it("uses the issue id for full runs and the exact attempt for focused runs", () => {
