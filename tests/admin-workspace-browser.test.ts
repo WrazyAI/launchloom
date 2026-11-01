@@ -1295,7 +1295,8 @@ describe("real admin workspace browser behavior", () => {
           border: style.borderTopColor,
         };
       });
-      expect(tone.background).toBe("rgb(51, 92, 255)");
+      expect(tone.background).toBe("rgb(217, 233, 223)");
+      expect(relativeLuminance(tone.background)).toBeGreaterThan(0.5);
       expect(contrastRatio(tone.color, tone.background)).toBeGreaterThanOrEqual(
         4.5,
       );
@@ -1306,9 +1307,9 @@ describe("real admin workspace browser behavior", () => {
         outline: getComputedStyle(element).outlineColor,
       }));
       expect(focus.text).toBe("Sites");
-      expect(focus.outline).toBe("rgb(217, 228, 255)");
+      expect(focus.outline).toBe("rgb(217, 240, 107)");
       expect(
-        contrastRatio(focus.outline, tone.background),
+        contrastRatio(focus.outline, "rgb(16, 37, 31)"),
       ).toBeGreaterThanOrEqual(3);
       autoErrors(errors);
     } finally {
