@@ -37,3 +37,10 @@ Recover and reconcile useful work from the 15 remaining extra LaunchLoom worktre
 - Creative report: `docs/reviews/2026-11-01-worktree-reconcile-creative.md` on the creative branch.
 - Operations report: `docs/reviews/2026-11-01-worktree-reconcile-ops.md` on the operations branch.
 - Private preservation root: `/home/zahemen/worktree-reconciliation-2026-11-01/`; separate `creative` and `ops` subdirectories.
+
+## 14:54 UTC checkpoint
+
+- Sol phase-1 report: `bee11b4d`; seven sources audited and preserved, not yet integrated/deleted. Phase 2 authorized for historical docs/evidence only, no runtime edits. Keep operations subtask open.
+- DeepSeek phase 1 remains active. Controller must compare its Juniper findings with the detached happy-engine commit before assigning any overlapping creative/runtime port.
+- Outstanding visual and live-thumbnail acceptance tasks remain open, now owned against current-main project records/shared checkout rather than stale workspaces. Do not dispatch a paid run merely to remove directories.
+- Controller's next action: read creative report when delivered, reconcile per-source dispositions, then assign non-overlapping bounded integration. Retain every original until preservation and integration checks pass.
