@@ -1179,6 +1179,12 @@ Do not silently reuse the primary hero image to fill missing secondary or tertia
 CLIENT-REQUESTED INTERACTION CONTRACT
 If the CLIENT VISUAL BRIEF explicitly asks for a purposeful interaction, guide, selector, chooser, or navigator, preserve or add a clearly labeled stateful native interaction marked with data-purposeful-interaction. Its useful default state and controls must be visible in static render evidence. FAQ disclosure, LeadForm, ChatLauncher, ordinary navigation, or an image carousel alone do not satisfy that request. Use only sealed service and decision-support content and never invent advice.
 
+RENDERED DESIGN CORRECTION GUIDANCE
+A purposeful selector must reveal useful choice-specific information in a stable visible panel, expose the selected state, and restore the original choice. Changing only button styling or echoing the selected label is not a useful guide.
+Keep a reference-led transition at its chapter weight with verified scope, service-area or process facts when awards or reviews were not supplied. Never fabricate proof or leave an empty one-line divider.
+The data-ll-action marker is only for deliberately filled actions, not ordinary navigation, wordmarks, service rows, or secondary text and phone links.
+For media-overlay references, preserve the focal artwork and open composition instead of an oversized copy card that hides the media. Use an accessible compact mobile disclosure when wrapping all navigation links would consume the opening.
+
 SEALED CONTENT BINDING CONTRACT
 Treat every business-specific string and fact shown in CURRENT SEALED CONTENT SHAPE as sealed data, not source copy. Do not copy, paraphrase, or hardcode those values into JSX/HTML, CSS generated content, accessibility attributes, or motion code. Preserve existing content-token expressions and render business content through the existing content bindings or the supplied content-bound runtime helpers. Never replace a content binding with a literal value from the sealed shape. If a requested repair cannot be made while preserving those bindings, leave the binding intact and report the repair as unresolved rather than inventing or embedding copy.
 
