@@ -21,6 +21,7 @@ import {
   CLIENT_PALETTE_ROLE_CONTRACT,
   CLIENT_TYPOGRAPHY_CONTRACT,
   EARLY_CONVERSION_OUTPUT_CONTRACT,
+  FAQ_DISCLOSURE_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
   SERVICE_PAGE_DIRECT_BINDING_CONTRACT,
   referenceImplementationChecklist,
@@ -28,6 +29,7 @@ import {
 import { cacheableReferenceDna } from "../scripts/openrouter-client.mjs";
 import { designAdherencePromptBlock } from "../scripts/design-adherence-guidance.mjs";
 import { imageOverlayHeroContract } from "../scripts/hero-overlay-contract.mjs";
+import { mobileHeroFitContract } from "../scripts/mobile-hero-contract.mjs";
 import { requestRepair } from "../scripts/creative-repair-loop.mjs";
 import {
   promptImagePart,
@@ -81,6 +83,7 @@ function authorPromptBuilders() {
       cacheableReferenceDna,
       designAdherencePromptBlock,
       imageOverlayHeroContract,
+      mobileHeroFitContract,
       formatModelBoundContentShape,
       typographyPalettePrompt,
       creativeServicePageShape,
@@ -88,6 +91,7 @@ function authorPromptBuilders() {
       CLIENT_PALETTE_ROLE_CONTRACT,
       CLIENT_TYPOGRAPHY_CONTRACT,
       EARLY_CONVERSION_OUTPUT_CONTRACT,
+      FAQ_DISCLOSURE_OUTPUT_CONTRACT,
       REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
       SERVICE_PAGE_DIRECT_BINDING_CONTRACT,
     },
