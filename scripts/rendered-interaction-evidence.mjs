@@ -1,6 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
+import {
+  clientImageDigests,
+  isClientImageSnapshotUrl,
+  isRetainedClientImage,
+} from "./client-image-snapshots.mjs";
 
 export function interactionSourceDigest(files) {
   return createHash("sha256")
@@ -174,12 +179,13 @@ export async function captureRenderedInteractionEvidence({
   capturePair = false,
   timeoutMs = 1500,
   settleMs = 250,
+  imageSnapshots = new Map(),
 }) {
   const unsafe = [],
     errors = [],
     pairs = [],
     failures = [];
-  /** @type {{viewport: string, candidateId: string, sourceDigest: string, kind: string, status: string, required: boolean, restored: boolean, before?: {state: string, content: string, scrollY: number}, after?: {state: string, content: string, scrollY: number}, reason?: string, unsafeEffects?: string[], browserErrors?: string[], omittedRuntime?: string[]}} */
+  /** @type {{viewport: string, candidateId: string, sourceDigest: string, kind: string, status: string, required: boolean, restored: boolean, before?: {state: string, content: string, scrollY: number}, after?: {state: string, content: string, scrollY: number}, reason?: string, unsafeEffects?: string[], browserErrors?: string[], omittedRuntime?: string[], retainedImages?: {urlDigest: string, contentDigest: string}[]}} */
   const observation = {
     viewport: viewport.name,
     candidateId,
@@ -196,6 +202,13 @@ export async function captureRenderedInteractionEvidence({
   });
   try {
     const staticRoot = await fs.realpath(dist);
+    if (!(imageSnapshots instanceof Map))
+      throw new Error("Invalid retained client-image snapshot map");
+    for (const [url, image] of imageSnapshots) {
+      if (!isClientImageSnapshotUrl(url) || !isRetainedClientImage(image))
+        throw new Error("Invalid retained client-image snapshot");
+    }
+    observation.retainedImages = clientImageDigests(imageSnapshots);
     let documentAllowed = true;
     await context.exposeBinding("__llInteractionBlocked", (_source, kind) => {
       unsafe.push(String(kind).slice(0, 120));
@@ -277,6 +290,18 @@ export async function captureRenderedInteractionEvidence({
         url.href === `${origin}/` &&
         documentAllowed;
       if (initialDocument) documentAllowed = false;
+      const snapshot = imageSnapshots.get(request.url());
+      if (
+        snapshot &&
+        request.resourceType() === "image" &&
+        request.method() === "GET"
+      ) {
+        await route.fulfill({
+          body: snapshot.body,
+          contentType: snapshot.contentType,
+        });
+        return;
+      }
       const asset = ["script", "stylesheet", "image", "font", "media"].includes(
         request.resourceType(),
       );
@@ -316,8 +341,7 @@ export async function captureRenderedInteractionEvidence({
           contentType: type,
           headers: initialDocument
             ? {
-                "content-security-policy":
-                  "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'none'; worker-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'",
+                "content-security-policy": `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:${imageSnapshots.size ? " https://assets.launchloom.wrazyos.com" : ""}; font-src 'self' data:; connect-src 'none'; worker-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'`,
               }
             : {},
         });

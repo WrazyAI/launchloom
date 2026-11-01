@@ -22,6 +22,7 @@ import {
   interactionSourceDigest,
   requiresPurposefulInteraction,
 } from "./rendered-interaction-evidence.mjs";
+import { snapshotClientImages } from "./client-image-snapshots.mjs";
 import { chromium } from "playwright";
 import {
   CREATIVE_PROMOTION_THRESHOLDS,
@@ -928,6 +929,7 @@ export async function runCreativeBakeoff({
         )
       : "";
   const results = [];
+  const clientImageSnapshotCache = new Map();
   await fs.mkdir(evidenceDir, { recursive: true });
   // Per-phase wall-clock instrumentation. Additive evidence only; entries are
   // persisted with the bakeoff report for run-to-run comparison.
@@ -1269,6 +1271,10 @@ export async function runCreativeBakeoff({
                 ),
               );
           }
+          const imageSnapshots = await snapshotClientImages(
+            candidate.contentManifest?.values || {},
+            { cache: clientImageSnapshotCache },
+          );
           const { server, origin } = await startServer(path.join(root, "dist"));
           const sourceDigest = interactionSourceDigest({
             experience: experienceSource,
@@ -1407,6 +1413,7 @@ export async function runCreativeBakeoff({
                   browser,
                   origin,
                   dist: path.join(root, "dist"),
+                  imageSnapshots,
                   candidateId: candidate.manifest.candidateId,
                   sourceDigest,
                   viewport,

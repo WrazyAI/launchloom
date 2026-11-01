@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 import { chromium, type Browser } from "playwright";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -123,6 +124,7 @@ describe("bounded rendered interaction evidence", () => {
     ["programmatic form", `document.querySelector('form').submit()`],
     ["popup", `window.open('https://example.test/contact')`],
     ["socket", `new WebSocket('ws://127.0.0.1:1')`],
+    ["beacon", `navigator.sendBeacon('/beacon','private')`],
   ])(
     "blocks attempted %s effects before contacting an endpoint",
     async (_name, action) => {
@@ -135,6 +137,70 @@ describe("bounded rendered interaction evidence", () => {
       expect(contacted.filter((url) => url !== "/")).toEqual([]);
     },
   );
+  it("fulfills exact sealed client images offline and records provenance hashes", async () => {
+    const url =
+      "https://assets.launchloom.wrazyos.com/intakes/synthetic/photo.webp";
+    const body = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=",
+      "base64",
+    );
+    const result = await capture(
+      `<section data-purposeful-interaction><h2>Choose a service</h2><details><summary>Preparation</summary><p>Bring your service history.</p></details><p id="image-status">Waiting</p><img src="${url}" alt="Fictional client asset" onload="document.getElementById('image-status').textContent='Image loaded'"></section>`,
+      {
+        imageSnapshots: new Map([[url, { body, contentType: "image/png" }]]),
+      },
+    );
+    expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+    expect(result.observation.before?.content).toContain("Image loaded");
+    expect(result.observation.retainedImages).toEqual([
+      {
+        urlDigest: createHash("sha256").update(url).digest("hex"),
+        contentDigest: createHash("sha256").update(body).digest("hex"),
+      },
+    ]);
+    expect(contacted.filter((path) => path !== "/")).toEqual([]);
+    expect(result.observation.unsafeEffects || []).toEqual([]);
+  });
+
+  it("rejects a retained snapshot outside the exact sealed URL boundary", async () => {
+    const body = Buffer.from("not-an-image");
+    const result = await capture(
+      '<img src="https://evil.test/photo.png" alt="Unsafe">',
+      {
+        imageSnapshots: new Map([
+          [
+            "https://evil.test/photo.png",
+            { body, contentType: "image/png" },
+          ],
+        ]),
+      },
+    );
+    expect(result.observation.status).toBe("failed");
+    expect(result.observation.reason).toMatch(
+      /Invalid retained client-image snapshot/u,
+    );
+  });
+
+  it("does not fulfill a snapshot for a different exact URL or non-image request", async () => {
+    const url =
+      "https://assets.launchloom.wrazyos.com/intakes/synthetic/photo.webp";
+    const body = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=",
+      "base64",
+    );
+    const result = await capture(
+      `<section data-purposeful-interaction><details><summary onclick="fetch('${url}')">Preparation</summary><p>Bring your service history.</p></details></section>`,
+      {
+        imageSnapshots: new Map([[url, { body, contentType: "image/png" }]]),
+      },
+    );
+    expect(result.observation.status).toBe("failed");
+    expect(result.observation.unsafeEffects?.some((effect) =>
+      ["csp-connect-src", "request-fetch-GET"].includes(effect),
+    )).toBe(true);
+    expect(contacted.filter((path) => path !== "/")).toEqual([]);
+  });
+
   it("exercises a safe local menu and restores it", async () => {
     const result = await capture(
       `<nav><button type="button" aria-expanded="false" aria-controls="menu">Menu</button><div id="menu" hidden><a href="/services/">Services</a></div></nav><script>document.querySelector('button').onclick=e=>{const b=e.target;b.setAttribute('aria-expanded',String(b.getAttribute('aria-expanded')!=='true'));document.querySelector('#menu').hidden=b.getAttribute('aria-expanded')!=='true';}</script>`,
