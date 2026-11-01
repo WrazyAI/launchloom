@@ -194,6 +194,13 @@ export function WorkspaceShell({
           </button>
         </div>
 
+        <div className="admin-workspace-label">
+          <span className="admin-workspace-label__mark">L</span>
+          <span>
+            LaunchLoom workspace<small>Client delivery studio</small>
+          </span>
+        </div>
+        <p className="admin-nav-caption">Workspace</p>
         <WorkspaceNav
           operationsRead={operationsRead}
           active={active}
@@ -223,6 +230,54 @@ export function WorkspaceShell({
         tabIndex={-1}
         aria-label={`${eyebrow} view`}
       >
+        <div className="admin-commandbar">
+          <div className="admin-breadcrumb">
+            <span>Workspace</span>
+            <span aria-hidden="true">/</span>
+            <strong>{VIEW_LABELS[active]}</strong>
+          </div>
+          <div className="admin-commandbar__actions">
+            <a
+              className="admin-commandbar__profile"
+              href="/admin/onboarding-invites?view=settings"
+              onClick={(event) => {
+                if (
+                  event.defaultPrevented ||
+                  event.button !== 0 ||
+                  event.metaKey ||
+                  event.ctrlKey ||
+                  event.shiftKey ||
+                  event.altKey
+                )
+                  return;
+                event.preventDefault();
+                navigate("settings");
+              }}
+              aria-label="Open your profile"
+            >
+              <AdminIcon name="team" />
+            </a>
+            <a
+              className="admin-create-link"
+              href="/admin/onboarding-invites?view=invitations"
+              onClick={(event) => {
+                if (
+                  event.defaultPrevented ||
+                  event.button !== 0 ||
+                  event.metaKey ||
+                  event.ctrlKey ||
+                  event.shiftKey ||
+                  event.altKey
+                )
+                  return;
+                event.preventDefault();
+                navigate("invitations");
+              }}
+            >
+              <span aria-hidden="true">+</span> Create invitation
+            </a>
+          </div>
+        </div>
         <header className="admin-topbar">
           <div className="admin-topbar__heading">
             <button
