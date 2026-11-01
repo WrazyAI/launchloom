@@ -653,3 +653,51 @@ it("keeps trades inner-hero labels and keyboard focus readable on the dark surfa
   );
   expect(report.pass, JSON.stringify(report.findings)).toBe(true);
 });
+
+const logoImage =
+  "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22%3E%3Crect width=%2280%22 height=%2280%22 fill=%22%23205d51%22/%3E%3C/svg%3E";
+const logoButton = (className = "") =>
+  `<button class="logo ${className}" aria-label="Home"><img src="${logoImage}" alt=""></button>`;
+const logoCss = `.logo{display:flex;align-items:center;justify-content:center;width:120px;height:120px;padding:0;border:0;background:#fff;color:#111}.logo img{display:block;width:80px;height:80px}.logo:focus-visible{outline:2px solid #111;outline-offset:3px}`;
+
+it("proves a square outward focus ring around an image-bearing logo from outside paint", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${logoCss}</style>${logoButton()}`,
+  );
+  expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+});
+
+it("does not false-pass a rounded outward ring of the same color as its surface", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.logo{border-radius:24px}.logo:focus-visible{outline-color:#fff}</style>${logoButton("round")}`,
+  );
+  expect(report.pass).toBe(false);
+});
+
+it("does not false-pass an inset ring that disappears into the control fill", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.logo{background:#111}.logo:focus-visible{outline-color:#111;outline-offset:-4px}</style>${logoButton("inset")}`,
+  );
+  expect(report.pass).toBe(false);
+});
+
+it("does not false-pass a square outward ring painted into a shadow", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.wrap{width:124px;height:124px;background:#fff;box-shadow:0 0 0 10px #111}</style><div class="wrap">${logoButton()}</div>`,
+  );
+  expect(report.pass).toBe(false);
+});
+
+it("does not false-pass a square outward ring crossing different paint", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.wrap{position:relative;width:124px;height:124px;background:#fff}.dark{position:absolute;right:0;top:0;width:20px;height:124px;background:#111;z-index:0}.logo{position:relative;z-index:1}</style><div class="wrap">${logoButton()}<div class="dark"></div></div>`,
+  );
+  expect(report.pass).toBe(false);
+});
+
+it("does not false-pass a square outward ring hidden by an occluding surface", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.wrap{position:relative;width:124px;height:124px}.cover{position:absolute;inset:0 -12px 0 112px;background:#fff;z-index:2}</style><div class="wrap">${logoButton()}<div class="cover"></div></div>`,
+  );
+  expect(report.pass).toBe(false);
+});
