@@ -27,6 +27,9 @@ const files = { experience: "fixture", styles: "", motion: "" };
 const disclosure = `<section data-purposeful-interaction><h2>Choose a service</h2><details><summary>Preparation</summary><p>Bring your service history.</p></details></section>`;
 const tabs = `<section data-purposeful-interaction><div role="tablist"><button type="button" role="tab" aria-selected="true" aria-controls="one">One</button><button type="button" role="tab" aria-selected="false" aria-controls="two">Two</button></div><div id="one" role="tabpanel">First service information</div><div id="two" role="tabpanel" hidden>Second service information</div></section>`;
 const tabScript = `<script>document.querySelectorAll('[role=tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[role=tab]').forEach(t=>t.setAttribute('aria-selected',String(t===b)));document.querySelectorAll('[role=tabpanel]').forEach(p=>p.hidden=p.id!==b.getAttribute('aria-controls'));}));</script>`;
+const exclusiveSelector = (selected: number) =>
+  `<section data-purposeful-interaction="care-steps-selector"><div class="steps"><button type="button" aria-pressed="${selected === 1}" aria-controls="step-one">One</button><button type="button" aria-pressed="${selected === 2}" aria-controls="step-two">Two</button><button type="button" aria-pressed="${selected === 3}" aria-controls="step-three">Three</button></div><div id="step-one" ${selected === 1 ? "" : "hidden"}>First step details</div><div id="step-two" ${selected === 2 ? "" : "hidden"}>Second step details</div><div id="step-three" ${selected === 3 ? "" : "hidden"}>Third step details</div></section><script>const buttons=[...document.querySelectorAll('button[aria-pressed]')];for(const button of buttons)button.addEventListener('click',()=>{if(button.getAttribute('aria-pressed')==='true')return;buttons.forEach(peer=>peer.setAttribute('aria-pressed',String(peer===button)));document.querySelectorAll('[id^=step-]').forEach(panel=>{panel.hidden=panel.id!==button.getAttribute('aria-controls');});});</script>`;
+const evidenceDir = process.env.PHASE2_EVIDENCE_DIR;
 
 beforeAll(async () => {
   root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-interaction-"));
@@ -206,13 +209,38 @@ describe("bounded rendered interaction evidence", () => {
   it.each([1, 2])(
     "switches and restores an exclusive pressed selector when option %i is selected",
     async (selected) => {
-      const result = await capture(
-        `<section data-purposeful-interaction="care-steps-selector"><div class="steps"><button type="button" aria-pressed="${selected === 1}" aria-controls="step-one">One</button><button type="button" aria-pressed="${selected === 2}" aria-controls="step-two">Two</button><button type="button" aria-pressed="${selected === 3}" aria-controls="step-three">Three</button></div><div id="step-one" ${selected === 1 ? "" : "hidden"}>First step details</div><div id="step-two" ${selected === 2 ? "" : "hidden"}>Second step details</div><div id="step-three" ${selected === 3 ? "" : "hidden"}>Third step details</div></section><script>const buttons=[...document.querySelectorAll('button[aria-pressed]')];for(const button of buttons)button.addEventListener('click',()=>{if(button.getAttribute('aria-pressed')==='true')return;buttons.forEach(peer=>peer.setAttribute('aria-pressed',String(peer===button)));document.querySelectorAll('[id^=step-]').forEach(panel=>{panel.hidden=panel.id!==button.getAttribute('aria-controls');});});</script>`,
-      );
+      const result = await capture(exclusiveSelector(selected));
       expect(result.observation.status, JSON.stringify(result)).toBe("passed");
       expect(result.observation.restored).toBe(true);
     },
   );
+
+  it("restores an exclusive pressed selector at desktop, compact and mobile", async () => {
+    for (const viewport of [
+      { name: "desktop", width: 1536, height: 864 },
+      { name: "compact", width: 1366, height: 768 },
+      { name: "mobile", width: 390, height: 844 },
+    ]) {
+      const result = await capture(exclusiveSelector(2), { viewport });
+      expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+      expect(result.observation.restored).toBe(true);
+      if (evidenceDir) {
+        await fs.mkdir(path.join(evidenceDir, "interaction"), {
+          recursive: true,
+        });
+        for (const pair of result.pairs) {
+          await fs.copyFile(
+            pair.before,
+            path.join(evidenceDir, "interaction", `${viewport.name}-before.png`),
+          );
+          await fs.copyFile(
+            pair.after,
+            path.join(evidenceDir, "interaction", `${viewport.name}-after.png`),
+          );
+        }
+      }
+    }
+  }, 120_000);
 
   it("does not mistake independent pressed buttons without a shared panel for an exclusive selector", async () => {
     const result = await capture(

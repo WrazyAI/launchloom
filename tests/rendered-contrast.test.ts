@@ -1,4 +1,6 @@
 import { readFileSync } from "node:fs";
+import { mkdir } from "node:fs/promises";
+import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { chromium, type Browser } from "playwright";
 import { semanticColorCss } from "../scripts/palette-policy.mjs";
@@ -16,13 +18,22 @@ beforeAll(async () => {
 afterAll(async () => {
   await browser?.close();
 });
-async function scan(html: string, width = 1440, options = {}) {
+async function scan(html: string, width = 1440, options: any = {}) {
+  const { height = 900, evidencePath, ...auditOptions } = options;
   const audit = await auditModule;
   expect(audit.inspectContrastPage).toBeTypeOf("function");
-  const page = await browser.newPage({ viewport: { width, height: 900 } });
+  const page = await browser.newPage({ viewport: { width, height } });
   try {
     await page.setContent(`<body data-ll-route="/">${html}</body>`);
-    return await audit.inspectContrastPage(page, { route: "/", ...options });
+    const report = await audit.inspectContrastPage(page, {
+      route: "/",
+      ...auditOptions,
+    });
+    if (evidencePath) {
+      await mkdir(path.dirname(evidencePath), { recursive: true });
+      await page.screenshot({ path: evidencePath });
+    }
+    return report;
   } finally {
     await page.close();
   }
@@ -672,6 +683,30 @@ it("proves a logo ring crossing a wrapper with the same opaque paint as its surf
     `<style>body{margin:0;background:#fff;color:#111}${logoCss}.wrap{width:150px;padding:12px 0;background:#fff}</style><div class="wrap">${logoButton()}</div>`,
   );
   expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+});
+
+it("proves a square outward logo ring at desktop, compact and mobile", async () => {
+  for (const viewport of [
+    { name: "desktop", width: 1536, height: 864 },
+    { name: "compact", width: 1366, height: 768 },
+    { name: "mobile", width: 390, height: 844 },
+  ]) {
+    const report = await scan(
+      `<style>body{margin:0;background:#fff;color:#111}${logoCss}</style>${logoButton()}`,
+      viewport.width,
+      {
+        height: viewport.height,
+        evidencePath: process.env.PHASE2_EVIDENCE_DIR
+          ? path.join(
+              process.env.PHASE2_EVIDENCE_DIR,
+              "focus",
+              `${viewport.name}.png`,
+            )
+          : undefined,
+      },
+    );
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+  }
 });
 
 it("does not false-pass a rounded outward ring of the same color as its surface", async () => {

@@ -9,6 +9,7 @@ import { afterEach, expect, it } from "vitest";
 import { pageBriefFixture } from "../scripts/fixtures/page-briefs-fixture.mjs";
 
 const exec = promisify(execFile);
+const evidenceDir = process.env.PHASE2_EVIDENCE_DIR;
 const roots: string[] = [];
 let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
 afterEach(async () => {
@@ -131,6 +132,7 @@ it(
       { width: 390, height: 844 },
     ];
     browser = await chromium.launch();
+    const geometry: any[] = [];
 
     await build(false);
     const normalHtml = await fs.readFile(
@@ -163,6 +165,19 @@ it(
           header!.y,
           `header overlapped notice at ${viewport.width}`,
         ).toBeGreaterThanOrEqual(banner!.y + banner!.height - 0.5);
+        geometry.push({ build: "test-preview", viewport, banner, header });
+        if (evidenceDir) {
+          await fs.mkdir(path.join(evidenceDir, "preview"), {
+            recursive: true,
+          });
+          await page.screenshot({
+            path: path.join(
+              evidenceDir,
+              "preview",
+              `test-preview-${viewport.width}.png`,
+            ),
+          });
+        }
         expect(
           await page.evaluate(
             () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -215,6 +230,19 @@ it(
             () => document.documentElement.scrollWidth <= window.innerWidth,
           ),
         ).toBe(true);
+        geometry.push({ build: "judge", viewport, header });
+        if (evidenceDir) {
+          await fs.mkdir(path.join(evidenceDir, "preview"), {
+            recursive: true,
+          });
+          await page.screenshot({
+            path: path.join(
+              evidenceDir,
+              "preview",
+              `judge-${viewport.width}.png`,
+            ),
+          });
+        }
         await page.close();
       }
     } finally {
@@ -232,6 +260,12 @@ it(
       "utf8",
     );
     expect(judgeCleanHtml).not.toContain('id="ll-review"');
+    if (evidenceDir) {
+      await fs.writeFile(
+        path.join(evidenceDir, "preview", "geometry.json"),
+        `${JSON.stringify(geometry, null, 2)}\n`,
+      );
+    }
   },
   120_000,
 );
