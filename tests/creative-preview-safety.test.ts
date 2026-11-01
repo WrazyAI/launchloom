@@ -1,7 +1,6 @@
 import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import http from "node:http";
-import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { chromium } from "playwright";

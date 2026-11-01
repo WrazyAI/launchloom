@@ -242,6 +242,14 @@ describe("bounded rendered interaction evidence", () => {
     }
   }, 120_000);
 
+  it("restores an explicitly declared process selector without aria-controls", async () => {
+    const result = await capture(
+      `<section data-purposeful-interaction="process-step-selector"><button type="button" aria-pressed="false">One</button><button type="button" aria-pressed="true">Two</button><p aria-live="polite">Second service information</p><script>document.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('button').forEach(peer=>peer.setAttribute('aria-pressed',String(peer===button)));document.querySelector('p').textContent=button.textContent==='One'?'First service information':'Second service information';}));</script></section>`,
+    );
+    expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+    expect(result.observation.restored).toBe(true);
+  });
+
   it("does not mistake independent pressed buttons without a shared panel for an exclusive selector", async () => {
     const result = await capture(
       `<section data-purposeful-interaction><button type="button" aria-pressed="true">First</button><button type="button" aria-pressed="false">Second</button><p>First enabled</p><script>document.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{const enabled=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(enabled));document.querySelector('p').textContent=button.textContent+(enabled?' enabled':' disabled');}));</script></section>`,
