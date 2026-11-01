@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "id": "startbootstrap-business-casual",
+  "productionEligible": true,
+  "referenceName": "Start Bootstrap Business Casual: warm cafe split with overlapping card",
+  "familyId": "startbootstrap-business-casual-family",
+  "source": {
+    "name": "Business Casual by Start Bootstrap",
+    "url": "https://startbootstrap.github.io/startbootstrap-business-casual/",
+    "sourceType": "official Start Bootstrap demo, MIT licensed",
+    "repository": "https://github.com/StartBootstrap/startbootstrap-business-casual",
+    "commit": "b6f928934386a54e08c2e7f40ebd9e4d7510bba4",
+    "rights": "licensed",
+    "rightsEvidence": "The official Start Bootstrap repository is licensed under the MIT License (copyright 2013-2023 Start Bootstrap LLC). The license text is retained in rights/LICENSE.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "restaurant",
+    "cafe",
+    "hospitality",
+    "coffee-shop"
+  ],
+  "tags": {
+    "business": [
+      "restaurant",
+      "cafe",
+      "hospitality",
+      "coffee shop"
+    ],
+    "style": [
+      "warm cafe",
+      "serif display",
+      "cream and amber"
+    ],
+    "composition": [
+      "split hero",
+      "overlapping card",
+      "promise band"
+    ],
+    "conversion": [
+      "visit us",
+      "single action"
+    ],
+    "motion": [
+      "static-first"
+    ],
+    "imagery": [
+      "cafe photography",
+      "coffee-bean masthead"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "2fb0bb1ef3074977435db45c7992a158702bd55d76dbc971b17317c31b80e062",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "786ccbc0730b9d7031d49d5bbe3128f4ebb7b0fa31699b48200981b78b089b7c",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A warm cafe template. A full-bleed coffee-bean photograph forms the masthead with a large thin display title and a simple four-link navigation. The opening is a split field: a cream text card with a short promise, a paragraph, and one amber button overlaps a wide photograph of a barista at work. A solid amber promise band follows with a centered cream card. A dark footer closes the page. Lora serif display, Raleway sans body, cream, amber, and coffee brown define the look.",
+    "heroGeometry": {
+      "mode": "split image-and-copy with overlapping text card",
+      "alignment": "image-right, copy-card-left",
+      "viewport": "wide photo with a cream card overlapping its left edge"
+    },
+    "navigationGeometry": {
+      "mode": "centered inline navigation under masthead",
+      "placement": "below masthead",
+      "mobile": "collapsed hamburger"
+    },
+    "typography": {
+      "display": "Lora serif with thin uppercase labels",
+      "body": "Raleway sans",
+      "scale": "large thin display with small caps"
+    },
+    "palette": {
+      "surfaces": [
+        "cream",
+        "amber",
+        "coffee brown"
+      ],
+      "ink": "deep brown",
+      "accents": [
+        "amber"
+      ],
+      "contrastIntent": "warm readable contrast"
+    },
+    "imageTreatment": {
+      "mode": "wide cafe photograph and coffee-bean masthead",
+      "crop": "cover",
+      "focalPoint": "people-safe"
+    },
+    "sectionSequence": [
+      "coffee-bean masthead",
+      "inline navigation",
+      "split image-and-copy intro",
+      "amber promise band",
+      "dark footer"
+    ],
+    "servicePresentation": {
+      "pattern": "single promise with one action",
+      "interaction": "static"
+    },
+    "ctaPlacement": {
+      "primary": "Visit Us Today",
+      "secondary": "none",
+      "early": "inside the overlapping card"
+    },
+    "motion": {
+      "primitive": "static-first",
+      "library": "none retained",
+      "reducedMotion": "no scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the photograph, then the cream card, then the promise band",
+      "rules": [
+        "keep the action visible",
+        "preserve the card overlap feel with spacing",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "overlapping cream card",
+        "promise band"
+      ],
+      "mobileTreatmentChanged": true
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "overlapping-cream-card",
+        "selector": "[data-reference-signature=overlapping-cream-card]",
+        "description": "cream copy card overlapping a wide cafe photograph"
+      },
+      {
+        "id": "promise-band",
+        "selector": "[data-reference-signature=promise-band]",
+        "description": "solid amber band with a centered cream promise card"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse source coffee-bean photography, copy, or trade dress",
+      "invent menu items, prices, or claims",
+      "copy source code into a client site",
+      "replace the overlapping card with a generic split hero",
+      "low-contrast actions"
+    ],
+    "acceptanceChecks": [
+      "Desktop opening reads as a wide photo with an overlapping cream card.",
+      "The amber promise band remains a distinct full-width moment.",
+      "At 390 px the photo, card, and band stack without horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Official Start Bootstrap demo captured at both viewports. The template is MIT licensed and uses bundled demo photography; no source photography is reused in client work."
+  }
+}

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "id": "launchloom-foundations",
-  "updatedAt": "2026-10-27T16:44:56.167Z",
+  "updatedAt": "2026-11-01T15:32:05.861Z",
   "policy": "Source-derived foundations preserve composition and mechanics; sealed client content replaces all source copy, imagery, and demo facts.",
   "summary": {
-    "total": 133,
-    "renderable": 1,
-    "needsAdaptation": 130,
+    "total": 150,
+    "renderable": 2,
+    "needsAdaptation": 146,
     "blocked": 2
   },
   "entries": [
@@ -1307,6 +1307,98 @@
       ]
     },
     {
+      "id": "html5up-editorial",
+      "dossierPath": "data/reference-library/dossiers/html5up-editorial",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "16997b3d9c3b95fa8b5b0936b1b73e1526f24a2ed583262a647b36d3fa7c6c2c",
+      "sectionCount": 9,
+      "slotCount": 18,
+      "interactionCount": 1,
+      "blockerCount": 16,
+      "blockers": [
+        {
+          "code": "missing-services",
+          "message": "No services or portfolio section was detected."
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/breakpoints.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/browser.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/main.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/util.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated hero items in 'header' have no sealed content mapping.",
+          "selector": "#header"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated unknown items in 'unknown-2' have no sealed content mapping.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated unknown items in 'unknown-3' have no sealed content mapping.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated unknown items in 'unknown-4' have no sealed content mapping.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated unknown items in 'unknown' have no sealed content mapping.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'banner' has no supported content role.",
+          "selector": "#banner"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'unknown-2' has no supported content role.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'unknown-3' has no supported content role.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'unknown-4' has no supported content role.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'unknown' has no supported content role.",
+          "selector": "section"
+        }
+      ]
+    },
+    {
       "id": "html5up-fitness-big-picture",
       "dossierPath": "data/reference-library/dossiers/html5up-fitness-big-picture",
       "status": "extracted",
@@ -1472,6 +1564,346 @@
           "code": "unmapped-section-content",
           "message": "Section 'unknown' has no supported content role.",
           "selector": "section"
+        }
+      ]
+    },
+    {
+      "id": "html5up-paradigm-shift",
+      "dossierPath": "data/reference-library/dossiers/html5up-paradigm-shift",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "f4e9e1526a23a94a40f44dadb3c2a708e4efb6cfc9e83a17c7864b2b10d87898",
+      "sectionCount": 6,
+      "slotCount": 18,
+      "interactionCount": 1,
+      "blockerCount": 17,
+      "blockers": [
+        {
+          "code": "missing-hero",
+          "message": "No hero section with an h1 was detected."
+        },
+        {
+          "code": "missing-services",
+          "message": "No services or portfolio section was detected."
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/breakpoints.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/browser.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.scrolly.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/main.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/util.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated contact items in 'contact' have no sealed content mapping.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated unknown items in 'unknown-2' have no sealed content mapping.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated unknown items in 'unknown-3' have no sealed content mapping.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated unknown items in 'unknown-4' have no sealed content mapping.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'first' has no supported content role.",
+          "selector": "#first"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'unknown-2' has no supported content role.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'unknown-3' has no supported content role.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'unknown-4' has no supported content role.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'unknown' has no supported content role.",
+          "selector": "section"
+        }
+      ]
+    },
+    {
+      "id": "html5up-prologue",
+      "dossierPath": "data/reference-library/dossiers/html5up-prologue",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "f8ef5e8f9fb0aaba05408f88f042b10f266d8f67703429b30a634af2bd37a769",
+      "sectionCount": 5,
+      "slotCount": 17,
+      "interactionCount": 1,
+      "blockerCount": 9,
+      "blockers": [
+        {
+          "code": "missing-hero",
+          "message": "No hero section with an h1 was detected."
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/breakpoints.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/browser.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.scrollex.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.scrolly.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/main.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/util.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'top' has no supported content role.",
+          "selector": "#top"
+        }
+      ]
+    },
+    {
+      "id": "html5up-read-only",
+      "dossierPath": "data/reference-library/dossiers/html5up-read-only",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "733f4ae9c6b7492a25c71b3115485a8c409abb1bde176b9ad50e11598eb5846b",
+      "sectionCount": 6,
+      "slotCount": 17,
+      "interactionCount": 1,
+      "blockerCount": 18,
+      "blockers": [
+        {
+          "code": "missing-hero",
+          "message": "No hero section with an h1 was detected."
+        },
+        {
+          "code": "missing-services",
+          "message": "No services or portfolio section was detected."
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/breakpoints.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/browser.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.scrollex.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.scrolly.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/main.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/util.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated contact items in 'four' have no sealed content mapping.",
+          "selector": "#four"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated contact items in 'header' have no sealed content mapping.",
+          "selector": "#header"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated unknown items in 'footer' have no sealed content mapping.",
+          "selector": "#footer"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated unknown items in 'three' have no sealed content mapping.",
+          "selector": "#three"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated unknown items in 'two' have no sealed content mapping.",
+          "selector": "#two"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'footer' has no supported content role.",
+          "selector": "#footer"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'one' has no supported content role.",
+          "selector": "#one"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'three' has no supported content role.",
+          "selector": "#three"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'two' has no supported content role.",
+          "selector": "#two"
+        }
+      ]
+    },
+    {
+      "id": "html5up-tessellate",
+      "dossierPath": "data/reference-library/dossiers/html5up-tessellate",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "6681720ee73f473e0a15fd09aca1596828c3f3985fbe5a2741035074f93726d0",
+      "sectionCount": 6,
+      "slotCount": 15,
+      "interactionCount": 1,
+      "blockerCount": 15,
+      "blockers": [
+        {
+          "code": "missing-hero",
+          "message": "No hero section with an h1 was detected."
+        },
+        {
+          "code": "missing-services",
+          "message": "No services or portfolio section was detected."
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/breakpoints.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/browser.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.scrolly.min.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/main.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "network-script",
+          "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/util.js",
+          "selector": "script[src]"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated contact items in 'fourth' have no sealed content mapping.",
+          "selector": "#fourth"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated unknown items in 'footer' have no sealed content mapping.",
+          "selector": "#footer"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'first' has no supported content role.",
+          "selector": "#first"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'footer' has no supported content role.",
+          "selector": "#footer"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'header' has no supported content role.",
+          "selector": "#header"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'second' has no supported content role.",
+          "selector": "#second"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'third' has no supported content role.",
+          "selector": "#third"
         }
       ]
     },
@@ -2176,6 +2608,234 @@
       ]
     },
     {
+      "id": "startbootstrap-agency",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-agency",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "23b1cda3ca4fa69d5d6106585f245db51ff3cab06136be498a3f722022b38eb8",
+      "sectionCount": 9,
+      "slotCount": 22,
+      "interactionCount": 1,
+      "blockerCount": 1,
+      "blockers": [
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated about items in 'about' have no sealed content mapping.",
+          "selector": "#about"
+        }
+      ]
+    },
+    {
+      "id": "startbootstrap-business-casual",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-business-casual",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "69c5dc4eaffb401c0f29b99a834f778f30859ecd2579dcc0f8f483a4d989cd03",
+      "sectionCount": 7,
+      "slotCount": 20,
+      "interactionCount": 1,
+      "blockerCount": 1,
+      "blockers": [
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'unknown' has no supported content role.",
+          "selector": "section"
+        }
+      ]
+    },
+    {
+      "id": "startbootstrap-clean-blog",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-clean-blog",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "12fe10ef8d092e27399f77173adbdeb2da9aebacfcb18011522cc813cd67c3bc",
+      "sectionCount": 5,
+      "slotCount": 15,
+      "interactionCount": 1,
+      "blockerCount": 1,
+      "blockers": [
+        {
+          "code": "missing-services",
+          "message": "No services or portfolio section was detected."
+        }
+      ]
+    },
+    {
+      "id": "startbootstrap-creative",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-creative",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "96bc23d7efee910fa374a7b9885197f3e9012b1d6f6378d4cb851355847b8b5a",
+      "sectionCount": 8,
+      "slotCount": 15,
+      "interactionCount": 1,
+      "blockerCount": 1,
+      "blockers": [
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'unknown' has no supported content role.",
+          "selector": "section"
+        }
+      ]
+    },
+    {
+      "id": "startbootstrap-grayscale",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-grayscale",
+      "status": "extracted",
+      "compatibility": "renderable",
+      "sourceDigest": "975d463959657de092615e1435e653673d3ba721e2326e8ca045317ab5fe7d0e",
+      "sectionCount": 8,
+      "slotCount": 16,
+      "interactionCount": 1,
+      "blockerCount": 0,
+      "blockers": []
+    },
+    {
+      "id": "startbootstrap-landing-page",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-landing-page",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "7876dad53f8ef61c6415022725ebc0d42cf23767c52feb1967005602aa2b202a",
+      "sectionCount": 8,
+      "slotCount": 18,
+      "interactionCount": 1,
+      "blockerCount": 3,
+      "blockers": [
+        {
+          "code": "missing-services",
+          "message": "No services or portfolio section was detected."
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'unknown-2' has no supported content role.",
+          "selector": "section"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'unknown' has no supported content role.",
+          "selector": "section"
+        }
+      ]
+    },
+    {
+      "id": "startbootstrap-small-business",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-small-business",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "45206b2e6811c176f9efa96b5f533b3f5a98749cd9cc0fb08c213f71419d73ed",
+      "sectionCount": 3,
+      "slotCount": 12,
+      "interactionCount": 1,
+      "blockerCount": 2,
+      "blockers": [
+        {
+          "code": "missing-hero",
+          "message": "No hero section with an h1 was detected."
+        },
+        {
+          "code": "missing-services",
+          "message": "No services or portfolio section was detected."
+        }
+      ]
+    },
+    {
+      "id": "templatemo-finance-business",
+      "dossierPath": "data/reference-library/dossiers/templatemo-finance-business",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "ed112d42e892d4dba00b86f8207c854c11b408fdea8d4e0d5ce9c1446067bc96",
+      "sectionCount": 4,
+      "slotCount": 15,
+      "interactionCount": 1,
+      "blockerCount": 2,
+      "blockers": [
+        {
+          "code": "missing-services",
+          "message": "No services or portfolio section was detected."
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+          "selector": "header"
+        }
+      ]
+    },
+    {
+      "id": "templatemo-medic-care",
+      "dossierPath": "data/reference-library/dossiers/templatemo-medic-care",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "308199c5200ac19b69dc39723111a465c3d6f265a45eb54e11330683d205eb9b",
+      "sectionCount": 9,
+      "slotCount": 22,
+      "interactionCount": 1,
+      "blockerCount": 2,
+      "blockers": [
+        {
+          "code": "missing-hero",
+          "message": "No hero section with an h1 was detected."
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'hero' has no supported content role.",
+          "selector": "#hero"
+        }
+      ]
+    },
+    {
+      "id": "templatemo-training-studio",
+      "dossierPath": "data/reference-library/dossiers/templatemo-training-studio",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "4b9dea4dd0e4e30edd7c6205ba6ce162383a11011eee82a933c91b35dc0a6e96",
+      "sectionCount": 9,
+      "slotCount": 30,
+      "interactionCount": 1,
+      "blockerCount": 8,
+      "blockers": [
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+          "selector": "header"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated seasons items in 'our-classes' have no sealed content mapping.",
+          "selector": "#our-classes"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated seasons items in 'schedule' have no sealed content mapping.",
+          "selector": "#schedule"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated unknown items in 'trainers' have no sealed content mapping.",
+          "selector": "#trainers"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'call-to-action' has no supported content role.",
+          "selector": "#call-to-action"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'our-classes' preserves source composition that needs adaptation.",
+          "selector": "#our-classes"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'schedule' preserves source composition that needs adaptation.",
+          "selector": "#schedule"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'trainers' has no supported content role.",
+          "selector": "#trainers"
+        }
+      ]
+    },
+    {
       "id": "trade-project-showcase",
       "dossierPath": "data/reference-library/dossiers/trade-project-showcase",
       "status": "extracted",
@@ -2674,6 +3334,79 @@
           "code": "unmapped-section-content",
           "message": "Section 'unknown' has no supported content role.",
           "selector": "section"
+        }
+      ]
+    },
+    {
+      "id": "web-coffee-ember-roast",
+      "dossierPath": "data/reference-library/dossiers/web-coffee-ember-roast",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "1a65e2078fdbde075f8ffaa38dd19547a7726fafb6646f97c9e6984439b3512a",
+      "sectionCount": 12,
+      "slotCount": 34,
+      "interactionCount": 1,
+      "blockerCount": 8,
+      "blockers": [
+        {
+          "code": "missing-css",
+          "message": "Missing local stylesheet(s): styles.css",
+          "selector": "link[rel=stylesheet]"
+        },
+        {
+          "code": "missing-services",
+          "message": "No services or portfolio section was detected."
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+          "selector": "header"
+        },
+        {
+          "code": "unmapped-repeated-items",
+          "message": "Repeated unknown items in 'subscription' have no sealed content mapping.",
+          "selector": "#subscription"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'coffee' has no supported content role.",
+          "selector": "#coffee"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'home' has no supported content role.",
+          "selector": "#home"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'subscription' has no supported content role.",
+          "selector": "#subscription"
+        },
+        {
+          "code": "unmapped-section-content",
+          "message": "Section 'unknown' has no supported content role.",
+          "selector": "section"
+        }
+      ]
+    },
+    {
+      "id": "web-coffee-marigold",
+      "dossierPath": "data/reference-library/dossiers/web-coffee-marigold",
+      "status": "extracted",
+      "compatibility": "needs-adaptation",
+      "sourceDigest": "93d4b9a21e6a5ecf16d3e77c2f9c85ef4ea75ef2457d94a2370ea7172e6adc75",
+      "sectionCount": 1,
+      "slotCount": 9,
+      "interactionCount": 1,
+      "blockerCount": 2,
+      "blockers": [
+        {
+          "code": "missing-hero",
+          "message": "No hero section with an h1 was detected."
+        },
+        {
+          "code": "missing-services",
+          "message": "No services or portfolio section was detected."
         }
       ]
     },

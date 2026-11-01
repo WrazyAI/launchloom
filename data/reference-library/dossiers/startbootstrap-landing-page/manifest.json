@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "id": "startbootstrap-landing-page",
+  "productionEligible": true,
+  "referenceName": "Start Bootstrap Landing Page: centered signup field over water",
+  "familyId": "startbootstrap-landing-page-family",
+  "source": {
+    "name": "Landing Page by Start Bootstrap",
+    "url": "https://startbootstrap.github.io/startbootstrap-landing-page/",
+    "sourceType": "official Start Bootstrap demo, MIT licensed",
+    "repository": "https://github.com/StartBootstrap/startbootstrap-landing-page",
+    "commit": "247a46a2503c91d1157179eab297953438ec498b",
+    "rights": "licensed",
+    "rightsEvidence": "The official Start Bootstrap repository is licensed under the MIT License (copyright 2013-2023 Start Bootstrap LLC). The license text is retained in rights/LICENSE.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "fitness",
+    "gym",
+    "dental",
+    "home-care"
+  ],
+  "tags": {
+    "business": [
+      "fitness",
+      "gym",
+      "dental",
+      "home care"
+    ],
+    "style": [
+      "clean",
+      "blue accent",
+      "neutral sans"
+    ],
+    "composition": [
+      "centered signup hero",
+      "alternating feature rows"
+    ],
+    "conversion": [
+      "email signup",
+      "submit"
+    ],
+    "motion": [
+      "static-first"
+    ],
+    "imagery": [
+      "water background",
+      "feature photographs"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "15786645b8367da4b90958a6c3318b34682873fedb398d750cd2f00f73a5e8d2",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "293db560df7d99ce7baea1c6be82a7f2f5eb499676ad09283f9d771fcdde6f0a",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A centered conversion opening over a wide water photograph: a short promise, an email field, and a submit button. A small top bar carries the brand and a Sign Up action. Three feature icons follow, then alternating image-and-copy rows, a testimonial row, a second centered signup band, and a compact footer. The palette is white, blue, and deep water blue. The typography is a neutral sans with large centered headings.",
+    "heroGeometry": {
+      "mode": "centered email signup over a wide background photograph",
+      "alignment": "centered",
+      "viewport": "wide water photograph with one promise and a signup field"
+    },
+    "navigationGeometry": {
+      "mode": "slim top bar with a signup action",
+      "placement": "top of page",
+      "mobile": "compact bar"
+    },
+    "typography": {
+      "display": "neutral sans with large centered headings",
+      "body": "same neutral sans",
+      "scale": "large centered heading with compact form"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "blue",
+        "deep water blue"
+      ],
+      "ink": "near-black on light, white on water",
+      "accents": [
+        "blue"
+      ],
+      "contrastIntent": "clean readable contrast"
+    },
+    "imageTreatment": {
+      "mode": "wide water background and alternating feature photographs",
+      "crop": "cover",
+      "focalPoint": "subject-safe"
+    },
+    "sectionSequence": [
+      "slim top bar",
+      "centered signup hero",
+      "three feature icons",
+      "alternating image-and-copy rows",
+      "testimonials",
+      "closing signup band",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "feature rows with one signup action",
+      "interaction": "signup-led"
+    },
+    "ctaPlacement": {
+      "primary": "email signup",
+      "secondary": "Sign Up",
+      "early": "in the hero and closing band"
+    },
+    "motion": {
+      "primitive": "static-first",
+      "library": "CSS",
+      "reducedMotion": "static"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the signup hero, features, alternating rows, testimonials, and closing signup",
+      "rules": [
+        "keep the email field visible",
+        "preserve feature crops",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "centered-field",
+      "mobileHero": "centered-field",
+      "mediaRelation": "centered-opening-field",
+      "mobileMediaRelation": "centered-opening-field",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "alternating feature rows"
+      ],
+      "mobileTreatmentChanged": false
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "centered-signup-hero",
+        "selector": "[data-reference-signature=centered-signup-hero]",
+        "description": "centered promise with an email field over a wide background"
+      },
+      {
+        "id": "feature-rows",
+        "selector": "[data-reference-signature=feature-rows]",
+        "description": "alternating image-and-copy feature rows"
+      },
+      {
+        "id": "closing-signup",
+        "selector": "[data-reference-signature=closing-signup]",
+        "description": "second centered signup band before the footer"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse source photography, copy, or trade dress",
+      "invent services, prices, or outcomes",
+      "copy source code into a client site",
+      "replace the signup field with a generic card grid",
+      "low-contrast overlaid copy"
+    ],
+    "acceptanceChecks": [
+      "The opening is a centered signup field over a wide photograph.",
+      "Feature rows alternate image and copy.",
+      "At 390 px the signup field remains visible without horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Official Start Bootstrap demo captured at both viewports. The template is MIT licensed and uses bundled demo photography; no source photography is reused in client work."
+  }
+}

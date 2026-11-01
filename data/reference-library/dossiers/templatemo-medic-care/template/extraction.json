@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "templatemo-medic-care",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://templatemo.com/templates/templatemo_566_medic_care",
+    "finalUrl": "https://templatemo.com/templates/templatemo_566_medic_care/",
+    "httpStatus": 200,
+    "pageTitle": "Medic Care Bootstrap 5 CSS Template",
+    "retrievedAt": "2026-10-23T18:18:37.466Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "license": "TemplateMo-Free",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/TEMPLATEMO-TERMS.md",
+    "licenseEvidencePath": "rights/TEMPLATEMO-TERMS.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 30886,
+      "sha256": "96f4098a2eb7030302a80a4cad4d14dd0eeb02e813b3a1ce1dcf4064e27b742f"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 23980,
+      "sha256": "d5c467cfd61ff1edab117f3e0f203298af395b4dbefb4c09cac770078a6f3058"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 155631,
+      "sha256": "847280dddfc7b6d0bc396dd2974f775bc0e866e7611c90e3fbe919628e8c2f30"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 65698,
+      "sha256": "27a058d2d69b4bab81e679aa19c1e92fff97b6424076f4fc61491ce3dc645026"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 3351,
+      "sha256": "521410e1fc44780061e09adc980275fb5ea277fd5d9e538454214ec4379ff4bc"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 1013,
+      "sha256": "924b0dc630d1c5dff9fa31aead9509775b1d476bfe0a5ac2977b2f11205a26ac"
+    },
+    {
+      "path": "source/styles/06.css",
+      "bytes": 16514,
+      "sha256": "8f918a853ed30226ec9ba89cccb468c18392d391f82b3cf8519ded29657ba74d"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://templatemo.com/templates/templatemo_566_medic_care/images/slider/portrait-successful-mid-adult-doctor-with-crossed-arms.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_566_medic_care/images/slider/young-asian-female-dentist-white-coat-posing-clinic-equipment.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_566_medic_care/images/slider/doctor-s-hand-holding-stethoscope-closeup.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_566_medic_care/images/gallery/medium-shot-man-getting-vaccine.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_566_medic_care/images/gallery/female-doctor-with-presenting-hand-gesture.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_566_medic_care/images/reviews/portrait-british-woman.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_566_medic_care/images/reviews/woman-wearing-mask-face-closeup-covid-19-green-background.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_566_medic_care/images/reviews/beautiful-woman-face-portrait-brown-background.jpeg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_566_medic_care/images/reviews/senior-man-wearing-white-face-mask-covid-19-campaign-with-design-space.jpeg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 6 of 6 stylesheets retained.",
+  "digest": "308199c5200ac19b69dc39723111a465c3d6f265a45eb54e11330683d205eb9b"
+}

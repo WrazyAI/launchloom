@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "startbootstrap-business-casual",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://startbootstrap.github.io/startbootstrap-business-casual/",
+    "finalUrl": "https://startbootstrap.github.io/startbootstrap-business-casual/",
+    "httpStatus": 200,
+    "pageTitle": "Business Casual - Start Bootstrap Theme",
+    "retrievedAt": "2026-10-23T18:18:18.458Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "license": "MIT",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/LICENSE",
+    "licenseEvidencePath": "rights/LICENSE"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 4484,
+      "sha256": "098ae30533931f2ecd9ecf1fc64b246881e1925a7103ea56e6b9a7bfc6f2fe2d"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 31212,
+      "sha256": "a0f98022fd0a2877659eb6ee0e680499d2256629928bc978cba710abe59bd475"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 17880,
+      "sha256": "43155576d691066c5d464cff52ff4b12582221971278f5e9b71c77b8503ded59"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 241375,
+      "sha256": "70394295e52762aa534f2d446b5d2399fd13d4dee1bbac9b4cefb813fc61b418"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-business-casual/assets/img/intro.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained. Page errors observed: 1.",
+  "digest": "69c5dc4eaffb401c0f29b99a834f778f30859ecd2579dcc0f8f483a4d989cd03"
+}

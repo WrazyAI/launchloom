@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "templatemo-training-studio",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://templatemo.com/templates/templatemo_548_training_studio",
+    "finalUrl": "https://templatemo.com/templates/templatemo_548_training_studio/",
+    "httpStatus": 200,
+    "pageTitle": "Training Studio - Free CSS Template",
+    "retrievedAt": "2026-10-23T18:18:46.193Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "license": "TemplateMo-Free",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/TEMPLATEMO-TERMS.md",
+    "licenseEvidencePath": "rights/TEMPLATEMO-TERMS.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 25644,
+      "sha256": "a8bef21647982dd3ea55bb46e4a8bfdc911ff1c5dbb67a9fecd28106e7282e8e"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 21893,
+      "sha256": "e4fb0f6358ab16ff3aadf3334df4c94960a58a8580fd0eac974a2545e8e54085"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 155758,
+      "sha256": "60b19e5da6a9234ff9220668a5ec1125c157a268513256188ee80f2d2c8d8d36"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 37415,
+      "sha256": "3d7580abb46561c0c4ba6656a8250bf1be5289d14027e1b6cff947a85aee2ffd"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 44621,
+      "sha256": "a5cd893910a8d5112b85ecddd35f39e6564e65c0b53d0acc18eb979529a7633e"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://templatemo.com/templates/templatemo_548_training_studio/assets/images/line-dec.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_548_training_studio/assets/images/features-first-icon.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_548_training_studio/assets/images/tabs-first-icon.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_548_training_studio/assets/images/training-image-01.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_548_training_studio/assets/images/training-image-02.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_548_training_studio/assets/images/training-image-03.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_548_training_studio/assets/images/training-image-04.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_548_training_studio/assets/images/first-trainer.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_548_training_studio/assets/images/second-trainer.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_548_training_studio/assets/images/third-trainer.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_548_training_studio/assets/images/gym-video.mp4",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://maps.google.com/maps?q=Av.+L%C3%BAcio+Costa,+Rio+de+Janeiro+-+RJ,+Brazil&t=&z=13&ie=UTF8&iwloc=&output=embed",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 4 of 4 stylesheets retained. Page errors observed: 8.",
+  "digest": "4b9dea4dd0e4e30edd7c6205ba6ce162383a11011eee82a933c91b35dc0a6e96"
+}

@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "html5up-prologue",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://html5up.net/prologue",
+    "repository": "https://github.com/zce/html5up",
+    "revision": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "prologue/",
+    "retrievedAt": "2026-10-23T16:40:06.220Z",
+    "license": "CC-BY-3.0",
+    "licenseEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/font-awesome.min.css",
+      "bytes": 31000,
+      "sha256": "799aeb25cc0373fdee0e1b1db7ad6c2f6a0e058dfadaa3379689f583213190bd"
+    },
+    {
+      "path": "source/assets/css/images/ie/grad0-15.svg",
+      "bytes": 440,
+      "sha256": "2a49bc837b381b091da68d01e12b2983b5a09b8a5e5a31111f23e1e8475998fa"
+    },
+    {
+      "path": "source/assets/css/images/overlay.png",
+      "bytes": 55264,
+      "sha256": "be5becf88bec29771f5419d854c92be96794d39a00f9771502a940c2e4555ea8"
+    },
+    {
+      "path": "source/assets/css/main.css",
+      "bytes": 41959,
+      "sha256": "da962b67fa98f3eafecef285d7a853af8ad3a6f83154f58bde98e42bac53399a"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.eot",
+      "bytes": 165742,
+      "sha256": "7bfcab6db99d5cfbf1705ca0536ddc78585432cc5fa41bbd7ad0f009033b2979"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.svg",
+      "bytes": 444379,
+      "sha256": "ad6157926c1622ba4e1d03d478f1541368524bfc46f51e42fe0d945f7ef323e4"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.ttf",
+      "bytes": 165548,
+      "sha256": "aa58f33f239a0fb02f5c7a6c45c043d7a9ac9a093335806694ecd6d4edc0d6a8"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.woff",
+      "bytes": 98024,
+      "sha256": "ba0c59deb5450f5cb41b3f93609ee2d0d995415877ddfa223e8a8a7533474f07"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.woff2",
+      "bytes": 77160,
+      "sha256": "2adefcbc041e7d18fcf2d417879dc5a09997aa64d675b7a3c4b6ce33da13f3fe"
+    },
+    {
+      "path": "source/assets/fonts/FontAwesome.otf",
+      "bytes": 134808,
+      "sha256": "444dd4366615ffc4a16d012b2fa90137065d3ccb410fa6fd5e4ddd7b5e4ffcd5"
+    },
+    {
+      "path": "source/assets/js/breakpoints.min.js",
+      "bytes": 2439,
+      "sha256": "309febcd6d6e0cf092201532215f03a6a9f30b30f26203272a4861d704e7cd52"
+    },
+    {
+      "path": "source/assets/js/browser.min.js",
+      "bytes": 1851,
+      "sha256": "87910d5ed0053d90caf83230a2f1811d8679815da01f7bdec7548e776d7f04c4"
+    },
+    {
+      "path": "source/assets/js/jquery.min.js",
+      "bytes": 86927,
+      "sha256": "160a426ff2894252cd7cebbdd6d6b7da8fcd319c65b70468f10b6690c45d02ef"
+    },
+    {
+      "path": "source/assets/js/jquery.scrollex.min.js",
+      "bytes": 2257,
+      "sha256": "fc25b75fb3fc8b42756413be387e0d7a602813125283d2384551961d73ea784e"
+    },
+    {
+      "path": "source/assets/js/jquery.scrolly.min.js",
+      "bytes": 831,
+      "sha256": "8b6571ea2c3631ff50bb4b96e7f9081c6e33ebaadef9cb2ca5955d5e0b625a02"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 2672,
+      "sha256": "fccafef010f8411d2e38a0b651cefb5275025722529cd04e7091260a8353806f"
+    },
+    {
+      "path": "source/assets/js/util.js",
+      "bytes": 12433,
+      "sha256": "c2e1e72b0de356f6ce184e3af4fa8ab6590a2581162905a27d77886b2d960e00"
+    },
+    {
+      "path": "source/assets/sass/libs/_breakpoints.scss",
+      "bytes": 4593,
+      "sha256": "69a8486c9bdc0b14358418cae6c4829b57fb0b6684634e1e72f5a2a27f732101"
+    },
+    {
+      "path": "source/assets/sass/libs/_functions.scss",
+      "bytes": 1957,
+      "sha256": "fc832d9ccc89117bb05beed1e5fb328e7f909845d2220a1060375142f51b7e5d"
+    },
+    {
+      "path": "source/assets/sass/libs/_html-grid.scss",
+      "bytes": 2840,
+      "sha256": "423fd36f530e34b329996d06b0db7c8543fc2034d0c12d479246fc0e498cc662"
+    },
+    {
+      "path": "source/assets/sass/libs/_mixins.scss",
+      "bytes": 1840,
+      "sha256": "1eadca47c82395e010637919c7684793711009b6413ebb3a087f7471a4e8bf41"
+    },
+    {
+      "path": "source/assets/sass/libs/_vars.scss",
+      "bytes": 206,
+      "sha256": "454ffdb60a8eb4a20b77fc074cd8bb7635729cadc3b013b254b765e2fc06cf61"
+    },
+    {
+      "path": "source/assets/sass/libs/_vendor.scss",
+      "bytes": 7356,
+      "sha256": "272b2a31ba214fbe7293e24c9e925c3965220c144d97fe9846ba095d7fce14d6"
+    },
+    {
+      "path": "source/assets/sass/main.scss",
+      "bytes": 17542,
+      "sha256": "1e3863c7aadeefbd8e0ee1ad98ac573b9eecb091fad928b0a0823e4e34596449"
+    },
+    {
+      "path": "source/images/avatar.jpg",
+      "bytes": 1543,
+      "sha256": "57676652b587615d511e7a0b5ba98d8a68566c6380ad97c3d19dfcafbeab6f33"
+    },
+    {
+      "path": "source/images/banner.jpg",
+      "bytes": 107938,
+      "sha256": "2d629ba88e0da651befcec0316e61f68d159bf780305334964f8165c553c4e65"
+    },
+    {
+      "path": "source/images/pic02.jpg",
+      "bytes": 11440,
+      "sha256": "cd2f15ede6b39ee95e87de1e9514e152b2a64bdebed88956be8e2e8664782c8b"
+    },
+    {
+      "path": "source/images/pic03.jpg",
+      "bytes": 11433,
+      "sha256": "5f4c7a8b8dd83827e0006c10a1e7e41474fe94d7b0978be1b9a0c34a8774d718"
+    },
+    {
+      "path": "source/images/pic04.jpg",
+      "bytes": 18261,
+      "sha256": "5ada406866a4a1d5c4da2c161c391bb0e14a03040c82a7fa53612e3d71276986"
+    },
+    {
+      "path": "source/images/pic05.jpg",
+      "bytes": 9803,
+      "sha256": "5408195e9c9f5e119288ef39c17b16e6c69916f23552bb5e4a78f6377596de2e"
+    },
+    {
+      "path": "source/images/pic06.jpg",
+      "bytes": 9197,
+      "sha256": "e4f3e533d6b22d595d07816c18c9d1ac3d74f21feac0f1b0dcaf49d72edcfd85"
+    },
+    {
+      "path": "source/images/pic07.jpg",
+      "bytes": 14197,
+      "sha256": "e40ca35cdfa44b0e9c9500aacc910e7715ec722aceb786c04268a899392fc2f1"
+    },
+    {
+      "path": "source/images/pic08.jpg",
+      "bytes": 48415,
+      "sha256": "c501e2d234033acb9d2ac98697d9970498bb03220f7ff1e8d0dfd2923bf3acfb"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 6868,
+      "sha256": "34ac0008378988cd78d50720eb63d0d696a39750fbf221b98c0d5ae7dd44461d"
+    },
+    {
+      "path": "source/LICENSE.txt",
+      "bytes": 17128,
+      "sha256": "d7b98629668e4968281c7083336bc292ae55e2ca3a5469072b9657dd2c1a634e"
+    },
+    {
+      "path": "source/README.txt",
+      "bytes": 1203,
+      "sha256": "e8cc96caf52b7fa946ee88b1756e137f38834563b361a9587e7a2fa7ade9a88b"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Fetched 36 files from the pinned repository at f32c95cd40e42659857e2318b6deb1f6be43da5d.",
+  "digest": "f8ef5e8f9fb0aaba05408f88f042b10f266d8f67703429b30a634af2bd37a769"
+}

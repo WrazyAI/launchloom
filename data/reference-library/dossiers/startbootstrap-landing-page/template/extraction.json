@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "startbootstrap-landing-page",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://startbootstrap.github.io/startbootstrap-landing-page/",
+    "finalUrl": "https://startbootstrap.github.io/startbootstrap-landing-page/",
+    "httpStatus": 200,
+    "pageTitle": "Landing Page - Start Bootstrap Theme",
+    "retrievedAt": "2026-10-23T19:12:39.198Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "license": "MIT",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/LICENSE",
+    "licenseEvidencePath": "rights/LICENSE"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 15337,
+      "sha256": "1a0e8e05fb10bea14cc09cbc1307fbb8fbe9a24338a9184af8ec00535a7a03fb"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 65696,
+      "sha256": "3c325075337b768950583012228055ae392e384688d77ec5235e6ca88dcec6ef"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 4691,
+      "sha256": "0f60fb375cc52ba7ba617170be64b707d9da5de79d3adacee07e99c1c88e5a18"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 238908,
+      "sha256": "79e9784ee23635f66f31f288b4199384dcad48d7e8a2fd1864cda9e4babc88bb"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-landing-page/assets/img/testimonials-1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-landing-page/assets/img/testimonials-2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-landing-page/assets/img/testimonials-3.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "7876dad53f8ef61c6415022725ebc0d42cf23767c52feb1967005602aa2b202a"
+}

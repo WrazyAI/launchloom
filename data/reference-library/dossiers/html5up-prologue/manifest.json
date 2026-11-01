@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "id": "html5up-prologue",
+  "productionEligible": true,
+  "referenceName": "Prologue by HTML5 UP: fixed sidebar with image-backed intro",
+  "familyId": "html5up-prologue-family",
+  "source": {
+    "name": "Prologue by HTML5 UP / AJ",
+    "url": "https://html5up.net/prologue",
+    "sourceType": "pinned HTML5 UP template source, CC BY 3.0",
+    "repository": "https://github.com/zce/html5up",
+    "commit": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "prologue/",
+    "rights": "licensed",
+    "license": "CC BY 3.0",
+    "rightsEvidence": "The pinned source template is licensed under Creative Commons Attribution 3.0. The license text is retained in rights/HTML5UP-CC-BY-3.0.txt, and the template attribution to HTML5 UP / AJ is retained in the source README.",
+    "rightsEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "consulting",
+    "accounting",
+    "legal-services",
+    "professional-services"
+  ],
+  "tags": {
+    "business": [
+      "consulting",
+      "accounting",
+      "legal services",
+      "professional services"
+    ],
+    "style": [
+      "dark sidebar",
+      "light humanist sans",
+      "muted teal"
+    ],
+    "composition": [
+      "fixed sidebar",
+      "image-backed intro",
+      "portfolio grid"
+    ],
+    "conversion": [
+      "intro button",
+      "contact forms"
+    ],
+    "motion": [
+      "static-first"
+    ],
+    "imagery": [
+      "blurred landscape hero",
+      "portfolio thumbnails"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "6c0fa7d4896869f42e9a592183da94611e29c40736a3e6d400a28843425fff71",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "94e52701d78a498f5e5a1222fd88d4ff0d3b655f5ec36afbbe7f1793bd82012c",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A fixed dark sidebar carries a portrait, name, role, icon navigation, and social links. The main field opens with a blurred landscape photograph behind a centered light statement, a supporting line, and a teal button. A portfolio grid follows, then an about section and contact forms. The type is a light humanist sans. Charcoal sidebar, muted landscape photography, white content, and a muted teal action create an editorial portfolio tone.",
+    "heroGeometry": {
+      "mode": "sidebar plus image-backed centered opening",
+      "alignment": "centered in the main field",
+      "viewport": "sidebar remains fixed while the opening photograph fills the stage"
+    },
+    "navigationGeometry": {
+      "mode": "fixed left sidebar with icon links",
+      "placement": "left edge",
+      "mobile": "top menu button"
+    },
+    "typography": {
+      "display": "light humanist sans",
+      "body": "same humanist sans",
+      "scale": "quiet large display with small labels"
+    },
+    "palette": {
+      "surfaces": [
+        "charcoal",
+        "white",
+        "muted landscape"
+      ],
+      "ink": "white on dark, near-black on light",
+      "accents": [
+        "muted teal"
+      ],
+      "contrastIntent": "quiet editorial contrast"
+    },
+    "imageTreatment": {
+      "mode": "blurred landscape hero and portfolio thumbnails",
+      "crop": "soft wide cover",
+      "focalPoint": "atmospheric"
+    },
+    "sectionSequence": [
+      "fixed sidebar navigation",
+      "image-backed centered intro",
+      "portfolio grid",
+      "about section",
+      "contact forms",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "portfolio grid with captions",
+      "interaction": "browse-led"
+    },
+    "ctaPlacement": {
+      "primary": "teal intro button",
+      "secondary": "contact forms",
+      "early": "in the intro"
+    },
+    "motion": {
+      "primitive": "static-first",
+      "library": "CSS and light script",
+      "reducedMotion": "static"
+    },
+    "mobileRecomposition": {
+      "strategy": "collapse the sidebar to a menu button, center the intro, stack the grid",
+      "rules": [
+        "keep the intro action visible",
+        "preserve thumbnail crops",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "utility-panel",
+      "mobileHero": "centered-field",
+      "mediaRelation": "task-panel-in-opening",
+      "mobileMediaRelation": "centered-opening-field",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "portfolio grid"
+      ],
+      "mobileTreatmentChanged": true
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "fixed-sidebar",
+        "selector": "[data-reference-signature=fixed-sidebar]",
+        "description": "fixed dark sidebar with identity and icon navigation"
+      },
+      {
+        "id": "image-backed-intro",
+        "selector": "[data-reference-signature=image-backed-intro]",
+        "description": "centered intro over a blurred landscape photograph"
+      },
+      {
+        "id": "portfolio-grid",
+        "selector": "[data-reference-signature=portfolio-grid]",
+        "description": "captioned portfolio thumbnails"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse source photography, copy, or trade dress",
+      "invent credentials, clients, or outcomes",
+      "copy source code into a client site",
+      "replace the sidebar with a generic top bar",
+      "low-contrast overlaid copy"
+    ],
+    "acceptanceChecks": [
+      "Desktop keeps a fixed sidebar and a centered image-backed intro.",
+      "The portfolio reads as a captioned grid.",
+      "Mobile collapses the sidebar without losing the intro action.",
+      "At 390 px the page stacks without horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Pinned HTML5 UP source captured locally at both viewports. CC BY 3.0 attribution is retained in the source and license record."
+  }
+}

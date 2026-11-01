@@ -1,0 +1,352 @@
+{
+  "schemaVersion": 1,
+  "id": "templatemo-training-studio",
+  "dossierId": "templatemo-training-studio",
+  "sourceDigest": "4b9dea4dd0e4e30edd7c6205ba6ce162383a11011eee82a933c91b35dc0a6e96",
+  "entrypoint": "source/index.html",
+  "sourceClass": "licensed",
+  "license": {
+    "name": "TemplateMo free commercial-use terms",
+    "url": "https://templatemo.com/templates/templatemo_548_training_studio",
+    "credit": "Template adapted from Training Studio by TemplateMo"
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "sourceSelector": "header",
+      "order": 1,
+      "role": "hero",
+      "required": true
+    },
+    {
+      "id": "conversion",
+      "sourceSelector": "aside",
+      "order": 2,
+      "role": "conversion",
+      "required": true
+    },
+    {
+      "id": "features",
+      "sourceSelector": "#features",
+      "order": 3,
+      "role": "services",
+      "required": true
+    },
+    {
+      "id": "call-to-action",
+      "sourceSelector": "#call-to-action",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "our-classes",
+      "sourceSelector": "#our-classes",
+      "order": 5,
+      "role": "seasons",
+      "required": false
+    },
+    {
+      "id": "schedule",
+      "sourceSelector": "#schedule",
+      "order": 6,
+      "role": "seasons",
+      "required": false
+    },
+    {
+      "id": "trainers",
+      "sourceSelector": "#trainers",
+      "order": 7,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "contact-us",
+      "sourceSelector": "#contact-us",
+      "order": 8,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "footer",
+      "order": 9,
+      "role": "footer",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "conversion.action",
+      "selector": "[data-foundation-slot=\"conversion.action\"]",
+      "kind": "text",
+      "contentPath": "hero.primaryLabel",
+      "required": true
+    },
+    {
+      "id": "conversion.body",
+      "selector": "[data-foundation-slot=\"conversion.body\"]",
+      "kind": "text",
+      "contentPath": "hero.offer",
+      "required": false
+    },
+    {
+      "id": "footer.brand",
+      "selector": "footer [data-foundation-footer-brand]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "footer.credit",
+      "selector": "footer [data-foundation-footer-credit]",
+      "kind": "text",
+      "contentPath": "license.name",
+      "required": true
+    },
+    {
+      "id": "navigation.brand",
+      "selector": "[data-foundation-slot=\"navigation.brand\"]",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "seasons-2.body",
+      "selector": "[data-foundation-slot=\"seasons-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "seasons-2.heading",
+      "selector": "[data-foundation-slot=\"seasons-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "seasons-2.image",
+      "selector": "[data-foundation-image=\"seasons-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "seasons.body",
+      "selector": "[data-foundation-slot=\"seasons.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "seasons.heading",
+      "selector": "[data-foundation-slot=\"seasons.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "seasons.image",
+      "selector": "[data-foundation-image=\"seasons.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "seasons.secondaryImage",
+      "selector": "[data-foundation-image=\"seasons.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "seasons.tertiaryImage",
+      "selector": "[data-foundation-image=\"seasons.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "services.body",
+      "selector": "[data-foundation-slot=\"services.body\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesIntro",
+      "required": true
+    },
+    {
+      "id": "services.heading",
+      "selector": "[data-foundation-slot=\"services.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.servicesHeading",
+      "required": true
+    },
+    {
+      "id": "services.image",
+      "selector": "[data-foundation-image=\"services.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "services.item.description",
+      "selector": "[data-foundation-item=\"services.items\"] description",
+      "kind": "text",
+      "contentPath": "service.description",
+      "required": true
+    },
+    {
+      "id": "services.item.image",
+      "selector": "[data-foundation-item=\"services.items\"] img",
+      "kind": "image",
+      "contentPath": "service.image",
+      "required": false
+    },
+    {
+      "id": "services.item.name",
+      "selector": "[data-foundation-item=\"services.items\"] name",
+      "kind": "text",
+      "contentPath": "service.name",
+      "required": true
+    },
+    {
+      "id": "services.items",
+      "selector": "[data-foundation-repeat=\"services.items\"]",
+      "kind": "each",
+      "contentPath": "services",
+      "itemPath": "service",
+      "required": true
+    },
+    {
+      "id": "services.secondaryImage",
+      "selector": "[data-foundation-image=\"services.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "services.tertiaryImage",
+      "selector": "[data-foundation-image=\"services.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-2.body",
+      "selector": "[data-foundation-slot=\"unknown-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.image",
+      "selector": "[data-foundation-image=\"unknown-2.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-2.secondaryImage",
+      "selector": "[data-foundation-image=\"unknown-2.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-2.tertiaryImage",
+      "selector": "[data-foundation-image=\"unknown-2.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated hero items in 'hero' have no sealed content mapping.",
+      "selector": "header"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated seasons items in 'our-classes' have no sealed content mapping.",
+      "selector": "#our-classes"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated seasons items in 'schedule' have no sealed content mapping.",
+      "selector": "#schedule"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'trainers' have no sealed content mapping.",
+      "selector": "#trainers"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'call-to-action' has no supported content role.",
+      "selector": "#call-to-action"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'our-classes' preserves source composition that needs adaptation.",
+      "selector": "#our-classes"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'schedule' preserves source composition that needs adaptation.",
+      "selector": "#schedule"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'trainers' has no supported content role.",
+      "selector": "#trainers"
+    }
+  ],
+  "fingerprint": "14e4789ab920a38a367a6409e0b132329534f7a975c43709a7d2f5ab54e61b86"
+}

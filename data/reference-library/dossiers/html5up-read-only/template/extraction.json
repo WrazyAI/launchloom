@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "html5up-read-only",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://html5up.net/read-only",
+    "repository": "https://github.com/zce/html5up",
+    "revision": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "read-only/",
+    "retrievedAt": "2026-10-23T19:12:25.171Z",
+    "license": "CC-BY-3.0",
+    "licenseEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/font-awesome.min.css",
+      "bytes": 31000,
+      "sha256": "799aeb25cc0373fdee0e1b1db7ad6c2f6a0e058dfadaa3379689f583213190bd"
+    },
+    {
+      "path": "source/assets/css/main.css",
+      "bytes": 54510,
+      "sha256": "69f9af2d30beee599a467e3638c12e75eb9844f161edb240b5435ceab2803521"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.eot",
+      "bytes": 165742,
+      "sha256": "7bfcab6db99d5cfbf1705ca0536ddc78585432cc5fa41bbd7ad0f009033b2979"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.svg",
+      "bytes": 444379,
+      "sha256": "ad6157926c1622ba4e1d03d478f1541368524bfc46f51e42fe0d945f7ef323e4"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.ttf",
+      "bytes": 165548,
+      "sha256": "aa58f33f239a0fb02f5c7a6c45c043d7a9ac9a093335806694ecd6d4edc0d6a8"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.woff",
+      "bytes": 98024,
+      "sha256": "ba0c59deb5450f5cb41b3f93609ee2d0d995415877ddfa223e8a8a7533474f07"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.woff2",
+      "bytes": 77160,
+      "sha256": "2adefcbc041e7d18fcf2d417879dc5a09997aa64d675b7a3c4b6ce33da13f3fe"
+    },
+    {
+      "path": "source/assets/fonts/FontAwesome.otf",
+      "bytes": 134808,
+      "sha256": "444dd4366615ffc4a16d012b2fa90137065d3ccb410fa6fd5e4ddd7b5e4ffcd5"
+    },
+    {
+      "path": "source/assets/js/breakpoints.min.js",
+      "bytes": 2439,
+      "sha256": "309febcd6d6e0cf092201532215f03a6a9f30b30f26203272a4861d704e7cd52"
+    },
+    {
+      "path": "source/assets/js/browser.min.js",
+      "bytes": 1851,
+      "sha256": "87910d5ed0053d90caf83230a2f1811d8679815da01f7bdec7548e776d7f04c4"
+    },
+    {
+      "path": "source/assets/js/jquery.min.js",
+      "bytes": 86927,
+      "sha256": "160a426ff2894252cd7cebbdd6d6b7da8fcd319c65b70468f10b6690c45d02ef"
+    },
+    {
+      "path": "source/assets/js/jquery.scrollex.min.js",
+      "bytes": 2257,
+      "sha256": "fc25b75fb3fc8b42756413be387e0d7a602813125283d2384551961d73ea784e"
+    },
+    {
+      "path": "source/assets/js/jquery.scrolly.min.js",
+      "bytes": 831,
+      "sha256": "8b6571ea2c3631ff50bb4b96e7f9081c6e33ebaadef9cb2ca5955d5e0b625a02"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 3501,
+      "sha256": "496d51cee81f77bd172ef2f3434235b5a9269f42ce2cfebe4b586f74bfbb650a"
+    },
+    {
+      "path": "source/assets/js/util.js",
+      "bytes": 12433,
+      "sha256": "c2e1e72b0de356f6ce184e3af4fa8ab6590a2581162905a27d77886b2d960e00"
+    },
+    {
+      "path": "source/assets/sass/libs/_breakpoints.scss",
+      "bytes": 4593,
+      "sha256": "69a8486c9bdc0b14358418cae6c4829b57fb0b6684634e1e72f5a2a27f732101"
+    },
+    {
+      "path": "source/assets/sass/libs/_functions.scss",
+      "bytes": 1957,
+      "sha256": "fc832d9ccc89117bb05beed1e5fb328e7f909845d2220a1060375142f51b7e5d"
+    },
+    {
+      "path": "source/assets/sass/libs/_html-grid.scss",
+      "bytes": 2840,
+      "sha256": "423fd36f530e34b329996d06b0db7c8543fc2034d0c12d479246fc0e498cc662"
+    },
+    {
+      "path": "source/assets/sass/libs/_mixins.scss",
+      "bytes": 1840,
+      "sha256": "1eadca47c82395e010637919c7684793711009b6413ebb3a087f7471a4e8bf41"
+    },
+    {
+      "path": "source/assets/sass/libs/_vars.scss",
+      "bytes": 1195,
+      "sha256": "64940329c80838678f03d684bedafae59d67bcb3580df24ffe7acdf088300a32"
+    },
+    {
+      "path": "source/assets/sass/libs/_vendor.scss",
+      "bytes": 7356,
+      "sha256": "272b2a31ba214fbe7293e24c9e925c3965220c144d97fe9846ba095d7fce14d6"
+    },
+    {
+      "path": "source/assets/sass/main.scss",
+      "bytes": 29346,
+      "sha256": "cfead00b22c0869c8600d26fd611a5e803057ca951a19097718d0b31b8145051"
+    },
+    {
+      "path": "source/images/avatar.jpg",
+      "bytes": 6558,
+      "sha256": "01f2cffeeac219f0d0650fd2b45fc475ffb4eb87418e3c7527d6e3a4157eb5b8"
+    },
+    {
+      "path": "source/images/banner.jpg",
+      "bytes": 62885,
+      "sha256": "1e79060a871868f1bc420680ae7981d27e83dd60c3e9ff2f9f4fef4d4958c8ae"
+    },
+    {
+      "path": "source/images/pic01.jpg",
+      "bytes": 19013,
+      "sha256": "4c12bf2aa1654be072259cf71c4e53ef77277fa80b26623b44916571f217df96"
+    },
+    {
+      "path": "source/images/pic02.jpg",
+      "bytes": 18665,
+      "sha256": "813d3d84e1d9f20493d90081959f0c35d076e3e7768aa5c88505c92b86c885a0"
+    },
+    {
+      "path": "source/images/pic03.jpg",
+      "bytes": 18892,
+      "sha256": "02e637d7b1624e2091b93faea97065861b36bee427f66dad788139c3ce1f1d8e"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 22862,
+      "sha256": "842cd29a27494f1f5af2b967f03ae308f90630342e07412a90245398ef88af7c"
+    },
+    {
+      "path": "source/LICENSE.txt",
+      "bytes": 17128,
+      "sha256": "d7b98629668e4968281c7083336bc292ae55e2ca3a5469072b9657dd2c1a634e"
+    },
+    {
+      "path": "source/README.txt",
+      "bytes": 944,
+      "sha256": "4190c3ce71c855bebaff8ad1fc2b0abcb7be44587d7f99b0c0cd528eee4c1219"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://github.com/zce/html5up/blob/f32c95cd40e42659857e2318b6deb1f6be43da5d/read-only/read-only.zip",
+      "reason": "unsupported-extension"
+    }
+  ],
+  "notes": "Fetched 30 files from the pinned repository at f32c95cd40e42659857e2318b6deb1f6be43da5d.",
+  "digest": "733f4ae9c6b7492a25c71b3115485a8c409abb1bde176b9ad50e11598eb5846b"
+}
