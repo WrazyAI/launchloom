@@ -2223,3 +2223,84 @@ describe("real admin workspace browser behavior", () => {
     }
   });
 });
+
+// Exercise the shared shell shortcuts against actual route transitions at the
+// supported breakpoints. Optional captures are synthetic fixtures, never clients.
+it("keeps studio navigation and summary actions usable on desktop and mobile", async () => {
+  for (const width of [1512, 768, 390]) {
+    const { page, errors } = await openPage({
+      viewport: { width, height: 960 },
+    });
+    try {
+      await visible(page.locator(".admin-site-group").first());
+      await page.evaluate(() => document.fonts.ready);
+      const metrics = await page.evaluate(() => ({
+        viewport: innerWidth,
+        document: document.documentElement.scrollWidth,
+      }));
+      expect(metrics.document).toBeLessThanOrEqual(metrics.viewport);
+      await visible(page.getByRole("button", { name: "Review attention" }));
+      if (process.env.ADMIN_DESIGN_CAPTURE_DIR) {
+        await page.screenshot({
+          path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-sites-${width}.png`,
+        });
+      }
+      await page
+        .getByRole("link", { name: "Create invitation", exact: true })
+        .click();
+      await visible(
+        page.getByRole("heading", { name: "Private invitations", exact: true }),
+      );
+      expect(page.url()).toContain("view=invitations");
+      if (width > 900) {
+        await page.getByRole("link", { name: "Open your profile" }).click();
+        await visible(
+          page.getByRole("heading", {
+            name: "Workspace settings",
+            exact: true,
+          }),
+        );
+        expect(page.url()).toContain("view=settings");
+        await page.getByRole("button", { name: "Collapse sidebar" }).click();
+        await visible(page.getByRole("button", { name: "Expand sidebar" }));
+        await page.getByRole("link", { name: "Clients", exact: true }).click();
+      } else {
+        await page.getByRole("button", { name: "Open navigation" }).click();
+        await page.getByRole("link", { name: "Clients", exact: true }).click();
+        await visible(
+          page.getByRole("heading", { name: "Client directory", exact: true }),
+        );
+        expect(
+          await page
+            .getByRole("button", { name: "Open navigation" })
+            .getAttribute("aria-expanded"),
+        ).toBe("false");
+      }
+      await waitForClients(page);
+      if (process.env.ADMIN_DESIGN_CAPTURE_DIR) {
+        await page.screenshot({
+          path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-clients-${width}.png`,
+        });
+      }
+      await page
+        .getByRole("button", { name: /Open client submission:client-a/u })
+        .click();
+      const dossier = page.getByRole("dialog", {
+        name: /Client dossier: Acme & Sons/u,
+      });
+      await visible(dossier);
+      await page.waitForTimeout(300);
+      if (process.env.ADMIN_DESIGN_CAPTURE_DIR) {
+        await page.screenshot({
+          path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-dossier-${width}.png`,
+        });
+      }
+      await page.keyboard.press("Escape");
+      await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
+      // Invitation/profile endpoints intentionally aren't supplied by this fixture.
+      expect(errors.filter((error) => !error.includes("404"))).toEqual([]);
+    } finally {
+      await page.close();
+    }
+  }
+}, 60_000);

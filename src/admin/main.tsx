@@ -5,6 +5,7 @@ import { AdminApp } from "./AdminApp";
 import { SignInView } from "./SignInView";
 import "./styles.css";
 import "./redesign.css";
+import "./studio.css";
 
 const root = document.getElementById("admin-root");
 
