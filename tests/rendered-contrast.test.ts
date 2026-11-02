@@ -709,6 +709,27 @@ it("proves a square outward logo ring at desktop, compact and mobile", async () 
   }
 });
 
+it("rejects an outward ring beside the control's own shadow", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.logo{box-shadow:0 0 0 20px #111}</style>${logoButton()}`,
+  );
+  expect(report.pass).toBe(false);
+});
+
+it("rejects an outward ring completely clipped by an ancestor", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.wrap{width:120px;height:120px;overflow:hidden}</style><div class="wrap">${logoButton()}</div>`,
+  );
+  expect(report.pass).toBe(false);
+});
+
+it("rejects a descendant paint that crosses the outward ring", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.logo{position:relative}.badge{position:absolute;left:115px;top:0;width:20px;height:120px;background:#111}</style><button class="logo" aria-label="Home"><img src="${logoImage}" alt=""><span class="badge"></span></button>`,
+  );
+  expect(report.pass).toBe(false);
+});
+
 it("does not false-pass a rounded outward ring of the same color as its surface", async () => {
   const report = await scan(
     `<style>body{margin:0;background:#fff;color:#111}${logoCss}.logo{border-radius:24px}.logo:focus-visible{outline-color:#fff}</style>${logoButton("round")}`,

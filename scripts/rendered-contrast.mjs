@@ -1576,6 +1576,46 @@ export function collectContrastTargets({
         );
         if (obstructed)
           outsideBg.issues.push("focus ring crosses non-ancestor paint");
+        const ownEffect =
+          ["boxShadow", "filter", "backdropFilter", "clipPath", "maskImage"].some(
+            (property) => s[property] && s[property] !== "none",
+          ) ||
+          s.mixBlendMode !== "normal" ||
+          Number(s.opacity) !== 1;
+        if (ownEffect)
+          outsideBg.issues.push("outward focus ring overlaps control effect");
+        const descendantPaint = [...el.querySelectorAll("*")].some((node) => {
+          const box = rectFor(node);
+          if (
+            !strips.some((strip) => intersects(box, strip)) ||
+            !visible(node, box)
+          )
+            return false;
+          if (paintedLayers.includes(node)) return true;
+          const nodeStyle = styleFor(node);
+          return ["boxShadow", "filter", "backdropFilter", "clipPath", "maskImage"].some(
+            (property) => nodeStyle[property] && nodeStyle[property] !== "none",
+          );
+        });
+        if (descendantPaint)
+          outsideBg.issues.push("focus ring crosses descendant paint");
+        let clippedByAncestor = false;
+        for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+          const parentStyle = styleFor(parent);
+          if (!/\b(?:hidden|clip)\b/u.test(parentStyle.overflow)) continue;
+          const box = rectFor(parent);
+          if (
+            box.left > left + 0.5 ||
+            box.right < right - 0.5 ||
+            box.top > top + 0.5 ||
+            box.bottom < bottom - 0.5
+          ) {
+            clippedByAncestor = true;
+            break;
+          }
+        }
+        if (clippedByAncestor)
+          outsideBg.issues.push("outward focus ring is clipped by ancestor overflow");
       }
       // An inset outline paints over the control, while a partially inset
       // outline touches both surfaces. Prove contrast against both in that case.
