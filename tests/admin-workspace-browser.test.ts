@@ -677,13 +677,13 @@ describe("real admin workspace browser behavior", () => {
     }
   });
 
-  it("preserves empty containers and deeply nested event values", async () => {
+  it("preserves empty containers and nested event values", async () => {
     eventDetails.set(
       "attempt-0000",
       JSON.stringify({
         emptyList: [],
         emptyObject: {},
-        nested: { a: { b: { c: { d: { result: "retained-value" } } } } },
+        nested: { a: { b: { result: "retained-value" } } },
       }),
     );
     const { page } = await openPage({
@@ -693,10 +693,27 @@ describe("real admin workspace browser behavior", () => {
       const detail = page.locator(".admin-structured-value");
       await visible(detail.getByText("No items", { exact: true }));
       await visible(detail.getByText("No fields", { exact: true }));
-      await visible(detail.locator("pre"));
-      expect(await detail.locator("pre").textContent()).toContain(
-        "retained-value",
-      );
+      await visible(detail.getByText("retained-value", { exact: true }));
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps pathological JSON as original evidence without expanding or breaking the panel", async () => {
+    const source = "[".repeat(3990) + "0" + "]".repeat(3990);
+    eventDetails.set("attempt-0000", source);
+    const { page } = await openPage({
+      path: "/admin/onboarding-invites?attempt=attempt-0000",
+    });
+    try {
+      const evidence = page.locator(".admin-structured-value pre");
+      await visible(evidence);
+      expect(await evidence.textContent()).toBe(source);
+      expect(
+        await evidence.evaluate((element) => element.outerHTML.length),
+      ).toBeLessThan(source.length + 1000);
+      await page.getByRole("button", { name: "Close preview" }).click();
+      await page.locator("#attempt-inspector").waitFor({ state: "detached" });
     } finally {
       await page.close();
     }

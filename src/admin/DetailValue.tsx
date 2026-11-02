@@ -10,21 +10,35 @@ function fieldLabel(key: string): string {
     : "Field";
 }
 
-function StructuredValue({
-  value,
-  depth = 0,
-}: {
-  value: unknown;
-  depth?: number;
-}) {
+/** Inspect iteratively before React renders any subtree. Exceeding a limit
+ * falls back once to the original evidence, not a reserialized remainder. */
+function withinStructureBudget(value: unknown): boolean {
+  const pending = [{ value, depth: 0 }];
+  let visited = 0;
+  while (pending.length) {
+    const entry = pending.pop()!;
+    visited += 1;
+    if (visited > 400) return false;
+    if (entry.value === null || typeof entry.value !== "object") continue;
+    if (entry.depth >= 5) return false;
+    const children = Array.isArray(entry.value)
+      ? entry.value
+      : Object.values(entry.value);
+    if (
+      children.length > 80 ||
+      visited + pending.length + children.length > 400
+    )
+      return false;
+    for (const child of children)
+      pending.push({ value: child, depth: entry.depth + 1 });
+  }
+  return true;
+}
+
+function StructuredValue({ value }: { value: unknown }) {
   if (value === null) return <span className="admin-muted">Not recorded</span>;
   if (typeof value === "boolean") return <span>{value ? "Yes" : "No"}</span>;
   if (typeof value !== "object") return <span>{String(value)}</span>;
-  if (depth >= 5)
-    return (
-      <pre className="admin-detail-code">{JSON.stringify(value, null, 2)}</pre>
-    );
-
   if (Array.isArray(value)) {
     if (!value.length) return <span className="admin-muted">No items</span>;
     return (
@@ -32,7 +46,7 @@ function StructuredValue({
         <ol className="admin-detail-array">
           {value.slice(0, 40).map((item, index) => (
             <li key={index}>
-              <StructuredValue value={item} depth={depth + 1} />
+              <StructuredValue value={item} />
             </li>
           ))}
         </ol>
@@ -40,7 +54,7 @@ function StructuredValue({
           <details className="admin-detail-remainder">
             <summary>{value.length - 40} more items</summary>
             <pre className="admin-detail-code">
-              {JSON.stringify(value.slice(40), null, 2)}
+              {JSON.stringify(value.slice(40))}
             </pre>
           </details>
         ) : null}
@@ -57,7 +71,7 @@ function StructuredValue({
           <div key={key}>
             <dt title={key}>{fieldLabel(key)}</dt>
             <dd>
-              <StructuredValue value={item} depth={depth + 1} />
+              <StructuredValue value={item} />
             </dd>
           </div>
         ))}
@@ -66,7 +80,7 @@ function StructuredValue({
         <details className="admin-detail-remainder">
           <summary>{entries.length - 40} more fields</summary>
           <pre className="admin-detail-code">
-            {JSON.stringify(Object.fromEntries(entries.slice(40)), null, 2)}
+            {JSON.stringify(Object.fromEntries(entries.slice(40)))}
           </pre>
         </details>
       ) : null}
@@ -84,7 +98,11 @@ export function DetailValue({ value }: { value: string }) {
       const parsed: unknown = JSON.parse(text);
       return (
         <div className="admin-structured-value">
-          <StructuredValue value={parsed} />
+          {withinStructureBudget(parsed) ? (
+            <StructuredValue value={parsed} />
+          ) : (
+            <pre className="admin-detail-code">{value}</pre>
+          )}
         </div>
       );
     } catch {
