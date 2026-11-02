@@ -137,3 +137,23 @@ history remain retained rather than being swept away.
 - No TestSprite CLI/run is available. No paid/provider generation or current
   production/client acceptance is inferred from local fixture success. Final CI,
   deployed-SHA verification and actual source removal are still pending.
+
+## Final shipping and removal evidence
+
+PR #231 merged as `5ab75bffce75291839b9900b058a2d3e2900816a`; deployment workflow
+`41397407177` succeeded on that exact commit. Final-head CI passed classify,
+validate and rendered route fixtures.
+
+All 15 allowed old source directories were removed with preservation-first
+snapshots and retained refs. The first pass removed 11 before a dependency-order
+guard stopped the remaining four; those four (`dossier-coffee`, `pr169-review`,
+`real-intake-20261023`, `juniper-blockers`) were then removed in safe order.
+The final four-worktree phase measured 3,417,473,024 bytes (3.183 GiB) recovered;
+the first pass delta was not persisted before the guard stopped, so no unsupported
+total is claimed. Every removed source has a fresh status/patch/untracked snapshot
+and hash manifest plus an unchanged retained ref.
+
+The shared checkout `/home/maigreeks/projects/launchloom` and the excluded
+`launchloom-reliability-phase3` remain. Task worktrees are retired only after
+this receipt merges. Live-thumbnail proof and full visual pipeline acceptance
+remain open in their own Work OS tasks; no paid rerun was dispatched.
