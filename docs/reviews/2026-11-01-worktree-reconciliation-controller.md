@@ -117,3 +117,23 @@ Final merged/deployed SHA, actual deletion results and free-space measurements
 will be recorded in the PR and Work OS/private evidence to avoid an endless
 sequence of temporary receipt worktrees. Branch refs with archived/unmerged
 history remain retained rather than being swept away.
+
+## Combined local verification result
+
+- Application suite: 2,859 passed, 101 existing skips, no failures.
+- Worker suite: 515 passed, no failures.
+- Astro check: 0 errors, 0 warnings; Worker type checks passed.
+- Admin assets and production build passed (four platform pages).
+- Reference integrity: 150 dossiers, 148 extracted, 2 existing failed, 0 problems.
+- Rendered-route matrix: trades-static, care-static and trades-authored all passed,
+  8 routes and 30 browser profiles per scenario; contrast and local readiness
+  passed with no real submissions. Desktop/mobile fixture screenshots inspected.
+- Final working tree remained clean; combined source logs and synthetic rendered
+  evidence are retained privately under `validation/controller/`.
+- Separate non-green diagnostics remain honestly disclosed: retained source
+  whitespace in 206 imported paths and formatting-only sync differences in two
+  pre-existing landscaping manifests. Neither is wired into required PR/build/
+  local-release checks; no validator or threshold was weakened.
+- No TestSprite CLI/run is available. No paid/provider generation or current
+  production/client acceptance is inferred from local fixture success. Final CI,
+  deployed-SHA verification and actual source removal are still pending.
