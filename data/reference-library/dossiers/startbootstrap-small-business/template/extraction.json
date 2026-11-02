@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "startbootstrap-small-business",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://startbootstrap.github.io/startbootstrap-small-business/",
+    "finalUrl": "https://startbootstrap.github.io/startbootstrap-small-business/",
+    "httpStatus": 200,
+    "pageTitle": "Small Business - Start Bootstrap Template",
+    "retrievedAt": "2026-10-23T16:40:20.177Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "license": "MIT",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/LICENSE",
+    "licenseEvidencePath": "rights/LICENSE"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 5037,
+      "sha256": "8112bf1df6316dec08da22930c06889aa69dc5a4f72d2c8d168cddbc731741ca"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 236795,
+      "sha256": "57d94ac8e8554c42315c037af5cc6b2ea9406b5648ca4143e5ffa9e036620e98"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://dummyimage.com/900x400/dee2e6/6c757d.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 1 of 1 stylesheets retained.",
+  "digest": "45206b2e6811c176f9efa96b5f533b3f5a98749cd9cc0fb08c213f71419d73ed"
+}

@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 import { chromium, type Browser } from "playwright";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -26,6 +27,9 @@ const files = { experience: "fixture", styles: "", motion: "" };
 const disclosure = `<section data-purposeful-interaction><h2>Choose a service</h2><details><summary>Preparation</summary><p>Bring your service history.</p></details></section>`;
 const tabs = `<section data-purposeful-interaction><div role="tablist"><button type="button" role="tab" aria-selected="true" aria-controls="one">One</button><button type="button" role="tab" aria-selected="false" aria-controls="two">Two</button></div><div id="one" role="tabpanel">First service information</div><div id="two" role="tabpanel" hidden>Second service information</div></section>`;
 const tabScript = `<script>document.querySelectorAll('[role=tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[role=tab]').forEach(t=>t.setAttribute('aria-selected',String(t===b)));document.querySelectorAll('[role=tabpanel]').forEach(p=>p.hidden=p.id!==b.getAttribute('aria-controls'));}));</script>`;
+const exclusiveSelector = (selected: number) =>
+  `<section data-purposeful-interaction="care-steps-selector"><div class="steps"><button type="button" aria-pressed="${selected === 1}" aria-controls="step-one">One</button><button type="button" aria-pressed="${selected === 2}" aria-controls="step-two">Two</button><button type="button" aria-pressed="${selected === 3}" aria-controls="step-three">Three</button></div><div id="step-one" ${selected === 1 ? "" : "hidden"}>First step details</div><div id="step-two" ${selected === 2 ? "" : "hidden"}>Second step details</div><div id="step-three" ${selected === 3 ? "" : "hidden"}>Third step details</div></section><script>const buttons=[...document.querySelectorAll('button[aria-pressed]')];for(const button of buttons)button.addEventListener('click',()=>{if(button.getAttribute('aria-pressed')==='true')return;buttons.forEach(peer=>peer.setAttribute('aria-pressed',String(peer===button)));document.querySelectorAll('[id^=step-]').forEach(panel=>{panel.hidden=panel.id!==button.getAttribute('aria-controls');});});</script>`;
+const evidenceDir = process.env.PHASE2_EVIDENCE_DIR;
 
 beforeAll(async () => {
   root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-interaction-"));
@@ -53,7 +57,9 @@ async function capture(body: string, extra: Record<string, any> = {}) {
     evidenceDir: root,
     requiredPurposeful: true,
     capturePair: true,
-    timeoutMs: 350,
+    // Use the production interaction timeout; 350ms can expire while the
+    // browser encodes a proven screenshot on a shared or loaded runner.
+    timeoutMs: 1500,
     settleMs: 30,
     ...extra,
   });
@@ -123,6 +129,7 @@ describe("bounded rendered interaction evidence", () => {
     ["programmatic form", `document.querySelector('form').submit()`],
     ["popup", `window.open('https://example.test/contact')`],
     ["socket", `new WebSocket('ws://127.0.0.1:1')`],
+    ["beacon", `navigator.sendBeacon('/beacon','private')`],
   ])(
     "blocks attempted %s effects before contacting an endpoint",
     async (_name, action) => {
@@ -135,6 +142,171 @@ describe("bounded rendered interaction evidence", () => {
       expect(contacted.filter((url) => url !== "/")).toEqual([]);
     },
   );
+  it("fulfills exact sealed client images offline and records provenance hashes", async () => {
+    const url =
+      "https://assets.launchloom.wrazyos.com/intakes/synthetic/photo.webp";
+    const body = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=",
+      "base64",
+    );
+    const result = await capture(
+      `<section data-purposeful-interaction><h2>Choose a service</h2><details><summary>Preparation</summary><p>Bring your service history.</p></details><p id="image-status">Waiting</p><img src="${url}" alt="Fictional client asset" onload="document.getElementById('image-status').textContent='Image loaded'"></section>`,
+      {
+        imageSnapshots: new Map([[url, { body, contentType: "image/png" }]]),
+      },
+    );
+    expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+    expect(result.observation.before?.content).toContain("Image loaded");
+    expect(result.observation.retainedImages).toEqual([
+      {
+        urlDigest: createHash("sha256").update(url).digest("hex"),
+        contentDigest: createHash("sha256").update(body).digest("hex"),
+      },
+    ]);
+    expect(contacted.filter((path) => path !== "/")).toEqual([]);
+    expect(result.observation.unsafeEffects || []).toEqual([]);
+  });
+
+  it("rejects a retained snapshot outside the exact sealed URL boundary", async () => {
+    const body = Buffer.from("not-an-image");
+    const result = await capture(
+      '<img src="https://evil.test/photo.png" alt="Unsafe">',
+      {
+        imageSnapshots: new Map([
+          [
+            "https://evil.test/photo.png",
+            { body, contentType: "image/png" },
+          ],
+        ]),
+      },
+    );
+    expect(result.observation.status).toBe("failed");
+    expect(result.observation.reason).toMatch(
+      /Invalid retained client-image snapshot/u,
+    );
+  });
+
+  it("does not fulfill a snapshot for a different exact URL or non-image request", async () => {
+    const url =
+      "https://assets.launchloom.wrazyos.com/intakes/synthetic/photo.webp";
+    const body = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=",
+      "base64",
+    );
+    const result = await capture(
+      `<section data-purposeful-interaction><details><summary onclick="fetch('${url}')">Preparation</summary><p>Bring your service history.</p></details></section>`,
+      {
+        imageSnapshots: new Map([[url, { body, contentType: "image/png" }]]),
+      },
+    );
+    expect(result.observation.status).toBe("failed");
+    expect(result.observation.unsafeEffects?.some((effect) =>
+      ["csp-connect-src", "request-fetch-GET"].includes(effect),
+    )).toBe(true);
+    expect(contacted.filter((path) => path !== "/")).toEqual([]);
+  });
+
+  it.each([1, 2])(
+    "switches and restores an exclusive pressed selector when option %i is selected",
+    async (selected) => {
+      const result = await capture(exclusiveSelector(selected));
+      expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+      expect(result.observation.restored).toBe(true);
+    },
+  );
+
+  it("restores an exclusive pressed selector at desktop, compact and mobile", async () => {
+    for (const viewport of [
+      { name: "desktop", width: 1536, height: 864 },
+      { name: "compact", width: 1366, height: 768 },
+      { name: "mobile", width: 390, height: 844 },
+    ]) {
+      const result = await capture(exclusiveSelector(2), { viewport });
+      expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+      expect(result.observation.restored).toBe(true);
+      if (evidenceDir) {
+        await fs.mkdir(path.join(evidenceDir, "interaction"), {
+          recursive: true,
+        });
+        for (const pair of result.pairs) {
+          await fs.copyFile(
+            pair.before,
+            path.join(evidenceDir, "interaction", `${viewport.name}-before.png`),
+          );
+          await fs.copyFile(
+            pair.after,
+            path.join(evidenceDir, "interaction", `${viewport.name}-after.png`),
+          );
+        }
+      }
+    }
+  }, 120_000);
+
+  it("restores an explicitly declared process selector without aria-controls", async () => {
+    const result = await capture(
+      `<section data-purposeful-interaction="process-step-selector"><button type="button" aria-pressed="false">One</button><button type="button" aria-pressed="true">Two</button><p aria-live="polite">Second service information</p><script>document.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('button').forEach(peer=>peer.setAttribute('aria-pressed',String(peer===button)));document.querySelector('p').textContent=button.textContent==='One'?'First service information':'Second service information';}));</script></section>`,
+    );
+    expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+    expect(result.observation.restored).toBe(true);
+  });
+
+  it("restores an explicitly declared exclusive selector that shares one output panel", async () => {
+    const result = await capture(
+      `<section data-purposeful-interaction="shared-selector"><button type="button" aria-pressed="true" aria-controls="output">First</button><button type="button" aria-pressed="false" aria-controls="output">Second</button><p id="output">First selected</p><script>const buttons=[...document.querySelectorAll('button')];for(const button of buttons)button.addEventListener('click',()=>{if(button.getAttribute('aria-pressed')==='true')return;buttons.forEach(peer=>peer.setAttribute('aria-pressed',String(peer===button)));document.querySelector('#output').textContent=button.textContent+' selected';});</script></section>`,
+    );
+    expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+    expect(result.observation.restored).toBe(true);
+  });
+
+  it.each([
+    ["first", true, false],
+    ["second", false, true],
+  ])(
+    "does not treat independent shared-panel toggles as exclusive when %s is pressed",
+    async (_name, firstPressed, secondPressed) => {
+      const result = await capture(
+        `<section data-purposeful-interaction><button type="button" aria-pressed="${firstPressed}" aria-controls="output">First</button><button type="button" aria-pressed="${secondPressed}" aria-controls="output">Second</button><p id="output">${firstPressed ? "First on" : "First off"}; ${secondPressed ? "Second on" : "Second off"}</p><script>const buttons=[...document.querySelectorAll('button')];for(const button of buttons)button.addEventListener('click',()=>{button.setAttribute('aria-pressed',String(button.getAttribute('aria-pressed')!=='true'));document.querySelector('#output').textContent=buttons.map(item=>item.textContent+' '+(item.getAttribute('aria-pressed')==='true'?'on':'off')).join('; ');});</script></section>`,
+      );
+      expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+      expect(result.observation.restored).toBe(true);
+    },
+  );
+
+  it("does not mistake independent pressed buttons without a shared panel for an exclusive selector", async () => {
+    const result = await capture(
+      `<section data-purposeful-interaction><button type="button" aria-pressed="true">First</button><button type="button" aria-pressed="false">Second</button><p>First enabled</p><script>document.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{const enabled=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(enabled));document.querySelector('p').textContent=button.textContent+(enabled?' enabled':' disabled');}));</script></section>`,
+    );
+    expect(result.observation.before?.state).toBe("true");
+    expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+    expect(result.observation.restored).toBe(true);
+  });
+
+  it("rejects an image beacon even on the snapshotted client asset host", async () => {
+    const url =
+      "https://assets.launchloom.wrazyos.com/intakes/synthetic/photo.webp";
+    const body = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=",
+      "base64",
+    );
+    const result = await capture(
+      disclosure + `<img src="${url}?visitor=private" alt="Unsafe beacon">`,
+      {
+        imageSnapshots: new Map([[url, { body, contentType: "image/png" }]]),
+      },
+    );
+    expect(result.observation.status).toBe("failed");
+    expect(result.observation.unsafeEffects?.length).toBeGreaterThan(0);
+    expect(contacted.filter((path) => path !== "/")).toEqual([]);
+  });
+
+  it("still restores an independent pressed toggle", async () => {
+    const result = await capture(
+      `<section data-purposeful-interaction><button type="button" aria-pressed="false">Show detail</button><p id="detail">Summary only</p><script>const button=document.querySelector('button');const detail=document.getElementById('detail');button.addEventListener('click',()=>{const next=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(next));detail.textContent=next?'Expanded detail':'Summary only';});</script></section>`,
+    );
+    expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+    expect(result.observation.restored).toBe(true);
+  });
+
   it("exercises a safe local menu and restores it", async () => {
     const result = await capture(
       `<nav><button type="button" aria-expanded="false" aria-controls="menu">Menu</button><div id="menu" hidden><a href="/services/">Services</a></div></nav><script>document.querySelector('button').onclick=e=>{const b=e.target;b.setAttribute('aria-expanded',String(b.getAttribute('aria-expanded')!=='true'));document.querySelector('#menu').hidden=b.getAttribute('aria-expanded')!=='true';}</script>`,

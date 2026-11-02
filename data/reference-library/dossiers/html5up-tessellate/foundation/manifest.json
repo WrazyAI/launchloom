@@ -1,0 +1,433 @@
+{
+  "schemaVersion": 1,
+  "id": "html5up-tessellate",
+  "dossierId": "html5up-tessellate",
+  "sourceDigest": "6681720ee73f473e0a15fd09aca1596828c3f3985fbe5a2741035074f93726d0",
+  "entrypoint": "source/index.html",
+  "sourceClass": "licensed",
+  "license": {
+    "name": "CC BY 3.0",
+    "url": "https://html5up.net/tessellate",
+    "credit": "Template adapted from Tessellate by HTML5 UP / AJ"
+  },
+  "sections": [
+    {
+      "id": "header",
+      "sourceSelector": "#header",
+      "order": 1,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "first",
+      "sourceSelector": "#first",
+      "order": 2,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "second",
+      "sourceSelector": "#second",
+      "order": 3,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "third",
+      "sourceSelector": "#third",
+      "order": 4,
+      "role": "unknown",
+      "required": false
+    },
+    {
+      "id": "fourth",
+      "sourceSelector": "#fourth",
+      "order": 5,
+      "role": "contact",
+      "required": true
+    },
+    {
+      "id": "footer",
+      "sourceSelector": "#footer",
+      "order": 6,
+      "role": "unknown",
+      "required": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "contact.body",
+      "selector": "[data-foundation-slot=\"contact.body\"]",
+      "kind": "text",
+      "contentPath": "businessDescription",
+      "required": true
+    },
+    {
+      "id": "contact.heading",
+      "selector": "[data-foundation-slot=\"contact.heading\"]",
+      "kind": "text",
+      "contentPath": "copy.contactHeading",
+      "required": true
+    },
+    {
+      "id": "page.title",
+      "selector": "title",
+      "kind": "text",
+      "contentPath": "brand.name",
+      "required": true
+    },
+    {
+      "id": "unknown-2.body",
+      "selector": "[data-foundation-slot=\"unknown-2.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-2.heading",
+      "selector": "[data-foundation-slot=\"unknown-2.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.body",
+      "selector": "[data-foundation-slot=\"unknown-3.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.heading",
+      "selector": "[data-foundation-slot=\"unknown-3.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-3.image",
+      "selector": "[data-foundation-image=\"unknown-3.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown-3.secondaryImage",
+      "selector": "[data-foundation-image=\"unknown-3.secondaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.secondaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-3.tertiaryImage",
+      "selector": "[data-foundation-image=\"unknown-3.tertiaryImage\"]",
+      "kind": "image",
+      "contentPath": "hero.tertiaryImage",
+      "required": false
+    },
+    {
+      "id": "unknown-4.body",
+      "selector": "[data-foundation-slot=\"unknown-4.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.heading",
+      "selector": "[data-foundation-slot=\"unknown-4.heading\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown-4.image",
+      "selector": "[data-foundation-image=\"unknown-4.image\"]",
+      "kind": "image",
+      "contentPath": "hero.image",
+      "required": false
+    },
+    {
+      "id": "unknown.body",
+      "selector": "[data-foundation-slot=\"unknown.body\"]",
+      "kind": "text",
+      "required": false
+    },
+    {
+      "id": "unknown.heading",
+      "selector": "[data-foundation-slot=\"unknown.heading\"]",
+      "kind": "text",
+      "required": false
+    }
+  ],
+  "assets": [
+    {
+      "source": "assets/css/images/arrow.svg",
+      "target": "template/source/assets/css/images/arrow.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/css/images/bgbl.svg",
+      "target": "template/source/assets/css/images/bgbl.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/css/images/bgtr.svg",
+      "target": "template/source/assets/css/images/bgtr.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/css/images/dark-arrow.svg",
+      "target": "template/source/assets/css/images/dark-arrow.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/css/images/ie/content-style1.svg",
+      "target": "template/source/assets/css/images/ie/content-style1.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/css/images/ie/content-style2.svg",
+      "target": "template/source/assets/css/images/ie/content-style2.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/css/images/ie/content-style3.svg",
+      "target": "template/source/assets/css/images/ie/content-style3.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/css/images/overlay.png",
+      "target": "template/source/assets/css/images/overlay.png",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.eot",
+      "target": "template/source/assets/fonts/fontawesome-webfont.eot",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.svg",
+      "target": "template/source/assets/fonts/fontawesome-webfont.svg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.ttf",
+      "target": "template/source/assets/fonts/fontawesome-webfont.ttf",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.woff",
+      "target": "template/source/assets/fonts/fontawesome-webfont.woff",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/fontawesome-webfont.woff2",
+      "target": "template/source/assets/fonts/fontawesome-webfont.woff2",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/fonts/FontAwesome.otf",
+      "target": "template/source/assets/fonts/FontAwesome.otf",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_breakpoints.scss",
+      "target": "template/source/assets/sass/libs/_breakpoints.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_functions.scss",
+      "target": "template/source/assets/sass/libs/_functions.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_html-grid.scss",
+      "target": "template/source/assets/sass/libs/_html-grid.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_mixins.scss",
+      "target": "template/source/assets/sass/libs/_mixins.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_vars.scss",
+      "target": "template/source/assets/sass/libs/_vars.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/libs/_vendor.scss",
+      "target": "template/source/assets/sass/libs/_vendor.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "assets/sass/main.scss",
+      "target": "template/source/assets/sass/main.scss",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/header.jpg",
+      "target": "template/source/images/header.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/pic01.jpg",
+      "target": "template/source/images/pic01.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/pic02.jpg",
+      "target": "template/source/images/pic02.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/pic03.jpg",
+      "target": "template/source/images/pic03.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/pic04.jpg",
+      "target": "template/source/images/pic04.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/pic05.jpg",
+      "target": "template/source/images/pic05.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/pic06.jpg",
+      "target": "template/source/images/pic06.jpg",
+      "role": "reference-only",
+      "required": false
+    },
+    {
+      "source": "images/pic07.jpg",
+      "target": "template/source/images/pic07.jpg",
+      "role": "reference-only",
+      "required": false
+    }
+  ],
+  "interactions": [
+    {
+      "id": "contact-form",
+      "source": "#contact",
+      "primitive": "shared-lead-form",
+      "reducedMotion": "static form"
+    }
+  ],
+  "preservedMechanics": [
+    "css-system",
+    "image-roles",
+    "native-interactions",
+    "section-order"
+  ],
+  "prohibitedSourceMaterial": [
+    "brand",
+    "copy",
+    "demo-facts",
+    "people",
+    "prices",
+    "project-names",
+    "reviews",
+    "source-images"
+  ],
+  "compatibility": "needs-adaptation",
+  "blockers": [
+    {
+      "code": "missing-hero",
+      "message": "No hero section with an h1 was detected."
+    },
+    {
+      "code": "missing-services",
+      "message": "No services or portfolio section was detected."
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/breakpoints.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/browser.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/jquery.scrolly.min.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/main.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "network-script",
+      "message": "Removed a local script with a network, storage, navigation, or dynamic-code primitive: assets/js/util.js",
+      "selector": "script[src]"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated contact items in 'fourth' have no sealed content mapping.",
+      "selector": "#fourth"
+    },
+    {
+      "code": "unmapped-repeated-items",
+      "message": "Repeated unknown items in 'footer' have no sealed content mapping.",
+      "selector": "#footer"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'first' has no supported content role.",
+      "selector": "#first"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'footer' has no supported content role.",
+      "selector": "#footer"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'header' has no supported content role.",
+      "selector": "#header"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'second' has no supported content role.",
+      "selector": "#second"
+    },
+    {
+      "code": "unmapped-section-content",
+      "message": "Section 'third' has no supported content role.",
+      "selector": "#third"
+    }
+  ],
+  "fingerprint": "a205020647711ed4ba1080962e69fe754967ee0f1b2a8d9f0ca94154b740037a"
+}

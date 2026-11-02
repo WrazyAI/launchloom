@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "id": "templatemo-training-studio",
+  "productionEligible": true,
+  "referenceName": "TemplateMo Training Studio: dark gym hero with program and schedule",
+  "familyId": "templatemo-training-studio-family",
+  "source": {
+    "name": "Training Studio by TemplateMo",
+    "url": "https://templatemo.com/templates/templatemo_548_training_studio",
+    "sourceType": "official TemplateMo template preview, free commercial-use terms",
+    "rights": "licensed",
+    "license": "TemplateMo free commercial-use terms",
+    "rightsEvidence": "TemplateMo states that its templates are free for commercial, personal, or learning use and may be modified for clients, with no usage restriction. The retained terms record is rights/TEMPLATEMO-TERMS.md.",
+    "rightsEvidencePath": "rights/TEMPLATEMO-TERMS.md",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "fitness",
+    "gym",
+    "personal-training"
+  ],
+  "tags": {
+    "business": [
+      "fitness",
+      "gym",
+      "personal training"
+    ],
+    "style": [
+      "dark gym",
+      "condensed display",
+      "orange accent"
+    ],
+    "composition": [
+      "full-bleed hero",
+      "program grid",
+      "schedule table"
+    ],
+    "conversion": [
+      "become a member",
+      "contact form"
+    ],
+    "motion": [
+      "static-first"
+    ],
+    "imagery": [
+      "gym photography",
+      "trainer portraits"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "f7a1a49957b04679edeee232897fe39828a8298d643315aadf4017bb0105b569",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "8b14e029e42ba205582f019a4ede141464ca542d8080881bb48851b84dcd193d",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A dark fitness template. A full-bleed gym photograph sits behind a centered white promise and an orange action. A program grid with six orange icon cards follows, then a dark motivational band, a classes section with a tabbed list and a large class photo, a weekly schedule table, three trainer cards, and a contact form. The typography is a condensed uppercase display with a neutral sans body. Charcoal, white, and orange define the look.",
+    "heroGeometry": {
+      "mode": "full-bleed gym photograph with centered copy",
+      "alignment": "centered",
+      "viewport": "photograph fills the opening behind one short promise and one action"
+    },
+    "navigationGeometry": {
+      "mode": "overlay top navigation",
+      "placement": "top of page",
+      "mobile": "collapsed hamburger"
+    },
+    "typography": {
+      "display": "condensed uppercase display",
+      "body": "neutral sans",
+      "scale": "large condensed headings"
+    },
+    "palette": {
+      "surfaces": [
+        "charcoal",
+        "white",
+        "orange"
+      ],
+      "ink": "white on dark, near-black on light",
+      "accents": [
+        "orange"
+      ],
+      "contrastIntent": "high-energy contrast"
+    },
+    "imageTreatment": {
+      "mode": "full-bleed gym hero, class photo, trainer portraits",
+      "crop": "subject-safe",
+      "focalPoint": "people-safe"
+    },
+    "sectionSequence": [
+      "overlay navigation",
+      "full-bleed gym hero",
+      "program grid",
+      "motivational band",
+      "classes",
+      "schedule table",
+      "trainers",
+      "contact form",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "program grid and weekly schedule",
+      "interaction": "browse then enquire"
+    },
+    "ctaPlacement": {
+      "primary": "Become a Member",
+      "secondary": "contact form",
+      "early": "in the hero and motivational band"
+    },
+    "motion": {
+      "primitive": "static-first",
+      "library": "CSS",
+      "reducedMotion": "static"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the hero, program cards, classes, schedule, trainers, and contact form",
+      "rules": [
+        "keep the hero action visible",
+        "preserve people-safe crops",
+        "avoid horizontal overflow in the schedule"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "program grid",
+        "schedule table"
+      ],
+      "mobileTreatmentChanged": false
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "gym-hero",
+        "selector": "[data-reference-signature=gym-hero]",
+        "description": "full-bleed gym photograph with centered copy and one action"
+      },
+      {
+        "id": "program-grid",
+        "selector": "[data-reference-signature=program-grid]",
+        "description": "six program cards with icon, copy, and discover action"
+      },
+      {
+        "id": "schedule-table",
+        "selector": "[data-reference-signature=schedule-table]",
+        "description": "weekly class schedule table"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse source photography, copy, or trade dress",
+      "invent classes, prices, trainers, or outcomes",
+      "copy source code into a client site",
+      "replace the gym hero with a generic card grid",
+      "low-contrast actions"
+    ],
+    "acceptanceChecks": [
+      "The opening is a full-bleed gym photograph with centered copy and one action.",
+      "Program cards and the schedule table remain distinct sections.",
+      "At 390 px the schedule does not cause horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Official TemplateMo template preview captured at both viewports. TemplateMo free commercial-use terms are retained in the rights record; source photography is not reused in client work."
+  }
+}

@@ -219,7 +219,12 @@ function referenceIdsForBusinessKind(repositoryRoot, industry) {
     throw new Error(
       "The canonical reference collection contains duplicate dossier IDs.",
     );
-  return new Set(referenceIds);
+  return {
+    matchedCoreIds: new Set(referenceIds),
+    allCoreIds: new Set(
+      collection.niches.flatMap((niche) => niche.referenceIds),
+    ),
+  };
 }
 
 function signatureFor(record) {
@@ -1027,14 +1032,32 @@ export function buildInspirationPack(
   );
   if (!seed || !industry)
     throw new Error("Inspiration selection requires a seed and industry.");
-  const canonicalReferenceIds = referenceIdsForBusinessKind(
-    repositoryRoot,
-    industry,
-  );
+  const { matchedCoreIds: canonicalReferenceIds, allCoreIds } =
+    referenceIdsForBusinessKind(repositoryRoot, industry);
+  const canonicalPoolSize = registry.records.filter((record) =>
+    canonicalReferenceIds.has(record.id),
+  ).length;
   registry = {
     ...registry,
-    records: registry.records.filter((record) =>
-      canonicalReferenceIds.has(record.id),
+    records: registry.records.filter(
+      (record) =>
+        canonicalReferenceIds.has(record.id) ||
+        (requireDossiers &&
+          !allCoreIds.has(record.id) &&
+          record.dossierPath &&
+          businessKindMatches(record, industry) &&
+          // Preserve established core selection unless a specific supplemental
+          // reference is requested or the supplied core pool needs coverage.
+          // A generic rendered-family/style phrase is not a source request.
+          (canonicalPoolSize < 6 ||
+            explicitlyRequested(
+              {
+                id: record.id,
+                name: record.name,
+                referenceName: record.referenceName,
+              },
+              request,
+            ))),
     ),
   };
   const dossiersById = new Map();
@@ -1063,10 +1086,21 @@ export function buildInspirationPack(
         (record) => dossiersById.get(record.id)?.productionEligible === true,
       )
       .map((record) => {
-        const tags = dossiersById.get(record.id).tags;
+        const dossier = dossiersById.get(record.id);
+        const tags = dossier.tags;
         return {
           ...record,
-          industries: [...new Set([...record.industries, ...tags.business])],
+          // Supplemental eligibility comes from the validated dossier, not
+          // from an unverified registry industry label. Core behavior stays
+          // unchanged, including its canonical niche boundaries.
+          industries: [
+            ...new Set([
+              ...(allCoreIds.has(record.id)
+                ? record.industries
+                : dossier.businessKinds),
+              ...tags.business,
+            ]),
+          ],
           moods: [...new Set([...record.moods, ...tags.style])],
           referenceTags: tags,
           selectionReferenceDna: dossiersById.get(record.id).referenceDna,

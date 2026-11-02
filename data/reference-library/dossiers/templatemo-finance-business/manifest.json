@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "id": "templatemo-finance-business",
+  "productionEligible": true,
+  "referenceName": "TemplateMo Finance Business: corporate photo hero with lime system",
+  "familyId": "templatemo-finance-business-family",
+  "source": {
+    "name": "Finance Business by TemplateMo",
+    "url": "https://templatemo.com/templates/templatemo_545_finance_business",
+    "sourceType": "official TemplateMo template preview, free commercial-use terms",
+    "rights": "licensed",
+    "license": "TemplateMo free commercial-use terms",
+    "rightsEvidence": "TemplateMo states that its templates are free for commercial, personal, or learning use and may be modified for clients, with no usage restriction. The retained terms record is rights/TEMPLATEMO-TERMS.md.",
+    "rightsEvidencePath": "rights/TEMPLATEMO-TERMS.md",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "accounting",
+    "bookkeeping",
+    "financial-services",
+    "professional-services"
+  ],
+  "tags": {
+    "business": [
+      "accounting",
+      "bookkeeping",
+      "financial services",
+      "professional services"
+    ],
+    "style": [
+      "corporate",
+      "geometric sans",
+      "lime accent"
+    ],
+    "composition": [
+      "full-bleed photo hero",
+      "statistics band",
+      "service cards"
+    ],
+    "conversion": [
+      "contact CTA",
+      "callback form"
+    ],
+    "motion": [
+      "restrained"
+    ],
+    "imagery": [
+      "full-bleed office photography",
+      "square service photos"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "1bc5df04872ab44acf49acf77213e914b3c3912cf38a0725ea00b41993660c76",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "7b7083d0997709fa72b6cb7fb9b8563703cefc3ee8b720ce67509e2e3f866ba6",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A corporate finance template. A slim dark top bar carries hours and phone; a white navigation row carries the brand, links, and a contact action. A full-bleed office photograph sits under a dark overlay with a left-aligned white promise, supporting copy, and a lime button. A lime callback strip follows, then three bordered service cards with photos, a large statistics band, a split about section, two testimonials, a lime callback form, a client-logo strip, and a dark footer. The typography is a friendly geometric sans. Lime green, white, charcoal, and office photography define the look.",
+    "heroGeometry": {
+      "mode": "full-bleed office photograph with left-aligned overlay copy",
+      "alignment": "left-aligned over media",
+      "viewport": "photograph fills the opening behind a short promise and one action"
+    },
+    "navigationGeometry": {
+      "mode": "utility top bar plus inline navigation",
+      "placement": "top of page",
+      "mobile": "collapsed hamburger"
+    },
+    "typography": {
+      "display": "bold geometric sans",
+      "body": "same geometric sans",
+      "scale": "large but compact corporate hierarchy"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "light gray",
+        "charcoal",
+        "lime green"
+      ],
+      "ink": "near-black on light, white on dark",
+      "accents": [
+        "lime green"
+      ],
+      "contrastIntent": "clear corporate contrast"
+    },
+    "imageTreatment": {
+      "mode": "full-bleed office hero and square service photographs",
+      "crop": "cover",
+      "focalPoint": "people-safe and desk-safe"
+    },
+    "sectionSequence": [
+      "utility top bar",
+      "inline navigation",
+      "full-bleed hero with overlay",
+      "lime callback strip",
+      "three service cards",
+      "statistics band",
+      "about split",
+      "testimonials",
+      "callback form",
+      "client logo strip",
+      "dark footer"
+    ],
+    "servicePresentation": {
+      "pattern": "three bordered service cards with photographs",
+      "interaction": "one action per card"
+    },
+    "ctaPlacement": {
+      "primary": "hero contact button",
+      "secondary": "callback form",
+      "early": "hero and callback strip"
+    },
+    "motion": {
+      "primitive": "restrained",
+      "library": "CSS and light script",
+      "reducedMotion": "static"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the hero, strips, cards, stats, about, proof, and form",
+      "rules": [
+        "keep the hero action visible",
+        "preserve people-safe photo crops",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "statistics band",
+        "callback strip"
+      ],
+      "mobileTreatmentChanged": false
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "corporate-photo-hero",
+        "selector": "[data-reference-signature=corporate-photo-hero]",
+        "description": "full-bleed office photograph with left-aligned overlay copy and one action"
+      },
+      {
+        "id": "statistics-band",
+        "selector": "[data-reference-signature=statistics-band]",
+        "description": "large-number proof band between services and about"
+      },
+      {
+        "id": "service-card-row",
+        "selector": "[data-reference-signature=service-card-row]",
+        "description": "three bordered service cards with photographs and one action each"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse source photography, copy, logos, or trade dress",
+      "invent clients, statistics, awards, or outcomes",
+      "copy source code into a client site",
+      "replace the photo hero with a flat text banner",
+      "low-contrast overlaid copy"
+    ],
+    "acceptanceChecks": [
+      "The opening is a full-bleed photograph with readable left-aligned copy and one action.",
+      "The statistics band remains a distinct proof moment.",
+      "Three service cards stay scannable and equal in weight.",
+      "At 390 px the page stacks without horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Official TemplateMo template preview captured at both viewports. TemplateMo's free commercial-use terms are retained in the rights record; source photography is not reused in client work."
+  }
+}

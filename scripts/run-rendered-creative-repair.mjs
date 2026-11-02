@@ -870,6 +870,16 @@ export function findingsRequirePaletteChange(findings) {
     if (finding?.category === "human-review-feedback") return true;
     // A rejected response's diagnostic wording is not a new design request.
     if (finding?.category === "repair-output-rejected") return false;
+    // Bakeoff forwards deterministic audit failures as strings, not category
+    // objects. Only the exact body-target prefix unlocks a color correction;
+    // incidental contrast wording and control-only findings stay locked.
+    if (
+      typeof finding === "string" &&
+      /^contrast (?:fail|unresolved): \/\S* (?:desktop|compact|mobile) (?:default|hover|focus|[^ ]+) body(?: >| )/u.test(
+        finding,
+      )
+    )
+      return true;
     const category =
       finding && typeof finding === "object"
         ? String(finding.category || "")

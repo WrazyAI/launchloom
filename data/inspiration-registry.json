@@ -9824,6 +9824,1408 @@
           "demo-people-not-client-staff"
         ]
       }
+    },
+    {
+      "id": "html5up-editorial",
+      "name": "Editorial by HTML5 UP: fixed sidebar with split editorial hero",
+      "referenceName": "Editorial by HTML5 UP: fixed sidebar with split editorial hero",
+      "referenceFamilyId": "html5up-editorial-family",
+      "source": "Editorial by HTML5 UP / AJ",
+      "sourceUrl": "https://html5up.net/editorial",
+      "rights": "licensed",
+      "industries": [
+        "dental",
+        "home-care",
+        "hospitality",
+        "roofing",
+        "veterinary",
+        "professional-services",
+        "home care",
+        "professional services"
+      ],
+      "moods": [
+        "editorial",
+        "serif display",
+        "coral accent"
+      ],
+      "navigation": "fixed left sidebar with search and section links",
+      "heroGeometry": "split editorial hero beside a fixed sidebar",
+      "servicePresentation": "article grid with outlined actions",
+      "sectionRhythm": "fixed sidebar -> split editorial hero -> feature icon grid -> two-column article grid -> contact and footer",
+      "typographyCategory": "high-contrast serif display",
+      "imageStrategy": "portrait hero and article thumbnails",
+      "motionOpportunities": [
+        "static-first"
+      ],
+      "familyId": "editorial-monument",
+      "dossierPath": "data/reference-library/dossiers/html5up-editorial",
+      "mobileBehavior": "collapse the sidebar, stack the hero image and copy, then the article cards",
+      "prohibitedPatterns": [
+        "reuse source photography, copy, or trade dress",
+        "invent services, credentials, or outcomes",
+        "copy source code into a client site",
+        "replace the sidebar with a generic top bar",
+        "low-contrast actions"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/html5up-editorial/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/html5up-editorial/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "editorial",
+        "serif display",
+        "coral accent"
+      ],
+      "sourceFonts": [
+        "high-contrast serif display"
+      ],
+      "referenceTags": {
+        "business": [
+          "dental",
+          "home care",
+          "hospitality",
+          "roofing",
+          "veterinary",
+          "professional services"
+        ],
+        "style": [
+          "editorial",
+          "serif display",
+          "coral accent"
+        ],
+        "composition": [
+          "fixed sidebar",
+          "split hero",
+          "article grid"
+        ],
+        "conversion": [
+          "learn more",
+          "article actions"
+        ],
+        "motion": [
+          "static-first"
+        ],
+        "imagery": [
+          "portrait hero",
+          "article thumbnails"
+        ]
+      }
+    },
+    {
+      "id": "html5up-paradigm-shift",
+      "name": "Paradigm Shift by HTML5 UP: split type-and-photo statement",
+      "referenceName": "Paradigm Shift by HTML5 UP: split type-and-photo statement",
+      "referenceFamilyId": "html5up-paradigm-shift-family",
+      "source": "Paradigm Shift by HTML5 UP / AJ",
+      "sourceUrl": "https://html5up.net/paradigm-shift",
+      "rights": "licensed",
+      "industries": [
+        "creative-studio",
+        "agency",
+        "architecture",
+        "interior-design",
+        "creative studio",
+        "interior design"
+      ],
+      "moods": [
+        "mint accent",
+        "oversized type",
+        "black and white"
+      ],
+      "navigation": "minimal inline top navigation",
+      "heroGeometry": "split statement-and-photo opening",
+      "servicePresentation": "stacked feature chapters",
+      "sectionRhythm": "split statement hero -> feature chapters -> element showcase -> contact block -> footer",
+      "typographyCategory": "bold geometric sans with tight leading",
+      "imageStrategy": "full-height portrait photograph",
+      "motionOpportunities": [
+        "restrained reveal"
+      ],
+      "familyId": "editorial-monument",
+      "dossierPath": "data/reference-library/dossiers/html5up-paradigm-shift",
+      "mobileBehavior": "stack the statement, then the photograph, then chapters",
+      "prohibitedPatterns": [
+        "reuse the source mint-and-photo composition as a brand",
+        "reuse source copy, photography, or trade dress",
+        "invent services, prices, or claims",
+        "copy source code into a client site",
+        "flatten the split opening into a generic card grid"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/html5up-paradigm-shift/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/html5up-paradigm-shift/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "mint accent",
+        "oversized type",
+        "black and white"
+      ],
+      "sourceFonts": [
+        "bold geometric sans with tight leading"
+      ],
+      "referenceTags": {
+        "business": [
+          "creative studio",
+          "agency",
+          "architecture",
+          "interior design"
+        ],
+        "style": [
+          "mint accent",
+          "oversized type",
+          "black and white"
+        ],
+        "composition": [
+          "split statement",
+          "full-height photo",
+          "stacked chapters"
+        ],
+        "conversion": [
+          "scroll cue",
+          "contact link"
+        ],
+        "motion": [
+          "restrained reveal"
+        ],
+        "imagery": [
+          "full-height portrait photograph"
+        ]
+      }
+    },
+    {
+      "id": "html5up-prologue",
+      "name": "Prologue by HTML5 UP: fixed sidebar with image-backed intro",
+      "referenceName": "Prologue by HTML5 UP: fixed sidebar with image-backed intro",
+      "referenceFamilyId": "html5up-prologue-family",
+      "source": "Prologue by HTML5 UP / AJ",
+      "sourceUrl": "https://html5up.net/prologue",
+      "rights": "licensed",
+      "industries": [
+        "consulting",
+        "accounting",
+        "legal-services",
+        "professional-services",
+        "legal services",
+        "professional services"
+      ],
+      "moods": [
+        "dark sidebar",
+        "light humanist sans",
+        "muted teal"
+      ],
+      "navigation": "fixed left sidebar with icon links",
+      "heroGeometry": "sidebar plus image-backed centered opening",
+      "servicePresentation": "portfolio grid with captions",
+      "sectionRhythm": "fixed sidebar navigation -> image-backed centered intro -> portfolio grid -> about section -> contact forms -> footer",
+      "typographyCategory": "light humanist sans",
+      "imageStrategy": "blurred landscape hero and portfolio thumbnails",
+      "motionOpportunities": [
+        "static-first"
+      ],
+      "familyId": "archive-rail",
+      "dossierPath": "data/reference-library/dossiers/html5up-prologue",
+      "mobileBehavior": "collapse the sidebar to a menu button, center the intro, stack the grid",
+      "prohibitedPatterns": [
+        "reuse source photography, copy, or trade dress",
+        "invent credentials, clients, or outcomes",
+        "copy source code into a client site",
+        "replace the sidebar with a generic top bar",
+        "low-contrast overlaid copy"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/html5up-prologue/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/html5up-prologue/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "dark sidebar",
+        "light humanist sans",
+        "muted teal"
+      ],
+      "sourceFonts": [
+        "light humanist sans"
+      ],
+      "referenceTags": {
+        "business": [
+          "consulting",
+          "accounting",
+          "legal services",
+          "professional services"
+        ],
+        "style": [
+          "dark sidebar",
+          "light humanist sans",
+          "muted teal"
+        ],
+        "composition": [
+          "fixed sidebar",
+          "image-backed intro",
+          "portfolio grid"
+        ],
+        "conversion": [
+          "intro button",
+          "contact forms"
+        ],
+        "motion": [
+          "static-first"
+        ],
+        "imagery": [
+          "blurred landscape hero",
+          "portfolio thumbnails"
+        ]
+      }
+    },
+    {
+      "id": "html5up-read-only",
+      "name": "Read Only by HTML5 UP: serif editorial stack with identity sidebar",
+      "referenceName": "Read Only by HTML5 UP: serif editorial stack with identity sidebar",
+      "referenceFamilyId": "html5up-read-only-family",
+      "source": "Read Only by HTML5 UP / AJ",
+      "sourceUrl": "https://html5up.net/read-only",
+      "rights": "licensed",
+      "industries": [
+        "dental",
+        "home-care",
+        "veterinary",
+        "roofing",
+        "home care"
+      ],
+      "moods": [
+        "minimal editorial",
+        "serif display",
+        "green accent"
+      ],
+      "navigation": "right sidebar with section links",
+      "heroGeometry": "full-width landscape with a large serif heading below",
+      "servicePresentation": "accomplishment rows with images",
+      "sectionRhythm": "full-width landscape -> large serif intro -> right sidebar identity -> icon list -> accomplishment rows -> contact form -> footer",
+      "typographyCategory": "large serif display",
+      "imageStrategy": "full-width landscape and accomplishment images",
+      "motionOpportunities": [
+        "static-first"
+      ],
+      "familyId": "editorial-monument",
+      "dossierPath": "data/reference-library/dossiers/html5up-read-only",
+      "mobileBehavior": "collapse the sidebar, stack the landscape, intro, icon list, accomplishment rows, and contact form",
+      "prohibitedPatterns": [
+        "reuse source photography, copy, or trade dress",
+        "invent credentials, clients, or outcomes",
+        "copy source code into a client site",
+        "replace the serif intro with a generic card grid",
+        "low-contrast actions"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/html5up-read-only/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/html5up-read-only/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "minimal editorial",
+        "serif display",
+        "green accent"
+      ],
+      "sourceFonts": [
+        "large serif display"
+      ],
+      "referenceTags": {
+        "business": [
+          "dental",
+          "home care",
+          "veterinary",
+          "roofing"
+        ],
+        "style": [
+          "minimal editorial",
+          "serif display",
+          "green accent"
+        ],
+        "composition": [
+          "full-width landscape",
+          "serif intro",
+          "accomplishment rows"
+        ],
+        "conversion": [
+          "send message",
+          "contact form"
+        ],
+        "motion": [
+          "static-first"
+        ],
+        "imagery": [
+          "full-width landscape",
+          "accomplishment images"
+        ]
+      }
+    },
+    {
+      "id": "html5up-tessellate",
+      "name": "Tessellate by HTML5 UP: cinematic image-led chapters",
+      "referenceName": "Tessellate by HTML5 UP: cinematic image-led chapters",
+      "referenceFamilyId": "html5up-tessellate-family",
+      "source": "Tessellate by HTML5 UP / AJ",
+      "sourceUrl": "https://html5up.net/tessellate",
+      "rights": "licensed",
+      "industries": [
+        "photography",
+        "architecture",
+        "interior-design",
+        "hospitality",
+        "interior design"
+      ],
+      "moods": [
+        "cinematic",
+        "thin sans",
+        "warm photography"
+      ],
+      "navigation": "overlay top navigation",
+      "heroGeometry": "full-bleed photographic opening with centered copy",
+      "servicePresentation": "feature rows with short copy",
+      "sectionRhythm": "full-bleed image hero -> centered intro -> feature rows -> dark geometric band -> element showcase -> footer",
+      "typographyCategory": "thin humanist sans",
+      "imageStrategy": "full-bleed cinematic hero and coordinated feature images",
+      "motionOpportunities": [
+        "restrained fade"
+      ],
+      "familyId": "cinematic-stage",
+      "dossierPath": "data/reference-library/dossiers/html5up-tessellate",
+      "mobileBehavior": "stack hero, intro, feature rows, then the closing band",
+      "prohibitedPatterns": [
+        "reuse source photography, copy, or trade dress",
+        "invent services, prices, or claims",
+        "copy source code into a client site",
+        "replace the cinematic opening with a flat text hero",
+        "low-contrast overlaid copy"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/html5up-tessellate/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/html5up-tessellate/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "cinematic",
+        "thin sans",
+        "warm photography"
+      ],
+      "sourceFonts": [
+        "thin humanist sans"
+      ],
+      "referenceTags": {
+        "business": [
+          "photography",
+          "architecture",
+          "interior design",
+          "hospitality"
+        ],
+        "style": [
+          "cinematic",
+          "thin sans",
+          "warm photography"
+        ],
+        "composition": [
+          "full-bleed hero",
+          "feature rows",
+          "modular grid"
+        ],
+        "conversion": [
+          "outlined hero action",
+          "feature links"
+        ],
+        "motion": [
+          "restrained fade"
+        ],
+        "imagery": [
+          "full-bleed cinematic photograph",
+          "coordinated feature images"
+        ]
+      }
+    },
+    {
+      "id": "startbootstrap-agency",
+      "name": "Start Bootstrap Agency: dark photo masthead with project grid",
+      "referenceName": "Start Bootstrap Agency: dark photo masthead with project grid",
+      "referenceFamilyId": "startbootstrap-agency-family",
+      "source": "Agency by Start Bootstrap",
+      "sourceUrl": "https://startbootstrap.github.io/startbootstrap-agency/",
+      "rights": "licensed",
+      "industries": [
+        "home-services",
+        "local-trades",
+        "landscaping",
+        "creative-studio",
+        "agency",
+        "roofing",
+        "veterinary",
+        "home services",
+        "local trades"
+      ],
+      "moods": [
+        "dark studio",
+        "uppercase sans",
+        "yellow accent"
+      ],
+      "navigation": "fixed dark top navbar",
+      "heroGeometry": "full-bleed photo masthead with centered uppercase promise",
+      "servicePresentation": "icon-led service columns",
+      "sectionRhythm": "fixed dark navigation -> full-bleed masthead -> three icon services -> six-item portfolio grid -> vertical timeline about -> team portraits -> client logo strip -> dark contact form -> footer",
+      "typographyCategory": "Montserrat uppercase",
+      "imageStrategy": "full-bleed masthead and square project thumbnails",
+      "motionOpportunities": [
+        "restrained hover and scroll",
+        "restrained hover"
+      ],
+      "familyId": "archive-rail",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-agency",
+      "mobileBehavior": "stack masthead, services, portfolio, timeline, team, contact",
+      "prohibitedPatterns": [
+        "reuse source photographs, client logos, team names, or copy",
+        "invent clients, awards, or outcomes",
+        "copy source code into a client site",
+        "replace the masthead with a generic card wall",
+        "low-contrast or inaccessible actions"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/startbootstrap-agency/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/startbootstrap-agency/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "dark studio",
+        "uppercase sans",
+        "yellow accent"
+      ],
+      "sourceFonts": [
+        "Montserrat uppercase"
+      ],
+      "referenceTags": {
+        "business": [
+          "agency",
+          "home services",
+          "local trades",
+          "landscaping",
+          "roofing",
+          "veterinary"
+        ],
+        "style": [
+          "dark studio",
+          "uppercase sans",
+          "yellow accent"
+        ],
+        "composition": [
+          "full-bleed masthead",
+          "portfolio grid",
+          "timeline"
+        ],
+        "conversion": [
+          "masthead CTA",
+          "contact form"
+        ],
+        "motion": [
+          "restrained hover"
+        ],
+        "imagery": [
+          "full-bleed photography",
+          "square project thumbnails"
+        ]
+      }
+    },
+    {
+      "id": "startbootstrap-business-casual",
+      "name": "Start Bootstrap Business Casual: warm cafe split with overlapping card",
+      "referenceName": "Start Bootstrap Business Casual: warm cafe split with overlapping card",
+      "referenceFamilyId": "startbootstrap-business-casual-family",
+      "source": "Business Casual by Start Bootstrap",
+      "sourceUrl": "https://startbootstrap.github.io/startbootstrap-business-casual/",
+      "rights": "licensed",
+      "industries": [
+        "restaurant",
+        "cafe",
+        "hospitality",
+        "coffee-shop",
+        "coffee shop"
+      ],
+      "moods": [
+        "warm cafe",
+        "serif display",
+        "cream and amber"
+      ],
+      "navigation": "centered inline navigation under masthead",
+      "heroGeometry": "split image-and-copy with overlapping text card",
+      "servicePresentation": "single promise with one action",
+      "sectionRhythm": "coffee-bean masthead -> inline navigation -> split image-and-copy intro -> amber promise band -> dark footer",
+      "typographyCategory": "Lora serif with thin uppercase labels",
+      "imageStrategy": "wide cafe photograph and coffee-bean masthead",
+      "motionOpportunities": [
+        "static-first"
+      ],
+      "familyId": "market-collage",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-business-casual",
+      "mobileBehavior": "stack the photograph, then the cream card, then the promise band",
+      "prohibitedPatterns": [
+        "reuse source coffee-bean photography, copy, or trade dress",
+        "invent menu items, prices, or claims",
+        "copy source code into a client site",
+        "replace the overlapping card with a generic split hero",
+        "low-contrast actions"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/startbootstrap-business-casual/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/startbootstrap-business-casual/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "warm cafe",
+        "serif display",
+        "cream and amber"
+      ],
+      "sourceFonts": [
+        "Lora serif with thin uppercase labels"
+      ],
+      "referenceTags": {
+        "business": [
+          "restaurant",
+          "cafe",
+          "hospitality",
+          "coffee shop"
+        ],
+        "style": [
+          "warm cafe",
+          "serif display",
+          "cream and amber"
+        ],
+        "composition": [
+          "split hero",
+          "overlapping card",
+          "promise band"
+        ],
+        "conversion": [
+          "visit us",
+          "single action"
+        ],
+        "motion": [
+          "static-first"
+        ],
+        "imagery": [
+          "cafe photography",
+          "coffee-bean masthead"
+        ]
+      }
+    },
+    {
+      "id": "startbootstrap-clean-blog",
+      "name": "Start Bootstrap Clean Blog: full-width header with single-column article list",
+      "referenceName": "Start Bootstrap Clean Blog: full-width header with single-column article list",
+      "referenceFamilyId": "startbootstrap-clean-blog-family",
+      "source": "Clean Blog by Start Bootstrap",
+      "sourceUrl": "https://startbootstrap.github.io/startbootstrap-clean-blog/",
+      "rights": "licensed",
+      "industries": [
+        "dental",
+        "home-care",
+        "hospitality",
+        "roofing",
+        "veterinary",
+        "home care"
+      ],
+      "moods": [
+        "editorial",
+        "bold serif",
+        "teal accent"
+      ],
+      "navigation": "inline top navigation",
+      "heroGeometry": "full-width header photograph with centered title",
+      "servicePresentation": "article list with standfirst and byline",
+      "sectionRhythm": "top navigation -> full-width header photograph -> single-column article list -> older posts action -> social footer",
+      "typographyCategory": "bold serif display",
+      "imageStrategy": "full-width header photograph and article imagery",
+      "motionOpportunities": [
+        "static-first"
+      ],
+      "familyId": "editorial-monument",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-clean-blog",
+      "mobileBehavior": "keep the header and stack the article list in one column",
+      "prohibitedPatterns": [
+        "reuse source photography, copy, or trade dress",
+        "invent services, credentials, or outcomes",
+        "copy source code into a client site",
+        "replace the article list with generic service cards",
+        "low-contrast actions"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/startbootstrap-clean-blog/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/startbootstrap-clean-blog/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "editorial",
+        "bold serif",
+        "teal accent"
+      ],
+      "sourceFonts": [
+        "bold serif display"
+      ],
+      "referenceTags": {
+        "business": [
+          "dental",
+          "home care",
+          "hospitality",
+          "roofing",
+          "veterinary"
+        ],
+        "style": [
+          "editorial",
+          "bold serif",
+          "teal accent"
+        ],
+        "composition": [
+          "full-width header",
+          "single-column article list"
+        ],
+        "conversion": [
+          "older posts",
+          "article reading"
+        ],
+        "motion": [
+          "static-first"
+        ],
+        "imagery": [
+          "full-width header photograph",
+          "article imagery"
+        ]
+      }
+    },
+    {
+      "id": "startbootstrap-creative",
+      "name": "Start Bootstrap Creative: full-bleed photo masthead with orange bands",
+      "referenceName": "Start Bootstrap Creative: full-bleed photo masthead with orange bands",
+      "referenceFamilyId": "startbootstrap-creative-family",
+      "source": "Creative by Start Bootstrap",
+      "sourceUrl": "https://startbootstrap.github.io/startbootstrap-creative/",
+      "rights": "licensed",
+      "industries": [
+        "fitness",
+        "gym",
+        "creative-studio",
+        "agency",
+        "creative studio"
+      ],
+      "moods": [
+        "energetic",
+        "orange accent",
+        "rounded sans"
+      ],
+      "navigation": "overlay top navigation",
+      "heroGeometry": "full-bleed photographic masthead with centered copy",
+      "servicePresentation": "four feature columns",
+      "sectionRhythm": "overlay navigation -> full-bleed photo masthead -> orange promise band -> four feature columns -> six-image grid -> dark download band -> contact form -> footer",
+      "typographyCategory": "rounded geometric sans",
+      "imageStrategy": "full-bleed hero and six-image workshop grid",
+      "motionOpportunities": [
+        "restrained"
+      ],
+      "familyId": "cinematic-stage",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-creative",
+      "mobileBehavior": "stack the masthead, orange band, features, image grid, and contact form",
+      "prohibitedPatterns": [
+        "reuse source photography, copy, or trade dress",
+        "invent services, prices, or claims",
+        "copy source code into a client site",
+        "replace the masthead with a generic card grid",
+        "low-contrast actions"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/startbootstrap-creative/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/startbootstrap-creative/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "energetic",
+        "orange accent",
+        "rounded sans"
+      ],
+      "sourceFonts": [
+        "rounded geometric sans"
+      ],
+      "referenceTags": {
+        "business": [
+          "fitness",
+          "gym",
+          "creative studio",
+          "agency"
+        ],
+        "style": [
+          "energetic",
+          "orange accent",
+          "rounded sans"
+        ],
+        "composition": [
+          "full-bleed masthead",
+          "promise band",
+          "image grid"
+        ],
+        "conversion": [
+          "find out more",
+          "get started",
+          "contact form"
+        ],
+        "motion": [
+          "restrained"
+        ],
+        "imagery": [
+          "full-bleed workshop photograph",
+          "six-image grid"
+        ]
+      }
+    },
+    {
+      "id": "startbootstrap-grayscale",
+      "name": "Start Bootstrap Grayscale: monochrome photo hero with project rows",
+      "referenceName": "Start Bootstrap Grayscale: monochrome photo hero with project rows",
+      "referenceFamilyId": "startbootstrap-grayscale-family",
+      "source": "Grayscale by Start Bootstrap",
+      "sourceUrl": "https://startbootstrap.github.io/startbootstrap-grayscale/",
+      "rights": "licensed",
+      "industries": [
+        "roofing",
+        "veterinary",
+        "fitness",
+        "construction"
+      ],
+      "moods": [
+        "monochrome",
+        "teal accent",
+        "thin sans"
+      ],
+      "navigation": "overlay top navigation",
+      "heroGeometry": "full-bleed grayscale photograph with centered copy",
+      "servicePresentation": "alternating project rows",
+      "sectionRhythm": "overlay navigation -> full-bleed hero -> intro -> alternating project rows -> newsletter band -> contact cards -> footer",
+      "typographyCategory": "thin geometric sans",
+      "imageStrategy": "full-bleed grayscale landscape and project rows",
+      "motionOpportunities": [
+        "static-first"
+      ],
+      "familyId": "cinematic-stage",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-grayscale",
+      "mobileBehavior": "stack the hero, intro, project rows, newsletter, and contact cards",
+      "prohibitedPatterns": [
+        "reuse source photography, copy, or trade dress",
+        "invent services, credentials, or outcomes",
+        "copy source code into a client site",
+        "replace the monochrome hero with a generic card grid",
+        "low-contrast overlaid copy"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/startbootstrap-grayscale/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/startbootstrap-grayscale/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "monochrome",
+        "teal accent",
+        "thin sans"
+      ],
+      "sourceFonts": [
+        "thin geometric sans"
+      ],
+      "referenceTags": {
+        "business": [
+          "roofing",
+          "veterinary",
+          "fitness",
+          "construction"
+        ],
+        "style": [
+          "monochrome",
+          "teal accent",
+          "thin sans"
+        ],
+        "composition": [
+          "full-bleed hero",
+          "project rows",
+          "newsletter band"
+        ],
+        "conversion": [
+          "get started",
+          "newsletter"
+        ],
+        "motion": [
+          "static-first"
+        ],
+        "imagery": [
+          "grayscale landscape",
+          "project photographs"
+        ]
+      }
+    },
+    {
+      "id": "startbootstrap-landing-page",
+      "name": "Start Bootstrap Landing Page: centered signup field over water",
+      "referenceName": "Start Bootstrap Landing Page: centered signup field over water",
+      "referenceFamilyId": "startbootstrap-landing-page-family",
+      "source": "Landing Page by Start Bootstrap",
+      "sourceUrl": "https://startbootstrap.github.io/startbootstrap-landing-page/",
+      "rights": "licensed",
+      "industries": [
+        "fitness",
+        "gym",
+        "dental",
+        "home-care",
+        "home care"
+      ],
+      "moods": [
+        "clean",
+        "blue accent",
+        "neutral sans"
+      ],
+      "navigation": "slim top bar with a signup action",
+      "heroGeometry": "centered email signup over a wide background photograph",
+      "servicePresentation": "feature rows with one signup action",
+      "sectionRhythm": "slim top bar -> centered signup hero -> three feature icons -> alternating image-and-copy rows -> testimonials -> closing signup band -> footer",
+      "typographyCategory": "neutral sans with large centered headings",
+      "imageStrategy": "wide water background and alternating feature photographs",
+      "motionOpportunities": [
+        "static-first"
+      ],
+      "familyId": "editorial-monument",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-landing-page",
+      "mobileBehavior": "stack the signup hero, features, alternating rows, testimonials, and closing signup",
+      "prohibitedPatterns": [
+        "reuse source photography, copy, or trade dress",
+        "invent services, prices, or outcomes",
+        "copy source code into a client site",
+        "replace the signup field with a generic card grid",
+        "low-contrast overlaid copy"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/startbootstrap-landing-page/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/startbootstrap-landing-page/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "clean",
+        "blue accent",
+        "neutral sans"
+      ],
+      "sourceFonts": [
+        "neutral sans with large centered headings"
+      ],
+      "referenceTags": {
+        "business": [
+          "fitness",
+          "gym",
+          "dental",
+          "home care"
+        ],
+        "style": [
+          "clean",
+          "blue accent",
+          "neutral sans"
+        ],
+        "composition": [
+          "centered signup hero",
+          "alternating feature rows"
+        ],
+        "conversion": [
+          "email signup",
+          "submit"
+        ],
+        "motion": [
+          "static-first"
+        ],
+        "imagery": [
+          "water background",
+          "feature photographs"
+        ]
+      }
+    },
+    {
+      "id": "startbootstrap-small-business",
+      "name": "Start Bootstrap Small Business: split image-and-copy business page",
+      "referenceName": "Start Bootstrap Small Business: split image-and-copy business page",
+      "referenceFamilyId": "startbootstrap-small-business-family",
+      "source": "Small Business by Start Bootstrap",
+      "sourceUrl": "https://startbootstrap.github.io/startbootstrap-small-business/",
+      "rights": "licensed",
+      "industries": [
+        "home-services",
+        "local-trades",
+        "landscaping",
+        "contractor",
+        "small-business",
+        "small business",
+        "home services",
+        "local trades"
+      ],
+      "moods": [
+        "plain bootstrap",
+        "neutral sans",
+        "blue accent",
+        "light surfaces"
+      ],
+      "navigation": "dark inline top bar",
+      "heroGeometry": "split image-and-copy opening",
+      "servicePresentation": "three equal service cards",
+      "sectionRhythm": "dark top navigation -> split image-and-copy hero -> full-width callout band -> three service cards -> dark footer",
+      "typographyCategory": "Bootstrap default neutral sans, semibold headings",
+      "imageStrategy": "wide rectangular image slot",
+      "motionOpportunities": [
+        "static-first"
+      ],
+      "familyId": "editorial-monument",
+      "dossierPath": "data/reference-library/dossiers/startbootstrap-small-business",
+      "mobileBehavior": "stack image, copy, callout, then cards in one column",
+      "prohibitedPatterns": [
+        "reuse Start Bootstrap demo copy or placeholder graphics as client content",
+        "invent services, prices, or claims",
+        "copy source code into a client site",
+        "replace the split opening with an unrelated full-bleed carousel",
+        "low-contrast or inaccessible actions"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/startbootstrap-small-business/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/startbootstrap-small-business/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "plain bootstrap",
+        "neutral sans",
+        "blue accent",
+        "light surfaces"
+      ],
+      "sourceFonts": [
+        "Bootstrap default neutral sans, semibold headings"
+      ],
+      "referenceTags": {
+        "business": [
+          "small business",
+          "home services",
+          "local trades",
+          "landscaping"
+        ],
+        "style": [
+          "plain bootstrap",
+          "neutral sans",
+          "blue accent",
+          "light surfaces"
+        ],
+        "composition": [
+          "split hero",
+          "full-width callout",
+          "three-card row"
+        ],
+        "conversion": [
+          "call to action",
+          "service enquiry"
+        ],
+        "motion": [
+          "static-first"
+        ],
+        "imagery": [
+          "wide image slot",
+          "no retained source photography"
+        ]
+      }
+    },
+    {
+      "id": "templatemo-finance-business",
+      "name": "TemplateMo Finance Business: corporate photo hero with lime system",
+      "referenceName": "TemplateMo Finance Business: corporate photo hero with lime system",
+      "referenceFamilyId": "templatemo-finance-business-family",
+      "source": "Finance Business by TemplateMo",
+      "sourceUrl": "https://templatemo.com/templates/templatemo_545_finance_business",
+      "rights": "licensed",
+      "industries": [
+        "accounting",
+        "bookkeeping",
+        "financial-services",
+        "professional-services",
+        "financial services",
+        "professional services"
+      ],
+      "moods": [
+        "corporate",
+        "geometric sans",
+        "lime accent"
+      ],
+      "navigation": "utility top bar plus inline navigation",
+      "heroGeometry": "full-bleed office photograph with left-aligned overlay copy",
+      "servicePresentation": "three bordered service cards with photographs",
+      "sectionRhythm": "utility top bar -> inline navigation -> full-bleed hero with overlay -> lime callback strip -> three service cards -> statistics band -> about split -> testimonials -> callback form -> client logo strip -> dark footer",
+      "typographyCategory": "bold geometric sans",
+      "imageStrategy": "full-bleed office hero and square service photographs",
+      "motionOpportunities": [
+        "restrained"
+      ],
+      "familyId": "cinematic-stage",
+      "dossierPath": "data/reference-library/dossiers/templatemo-finance-business",
+      "mobileBehavior": "stack the hero, strips, cards, stats, about, proof, and form",
+      "prohibitedPatterns": [
+        "reuse source photography, copy, logos, or trade dress",
+        "invent clients, statistics, awards, or outcomes",
+        "copy source code into a client site",
+        "replace the photo hero with a flat text banner",
+        "low-contrast overlaid copy"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/templatemo-finance-business/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/templatemo-finance-business/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "corporate",
+        "geometric sans",
+        "lime accent"
+      ],
+      "sourceFonts": [
+        "bold geometric sans"
+      ],
+      "referenceTags": {
+        "business": [
+          "accounting",
+          "bookkeeping",
+          "financial services",
+          "professional services"
+        ],
+        "style": [
+          "corporate",
+          "geometric sans",
+          "lime accent"
+        ],
+        "composition": [
+          "full-bleed photo hero",
+          "statistics band",
+          "service cards"
+        ],
+        "conversion": [
+          "contact CTA",
+          "callback form"
+        ],
+        "motion": [
+          "restrained"
+        ],
+        "imagery": [
+          "full-bleed office photography",
+          "square service photos"
+        ]
+      }
+    },
+    {
+      "id": "templatemo-medic-care",
+      "name": "TemplateMo Medic Care: split care hero with timeline and booking",
+      "referenceName": "TemplateMo Medic Care: split care hero with timeline and booking",
+      "referenceFamilyId": "templatemo-medic-care-family",
+      "source": "Medic Care by TemplateMo",
+      "sourceUrl": "https://templatemo.com/templates/templatemo_566_medic_care",
+      "rights": "licensed",
+      "industries": [
+        "dental",
+        "home-care",
+        "home care"
+      ],
+      "moods": [
+        "clinical",
+        "neutral sans",
+        "navy accent"
+      ],
+      "navigation": "inline top navigation",
+      "heroGeometry": "split image-and-copy care hero",
+      "servicePresentation": "timeline and booking",
+      "sectionRhythm": "inline navigation -> split hero -> doctor introduction -> care photo band -> vertical timeline -> patient testimonial -> booking form -> footer",
+      "typographyCategory": "neutral sans with bold dark headings",
+      "imageStrategy": "doctor portrait, care photographs, testimonial avatar",
+      "motionOpportunities": [
+        "static-first"
+      ],
+      "familyId": "editorial-monument",
+      "dossierPath": "data/reference-library/dossiers/templatemo-medic-care",
+      "mobileBehavior": "stack the hero, doctor introduction, timeline, testimonial, and booking form",
+      "prohibitedPatterns": [
+        "reuse source photography, copy, or trade dress",
+        "invent credentials, prices, or outcomes",
+        "copy source code into a client site",
+        "replace the split hero with a generic card grid",
+        "low-contrast actions"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/templatemo-medic-care/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/templatemo-medic-care/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "clinical",
+        "neutral sans",
+        "navy accent"
+      ],
+      "sourceFonts": [
+        "neutral sans with bold dark headings"
+      ],
+      "referenceTags": {
+        "business": [
+          "dental",
+          "home care"
+        ],
+        "style": [
+          "clinical",
+          "neutral sans",
+          "navy accent"
+        ],
+        "composition": [
+          "split hero",
+          "vertical timeline",
+          "booking form"
+        ],
+        "conversion": [
+          "book now",
+          "learn more"
+        ],
+        "motion": [
+          "static-first"
+        ],
+        "imagery": [
+          "doctor portrait",
+          "care photographs"
+        ]
+      }
+    },
+    {
+      "id": "templatemo-training-studio",
+      "name": "TemplateMo Training Studio: dark gym hero with program and schedule",
+      "referenceName": "TemplateMo Training Studio: dark gym hero with program and schedule",
+      "referenceFamilyId": "templatemo-training-studio-family",
+      "source": "Training Studio by TemplateMo",
+      "sourceUrl": "https://templatemo.com/templates/templatemo_548_training_studio",
+      "rights": "licensed",
+      "industries": [
+        "fitness",
+        "gym",
+        "personal-training",
+        "personal training"
+      ],
+      "moods": [
+        "dark gym",
+        "condensed display",
+        "orange accent"
+      ],
+      "navigation": "overlay top navigation",
+      "heroGeometry": "full-bleed gym photograph with centered copy",
+      "servicePresentation": "program grid and weekly schedule",
+      "sectionRhythm": "overlay navigation -> full-bleed gym hero -> program grid -> motivational band -> classes -> schedule table -> trainers -> contact form -> footer",
+      "typographyCategory": "condensed uppercase display",
+      "imageStrategy": "full-bleed gym hero, class photo, trainer portraits",
+      "motionOpportunities": [
+        "static-first"
+      ],
+      "familyId": "cinematic-stage",
+      "dossierPath": "data/reference-library/dossiers/templatemo-training-studio",
+      "mobileBehavior": "stack the hero, program cards, classes, schedule, trainers, and contact form",
+      "prohibitedPatterns": [
+        "reuse source photography, copy, or trade dress",
+        "invent classes, prices, trainers, or outcomes",
+        "copy source code into a client site",
+        "replace the gym hero with a generic card grid",
+        "low-contrast actions"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/templatemo-training-studio/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/templatemo-training-studio/screenshots/mobile.png",
+      "notes": "licensed supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "licensed-direct-site",
+      "sourceStyles": [
+        "dark gym",
+        "condensed display",
+        "orange accent"
+      ],
+      "sourceFonts": [
+        "condensed uppercase display"
+      ],
+      "referenceTags": {
+        "business": [
+          "fitness",
+          "gym",
+          "personal training"
+        ],
+        "style": [
+          "dark gym",
+          "condensed display",
+          "orange accent"
+        ],
+        "composition": [
+          "full-bleed hero",
+          "program grid",
+          "schedule table"
+        ],
+        "conversion": [
+          "become a member",
+          "contact form"
+        ],
+        "motion": [
+          "static-first"
+        ],
+        "imagery": [
+          "gym photography",
+          "trainer portraits"
+        ]
+      }
+    },
+    {
+      "id": "web-coffee-ember-roast",
+      "name": "Ember Roast Coffee Co.: editorial single-coffee hero on warm cream",
+      "referenceName": "Ember Roast Coffee Co.: editorial single-coffee hero on warm cream",
+      "referenceFamilyId": "web-coffee-ember-roast-family",
+      "source": "Ember Roast Coffee Co. official website",
+      "sourceUrl": "https://emberroastcoffee.com/",
+      "rights": "permission-cleared",
+      "industries": [
+        "coffee-shop",
+        "cafe",
+        "specialty-coffee",
+        "coffee-roaster",
+        "coffee shop",
+        "specialty coffee"
+      ],
+      "moods": [
+        "warm editorial",
+        "serif display",
+        "cream surfaces"
+      ],
+      "navigation": "inline horizontal top nav with shop-forward links",
+      "heroGeometry": "single-feature editorial hero with serif display",
+      "servicePresentation": "story-led bands each with one primary action (shop, subscribe, visit)",
+      "sectionRhythm": "featured-coffee hero -> roastery story grid -> subscription band -> locations band -> testimonials -> community newsletter close",
+      "typographyCategory": "high-contrast serif display for headings",
+      "imageStrategy": "large single-feature photograph with supporting product and lifestyle images",
+      "motionOpportunities": [
+        "restrained fade or static-first",
+        "restrained fade",
+        "static-first"
+      ],
+      "familyId": "editorial-monument",
+      "dossierPath": "data/reference-library/dossiers/web-coffee-ember-roast",
+      "mobileBehavior": "stack editorial bands into vertical chapters with outlined actions",
+      "prohibitedPatterns": [
+        "reuse Ember Roast brand, words, logo, photographs, testimonials or trade dress",
+        "invent awards, prices, locations, staff or outcomes",
+        "copy a source section or source code",
+        "generic repeated cards that erase the editorial rhythm",
+        "low contrast or inaccessible mobile actions"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-coffee-ember-roast/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-coffee-ember-roast/screenshots/mobile.png",
+      "notes": "permission-cleared supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "warm editorial",
+        "serif display",
+        "cream surfaces"
+      ],
+      "sourceFonts": [
+        "high-contrast serif display for headings"
+      ],
+      "referenceTags": {
+        "business": [
+          "coffee shop",
+          "specialty coffee",
+          "cafe"
+        ],
+        "style": [
+          "warm editorial",
+          "serif display",
+          "cream surfaces"
+        ],
+        "composition": [
+          "single-feature hero",
+          "labeled value grid",
+          "story bands"
+        ],
+        "conversion": [
+          "shop coffee",
+          "subscribe",
+          "visit cafe"
+        ],
+        "motion": [
+          "restrained fade",
+          "static-first"
+        ],
+        "imagery": [
+          "featured coffee photograph",
+          "product and lifestyle stills",
+          "no source assets for generated client"
+        ]
+      }
+    },
+    {
+      "id": "web-coffee-marigold",
+      "name": "Marigold Coffee: image-led storefront with product grid",
+      "referenceName": "Marigold Coffee: image-led storefront with product grid",
+      "referenceFamilyId": "web-coffee-marigold-family",
+      "source": "Marigold Coffee official website",
+      "sourceUrl": "https://marigoldcoffee.com/",
+      "rights": "permission-cleared",
+      "industries": [
+        "coffee-shop",
+        "cafe",
+        "specialty-coffee",
+        "coffee-roaster",
+        "ecommerce",
+        "coffee shop",
+        "specialty coffee"
+      ],
+      "moods": [
+        "friendly sans",
+        "warm off-white",
+        "rounded UI"
+      ],
+      "navigation": "inline shop-forward top nav plus announcement bar",
+      "heroGeometry": "image-led hero with short headline and shop action",
+      "servicePresentation": "product grid with clear buy and subscribe actions",
+      "sectionRhythm": "announcement bar -> image-led hero -> featured blends grid -> single origins -> subscription -> bestsellers -> customer quote -> newsletter footer",
+      "typographyCategory": "rounded friendly sans for headings and body",
+      "imageStrategy": "product photography grid with a lifestyle hero",
+      "motionOpportunities": [
+        "restrained or static-first",
+        "restrained",
+        "static-first"
+      ],
+      "familyId": "cinematic-stage",
+      "dossierPath": "data/reference-library/dossiers/web-coffee-marigold",
+      "mobileBehavior": "stack product grids into a single column and keep actions touch-safe",
+      "prohibitedPatterns": [
+        "reuse Marigold brand, words, logo, photographs, prices or trade dress",
+        "invent awards, prices, locations, staff or outcomes",
+        "copy a source section or source code",
+        "generic repeated cards that erase the storefront rhythm",
+        "low contrast or inaccessible mobile actions"
+      ],
+      "screenshotPath": "data/reference-library/dossiers/web-coffee-marigold/screenshots/desktop.png",
+      "mobileScreenshotPath": "data/reference-library/dossiers/web-coffee-marigold/screenshots/mobile.png",
+      "notes": "permission-cleared supplemental reference. Transfer design mechanics only.",
+      "evidenceKind": "permission-cleared-direct-site",
+      "sourceStyles": [
+        "friendly sans",
+        "warm off-white",
+        "rounded UI"
+      ],
+      "sourceFonts": [
+        "rounded friendly sans for headings and body"
+      ],
+      "referenceTags": {
+        "business": [
+          "coffee shop",
+          "specialty coffee",
+          "ecommerce"
+        ],
+        "style": [
+          "friendly sans",
+          "warm off-white",
+          "rounded UI"
+        ],
+        "composition": [
+          "announcement bar",
+          "image-led hero",
+          "product grid"
+        ],
+        "conversion": [
+          "shop",
+          "subscribe",
+          "join newsletter"
+        ],
+        "motion": [
+          "restrained",
+          "static-first"
+        ],
+        "imagery": [
+          "product photography grid",
+          "lifestyle hero",
+          "no source assets for generated client"
+        ]
+      }
     }
   ],
   "retiredRecords": [

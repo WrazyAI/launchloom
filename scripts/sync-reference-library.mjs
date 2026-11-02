@@ -2,9 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CREATIVE_FAMILIES } from "./creative-compiler.mjs";
-import {
-  validateReferenceDossier,
-} from "./reference-dossier.mjs";
+import { validateReferenceDossier } from "./reference-dossier.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 const corePath = path.join(root, "data/reference-library/core-collection.json");
@@ -31,7 +29,11 @@ const PROVENANCE_ONLY_ASSET_EVIDENCE = new Set([
 ]);
 
 function unique(values) {
-  return [...new Set(values.map((value) => String(value || "").trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      values.map((value) => String(value || "").trim()).filter(Boolean),
+    ),
+  ];
 }
 
 function normalizedSourceUrl(value) {
@@ -55,17 +57,39 @@ function familyForDossier(dossier) {
     ...dna.sectionSequence,
     ...dossier.tags.composition,
     ...dossier.tags.motion,
-  ].join(" ").toLowerCase();
+  ]
+    .join(" ")
+    .toLowerCase();
   const rules = [
-    ["guided-conversation", /guided|conversation|consultation|qualifier|questionnaire|intake form|question-led/u],
-    ["utility-diagnostic", /diagnostic|problem-led|symptom|inspection|service-desk|quote form|troubleshoot/u],
-    ["market-collage", /collage|mosaic|asymmetric grid|layered grid|overlapping/u],
-    ["archive-rail", /archive|collection|portfolio|project gallery|work gallery|case stud|editorial menu|service taxonomy|service index|equipment-and-copy|resource index|article cards/u],
+    [
+      "guided-conversation",
+      /guided|conversation|consultation|qualifier|questionnaire|intake form|question-led/u,
+    ],
+    [
+      "utility-diagnostic",
+      /diagnostic|problem-led|symptom|inspection|service-desk|quote form|troubleshoot/u,
+    ],
+    [
+      "market-collage",
+      /collage|mosaic|asymmetric grid|layered grid|overlapping/u,
+    ],
+    [
+      "archive-rail",
+      /archive|collection|portfolio|project gallery|work gallery|case stud|editorial menu|service taxonomy|service index|equipment-and-copy|resource index|article cards/u,
+    ],
     ["spatial-object", /spatial|object-led|product render|artifact|3d scene/u],
-    ["cinematic-stage", /cinematic|full-bleed|film-like|image-led|immersive photograph|aerial photograph/u],
-    ["typographic-poster", /poster|oversized type|kinetic type|condensed|typographic/u],
+    [
+      "cinematic-stage",
+      /cinematic|full-bleed|film-like|image-led|immersive photograph|aerial photograph/u,
+    ],
+    [
+      "typographic-poster",
+      /poster|oversized type|kinetic type|condensed|typographic/u,
+    ],
   ];
-  return rules.find(([, pattern]) => pattern.test(text))?.[0] || "editorial-monument";
+  return (
+    rules.find(([, pattern]) => pattern.test(text))?.[0] || "editorial-monument"
+  );
 }
 
 function makeRecord(dossier, niche, existing) {
@@ -85,7 +109,8 @@ function makeRecord(dossier, niche, existing) {
       screenshotPath: `${dossier.path}/${dossier.evidence.desktop.path}`,
       mobileScreenshotPath: `${dossier.path}/${dossier.evidence.mobile.path}`,
       referenceTags: existing.referenceTags || dossier.tags,
-      evidenceKind: existing.evidenceKind || `${dossier.source.rights}-reference`,
+      evidenceKind:
+        existing.evidenceKind || `${dossier.source.rights}-reference`,
     };
   }
   const dna = dossier.referenceDna;
@@ -98,7 +123,11 @@ function makeRecord(dossier, niche, existing) {
     source: dossier.source.name,
     sourceUrl: dossier.source.url,
     rights: dossier.source.rights,
-    industries: unique([...dossier.businessKinds, ...dossier.tags.business, niche.businessKind]),
+    industries: unique([
+      ...dossier.businessKinds,
+      ...dossier.tags.business,
+      niche.businessKind,
+    ]),
     moods: unique(dossier.tags.style),
     navigation: dna.navigationGeometry.mode,
     heroGeometry: dna.heroGeometry.mode,
@@ -156,7 +185,9 @@ function normalizeManifestEvidence(manifest, directory) {
   // in rightsEvidencePath (and provenance evidence when present), never in
   // the asset-license/credit list.
   const normalizedProvenance = unique(
-    [...provenance].filter((relative) => relative !== manifest.source.rightsEvidencePath),
+    [...provenance].filter(
+      (relative) => relative !== manifest.source.rightsEvidencePath,
+    ),
   );
   if (normalizedAssets.length)
     manifest.source.assetEvidencePaths = normalizedAssets;
@@ -166,24 +197,45 @@ function normalizeManifestEvidence(manifest, directory) {
   else delete manifest.source.provenanceEvidencePaths;
 }
 
-export function buildSyncedLibraryState({ core, registry, repositoryRoot = root }) {
+export function buildSyncedLibraryState({
+  core,
+  registry,
+  repositoryRoot = root,
+}) {
   if (!Array.isArray(core?.niches) || core.niches.length !== 16)
     throw new Error("Canonical local SEO core must contain exactly 16 niches.");
   const coreIds = core.niches.flatMap((niche) => {
     if (!Array.isArray(niche.referenceIds) || niche.referenceIds.length < 6)
-      throw new Error(`Core niche '${niche.id}' must have at least six reference IDs.`);
+      throw new Error(
+        `Core niche '${niche.id}' must have at least six reference IDs.`,
+      );
     return niche.referenceIds;
   });
   if (new Set(coreIds).size !== 98)
-    throw new Error("Canonical core must contain exactly 98 unique dossier IDs.");
+    throw new Error(
+      "Canonical core must contain exactly 98 unique dossier IDs.",
+    );
 
-  const existingById = new Map(registry.records.map((record) => [record.id, record]));
+  const existingById = new Map(
+    registry.records.map((record) => [record.id, record]),
+  );
   const sourceByUrl = new Map();
+  for (const record of registry.records) {
+    const sourceKey = normalizedSourceUrl(record.sourceUrl);
+    const previousSource = sourceByUrl.get(sourceKey);
+    if (previousSource && previousSource !== record.id)
+      throw new Error(
+        `References '${previousSource}' and '${record.id}' reuse source URL ${sourceKey}.`,
+      );
+    sourceByUrl.set(sourceKey, record.id);
+  }
   const manifests = new Map();
   const normalizedBusinessKindByNiche = new Map(
     core.niches.map((niche) => [
       niche,
-      String(niche.businessKind || "").trim().toLowerCase(),
+      String(niche.businessKind || "")
+        .trim()
+        .toLowerCase(),
     ]),
   );
   for (const niche of core.niches) {
@@ -193,18 +245,28 @@ export function buildSyncedLibraryState({ core, registry, repositoryRoot = root 
       const manifestPath = path.join(directory, "manifest.json");
       const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
       normalizeManifestEvidence(manifest, directory);
-      const dossier = validateReferenceDossier(manifest, { dossierDirectory: directory });
+      const dossier = validateReferenceDossier(manifest, {
+        dossierDirectory: directory,
+      });
       if (!dossier.productionEligible)
-        throw new Error(`Canonical reference '${id}' is not marked production eligible.`);
+        throw new Error(
+          `Canonical reference '${id}' is not marked production eligible.`,
+        );
       const nicheKind = normalizedBusinessKindByNiche.get(niche) || "";
-      if (!dossier.businessKinds.some((kind) => kind.toLowerCase() === nicheKind) &&
-          !dossier.tags.business.some((kind) => kind.toLowerCase() === nicheKind))
+      if (
+        !dossier.businessKinds.some(
+          (kind) => kind.toLowerCase() === nicheKind,
+        ) &&
+        !dossier.tags.business.some((kind) => kind.toLowerCase() === nicheKind)
+      )
         manifest.businessKinds = unique([...manifest.businessKinds, nicheKind]);
       manifest.tags.business = unique([...manifest.tags.business, nicheKind]);
       const sourceKey = normalizedSourceUrl(dossier.source.url);
       const previousSource = sourceByUrl.get(sourceKey);
       if (previousSource && previousSource !== id)
-        throw new Error(`Core references '${previousSource}' and '${id}' reuse source URL ${sourceKey}.`);
+        throw new Error(
+          `Core references '${previousSource}' and '${id}' reuse source URL ${sourceKey}.`,
+        );
       sourceByUrl.set(sourceKey, id);
       manifests.set(id, { manifest, directory, dossierPath });
     }
@@ -217,10 +279,14 @@ export function buildSyncedLibraryState({ core, registry, repositoryRoot = root 
       if (!item) throw new Error(`Core dossier '${id}' was not loaded.`);
       const manifest = item.manifest;
       const nicheKind = normalizedBusinessKindByNiche.get(niche) || "";
-      if (!manifest.businessKinds.some((kind) => kind.toLowerCase() === nicheKind))
+      if (
+        !manifest.businessKinds.some((kind) => kind.toLowerCase() === nicheKind)
+      )
         manifest.businessKinds = unique([...manifest.businessKinds, nicheKind]);
       manifest.tags.business = unique([...manifest.tags.business, nicheKind]);
-      const dossier = validateReferenceDossier(manifest, { dossierDirectory: item.directory });
+      const dossier = validateReferenceDossier(manifest, {
+        dossierDirectory: item.directory,
+      });
       const existing = existingById.get(id);
       const record = makeRecord(
         { ...dossier, path: item.dossierPath },
@@ -237,15 +303,63 @@ export function buildSyncedLibraryState({ core, registry, repositoryRoot = root 
     }
   }
 
+  // Discover supplemental data without replacing the current registry or the
+  // canonical core. Ineligible studies remain retained but never get promoted
+  // merely because a directory exists.
+  const coreIdSet = new Set(coreIds);
+  const dossiersRoot = path.join(
+    repositoryRoot,
+    "data/reference-library/dossiers",
+  );
+  const supplementalDirectories = fs
+    .readdirSync(dossiersRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !coreIdSet.has(entry.name))
+    .sort((left, right) => left.name.localeCompare(right.name));
+  for (const entry of supplementalDirectories) {
+    const dossierPath = `data/reference-library/dossiers/${entry.name}`;
+    const directory = path.join(dossiersRoot, entry.name);
+    const manifestPath = path.join(directory, "manifest.json");
+    if (!fs.existsSync(manifestPath)) continue;
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    if (manifest.productionEligible !== true) continue;
+    normalizeManifestEvidence(manifest, directory);
+    const dossier = validateReferenceDossier(manifest, {
+      dossierDirectory: directory,
+    });
+    if (dossier.id !== entry.name)
+      throw new Error(
+        `Supplemental directory '${entry.name}' has mismatched dossier '${dossier.id}'.`,
+      );
+    const sourceKey = normalizedSourceUrl(dossier.source.url);
+    const previousSource = sourceByUrl.get(sourceKey);
+    if (previousSource && previousSource !== dossier.id)
+      throw new Error(
+        `Supplemental reference '${dossier.id}' reuses source URL ${sourceKey} from '${previousSource}'.`,
+      );
+    sourceByUrl.set(sourceKey, dossier.id);
+    manifests.set(dossier.id, { manifest, directory, dossierPath });
+    if (existingById.has(dossier.id)) continue;
+    const record = makeRecord(
+      { ...dossier, path: dossierPath },
+      { businessKind: "", label: "supplemental design study" },
+    );
+    record.notes = `${dossier.source.rights} supplemental reference. Transfer design mechanics only.`;
+    records.push(record);
+  }
+
   for (let index = 0; index < records.length; index += 1) {
     const record = records[index];
     if (!record.dossierPath)
-      throw new Error(`Reference '${record.id}' has no canonical dossier path.`);
+      throw new Error(
+        `Reference '${record.id}' has no canonical dossier path.`,
+      );
     const directory = path.resolve(repositoryRoot, record.dossierPath);
     const existingManifest = manifests.get(record.id)?.manifest;
-    const manifest = existingManifest || JSON.parse(
-      fs.readFileSync(path.join(directory, "manifest.json"), "utf8"),
-    );
+    const manifest =
+      existingManifest ||
+      JSON.parse(
+        fs.readFileSync(path.join(directory, "manifest.json"), "utf8"),
+      );
     normalizeManifestEvidence(manifest, directory);
     const dossier = validateReferenceDossier(manifest, {
       dossierDirectory: directory,
@@ -274,31 +388,52 @@ export function buildSyncedLibraryState({ core, registry, repositoryRoot = root 
   return { registry: nextRegistry, manifests };
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
   const args = process.argv.slice(2);
   const write = args.includes("--write");
   const check = args.includes("--check") || !args.includes("--plan");
   const core = JSON.parse(fs.readFileSync(corePath, "utf8"));
   const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
-  const next = buildSyncedLibraryState({ core, registry, repositoryRoot: root });
+  const next = buildSyncedLibraryState({
+    core,
+    registry,
+    repositoryRoot: root,
+  });
   const changedManifests = [...next.manifests.entries()].filter(([, item]) => {
-    const current = fs.readFileSync(path.join(item.directory, "manifest.json"), "utf8");
+    const current = fs.readFileSync(
+      path.join(item.directory, "manifest.json"),
+      "utf8",
+    );
     return current !== `${JSON.stringify(item.manifest, null, 2)}\n`;
   });
   const currentRegistry = fs.readFileSync(registryPath, "utf8");
-  const registryChanged = currentRegistry !== `${JSON.stringify(next.registry, null, 2)}\n`;
+  const registryChanged =
+    currentRegistry !== `${JSON.stringify(next.registry, null, 2)}\n`;
   if (write) {
     for (const { manifest, directory } of next.manifests.values())
-      fs.writeFileSync(path.join(directory, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-    fs.writeFileSync(registryPath, `${JSON.stringify(next.registry, null, 2)}\n`);
+      fs.writeFileSync(
+        path.join(directory, "manifest.json"),
+        `${JSON.stringify(manifest, null, 2)}\n`,
+      );
+    fs.writeFileSync(
+      registryPath,
+      `${JSON.stringify(next.registry, null, 2)}\n`,
+    );
   } else if (check && (changedManifests.length || registryChanged)) {
     const changed = changedManifests.map(([id]) => id);
     if (registryChanged) changed.push("data/inspiration-registry.json");
-    throw new Error(`Reference library sync is stale (${changed.join(", ")}). Run npm run sync:reference-library -- --write.`);
+    throw new Error(
+      `Reference library sync is stale (${changed.join(", ")}). Run npm run sync:reference-library -- --write.`,
+    );
   }
   const referenceCount = core.niches.reduce(
     (total, niche) => total + niche.referenceIds.length,
     0,
   );
-  console.log(`reference_core_niches=${core.niches.length} reference_core_ids=${referenceCount} registry_records=${next.registry.records.length} mode=${write ? "write" : check ? "check" : "plan"}`);
+  console.log(
+    `reference_core_niches=${core.niches.length} reference_core_ids=${referenceCount} registry_records=${next.registry.records.length} mode=${write ? "write" : check ? "check" : "plan"}`,
+  );
 }

@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "id": "startbootstrap-grayscale",
+  "productionEligible": true,
+  "referenceName": "Start Bootstrap Grayscale: monochrome photo hero with project rows",
+  "familyId": "startbootstrap-grayscale-family",
+  "source": {
+    "name": "Grayscale by Start Bootstrap",
+    "url": "https://startbootstrap.github.io/startbootstrap-grayscale/",
+    "sourceType": "official Start Bootstrap demo, MIT licensed",
+    "repository": "https://github.com/StartBootstrap/startbootstrap-grayscale",
+    "commit": "d974402542d05abcbaa8d21d4dd78e53680f2edd",
+    "rights": "licensed",
+    "rightsEvidence": "The official Start Bootstrap repository is licensed under the MIT License (copyright 2013-2023 Start Bootstrap LLC). The license text is retained in rights/LICENSE.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "roofing",
+    "veterinary",
+    "fitness",
+    "construction"
+  ],
+  "tags": {
+    "business": [
+      "roofing",
+      "veterinary",
+      "fitness",
+      "construction"
+    ],
+    "style": [
+      "monochrome",
+      "teal accent",
+      "thin sans"
+    ],
+    "composition": [
+      "full-bleed hero",
+      "project rows",
+      "newsletter band"
+    ],
+    "conversion": [
+      "get started",
+      "newsletter"
+    ],
+    "motion": [
+      "static-first"
+    ],
+    "imagery": [
+      "grayscale landscape",
+      "project photographs"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "1c171bf7b7a9e281b9730582f119d2e394ed82aa228638694917a59319893eaa",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "ddcc31b064b92549533a60e9055172e6534cf5377e0bcf9ac3318b972c0515e5",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A monochrome one-page template. A full-bleed grayscale mountain photograph fills the opening with a centered light title, a short line, and a teal action. A short intro follows, then alternating image-and-text project rows: a wide image with a caption, then a two-column image/text grid. A dark newsletter band with an email field, three contact cards, and a dark footer close the page. The palette is black, white, and muted gray with a single teal accent.",
+    "heroGeometry": {
+      "mode": "full-bleed grayscale photograph with centered copy",
+      "alignment": "centered",
+      "viewport": "photograph fills the opening behind one short promise and one action"
+    },
+    "navigationGeometry": {
+      "mode": "overlay top navigation",
+      "placement": "top of page",
+      "mobile": "collapsed menu"
+    },
+    "typography": {
+      "display": "thin geometric sans",
+      "body": "same thin sans",
+      "scale": "light large display"
+    },
+    "palette": {
+      "surfaces": [
+        "black",
+        "white",
+        "muted gray"
+      ],
+      "ink": "white on dark, black on light",
+      "accents": [
+        "teal"
+      ],
+      "contrastIntent": "monochrome contrast with one accent"
+    },
+    "imageTreatment": {
+      "mode": "full-bleed grayscale landscape and project rows",
+      "crop": "cover",
+      "focalPoint": "atmospheric"
+    },
+    "sectionSequence": [
+      "overlay navigation",
+      "full-bleed hero",
+      "intro",
+      "alternating project rows",
+      "newsletter band",
+      "contact cards",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "alternating project rows",
+      "interaction": "browse-led"
+    },
+    "ctaPlacement": {
+      "primary": "Get Started",
+      "secondary": "newsletter signup",
+      "early": "in the hero"
+    },
+    "motion": {
+      "primitive": "static-first",
+      "library": "CSS",
+      "reducedMotion": "static"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the hero, intro, project rows, newsletter, and contact cards",
+      "rules": [
+        "preserve monochrome crops",
+        "keep the hero action visible",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "project rows",
+        "newsletter band"
+      ],
+      "mobileTreatmentChanged": false
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "monochrome-hero",
+        "selector": "[data-reference-signature=monochrome-hero]",
+        "description": "full-bleed grayscale photograph with centered copy and one action"
+      },
+      {
+        "id": "project-rows",
+        "selector": "[data-reference-signature=project-rows]",
+        "description": "alternating image-and-text project rows"
+      },
+      {
+        "id": "newsletter-band",
+        "selector": "[data-reference-signature=newsletter-band]",
+        "description": "dark newsletter band with an email field"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse source photography, copy, or trade dress",
+      "invent services, credentials, or outcomes",
+      "copy source code into a client site",
+      "replace the monochrome hero with a generic card grid",
+      "low-contrast overlaid copy"
+    ],
+    "acceptanceChecks": [
+      "The opening is a full-bleed grayscale photograph with readable centered copy.",
+      "Project rows alternate image and text without repeating a card shape.",
+      "At 390 px the page stacks without horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Official Start Bootstrap demo captured at both viewports. The template is MIT licensed and uses bundled demo photography; no source photography is reused in client work."
+  }
+}

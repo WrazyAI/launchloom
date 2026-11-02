@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "id": "startbootstrap-agency",
+  "productionEligible": true,
+  "referenceName": "Start Bootstrap Agency: dark photo masthead with project grid",
+  "familyId": "startbootstrap-agency-family",
+  "source": {
+    "name": "Agency by Start Bootstrap",
+    "url": "https://startbootstrap.github.io/startbootstrap-agency/",
+    "sourceType": "official Start Bootstrap demo, MIT licensed",
+    "repository": "https://github.com/StartBootstrap/startbootstrap-agency",
+    "commit": "b2d5d5c6b1396bc5b0e8dd92c693b106cfb7cee1",
+    "rights": "licensed",
+    "rightsEvidence": "The official Start Bootstrap repository is licensed under the MIT License (copyright 2013-2023 Start Bootstrap LLC). The license text is retained in rights/LICENSE.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "home-services",
+    "local-trades",
+    "landscaping",
+    "creative-studio",
+    "agency",
+    "roofing",
+    "veterinary"
+  ],
+  "tags": {
+    "business": [
+      "agency",
+      "home services",
+      "local trades",
+      "landscaping",
+      "roofing",
+      "veterinary"
+    ],
+    "style": [
+      "dark studio",
+      "uppercase sans",
+      "yellow accent"
+    ],
+    "composition": [
+      "full-bleed masthead",
+      "portfolio grid",
+      "timeline"
+    ],
+    "conversion": [
+      "masthead CTA",
+      "contact form"
+    ],
+    "motion": [
+      "restrained hover"
+    ],
+    "imagery": [
+      "full-bleed photography",
+      "square project thumbnails"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "892afc6d9d78664679e9384f634cdb828e6f0432fce2648b66514e56f7326b54",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "f85455b083d0a914bfa10279cf9e09c490636c5dbfe84b5b6cf062aa0b1cb44a",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A dark, photo-led agency template. A fixed dark navbar sits over a full-bleed masthead photograph. The opening centers a small welcome line, a large uppercase promise, and a high-contrast yellow button. Three icon-led service columns follow on white. A six-item portfolio grid uses square project images with captions. A vertical timeline tells the business story, then three circular team portraits, a quiet client-logo strip, and a dark contact section with a form. Montserrat uppercase display, Roboto Slab body, charcoal surfaces, white content bands, and a yellow action color create a confident studio tone.",
+    "heroGeometry": {
+      "mode": "full-bleed photo masthead with centered uppercase promise",
+      "alignment": "centered",
+      "viewport": "photograph fills the opening behind a short statement and one action"
+    },
+    "navigationGeometry": {
+      "mode": "fixed dark top navbar",
+      "placement": "top of page",
+      "mobile": "collapsed hamburger"
+    },
+    "typography": {
+      "display": "Montserrat uppercase",
+      "body": "Roboto Slab",
+      "scale": "large uppercase opening with compact section labels"
+    },
+    "palette": {
+      "surfaces": [
+        "charcoal",
+        "white",
+        "light gray"
+      ],
+      "ink": "white on dark, near-black on light",
+      "accents": [
+        "signal yellow"
+      ],
+      "contrastIntent": "high-contrast studio contrast"
+    },
+    "imageTreatment": {
+      "mode": "full-bleed masthead and square project thumbnails",
+      "crop": "cover with subject-safe center",
+      "focalPoint": "subject-centered"
+    },
+    "sectionSequence": [
+      "fixed dark navigation",
+      "full-bleed masthead",
+      "three icon services",
+      "six-item portfolio grid",
+      "vertical timeline about",
+      "team portraits",
+      "client logo strip",
+      "dark contact form",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "icon-led service columns",
+      "interaction": "one action in the opening, modal project details"
+    },
+    "ctaPlacement": {
+      "primary": "masthead button",
+      "secondary": "contact form",
+      "early": "in the masthead"
+    },
+    "motion": {
+      "primitive": "restrained hover and scroll",
+      "library": "Bootstrap scrollspy and CSS",
+      "reducedMotion": "static sections"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack masthead, services, portfolio, timeline, team, contact",
+      "rules": [
+        "keep the masthead action visible",
+        "preserve square project crops",
+        "stack the timeline without horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "image-led-stage",
+      "mobileHero": "image-led-stage",
+      "mediaRelation": "media-leads-copy",
+      "mobileMediaRelation": "media-leads-copy",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "portfolio grid",
+        "vertical timeline"
+      ],
+      "mobileTreatmentChanged": false
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "full-bleed-masthead",
+        "selector": "[data-reference-signature=full-bleed-masthead]",
+        "description": "photograph fills the opening behind one centered promise and action"
+      },
+      {
+        "id": "portfolio-grid",
+        "selector": "[data-reference-signature=portfolio-grid]",
+        "description": "six square project thumbnails with short captions"
+      },
+      {
+        "id": "vertical-timeline",
+        "selector": "[data-reference-signature=vertical-timeline]",
+        "description": "vertical story timeline with alternating entries"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse source photographs, client logos, team names, or copy",
+      "invent clients, awards, or outcomes",
+      "copy source code into a client site",
+      "replace the masthead with a generic card wall",
+      "low-contrast or inaccessible actions"
+    ],
+    "acceptanceChecks": [
+      "The masthead is full-bleed with one centered promise and one action.",
+      "The portfolio reads as a project grid, not generic cards.",
+      "The about story uses a vertical timeline.",
+      "At 390 px all sections stack without horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Official Start Bootstrap demo captured at both viewports. The template is MIT licensed and includes bundled demo photography; no source photography is retained in generated client work."
+  }
+}

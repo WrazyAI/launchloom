@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "templatemo-finance-business",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://templatemo.com/templates/templatemo_545_finance_business",
+    "finalUrl": "https://templatemo.com/templates/templatemo_545_finance_business/",
+    "httpStatus": 200,
+    "pageTitle": "Finance Business HTML5 Template",
+    "retrievedAt": "2026-10-23T16:40:26.906Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "license": "TemplateMo-Free",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/TEMPLATEMO-TERMS.md",
+    "licenseEvidencePath": "rights/TEMPLATEMO-TERMS.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 27903,
+      "sha256": "23d64100d30e38b3dd5047f0f64e14acf2f7228716f4f1a88be4055ea4cfb54e"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 10910,
+      "sha256": "43bcc028f371898b6a332687f48b3aadd7a5680b3c8c24fc2747b8802fb65c0e"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 140936,
+      "sha256": "7928b5ab63c6e89ee0ee26f5ef201a58c72baf91abb688580a1aa26eb57b3c11"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 23739,
+      "sha256": "541ac58217a8ade1a5e292a65a0661dc9db7a49ae13654943817a4fbc6761afd"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 22989,
+      "sha256": "24da775cfe690b782f2037204862b6d3ccef535d3b788cd88cb02669746e398f"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 4743,
+      "sha256": "bd72e6b7ad63bac5af484333c93f4bf952b002e4264dc3a7157fe21bfa0a2072"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://templatemo.com/templates/templatemo_545_finance_business/assets/images/service_01.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_545_finance_business/assets/images/service_02.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_545_finance_business/assets/images/service_03.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_545_finance_business/assets/images/more-info.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://placehold.it/60x60",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "http://placehold.it/60x60",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://templatemo.com/templates/templatemo_545_finance_business/assets/images/client-01.png",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 5 of 5 stylesheets retained.",
+  "digest": "ed112d42e892d4dba00b86f8207c854c11b408fdea8d4e0d5ce9c1446067bc96"
+}

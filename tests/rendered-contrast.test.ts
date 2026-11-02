@@ -653,3 +653,48 @@ it("keeps trades inner-hero labels and keyboard focus readable on the dark surfa
   );
   expect(report.pass, JSON.stringify(report.findings)).toBe(true);
 });
+
+// Negative browser fixtures for the conservative production contrast gate.
+// These prove unsafe outward-focus approvals are not introduced when the
+// experimental focus-ring optimization is omitted.
+const reviewLogoImage =
+  "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22%3E%3Crect width=%2280%22 height=%2280%22 fill=%22%23205d51%22/%3E%3C/svg%3E";
+const reviewLogoButton =
+  `<button class="logo" aria-label="Home"><img src="${reviewLogoImage}" alt=""></button>`;
+const reviewLogoCss =
+  ".logo{display:flex;align-items:center;justify-content:center;width:120px;height:120px;padding:0;border:0;background:#fff;color:#111}.logo img{display:block;width:80px;height:80px}.logo:focus-visible{outline:2px solid #111;outline-offset:3px}";
+
+it("does not approve an outward ring beside the control's own shadow", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${reviewLogoCss}.logo{box-shadow:0 0 0 20px #111}</style>${reviewLogoButton}`,
+  );
+  expect(report.pass).toBe(false);
+});
+
+it("does not approve an outward ring clipped by a hidden ancestor", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${reviewLogoCss}.wrap{width:120px;height:120px;overflow:hidden}</style><div class="wrap">${reviewLogoButton}</div>`,
+  );
+  expect(report.pass).toBe(false);
+});
+
+it("does not approve an outward ring clipped by an auto-overflow ancestor", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${reviewLogoCss}.wrap{width:120px;height:120px;overflow:auto}</style><div class="wrap">${reviewLogoButton}</div>`,
+  );
+  expect(report.pass).toBe(false);
+});
+
+it("does not approve an outward ring clipped by a scroll-overflow ancestor", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${reviewLogoCss}.wrap{width:120px;height:120px;overflow:scroll}</style><div class="wrap">${reviewLogoButton}</div>`,
+  );
+  expect(report.pass).toBe(false);
+});
+
+it("does not approve an outward ring covered by a descendant image shadow", async () => {
+  const report = await scan(
+    `<style>body{margin:0;background:#fff;color:#111}${reviewLogoCss}.logo img{box-shadow:0 0 0 50px #111}</style>${reviewLogoButton}`,
+  );
+  expect(report.pass).toBe(false);
+});

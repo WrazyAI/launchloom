@@ -1,6 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
+import {
+  clientImageDigests,
+  isClientImageSnapshotUrl,
+  isRetainedClientImage,
+} from "./client-image-snapshots.mjs";
 
 export function interactionSourceDigest(files) {
   return createHash("sha256")
@@ -93,7 +98,23 @@ async function snapshot(control) {
       detail ||
       el.closest("nav") ||
       el.parentElement;
-    const panelId = el.getAttribute("aria-controls");
+    const group = el.closest("[data-purposeful-interaction]") || el.parentElement;
+    const peers = [...(group?.querySelectorAll("button[aria-pressed]") || [])];
+    const selected = peers.filter(
+      (peer) => peer.getAttribute("aria-pressed") === "true",
+    );
+    const declaredSelector = /(?:^|-)selector$/u.test(
+      group?.getAttribute("data-purposeful-interaction") || "",
+    );
+    // A shared output panel is not exclusive semantics: independent toggles
+    // may legitimately control the same panel. Only the explicit selector
+    // contract may choose a different peer for activation/restoration.
+    const exclusive =
+      peers.length > 1 && selected.length === 1 && declaredSelector;
+    const panelId =
+      exclusive && selected[0]
+        ? selected[0].getAttribute("aria-controls")
+        : el.getAttribute("aria-controls");
     const panel = panelId ? document.getElementById(panelId) : null;
     const contentScope = scope?.querySelector('[role="tablist"]')
       ? scope
@@ -174,12 +195,13 @@ export async function captureRenderedInteractionEvidence({
   capturePair = false,
   timeoutMs = 1500,
   settleMs = 250,
+  imageSnapshots = new Map(),
 }) {
   const unsafe = [],
     errors = [],
     pairs = [],
     failures = [];
-  /** @type {{viewport: string, candidateId: string, sourceDigest: string, kind: string, status: string, required: boolean, restored: boolean, before?: {state: string, content: string, scrollY: number}, after?: {state: string, content: string, scrollY: number}, reason?: string, unsafeEffects?: string[], browserErrors?: string[], omittedRuntime?: string[]}} */
+  /** @type {{viewport: string, candidateId: string, sourceDigest: string, kind: string, status: string, required: boolean, restored: boolean, before?: {state: string, content: string, scrollY: number}, after?: {state: string, content: string, scrollY: number}, reason?: string, unsafeEffects?: string[], browserErrors?: string[], omittedRuntime?: string[], retainedImages?: {urlDigest: string, contentDigest: string}[]}} */
   const observation = {
     viewport: viewport.name,
     candidateId,
@@ -196,6 +218,13 @@ export async function captureRenderedInteractionEvidence({
   });
   try {
     const staticRoot = await fs.realpath(dist);
+    if (!(imageSnapshots instanceof Map))
+      throw new Error("Invalid retained client-image snapshot map");
+    for (const [url, image] of imageSnapshots) {
+      if (!isClientImageSnapshotUrl(url) || !isRetainedClientImage(image))
+        throw new Error("Invalid retained client-image snapshot");
+    }
+    observation.retainedImages = clientImageDigests(imageSnapshots);
     let documentAllowed = true;
     await context.exposeBinding("__llInteractionBlocked", (_source, kind) => {
       unsafe.push(String(kind).slice(0, 120));
@@ -277,6 +306,18 @@ export async function captureRenderedInteractionEvidence({
         url.href === `${origin}/` &&
         documentAllowed;
       if (initialDocument) documentAllowed = false;
+      const snapshot = imageSnapshots.get(request.url());
+      if (
+        snapshot &&
+        request.resourceType() === "image" &&
+        request.method() === "GET"
+      ) {
+        await route.fulfill({
+          body: snapshot.body,
+          contentType: snapshot.contentType,
+        });
+        return;
+      }
       const asset = ["script", "stylesheet", "image", "font", "media"].includes(
         request.resourceType(),
       );
@@ -316,8 +357,7 @@ export async function captureRenderedInteractionEvidence({
           contentType: type,
           headers: initialDocument
             ? {
-                "content-security-policy":
-                  "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'none'; worker-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'",
+                "content-security-policy": `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:${imageSnapshots.size ? " https://assets.launchloom.wrazyos.com" : ""}; font-src 'self' data:; connect-src 'none'; worker-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'`,
               }
             : {},
         });
@@ -377,6 +417,25 @@ export async function captureRenderedInteractionEvidence({
           el.getAttribute("aria-selected") === "true"
         )
           return false;
+        if (el.getAttribute("aria-pressed") === "true") {
+          const group =
+            el.closest("[data-purposeful-interaction]") || el.parentElement;
+          const peers = [
+            ...(group?.querySelectorAll("button[aria-pressed]") || []),
+          ];
+          const selected = peers.filter(
+            (peer) => peer.getAttribute("aria-pressed") === "true",
+          );
+          const declaredSelector = /(?:^|-)selector$/u.test(
+            group?.getAttribute("data-purposeful-interaction") || "",
+          );
+          if (
+            peers.length > 1 &&
+            selected.length === 1 &&
+            declaredSelector
+          )
+            return false;
+        }
         if (el.tagName === "SELECT" && el.options.length < 2) return false;
         const id = el.getAttribute("aria-controls");
         return !id || Boolean(document.getElementById(id));
@@ -402,6 +461,28 @@ export async function captureRenderedInteractionEvidence({
       observation.before = before;
       let restoreControl = control;
       let option;
+      if (kind === "toggle") {
+        const original = await control.evaluateHandle((el) => {
+          if (!el.hasAttribute("aria-pressed")) return el;
+          const group =
+            el.closest("[data-purposeful-interaction]") || el.parentElement;
+          const peers = [
+            ...(group?.querySelectorAll("button[aria-pressed]") || []),
+          ];
+          const selected = peers.filter(
+            (peer) => peer.getAttribute("aria-pressed") === "true",
+          );
+          const declaredSelector = /(?:^|-)selector$/u.test(
+            group?.getAttribute("data-purposeful-interaction") || "",
+          );
+          return peers.length > 1 &&
+            selected.length === 1 &&
+            declaredSelector
+            ? selected[0]
+            : el;
+        });
+        restoreControl = original.asElement() || control;
+      }
       if (kind === "tab") {
         const original = await control.evaluateHandle((el) =>
           (

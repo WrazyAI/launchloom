@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "startbootstrap-grayscale",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://startbootstrap.github.io/startbootstrap-grayscale/",
+    "finalUrl": "https://startbootstrap.github.io/startbootstrap-grayscale/",
+    "httpStatus": 200,
+    "pageTitle": "Grayscale - Start Bootstrap Theme",
+    "retrievedAt": "2026-10-23T18:18:30.723Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "license": "MIT",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/LICENSE",
+    "licenseEvidencePath": "rights/LICENSE"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 36133,
+      "sha256": "b14cfc00f685f02c16cdee0aa8e28eec2317e5034171ab5a897528e2eec926f2"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 1509,
+      "sha256": "7cc1603a99bfee28a414d9d9a356451be7fdb636c92dd05291ef4936bb0c5afd"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 24059,
+      "sha256": "0702e1bc5060170a0284138e8159f639288355e05825201f904eb41140d2b558"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 246671,
+      "sha256": "9fd76ca3867d2bf177c1648f68ca8f7113f2c67096b5ef8d6a0258eae045ab37"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-grayscale/assets/img/ipad.png",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-grayscale/assets/img/bg-masthead.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-grayscale/assets/img/demo-image-01.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-grayscale/assets/img/demo-image-02.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "975d463959657de092615e1435e653673d3ba721e2326e8ca045317ab5fe7d0e"
+}

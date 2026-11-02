@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "startbootstrap-clean-blog",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://startbootstrap.github.io/startbootstrap-clean-blog/",
+    "finalUrl": "https://startbootstrap.github.io/startbootstrap-clean-blog/",
+    "httpStatus": 200,
+    "pageTitle": "Clean Blog - Start Bootstrap Theme",
+    "retrievedAt": "2026-10-23T19:12:32.703Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "license": "MIT",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/LICENSE",
+    "licenseEvidencePath": "rights/LICENSE"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 30138,
+      "sha256": "bbddae32569d8bc9471364867e51060c35f67a463f9affa2181511b90a7aea93"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 17880,
+      "sha256": "43155576d691066c5d464cff52ff4b12582221971278f5e9b71c77b8503ded59"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 57895,
+      "sha256": "231d46524799585e7c8f7d1a696c87b8e1fb362f14d0fcb81395e64e0c4e903a"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 233159,
+      "sha256": "186bc930a1ac74e723406db4a509fcfae961a53ae66e1a0af2373823b61c49ec"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 3 of 3 stylesheets retained.",
+  "digest": "12fe10ef8d092e27399f77173adbdeb2da9aebacfcb18011522cc813cd67c3bc"
+}

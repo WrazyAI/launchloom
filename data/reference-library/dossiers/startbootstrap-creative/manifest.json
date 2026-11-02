@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "id": "startbootstrap-creative",
+  "productionEligible": true,
+  "referenceName": "Start Bootstrap Creative: full-bleed photo masthead with orange bands",
+  "familyId": "startbootstrap-creative-family",
+  "source": {
+    "name": "Creative by Start Bootstrap",
+    "url": "https://startbootstrap.github.io/startbootstrap-creative/",
+    "sourceType": "official Start Bootstrap demo, MIT licensed",
+    "repository": "https://github.com/StartBootstrap/startbootstrap-creative",
+    "commit": "b1762d8c690a2379c078c776dc0830bdd81c6f55",
+    "rights": "licensed",
+    "rightsEvidence": "The official Start Bootstrap repository is licensed under the MIT License (copyright 2013-2023 Start Bootstrap LLC). The license text is retained in rights/LICENSE.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "fitness",
+    "gym",
+    "creative-studio",
+    "agency"
+  ],
+  "tags": {
+    "business": [
+      "fitness",
+      "gym",
+      "creative studio",
+      "agency"
+    ],
+    "style": [
+      "energetic",
+      "orange accent",
+      "rounded sans"
+    ],
+    "composition": [
+      "full-bleed masthead",
+      "promise band",
+      "image grid"
+    ],
+    "conversion": [
+      "find out more",
+      "get started",
+      "contact form"
+    ],
+    "motion": [
+      "restrained"
+    ],
+    "imagery": [
+      "full-bleed workshop photograph",
+      "six-image grid"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "59bd962b3e353a66eaa97e4dc3ce5943f501a881e590cf936cdc78990fef7592",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "ce327bff15d5f468cfc1570406f1862a89b749d883054c5228478a7d70a32f31",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A full-bleed photographic masthead with centered white copy and one orange pill action. An orange band follows with a short promise and a white action. Four icon-led feature columns sit on white, then a six-image workshop grid, a dark download band, a contact form, and a light footer. The typography is a rounded sans with large centered headings. Warm wood photography, orange, white, and charcoal create an energetic one-page studio tone.",
+    "heroGeometry": {
+      "mode": "full-bleed photographic masthead with centered copy",
+      "alignment": "centered",
+      "viewport": "photograph fills the opening behind one short promise and one action"
+    },
+    "navigationGeometry": {
+      "mode": "overlay top navigation",
+      "placement": "top of page",
+      "mobile": "collapsed hamburger"
+    },
+    "typography": {
+      "display": "rounded geometric sans",
+      "body": "same rounded sans",
+      "scale": "large centered headings"
+    },
+    "palette": {
+      "surfaces": [
+        "warm wood photograph",
+        "orange",
+        "white",
+        "charcoal"
+      ],
+      "ink": "white on photo, charcoal on light",
+      "accents": [
+        "orange"
+      ],
+      "contrastIntent": "energetic high contrast"
+    },
+    "imageTreatment": {
+      "mode": "full-bleed hero and six-image workshop grid",
+      "crop": "cover",
+      "focalPoint": "subject-safe"
+    },
+    "sectionSequence": [
+      "overlay navigation",
+      "full-bleed photo masthead",
+      "orange promise band",
+      "four feature columns",
+      "six-image grid",
+      "dark download band",
+      "contact form",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "four feature columns",
+      "interaction": "static"
+    },
+    "ctaPlacement": {
+      "primary": "Find Out More",
+      "secondary": "Get Started",
+      "early": "in the masthead and orange band"
+    },
+    "motion": {
+      "primitive": "restrained",
+      "library": "CSS transitions",
+      "reducedMotion": "static"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the masthead, orange band, features, image grid, and contact form",
+      "rules": [
+        "keep the masthead action visible",
+        "preserve image crops",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "image-led-stage",
+      "mobileHero": "image-led-stage",
+      "mediaRelation": "media-leads-copy",
+      "mobileMediaRelation": "media-leads-copy",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "orange promise band",
+        "image grid"
+      ],
+      "mobileTreatmentChanged": false
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "full-bleed-masthead",
+        "selector": "[data-reference-signature=full-bleed-masthead]",
+        "description": "photograph fills the opening behind centered copy and one action"
+      },
+      {
+        "id": "orange-promise-band",
+        "selector": "[data-reference-signature=orange-promise-band]",
+        "description": "solid orange band with a short promise and one action"
+      },
+      {
+        "id": "image-grid",
+        "selector": "[data-reference-signature=image-grid]",
+        "description": "six-image workshop grid"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse source photography, copy, or trade dress",
+      "invent services, prices, or claims",
+      "copy source code into a client site",
+      "replace the masthead with a generic card grid",
+      "low-contrast actions"
+    ],
+    "acceptanceChecks": [
+      "The masthead is full-bleed with centered copy and one action.",
+      "The orange promise band is a distinct full-width moment.",
+      "The image grid reads as a workshop gallery.",
+      "At 390 px the page stacks without horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Official Start Bootstrap demo captured at both viewports. The template is MIT licensed and uses bundled demo photography; no source photography is reused in client work."
+  }
+}

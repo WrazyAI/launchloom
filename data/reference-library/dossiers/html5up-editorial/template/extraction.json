@@ -1,0 +1,333 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "html5up-editorial",
+  "status": "extracted",
+  "method": "pinned-git",
+  "source": {
+    "url": "https://html5up.net/editorial",
+    "repository": "https://github.com/zce/html5up",
+    "revision": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "editorial/",
+    "retrievedAt": "2026-10-23T18:18:12.601Z",
+    "license": "CC-BY-3.0",
+    "licenseEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/assets/css/font-awesome.min.css",
+      "bytes": 31000,
+      "sha256": "799aeb25cc0373fdee0e1b1db7ad6c2f6a0e058dfadaa3379689f583213190bd"
+    },
+    {
+      "path": "source/assets/css/main.css",
+      "bytes": 60936,
+      "sha256": "6b106cdb244dcd01831c0979a29d41dc2abd08c08be07d0bd9d88fcf5db43ebe"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.eot",
+      "bytes": 165742,
+      "sha256": "7bfcab6db99d5cfbf1705ca0536ddc78585432cc5fa41bbd7ad0f009033b2979"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.svg",
+      "bytes": 444379,
+      "sha256": "ad6157926c1622ba4e1d03d478f1541368524bfc46f51e42fe0d945f7ef323e4"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.ttf",
+      "bytes": 165548,
+      "sha256": "aa58f33f239a0fb02f5c7a6c45c043d7a9ac9a093335806694ecd6d4edc0d6a8"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.woff",
+      "bytes": 98024,
+      "sha256": "ba0c59deb5450f5cb41b3f93609ee2d0d995415877ddfa223e8a8a7533474f07"
+    },
+    {
+      "path": "source/assets/fonts/fontawesome-webfont.woff2",
+      "bytes": 77160,
+      "sha256": "2adefcbc041e7d18fcf2d417879dc5a09997aa64d675b7a3c4b6ce33da13f3fe"
+    },
+    {
+      "path": "source/assets/fonts/FontAwesome.otf",
+      "bytes": 134808,
+      "sha256": "444dd4366615ffc4a16d012b2fa90137065d3ccb410fa6fd5e4ddd7b5e4ffcd5"
+    },
+    {
+      "path": "source/assets/js/breakpoints.min.js",
+      "bytes": 2439,
+      "sha256": "309febcd6d6e0cf092201532215f03a6a9f30b30f26203272a4861d704e7cd52"
+    },
+    {
+      "path": "source/assets/js/browser.min.js",
+      "bytes": 1851,
+      "sha256": "87910d5ed0053d90caf83230a2f1811d8679815da01f7bdec7548e776d7f04c4"
+    },
+    {
+      "path": "source/assets/js/jquery.min.js",
+      "bytes": 86927,
+      "sha256": "160a426ff2894252cd7cebbdd6d6b7da8fcd319c65b70468f10b6690c45d02ef"
+    },
+    {
+      "path": "source/assets/js/main.js",
+      "bytes": 5968,
+      "sha256": "a3b8bc04e80d1e016d019ebad18756f514d45f02cfadf97872c72615d335715c"
+    },
+    {
+      "path": "source/assets/js/util.js",
+      "bytes": 12433,
+      "sha256": "c2e1e72b0de356f6ce184e3af4fa8ab6590a2581162905a27d77886b2d960e00"
+    },
+    {
+      "path": "source/assets/sass/base/_page.scss",
+      "bytes": 1024,
+      "sha256": "b6d98cb075bbb352816b35ef69dd0df3f0db8b616c4cf3fdd9db8bcf3eb35e5e"
+    },
+    {
+      "path": "source/assets/sass/base/_reset.scss",
+      "bytes": 1569,
+      "sha256": "8d72d66caca771115fe606fbec4c6577ca84f043c92a4fef8f3a15c0ee0c41fe"
+    },
+    {
+      "path": "source/assets/sass/base/_typography.scss",
+      "bytes": 3122,
+      "sha256": "004e91cef9c3652a61c5ea56d0b01693be5ee48c6bff4489a27a56f5380bffbb"
+    },
+    {
+      "path": "source/assets/sass/components/_actions.scss",
+      "bytes": 1091,
+      "sha256": "666a612e56d029eb99e9869e04aa46b02d1f4577f9498f99804d4874220d4c51"
+    },
+    {
+      "path": "source/assets/sass/components/_box.scss",
+      "bytes": 515,
+      "sha256": "35127ed8ac5021930eea56fa6713916cff15dbc21845e7bf3910202ed32befd4"
+    },
+    {
+      "path": "source/assets/sass/components/_button.scss",
+      "bytes": 1757,
+      "sha256": "ca4f5db481911f2dcca0a24107f58e244c9658d4fc977afb50b7ea90221d4489"
+    },
+    {
+      "path": "source/assets/sass/components/_contact.scss",
+      "bytes": 760,
+      "sha256": "85bd326940cef8faf7c346dfdacf21db0aed5d914c31cd05542f81e038cf5be1"
+    },
+    {
+      "path": "source/assets/sass/components/_features.scss",
+      "bytes": 2919,
+      "sha256": "496fd1deff68c1abec36dfb42153b0a322e23d5238eee411452e23383a976e75"
+    },
+    {
+      "path": "source/assets/sass/components/_form.scss",
+      "bytes": 3885,
+      "sha256": "cd831819148c321e1d799068edeb59502ef14f0e8c7ed982c258cf5650118b2d"
+    },
+    {
+      "path": "source/assets/sass/components/_icon.scss",
+      "bytes": 286,
+      "sha256": "909acc3ba8d74adbcad8c7868a2cdd8f0e80af7e6e86c7442a60183fbf3095d8"
+    },
+    {
+      "path": "source/assets/sass/components/_icons.scss",
+      "bytes": 424,
+      "sha256": "c352da0766b91d01bbe752d18d6a304348a4edf33ee751423bf7afff1c1c673e"
+    },
+    {
+      "path": "source/assets/sass/components/_image.scss",
+      "bytes": 1107,
+      "sha256": "537bfb0372b8ae2a6bede3e7538306444949ace674908595b4129462c92ff864"
+    },
+    {
+      "path": "source/assets/sass/components/_list.scss",
+      "bytes": 892,
+      "sha256": "45766966aaeb130f5e4336f1d276160740fecaf01f26e70a428ef9ceead052f6"
+    },
+    {
+      "path": "source/assets/sass/components/_mini-posts.scss",
+      "bytes": 577,
+      "sha256": "1dc122c77aa659d0e227732bf8d3d08e0918884ed8732b97833f6ba3ca5e3c13"
+    },
+    {
+      "path": "source/assets/sass/components/_pagination.scss",
+      "bytes": 1310,
+      "sha256": "779835dacd5a132b8ed47104fee4380b9cc8fa78f2423e5a07c74c156853c05c"
+    },
+    {
+      "path": "source/assets/sass/components/_posts.scss",
+      "bytes": 3086,
+      "sha256": "897b10b46bd450489a87003fd706e2b376bf5d77373197739cf638b5e5b31c5f"
+    },
+    {
+      "path": "source/assets/sass/components/_row.scss",
+      "bytes": 630,
+      "sha256": "23249672a28f41eb80b709084b00a33d73ffb47fd7a12b9022da7f5aa268dded"
+    },
+    {
+      "path": "source/assets/sass/components/_section.scss",
+      "bytes": 771,
+      "sha256": "1be0ea2b205957ba375a4bd9a156d19e60721b71a11d128cd1173f87dd3a2f55"
+    },
+    {
+      "path": "source/assets/sass/components/_table.scss",
+      "bytes": 1291,
+      "sha256": "b79f2d2fb9b05fc0a2d39af72d0880a33eefb97c985601c7495a2f85784030d7"
+    },
+    {
+      "path": "source/assets/sass/layout/_banner.scss",
+      "bytes": 1521,
+      "sha256": "b6b058be2342886d2793666a39761b698025ec07292ad9fd122a50893ff64138"
+    },
+    {
+      "path": "source/assets/sass/layout/_footer.scss",
+      "bytes": 296,
+      "sha256": "596457cc719a119698bcb75ecb56aefc4bef8468c59b46b2303a781e4966b778"
+    },
+    {
+      "path": "source/assets/sass/layout/_header.scss",
+      "bytes": 904,
+      "sha256": "30465eba24bda5795ee36db283c3a270c0e8d6c5519a71eca18319fcb1c46156"
+    },
+    {
+      "path": "source/assets/sass/layout/_main.scss",
+      "bytes": 993,
+      "sha256": "82f1ca1c0509c6012d33cc9dbabbeafac773530b1918c8a126e10b9ec0924a34"
+    },
+    {
+      "path": "source/assets/sass/layout/_menu.scss",
+      "bytes": 1941,
+      "sha256": "c862ee4baa2dbfc53da6584a1ed4e868ffb7b4d69c67497a431c75a5880e652b"
+    },
+    {
+      "path": "source/assets/sass/layout/_sidebar.scss",
+      "bytes": 4356,
+      "sha256": "a0461881dfa9aa09ce890a326b544a45b9aa304b8298a5076856af2837703499"
+    },
+    {
+      "path": "source/assets/sass/layout/_wrapper.scss",
+      "bytes": 301,
+      "sha256": "7648bd293e53515ed10f45afa25232b5099be99e68a4b03b03e420fbef3a8b18"
+    },
+    {
+      "path": "source/assets/sass/libs/_breakpoints.scss",
+      "bytes": 4593,
+      "sha256": "69a8486c9bdc0b14358418cae6c4829b57fb0b6684634e1e72f5a2a27f732101"
+    },
+    {
+      "path": "source/assets/sass/libs/_functions.scss",
+      "bytes": 1957,
+      "sha256": "fc832d9ccc89117bb05beed1e5fb328e7f909845d2220a1060375142f51b7e5d"
+    },
+    {
+      "path": "source/assets/sass/libs/_html-grid.scss",
+      "bytes": 2840,
+      "sha256": "423fd36f530e34b329996d06b0db7c8543fc2034d0c12d479246fc0e498cc662"
+    },
+    {
+      "path": "source/assets/sass/libs/_mixins.scss",
+      "bytes": 1840,
+      "sha256": "1eadca47c82395e010637919c7684793711009b6413ebb3a087f7471a4e8bf41"
+    },
+    {
+      "path": "source/assets/sass/libs/_vars.scss",
+      "bytes": 835,
+      "sha256": "9e1d5994e5b248b57bbae356f6859c1d5e9f7658c580f613dfa5f8baa1d79326"
+    },
+    {
+      "path": "source/assets/sass/libs/_vendor.scss",
+      "bytes": 7355,
+      "sha256": "f081f8ff029549e642a7ff5a615752e1e9032258b635abcef39f59e747d39d12"
+    },
+    {
+      "path": "source/assets/sass/main.scss",
+      "bytes": 1614,
+      "sha256": "cb0fad44be58c1156542df612fc75526317e1257d3e4f1b7bc075df8d2177f77"
+    },
+    {
+      "path": "source/elements.html",
+      "bytes": 25247,
+      "sha256": "15db5dc99ea261f1b57f100be9c7f86d40456361fa78a615d0f2d62384635621"
+    },
+    {
+      "path": "source/generic.html",
+      "bytes": 10884,
+      "sha256": "2f1144c91443cad3e23418427597890820f1c0a69ba4f070bb1c8b95b5e8bfd9"
+    },
+    {
+      "path": "source/images/pic01.jpg",
+      "bytes": 20660,
+      "sha256": "cfba48b3c6d34a330b7f0bdca0c397cae0432bb876bb79d95b085caeb0c4f51c"
+    },
+    {
+      "path": "source/images/pic02.jpg",
+      "bytes": 20986,
+      "sha256": "21e95f333667e0290ddd67f3d4e416dd110fe65df2c99acb2153a24311fe250b"
+    },
+    {
+      "path": "source/images/pic03.jpg",
+      "bytes": 21127,
+      "sha256": "ca1244222832b88d91bcabd4ed6185cad434df6904bddaddef54f33a15780597"
+    },
+    {
+      "path": "source/images/pic04.jpg",
+      "bytes": 21412,
+      "sha256": "b02385c0732a3d31fecd9f47e49595e76eb82445a6aabb13203d9d6b210d0387"
+    },
+    {
+      "path": "source/images/pic05.jpg",
+      "bytes": 21497,
+      "sha256": "a1bb3e08c4ea7049f684c437afe16dc449072441e58b6b1f3d9344757ce802ae"
+    },
+    {
+      "path": "source/images/pic06.jpg",
+      "bytes": 21564,
+      "sha256": "1950de9f8fcfe68147965068259af89c1379f767abf3bd7c926424a2ed1af84c"
+    },
+    {
+      "path": "source/images/pic07.jpg",
+      "bytes": 10854,
+      "sha256": "1c2af5ef123448c58be434d2560a605f64db783f5f3a57649b57c095ad84e9af"
+    },
+    {
+      "path": "source/images/pic08.jpg",
+      "bytes": 10934,
+      "sha256": "8e35ca997d04e452c7099e7130f67e8b646072fe3b6f30944f9d30d4a5c05642"
+    },
+    {
+      "path": "source/images/pic09.jpg",
+      "bytes": 10350,
+      "sha256": "e3dcb81c787aa42ce1656ac321431966651d8c8935afb0f4d57f25e40529474a"
+    },
+    {
+      "path": "source/images/pic10.jpg",
+      "bytes": 70746,
+      "sha256": "600149b80023f90fb926440f0c0a532cfa32bd8dc4e8e6444629f618270471c1"
+    },
+    {
+      "path": "source/images/pic11.jpg",
+      "bytes": 99292,
+      "sha256": "4229dd82b2a548995c1aaaaad596f93e8edf442d27a02b4fffde5df180321605"
+    },
+    {
+      "path": "source/index.html",
+      "bytes": 10391,
+      "sha256": "137976a3c82ff2f4e782973f5ed84e61614e6b334de3942a5bcfdcedca379db7"
+    },
+    {
+      "path": "source/LICENSE.txt",
+      "bytes": 17128,
+      "sha256": "d7b98629668e4968281c7083336bc292ae55e2ca3a5469072b9657dd2c1a634e"
+    },
+    {
+      "path": "source/README.txt",
+      "bytes": 820,
+      "sha256": "778a1c7b6b5e72c957738c235d3337814bd0f1f080058c86223ece9decf5b0e6"
+    }
+  ],
+  "excludedMedia": [],
+  "notes": "Fetched 62 files from the pinned repository at f32c95cd40e42659857e2318b6deb1f6be43da5d.",
+  "digest": "16997b3d9c3b95fa8b5b0936b1b73e1526f24a2ed583262a647b36d3fa7c6c2c"
+}

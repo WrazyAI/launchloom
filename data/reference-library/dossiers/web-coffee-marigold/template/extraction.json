@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-coffee-marigold",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://marigoldcoffee.com/",
+    "retrievedAt": "2026-10-23T14:53:55.685Z",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 32017,
+      "sha256": "73be91ab3046958ecc4f924396c075888596a443cca7598e36c90cd61fd4c7c0"
+    },
+    {
+      "path": "source/style-1.css",
+      "bytes": 121396,
+      "sha256": "effcf817471fcc1b7dc3d50cac8df5bf4a591f68488f1edd5832b1047c7304b2"
+    },
+    {
+      "path": "source/style-2.css",
+      "bytes": 71290,
+      "sha256": "1af956a591f759106841a6e9236757198e1688ff26c530750b841be7566faacc"
+    },
+    {
+      "path": "source/style-3.css",
+      "bytes": 13728,
+      "sha256": "2be67d829931067051705cabc083afb8507f2ba111f8825e7f3cd551ad41b88d"
+    },
+    {
+      "path": "source/style-4.css",
+      "bytes": 21666,
+      "sha256": "437e6e23bb4219f1dd245da75b1729666e71fbf31985189fa35be75702b8cab9"
+    },
+    {
+      "path": "source/style-5.css",
+      "bytes": 4755,
+      "sha256": "e33ffd8f589de1de6fef1ca1dc30a7b2b1cdb348928af3b9f24597e7979fea75"
+    },
+    {
+      "path": "source/style-6.css",
+      "bytes": 20312,
+      "sha256": "ef91e4cbe411235f5047ab29662ec7ae4fb557e18815ee99008e3b4f8c9b5bd8"
+    },
+    {
+      "path": "source/style-7.css",
+      "bytes": 14092,
+      "sha256": "ea7868f91256977b52f1cc0cfc784fe092b31cbc848aa0eaf8ced104f6bd9894"
+    },
+    {
+      "path": "source/style-8.css",
+      "bytes": 5512,
+      "sha256": "6f59fc4175807107430f4afc6bb692d1d2d726dbe4de96ffaa7f557424961312"
+    },
+    {
+      "path": "source/style-9.css",
+      "bytes": 13093,
+      "sha256": "3f26f75ce0fb6f2d7c5e8c465a96b9b25568428c7d1fb09a368e0c0a37204abc"
+    }
+  ],
+  "excludedMedia": [],
+  "digest": "93d4b9a21e6a5ecf16d3e77c2f9c85ef4ea75ef2457d94a2370ea7172e6adc75"
+}

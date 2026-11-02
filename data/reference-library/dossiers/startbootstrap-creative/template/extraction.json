@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "startbootstrap-creative",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://startbootstrap.github.io/startbootstrap-creative/",
+    "finalUrl": "https://startbootstrap.github.io/startbootstrap-creative/",
+    "httpStatus": 200,
+    "pageTitle": "Creative - Start Bootstrap Theme",
+    "retrievedAt": "2026-10-23T18:18:24.597Z",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "license": "MIT",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/LICENSE",
+    "licenseEvidencePath": "rights/LICENSE"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 16214,
+      "sha256": "57accad86645a0e960f9482f8de3f853994f9b856ba78e5e04e4b5aa9fac1486"
+    },
+    {
+      "path": "source/styles/01.css",
+      "bytes": 65696,
+      "sha256": "3c325075337b768950583012228055ae392e384688d77ec5235e6ca88dcec6ef"
+    },
+    {
+      "path": "source/styles/02.css",
+      "bytes": 3176,
+      "sha256": "c18ea176256a8852e456408b1ac85fe18545dc157fa5822a85adbcc6977717b4"
+    },
+    {
+      "path": "source/styles/03.css",
+      "bytes": 12609,
+      "sha256": "db408e19715c51b3ec4e2239da8aebf462a5e730cce33ed02bdf424ab8f85933"
+    },
+    {
+      "path": "source/styles/04.css",
+      "bytes": 5307,
+      "sha256": "3512254c44de3da60d37964e07be6792fec821c402da6af843e98dfd3f18e1c9"
+    },
+    {
+      "path": "source/styles/05.css",
+      "bytes": 243747,
+      "sha256": "5caca2c3ace316733b9b3750b34b67865b0cbf096a0c01b82e33fee5e682da9f"
+    }
+  ],
+  "excludedMedia": [
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-creative/assets/img/portfolio/thumbnails/1.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-creative/assets/img/portfolio/thumbnails/2.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-creative/assets/img/portfolio/thumbnails/3.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-creative/assets/img/portfolio/thumbnails/4.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-creative/assets/img/portfolio/thumbnails/5.jpg",
+      "reason": "remote-media-not-retained"
+    },
+    {
+      "url": "https://startbootstrap.github.io/startbootstrap-creative/assets/img/portfolio/thumbnails/6.jpg",
+      "reason": "remote-media-not-retained"
+    }
+  ],
+  "notes": "Rendered DOM captured after script execution and lazy-load scrolling. Scripts and inline event handlers were stripped; 5 of 5 stylesheets retained.",
+  "digest": "96bc23d7efee910fa374a7b9885197f3e9012b1d6f6378d4cb851355847b8b5a"
+}

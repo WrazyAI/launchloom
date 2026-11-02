@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "web-coffee-ember-roast",
+  "status": "extracted",
+  "method": "live-site",
+  "source": {
+    "url": "https://emberroastcoffee.com/",
+    "retrievedAt": "2026-10-23T14:52:38.182Z",
+    "attestationPath": "rights/template-extraction.md",
+    "rightsEvidencePath": "rights/requester-attestation.md"
+  },
+  "entrypoint": "source/index.html",
+  "files": [
+    {
+      "path": "source/index.html",
+      "bytes": 16705,
+      "sha256": "e8e6729f17539193647321a8ba67c503ba43db4f564f678fd3d50c5ff3ac8d0c"
+    },
+    {
+      "path": "source/style-1.css",
+      "bytes": 33340,
+      "sha256": "10e79dc4cb537c7d6b210e700fde7f268afd3212ca4335eba67458a9b304d348"
+    },
+    {
+      "path": "source/style-2.css",
+      "bytes": 17272,
+      "sha256": "aa7405ab0ea8795e042f6a07f52eed83f272f5b322b2b792fb04cb3c785d629f"
+    },
+    {
+      "path": "source/style-3.css",
+      "bytes": 102025,
+      "sha256": "1edb1725a9ea8ca4dcf2f5508cee183218aa1685e47c1b23056717f754f58ebf"
+    }
+  ],
+  "excludedMedia": [],
+  "digest": "1a65e2078fdbde075f8ffaa38dd19547a7726fafb6646f97c9e6984439b3512a"
+}

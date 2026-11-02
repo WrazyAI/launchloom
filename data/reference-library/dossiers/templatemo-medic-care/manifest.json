@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "id": "templatemo-medic-care",
+  "productionEligible": true,
+  "referenceName": "TemplateMo Medic Care: split care hero with timeline and booking",
+  "familyId": "templatemo-medic-care-family",
+  "source": {
+    "name": "Medic Care by TemplateMo",
+    "url": "https://templatemo.com/templates/templatemo_566_medic_care",
+    "sourceType": "official TemplateMo template preview, free commercial-use terms",
+    "rights": "licensed",
+    "license": "TemplateMo free commercial-use terms",
+    "rightsEvidence": "TemplateMo states that its templates are free for commercial, personal, or learning use and may be modified for clients, with no usage restriction. The retained terms record is rights/TEMPLATEMO-TERMS.md.",
+    "rightsEvidencePath": "rights/TEMPLATEMO-TERMS.md",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "dental",
+    "home-care"
+  ],
+  "tags": {
+    "business": [
+      "dental",
+      "home care"
+    ],
+    "style": [
+      "clinical",
+      "neutral sans",
+      "navy accent"
+    ],
+    "composition": [
+      "split hero",
+      "vertical timeline",
+      "booking form"
+    ],
+    "conversion": [
+      "book now",
+      "learn more"
+    ],
+    "motion": [
+      "static-first"
+    ],
+    "imagery": [
+      "doctor portrait",
+      "care photographs"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "922f9c85e1a4294e5806c6bae21a59392bada8b6dc0c4d709d92698d6f5349a4",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "8bf06a59c97fa8a919b568ded8be334bca2da419ad1726b4cb44308e2e7c01c0",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A clean medical template. A top navigation row sits above a split hero: a doctor portrait on the left and a white text card on the right with a short promise and two actions. A doctor introduction with a large experience badge follows, then a two-photo care band, a vertical timeline, a patient testimonial, a booking form, and a footer with hours and contact details. The typography is a neutral sans with large dark headings. White, pale blue, and navy accents create a calm clinical tone.",
+    "heroGeometry": {
+      "mode": "split image-and-copy care hero",
+      "alignment": "portrait-left, text-card-right",
+      "viewport": "doctor portrait beside a white promise card with one primary action"
+    },
+    "navigationGeometry": {
+      "mode": "inline top navigation",
+      "placement": "top of page",
+      "mobile": "collapsed hamburger"
+    },
+    "typography": {
+      "display": "neutral sans with bold dark headings",
+      "body": "same neutral sans",
+      "scale": "large clinical headings"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "pale blue",
+        "navy"
+      ],
+      "ink": "near-black",
+      "accents": [
+        "navy"
+      ],
+      "contrastIntent": "calm clinical contrast"
+    },
+    "imageTreatment": {
+      "mode": "doctor portrait, care photographs, testimonial avatar",
+      "crop": "subject-safe",
+      "focalPoint": "people-safe"
+    },
+    "sectionSequence": [
+      "inline navigation",
+      "split hero",
+      "doctor introduction",
+      "care photo band",
+      "vertical timeline",
+      "patient testimonial",
+      "booking form",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "timeline and booking",
+      "interaction": "read then book"
+    },
+    "ctaPlacement": {
+      "primary": "Book Now",
+      "secondary": "Learn More",
+      "early": "in the hero and booking form"
+    },
+    "motion": {
+      "primitive": "static-first",
+      "library": "CSS",
+      "reducedMotion": "static"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the hero, doctor introduction, timeline, testimonial, and booking form",
+      "rules": [
+        "keep the booking action visible",
+        "preserve people-safe crops",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "vertical timeline",
+        "booking form"
+      ],
+      "mobileTreatmentChanged": true
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "split-care-hero",
+        "selector": "[data-reference-signature=split-care-hero]",
+        "description": "doctor portrait beside a white promise card"
+      },
+      {
+        "id": "care-timeline",
+        "selector": "[data-reference-signature=care-timeline]",
+        "description": "vertical care timeline with dated entries"
+      },
+      {
+        "id": "booking-form",
+        "selector": "[data-reference-signature=booking-form]",
+        "description": "simple appointment booking form"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse source photography, copy, or trade dress",
+      "invent credentials, prices, or outcomes",
+      "copy source code into a client site",
+      "replace the split hero with a generic card grid",
+      "low-contrast actions"
+    ],
+    "acceptanceChecks": [
+      "Desktop opening reads as a portrait beside a promise card.",
+      "The timeline and booking form remain distinct sections.",
+      "At 390 px the page stacks without horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Official TemplateMo template preview captured at both viewports. TemplateMo free commercial-use terms are retained in the rights record; source photography is not reused in client work."
+  }
+}

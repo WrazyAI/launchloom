@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "id": "web-coffee-ember-roast",
+  "productionEligible": true,
+  "referenceName": "Ember Roast Coffee Co.: editorial single-coffee hero on warm cream",
+  "familyId": "web-coffee-ember-roast-family",
+  "source": {
+    "name": "Ember Roast Coffee Co. official website",
+    "url": "https://emberroastcoffee.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "On 2026-11-01 the requester confirmed reuse authorization for emberroastcoffee.com and marigoldcoffee.com. This is requester testimony, not independent verification of ownership or operation. Retain existing screenshots and extracted source for internal design-mechanics study; no source brand, copy, imagery, products, prices, or trade dress transfers to client sites.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "coffee-shop",
+    "cafe",
+    "specialty-coffee",
+    "coffee-roaster"
+  ],
+  "tags": {
+    "business": [
+      "coffee shop",
+      "specialty coffee",
+      "cafe"
+    ],
+    "style": [
+      "warm editorial",
+      "serif display",
+      "cream surfaces"
+    ],
+    "composition": [
+      "single-feature hero",
+      "labeled value grid",
+      "story bands"
+    ],
+    "conversion": [
+      "shop coffee",
+      "subscribe",
+      "visit cafe"
+    ],
+    "motion": [
+      "restrained fade",
+      "static-first"
+    ],
+    "imagery": [
+      "featured coffee photograph",
+      "product and lifestyle stills",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "fe6e7ad25bed46b8c7d9dd9d48bff9c1cf58456f7e69a01d03fd8f231a8e58b4",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "1233b69a27ec88790c51235e206e078fdb648834c6a1510e91383822867f4e8f",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The reference is a specialty coffee roastery site. The opening features a single highlighted coffee with a large lifestyle or product photograph and a serif display heading, paired with a short promise and a primary shop action. A roastery-story band introduces the business through a small labeled grid of values such as sourcing, roasting, specialty coffee, brewing, and goods. A subscription band promotes recurring delivery. A locations band lists cafe addresses. A testimonial band quotes customers. A community or newsletter close captures email. Warm off-white surfaces, deep espresso ink, and a high-contrast serif display against a clean sans body define the look.",
+    "heroGeometry": {
+      "mode": "single-feature editorial hero with serif display",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the featured coffee, context and shop action"
+    },
+    "navigationGeometry": {
+      "mode": "inline horizontal top nav with shop-forward links",
+      "placement": "top of page",
+      "mobile": "compact menu"
+    },
+    "typography": {
+      "display": "high-contrast serif display for headings",
+      "body": "clean neutral sans for body",
+      "scale": "large editorial opening with clear section titles and comfortable measure"
+    },
+    "palette": {
+      "surfaces": [
+        "warm cream",
+        "white"
+      ],
+      "ink": "deep espresso",
+      "accents": [
+        "warm amber"
+      ],
+      "contrastIntent": "legible body and actions on warm surfaces"
+    },
+    "imageTreatment": {
+      "mode": "large single-feature photograph with supporting product and lifestyle images",
+      "crop": "subject-safe hero crop with a product grid below",
+      "focalPoint": "keep faces and text clear of each other"
+    },
+    "sectionSequence": [
+      "featured-coffee hero",
+      "roastery story grid",
+      "subscription band",
+      "locations band",
+      "testimonials",
+      "community newsletter close"
+    ],
+    "servicePresentation": {
+      "pattern": "story-led bands each with one primary action (shop, subscribe, visit)",
+      "interaction": "each band explains the choice and leads to a real destination"
+    },
+    "ctaPlacement": {
+      "primary": "shop the featured coffee",
+      "secondary": "explore the roastery and subscribe",
+      "early": "near the opening promise"
+    },
+    "motion": {
+      "primitive": "restrained fade or static-first",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack editorial bands into vertical chapters with outlined actions",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": true
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "featured-coffee-hero",
+        "selector": "[data-reference-signature=featured-coffee-hero]",
+        "description": "Translate the single-feature editorial hero with client-cleared content."
+      },
+      {
+        "id": "roastery-story-grid",
+        "selector": "[data-reference-signature=roastery-story-grid]",
+        "description": "Translate the labeled value grid with new-client content."
+      },
+      {
+        "id": "subscription-band",
+        "selector": "[data-reference-signature=subscription-band]",
+        "description": "Translate the recurring-delivery band with a single clear action."
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse Ember Roast brand, words, logo, photographs, testimonials or trade dress",
+      "invent awards, prices, locations, staff or outcomes",
+      "copy a source section or source code",
+      "generic repeated cards that erase the editorial rhythm",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "acceptanceChecks": [
+      "Opening features a single clear hero with a visible primary action.",
+      "Roastery story reads as a labeled value grid, not a generic card wall.",
+      "Subscription and location bands each keep one decisive action.",
+      "At 390 px all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-11-02",
+    "notes": "Historical October 23 capture review recorded HTTP 200 at both viewports and scroll-settled full-page images showing all sections; no new capture is claimed. Rights re-reviewed November 2 against the November 1 requester reuse authorization: permission-cleared, not independently verified ownership or operation. Retained as an internal design-mechanics reference only."
+  }
+}

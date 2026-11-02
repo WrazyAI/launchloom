@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "id": "startbootstrap-clean-blog",
+  "productionEligible": true,
+  "referenceName": "Start Bootstrap Clean Blog: full-width header with single-column article list",
+  "familyId": "startbootstrap-clean-blog-family",
+  "source": {
+    "name": "Clean Blog by Start Bootstrap",
+    "url": "https://startbootstrap.github.io/startbootstrap-clean-blog/",
+    "sourceType": "official Start Bootstrap demo, MIT licensed",
+    "repository": "https://github.com/StartBootstrap/startbootstrap-clean-blog",
+    "commit": "1ebc4f8f3b6194335df237a2a7837955a5a4a9aa",
+    "rights": "licensed",
+    "rightsEvidence": "The official Start Bootstrap repository is licensed under the MIT License (copyright 2013-2023 Start Bootstrap LLC). The license text is retained in rights/LICENSE.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "provenanceEvidencePaths": [
+      "rights/capture-record.md",
+      "rights/source-provenance.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "businessKinds": [
+    "dental",
+    "home-care",
+    "hospitality",
+    "roofing",
+    "veterinary"
+  ],
+  "tags": {
+    "business": [
+      "dental",
+      "home care",
+      "hospitality",
+      "roofing",
+      "veterinary"
+    ],
+    "style": [
+      "editorial",
+      "bold serif",
+      "teal accent"
+    ],
+    "composition": [
+      "full-width header",
+      "single-column article list"
+    ],
+    "conversion": [
+      "older posts",
+      "article reading"
+    ],
+    "motion": [
+      "static-first"
+    ],
+    "imagery": [
+      "full-width header photograph",
+      "article imagery"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "sha256": "a6813e0e57f996ebd6625d2c3dbf8418128e8bcf04de350cf812772b58a771e7",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "sha256": "ad164c87a30138e638ad5d78f44cd3ebe1b48dd3df54f153b187abe12a68001c",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A full-width header photograph with a centered white title and subtitle. A simple top navigation sits above. The body is a single-column editorial list: large bold serif headings, short standfirst lines, dated bylines, and thin dividers, followed by an Older Posts button and a small social footer. The palette is white, near-black, and one teal action. The typography is a bold serif display with a neutral sans body.",
+    "heroGeometry": {
+      "mode": "full-width header photograph with centered title",
+      "alignment": "centered",
+      "viewport": "photograph fills a wide header band above the article list"
+    },
+    "navigationGeometry": {
+      "mode": "inline top navigation",
+      "placement": "top of page",
+      "mobile": "menu button"
+    },
+    "typography": {
+      "display": "bold serif display",
+      "body": "neutral sans",
+      "scale": "large article headings with compact bylines"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "near-black",
+        "teal"
+      ],
+      "ink": "near-black",
+      "accents": [
+        "teal"
+      ],
+      "contrastIntent": "high-contrast editorial reading"
+    },
+    "imageTreatment": {
+      "mode": "full-width header photograph and article imagery",
+      "crop": "wide cover",
+      "focalPoint": "subject-safe"
+    },
+    "sectionSequence": [
+      "top navigation",
+      "full-width header photograph",
+      "single-column article list",
+      "older posts action",
+      "social footer"
+    ],
+    "servicePresentation": {
+      "pattern": "article list with standfirst and byline",
+      "interaction": "reading-led"
+    },
+    "ctaPlacement": {
+      "primary": "Older Posts",
+      "secondary": "article links",
+      "early": "after the header"
+    },
+    "motion": {
+      "primitive": "static-first",
+      "library": "CSS",
+      "reducedMotion": "static"
+    },
+    "mobileRecomposition": {
+      "strategy": "keep the header and stack the article list in one column",
+      "rules": [
+        "preserve article headings",
+        "keep bylines readable",
+        "avoid horizontal overflow"
+      ]
+    },
+    "compositionTopology": {
+      "hero": "editorial-stack",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "vertical-copy-media-stack",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [
+        "article list"
+      ],
+      "mobileTreatmentChanged": false
+    },
+    "requiredSignatureElements": [
+      {
+        "id": "full-width-header",
+        "selector": "[data-reference-signature=full-width-header]",
+        "description": "wide header photograph with a centered title"
+      },
+      {
+        "id": "article-list",
+        "selector": "[data-reference-signature=article-list]",
+        "description": "single-column article list with standfirst and byline"
+      }
+    ],
+    "prohibitedPatterns": [
+      "reuse source photography, copy, or trade dress",
+      "invent services, credentials, or outcomes",
+      "copy source code into a client site",
+      "replace the article list with generic service cards",
+      "low-contrast actions"
+    ],
+    "acceptanceChecks": [
+      "The header is a full-width photograph with a centered title.",
+      "Articles read as a single-column editorial list.",
+      "At 390 px the list stacks without horizontal overflow."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "LaunchLoom design QA",
+    "date": "2026-10-23",
+    "notes": "Official Start Bootstrap demo captured at both viewports. The template is MIT licensed and uses bundled demo photography; no source photography is reused in client work."
+  }
+}
