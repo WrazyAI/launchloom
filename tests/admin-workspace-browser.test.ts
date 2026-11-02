@@ -628,6 +628,28 @@ describe("real admin workspace browser behavior", () => {
     }
   });
 
+  it("keeps the complete attempt reference readable in the record disclosure", async () => {
+    const { page } = await openPage({
+      path: "/admin/onboarding-invites?attempt=attempt-0000",
+    });
+    try {
+      const record = page
+        .locator("#attempt-inspector .admin-panel-disclosure")
+        .filter({
+          has: page.locator("summary").filter({ hasText: "Record details" }),
+        });
+      await record.locator("summary").click();
+      await visible(
+        record.locator("dt").getByText("Attempt reference", { exact: true }),
+      );
+      await visible(
+        record.locator("dd").getByText("attempt-0000", { exact: true }),
+      );
+    } finally {
+      await page.close();
+    }
+  });
+
   it("keeps large arrays expandable without losing retained event evidence", async () => {
     eventDetails.set(
       "attempt-0000",

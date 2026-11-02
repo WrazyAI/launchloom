@@ -548,6 +548,10 @@ export function AttemptInspector({
                 <h3 id="attempt-summary-title">Attempt summary</h3>
                 <dl className="admin-detail-grid">
                   <div>
+                    <dt>Attempt reference</dt>
+                    <dd className="admin-mono">{attempt.attemptId}</dd>
+                  </div>
+                  <div>
                     <dt>Client</dt>
                     <dd>
                       <span>
