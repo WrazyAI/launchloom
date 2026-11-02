@@ -25,8 +25,12 @@ describe("sealed client image snapshots", () => {
       "https://assets.launchloom.wrazyos.com/intakes/synthetic/photo.svg",
       `${url}?visitor=private`,
       `${url}#fragment`,
-      "https://user:pass@assets.launchloom.wrazyos.com/intakes/synthetic/photo.webp",
+      `${url}#`,
+      `${url}?`,
+      "https://assets.launchloom.wrazyos.com/not-intakes/%2e%2e/intakes/synthetic/photo.webp",
       "https://assets.launchloom.wrazyos.com/intakes/../photo.webp",
+      "https://ASSETS.launchloom.wrazyos.com/intakes/synthetic/photo.webp",
+      "https://assets.launchloom.wrazyos.com:443/intakes/synthetic/photo.webp",
     ])
       expect(isClientImageSnapshotUrl(rejected), rejected).toBe(false);
   });
@@ -41,13 +45,27 @@ describe("sealed client image snapshots", () => {
     const content = {
       hero: { image: url },
       brand: { logo: url },
-      ignored: ["https://evil.test/photo.png", `${url}?visitor=private`],
+      ignored: ["https://evil.test/photo.png"],
     };
     const snapshots = await snapshotClientImages(content, { retrieve, cache });
     expect([...snapshots.keys()]).toEqual([url]);
     expect(snapshots.get(url)?.body).toEqual(image);
     await snapshotClientImages(content, { retrieve, cache });
     expect(calls).toEqual([url]);
+  });
+
+  it.each([
+    `${url}#`,
+    `${url}?`,
+    "https://assets.launchloom.wrazyos.com/not-intakes/%2e%2e/intakes/synthetic/photo.webp",
+  ])("rejects a noncanonical sealed spelling before fetching: %s", async (value) => {
+    const retrieve = vi.fn(async () => {
+      throw new Error("must not fetch a noncanonical sealed URL");
+    });
+    await expect(
+      snapshotClientImages({ hero: { image: value } }, { retrieve }),
+    ).rejects.toThrow(/Noncanonical sealed client image URL/u);
+    expect(retrieve).not.toHaveBeenCalled();
   });
 
   it("requests redirects as errors and rejects redirect responses", async () => {

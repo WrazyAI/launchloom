@@ -12,9 +12,12 @@ const ALLOWED_PATH =
 const RASTER_MIME = /^image\/(?:png|webp|jpeg|avif)$/u;
 
 export function isClientImageSnapshotUrl(value) {
+  if (typeof value !== "string") return false;
   try {
     const url = new URL(value);
+    const canonical = `${url.origin}${url.pathname}`;
     return (
+      value === canonical &&
       url.origin === ALLOWED_ORIGIN &&
       !url.username &&
       !url.password &&
@@ -22,6 +25,14 @@ export function isClientImageSnapshotUrl(value) {
       !url.hash &&
       ALLOWED_PATH.test(url.pathname)
     );
+  } catch {
+    return false;
+  }
+}
+
+function hasAllowedAssetOrigin(value) {
+  try {
+    return new URL(value).origin === ALLOWED_ORIGIN;
   } catch {
     return false;
   }
@@ -61,6 +72,8 @@ function snapshotUrls(content) {
   const visit = (value) => {
     if (typeof value === "string") {
       if (isClientImageSnapshotUrl(value)) urls.add(value);
+      else if (hasAllowedAssetOrigin(value))
+        throw new Error("Noncanonical sealed client image URL");
       return;
     }
     if (!value || typeof value !== "object" || seen.has(value)) return;
