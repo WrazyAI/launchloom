@@ -529,3 +529,34 @@ evidence, not client or production evidence.
 - Remaining work is independent review by Sol, controller integration, and CI or
   deployment verification. The Work OS subtask remains open until that
   integration is verified.
+
+# Independent review corrections (2026-11-02)
+
+Sol reviewed the exact range `2f7e8d51..8f4bd117` and confirmed three blocking
+regressions in `docs/reviews/2026-11-01-juniper-port-review.md` at
+`f9bd2053`. The reproductions were rerun against this branch before each fix.
+The earlier full-suite pass of 2,807 tests is historical; the corrected source
+now passes 2,816 tests.
+
+Corrected review-fix range: `f6110733..3d908d10`
+
+| Finding | Actual failure | Resolution |
+| --- | --- | --- |
+| P1 own shadow | A white 120 px image-bearing button with `box-shadow:0 0 0 20px #111` and `outline:2px solid #111; outline-offset:3px` showed ring and adjacent shadow as RGB 17/17, but the reviewed branch returned `pass:true` with ratio `18.883060964594996`. | `61396e25`: own control effects now add `outward focus ring overlaps control effect`; the finding stays fail/unresolved. |
+| P1 clipped ancestor | The same button inside a matching 120 px `overflow:hidden` wrapper had its outline completely clipped, but the reviewed branch returned `pass:true`. | `61396e25`: ring extents are checked against every clipped ancestor; a clipped ring adds `outward focus ring is clipped by ancestor overflow`. |
+| P1 descendant paint | A descendant badge crossing the outward strip was excluded by the `el.contains(layer)` shortcut and false-passed. | `61396e25`: descendant paint or effects intersecting a strip add `focus ring crosses descendant paint`. |
+| P2 shared panel | Two independent toggles sharing `aria-controls="output"`, one pressed, were classified as exclusive. The capture toggled the second and restored by clicking the first, ending in the wrong combination and `restored:false`. | `08642a67`: a shared output panel no longer establishes exclusivity. Only the explicit `data-purposeful-interaction="...-selector"` contract selects a peer for restoration. `3d908d10` adds a declared-shared-panel exclusive positive test. |
+| P3 noncanonical URL | `new URL` normalized encoded dot segments while the map retained the raw key, so the browser requested the canonical path and missed the map. Empty trailing `#` and `?` also passed the validator. | `47c3d682`: the validator requires the input string to equal its canonical origin plus pathname; allowed-host spellings that are noncanonical now throw `Noncanonical sealed client image URL` before any fetch. No origin or path broadening. |
+
+## Corrected verification
+
+- `npm test -- --maxWorkers=2`: pass, 176 files passed, 7 skipped; 2,816 tests passed, 101 skipped; exit 0.
+- Focused review suite: 113 passed (`rendered-contrast` 66, `client-image-snapshots` 15, `rendered-interaction-evidence` 32).
+- `npm run check`: 0 errors, 0 warnings, 11 pre-existing hints.
+- `npm run check:worker`: pass.
+- `npm run build`: pass, 4 pages.
+- Private browser evidence under `/home/zahemen/worktree-reconciliation-2026-11-01/validation/creative-review-fixes/` with `0700` directories, `0600` files, and a verified manifest (`4060a47903bdde3440b7cf8169300064b5ba03869fa8ea04d5a5c520c38224be`).
+- Private observed results: valid square ring pass ratio 18.883; own shadow, clipped ancestor, and descendant paint fail with ratio 1 and the specific issue; shared independent first/second pass and restore true; declared exclusive shared panel passes and restores true; encoded-dot, empty fragment, and empty query are rejected with 0 retrievals.
+- `rendered/valid-square.png`, `rendered/own-shadow.png`, `rendered/clipped-ancestor.png`, `rendered/descendant-paint.png`, and shared-panel before/after screenshots were inspected.
+
+The positive square ring and the same-paint wrapper, rounded, inset, shadow-wrapper, different-paint, and occlusion tests remain in the suite and pass. No shared provider-free test or reference data was edited. Sol should independently retest these exact cases before controller integration.
