@@ -143,6 +143,32 @@ describe("inspiration registry", () => {
     ).toThrow(/reuse.*source URL/iu);
   }, 30_000);
 
+  it("rejects supplemental reuse of an existing non-core registry source", () => {
+    const fixture = supplementalFixture();
+    const coreIds = new Set(
+      fixture.core.niches.flatMap((niche: any) => niche.referenceIds),
+    );
+    const existing = registry.records.find((record: any) => {
+      if (coreIds.has(record.id)) return false;
+      const manifest = JSON.parse(
+        fs.readFileSync(path.join(record.dossierPath, "manifest.json"), "utf8"),
+      );
+      return manifest.productionEligible === false;
+    });
+    expect(existing).toBeDefined();
+    const url = new URL(existing.sourceUrl);
+    url.search = "duplicate=true";
+    fixture.manifest.source.url = url.toString();
+    fs.writeFileSync(fixture.manifestPath, JSON.stringify(fixture.manifest));
+    expect(() =>
+      buildSyncedLibraryState({
+        core: fixture.core,
+        registry,
+        repositoryRoot: fixture.root,
+      }),
+    ).toThrow(/reuse.*source URL/iu);
+  }, 30_000);
+
   it.each([
     ["cafe", "restaurant", "startbootstrap-business-casual"],
     ["accounting", "accounting", "templatemo-finance-business"],

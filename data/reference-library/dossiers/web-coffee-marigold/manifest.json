@@ -183,7 +183,7 @@
   "review": {
     "status": "reviewed",
     "reviewer": "LaunchLoom design QA",
-    "date": "2026-10-23",
-    "notes": "Official business page rendered HTTP 200 at both viewports. Recaptured with the supported scroll-settled full-page capture; desktop and mobile images verified to show product grids and all sections. Owned source; retained as internal design-mechanics reference only."
+    "date": "2026-11-02",
+    "notes": "Historical October 23 capture review recorded HTTP 200 at both viewports and scroll-settled full-page images showing product grids and all sections; no new capture is claimed. Rights re-reviewed November 2 against the November 1 requester reuse authorization: permission-cleared, not independently verified ownership or operation. Retained as an internal design-mechanics reference only."
   }
 }

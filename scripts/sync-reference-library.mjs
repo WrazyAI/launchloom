@@ -220,6 +220,15 @@ export function buildSyncedLibraryState({
     registry.records.map((record) => [record.id, record]),
   );
   const sourceByUrl = new Map();
+  for (const record of registry.records) {
+    const sourceKey = normalizedSourceUrl(record.sourceUrl);
+    const previousSource = sourceByUrl.get(sourceKey);
+    if (previousSource && previousSource !== record.id)
+      throw new Error(
+        `References '${previousSource}' and '${record.id}' reuse source URL ${sourceKey}.`,
+      );
+    sourceByUrl.set(sourceKey, record.id);
+  }
   const manifests = new Map();
   const normalizedBusinessKindByNiche = new Map(
     core.niches.map((niche) => [

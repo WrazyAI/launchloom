@@ -32,6 +32,12 @@ describe("recovered coffee reuse permission", () => {
       expect(attestation).toContain("2026-11-01");
       expect(attestation).toContain("reuse authorization");
       expect(attestation).toContain("not independent verification");
+      const manifest = JSON.parse(
+        fs.readFileSync(path.join(dossierPath, "manifest.json"), "utf8"),
+      );
+      expect(manifest.review.notes).not.toMatch(/owned source/iu);
+      expect(manifest.review.notes).toMatch(/permission-cleared/iu);
+      expect(manifest.review.date >= "2026-11-01").toBe(true);
       for (const file of [
         "rights/business-verification.md",
         "rights/capture-record.md",
