@@ -604,7 +604,7 @@ describe("Reference DNA", () => {
     }
   }, 20_000);
 
-  it("reports the Go provider status and code when transient errors keep failing", async () => {
+  it("retains dossier DNA and provider diagnostics when bounded transient retries are exhausted", async () => {
     vi.resetModules();
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
     vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
@@ -637,17 +637,29 @@ describe("Reference DNA", () => {
     try {
       const { enrichInspirationPack: enrichGo } =
         await import("../scripts/analyze-reference-dna.mjs");
-      await expect(
-        enrichGo(pack, {
-          fetchImpl: fetchImpl as typeof fetch,
-          sleep: async () => {},
-        }),
-      ).rejects.toThrow(
-        /Reference analyzer did not produce a complete analysis after model and evidence fallbacks \(finish_reason=error\/upstream http_status=503/u,
-      );
+      const enriched = await enrichGo(pack, {
+        fetchImpl: fetchImpl as typeof fetch,
+        sleep: async () => {},
+      });
+      expect(enriched.referenceDnaAnalyzerModel).toBe("dossier-fallback");
+      expect(enriched.routes).toHaveLength(3);
+      for (let index = 0; index < 3; index += 1) {
+        expect(enriched.routes[index]).toEqual({
+          ...pack.routes[index],
+          referenceDna: {
+            ...pack.routes[index].referenceDna,
+            analyzedFromEvidence: false,
+            analyzerModel: "dossier-fallback",
+            analysisFallback: expect.stringMatching(
+              /finish_reason=error\/upstream http_status=503/u,
+            ),
+          },
+        });
+      }
       // Initial attempts, the uncached retry, desktop-only evidence, and the
-      // fallback analyst model: four bounded transport rounds.
-      expect(calls).toBe(16);
+      // fallback analyst model: four bounded transport rounds per route,
+      // each capped at four requests, across all three preserved routes.
+      expect(calls).toBe(48);
       expect(
         warnings.some((line) =>
           /reference_dna_retry route=route-\d+ finish_reason=error\/upstream http_status=503 .*cache=bypassed/u.test(
@@ -877,7 +889,7 @@ describe("Reference DNA", () => {
     }
   }, 20_000);
 
-  it("fails closed after one uncached retry still returns invalid JSON", async () => {
+  it("preserves the dossier rather than malformed model output after one uncached retry per route", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
     const requestCalls: Array<{ url: string; init?: RequestInit }> = [];
     const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
@@ -909,16 +921,29 @@ describe("Reference DNA", () => {
     );
 
     try {
-      await expect(
-        enrichInspirationPack(pack, { fetchImpl: fetchImpl as typeof fetch }),
-      ).rejects.toThrow(
-        "Reference analyzer returned invalid JSON after one uncached retry",
-      );
-      expect(fetchImpl).toHaveBeenCalledTimes(2);
+      const enriched = await enrichInspirationPack(pack, {
+        fetchImpl: fetchImpl as typeof fetch,
+      });
+      expect(enriched.referenceDnaAnalyzerModel).toBe("dossier-fallback");
+      expect(enriched.routes).toHaveLength(3);
+      for (let index = 0; index < 3; index += 1) {
+        expect(enriched.routes[index]).toEqual({
+          ...pack.routes[index],
+          referenceDna: {
+            ...pack.routes[index].referenceDna,
+            analyzedFromEvidence: false,
+            analyzerModel: "dossier-fallback",
+            analysisFallback: expect.stringContaining(
+              "invalid JSON after one uncached retry",
+            ),
+          },
+        });
+      }
+      expect(fetchImpl).toHaveBeenCalledTimes(6);
       const cacheHeaders = requestCalls.map(({ init }) =>
         new Headers(init?.headers).get("X-OpenRouter-Cache"),
       );
-      expect(cacheHeaders).toEqual(["true", null]);
+      expect(cacheHeaders).toEqual(["true", null, "true", null, "true", null]);
     } finally {
       vi.unstubAllEnvs();
     }
