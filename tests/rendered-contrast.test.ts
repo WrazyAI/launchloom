@@ -1,6 +1,4 @@
 import { readFileSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
-import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { chromium, type Browser } from "playwright";
 import { semanticColorCss } from "../scripts/palette-policy.mjs";
@@ -18,22 +16,13 @@ beforeAll(async () => {
 afterAll(async () => {
   await browser?.close();
 });
-async function scan(html: string, width = 1440, options: any = {}) {
-  const { height = 900, evidencePath, ...auditOptions } = options;
+async function scan(html: string, width = 1440, options = {}) {
   const audit = await auditModule;
   expect(audit.inspectContrastPage).toBeTypeOf("function");
-  const page = await browser.newPage({ viewport: { width, height } });
+  const page = await browser.newPage({ viewport: { width, height: 900 } });
   try {
     await page.setContent(`<body data-ll-route="/">${html}</body>`);
-    const report = await audit.inspectContrastPage(page, {
-      route: "/",
-      ...auditOptions,
-    });
-    if (evidencePath) {
-      await mkdir(path.dirname(evidencePath), { recursive: true });
-      await page.screenshot({ path: evidencePath });
-    }
-    return report;
+    return await audit.inspectContrastPage(page, { route: "/", ...options });
   } finally {
     await page.close();
   }
@@ -665,102 +654,47 @@ it("keeps trades inner-hero labels and keyboard focus readable on the dark surfa
   expect(report.pass, JSON.stringify(report.findings)).toBe(true);
 });
 
-const logoImage =
+// Negative browser fixtures for the conservative production contrast gate.
+// These prove unsafe outward-focus approvals are not introduced when the
+// experimental focus-ring optimization is omitted.
+const reviewLogoImage =
   "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22%3E%3Crect width=%2280%22 height=%2280%22 fill=%22%23205d51%22/%3E%3C/svg%3E";
-const logoButton = (className = "") =>
-  `<button class="logo ${className}" aria-label="Home"><img src="${logoImage}" alt=""></button>`;
-const logoCss = `.logo{display:flex;align-items:center;justify-content:center;width:120px;height:120px;padding:0;border:0;background:#fff;color:#111}.logo img{display:block;width:80px;height:80px}.logo:focus-visible{outline:2px solid #111;outline-offset:3px}`;
+const reviewLogoButton =
+  `<button class="logo" aria-label="Home"><img src="${reviewLogoImage}" alt=""></button>`;
+const reviewLogoCss =
+  ".logo{display:flex;align-items:center;justify-content:center;width:120px;height:120px;padding:0;border:0;background:#fff;color:#111}.logo img{display:block;width:80px;height:80px}.logo:focus-visible{outline:2px solid #111;outline-offset:3px}";
 
-it("proves a square outward focus ring around an image-bearing logo from outside paint", async () => {
+it("does not approve an outward ring beside the control's own shadow", async () => {
   const report = await scan(
-    `<style>body{margin:0;background:#fff;color:#111}${logoCss}</style>${logoButton()}`,
-  );
-  expect(report.pass, JSON.stringify(report.findings)).toBe(true);
-});
-
-it("proves a logo ring crossing a wrapper with the same opaque paint as its surface", async () => {
-  const report = await scan(
-    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.wrap{width:150px;padding:12px 0;background:#fff}</style><div class="wrap">${logoButton()}</div>`,
-  );
-  expect(report.pass, JSON.stringify(report.findings)).toBe(true);
-});
-
-it("proves a square outward logo ring at desktop, compact and mobile", async () => {
-  for (const viewport of [
-    { name: "desktop", width: 1536, height: 864 },
-    { name: "compact", width: 1366, height: 768 },
-    { name: "mobile", width: 390, height: 844 },
-  ]) {
-    const report = await scan(
-      `<style>body{margin:0;background:#fff;color:#111}${logoCss}</style>${logoButton()}`,
-      viewport.width,
-      {
-        height: viewport.height,
-        evidencePath: process.env.PHASE2_EVIDENCE_DIR
-          ? path.join(
-              process.env.PHASE2_EVIDENCE_DIR,
-              "focus",
-              `${viewport.name}.png`,
-            )
-          : undefined,
-      },
-    );
-    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
-  }
-});
-
-it("rejects an outward ring beside the control's own shadow", async () => {
-  const report = await scan(
-    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.logo{box-shadow:0 0 0 20px #111}</style>${logoButton()}`,
+    `<style>body{margin:0;background:#fff;color:#111}${reviewLogoCss}.logo{box-shadow:0 0 0 20px #111}</style>${reviewLogoButton}`,
   );
   expect(report.pass).toBe(false);
 });
 
-it("rejects an outward ring completely clipped by an ancestor", async () => {
+it("does not approve an outward ring clipped by a hidden ancestor", async () => {
   const report = await scan(
-    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.wrap{width:120px;height:120px;overflow:hidden}</style><div class="wrap">${logoButton()}</div>`,
+    `<style>body{margin:0;background:#fff;color:#111}${reviewLogoCss}.wrap{width:120px;height:120px;overflow:hidden}</style><div class="wrap">${reviewLogoButton}</div>`,
   );
   expect(report.pass).toBe(false);
 });
 
-it("rejects a descendant paint that crosses the outward ring", async () => {
+it("does not approve an outward ring clipped by an auto-overflow ancestor", async () => {
   const report = await scan(
-    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.logo{position:relative}.badge{position:absolute;left:115px;top:0;width:20px;height:120px;background:#111}</style><button class="logo" aria-label="Home"><img src="${logoImage}" alt=""><span class="badge"></span></button>`,
+    `<style>body{margin:0;background:#fff;color:#111}${reviewLogoCss}.wrap{width:120px;height:120px;overflow:auto}</style><div class="wrap">${reviewLogoButton}</div>`,
   );
   expect(report.pass).toBe(false);
 });
 
-it("does not false-pass a rounded outward ring of the same color as its surface", async () => {
+it("does not approve an outward ring clipped by a scroll-overflow ancestor", async () => {
   const report = await scan(
-    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.logo{border-radius:24px}.logo:focus-visible{outline-color:#fff}</style>${logoButton("round")}`,
+    `<style>body{margin:0;background:#fff;color:#111}${reviewLogoCss}.wrap{width:120px;height:120px;overflow:scroll}</style><div class="wrap">${reviewLogoButton}</div>`,
   );
   expect(report.pass).toBe(false);
 });
 
-it("does not false-pass an inset ring that disappears into the control fill", async () => {
+it("does not approve an outward ring covered by a descendant image shadow", async () => {
   const report = await scan(
-    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.logo{background:#111}.logo:focus-visible{outline-color:#111;outline-offset:-4px}</style>${logoButton("inset")}`,
-  );
-  expect(report.pass).toBe(false);
-});
-
-it("does not false-pass a square outward ring painted into a shadow", async () => {
-  const report = await scan(
-    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.wrap{width:124px;height:124px;background:#fff;box-shadow:0 0 0 10px #111}</style><div class="wrap">${logoButton()}</div>`,
-  );
-  expect(report.pass).toBe(false);
-});
-
-it("does not false-pass a square outward ring crossing different paint", async () => {
-  const report = await scan(
-    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.wrap{position:relative;width:124px;height:124px;background:#fff}.dark{position:absolute;right:0;top:0;width:20px;height:124px;background:#111;z-index:0}.logo{position:relative;z-index:1}</style><div class="wrap">${logoButton()}<div class="dark"></div></div>`,
-  );
-  expect(report.pass).toBe(false);
-});
-
-it("does not false-pass a square outward ring hidden by an occluding surface", async () => {
-  const report = await scan(
-    `<style>body{margin:0;background:#fff;color:#111}${logoCss}.wrap{position:relative;width:124px;height:124px}.cover{position:absolute;inset:0 -12px 0 112px;background:#fff;z-index:2}</style><div class="wrap">${logoButton()}<div class="cover"></div></div>`,
+    `<style>body{margin:0;background:#fff;color:#111}${reviewLogoCss}.logo img{box-shadow:0 0 0 50px #111}</style>${reviewLogoButton}`,
   );
   expect(report.pass).toBe(false);
 });

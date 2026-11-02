@@ -416,7 +416,7 @@ tree, or recovery checkpoint was modified.
 | `88ecd71b` | Exclusive pressed-selector restoration |
 | `a2566c46` | Judge-only chrome suppression and creative-host containment |
 | `edd3cbb1` | Palette-guard recognition of current contrast strings |
-| `07c40624` | Square outward focus-ring measurement from outside strips |
+| `07c40624` | Archived, not integrated; focus-ring optimization excluded after independent review |
 | `86d2710c` | Reference-led correction guidance in normative docs and prompts |
 | `8f4bd117` | Retained-image and selector edge cases |
 | `5479137b` | Production interaction timeout in the test harness |
@@ -453,7 +453,7 @@ the reboot. All post-reboot validation is listed separately and was rerun.
 | `scripts/creative-authoring-output.mjs` | Intentionally not transplanted as a new contract | The old exported contract contained conflicting opaque-plate wording. Equivalent bounded guidance was added inline to the current author and repair prompts, so no new imported VM binding is required. |
 | `scripts/creative-repair-loop.mjs` | Ported and adapted | Added the current-contract `RENDERED DESIGN CORRECTION GUIDANCE` block. No new contract import and no shared test edit. |
 | `scripts/production-experience-author.mjs` | Ported and adapted | Added four author-rule lines for selector usefulness, reference-led transitions, `data-ll-action` semantics, and media-overlay composition. Opaque per-line/control plate wording was not introduced. |
-| `scripts/rendered-contrast.mjs` | Ported and adapted | Square outward image-bearing rings now measure four outside strips; wrapper plates identical to a proven opaque parent are allowed only with no shadow, pseudo paint, or intersecting media; non-ancestor paint crossing a strip becomes unresolved and pixel-resolved. Rounded and inset paths remain conservative. No threshold changed. |
+| `scripts/rendered-contrast.mjs` | Intentionally omitted after independent review | The experimental outward-strip and partial-plate work was removed. The production file is restored byte-for-byte to `65cae064` (blob `2086c26f08aa1976a6e26064e87eccea526484db`). The old focus commit and its two follow-up fix commits remain archived on the branch history but are not integrated. The original conservative gate is retained. |
 | `scripts/rendered-interaction-evidence.mjs` | Ported and adapted | Added exact retained-image fulfillment, provenance digests, conditional asset-host CSP, exclusive pressed-selector detection, selected-peer panel scope, and original-choice restoration. Independent toggles and tabs retain their behavior. |
 | `scripts/run-creative-bakeoff.mjs` | Ported and adapted | Creates one bounded snapshot cache per bakeoff, snapshots the current content manifest values, and passes exact retained bytes into each interaction capture. |
 | `scripts/run-rendered-creative-repair.mjs` | Ported | Added the exact body-target `contrast fail`/`contrast unresolved` prefix guard. Control-only and incidental contrast wording remain locked. |
@@ -464,7 +464,7 @@ the reboot. All post-reboot validation is listed separately and was rerun.
 | `tests/creative-runtime-containment.test.ts` | Replaced | The old raw CSS-only test is replaced by `tests/creative-preview-safety.test.ts`, which builds the real Astro shell at desktop, compact, and mobile and checks both normal and judge builds. |
 | `tests/pipeline-test-rendered.test.ts` | Intentionally not expanded | The dedicated preview-safety test covers judge-normal, judge-clean, and containment behavior directly. Existing normal pipeline profiles remain unchanged and pass. |
 | `tests/production-experience-author.test.ts` | Intentionally not copied | The old exact contract assertions no longer apply because the contract wording was intentionally changed. Author and provider-free suites pass; no exact prompt-wording assertion was added for the new inline rules. |
-| `tests/rendered-contrast.test.ts` | Ported and expanded | Seven ring tests plus a three-viewport evidence test cover positive outside paint, same-paint wrapper, rounded, inset, shadow, different paint, and occlusion. |
+| `tests/rendered-contrast.test.ts` | Base tests preserved; negative coverage added | All original `65cae064` tests are preserved byte-for-byte. The optimization-positive tests were removed. Five browser negative cases were added: own control shadow, hidden-ancestor clipping, auto-overflow clipping, scroll-overflow clipping, and centered descendant image shadow. All confirm the original gate refuses unsafe outward focus. |
 | `tests/rendered-creative-repair.test.ts` | Ported equivalent | Tests the current `contrastFailureMessages` producer directly and confirms body findings unlock palette repair while control-only findings stay locked. |
 | `tests/rendered-interaction-evidence.test.ts` | Ported and expanded | 29 tests cover snapshots, exact URL rejection, image beacons, exclusive selectors with and without `aria-controls`, independent toggles, tabs, restoration, and the production timeout. |
 
@@ -542,9 +542,9 @@ Corrected review-fix range: `f6110733..3d908d10`
 
 | Finding | Actual failure | Resolution |
 | --- | --- | --- |
-| P1 own shadow | A white 120 px image-bearing button with `box-shadow:0 0 0 20px #111` and `outline:2px solid #111; outline-offset:3px` showed ring and adjacent shadow as RGB 17/17, but the reviewed branch returned `pass:true` with ratio `18.883060964594996`. | `61396e25`: own control effects now add `outward focus ring overlaps control effect`; the finding stays fail/unresolved. |
-| P1 clipped ancestor | The same button inside a matching 120 px `overflow:hidden` wrapper had its outline completely clipped, but the reviewed branch returned `pass:true`. | `61396e25`: ring extents are checked against every clipped ancestor; a clipped ring adds `outward focus ring is clipped by ancestor overflow`. |
-| P1 descendant paint | A descendant badge crossing the outward strip was excluded by the `el.contains(layer)` shortcut and false-passed. | `61396e25`: descendant paint or effects intersecting a strip add `focus ring crosses descendant paint`. |
+| P1 own shadow | A white 120 px image-bearing button with `box-shadow:0 0 0 20px #111` and `outline:2px solid #111; outline-offset:3px` showed ring and adjacent shadow as RGB 17/17, but the reviewed branch returned `pass:true` with ratio `18.883060964594996`. | **Superseded:** the optimization, including `61396e25`, was excluded. The original gate is restored and fails closed. |
+| P1 clipped ancestor | The same button inside a matching 120 px `overflow:hidden` wrapper had its outline completely clipped, but the reviewed branch returned `pass:true`. | **Superseded:** the optimization was excluded. Hidden clipping is now a negative regression against the original gate. |
+| P1 descendant paint | A descendant badge crossing the outward strip was excluded by the `el.contains(layer)` shortcut and false-passed. | **Superseded:** the optimization was excluded. The centered descendant image shadow is now a negative regression against the original gate. |
 | P2 shared panel | Two independent toggles sharing `aria-controls="output"`, one pressed, were classified as exclusive. The capture toggled the second and restored by clicking the first, ending in the wrong combination and `restored:false`. | `08642a67`: a shared output panel no longer establishes exclusivity. Only the explicit `data-purposeful-interaction="...-selector"` contract selects a peer for restoration. `3d908d10` adds a declared-shared-panel exclusive positive test. |
 | P3 noncanonical URL | `new URL` normalized encoded dot segments while the map retained the raw key, so the browser requested the canonical path and missed the map. Empty trailing `#` and `?` also passed the validator. | `47c3d682`: the validator requires the input string to equal its canonical origin plus pathname; allowed-host spellings that are noncanonical now throw `Noncanonical sealed client image URL` before any fetch. No origin or path broadening. |
 
@@ -560,3 +560,58 @@ Corrected review-fix range: `f6110733..3d908d10`
 - `rendered/valid-square.png`, `rendered/own-shadow.png`, `rendered/clipped-ancestor.png`, `rendered/descendant-paint.png`, and shared-panel before/after screenshots were inspected.
 
 The positive square ring and the same-paint wrapper, rounded, inset, shadow-wrapper, different-paint, and occlusion tests remain in the suite and pass. No shared provider-free test or reference data was edited. Sol should independently retest these exact cases before controller integration.
+
+
+# Scope adjustment: focus-ring optimization excluded after second independent review
+
+Date: 2026-11-02 UTC
+
+Sol's follow-up review at `3ce39aee` confirmed two remaining false passes in the
+experimental outward-ring proof:
+
+- a centered descendant image with `box-shadow: 0 0 0 50px #111` extending from
+  inside the control over the outward ring;
+- an ancestor using `overflow: auto` or `overflow: scroll` clipping the outline.
+
+Both were independent Chromium reproductions. Two focus fix iterations did not
+establish a safe outside-paint and clip proof. The controller therefore decided
+to exclude the entire optimization rather than continue tuning it.
+
+Latest disposition:
+
+- `scripts/rendered-contrast.mjs` is restored exactly to `65cae064`.
+  - current blob: `2086c26f08aa1976a6e26064e87eccea526484db`
+  - base blob: `2086c26f08aa1976a6e26064e87eccea526484db`
+  - SHA-256: `bd82fcf50f9752796264ed1d5d4662844f7d730606d3e85e2fb0e7c5113456d5`
+- The focus commits `07c40624` and `61396e25` are archived, not integrated.
+  No new focus-ring behavior or partial-plate exception is part of the
+  delivered tree.
+- `tests/rendered-contrast.test.ts` preserves every `65cae064` test byte-for-byte.
+  Optimization-positive tests were removed. Five negative browser tests were
+  added: own control shadow, hidden ancestor clipping, auto-overflow clipping,
+  scroll-overflow clipping, and centered descendant image shadow. All assert
+  `report.pass === false`; no exact issue wording or threshold is required.
+  These fixtures use the image-bearing logo pattern and confirm fail-closed
+  behavior, not that the original gate diagnoses the exact clip or effect cause.
+  The auto and scroll fixtures are not isolated clip-only proofs; they retain the
+  full unsafe image-bearing pattern.
+- Other non-focus ports remain in place: sealed snapshots, shared-panel aware
+  exclusive selectors, judge containment/chrome suppression, contrast-string
+  palette guard, and correction guidance.
+
+Fresh exclusion validation:
+
+- `npx vitest run` focused batch: 144 passed across rendered contrast,
+  interaction evidence, snapshots, preview safety, pipeline preview, static
+  homepage contrast, and contrast sweep.
+- Repair/provider-free batch: 181 passed.
+- `npm test -- --maxWorkers=2`: 176 files passed, 7 skipped; 2,810 tests passed,
+  101 skipped; exit 0. Log:
+  `validation/creative-review-fixes/logs/full-npm-test-focus-exclusion.log`.
+- `npm run check`: 0 errors, 0 warnings, 11 pre-existing hints.
+- `npm run check:worker`: pass.
+- `npm run build`: pass, 4 pages.
+
+This section supersedes the earlier focus-ring port claims. The old positive
+fixtures and private screenshots remain historical evidence of the rejected
+approach, not current-gate proof.
