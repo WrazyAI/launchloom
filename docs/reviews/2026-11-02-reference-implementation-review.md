@@ -177,3 +177,61 @@ as a follow-up hardening item or fix it in the same data stream. Re-run the
 focused reference tests and the combined controller verification after the data
 change. This report is limited to the reference implementation and does not
 clear the separate creative focus-ring scope adjustment.
+
+# Review receipt: controller fix f113276d
+
+Date: 2026-11-02 UTC
+Reviewed exact commit: `f113276d694257838ba5bcb628312e34997e9c5b`
+Parent: `66f2941f12362a06d000be1b97bf9ef274054c0d`
+
+**Disposition: no blockers. P1 and P2 are resolved. No new behavior regression
+was found in the scoped fix.**
+
+## P1 resolved
+
+The exact diff changes only the two coffee manifests and the related tests:
+
+- `data/reference-library/dossiers/web-coffee-ember-roast/manifest.json:181-186`
+- `data/reference-library/dossiers/web-coffee-marigold/manifest.json:183-188`
+
+Both now use `review.date: "2026-11-02"` and state that the October 23 review
+was a historical capture review, followed by a November 2 rights review against
+the November 1 requester authorization. They explicitly say
+`permission-cleared, not independently verified ownership or operation`. The
+source rights and `rights/requester-attestation.md` remain unchanged.
+
+`tests/reference-dossier.test.ts:35-40` now asserts that `manifest.review.notes`
+does not contain `owned source`, does contain `permission-cleared`, and has a
+review date on or after `2026-11-01`. This closes the exact test gap identified
+in the review.
+
+## P2 resolved
+
+`scripts/sync-reference-library.mjs:220-229` now seeds `sourceByUrl` from every
+existing registry record and throws on a normalized duplicate before core or
+supplemental discovery. The new test at
+`tests/inspiration-registry.test.ts:146-171` finds an existing non-core,
+non-production record, points a supplemental at the same source URL, and
+expects the sync to reject it. This covers the non-core case that was previously
+unchecked.
+
+Current registry data has 146 records, 146 unique IDs, and no duplicate
+normalized source URLs. The stricter seed therefore does not break the reviewed
+inventory; a future duplicate now fails closed, which is the intended policy.
+
+## Scope and limits
+
+- `git diff --name-status 66f2941f..f113276d` contains only the two coffee
+  manifests, the sync script, the two tests, and the daily progress file.
+- No source, extraction, screenshot, rights-attestation, or index byte changed.
+- `git diff --check 66f2941f..f113276d` is clean.
+- Controller reports RED 3 expected failures then GREEN 5 related tests,
+  `verify-reference-templates` at 150 dossiers, 148 extracted, 2 existing
+  failed, 0 problems, and clean Prettier/diff checks. This receipt independently
+  confirms the exact code and data changes but does not rerun the full suite or
+  whole-library compiler.
+
+This receipt supersedes the earlier "Required next action" section for the
+controller fix. The original P1/P2 findings remain historical and are now
+closed. The creative worktree remains at `dd7a3e0d`; no creative production file
+was changed by this receipt.
