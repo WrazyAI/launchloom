@@ -51,42 +51,8 @@
   border: 0;
   color: var(--admin-sage);
 }
-.admin-workspace-label {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin: 32px 4px 28px;
-  padding: 12px;
-  border: 1px solid rgba(186, 216, 200, 0.24);
-  border-radius: 10px;
-  color: var(--admin-paper);
-  font-size: 11px;
-  font-weight: 600;
-}
-.admin-workspace-label small {
-  display: block;
-  margin-top: 3px;
-  color: var(--admin-sage);
-  font-size: 10px;
-  font-weight: 400;
-}
-.admin-workspace-label__mark {
-  display: grid;
-  place-items: center;
-  flex: 0 0 28px;
-  height: 28px;
-  background: #1a3b32;
-  border-radius: 6px;
-  font-size: 14px;
-}
-.admin-nav-caption {
-  padding: 0 16px;
-  color: #91aa9f;
-  font-size: 10px;
-  font-weight: 500;
-}
 .admin-page .admin-nav {
-  margin-top: 12px;
+  margin-top: 32px;
   gap: 6px;
 }
 .admin-page .admin-nav a {
@@ -122,15 +88,55 @@
   color: #91aa9f;
 }
 .admin-sidebar__account {
-  padding: 18px 8px 0;
+  padding: 16px 0 0;
   border-color: rgba(186, 216, 200, 0.24);
 }
+.admin-account-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  color: var(--admin-paper);
+  text-decoration: none;
+}
+.admin-account-link:hover {
+  background: #1a3b32;
+}
+.admin-account-link:focus-visible {
+  outline: 2px solid var(--admin-lime);
+  outline-offset: 2px;
+}
+.admin-account-link .admin-avatar {
+  flex: 0 0 36px;
+}
 .admin-sidebar__account-copy strong {
-  font-size: 11px;
+  font-size: 14px;
+  line-height: 20px;
   font-weight: 600;
 }
 .admin-sidebar__account-copy span {
-  font-size: 10px;
+  font-size: 12px;
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-account-skeleton {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+}
+.admin-account-skeleton span {
+  height: 12px;
+  background: #385449;
+  border-radius: 4px;
+}
+.admin-account-skeleton span:last-child {
+  width: 65%;
 }
 .admin-avatar {
   background: #eef4ea;
@@ -140,10 +146,6 @@
 .admin-avatar--lime {
   background: var(--admin-lime);
   color: var(--admin-forest);
-}
-.admin-shell--collapsed .admin-workspace-label,
-.admin-shell--collapsed .admin-nav-caption {
-  display: none;
 }
 .admin-shell--collapsed .admin-nav {
   margin-top: 28px;

@@ -8,6 +8,8 @@ import {
 import { AdminIcon, type AdminIconName } from "./AdminIcon";
 import { BrandMark } from "./BrandMark";
 import { ADMIN_VIEWS, type AdminView } from "./route-state";
+import type { WorkspacePrincipal } from "./api";
+import { accountInitials } from "./account-identity";
 
 const VIEW_LABELS: Record<AdminView, string> = {
   operations: "Operations",
@@ -87,6 +89,8 @@ export function WorkspaceShell({
   titleId = "admin-view-title",
   children,
   operationsRead = false,
+  principal = null,
+  accountLoading = false,
 }: {
   active: AdminView;
   onNavigate: (view: AdminView) => void;
@@ -96,6 +100,8 @@ export function WorkspaceShell({
   titleId?: string;
   children: ReactNode;
   operationsRead?: boolean;
+  principal?: WorkspacePrincipal | null;
+  accountLoading?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -194,13 +200,6 @@ export function WorkspaceShell({
           </button>
         </div>
 
-        <div className="admin-workspace-label">
-          <span className="admin-workspace-label__mark">L</span>
-          <span>
-            LaunchLoom workspace<small>Client delivery studio</small>
-          </span>
-        </div>
-        <p className="admin-nav-caption">Workspace</p>
         <WorkspaceNav
           operationsRead={operationsRead}
           active={active}
@@ -210,17 +209,64 @@ export function WorkspaceShell({
         />
 
         <div className="admin-sidebar__spacer" />
-        <p className="admin-sidebar__note">
-          Every admin sees the same clients and generation history.
-        </p>
         <div className="admin-sidebar__account">
-          <span className="admin-avatar admin-avatar--lime" aria-hidden="true">
-            LL
-          </span>
-          <span className="admin-sidebar__account-copy">
-            <strong>Workspace account</strong>
-            <span>All authorized admins</span>
-          </span>
+          {accountLoading ? (
+            <div
+              className="admin-account-skeleton"
+              role="status"
+              aria-label="Loading account"
+            >
+              <span />
+              <span />
+            </div>
+          ) : (
+            <a
+              className="admin-account-link"
+              href="/admin/onboarding-invites?view=settings"
+              title={
+                principal
+                  ? `${principal.displayName || principal.email} (${principal.role})`
+                  : "Account unavailable"
+              }
+              onClick={(event) => {
+                if (
+                  event.defaultPrevented ||
+                  event.button !== 0 ||
+                  event.metaKey ||
+                  event.ctrlKey ||
+                  event.shiftKey ||
+                  event.altKey
+                )
+                  return;
+                event.preventDefault();
+                navigate("settings");
+              }}
+            >
+              <span
+                className="admin-avatar admin-avatar--lime"
+                aria-hidden="true"
+              >
+                {principal ? accountInitials(principal) : "?"}
+              </span>
+              <span className="admin-sidebar__account-copy">
+                <strong>
+                  {principal?.displayName?.trim() ||
+                    principal?.email ||
+                    "Account unavailable"}
+                </strong>
+                {principal?.displayName?.trim() ? (
+                  <span>{principal.email}</span>
+                ) : null}
+                <span>
+                  {principal
+                    ? principal.role === "owner"
+                      ? "Owner"
+                      : "Admin"
+                    : "Open profile to retry"}
+                </span>
+              </span>
+            </a>
+          )}
         </div>
       </aside>
 

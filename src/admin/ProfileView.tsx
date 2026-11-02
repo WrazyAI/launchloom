@@ -6,6 +6,7 @@ import type {
   WorkspacePrincipal,
 } from "./api";
 import { requestErrorMessage } from "./format";
+import { accountInitials as initials } from "./account-identity";
 
 function identityReference(id: string) {
   const separator = id.indexOf(":");
@@ -13,22 +14,6 @@ function identityReference(id: string) {
   const digest = separator === -1 ? id : id.slice(separator + 1);
   const prefix = scheme === "access" ? "access:" : "";
   return `${prefix}${digest.slice(0, 8)}`;
-}
-
-function initials(principal: AccessModePrincipal | NeonMember) {
-  if (principal.authSource === "neon" && principal.initials)
-    return principal.initials;
-  const source = principal.displayName || principal.email.split("@")[0] || "";
-  const letters = source
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .trim()
-    .split(/\s+/u);
-  const value = letters
-    .slice(0, 2)
-    .map((part) => part[0] || "")
-    .join("")
-    .toUpperCase();
-  return value || "LL";
 }
 
 const ROLE_LABEL = { owner: "Owner", admin: "Admin" } as const;
@@ -418,7 +403,13 @@ function AccessProfile({ principal }: { principal: AccessModePrincipal }) {
   );
 }
 
-export function ProfileView({ api }: { api: AdminApi }) {
+export function ProfileView({
+  api,
+  onPrincipal,
+}: {
+  api: AdminApi;
+  onPrincipal?: (value: WorkspacePrincipal) => void;
+}) {
   const [principal, setPrincipal] = useState<WorkspacePrincipal | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -435,6 +426,7 @@ export function ProfileView({ api }: { api: AdminApi }) {
       .then((value) => {
         if (request.current !== requestId) return;
         setPrincipal(value);
+        onPrincipal?.(value);
         setLoading(false);
       })
       .catch((failure) => {
@@ -444,7 +436,7 @@ export function ProfileView({ api }: { api: AdminApi }) {
         setLoading(false);
       });
     return () => controller.abort();
-  }, [api, refreshToken]);
+  }, [api, refreshToken, onPrincipal]);
 
   const accessPrincipal =
     principal?.authSource === "cloudflare-access" ? principal : null;
@@ -486,7 +478,10 @@ export function ProfileView({ api }: { api: AdminApi }) {
           <NeonProfile
             api={api}
             principal={neonPrincipal}
-            onPrincipal={(value) => setPrincipal(value)}
+            onPrincipal={(value) => {
+              setPrincipal(value);
+              onPrincipal?.(value);
+            }}
           />
           <NeonPasswordPanel api={api} />
         </>

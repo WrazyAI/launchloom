@@ -558,6 +558,77 @@ function autoErrors(
 }
 
 describe("real admin workspace browser behavior", () => {
+  it("shows the authenticated admin in the sidebar without duplicate workspace copy", async () => {
+    const { page } = await openPage();
+    try {
+      const account = page.locator(".admin-sidebar__account");
+      await visible(account.getByText("Browser Admin", { exact: true }));
+      expect(await account.textContent()).toContain("admin@example.test");
+      expect(await account.textContent()).toContain("Admin");
+      expect(await account.locator(".admin-avatar").textContent()).toBe("BA");
+      expect(await page.locator(".admin-workspace-label").count()).toBe(0);
+      await account.click();
+      await visible(page.locator("#profile-view"));
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("uses verified email when a display name is missing and never invents an account", async () => {
+    const page = await browser.newPage();
+    try {
+      await page.route("**/workspace/me", (route) =>
+        route.fulfill({
+          json: { principal: { ...adminPrincipal, displayName: null } },
+        }),
+      );
+      await page.goto(`${origin}/admin/onboarding-invites`);
+      const account = page.locator(".admin-sidebar__account");
+      await visible(
+        account.getByText("admin@example.test", { exact: true }).first(),
+      );
+      expect(await account.textContent()).not.toContain("Workspace account");
+      expect(await account.locator("strong").textContent()).toBe(
+        "admin@example.test",
+      );
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps account loading and failure distinct from an authenticated identity", async () => {
+    const page = await browser.newPage();
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    try {
+      await page.route("**/workspace/me", async (route) => {
+        await gate;
+        await route.fulfill({
+          status: 503,
+          json: { error: { code: "unavailable", message: "Unavailable" } },
+        });
+      });
+      await page.goto(`${origin}/admin/onboarding-invites`);
+      await visible(
+        page.locator(".admin-sidebar__account [aria-label='Loading account']"),
+      );
+      release();
+      await visible(
+        page
+          .locator(".admin-sidebar__account")
+          .getByText("Account unavailable", { exact: true }),
+      );
+      expect(
+        await page.locator(".admin-sidebar__account").textContent(),
+      ).not.toContain("Browser Admin");
+    } finally {
+      release();
+      await page.close();
+    }
+  });
+
   it("renders server counts, applies every filter and sends them to the server", async () => {
     const { page, errors } = await openPage();
     try {

@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { ADMIN_UNAUTHORIZED_EVENT, createAdminApi } from "./api";
+import {
+  ADMIN_UNAUTHORIZED_EVENT,
+  createAdminApi,
+  type WorkspacePrincipal,
+} from "./api";
 import { ClientsView } from "./ClientsView";
 import { GenerationsView } from "./GenerationsView";
 import { IntegrationsView } from "./IntegrationsView";
@@ -113,6 +117,7 @@ export function AdminApp() {
   const [state, setState, cursorTrail, setCursorTrail] = useRouteState();
   const [api] = useState(createAdminApi);
   const [operationsRead, setOperationsRead] = useState<boolean | null>(null);
+  const [principal, setPrincipal] = useState<WorkspacePrincipal | null>(null);
   const pendingOperations =
     state.view === "operations" && operationsRead === null;
   const view = pendingOperations
@@ -128,8 +133,10 @@ export function AdminApp() {
     api
       .getWorkspace({ signal: controller.signal })
       .then((workspace) => {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
+          setPrincipal(workspace.principal);
           setOperationsRead(workspace.capabilities.operationsRead);
+        }
       })
       .catch(() => {
         if (!controller.signal.aborted) setOperationsRead(false);
@@ -191,6 +198,8 @@ export function AdminApp() {
   return (
     <WorkspaceShell
       active={view}
+      principal={principal}
+      accountLoading={operationsRead === null}
       operationsRead={operationsRead === true}
       onNavigate={selectView}
       eyebrow={copy.label}
@@ -227,7 +236,7 @@ export function AdminApp() {
       ) : state.view === "integrations" ? (
         <IntegrationsView />
       ) : (
-        <ProfileView api={api} />
+        <ProfileView api={api} onPrincipal={setPrincipal} />
       )}
     </WorkspaceShell>
   );
