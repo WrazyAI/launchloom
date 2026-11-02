@@ -65,3 +65,9 @@ Recover and reconcile useful work from the 15 remaining extra LaunchLoom worktre
 - Sol phase 3 complete at `c5c99a48` and merged locally as `62306385`; final independent review/combined validation still pending. Controller's RED inventory mismatch was corrected to 115 with all 120 provider-free tests passing and canonical core 98 kept unchanged.
 - Independent controller index checks: all 129 old registry and 133 old index entries remain unchanged; current totals 146/150/115 approved, both landscaping IDs retained, coffee rights permission-cleared. Code formatting applied only to four recovered code/test files; raw source bytes preserved despite 206 disclosed whitespace paths.
 - Sol is now read-only reviewing creative range `2f7e8d51..8f4bd117`; DeepSeek finishes its saved port verification/report. Next: act on independent findings, merge creative code, reconcile shared bindings if needed, run final combined suite/checks/build/rendered gates, then review latest main and ship. Originals remain in place.
+
+## November 2 continuation checkpoint
+
+- Creative local handoff `f6110733` passed its existing full tests, but Sol's exact-range review found three confirmed regressions. Controller imported review `8d41422d`; DeepSeek is correcting focus-ring false passes, shared-panel independent-toggle restoration and noncanonical retained-image URL binding with new regressions, then rerunning verification.
+- Sol audits reference transfer integrity at `62306385` and required-gate implications of disclosed source whitespace/old formatting diagnostics. This is not independent review of Sol's own reference implementation; DeepSeek should review that bounded reference delta after finishing its fixes.
+- No creative merge until corrected exact head is independently reviewed. No original deletion until final combined checks, deployment and dirty-copy preservation/disposition are verified. Reliability source remains excluded.
