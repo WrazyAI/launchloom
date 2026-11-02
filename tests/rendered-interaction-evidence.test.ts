@@ -250,6 +250,14 @@ describe("bounded rendered interaction evidence", () => {
     expect(result.observation.restored).toBe(true);
   });
 
+  it("restores an explicitly declared exclusive selector that shares one output panel", async () => {
+    const result = await capture(
+      `<section data-purposeful-interaction="shared-selector"><button type="button" aria-pressed="true" aria-controls="output">First</button><button type="button" aria-pressed="false" aria-controls="output">Second</button><p id="output">First selected</p><script>const buttons=[...document.querySelectorAll('button')];for(const button of buttons)button.addEventListener('click',()=>{if(button.getAttribute('aria-pressed')==='true')return;buttons.forEach(peer=>peer.setAttribute('aria-pressed',String(peer===button)));document.querySelector('#output').textContent=button.textContent+' selected';});</script></section>`,
+    );
+    expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+    expect(result.observation.restored).toBe(true);
+  });
+
   it.each([
     ["first", true, false],
     ["second", false, true],
