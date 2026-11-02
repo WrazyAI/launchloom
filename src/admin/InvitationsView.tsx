@@ -161,8 +161,7 @@ export function InvitationsView({ api }: { api: AdminApi }) {
     revokeErrorRef.current?.focus();
   }, [revokeError]);
 
-  const createBlockedByResult =
-    Boolean(created) && copyState !== "copied";
+  const createBlockedByResult = Boolean(created) && copyState !== "copied";
 
   async function submitCreate(event: { preventDefault(): void }) {
     event.preventDefault();
@@ -241,7 +240,9 @@ export function InvitationsView({ api }: { api: AdminApi }) {
       await api.revokeInvite(inviteId);
       setConfirmRevokeId(null);
       focusRevokeNotice.current = true;
-      setRevokeNotice("Invitation revoked. Unused links can no longer be used.");
+      setRevokeNotice(
+        "Invitation revoked. Unused links can no longer be used.",
+      );
       refresh();
     } catch (failure) {
       if (isAmbiguousFailure(failure)) {
@@ -344,10 +345,7 @@ export function InvitationsView({ api }: { api: AdminApi }) {
 
   return (
     <div className="admin-stack" id="invitations-view">
-      <section
-        className="admin-panel"
-        aria-labelledby="invite-create-title"
-      >
+      <section className="admin-panel" aria-labelledby="invite-create-title">
         <div className="admin-panel__head">
           <div>
             <p className="admin-eyebrow">Single-use links</p>
@@ -359,7 +357,10 @@ export function InvitationsView({ api }: { api: AdminApi }) {
           server. No administrator identity is sent from this form.
         </p>
         <form className="admin-form" onSubmit={submitCreate}>
-          <label className="admin-field admin-field--wide" htmlFor="invite-email">
+          <label
+            className="admin-field admin-field--wide"
+            htmlFor="invite-email"
+          >
             Client email (optional)
             <input
               id="invite-email"
@@ -387,11 +388,12 @@ export function InvitationsView({ api }: { api: AdminApi }) {
                     ? "Copy or discard current link first"
                     : "Create invitation"}
             </button>
-            <span className="admin-muted">
-              {createBlockedByResult
-                ? "The one-time link above must be copied or explicitly discarded before another invitation can be created."
-                : "Expires 14 days after creation. The link is shown once."}
-            </span>
+            {createBlockedByResult ? (
+              <span className="admin-muted">
+                The one-time link above must be copied or explicitly discarded
+                before another invitation can be created.
+              </span>
+            ) : null}
           </div>
         </form>
 
@@ -427,7 +429,10 @@ export function InvitationsView({ api }: { api: AdminApi }) {
               This is the only time the link is shown. It is held in this
               browser tab only and is not saved to storage, analytics or logs.
             </p>
-            <label className="admin-field admin-field--wide" htmlFor="invite-link">
+            <label
+              className="admin-field admin-field--wide"
+              htmlFor="invite-link"
+            >
               New invitation link
               <input
                 id="invite-link"
@@ -508,9 +513,7 @@ export function InvitationsView({ api }: { api: AdminApi }) {
             {copyMessage ? (
               <p
                 className={
-                  copyState === "manual"
-                    ? "admin-copy-warning"
-                    : "admin-muted"
+                  copyState === "manual" ? "admin-copy-warning" : "admin-muted"
                 }
                 role="status"
               >
@@ -677,7 +680,9 @@ export function InvitationsView({ api }: { api: AdminApi }) {
                                   className="admin-button"
                                   type="button"
                                   ref={confirmRevokeRef}
-                                  onClick={() => void confirmRevoke(invite.inviteId)}
+                                  onClick={() =>
+                                    void confirmRevoke(invite.inviteId)
+                                  }
                                   disabled={revokingId === invite.inviteId}
                                 >
                                   {revokingId === invite.inviteId
@@ -723,7 +728,9 @@ export function InvitationsView({ api }: { api: AdminApi }) {
                             </button>
                           )
                         ) : (
-                          <span className="admin-muted">No action available</span>
+                          <span className="admin-muted">
+                            No action available
+                          </span>
                         )}
                       </td>
                     </tr>

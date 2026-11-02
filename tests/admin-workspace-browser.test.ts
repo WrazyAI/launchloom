@@ -2583,6 +2583,105 @@ describe("real admin workspace browser behavior", () => {
       await page.close();
     }
   });
+
+  it("scrolls the client table horizontally instead of crushing the row action", async () => {
+    const { page, errors } = await openPage({
+      viewport: { width: 1024, height: 900 },
+      path: "/admin/onboarding-invites?view=clients",
+    });
+    try {
+      await waitForClients(page);
+      const wrap = page.locator(".admin-client-table-wrap");
+      expect(
+        await wrap.evaluate((element) => getComputedStyle(element).overflowX),
+      ).toBe("auto");
+      expect(
+        await wrap.evaluate(
+          (element) => element.scrollWidth > element.clientWidth,
+        ),
+      ).toBe(true);
+      const action = page.locator("[data-row-action]").first();
+      const box = await action.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.width).toBeGreaterThanOrEqual(72);
+      expect(box!.height).toBeGreaterThanOrEqual(32);
+      expect(
+        await action.evaluate(
+          (element) => element.scrollWidth <= element.clientWidth + 1,
+        ),
+      ).toBe(true);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("scrolls the ledger horizontally and states each finish time once", async () => {
+    const { page, errors } = await openPage({
+      viewport: { width: 1024, height: 900 },
+    });
+    try {
+      await waitForGenerations(page);
+      const wrap = page.locator(".admin-ledger-wrap");
+      expect(
+        await wrap.evaluate((element) => getComputedStyle(element).overflowX),
+      ).toBe("auto");
+      expect(
+        await wrap.evaluate(
+          (element) => element.scrollWidth > element.clientWidth,
+        ),
+      ).toBe(true);
+      const row = page.locator(".admin-ledger tbody tr").first();
+      const finished = await row.locator("td").nth(3).innerText();
+      expect(finished.match(/\b\d{2}:\d{2}\b/gu)?.length ?? 0).toBe(1);
+      const action = row.getByRole("button", { name: /Open attempt/u });
+      const box = await action.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.width).toBeGreaterThanOrEqual(72);
+      expect(box!.height).toBeGreaterThanOrEqual(32);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("omits the filler subtitle from every dashboard view", async () => {
+    for (const view of ["generations", "clients", "invitations"]) {
+      const { page } = await openPage({
+        path: `/admin/onboarding-invites?view=${view}`,
+      });
+      try {
+        await visible(page.locator("#admin-view-title"));
+        expect(await page.locator(".admin-topbar__description").count()).toBe(
+          0,
+        );
+      } finally {
+        await page.close();
+      }
+    }
+  });
+
+  it("shows the site status as a labelled pill that stays inside a mobile card", async () => {
+    const { page, errors } = await openPage({
+      viewport: { width: 390, height: 844 },
+    });
+    try {
+      await visible(page.locator(".admin-site-group").first());
+      const status = page.locator(".admin-site-status").first();
+      await visible(status);
+      expect((await status.innerText()).trim().length).toBeGreaterThan(0);
+      const group = page.locator(".admin-site-group").first();
+      const card = await group.boundingBox();
+      const viewport = page.viewportSize();
+      expect(card).not.toBeNull();
+      expect(viewport).not.toBeNull();
+      expect(card!.x).toBeGreaterThanOrEqual(0);
+      expect(card!.x + card!.width).toBeLessThanOrEqual(viewport!.width + 1);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
 });
 
 // Exercise the shared shell shortcuts against actual route transitions at the

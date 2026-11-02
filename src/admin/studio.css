@@ -230,12 +230,6 @@
 .admin-page .admin-topbar .admin-eyebrow {
   display: none;
 }
-.admin-page .admin-topbar__description {
-  margin-top: 10px;
-  max-width: 680px;
-  font-size: 12px;
-  line-height: 20px;
-}
 .admin-overview {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

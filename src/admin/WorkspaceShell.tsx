@@ -85,7 +85,6 @@ export function WorkspaceShell({
   onNavigate,
   eyebrow,
   title,
-  description,
   titleId = "admin-view-title",
   children,
   operationsRead = false,
@@ -96,7 +95,6 @@ export function WorkspaceShell({
   onNavigate: (view: AdminView) => void;
   eyebrow: string;
   title: string;
-  description: string;
   titleId?: string;
   children: ReactNode;
   operationsRead?: boolean;
@@ -341,9 +339,6 @@ export function WorkspaceShell({
               <h1 id={titleId} tabIndex={-1}>
                 {title}
               </h1>
-              {description ? (
-                <p className="admin-topbar__description">{description}</p>
-              ) : null}
             </div>
           </div>
         </header>

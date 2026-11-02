@@ -145,7 +145,12 @@ export function AttemptLedger({
               {group.attempts.length === 1 ? "generation" : "generations"}
             </span>
           </div>
-          <div className="admin-table-wrap admin-ledger-wrap">
+          <div
+            className="admin-table-wrap admin-ledger-wrap"
+            role="region"
+            aria-label={`${group.label} generation table`}
+            tabIndex={0}
+          >
             <table className="admin-ledger">
               <caption className="admin-visually-hidden">
                 Generation attempts for {group.label}
@@ -234,11 +239,13 @@ export function AttemptLedger({
                       </td>
                       <td>
                         <span className="admin-time">
-                          {localTime(finished)}
+                          {finished ? localTime(finished) : "Not recorded"}
                           <span>
-                            {finished
-                              ? `${attempt.completedAt ? "Finished" : "Updated"} ${localTime(finished)}`
-                              : "No timestamp"}
+                            {attempt.completedAt
+                              ? "Finished"
+                              : finished
+                                ? "Updated"
+                                : "No timestamp"}
                           </span>
                         </span>
                       </td>
@@ -434,10 +441,9 @@ export function SiteTimeline({
                 </p>
               </div>
               <div className="admin-site-head__actions">
-                <span className="admin-status">
-                  <span
-                    className={`admin-status__dot admin-status__dot--${tone}`}
-                  />
+                <span
+                  className={`admin-site-status admin-site-status--${tone}`}
+                >
                   {statusLabel}
                 </span>
                 {siteUrl ? (
