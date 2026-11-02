@@ -13,7 +13,7 @@
 ## Global Constraints
 - Remove the workspace label, not merely hide it.
 - Account identity comes from the authenticated workspace principal; no invented user identity or role.
-- Keep existing forest #10251f, paper #fffefa, sage #bad8c8, lime #dfff00 and muted text tokens; retain Manrope. Use 12/14/16/20/24px type and 8/12/16/24/32px spacing.
+- Keep existing forest #10251f, paper #fffefa, sage #bad8c8, lime #d9f06b and muted text tokens; retain Manrope. Use 12/14/16/20/24px type and 8/12/16/24/32px spacing.
 - No new dependencies, admin routes, generation features, or authorization changes.
 - No subtitles or explanatory copy unless needed to distinguish evidence, missing data, errors, or partial coverage.
 - Keep execution and delivery separate; missing costs are not zero; related previews never become own-attempt delivery.
@@ -44,17 +44,17 @@ The large screenshot-first layout was rejected: it hides the operational answer.
 ### Task 1: Authenticated sidebar identity
 **Files:** `src/admin/AdminApp.tsx`, `src/admin/WorkspaceShell.tsx`, `src/admin/ProfileView.tsx`, `tests/admin-workspace-browser.test.ts`.
 **Interfaces:** Pass `WorkspacePrincipal | null` plus account loading/error state from the existing bootstrap; profile saves update that principal.
-- [ ] Add browser assertions for the real bootstrap identity, removed label, fallback email, loading/error states and profile navigation.
-- [ ] Run the focused browser test and observe the missing identity failure.
-- [ ] Implement identity display, initials, role and profile link; remove workspace card and redundant sidebar note.
-- [ ] Run workspace/account browser tests and commit.
+- [x] Add browser assertions for the real bootstrap identity, removed label, fallback email, loading/error states and profile navigation.
+- [x] Run the focused browser test and observe the missing identity failure.
+- [x] Implement identity display, initials, role and profile link; remove workspace card and redundant sidebar note.
+- [x] Run workspace/account browser tests and commit.
 
 ### Task 2: Readable, consistent detail panels
 **Files:** `src/admin/AttemptInspector.tsx`, `src/admin/ClientDossier.tsx`, new `src/admin/DetailValue.tsx`, new `src/admin/detail-panels.css`, `src/admin/entry.tsx` (or existing stylesheet import entry), `tests/admin-detail-value.test.tsx`, `tests/admin-workspace-browser.test.ts`.
 **Interfaces:** `DetailValue({ value: string })` displays JSON objects/arrays structurally and falls back to escaped prose. Shared `.admin-detail-panel` uses a fixed header and one scrolling body.
-- [ ] Add red tests for JSON structure and hostile/malformed data, attempt metric visibility, long mobile values and client server-total coverage.
-- [ ] Implement semantic event details, labeled status/metrics, collapsible secondary evidence and shared panel geometry.
-- [ ] Verify desktop/mobile, keyboard controls, safe/related previews and existing pagination tests; commit.
+- [x] Add red tests for JSON structure and hostile/malformed data, attempt metric visibility, long mobile values and client server-total coverage.
+- [x] Implement semantic event details, labeled status/metrics, collapsible secondary evidence and shared panel geometry.
+- [x] Verify desktop/mobile, keyboard controls, safe/related previews and existing pagination tests; commit.
 
 ### Task 3: Verify and ship
 **Files:** daily progress ledger and completion receipt.

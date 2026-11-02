@@ -8,6 +8,7 @@ import { ActorLabel } from "./ActorLabel";
 import { AdminIcon } from "./AdminIcon";
 import { isSiteGeneration } from "./site-groups";
 import { GenerationPreview } from "./GenerationPreview";
+import { DetailValue } from "./DetailValue";
 import {
   DeliveryStatusBadge,
   ExecutionStatusBadge,
@@ -108,13 +109,14 @@ function FailureSection({ attempt }: { attempt: AttemptDetail }) {
           <dd>{failure.stage || "Not recorded"}</dd>
         </div>
       </dl>
-      <p className="admin-inspector__summary">
-        {failure.summary || "Cause not recorded."}
-      </p>
+      <div className="admin-inspector__summary">
+        <DetailValue value={failure.summary || "Cause not recorded."} />
+      </div>
       {failure.nextStep ? (
-        <p>
-          <strong>Next step:</strong> {failure.nextStep}
-        </p>
+        <div className="admin-failure-next">
+          <strong>Next step</strong>
+          <DetailValue value={failure.nextStep} />
+        </div>
       ) : (
         <p className="admin-muted">No next step recorded.</p>
       )}
@@ -159,10 +161,6 @@ function EventTimeline({
       {events.length ? (
         <ol className="admin-timeline">
           {events.map((event) => {
-            const cost =
-              event.costUsd === null
-                ? null
-                : `${event.costKind}: $${event.costUsd.toFixed(4)}`;
             return (
               <li key={event.eventKey} className="admin-timeline__item">
                 <div className="admin-timeline__head">
@@ -172,14 +170,37 @@ function EventTimeline({
                     {formatTimestamp(event.createdAt)}
                   </span>
                 </div>
-                {event.detail ? (
-                  <p className="admin-timeline__detail">{event.detail}</p>
-                ) : null}
-                <p className="admin-timeline__meta">
-                  {[event.provider, event.model, cost, event.source]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
+                {event.detail ? <DetailValue value={event.detail} /> : null}
+                <dl className="admin-event-facts">
+                  {event.provider ? (
+                    <div>
+                      <dt>Provider</dt>
+                      <dd>{event.provider}</dd>
+                    </div>
+                  ) : null}
+                  {event.model ? (
+                    <div>
+                      <dt>Model</dt>
+                      <dd>{event.model}</dd>
+                    </div>
+                  ) : null}
+                  {event.costUsd !== null ? (
+                    <div>
+                      <dt>
+                        {event.costKind === "actual"
+                          ? "Actual cost"
+                          : event.costKind === "estimated"
+                            ? "Estimated cost"
+                            : "Unreported cost"}
+                      </dt>
+                      <dd>${event.costUsd.toFixed(4)}</dd>
+                    </div>
+                  ) : null}
+                  <div>
+                    <dt>Source</dt>
+                    <dd>{event.source}</dd>
+                  </div>
+                </dl>
               </li>
             );
           })}
@@ -258,9 +279,10 @@ export function AttemptInspector({
     };
   }, []);
 
-  const latestEvent = [...(attempt?.events || []), ...events].reduce<
-    AttemptEventRecord | null
-  >(
+  const latestEvent = [
+    ...(attempt?.events || []),
+    ...events,
+  ].reduce<AttemptEventRecord | null>(
     (latest, event) =>
       !latest || event.createdAt > latest.createdAt ? event : latest,
     null,
@@ -272,14 +294,21 @@ export function AttemptInspector({
         <div className="admin-sheet__header-copy">
           <div className="admin-sheet__kicker">
             <span>
-              {attempt ? `${attempt.profile} generation` : "Generation detail"}
+              {attempt ? formatProfile(attempt.profile) : "Generation"}
             </span>
-            {attempt ? (
-              <span>· attempt {attempt.attemptId.slice(0, 12)}</span>
-            ) : null}
           </div>
           <h2 id="attempt-inspector-title" ref={headingRef} tabIndex={-1}>
-            {attempt ? `Attempt ${attempt.attemptId}` : "Attempt inspector"}
+            {attempt ? (
+              <>
+                {client?.businessName ||
+                  client?.contactName ||
+                  attempt.clientName ||
+                  "Generation detail"}
+                <span className="admin-visually-hidden">{` Attempt ${attempt.attemptId}`}</span>
+              </>
+            ) : (
+              "Attempt inspector"
+            )}
           </h2>
         </div>
         <button
@@ -323,13 +352,81 @@ export function AttemptInspector({
               </p>
             ) : null}
 
-            <div className="admin-status-stack admin-status-stack--large">
-              <ExecutionStatusBadge
-                status={attempt.executionStatus}
-                stale={attempt.stale}
-              />
-              <DeliveryStatusBadge status={attempt.deliveryStatus} />
+            <dl className="admin-panel-outcomes" data-attempt-outcomes>
+              <div>
+                <dt>Execution</dt>
+                <dd>
+                  <ExecutionStatusBadge
+                    status={attempt.executionStatus}
+                    stale={attempt.stale}
+                  />
+                </dd>
+              </div>
+              <div>
+                <dt>Delivery</dt>
+                <dd>
+                  <DeliveryStatusBadge status={attempt.deliveryStatus} />
+                </dd>
+              </div>
+            </dl>
+
+            <dl className="admin-panel-metrics" data-attempt-metrics>
+              <div>
+                <dt>Elapsed</dt>
+                <dd data-attempt-elapsed>
+                  {formatElapsed(
+                    attempt.startedAt,
+                    attempt.completedAt,
+                    attempt.stale ||
+                      [
+                        "succeeded",
+                        "failed",
+                        "cancelled",
+                        "skipped",
+                        "unknown",
+                      ].includes(attempt.executionStatus),
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Actual cost</dt>
+                <dd>{formatCost(attempt.costs).actual}</dd>
+              </div>
+              <div>
+                <dt>Estimated cost</dt>
+                <dd>{formatCost(attempt.costs).estimated}</dd>
+              </div>
+            </dl>
+            {attempt.costs.unreportedCount > 0 ? (
+              <p className="admin-cost-coverage">
+                {formatCost(attempt.costs).unreported}
+              </p>
+            ) : null}
+
+            <div className="admin-panel-actions">
+              {siteHref ? (
+                <a
+                  className="admin-button"
+                  href={siteHref}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Visit site
+                </a>
+              ) : null}
+              <WorkflowLinks attempt={attempt} />
+              {attempt.clientId ? (
+                <button
+                  type="button"
+                  className="admin-link-button"
+                  onClick={() => onOpenClient(attempt.clientId!)}
+                >
+                  Open client dossier
+                </button>
+              ) : null}
             </div>
+
+            <FailureSection attempt={attempt} />
 
             {attempt.executionStatus === "running" ||
             attempt.executionStatus === "queued" ? (
@@ -350,51 +447,48 @@ export function AttemptInspector({
               </div>
             ) : null}
 
-            <section
-              className="admin-sheet__preview"
-              aria-labelledby="attempt-preview-title"
-            >
-              <div className="admin-sheet__preview-toolbar">
-                <span className="admin-sheet__label" id="attempt-preview-title">
-                  Site preview
-                </span>
-                {siteHref ? (
-                  <a
-                    className="admin-button admin-button--quiet"
-                    href={siteHref}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Visit site
-                  </a>
-                ) : null}
-              </div>
-              <div className="admin-browser">
-                <div className="admin-browser__bar">
-                  <span className="admin-browser__dots" aria-hidden="true">
-                    <i />
-                    <i />
-                    <i />
-                  </span>
-                  <span className="admin-browser__url">
-                    {siteUrl
-                      ? new URL(siteUrl).hostname
-                      : "Preview unavailable"}
-                  </span>
+            <EventTimeline
+              events={events}
+              nextCursor={eventsNextCursor}
+              eventCount={eventCount}
+              loading={eventsLoading}
+              error={eventsError}
+              onLoadMore={onLoadMoreEvents}
+            />
+
+            <details className="admin-panel-disclosure" open>
+              <summary id="attempt-preview-title">Site capture</summary>
+              <div
+                className="admin-sheet__preview"
+                aria-labelledby="attempt-preview-title"
+              >
+                <div className="admin-browser">
+                  <div className="admin-browser__bar">
+                    <span className="admin-browser__dots" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                    <span className="admin-browser__url">
+                      {siteUrl
+                        ? new URL(siteUrl).hostname
+                        : "Preview unavailable"}
+                    </span>
+                  </div>
+                  <div className="admin-browser__media">
+                    <GenerationPreview attempt={attempt} large />
+                  </div>
                 </div>
-                <div className="admin-browser__media">
-                  <GenerationPreview attempt={attempt} large />
-                </div>
+                <p className="admin-sheet__notes">
+                  <strong>Generation screenshot.</strong>{" "}
+                  {focused
+                    ? "Captured for this attempt."
+                    : relatedPreview
+                      ? "Issue capture, not this attempt's delivery."
+                      : "Issue capture; may predate later revisions."}
+                </p>
               </div>
-              <p className="admin-sheet__notes">
-                <strong>Generation screenshot.</strong>{" "}
-                {focused
-                  ? "A capture for this attempt, when available."
-                  : relatedPreview
-                    ? "This is the captured site for this generation issue. Use Visit related preview for the latest successful preview of this issue."
-                    : "This is the captured site for this generation issue. It may predate later revisions; use Visit site for the current preview."}
-              </p>
-            </section>
+            </details>
 
             {relatedPreview ? (
               <section
@@ -445,128 +539,80 @@ export function AttemptInspector({
               </section>
             ) : null}
 
-            <section
-              className="admin-inspector__block"
-              aria-labelledby="attempt-summary-title"
-            >
-              <h3 id="attempt-summary-title">Attempt summary</h3>
-              <dl className="admin-detail-grid">
-                <div>
-                  <dt>Client</dt>
-                  <dd>
-                    <span>
-                      {client
-                        ? client.businessName ||
-                          client.contactName ||
-                          client.clientId
-                        : attempt.clientName ||
-                          attempt.clientId ||
-                          "Not recorded"}
-                    </span>
-                    {client && attempt.clientId ? (
-                      <span className="admin-mono admin-block">
-                        {client.clientId}
+            <details className="admin-panel-disclosure">
+              <summary>Record details</summary>
+              <section
+                className="admin-inspector__block"
+                aria-labelledby="attempt-summary-title"
+              >
+                <h3 id="attempt-summary-title">Attempt summary</h3>
+                <dl className="admin-detail-grid">
+                  <div>
+                    <dt>Client</dt>
+                    <dd>
+                      <span>
+                        {client
+                          ? client.businessName ||
+                            client.contactName ||
+                            client.clientId
+                          : attempt.clientName ||
+                            attempt.clientId ||
+                            "Not recorded"}
                       </span>
-                    ) : null}
-                    {attempt.clientId ? (
-                      <button
-                        type="button"
-                        className="admin-link-button"
-                        onClick={() => onOpenClient(attempt.clientId!)}
-                      >
-                        Open client dossier
-                      </button>
-                    ) : null}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Profile</dt>
-                  <dd>{formatProfile(attempt.profile)}</dd>
-                </div>
-                <div>
-                  <dt>Issue</dt>
-                  <dd>{attempt.issueNumber ?? "Not recorded"}</dd>
-                </div>
-                <div>
-                  <dt>Request</dt>
-                  <dd className="admin-mono">
-                    {attempt.requestId || "Not recorded"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Repository</dt>
-                  <dd className="admin-mono">
-                    {attempt.repository || "Not recorded"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Workflow run</dt>
-                  <dd>
-                    {attempt.runId
-                      ? `${attempt.runId}${
-                          attempt.runAttempt
-                            ? ` / attempt ${attempt.runAttempt}`
-                            : ""
-                        }`
-                      : "Not recorded"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Created</dt>
-                  <dd>{formatTimestamp(attempt.createdAt)}</dd>
-                </div>
-                <div>
-                  <dt>Started</dt>
-                  <dd>{formatTimestamp(attempt.startedAt)}</dd>
-                </div>
-                <div>
-                  <dt>Completed</dt>
-                  <dd>{formatTimestamp(attempt.completedAt)}</dd>
-                </div>
-                <div>
-                  <dt>Elapsed</dt>
-                  <dd data-attempt-elapsed>
-                    {formatElapsed(
-                      attempt.startedAt,
-                      attempt.completedAt,
-                      attempt.stale ||
-                        [
-                          "succeeded",
-                          "failed",
-                          "cancelled",
-                          "skipped",
-                          "unknown",
-                        ].includes(attempt.executionStatus),
-                    )}
-                  </dd>
-                </div>
-              </dl>
-              <WorkflowLinks attempt={attempt} />
-            </section>
-
-            <FailureSection attempt={attempt} />
-
-            <section
-              className="admin-inspector__block"
-              aria-labelledby="attempt-costs-title"
-            >
-              <h3 id="attempt-costs-title">Costs</h3>
-              <dl className="admin-cost-grid">
-                <div>
-                  <dt>Actual cost</dt>
-                  <dd>{formatCost(attempt.costs).actual}</dd>
-                </div>
-                <div>
-                  <dt>Estimated cost</dt>
-                  <dd>{formatCost(attempt.costs).estimated}</dd>
-                </div>
-                <div>
-                  <dt>Unreported cost</dt>
-                  <dd>{formatCost(attempt.costs).unreported}</dd>
-                </div>
-              </dl>
-            </section>
-
+                      {client && attempt.clientId ? (
+                        <span className="admin-mono admin-block">
+                          {client.clientId}
+                        </span>
+                      ) : null}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Profile</dt>
+                    <dd>{formatProfile(attempt.profile)}</dd>
+                  </div>
+                  <div>
+                    <dt>Issue</dt>
+                    <dd>{attempt.issueNumber ?? "Not recorded"}</dd>
+                  </div>
+                  <div>
+                    <dt>Request</dt>
+                    <dd className="admin-mono">
+                      {attempt.requestId || "Not recorded"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Repository</dt>
+                    <dd className="admin-mono">
+                      {attempt.repository || "Not recorded"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Workflow run</dt>
+                    <dd>
+                      {attempt.runId
+                        ? `${attempt.runId}${
+                            attempt.runAttempt
+                              ? ` / attempt ${attempt.runAttempt}`
+                              : ""
+                          }`
+                        : "Not recorded"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Created</dt>
+                    <dd>{formatTimestamp(attempt.createdAt)}</dd>
+                  </div>
+                  <div>
+                    <dt>Started</dt>
+                    <dd>{formatTimestamp(attempt.startedAt)}</dd>
+                  </div>
+                  <div>
+                    <dt>Completed</dt>
+                    <dd>{formatTimestamp(attempt.completedAt)}</dd>
+                  </div>
+                </dl>
+              </section>
+            </details>
             <section
               className="admin-inspector__block"
               aria-labelledby="attempt-actors-title"
@@ -587,15 +633,6 @@ export function AttemptInspector({
                 </div>
               </dl>
             </section>
-
-            <EventTimeline
-              events={events}
-              nextCursor={eventsNextCursor}
-              eventCount={eventCount}
-              loading={eventsLoading}
-              error={eventsError}
-              onLoadMore={onLoadMoreEvents}
-            />
           </>
         ) : null}
       </div>
@@ -606,7 +643,7 @@ export function AttemptInspector({
     <dialog
       id="attempt-inspector"
       ref={dialogRef}
-      className={`admin-sheet${open ? " is-open" : ""}`}
+      className={`admin-sheet admin-detail-panel${open ? " is-open" : ""}`}
       data-inspector-surface="dialog"
       aria-modal="true"
       aria-labelledby="attempt-inspector-title"
@@ -649,10 +686,7 @@ export function AttemptInspector({
         }
       }}
     >
-      <div className="admin-inspector__sheet">
-        <span className="admin-inspector__grabber" aria-hidden="true" />
-        {body}
-      </div>
+      {body}
     </dialog>
   );
 }

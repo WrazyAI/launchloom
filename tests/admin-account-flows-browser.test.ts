@@ -766,7 +766,10 @@ describe("interim Access identity and unavailable account surfaces", () => {
         await page.getByText("Invite administrator", { exact: false }).count(),
       ).toBe(0);
       expect(
-        await page.locator("#admin-main").getByText(ACCESS_PRINCIPAL.email, { exact: false }).count(),
+        await page
+          .locator("#admin-main")
+          .getByText(ACCESS_PRINCIPAL.email, { exact: false })
+          .count(),
       ).toBe(0);
       expect(requests.map((request) => request.path)).toEqual([
         "/api/admin/onboarding-invites/workspace/me",
