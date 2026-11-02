@@ -65,6 +65,7 @@ let failAttemptListOnce = false;
 let failHealth = false;
 let attemptListDelay = 0;
 let relatedPreviews = new Map<string, RelatedIssuePreview>();
+let eventDetails = new Map<string, string>();
 type HeroMode = "ok" | "notFound" | "unauthorized";
 let heroMode: HeroMode = "ok";
 let heroPng: Buffer;
@@ -384,13 +385,28 @@ async function serve(
       );
       return;
     }
+    const detail = attemptDetail(attempt);
+    const detailOverride = eventDetails.get(id);
+    const events = eventPage(attempt, params);
+    if (detailOverride) {
+      detail.events = detail.events.map((event) =>
+        event.stage === "creative"
+          ? { ...event, detail: detailOverride }
+          : event,
+      );
+      events.items = events.items.map((event) =>
+        event.stage === "creative"
+          ? { ...event, detail: detailOverride }
+          : event,
+      );
+    }
     sendJson(
       response,
       attemptMatch[2]
-        ? eventPage(attempt, params)
+        ? events
         : {
             attempt: {
-              ...attemptDetail(attempt),
+              ...detail,
               relatedPreview: relatedPreviews.get(id) ?? null,
             },
           },
@@ -444,6 +460,7 @@ beforeEach(() => {
   attemptListDelay = 0;
   heroMode = "ok";
   relatedPreviews = new Map();
+  eventDetails = new Map();
 });
 
 type OpenOptions = {
@@ -558,6 +575,327 @@ function autoErrors(
 }
 
 describe("real admin workspace browser behavior", () => {
+  it("renders nested event JSON as labeled fields without losing zero, false or escaped text", async () => {
+    eventDetails.set(
+      "attempt-0000",
+      JSON.stringify({
+        renderer: "pack",
+        quality_metrics: { passedChecks: 0, approved: false },
+        checks: [{ name: "contrast", passed: true }],
+        note: null,
+        html: '<img src=x onerror="window.__adminFxss=1">',
+        evidenceUrl: "javascript:window.__adminFxss=2",
+      }),
+    );
+    const { page } = await openPage({
+      path: "/admin/onboarding-invites?attempt=attempt-0000",
+    });
+    try {
+      const detail = page
+        .locator("#attempt-inspector .admin-timeline__item")
+        .filter({ hasText: "creative" })
+        .locator(".admin-structured-value");
+      await visible(
+        detail.locator("dt").getByText("Quality metrics", { exact: true }),
+      );
+      expect(
+        await detail.locator("dd").getByText("0", { exact: true }).count(),
+      ).toBe(1);
+      expect(
+        await detail.locator("dd").getByText("No", { exact: true }).count(),
+      ).toBe(1);
+      expect(
+        await detail.locator("dd").getByText("Yes", { exact: true }).count(),
+      ).toBe(1);
+      expect(
+        await detail
+          .locator("dd")
+          .getByText("Not recorded", { exact: true })
+          .count(),
+      ).toBe(1);
+      expect(await detail.locator("ol > li").count()).toBe(1);
+      expect(await detail.textContent()).toContain(
+        '<img src=x onerror="window.__adminFxss=1">',
+      );
+      expect(await detail.locator("img, script, a").count()).toBe(0);
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { __adminFxss?: number }).__adminFxss,
+        ),
+      ).toBeUndefined();
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps the complete attempt reference readable in the record disclosure", async () => {
+    const { page } = await openPage({
+      path: "/admin/onboarding-invites?attempt=attempt-0000",
+    });
+    try {
+      const record = page
+        .locator("#attempt-inspector .admin-panel-disclosure")
+        .filter({
+          has: page.locator("summary").filter({ hasText: "Record details" }),
+        });
+      await record.locator("summary").click();
+      await visible(
+        record.locator("dt").getByText("Attempt reference", { exact: true }),
+      );
+      await visible(
+        record.locator("dd").getByText("attempt-0000", { exact: true }),
+      );
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps large arrays expandable without losing retained event evidence", async () => {
+    eventDetails.set(
+      "attempt-0000",
+      JSON.stringify(
+        Array.from({ length: 46 }, (_, index) => ({
+          result: `check-${index}`,
+        })),
+      ),
+    );
+    const { page } = await openPage({
+      path: "/admin/onboarding-invites?attempt=attempt-0000",
+    });
+    try {
+      const detail = page.locator(".admin-structured-value");
+      await visible(detail.locator("ol"));
+      expect(await detail.locator("ol > li").count()).toBe(40);
+      await detail
+        .locator("summary")
+        .filter({ hasText: "6 more items" })
+        .click();
+      await visible(detail.locator("pre").getByText(/check-45/u));
+      expect(await detail.locator("pre").textContent()).toContain("check-40");
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("preserves empty containers and nested event values", async () => {
+    eventDetails.set(
+      "attempt-0000",
+      JSON.stringify({
+        emptyList: [],
+        emptyObject: {},
+        nested: { a: { b: { result: "retained-value" } } },
+      }),
+    );
+    const { page } = await openPage({
+      path: "/admin/onboarding-invites?attempt=attempt-0000",
+    });
+    try {
+      const detail = page.locator(".admin-structured-value");
+      await visible(detail.getByText("No items", { exact: true }));
+      await visible(detail.getByText("No fields", { exact: true }));
+      await visible(detail.getByText("retained-value", { exact: true }));
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps pathological JSON as original evidence without expanding or breaking the panel", async () => {
+    const source = "[".repeat(3990) + "0" + "]".repeat(3990);
+    eventDetails.set("attempt-0000", source);
+    const { page } = await openPage({
+      path: "/admin/onboarding-invites?attempt=attempt-0000",
+    });
+    try {
+      const evidence = page.locator(".admin-structured-value pre");
+      await visible(evidence);
+      expect(await evidence.textContent()).toBe(source);
+      expect(
+        await evidence.evaluate((element) => element.outerHTML.length),
+      ).toBeLessThan(source.length + 1000);
+      await page.getByRole("button", { name: "Close preview" }).click();
+      await page.locator("#attempt-inspector").waitFor({ state: "detached" });
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("puts labeled run outcomes and metrics above the screenshot in a single scrolling panel", async () => {
+    const { page } = await openPage({
+      path: "/admin/onboarding-invites?attempt=attempt-0000",
+    });
+    try {
+      const metrics = page.locator("[data-attempt-metrics]");
+      await visible(metrics);
+      expect(await metrics.getByText("Elapsed", { exact: true }).count()).toBe(
+        1,
+      );
+      expect(await metrics.textContent()).toContain("2 minutes");
+      expect(await metrics.textContent()).toContain("$0.00");
+      expect(await metrics.textContent()).toContain("Not reported");
+      const body = page.locator("#attempt-inspector .admin-sheet__body");
+      expect(
+        await body.evaluate(
+          (element) => element.scrollHeight > element.clientHeight,
+        ),
+      ).toBe(true);
+      const metricBox = await metrics.boundingBox();
+      expect(metricBox!.y + metricBox!.height).toBeLessThan(500);
+      const outcome = page.locator("[data-attempt-outcomes]");
+      expect(await outcome.textContent()).toContain("ExecutionSucceeded");
+      expect(await outcome.textContent()).toContain("DeliveryPublished");
+      await body.evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+      const closeBox = await page
+        .getByRole("button", { name: "Close preview" })
+        .boundingBox();
+      expect(closeBox!.y).toBeGreaterThanOrEqual(0);
+      expect(closeBox!.y).toBeLessThan(150);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("shows server history totals without deriving a success rate from the loaded client page", async () => {
+    const page = await browser.newPage();
+    try {
+      await page.route("**/workspace/attempts?**", (route) =>
+        route.fulfill({
+          json: {
+            items: [
+              ATTEMPTS.find(
+                (attempt) => attempt.attemptId === "attempt-diagnostic",
+              ),
+            ],
+            total: 7,
+            nextCursor: "offset:1",
+          },
+        }),
+      );
+      await page.goto(
+        `${origin}/admin/onboarding-invites?view=clients&client=submission:client-a`,
+      );
+      const metrics = page.locator("[data-client-metrics]");
+      await visible(metrics);
+      await expect.poll(() => metrics.textContent()).toContain("Attempts7");
+      expect(await metrics.textContent()).not.toContain("%");
+      expect(await metrics.textContent()).toContain("Available");
+      await visible(page.getByText("1 of 7 attempts", { exact: true }));
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps malformed and very long event details readable at 390px", async () => {
+    eventDetails.set(
+      "attempt-0000",
+      '{"invalid_json":' + "long-value".repeat(150),
+    );
+    const { page } = await openPage({
+      viewport: { width: 390, height: 844 },
+      path: "/admin/onboarding-invites?attempt=attempt-0000",
+    });
+    try {
+      const detail = page.locator("#attempt-inspector .admin-timeline__detail");
+      await visible(detail);
+      expect(await detail.textContent()).toContain(
+        '{"invalid_json":long-value',
+      );
+      const panel = page.locator("#attempt-inspector");
+      await expect
+        .poll(() =>
+          panel.evaluate((element) =>
+            Math.abs(element.getBoundingClientRect().right - window.innerWidth),
+          ),
+        )
+        .toBeLessThanOrEqual(1);
+      expect(
+        await panel.evaluate(
+          (element) => element.scrollWidth - element.clientWidth,
+        ),
+      ).toBeLessThanOrEqual(1);
+      expect(
+        await panel
+          .locator(".admin-sheet__body")
+          .evaluate((element) => element.scrollWidth - element.clientWidth),
+      ).toBeLessThanOrEqual(1);
+      expect(await page.locator(".admin-detail-panel").count()).toBe(1);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("shows the authenticated admin in the sidebar without duplicate workspace copy", async () => {
+    const { page } = await openPage();
+    try {
+      const account = page.locator(".admin-sidebar__account");
+      await visible(account.getByText("Browser Admin", { exact: true }));
+      expect(await account.textContent()).toContain("admin@example.test");
+      expect(await account.textContent()).toContain("Admin");
+      expect(await account.locator(".admin-avatar").textContent()).toBe("BA");
+      expect(await page.locator(".admin-workspace-label").count()).toBe(0);
+      await account.click();
+      await visible(page.locator("#profile-view"));
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("uses verified email when a display name is missing and never invents an account", async () => {
+    const page = await browser.newPage();
+    try {
+      await page.route("**/workspace/me", (route) =>
+        route.fulfill({
+          json: { principal: { ...adminPrincipal, displayName: null } },
+        }),
+      );
+      await page.goto(`${origin}/admin/onboarding-invites`);
+      const account = page.locator(".admin-sidebar__account");
+      await visible(
+        account.getByText("admin@example.test", { exact: true }).first(),
+      );
+      expect(await account.textContent()).not.toContain("Workspace account");
+      expect(await account.locator("strong").textContent()).toBe(
+        "admin@example.test",
+      );
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps account loading and failure distinct from an authenticated identity", async () => {
+    const page = await browser.newPage();
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    try {
+      await page.route("**/workspace/me", async (route) => {
+        await gate;
+        await route.fulfill({
+          status: 503,
+          json: { error: { code: "unavailable", message: "Unavailable" } },
+        });
+      });
+      await page.goto(`${origin}/admin/onboarding-invites`);
+      await visible(
+        page.locator(".admin-sidebar__account [aria-label='Loading account']"),
+      );
+      release();
+      await visible(
+        page
+          .locator(".admin-sidebar__account")
+          .getByText("Account unavailable", { exact: true }),
+      );
+      expect(
+        await page.locator(".admin-sidebar__account").textContent(),
+      ).not.toContain("Browser Admin");
+    } finally {
+      release();
+      await page.close();
+    }
+  });
+
   it("renders server counts, applies every filter and sends them to the server", async () => {
     const { page, errors } = await openPage();
     try {
@@ -748,7 +1086,13 @@ describe("real admin workspace browser behavior", () => {
         name: /Client dossier: Acme & Sons/u,
       });
       await visible(dossier);
-      await page.waitForTimeout(300);
+      await expect
+        .poll(() =>
+          dossier.evaluate((element) =>
+            Math.abs(element.getBoundingClientRect().right - window.innerWidth),
+          ),
+        )
+        .toBeLessThanOrEqual(1);
       expect(
         await dossier.evaluate((element) => element.matches(":modal")),
       ).toBe(true);
@@ -1076,10 +1420,22 @@ describe("real admin workspace browser behavior", () => {
           name: "Attempt attempt-0000",
         });
         await visible(dialog);
+        await dialog
+          .locator("summary")
+          .filter({ hasText: "Record details" })
+          .click();
         await visible(dialog.getByText("Attempt summary"));
         await visible(dialog.getByText("Stage timeline"));
 
-        await page.waitForTimeout(300);
+        await expect
+          .poll(() =>
+            dialog.evaluate((element) =>
+              Math.abs(
+                element.getBoundingClientRect().right - window.innerWidth,
+              ),
+            ),
+          )
+          .toBeLessThanOrEqual(1);
         const sheet = await dialog.boundingBox();
         expect(sheet).not.toBeNull();
         expect(sheet!.y).toBeGreaterThanOrEqual(0);
@@ -1093,11 +1449,13 @@ describe("real admin workspace browser behavior", () => {
         );
         expect(Math.abs(sheet!.height - 844)).toBeLessThanOrEqual(1);
         const innerSheet = await dialog
-          .locator(".admin-inspector__sheet")
+          .locator(".admin-sheet__body")
           .boundingBox();
         expect(innerSheet).not.toBeNull();
-        expect(Math.abs(innerSheet!.y)).toBeLessThanOrEqual(1);
-        expect(Math.abs(innerSheet!.height - 844)).toBeLessThanOrEqual(1);
+        expect(innerSheet!.y).toBeGreaterThan(0);
+        expect(
+          Math.abs(innerSheet!.y + innerSheet!.height - 844),
+        ).toBeLessThanOrEqual(1);
         const heading = dialog.getByRole("heading", {
           name: "Attempt attempt-0000",
         });
@@ -1150,7 +1508,7 @@ describe("real admin workspace browser behavior", () => {
 
   it("opens a deep-linked attempt as a modal sheet and closes on the backdrop", async () => {
     const { page, errors } = await openPage({
-      viewport: { width: 390, height: 844 },
+      viewport: { width: 1200, height: 844 },
       path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
     });
     try {

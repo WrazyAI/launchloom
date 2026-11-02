@@ -6,6 +6,9 @@ import { DeliveryStatusBadge, ExecutionStatusBadge } from "./StatusBadge";
 import {
   formatClientName,
   formatTimestamp,
+  formatProfile,
+  formatElapsed,
+  formatCost,
   safeSiteUrl,
   previewHref,
 } from "./format";
@@ -33,7 +36,7 @@ function SiteLinks({ client }: { client: ClientRecord }) {
   const hasUnsafe = Boolean(
     (client.productionUrl && !production) ||
     (client.siteUrl && !verified) ||
-    (client.previewUrl && !preview),
+    (client.previewUrl && !previewHref(client.previewUrl)),
   );
   return (
     <section
@@ -67,10 +70,6 @@ function SiteLinks({ client }: { client: ClientRecord }) {
           </span>
         ) : null}
       </div>
-      <p className="admin-sheet__notes">
-        Site links stay independent of individual attempt outcomes. A later
-        failed attempt does not demote an earlier published site.
-      </p>
     </section>
   );
 }
@@ -106,7 +105,9 @@ function ClientAttempts({
       <div className="admin-inspector__block-head">
         <h3 id="client-attempts-title">Attempt history</h3>
         <span className="admin-muted">
-          {total} {total === 1 ? "attempt" : "attempts"}
+          {nextCursor
+            ? `${attempts.length} of ${total} attempts`
+            : `${total} ${total === 1 ? "attempt" : "attempts"}`}
         </span>
       </div>
       {hasDiagnostic ? (
@@ -136,6 +137,12 @@ function ClientAttempts({
         <ul className="admin-attempt-list">
           {attempts.map((attempt) => (
             <li key={attempt.attemptId} data-attempt-id={attempt.attemptId}>
+              <div className="admin-attempt-list__heading">
+                <strong>{formatProfile(attempt.profile)}</strong>
+                <span className="admin-muted">
+                  {formatTimestamp(attempt.createdAt)}
+                </span>
+              </div>
               <div className="admin-attempt-list__status">
                 <ExecutionStatusBadge
                   status={attempt.executionStatus}
@@ -144,10 +151,26 @@ function ClientAttempts({
                 <DeliveryStatusBadge status={attempt.deliveryStatus} />
               </div>
               <div>
-                <p className="admin-mono">{attempt.attemptId}</p>
-                <p className="admin-muted">
-                  {formatTimestamp(attempt.createdAt)}
-                </p>
+                <dl className="admin-history-facts">
+                  <div>
+                    <dt>Elapsed</dt>
+                    <dd>
+                      {formatElapsed(
+                        attempt.startedAt,
+                        attempt.completedAt,
+                        attempt.stale ||
+                          !["running", "queued"].includes(
+                            attempt.executionStatus,
+                          ),
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Actual cost</dt>
+                    <dd>{formatCost(attempt.costs).actual}</dd>
+                  </div>
+                </dl>
+                <p className="admin-record-id">{attempt.attemptId}</p>
               </div>
               <button
                 type="button"
@@ -182,12 +205,8 @@ function ClientDetails({ client }: { client: ClientRecord }) {
         className="admin-sheet__section"
         aria-labelledby="client-identity-title"
       >
-        <h3 id="client-identity-title">Client identity</h3>
+        <h3 id="client-identity-title">Contact</h3>
         <dl className="admin-sheet__details">
-          <div>
-            <dt>Business name</dt>
-            <dd>{client.businessName || "Not recorded"}</dd>
-          </div>
           <div>
             <dt>Contact name</dt>
             <dd>{client.contactName || "Not recorded"}</dd>
@@ -200,15 +219,6 @@ function ClientDetails({ client }: { client: ClientRecord }) {
             <dt>Phone</dt>
             <dd>{client.phone || "Not recorded"}</dd>
           </div>
-        </dl>
-      </section>
-
-      <section
-        className="admin-sheet__section"
-        aria-labelledby="client-record-title"
-      >
-        <h3 id="client-record-title">Record details</h3>
-        <dl className="admin-sheet__details">
           <div>
             <dt>Submitted</dt>
             <dd data-client-submitted>{formatTimestamp(client.submittedAt)}</dd>
@@ -219,26 +229,40 @@ function ClientDetails({ client }: { client: ClientRecord }) {
               <ActorLabel actor={client.creator} />
             </dd>
           </div>
-          <div>
-            <dt>Issue</dt>
-            <dd>{client.issueNumber}</dd>
-          </div>
-          <div>
-            <dt>Client record</dt>
-            <dd className="admin-mono">{client.clientId}</dd>
-          </div>
-          <div>
-            <dt>Invitation</dt>
-            <dd className="admin-mono">{client.inviteId || "Not recorded"}</dd>
-          </div>
-          <div>
-            <dt>Submission</dt>
-            <dd className="admin-mono">
-              {client.submissionId || "Not recorded"}
-            </dd>
-          </div>
         </dl>
       </section>
+
+      <details className="admin-panel-disclosure">
+        <summary>Record details</summary>
+        <section
+          className="admin-sheet__section"
+          aria-labelledby="client-record-title"
+        >
+          <h3 id="client-record-title">Record details</h3>
+          <dl className="admin-sheet__details">
+            <div>
+              <dt>Issue</dt>
+              <dd>{client.issueNumber}</dd>
+            </div>
+            <div>
+              <dt>Client record</dt>
+              <dd className="admin-mono">{client.clientId}</dd>
+            </div>
+            <div>
+              <dt>Invitation</dt>
+              <dd className="admin-mono">
+                {client.inviteId || "Not recorded"}
+              </dd>
+            </div>
+            <div>
+              <dt>Submission</dt>
+              <dd className="admin-mono">
+                {client.submissionId || "Not recorded"}
+              </dd>
+            </div>
+          </dl>
+        </section>
+      </details>
     </>
   );
 }
@@ -279,7 +303,7 @@ export function ClientDossier({
     <dialog
       id="client-inspector"
       ref={dialogRef}
-      className={`admin-sheet admin-client-sheet${open ? " is-open" : ""}`}
+      className={`admin-sheet admin-client-sheet admin-detail-panel${open ? " is-open" : ""}`}
       data-inspector-surface="dialog"
       aria-modal="true"
       aria-labelledby="client-inspector-title"
@@ -324,7 +348,6 @@ export function ClientDossier({
     >
       <div className="admin-sheet__header">
         <div className="admin-sheet__header-copy">
-          <div className="admin-sheet__kicker">Client dossier</div>
           <h2 id="client-inspector-title" ref={headingRef} tabIndex={-1}>
             {client ? (
               <>
@@ -335,13 +358,6 @@ export function ClientDossier({
               "Client dossier"
             )}
           </h2>
-          {client ? (
-            <p className="admin-client-sheet__subhead">
-              {client.contactName ||
-                (client.businessName && client.email) ||
-                "No contact name recorded"}
-            </p>
-          ) : null}
         </div>
         <button
           className="admin-icon-button"
@@ -371,8 +387,33 @@ export function ClientDossier({
 
         {client ? (
           <>
-            <ClientDetails client={client} />
+            <dl
+              className="admin-panel-metrics admin-panel-metrics--pair"
+              data-client-metrics
+            >
+              <div>
+                <dt>Attempts</dt>
+                <dd>
+                  {attemptsLoading && !attempts.length
+                    ? "Loading…"
+                    : attemptsError && !attempts.length
+                      ? "Unavailable"
+                      : attemptTotal}
+                </dd>
+              </div>
+              <div>
+                <dt>Site link</dt>
+                <dd>
+                  {safeSiteUrl(client.siteUrl) ||
+                  safeSiteUrl(client.previewUrl) ||
+                  safeSiteUrl(client.productionUrl)
+                    ? "Available"
+                    : "Not recorded"}
+                </dd>
+              </div>
+            </dl>
             <SiteLinks client={client} />
+            <ClientDetails client={client} />
             <ClientAttempts
               attempts={attempts}
               loading={attemptsLoading}

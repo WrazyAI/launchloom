@@ -631,9 +631,25 @@ Rules:
 export function dossierAnalysisFallback(route, error) {
   const dna = route?.referenceDna || route?.canonicalReferenceDna;
   if (!dna || typeof dna !== "object" || dna.complete === false) return null;
+  const message = String(error?.message || error);
+  // Transport diagnostics can be wrapped in an invalid-JSON error by the
+  // analyzer retry contract. A usable dossier must not mask access/billing
+  // failures merely because the wrapper also mentions missing content.
+  if (
+    ["quota", "authentication"].includes(
+      String(error?.providerErrorCode || ""),
+    ) ||
+    [401, 402, 403].includes(
+      Number(error?.providerHttpStatus ?? error?.status),
+    ) ||
+    /\b(?:quota|authentication|unauthorized|forbidden)\b|\bhttp(?:_status)?\s*[=:]?\s*(?:401|402|403)\b|\((?:401|402|403)\)/iu.test(
+      message,
+    )
+  )
+    return null;
   if (
     !/no content|invalid json|empty|schema|incomplete|did not produce/iu.test(
-      String(error?.message || error),
+      message,
     )
   )
     return null;
@@ -643,7 +659,7 @@ export function dossierAnalysisFallback(route, error) {
       ...dna,
       analyzedFromEvidence: false,
       analyzerModel: "dossier-fallback",
-      analysisFallback: String(error?.message || error).slice(0, 240),
+      analysisFallback: message.slice(0, 240),
     },
   };
 }
@@ -702,7 +718,8 @@ export async function enrichInspirationPack(
     referenceDnaAnalyzerModel: usedDossierFallback
       ? "dossier-fallback"
       : routes.every(
-            (route) => route.referenceDna?.analyzerModel === "canonical-dossier",
+            (route) =>
+              route.referenceDna?.analyzerModel === "canonical-dossier",
           )
         ? "canonical-dossier"
         : model,

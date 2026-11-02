@@ -663,11 +663,13 @@ describe("interim Access identity and unavailable account surfaces", () => {
       await visible(reference);
       await expect(reference.textContent()).resolves.toBe("access:abababab");
       // One capability bootstrap plus the profile's own verified identity read.
-      expect(requests).toEqual(Array.from({ length: 2 }, () => ({
+      expect(requests).toEqual(
+        Array.from({ length: 2 }, () => ({
           method: "GET",
           path: "/api/admin/onboarding-invites/workspace/me",
           body: null,
-      })));
+        })),
+      );
       expect(
         await page.evaluate(() => ({
           local: Object.keys(localStorage),
@@ -695,7 +697,10 @@ describe("interim Access identity and unavailable account surfaces", () => {
         }),
       );
       expect(
-        await page.getByText(ACCESS_PRINCIPAL.email, { exact: false }).count(),
+        await page
+          .locator("#admin-main")
+          .getByText(ACCESS_PRINCIPAL.email, { exact: false })
+          .count(),
       ).toBe(0);
       expect(
         await page.getByText("Name not recorded", { exact: true }).count(),
@@ -754,12 +759,17 @@ describe("interim Access identity and unavailable account surfaces", () => {
       expect(
         await page.getByText("No owner controls", { exact: false }).count(),
       ).toBe(1);
-      expect(await page.locator("#admin-main").getByRole("button").count()).toBe(0);
+      expect(
+        await page.locator("#admin-main").getByRole("button").count(),
+      ).toBe(0);
       expect(
         await page.getByText("Invite administrator", { exact: false }).count(),
       ).toBe(0);
       expect(
-        await page.getByText(ACCESS_PRINCIPAL.email, { exact: false }).count(),
+        await page
+          .locator("#admin-main")
+          .getByText(ACCESS_PRINCIPAL.email, { exact: false })
+          .count(),
       ).toBe(0);
       expect(requests.map((request) => request.path)).toEqual([
         "/api/admin/onboarding-invites/workspace/me",
@@ -801,9 +811,13 @@ describe("interim Access identity and unavailable account surfaces", () => {
           /gohighlevel|leadconnector|ghl\./iu.test(url),
         ),
       ).toEqual([]);
-      expect(requests).toEqual([{
-        method: "GET", path: "/api/admin/onboarding-invites/workspace/me", body: null,
-      }]);
+      expect(requests).toEqual([
+        {
+          method: "GET",
+          path: "/api/admin/onboarding-invites/workspace/me",
+          body: null,
+        },
+      ]);
       unexpectedErrors(errors);
     } finally {
       await page.close();
@@ -837,9 +851,7 @@ describe("interim Access identity and unavailable account surfaces", () => {
 
       const activeNav = page.locator('.admin-nav a[aria-current="page"]');
       await activeNav.focus();
-      await expect
-        .poll(() => activeNav.textContent())
-        .toBe("Settings");
+      await expect.poll(() => activeNav.textContent()).toBe("Settings");
 
       await page.getByRole("link", { name: "Team", exact: true }).click();
       await visible(
@@ -1495,12 +1507,25 @@ describe("Neon account flows", () => {
         page.getByText("Neon account", { exact: true }).count(),
       ).resolves.toBe(1);
       await expect(
-        page.getByText("Owner", { exact: true }).count(),
+        page
+          .locator("#profile-view")
+          .getByText("Owner", { exact: true })
+          .count(),
       ).resolves.toBe(1);
       await name.fill("Avery Owner");
       await page.getByLabel("Avatar key (optional)").fill("sage-circle");
       await page.getByRole("button", { name: "Save profile" }).click();
       await visible(page.getByText("Profile saved.", { exact: false }));
+      await visible(
+        page
+          .locator(".admin-sidebar__account")
+          .getByText("Avery Owner", { exact: true }),
+      );
+      expect(
+        await page
+          .locator(".admin-sidebar__account .admin-avatar")
+          .textContent(),
+      ).toBe("AV");
       expect(bodyFor("PATCH", "/workspace/me")).toEqual({
         displayName: "Avery Owner",
         avatarKey: "sage-circle",
