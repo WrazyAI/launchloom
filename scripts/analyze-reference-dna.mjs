@@ -623,6 +623,32 @@ Rules:
 }
 
 /**
+ * A provider refusal or an empty analyzer response must not kill an otherwise
+ * valid run when the route already carries a usable dossier Reference DNA.
+ * The fallback is explicit in the output so authoring and review can see that
+ * the analysis came from the dossier, not from fresh screenshots.
+ */
+export function dossierAnalysisFallback(route, error) {
+  const dna = route?.referenceDna || route?.canonicalReferenceDna;
+  if (!dna || typeof dna !== "object" || dna.complete === false) return null;
+  if (
+    !/no content|invalid json|empty|schema|incomplete|did not produce/iu.test(
+      String(error?.message || error),
+    )
+  )
+    return null;
+  return {
+    ...route,
+    referenceDna: {
+      ...dna,
+      analyzedFromEvidence: false,
+      analyzerModel: "dossier-fallback",
+      analysisFallback: String(error?.message || error).slice(0, 240),
+    },
+  };
+}
+
+/**
  * @param {Record<string, any>} pack
  * @param {{
  *   fetchImpl?: typeof fetch,
@@ -655,17 +681,31 @@ export async function enrichInspirationPack(
   }
   const routes = [];
   for (const route of pack.routes) {
-    const analyzed = await analyzeRoute(route, { fetchImpl, sleep });
-    routes.push(applyMeasuredReferenceAnalysis(route, analyzed));
+    try {
+      const analyzed = await analyzeRoute(route, { fetchImpl, sleep });
+      routes.push(applyMeasuredReferenceAnalysis(route, analyzed));
+    } catch (error) {
+      const fallback = dossierAnalysisFallback(route, error);
+      if (!fallback) throw error;
+      console.warn(
+        `reference_dna_fallback route=${route.id} source=dossier reason=${String(error?.message || error).slice(0, 200)}`,
+      );
+      routes.push(fallback);
+    }
   }
+  const usedDossierFallback = routes.some(
+    (route) => route.referenceDna?.analyzerModel === "dossier-fallback",
+  );
   return {
     ...pack,
     referenceDnaAnalyzed: true,
-    referenceDnaAnalyzerModel: routes.every(
-      (route) => route.referenceDna?.analyzerModel === "canonical-dossier",
-    )
-      ? "canonical-dossier"
-      : model,
+    referenceDnaAnalyzerModel: usedDossierFallback
+      ? "dossier-fallback"
+      : routes.every(
+            (route) => route.referenceDna?.analyzerModel === "canonical-dossier",
+          )
+        ? "canonical-dossier"
+        : model,
     routes,
   };
 }

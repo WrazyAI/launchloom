@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   buildInspirationPack,
   normalizedHeroArchetype,
+  preferPeopleFreeReferences,
   referenceStructuralDistance,
 } from "../scripts/inspiration-registry.mjs";
 import { assertIndependentRoutes } from "../scripts/creative-compiler.mjs";
@@ -28,6 +29,79 @@ const baseRequest = {
 };
 
 const temporaryRoots: string[] = [];
+
+describe("people-free plumbing references", () => {
+  const ranked = [
+    {
+      record: {
+        id: "colorlib-fixwell-quote-desk",
+        heroGeometry: "hero-integrated-quote-form",
+        imageStrategy: "bright-work-context-image-with-soft-overlay",
+      },
+    },
+    {
+      record: {
+        id: "web-homeservices-roto-rooter",
+        heroGeometry:
+          "a pale-lavender split stage pairs a service van and technician",
+        imageStrategy: "documentary van and technician photographs",
+      },
+    },
+    {
+      record: {
+        id: "web-homeservices-morris-jenkins",
+        heroGeometry: "a campaign poster places a uniformed technician",
+        imageStrategy: "technician photography",
+      },
+    },
+    {
+      record: {
+        id: "urgent-trade-service-poster",
+        heroGeometry: "problem-poster-beside-high-visibility-geometric-signal",
+        imageStrategy: "diagonal-warning-frame-and-diagnostic-ring",
+      },
+    },
+    {
+      record: {
+        id: "spicer-plumber-dispatch-console",
+        heroGeometry: "emergency-promise-beside-dispatch-console",
+        imageStrategy: "ai-generated-plumbing-scene-with-service-console",
+      },
+    },
+  ];
+
+  it("filters technician and van references for a plumbing request", () => {
+    const filtered = preferPeopleFreeReferences(ranked, {
+      industry: "home-services",
+      seed: "Alder & Iron Plumbing Co.",
+      businessFocusTerms: ["plumbing"],
+    });
+    expect(filtered.map((candidate: any) => candidate.record.id)).toEqual([
+      "colorlib-fixwell-quote-desk",
+      "urgent-trade-service-poster",
+      "spicer-plumber-dispatch-console",
+    ]);
+  });
+
+  it("keeps every reference for a non-plumbing request", () => {
+    expect(
+      preferPeopleFreeReferences(ranked, {
+        industry: "home-care",
+        seed: "Maison Orphee",
+      }),
+    ).toHaveLength(5);
+  });
+
+  it("falls back to the full pool when fewer than three people-free references remain", () => {
+    expect(
+      preferPeopleFreeReferences(ranked.slice(0, 4), {
+        industry: "home-services",
+        seed: "Alder & Iron Plumbing Co.",
+        businessFocusTerms: ["plumbing"],
+      }),
+    ).toHaveLength(4);
+  });
+});
 
 describe("inspiration registry", () => {
   function supplementalFixture() {

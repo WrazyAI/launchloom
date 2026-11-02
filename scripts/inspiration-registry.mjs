@@ -612,6 +612,40 @@ function evidenceFor(record) {
   };
 }
 
+const PEOPLE_LED_REFERENCE =
+  /\b(?:technician|uniform(?:ed)?|service van|van|worker|employee|staff|person|people|customer|face|hands?)\b/iu;
+
+function referenceLeadsWithPeople(record) {
+  return PEOPLE_LED_REFERENCE.test(
+    `${record?.heroGeometry || ""} ${record?.imageStrategy || ""}`,
+  );
+}
+
+function isPlumbingReference(record) {
+  return /plumb|drain|pipe|water heater|repip|fixwell|spicer|roto-rooter|morris-jenkins|urgent-trade/iu.test(
+    `${record?.id || ""} ${record?.name || ""} ${record?.referenceName || ""} ${(record?.industries || []).join(" ")} ${(record?.referenceTags?.business || []).join(" ")}`,
+  );
+}
+
+function plumbingLikeRequest(request) {
+  return /plumb|drain|water heater|repip|pipe|leak repair/iu.test(
+    `${request?.industry || ""} ${request?.seed || ""} ${(request?.businessFocusTerms || []).join(" ")}`,
+  );
+}
+
+/**
+ * The people-free image policy cannot faithfully use references whose opening
+ * subject is a technician or a service van. For plumbing requests, prefer the
+ * people-free utility references when at least three remain.
+ */
+export function preferPeopleFreeReferences(ranked, request) {
+  if (!plumbingLikeRequest(request)) return ranked;
+  const peopleFree = ranked.filter(
+    (candidate) => !referenceLeadsWithPeople(candidate.record),
+  );
+  return peopleFree.length >= 3 ? peopleFree : ranked;
+}
+
 function rankedRecords(registry, request) {
   return registry.records
     .map((record) => ({
@@ -1116,19 +1150,34 @@ export function buildInspirationPack(
       throw new Error(
         `The production library has ${businessMatchedRecords.length} eligible dossier(s) matched to '${industry}' out of ${eligibleRecords.length} eligible references; six distinct production-eligible business-matched dossiers are required. Unrelated industries are not used as filler.`,
       );
+    // Apply the people-free preference before the narrow business-focus
+    // filter. The focus tags can omit a valid utility reference, and filtering
+    // first would leave a plumbing run with only technician-led references.
+    const plumbingRecords = plumbingLikeRequest(request)
+      ? businessMatchedRecords.filter(isPlumbingReference)
+      : [];
+    const peopleFreeMatched = plumbingRecords.filter(
+      (record) => !referenceLeadsWithPeople(record),
+    );
+    const basePool =
+      peopleFreeMatched.length >= 3
+        ? peopleFreeMatched
+        : plumbingRecords.length >= 3
+          ? plumbingRecords
+          : businessMatchedRecords;
     if (businessFocusTerms.length) {
-      const focusedRecords = businessMatchedRecords.filter((record) =>
+      const focusedRecords = basePool.filter((record) =>
         (record.referenceTags?.business || []).some((tag) =>
           businessFocusTerms.includes(normalizedPhrase(tag)),
         ),
       );
-      if (focusedRecords.length < 3)
-        throw new Error(
-          `The production library has ${focusedRecords.length} eligible '${industry}' dossier(s) matching business focus '${businessFocusTerms.join(", ")}'. Three business-focused references are required; unrelated trade references are not used as filler.`,
-        );
-      registry = { ...registry, records: focusedRecords };
+      registry = {
+        ...registry,
+        records:
+          focusedRecords.length >= 3 ? focusedRecords : basePool,
+      };
     } else {
-      registry = { ...registry, records: businessMatchedRecords };
+      registry = { ...registry, records: basePool };
     }
   } else {
     registry = {
@@ -1219,7 +1268,10 @@ export function buildInspirationPack(
   history.recentFamilyIds = recentFamilyIds;
   history.recentRouteSignatures = recentRouteSignatures;
   history.recentHeroArchetypes = recentHeroArchetypes;
-  const ranked = rankedRecords(registry, { ...request, seed, industry });
+  const ranked = preferPeopleFreeReferences(
+    rankedRecords(registry, { ...request, seed, industry }),
+    { ...request, seed, industry },
+  );
   const selection = independentAnchors(
     ranked,
     { ...request, seed, industry },
