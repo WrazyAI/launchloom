@@ -154,3 +154,53 @@ dependency symlink and is excluded from hashing. `evidence-manifest.json` SHA-25
 `a7dcff9dcb10aa61fbbc668f791174e0f87912530ac1a0f32f9820dbe2b5a1d7`.
 Only this report is changed in the ops worktree. Work OS remains open; controller
 owns further fixes, exact follow-up review, combined verification and integration.
+
+## Final narrow confirmation: optimization excluded at `dd7a3e0d`
+
+**No blockers within this requested confirmation scope.** Exact head:
+`dd7a3e0d52086050ba2f15d2754f846e9f2abe1b`. This supersedes the above P1
+blocking disposition for the delivered tree, not the historical reproductions.
+
+- Git-object comparison confirms `scripts/rendered-contrast.mjs` equals the
+  `65cae064` version and original blob
+  `2086c26f08aa1976a6e26064e87eccea526484db` byte-for-byte. The outward-strip
+  shortcut and partial-plate exception are absent; the experimental optimization
+  was excluded, not declared safe by another patch.
+- The complete original `65cae064` contrast test file is an exact byte prefix of
+  the final file. Only fixture helpers/comments and five fail-closed browser
+  tests are appended: own shadow, hidden clipping, auto clipping, scroll clipping,
+  and descendant image shadow. No original assertion, helper or timeout changed.
+- `scripts/rendered-interaction-evidence.mjs` and
+  `scripts/client-image-snapshots.mjs` equal their independently cleared
+  `3ce39aee` blobs. P2/P3 were not retested broadly because their production
+  modules are unchanged, as requested.
+- Independently reran my own five unsafe Chromium fixtures using isolated copies
+  of the restored exact-head gate/color modules and existing ops dependencies.
+  **All five reject**, each whole report `pass:false`, focus `status:fail`, ratio
+  1, with rendered-pixel indistinguishability evidence. This establishes refusal
+  of these unsafe fixtures, not new diagnostic precision or complete focus-paint
+  coverage. No positive optimization claim is restored.
+- Inspected the later creative report/progress diff: current disposition explicitly
+  removes the optimization and supersedes earlier positive evidence. Historical
+  positive screenshots/tests are not represented as current acceptance. The
+  separate reference review/controller reference fixes remain outside this narrow
+  confirmation and were not re-reviewed or edited.
+
+Actual commands: Git-object byte comparisons (`git show`/`git cat-file`),
+`git diff 65cae064 dd7a3e0d -- tests/rendered-contrast.test.ts scripts/rendered-contrast.mjs`,
+and, with Node v22.20.0:
+
+```text
+node <evidence-root>/retest-five.mjs > <evidence-root>/retest-five.log 2>&1
+```
+
+The browser command exits **0** with assertions rejecting all five fixtures.
+Private scripts/results, exact module copies, five screenshots and full reports:
+`/home/zahemen/worktree-reconciliation-2026-11-02/validation/juniper-final-dd7a3e0d/`.
+`evidence-manifest.json` SHA-256:
+`f92aac252c2a8d0d7c5e3f4885bba832e361fcd696bf4db1345a31d93897b46d`.
+Directories/files are 0700/0600; own-dependency symlink is read-only in use and
+excluded from hashing. No full suite, build, install, runtime/data mutation,
+original/reliability access, new agent, push or deletion. Implementer full-suite
+claims are not independent evidence here. Work OS remains open for controller
+integration, combined checks and cleanup.
