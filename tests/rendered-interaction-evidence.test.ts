@@ -250,6 +250,20 @@ describe("bounded rendered interaction evidence", () => {
     expect(result.observation.restored).toBe(true);
   });
 
+  it.each([
+    ["first", true, false],
+    ["second", false, true],
+  ])(
+    "does not treat independent shared-panel toggles as exclusive when %s is pressed",
+    async (_name, firstPressed, secondPressed) => {
+      const result = await capture(
+        `<section data-purposeful-interaction><button type="button" aria-pressed="${firstPressed}" aria-controls="output">First</button><button type="button" aria-pressed="${secondPressed}" aria-controls="output">Second</button><p id="output">${firstPressed ? "First on" : "First off"}; ${secondPressed ? "Second on" : "Second off"}</p><script>const buttons=[...document.querySelectorAll('button')];for(const button of buttons)button.addEventListener('click',()=>{button.setAttribute('aria-pressed',String(button.getAttribute('aria-pressed')!=='true'));document.querySelector('#output').textContent=buttons.map(item=>item.textContent+' '+(item.getAttribute('aria-pressed')==='true'?'on':'off')).join('; ');});</script></section>`,
+      );
+      expect(result.observation.status, JSON.stringify(result)).toBe("passed");
+      expect(result.observation.restored).toBe(true);
+    },
+  );
+
   it("does not mistake independent pressed buttons without a shared panel for an exclusive selector", async () => {
     const result = await capture(
       `<section data-purposeful-interaction><button type="button" aria-pressed="true">First</button><button type="button" aria-pressed="false">Second</button><p>First enabled</p><script>document.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{const enabled=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(enabled));document.querySelector('p').textContent=button.textContent+(enabled?' enabled':' disabled');}));</script></section>`,

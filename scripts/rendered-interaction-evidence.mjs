@@ -106,16 +106,11 @@ async function snapshot(control) {
     const declaredSelector = /(?:^|-)selector$/u.test(
       group?.getAttribute("data-purposeful-interaction") || "",
     );
-    const sharedControls = peers.some(
-      (peer) =>
-        peer !== el &&
-        el.getAttribute("aria-controls") &&
-        peer.getAttribute("aria-controls") === el.getAttribute("aria-controls"),
-    );
+    // A shared output panel is not exclusive semantics: independent toggles
+    // may legitimately control the same panel. Only the explicit selector
+    // contract may choose a different peer for activation/restoration.
     const exclusive =
-      peers.length > 1 &&
-      selected.length === 1 &&
-      (declaredSelector || sharedControls);
+      peers.length > 1 && selected.length === 1 && declaredSelector;
     const panelId =
       exclusive && selected[0]
         ? selected[0].getAttribute("aria-controls")
@@ -434,17 +429,10 @@ export async function captureRenderedInteractionEvidence({
           const declaredSelector = /(?:^|-)selector$/u.test(
             group?.getAttribute("data-purposeful-interaction") || "",
           );
-          const sharedControls = peers.some(
-            (peer) =>
-              peer !== el &&
-              el.getAttribute("aria-controls") &&
-              peer.getAttribute("aria-controls") ===
-                el.getAttribute("aria-controls"),
-          );
           if (
             peers.length > 1 &&
             selected.length === 1 &&
-            (declaredSelector || sharedControls)
+            declaredSelector
           )
             return false;
         }
@@ -487,16 +475,9 @@ export async function captureRenderedInteractionEvidence({
           const declaredSelector = /(?:^|-)selector$/u.test(
             group?.getAttribute("data-purposeful-interaction") || "",
           );
-          const sharedControls = peers.some(
-            (peer) =>
-              peer !== el &&
-              el.getAttribute("aria-controls") &&
-              peer.getAttribute("aria-controls") ===
-                el.getAttribute("aria-controls"),
-          );
           return peers.length > 1 &&
             selected.length === 1 &&
-            (declaredSelector || sharedControls)
+            declaredSelector
             ? selected[0]
             : el;
         });
