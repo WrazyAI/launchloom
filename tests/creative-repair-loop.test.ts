@@ -633,6 +633,14 @@ describe("creative repair loop", () => {
     expect(findings).toEqual(original);
     expect(prompt).toContain("SOURCE SAFETY CONTRACT");
     expect(prompt).toContain("SEALED CONTENT BINDING CONTRACT");
+    expect(prompt).toContain("RENDERED DESIGN CORRECTION GUIDANCE");
+    expect(prompt).toContain(
+      "A purposeful selector must reveal useful choice-specific information",
+    );
+    expect(prompt).toContain(
+      "The data-ll-action marker is only for deliberately filled actions",
+    );
+    expect(prompt).toContain("Keep a reference-led transition");
   });
 
   it("fails closed when a human repair has no resolved section scope", async () => {

@@ -114,6 +114,28 @@ descriptions to one distinct sentence. Put supporting detail on the service
 page. Do not add decorative ordinal numbers to service or proof cards. Reserve
 numbering for a sequence where the order communicates a real process.
 
+### Reference-led composition corrections
+
+A reference-led transition keeps its editorial weight when the source proof is
+unavailable. Replace an unsupported awards or reviews strip with verified scope,
+service-area or process facts at a comparable rhythm. Never invent proof or
+leave an empty one-line divider in its place.
+
+A purposeful selector must reveal useful choice-specific information in a
+stable visible panel, expose the selected state, and support restoring the
+original choice. Changing only button styling or echoing the selected label is
+not a useful guide. Labels alone do not authorize invented service promises.
+
+The `data-ll-action` marker applies the filled action foreground and background
+pair. Use it only for deliberately filled actions, not ordinary navigation,
+wordmarks, service rows, or secondary text and phone links.
+
+For media-overlay references, preserve the focal artwork and the reference's
+open composition. Do not replace it with an oversized landing-page copy card
+that hides the media. On mobile, use an accessible compact disclosure menu when
+wrapping every navigation link would consume the opening; keep every destination
+and a usable contact route.
+
 ### Template adherence
 
 The assigned Reference DNA, Reference Dossier, and any structured route

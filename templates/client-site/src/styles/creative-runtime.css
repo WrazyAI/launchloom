@@ -1,4 +1,7 @@
 [data-creative-host="true"] {
+  /* Absolute candidate navigation belongs to the authored page, not the
+     viewport containing platform provenance/review notices. */
+  position: relative;
   width: 100%;
   max-width: 100%;
   min-width: 0;
