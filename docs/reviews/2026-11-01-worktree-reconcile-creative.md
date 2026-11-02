@@ -394,3 +394,138 @@ The preserved snapshots contain private evidence such as model prompts, usage re
 - Did not run application tests, install dependencies, start processes, generate content, push, merge, deploy, or write to production.
 
 Remaining work is reconciliation and integration, not audit. This report does not prove that any preserved work is accepted, deployed, or visually verified in its target pipeline.
+
+# Phase 2: bounded Juniper safety port
+
+Date: 2026-11-02 UTC
+Source commit audited: `4d77edc1b2840011bb39e17d9d6ce96c1350eb94`
+Phase 2 code range: `92eeb79b..1745b149`
+Final code HEAD before this report commit: `1745b1490a9e937b5040c667b33c2f532524f984`
+Base: `65cae064` plus the Phase 1 report commit `2f7e8d51`
+
+This phase ported only the still-relevant Juniper fixes. No renderer, intake,
+admin, client artifact, coffee dossier, source-first mode, or reference-library
+change was made. No original worktree, reliability worktree, shared dependency
+tree, or recovery checkpoint was modified.
+
+## Phase 2 commits
+
+| Commit | Subgroup |
+| --- | --- |
+| `92eeb79b` | Sealed client-image snapshots and offline interaction fulfillment |
+| `88ecd71b` | Exclusive pressed-selector restoration |
+| `a2566c46` | Judge-only chrome suppression and creative-host containment |
+| `edd3cbb1` | Palette-guard recognition of current contrast strings |
+| `07c40624` | Square outward focus-ring measurement from outside strips |
+| `86d2710c` | Reference-led correction guidance in normative docs and prompts |
+| `8f4bd117` | Retained-image and selector edge cases |
+| `5479137b` | Production interaction timeout in the test harness |
+| `b2676cf5` | Bounded rendered evidence capture |
+| `1745b149` | Final interaction selector and evidence coverage |
+
+The final documentation commit adds this report and the daily progress entry.
+
+## RED evidence
+
+The failures below were observed while implementing the port in the interrupted
+session before the WSL reboot. They are recorded here as implementation history,
+not as fresh post-reboot evidence. Temporary logs from that session were lost in
+the reboot. All post-reboot validation is listed separately and was rerun.
+
+| Subgroup | RED evidence before implementation |
+| --- | --- |
+| Snapshots | The new module test failed with `Cannot find module '../scripts/client-image-snapshots.mjs'`. The interaction test then failed with `csp-img-src` because the sealed asset host was not allowed, and the invalid-snapshot case did not reject the map entry. |
+| Exclusive selector | With the first option selected, activation was a no-op and the observation failed with `Activation did not change useful visible content and native/ARIA state`. With the second option selected, restoration clicked the newly selected control and failed with `Original interaction content/state did not restore`. |
+| Judge and containment | The rendered test failed at 1536 px because the authored header top was `16` while the public notice bottom was `57.4375`, proving overlap. The judge build still contained the test-preview banner and `#ll-review`. |
+| Palette guard | `findingsRequirePaletteChange` returned `false` for the exact `contrast fail: / desktop default body > main...` string produced by `contrastFailureMessages`. |
+| Outward ring | The positive image-bearing square logo fixture failed with a focus finding whose ratio was `1` and whose issues included `text paint is indistinguishable from its rendered backdrop`. The negative rounded and inset cases were already conservative. |
+| Guidance | The old Juniper contract was inspected and deliberately not transplanted because it contained opaque local-plate wording that conflicts with the current foreground-first contrast contract. |
+
+## Disposition of every `4d77edc1` hunk group
+
+| File | Disposition | Evidence and rationale |
+| --- | --- | --- |
+| `.github/agents/progress-update/UPDATE-2026-10-14.md` | Omitted from the branch | Historical ledger only. The private snapshot retains it; this report records the relevant outcome. |
+| `.github/agents/progress-update/UPDATE-2026-10-15.md` | Omitted from the branch | Historical B/C design and image-generation ledger, including the later dirty append. It is not runtime code; private artwork and screenshots remain private. |
+| `docs/site-generation-guidelines.md` | Ported and adapted | Added the `Reference-led composition corrections` section. The opaque local-plate sentence from Juniper was omitted because current guidelines already require foreground-first contrast and explicitly reject opaque per-line boxes. |
+| `docs/superpowers/plans/2026-10-15-juniper-design-corrections.md` | Intentionally omitted | A manual plan for retained B/C artifact corrections, not a runtime or template fix. It remains archived on the original branch and private snapshot. |
+| `scripts/client-image-snapshots.mjs` | Ported and expanded | New module preserves the exact host and `/intakes/<id>/<file>.<ext>` boundary, no query/hash/credentials, raster MIME restriction, redirect refusal, 5 MiB per image and 20 MiB per set, plus added bounded cache limits and poisoned-cache rejection. |
+| `scripts/creative-authoring-output.mjs` | Intentionally not transplanted as a new contract | The old exported contract contained conflicting opaque-plate wording. Equivalent bounded guidance was added inline to the current author and repair prompts, so no new imported VM binding is required. |
+| `scripts/creative-repair-loop.mjs` | Ported and adapted | Added the current-contract `RENDERED DESIGN CORRECTION GUIDANCE` block. No new contract import and no shared test edit. |
+| `scripts/production-experience-author.mjs` | Ported and adapted | Added four author-rule lines for selector usefulness, reference-led transitions, `data-ll-action` semantics, and media-overlay composition. Opaque per-line/control plate wording was not introduced. |
+| `scripts/rendered-contrast.mjs` | Ported and adapted | Square outward image-bearing rings now measure four outside strips; wrapper plates identical to a proven opaque parent are allowed only with no shadow, pseudo paint, or intersecting media; non-ancestor paint crossing a strip becomes unresolved and pixel-resolved. Rounded and inset paths remain conservative. No threshold changed. |
+| `scripts/rendered-interaction-evidence.mjs` | Ported and adapted | Added exact retained-image fulfillment, provenance digests, conditional asset-host CSP, exclusive pressed-selector detection, selected-peer panel scope, and original-choice restoration. Independent toggles and tabs retain their behavior. |
+| `scripts/run-creative-bakeoff.mjs` | Ported and adapted | Creates one bounded snapshot cache per bakeoff, snapshots the current content manifest values, and passes exact retained bytes into each interaction capture. |
+| `scripts/run-rendered-creative-repair.mjs` | Ported | Added the exact body-target `contrast fail`/`contrast unresolved` prefix guard. Control-only and incidental contrast wording remain locked. |
+| `templates/client-site/src/layouts/SiteLayout.astro` | Ported and adapted | The test-preview notice and `ReviewBanner` are suppressed in judge builds only. Normal diagnostic and test-preview notices remain visible. |
+| `templates/client-site/src/styles/creative-runtime.css` | Ported | Added `position: relative` to the creative host so absolute candidate navigation is contained below platform notices. |
+| `tests/client-image-snapshots.test.ts` | Ported and expanded | 12 tests cover URL trust, raster type, redirects, per-image and per-set caps, URL-count cap, cache eviction, poisoned cache, HTTP failure, and cache reuse. |
+| `tests/creative-repair-loop.test.ts` | Ported equivalent | Asserts the repair prompt carries the new selector, action, and transition guidance. The media-overlay sentence is present in the prompt but is not separately asserted. |
+| `tests/creative-runtime-containment.test.ts` | Replaced | The old raw CSS-only test is replaced by `tests/creative-preview-safety.test.ts`, which builds the real Astro shell at desktop, compact, and mobile and checks both normal and judge builds. |
+| `tests/pipeline-test-rendered.test.ts` | Intentionally not expanded | The dedicated preview-safety test covers judge-normal, judge-clean, and containment behavior directly. Existing normal pipeline profiles remain unchanged and pass. |
+| `tests/production-experience-author.test.ts` | Intentionally not copied | The old exact contract assertions no longer apply because the contract wording was intentionally changed. Author and provider-free suites pass; no exact prompt-wording assertion was added for the new inline rules. |
+| `tests/rendered-contrast.test.ts` | Ported and expanded | Seven ring tests plus a three-viewport evidence test cover positive outside paint, same-paint wrapper, rounded, inset, shadow, different paint, and occlusion. |
+| `tests/rendered-creative-repair.test.ts` | Ported equivalent | Tests the current `contrastFailureMessages` producer directly and confirms body findings unlock palette repair while control-only findings stay locked. |
+| `tests/rendered-interaction-evidence.test.ts` | Ported and expanded | 29 tests cover snapshots, exact URL rejection, image beacons, exclusive selectors with and without `aria-controls`, independent toggles, tabs, restoration, and the production timeout. |
+
+## Fresh post-reboot validation
+
+All commands used `/home/zahemen/.nvm/versions/node/v22.20.0/bin` on the final
+source. Evidence is under
+`/home/zahemen/worktree-reconciliation-2026-11-01/validation/creative/`.
+
+| Check | Result |
+| --- | --- |
+| `npm test -- --maxWorkers=2` | **Pass**: 176 files passed, 7 skipped; 2,807 tests passed, 101 skipped; exit 0. Log: `logs/full-npm-test-maxworkers2.log`. |
+| `npm run check` | **Pass**: 495 files, 0 errors, 0 warnings, 11 pre-existing hints. Log: `logs/npm-run-check-final.log`. |
+| `npm run check:worker` | **Pass**. Log: `logs/npm-run-check-worker-final.log`. |
+| `npm run build` | **Pass**: 4 pages built. Log: `logs/npm-run-build-final.log`. |
+| `npm run build:design-demos` | **Pass** after installing the template's locked dependencies; home-care and garage-door demos built. The temporary template dependency copy was removed afterward. Log: `logs/npm-run-build-design-demos.log`. |
+| Focused changed-area suites | Pass: snapshots 12, interaction 29, preview safety 1, contrast 63, creative repair 73, promotion 24, companion routes plus sync and contrast 83, diagnostic plus static contrast 12, config/recipe/contrast/repair 222, provider-free plus author 237. |
+
+Earlier full-suite attempts are retained as failed evidence, not final proof:
+`logs/full-npm-test.log`, `logs/full-npm-test-final.log`, and
+`logs/full-npm-test-final2.log`. They contain timeouts and a temporary dual
+React copy from the template dependency install; the final passing run uses the
+root locked dependency tree and no template `node_modules`.
+
+## Rendered verification
+
+The private evidence directory contains:
+
+- `preview/test-preview-{1536,1366,390}.png`: normal test-preview builds with the public notice visible and the authored header below it. Geometry: notice bottom `57.9375` and header top `73.9375` at 1536 and 1366; notice bottom `114.5` and header top `130.5` at 390.
+- `preview/judge-{1536,1366,390}.png`: judge builds with no test-preview banner and no `#ll-review` chrome. Header top is `16` inside the relative creative host.
+- `interaction/{desktop,compact,mobile}-{before,after}.png`: exclusive selector before and after activation. The "before" state shows the selected second step; "after" shows the first step. The test also asserts restoration to the second step.
+- `focus/{desktop,compact,mobile}.png`: image-bearing square logo with an outward focus ring. The ring is visible against the surrounding surface at all three widths.
+
+The screenshots were inspected after generation. They are synthetic fixture
+evidence, not client or production evidence.
+
+## Security and review notes
+
+- Snapshot requests are server-side only and limited to the exact sealed intake
+  host and path shape. The browser never receives arbitrary URLs; exact retained
+  bytes are fulfilled only for image GET requests, with redirects refused,
+  raster MIME enforced, per-image and per-set byte caps, and a bounded cache.
+- The CSP allows the asset host only when at least one snapshot exists, and the
+  route still aborts any non-exact request. A page cannot use the widened host
+  entry to reach an arbitrary asset.
+- Snapshot bytes are not decoded to verify their internal image format; the
+  provider MIME and byte caps are the current trust boundary. Independent review
+  should confirm that this is acceptable for retained client uploads.
+- The contrast fix does not lower any threshold. It restricts the outward-strip
+  path to square image-bearing controls, preserves conservative rounded/inset
+  behavior, and turns any non-ancestor paint crossing the ring into an
+  unresolved finding resolved from pixels.
+- Judge suppression is limited to judge builds. Normal test-preview notices,
+  noindex behavior, and disabled forms remain.
+- No shared test was edited. The new guidance is inline, so no VM binding change
+  is required. If the controller promotes it to an exported contract later, the
+  shared provider-free VM would need that binding added once.
+- Cross-stream requirement: the template demo build needs
+  `templates/client-site/node_modules` installed from its lockfile. It is absent
+  now to keep the root test environment on a single React copy; integration
+  should install it only for the template build and remove it before root tests.
+- Remaining work is independent review by Sol, controller integration, and CI or
+  deployment verification. The Work OS subtask remains open until that
+  integration is verified.
