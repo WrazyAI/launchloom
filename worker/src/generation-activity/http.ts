@@ -7,6 +7,7 @@ import type {
   TraceIdentity,
 } from "../../../src/lib/generation-activity";
 import {
+  activityWorkflowPolicy,
   OperationsAuthError,
   trustedWorkflowRun,
   type WorkflowPolicy,
@@ -182,7 +183,11 @@ export async function generationActivityIngest(
 
   let run;
   try {
-    run = await trustedWorkflowRun(request, env, dependencies.policy);
+    run = await trustedWorkflowRun(
+      request,
+      env,
+      dependencies.policy ?? activityWorkflowPolicy(env),
+    );
   } catch (error) {
     if (error instanceof OperationsAuthError)
       return workspaceError("unauthorized", "Unauthorized.", 401);

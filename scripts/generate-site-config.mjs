@@ -3445,6 +3445,21 @@ export async function generateSiteConfigWithModel(intake, model = siteCopyDefaul
   } else if (!process.env.OPENROUTER_API_KEY) {
     throw new Error("OPENROUTER_API_KEY is required to generate client copy.");
   }
+  const activity = processActivity({
+    stage: "site_config",
+    actor: { kind: "model", role: "site_copy" },
+  });
+  activity.emit("coverage", {
+    boundary: "action.site_config",
+    status: provider === "opencode-go" ? "instrumented" : "limited",
+    detail:
+      provider === "opencode-go"
+        ? null
+        : {
+            kind: "text",
+            text: "Legacy OpenRouter copy dispatch is not instrumented.",
+          },
+  });
   const groundedIntake = prepareGenerationIntake(intake);
   let draft;
   let modelOutput;

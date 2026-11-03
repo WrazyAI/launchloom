@@ -96,7 +96,7 @@ async function token(overrides: Record<string, unknown> = {}) {
   return `${header}.${body}.${base64url(new Uint8Array(signature))}`;
 }
 
-function policy(): WorkflowPolicy {
+function policy(overrides: Partial<WorkflowPolicy> = {}): WorkflowPolicy {
   return {
     issuer: GITHUB_OIDC_ISSUER,
     audience,
@@ -107,6 +107,7 @@ function policy(): WorkflowPolicy {
     eventName: OPERATIONS_EVENT,
     now,
     keys,
+    ...overrides,
   };
 }
 
@@ -302,6 +303,32 @@ describe("generation activity ingest", () => {
     );
     expect(sharedSecret.status).toBe(401);
     expect(store.appended).toHaveLength(0);
+  });
+
+  it("accepts both trusted main-branch generation entry points", async () => {
+    const store = new FakeStore();
+    const identity = { namespace: "operations" as const, attemptId };
+    for (const event_name of ["workflow_dispatch", "repository_dispatch"]) {
+      const response = await generationActivityIngest(
+        ingestRequest(
+          { identity, events: eventsFor(identity) },
+          { Authorization: `Bearer ${await token({ event_name })}` },
+        ),
+        enabledEnv,
+        { store, policy: policy({ eventNames: ["workflow_dispatch", "repository_dispatch"] }) },
+      );
+      expect(response.status).toBe(200);
+    }
+    expect(store.appended).toHaveLength(2);
+    const rejected = await generationActivityIngest(
+      ingestRequest(
+        { identity, events: eventsFor(identity) },
+        { Authorization: `Bearer ${await token({ event_name: "push" })}` },
+      ),
+      enabledEnv,
+      { store, policy: policy({ eventNames: ["workflow_dispatch", "repository_dispatch"] }) },
+    );
+    expect(rejected.status).toBe(401);
   });
 
   it("rejects extra envelope fields and mismatched event identity", async () => {

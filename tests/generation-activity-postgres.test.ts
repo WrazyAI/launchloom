@@ -325,6 +325,11 @@ describe.skipIf(!url)("generation activity persistence", () => {
     const finished = await store.append(owner, [
       event(attemptId, 3, {
         kind: "producer_finished",
+        context: {
+          ...traceEvent().context,
+          attemptId,
+          actor: { kind: "orchestrator", role: "run_finalizer" },
+        },
         payload: { status: "incomplete", detail: null },
       }),
     ]);

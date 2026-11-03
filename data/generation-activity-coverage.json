@@ -77,50 +77,50 @@
       "id": "action.workflow_stage",
       "kind": "stage",
       "source": "scripts/record-generation-stage.mjs",
-      "status": "unsupported",
-      "detail": "Existing lifecycle stage transitions; activity mirrors them without replacing lifecycle authority."
+      "status": "not_applicable",
+      "detail": "Lifecycle stage evidence stays authoritative in the existing stage timeline; the diagnostic trace does not duplicate it."
     },
     {
       "id": "action.site_config",
       "kind": "action",
       "source": "scripts/generate-site-config.mjs",
-      "status": "unsupported",
-      "detail": "Configuration and copy compilation."
+      "status": "instrumented",
+      "detail": "OpenCode Go copy dispatch is observed. The legacy OpenRouter copy dispatch remains limited and reports coverage status limited."
     },
     {
       "id": "action.contextual_imagery",
       "kind": "action",
       "source": "scripts/generate-contextual-assets.mjs",
-      "status": "unsupported",
-      "detail": "Image generation and reviewed fallback selection."
+      "status": "limited",
+      "detail": "Image generation is orchestrated by an uninstrumented script in this version."
     },
     {
       "id": "action.creative_authoring",
       "kind": "action",
       "source": "scripts/author-production-experiences.mjs",
-      "status": "unsupported",
-      "detail": "Independent candidate authoring and bounded repair."
+      "status": "instrumented",
+      "detail": "Candidate authoring is wrapped as a real pipeline action; each model dispatch is observed separately."
     },
     {
       "id": "action.creative_render_repair",
       "kind": "action",
       "source": "scripts/run-rendered-creative-repair.mjs",
-      "status": "unsupported",
-      "detail": "Rendered candidate checks and repair passes."
+      "status": "limited",
+      "detail": "Rendered repair is orchestrated by an uninstrumented script in this version."
     },
     {
       "id": "action.preview_deploy",
       "kind": "action",
       "source": ".github/workflows/generate-client.yml",
-      "status": "unsupported",
-      "detail": "Preview build and deployment orchestrated by the workflow."
+      "status": "limited",
+      "detail": "The workflow shell deploys the preview; no diagnostic producer runs inside the deployment step."
     },
     {
       "id": "action.handoff_telemetry",
       "kind": "action",
       "source": "scripts/record-operations-telemetry.mjs",
       "status": "not_applicable",
-      "detail": "Authoritative lifecycle telemetry. Activity must never duplicate or weaken it."
+      "detail": "Authoritative lifecycle telemetry must never depend on the diagnostic trace."
     },
     {
       "id": "action.github_job_scheduling",
@@ -128,6 +128,13 @@
       "source": "GitHub Actions",
       "status": "unsupported",
       "detail": "Queue time before a job starts is not observable from inside the run."
+    },
+    {
+      "id": "workflow.finalizer",
+      "kind": "stage",
+      "source": "scripts/finalize-generation-activity.mjs",
+      "status": "instrumented",
+      "detail": "The only producer allowed to declare the trace complete; runs after every workflow outcome."
     }
   ]
 }

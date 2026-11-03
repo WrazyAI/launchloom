@@ -52,6 +52,8 @@ export type WorkflowPolicy = {
   workflowRef: string;
   ref: string;
   eventName: string;
+  /** Optional explicit allowlist; defaults to exactly `eventName`. */
+  eventNames?: string[];
   maxTokenAgeSeconds?: number;
   now?: () => number;
   keys?: GitHubOidcKey[];
@@ -278,7 +280,9 @@ export async function verifyRunIdentity(
 
   if (claims.ref !== policy.ref) deny("ref");
   if (claims.ref_type !== "branch") deny("ref");
-  if (claims.event_name !== policy.eventName) deny("event");
+  const allowedEvents = policy.eventNames ?? [policy.eventName];
+  if (typeof claims.event_name !== "string" || !allowedEvents.includes(claims.event_name))
+    deny("event");
 
   const runId = exactString(claims.run_id);
   if (!runId || !/^[1-9][0-9]{0,19}$/u.test(runId)) deny("run");
@@ -615,4 +619,19 @@ export async function operationsEvent(
   } catch {
     return reply({ error: "unavailable" }, 503);
   }
+}
+
+/**
+ * Diagnostic activity ingest accepts the two trusted main-branch entry points
+ * used by the generation workflow. Every other claim check stays identical to
+ * the lifecycle policy.
+ */
+export function activityWorkflowPolicy(env: {
+  OPERATIONS_OIDC_AUDIENCE?: string;
+  OPERATIONS_OIDC_REPOSITORY_ID?: string;
+}): WorkflowPolicy {
+  return {
+    ...operationsWorkflowPolicy(env),
+    eventNames: [OPERATIONS_EVENT, "repository_dispatch"],
+  };
 }

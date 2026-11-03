@@ -29,6 +29,7 @@ import {
   creativeServicePageShape,
 } from "./production-experience-author.mjs";
 import { activityFromEnv } from "./generation-activity-context.mjs";
+import { observePipelineAction } from "./generation-activity-action.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
@@ -112,6 +113,12 @@ const promptEvidence = [];
 const activity = activityFromEnv(process.env, {
   stage: "authoring",
   actor: { kind: "model", role: "candidate_author" },
+});
+
+activity.emit("coverage", {
+  boundary: "action.creative_authoring",
+  status: "instrumented",
+  detail: null,
 });
 
 function activityContext(request) {
@@ -994,13 +1001,23 @@ try {
     fs.readFile(inspirationPath, "utf8").then(JSON.parse),
   ]);
   assertReferenceDossierPack(inspirationPack);
-  const result = await authorExperienceCandidates({
-    site,
-    inspirationPack,
-    generate: requestStage,
-    model,
-    creativeSession,
-    testProfile: testPolicy.profile,
+  const result = await observePipelineAction({
+    producer: activity,
+    actionId: "authoring:candidates",
+    name: "author_candidates",
+    input: { step: "authoring" },
+    invoke: () =>
+      authorExperienceCandidates({
+        site,
+        inspirationPack,
+        generate: requestStage,
+        model,
+        creativeSession,
+        testProfile: testPolicy.profile,
+      }),
+    projectResult: (value) => ({
+      count: Array.isArray(value?.candidates) ? value.candidates.length : 0,
+    }),
   });
   await writeResult(result);
   console.log(`production_experience_candidates=${outputPath}`);

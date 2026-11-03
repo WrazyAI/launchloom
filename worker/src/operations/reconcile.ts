@@ -4,6 +4,7 @@ import {
   operationsDatabaseSql,
   type OperationsSql,
 } from "./store";
+import { createGenerationActivityStore } from "../generation-activity/store";
 
 export type ReconcileResult = "updated" | "unchanged" | "attention";
 type Snapshot = { attemptId: string; run: RunIdentity | null; state: string };
@@ -219,6 +220,7 @@ export async function operationsResolutionApi(
 }
 
 export type ReconciliationEnvironment = {
+  GENERATION_ACTIVITY_ENABLED?: string;
   OPERATIONS_RECONCILE_MODE?: string;
   OPERATIONS_DATABASE_URL?: string;
   OPERATIONS_DISPATCH_REPOSITORY?: string;
@@ -266,6 +268,29 @@ export async function operationsAdminApi(
     return reply({ error: "unavailable" }, 503);
   }
 }
+/**
+ * Bounded retention for diagnostic trace content. Deliberately isolated from
+ * reconciliation: a trace failure never blocks lifecycle verification, and no
+ * lifecycle or cost row is ever deleted here.
+ */
+export async function pruneGenerationActivity(
+  env: { GENERATION_ACTIVITY_ENABLED?: string },
+  sql: OperationsSql,
+): Promise<{ deleted: number; batches: number }> {
+  if (env.GENERATION_ACTIVITY_ENABLED !== "true")
+    return { deleted: 0, batches: 0 };
+  const store = createGenerationActivityStore(sql);
+  let deleted = 0;
+  let batches = 0;
+  for (let index = 0; index < 5; index += 1) {
+    const result = await store.pruneExpired(100);
+    batches += 1;
+    deleted += result.deleted;
+    if (!result.hasMore) break;
+  }
+  return { deleted, batches };
+}
+
 export async function scheduledReconciliation(
   env: ReconciliationEnvironment,
   sql?: OperationsSql,
@@ -294,4 +319,19 @@ export async function scheduledReconciliation(
         attemptId: alert.attemptId,
       }),
     );
+  // Retention is independent housekeeping; never let it block reconciliation.
+  await runGenerationActivityPrune(env, connection);
+}
+
+/** Non-throwing scheduled wrapper; retention failure is reported, not fatal. */
+export async function runGenerationActivityPrune(
+  env: { GENERATION_ACTIVITY_ENABLED?: string },
+  sql: OperationsSql,
+): Promise<{ deleted: number; batches: number }> {
+  try {
+    return await pruneGenerationActivity(env, sql);
+  } catch {
+    console.warn("generation_activity_prune=failed");
+    return { deleted: 0, batches: 0 };
+  }
 }

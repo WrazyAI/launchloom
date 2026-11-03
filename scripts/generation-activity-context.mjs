@@ -35,7 +35,9 @@ export function activityIdentity(env = process.env) {
   const namespace = env.OPERATION_ID ? "operations" : "legacy";
   if (namespace === "operations" && !UUID.test(attemptId)) return null;
   if (namespace === "legacy" && !LEGACY_ATTEMPT.test(attemptId)) return null;
-  const producerId = UUID.test(String(env.GENERATION_ACTIVITY_PRODUCER_ID || ""))
+  const producerId = UUID.test(
+    String(env.GENERATION_ACTIVITY_PRODUCER_ID || ""),
+  )
     ? String(env.GENERATION_ACTIVITY_PRODUCER_ID)
     : crypto.randomUUID();
   return { namespace, attemptId, producerId };
@@ -96,10 +98,7 @@ export function createFileSpool({
   return {
     async write(events) {
       await fsImpl.mkdir(dir, { recursive: true, mode: 0o700 });
-      const file = path.join(
-        dir,
-        `batch-${now()}-${randomUUID()}.json`,
-      );
+      const file = path.join(dir, `batch-${now()}-${randomUUID()}.json`);
       await fsImpl.writeFile(file, JSON.stringify(events), { mode: 0o600 });
       if (written) await fsImpl.rm(written, { force: true });
       written = file;
@@ -137,7 +136,11 @@ export function noopActivityProducer() {
  * Build the producer for one runner process. Disabled or incomplete
  * configuration yields a no-op so generation behavior is unchanged.
  */
-export function activityFromEnv(env = process.env, semantic = {}, dependencies = {}) {
+export function activityFromEnv(
+  env = process.env,
+  semantic = {},
+  dependencies = {},
+) {
   if (env.GENERATION_ACTIVITY_ENABLED !== "true") return noopActivityProducer();
   const identity = activityIdentity(env);
   if (!identity) return noopActivityProducer();
@@ -154,7 +157,9 @@ export function activityFromEnv(env = process.env, semantic = {}, dependencies =
     allowSourceText: true,
     sensitiveValues: [
       ...collectSensitiveValues(env),
-      ...(Array.isArray(semantic.sensitiveValues) ? semantic.sensitiveValues : []),
+      ...(Array.isArray(semantic.sensitiveValues)
+        ? semantic.sensitiveValues
+        : []),
     ],
   });
   return createActivityProducer({
@@ -171,9 +176,7 @@ export function activityFromEnv(env = process.env, semantic = {}, dependencies =
     privacy,
     transport:
       transport ?? createActivityTransport({ env, identity, fetchImpl }),
-    spool: spoolDir
-      ? createFileSpool({ dir: spoolDir, fsImpl })
-      : undefined,
+    spool: spoolDir ? createFileSpool({ dir: spoolDir, fsImpl }) : undefined,
     clock,
     limits: TRACE_LIMITS,
   });

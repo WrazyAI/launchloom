@@ -322,6 +322,8 @@ jobs:
         shell: bash scripts/private-run.sh {0}
     env:
       OPERATION_ID: ${{ inputs.operation_id }}
+      # Diagnostic only. Off by default; never affects generation outcomes.
+      GENERATION_ACTIVITY_ENABLED: ${{ vars.GENERATION_ACTIVITY_ENABLED || 'false' }}
       OPERATIONS_API_URL: ${{ vars.LAUNCHLOOM_OPERATIONS_API_URL || vars.LAUNCHLOOM_API_URL || 'https://api.launchloom.wrazyos.com' }}
       OPERATIONS_OIDC_AUDIENCE: ${{ vars.OPERATIONS_OIDC_AUDIENCE || 'launchloom-operations' }}
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
@@ -1578,3 +1580,12 @@ jobs:
             --failure-category "$FAILURE_CATEGORY" \
             --failure-next-step "Inspect the Actions run and the private candidate evidence." \
             --completed-at "$(date +%s%3N)"
+
+      - name: Finalize generation activity
+        # Diagnostic evidence only. Runs after every outcome, never fails the job,
+        # and is the only producer allowed to declare the trace complete.
+        if: ${{ always() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') }}
+        continue-on-error: true
+        env:
+          GENERATION_OUTCOME: ${{ job.status }}
+        run: node scripts/finalize-generation-activity.mjs

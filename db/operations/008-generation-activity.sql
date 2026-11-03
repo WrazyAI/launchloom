@@ -277,12 +277,16 @@ BEGIN
         )
         ON CONFLICT (namespace, attempt_id, call_id) DO NOTHING;
       ELSIF v_kind = 'producer_finished' THEN
-        v_partition.producer_finished := true;
-        v_recording := CASE
-          WHEN v_event->'payload'->>'status' = 'complete' THEN 'complete'
-          ELSE 'incomplete'
-        END;
-        v_partition.recording := v_recording;
+        -- Only the run finalizer may declare the whole trace complete. A
+        -- per-script producer finishing early must not close the recording.
+        IF (v_event->'context'->'actor'->>'role') = 'run_finalizer' THEN
+          v_partition.producer_finished := true;
+          v_recording := CASE
+            WHEN v_event->'payload'->>'status' = 'complete' THEN 'complete'
+            ELSE 'incomplete'
+          END;
+          v_partition.recording := v_recording;
+        END IF;
       END IF;
     ELSE
       -- A repeated event ID with identical evidence is an idempotent delivery
