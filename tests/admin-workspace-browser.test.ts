@@ -2661,6 +2661,35 @@ describe("real admin workspace browser behavior", () => {
     }
   });
 
+  it("keeps a long inviting-admin address inside its column", async () => {
+    const { page, errors } = await openPage({
+      viewport: { width: 1512, height: 960 },
+      path: "/admin/onboarding-invites?view=clients",
+    });
+    try {
+      await waitForClients(page);
+      const row = page.locator(".admin-client-table tbody tr").first();
+      await row
+        .locator("td:nth-child(4) .admin-actor__name")
+        .evaluate((element) => {
+          element.textContent = "intake-flow-1792764962080@launchloom.test";
+        });
+      const admin = await row.locator("td:nth-child(4)").boundingBox();
+      const action = await row.locator("td:nth-child(5)").boundingBox();
+      expect(admin).not.toBeNull();
+      expect(action).not.toBeNull();
+      expect(admin!.x + admin!.width).toBeLessThanOrEqual(action!.x + 1);
+      expect(
+        await row
+          .locator("td:nth-child(4)")
+          .evaluate((element) => element.scrollWidth - element.clientWidth),
+      ).toBeLessThanOrEqual(1);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
   it("shows the site status as a labelled pill that stays inside a mobile card", async () => {
     const { page, errors } = await openPage({
       viewport: { width: 390, height: 844 },
