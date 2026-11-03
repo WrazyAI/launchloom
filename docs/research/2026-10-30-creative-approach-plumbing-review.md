@@ -321,6 +321,14 @@ happening, and what comes next"; the fixed module produced zero findings and
 passed. The new positive and fail-closed regression tests pass, and the six
 contrast test files pass 128 tests.
 
+Commit `c32fa415` adds deterministic rendered failures for the two content
+placeholders: a purposeful selector whose default panel only repeats the
+section heading and intro, and a media or poster frame with no image, label, or
+caption. Both now fail the bakeoff before the visual judge, and the authoring
+and repair prompts carry the same rules. On the selected candidate the detector
+reports one hollow panel and one empty media frame on the home page, and zero
+of both on the service detail page.
+
 ## Boundaries
 
 This is an owned fictional QA intake. No public production, no invented
