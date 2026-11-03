@@ -180,6 +180,30 @@ describe("rendered contrast independent of authored classes", () => {
     );
   });
 
+  it("does not repeat a newly overlapping out-of-scope heading on focus", async () => {
+    const report = await scan(
+      `<style>body{margin:0;background:#fff;color:#000}.wrap:focus-within .overlay{display:block}.overlay{display:none;height:1800px;margin-bottom:-1800px;background:#fff}.heading{background:#fff;color:#000;padding:12px}button{background:#fff;color:#000;margin:12px}button:focus-visible{outline:2px solid #000}</style><div class="wrap"><button type="button">Continue</button><div class="overlay"></div><h2 class="heading">Readable heading</h2></div>`,
+    );
+    expect(
+      report.findings.filter((finding) => finding.text === "Readable heading"),
+    ).toEqual([]);
+  });
+
+  it("still fails an out-of-scope heading whose backdrop darkens on focus", async () => {
+    const report = await scan(
+      `<style>body{margin:0;background:#fff;color:#000}.wrap:focus-within .overlay{display:block}.wrap:focus-within .heading{background:#000;color:#000}.overlay{display:none;height:1800px;margin-bottom:-1800px;background:#fff}.heading{background:#fff;color:#000;padding:12px}button{background:#fff;color:#000;margin:12px}button:focus-visible{outline:2px solid #000}</style><div class="wrap"><button type="button">Continue</button><div class="overlay"></div><h2 class="heading">Out-of-scope heading that must stay readable</h2></div>`,
+    );
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Out-of-scope heading that must stay readable",
+          state: "focus",
+          status: "fail",
+        }),
+      ]),
+    );
+  });
+
   it("leaves a fully offscreen partial plate to the default state", async () => {
     const report = await scan(
       `<style>body{margin:0;background:#fff;color:#000}.spacer{height:1200px}.plate{width:40px;background:#fff}.overflow{display:block;width:320px;color:#000;background:transparent}button{background:#fff;color:#000}button:focus-visible{outline:2px solid #000}</style><button type="button">Continue</button><div class="spacer"></div><div class="plate"><span class="overflow">Offscreen text</span></div>`,
@@ -659,8 +683,7 @@ it("keeps trades inner-hero labels and keyboard focus readable on the dark surfa
 // experimental focus-ring optimization is omitted.
 const reviewLogoImage =
   "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22%3E%3Crect width=%2280%22 height=%2280%22 fill=%22%23205d51%22/%3E%3C/svg%3E";
-const reviewLogoButton =
-  `<button class="logo" aria-label="Home"><img src="${reviewLogoImage}" alt=""></button>`;
+const reviewLogoButton = `<button class="logo" aria-label="Home"><img src="${reviewLogoImage}" alt=""></button>`;
 const reviewLogoCss =
   ".logo{display:flex;align-items:center;justify-content:center;width:120px;height:120px;padding:0;border:0;background:#fff;color:#111}.logo img{display:block;width:80px;height:80px}.logo:focus-visible{outline:2px solid #111;outline-offset:3px}";
 
