@@ -61,6 +61,14 @@ jobs:
       LAUNCHLOOM_ADMIN_ORIGIN: ${{ vars.ADMIN_PUBLIC_ORIGIN || 'https://api.launchloom.wrazyos.com' }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
+      # uploadLiveCandidatePreview needs the API URL and the focused attempt
+      # identity. The run id and attempt come from GitHub; these values bind
+      # the live thumbnail to this exact focused run.
+      LAUNCHLOOM_API_URL: ${{ vars.LAUNCHLOOM_API_URL || 'https://api.launchloom.wrazyos.com' }}
+      TRACK_PROFILE: ${{ inputs.test_profile }}
+      TRACK_ISSUE: ${{ inputs.issue }}
+      TRACK_ATTEMPT: github:${{ github.run_id }}:${{ github.run_attempt }}
+      TRACK_ACTOR: ${{ github.triggering_actor }}
       GITHUB_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}

@@ -498,6 +498,7 @@ describe("rendered creative repair orchestration", () => {
           GENERATION_TRACKING_SECRET: "secret",
           LAUNCHLOOM_API_URL: "https://api.example.test",
           TRACK_PROFILE: "creative-only",
+          TRACK_ISSUE: "217",
           GITHUB_RUN_ID: "9001",
           GITHUB_RUN_ATTEMPT: "2",
         },
@@ -522,6 +523,7 @@ describe("rendered creative repair orchestration", () => {
       expect(records[0]).toMatchObject({
         stage: "creative_render",
         status: "running",
+        issue: "217",
       });
     } finally {
       await fs.rm(dir, { recursive: true, force: true });

@@ -1143,6 +1143,7 @@ export async function uploadLiveCandidatePreview({
       stage: "creative_render",
       status: "running",
       detail: `Live candidate preview: ${candidate.candidateId}.`,
+      issue: String(env.TRACK_ISSUE || "").trim(),
       env,
     }),
   ).catch(() => {});
