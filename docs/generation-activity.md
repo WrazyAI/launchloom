@@ -81,7 +81,12 @@ an action, not a model tool call. Provider-hosted tool execution is unsupported.
   reaches the spool, network or storage.
 - Known secret values from the runner environment and any caller-supplied private
   values are removed by exact match before truncation, so a credential spanning
-  the truncation boundary cannot leak a prefix.
+  the truncation boundary cannot leak a prefix. The site-config and authoring
+  steps add the intake business phone, email and address as exact private values
+  before model text is emitted.
+- Contact-shaped values in failures and labels are replaced with
+  `(email redacted)` / `(phone redacted)`. Public business contact copy in model
+  output is retained for review, because that copy is intended for the site.
 - Provider credentials, authorization headers, environment dumps, raw prompts,
   private intake contact fields, invitation/session/review tokens and private
   reasoning are not stored.

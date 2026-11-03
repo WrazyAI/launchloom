@@ -3460,6 +3460,10 @@ export async function generateSiteConfigWithModel(intake, model = siteCopyDefaul
             text: "Legacy OpenRouter copy dispatch is not instrumented.",
           },
   });
+  const business = intake?.business || {};
+  activity.addSensitiveValues(
+    [business.phone, business.email, business.address].filter(Boolean),
+  );
   const groundedIntake = prepareGenerationIntake(intake);
   let draft;
   let modelOutput;

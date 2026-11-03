@@ -115,6 +115,7 @@ export function noopActivityProducer() {
   const noop = {
     context: () => null,
     withContext: () => noop,
+    addSensitiveValues: () => {},
     emit: () => false,
     flush: async () => {},
     close: async () => {},

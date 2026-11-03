@@ -223,6 +223,23 @@ describe("generation activity producer", () => {
     expect(stats.rejected).toBe(0);
   });
 
+  it("removes private values discovered after producer creation", async () => {
+    const { producer, sent } = harness();
+    producer.addSensitiveValues(["Private Contact 555-0199"]);
+    producer.emit("output", {
+      callId: BASE_CALL_ID,
+      message: {
+        kind: "text",
+        text: "Reach Private Contact 555-0199 before publishing.",
+      },
+    });
+    await vi.advanceTimersByTimeAsync(TRACE_LIMITS.flushIntervalMs);
+    const text = JSON.stringify(sent);
+    expect(text).not.toContain("Private Contact 555-0199");
+    expect(text).toContain("[redacted]");
+    await producer.close();
+  });
+
   it("unrefs its periodic timers so a script can exit", () => {
     const handles: { unref: ReturnType<typeof vi.fn> }[] = [];
     const clock = {

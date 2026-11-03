@@ -50,6 +50,13 @@ export function createActivityProducer({
   limits,
 }) {
   const base = { ...context };
+  // Mutable copy so callers can add exact private values discovered later
+  // (for example intake contact fields) without rebuilding the producer.
+  const effectivePrivacy = {
+    allowedFields: privacy.allowedFields,
+    sensitiveValues: [...privacy.sensitiveValues],
+    allowSourceText: privacy.allowSourceText,
+  };
   let sequence = 0;
   let queue = [];
   let queueBytes = 0;
@@ -133,7 +140,7 @@ export function createActivityProducer({
           kind,
           payload,
         },
-        privacy,
+        effectivePrivacy,
       );
     } catch {
       // Diagnostic evidence must never break generation, and an invalid event
@@ -245,10 +252,27 @@ export function createActivityProducer({
       return {
         context: () => ({ ...base, ...overrides }),
         emit: (kind, payload) => emit(kind, payload, { context: overrides }),
+        addSensitiveValues: (values) => api.addSensitiveValues(values),
         flush,
         close: async () => {},
         stats: () => api.stats(),
       };
+    },
+    addSensitiveValues(values) {
+      let changed = false;
+      for (const value of values || []) {
+        if (typeof value !== "string" || value.length < 8) continue;
+        if (effectivePrivacy.sensitiveValues.includes(value)) continue;
+        effectivePrivacy.sensitiveValues.push(value);
+        changed = true;
+      }
+      if (changed) {
+        effectivePrivacy.sensitiveValues = [
+          ...new Set(effectivePrivacy.sensitiveValues),
+        ]
+          .sort((left, right) => right.length - left.length)
+          .slice(0, 200);
+      }
     },
     emit,
     flush,

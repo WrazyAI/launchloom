@@ -1001,6 +1001,13 @@ try {
     fs.readFile(inspirationPath, "utf8").then(JSON.parse),
   ]);
   assertReferenceDossierPack(inspirationPack);
+  activity.addSensitiveValues(
+    [
+      site?.business?.phone,
+      site?.business?.email,
+      site?.business?.address,
+    ].filter(Boolean),
+  );
   const result = await observePipelineAction({
     producer: activity,
     actionId: "authoring:candidates",
