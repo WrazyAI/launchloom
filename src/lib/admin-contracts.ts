@@ -326,4 +326,7 @@ export type DispatchRequest = {
   createdAt: number;
 };
 /** Server-derived availability only; never a credential or authorization grant. */
-export type WorkspaceCapabilities = { operationsRead: boolean };
+export type WorkspaceCapabilities = {
+  operationsRead: boolean;
+  generationActivityRead: boolean;
+};

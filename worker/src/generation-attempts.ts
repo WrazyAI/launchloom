@@ -886,6 +886,38 @@ export class GenerationAttempts {
       },
     };
   }
+  /**
+   * Verified workflow ownership for diagnostic activity ingest. Returns only
+   * the run binding; never the attempt payload or client identity.
+   */
+  getActivityOwner(
+    id: string,
+  ): { repository: string; runId: string; runAttempt: number } | null {
+    const row = this.row(id);
+    if (!row) return null;
+    let data: Record<string, unknown>;
+    try {
+      data = JSON.parse(row.data) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+    const repository =
+      typeof data.repository === "string" && data.repository ? data.repository : null;
+    const runId =
+      typeof data.runId === "string" && /^[1-9][0-9]{0,19}$/u.test(data.runId)
+        ? data.runId
+        : null;
+    const runAttempt = data.runAttempt;
+    if (
+      !repository ||
+      !runId ||
+      !Number.isSafeInteger(runAttempt) ||
+      (runAttempt as number) < 1
+    )
+      return null;
+    return { repository, runId, runAttempt: runAttempt as number };
+  }
+
   getAttempt(id: string): AttemptDetail | null {
     const row = this.row(id);
     if (!row) return null;

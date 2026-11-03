@@ -241,7 +241,7 @@ async function verifyBrowser(attemptId: string) {
       res.setHeader("Content-Type", "application/json");
       if (url.pathname.endsWith("/me"))
         res.end(
-          JSON.stringify({ principal, capabilities: { operationsRead: true } }),
+          JSON.stringify({ principal, capabilities: { operationsRead: true, generationActivityRead: false } }),
         );
       else if (url.pathname.endsWith("/health"))
         res.end(JSON.stringify(fixtureHealth()));

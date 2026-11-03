@@ -325,7 +325,10 @@ async function serve(
   if (suffix === "/me") {
     sendJson(response, {
       principal: adminPrincipal,
-      capabilities: { operationsRead: operationsReadCapability },
+      capabilities: {
+          operationsRead: operationsReadCapability,
+          generationActivityRead: false,
+        },
     });
     return;
   }

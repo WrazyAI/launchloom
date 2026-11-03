@@ -359,6 +359,20 @@ async function trustedRun(
   return verifyRunIdentity(token, policy);
 }
 
+/**
+ * Narrow reusable boundary for other trusted internal routes. The caller gets
+ * only the run identity proven by the token; it never sees the raw token.
+ */
+export async function trustedWorkflowRun(
+  request: Request,
+  env: { OPERATIONS_OIDC_AUDIENCE?: string; OPERATIONS_OIDC_REPOSITORY_ID?: string },
+  policy?: WorkflowPolicy,
+): Promise<RunIdentity> {
+  const token = bearer(request);
+  if (!token) deny("malformed");
+  return verifyRunIdentity(token, policy ?? operationsWorkflowPolicy(env));
+}
+
 function storeFor(
   env: OperationsApiEnv,
   dependencies: RouteDependencies,

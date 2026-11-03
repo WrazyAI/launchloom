@@ -96,7 +96,7 @@ describe("operations API client", () => {
       const workspace = await createAdminApi().getWorkspace();
       expect(workspace).toEqual({
         principal,
-        capabilities: { operationsRead: enabled },
+        capabilities: { operationsRead: enabled, generationActivityRead: false },
       });
       expect(JSON.stringify(workspace)).not.toContain("must-not-pass-through");
     },
