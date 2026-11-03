@@ -3011,6 +3011,9 @@ it("keeps studio navigation and summary actions usable on desktop and mobile", a
       await expect
         .poll(() => activity.locator(".admin-activity__summary").textContent())
         .toContain("$0.1200 actual");
+      await expect
+        .poll(() => activity.locator(".admin-activity__coverage summary").textContent())
+        .toContain("Coverage: 1 instrumented");
 
       await activity.getByRole("button", { name: /Model request/u }).click();
       const evidence = activity.locator(".admin-activity__evidence");

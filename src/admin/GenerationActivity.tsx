@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type {
+  GenerationActivityCoverageEntry,
   StoredTraceEvent,
   TraceIdentity,
   TraceText,
@@ -43,6 +44,16 @@ const GLYPHS: Record<string, string> = {
 function text(value: TraceText | null): string {
   if (!value) return "";
   return value.kind === "text" ? value.text : `Withheld (${value.reason})`;
+}
+
+function coverageSummary(entries: GenerationActivityCoverageEntry[]): string {
+  const counts = new Map<string, number>();
+  for (const entry of entries)
+    counts.set(entry.status, (counts.get(entry.status) ?? 0) + 1);
+  const parts = ["instrumented", "limited", "unsupported", "not_applicable"]
+    .filter((status) => counts.has(status))
+    .map((status) => `${counts.get(status)} ${status.replace(/_/gu, " ")}`);
+  return `Coverage: ${parts.join(", ") || "not reported"}`;
 }
 
 function StatusPill({ status }: { status: string | null }) {
@@ -577,7 +588,7 @@ export function GenerationActivity({
           </div>
 
           <footer className="admin-activity__foot">
-            <div>
+            <div className="admin-activity__foot-left">
               {hasOlder ? (
                 <button
                   type="button"
@@ -589,6 +600,19 @@ export function GenerationActivity({
                 </button>
               ) : null}
             </div>
+            {page && page.coverage.length ? (
+              <details className="admin-activity__coverage">
+                <summary>{coverageSummary(page.coverage)}</summary>
+                <ul>
+                  {page.coverage.map((entry) => (
+                    <li key={entry.boundary}>
+                      <span>{entry.boundary}</span>
+                      <span>{entry.status.replace(/_/gu, " ")}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
             <span>
               {events.length} events
               {page ? ` · retained ${page.retentionDays} days` : ""}
