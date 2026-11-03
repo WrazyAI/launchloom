@@ -1,7 +1,7 @@
 # Live generation observability, v1
 
-Status: proposed for owner approval. This document authorizes no implementation,
-provider calls, production writes, main merge, or deployment by itself.
+Status: owner approved on 2026-11-03 for implementation planning. This approval
+does not authorize paid provider calls, production writes, main merge, or deployment.
 
 ## Intent and agreed boundaries
 
@@ -17,8 +17,8 @@ No access to private model reasoning. Reasoning-token counts, when reported, are
 usage metadata only, never a transcript of reasoning.
 
 The owner accepted a visual mockup and supplied Beautiful UI as design guidance
-at `/mnt/c/Users/jnopa/beautiful-ui-reference.md`. Continued exploration is approved;
-the technical choices below are the designer's recommendations, not yet approved.
+at `/mnt/c/Users/jnopa/beautiful-ui-reference.md`. The owner approved the complete
+v1 scope, including the technical recommendations below, before planning.
 
 ## Current evidence
 
@@ -256,7 +256,7 @@ index layout, safe-payload codecs and polling backoff, preserving the contracts
 above. Validate platform limits and current library/provider APIs before choosing
 implementation syntax. No dependency or framework rewrite is required.
 
-Owner approval is still needed for this complete description, especially the
-v1 completed-response output boundary, embedded inspector placement, 30-day
-diagnostic retention, and recommended polling design. Approval leads to a written
-implementation plan, not an automatic paid run or production deployment.
+The owner approved this complete description, including the v1 completed-response
+output boundary, embedded inspector placement, 30-day diagnostic retention, and
+recommended polling design. The next gate is review of the implementation plan,
+not an automatic paid run or production deployment.
