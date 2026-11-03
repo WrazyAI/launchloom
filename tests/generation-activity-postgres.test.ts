@@ -6,6 +6,7 @@ import {
   type VerifiedTraceOwner,
 } from "../worker/src/generation-activity/store";
 import type { OperationsSql } from "../worker/src/operations/store";
+import { encodeActivityCursor } from "../worker/src/generation-activity/cursor";
 import { BASE_CALL_ID, traceEvent } from "./fixtures/generation-activity";
 import type { TraceEvent } from "../src/lib/generation-activity";
 
@@ -192,7 +193,10 @@ describe.skipIf(!url)("generation activity persistence", () => {
           },
         }),
       ]),
-    ).rejects.toThrow(/activity_conflict/u);
+    ).rejects.toMatchObject({
+      name: "OperationsError",
+      code: "conflict",
+    });
     const page = await store.read(owner);
     expect(page.items).toHaveLength(1);
   });
@@ -201,7 +205,10 @@ describe.skipIf(!url)("generation activity persistence", () => {
     const { attemptId, owner } = await createAttempt();
     await expect(
       store.append({ ...owner, runId: "77777" }, [event(attemptId, 1)]),
-    ).rejects.toThrow(/activity_not_owned/u);
+    ).rejects.toMatchObject({
+      name: "OperationsError",
+      code: "forbidden",
+    });
     await expect(
       store.append({ ...owner, repositoryId: "not-a-number" }, [
         event(attemptId, 1),
@@ -262,6 +269,47 @@ describe.skipIf(!url)("generation activity persistence", () => {
     await expect(
       store.read(owner, { after: "v1.1.deadbeef" }),
     ).rejects.toThrow(/Invalid activity cursor/u);
+  });
+
+  it("catches up forward without skipping the middle of a burst", async () => {
+    const { attemptId, owner } = await createAttempt();
+    await store.append(owner, [event(attemptId, 1)]);
+    // 150 more events arrive in bounded batches, as a long model burst would.
+    for (let start = 2; start <= 151; start += 20) {
+      const batch = Array.from(
+        { length: Math.min(20, 152 - start) },
+        (_, index) => event(attemptId, start + index),
+      );
+      await store.append(owner, batch);
+    }
+    const first = await store.read(owner, {
+      after: encodeActivityCursor(owner, 1),
+      limit: 100,
+    });
+    expect(first.items).toHaveLength(100);
+    expect(first.items[0]?.sequence).toBe(2);
+    expect(first.items.at(-1)?.sequence).toBe(101);
+    expect(first.hasMore).toBe(true);
+    const second = await store.read(owner, {
+      after: first.nextCursor,
+      limit: 100,
+    });
+    expect(second.items[0]?.sequence).toBe(102);
+    expect(second.items.at(-1)?.sequence).toBe(151);
+    expect(second.hasMore).toBe(false);
+  });
+
+  it("serves an expired partition as expired instead of healthy content", async () => {
+    const { attemptId, owner } = await createAttempt();
+    await store.append(owner, [event(attemptId, 1)]);
+    await sql(
+      `update launchloom_operations.activity_partitions
+          set expires_at = now() - interval '1 day'
+        where attempt_id = '${attemptId}'`,
+    );
+    const page = await store.read(owner);
+    expect(page.recording).toBe("expired");
+    expect(page.items).toHaveLength(0);
   });
 
   it("counts usage once per call and keeps rollups independent of the feed window", async () => {

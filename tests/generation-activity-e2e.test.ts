@@ -305,6 +305,14 @@ describe.skipIf(!url)("generation activity end to end", () => {
       "output",
       "usage",
     ]);
+    expect(
+      live.items.find((event) => event.kind === "output")?.payload,
+    ).toMatchObject({
+      message: {
+        kind: "text",
+        text: "The approved service scope is ready for review.",
+      },
+    });
     expect(live.usage).toMatchObject({
       responses: 1,
       inputTokens: 1200,

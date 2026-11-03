@@ -244,22 +244,45 @@ export function createGenerationActivityStore(
         )
       )
         invalid();
-      const rows = await sql.query<{
+      let rows: {
         accepted: number;
         last_cursor: number;
         suppressed: boolean;
         expired: boolean;
-      }>(
-        "select * from launchloom_operations.append_activity_events($1, $2, $3, $4, $5::integer, $6::jsonb)",
-        [
-          verified.namespace,
-          verified.attemptId,
-          verified.repositoryId,
-          verified.runId,
-          verified.runAttempt,
-          JSON.stringify(valid),
-        ],
-      );
+      }[];
+      try {
+        rows = await sql.query<{
+          accepted: number;
+          last_cursor: number;
+          suppressed: boolean;
+          expired: boolean;
+        }>(
+          "select * from launchloom_operations.append_activity_events($1, $2, $3, $4, $5::integer, $6::jsonb)",
+          [
+            verified.namespace,
+            verified.attemptId,
+            verified.repositoryId,
+            verified.runId,
+            verified.runAttempt,
+            JSON.stringify(valid),
+          ],
+        );
+      } catch (error) {
+        const message = String((error as Error)?.message ?? "");
+        if (message.includes("activity_conflict"))
+          throw new OperationsError(
+            "conflict",
+            "Conflicting activity evidence.",
+          );
+        if (message.includes("activity_not_owned"))
+          throw new OperationsError(
+            "forbidden",
+            "Activity is not owned by this run.",
+          );
+        if (message.includes("activity_invalid"))
+          throw new OperationsError("invalid", "Invalid activity evidence.");
+        throw error;
+      }
       const row = rows[0];
       if (!row) unavailable();
       const last = count(row.last_cursor);
@@ -285,6 +308,39 @@ export function createGenerationActivityStore(
       );
       const row = rows[0]?.record;
       if (!row) unavailable();
+      const expiresAt = row.partition
+        ? epochMilliseconds(
+            (row.partition as Record<string, unknown>).expires_ms,
+          )
+        : null;
+      if (expiresAt !== null && expiresAt <= Date.now()) {
+        return {
+          identity,
+          items: [],
+          nextCursor: null,
+          hasMore: false,
+          observedAt: Date.now(),
+          lastHeartbeatAt: null,
+          recording: "expired",
+          coverage: [],
+          usage: {
+            inputTokens: null,
+            outputTokens: null,
+            cachedInputTokens: null,
+            cacheWriteTokens: null,
+            reasoningTokens: null,
+            responses: 0,
+            unknownResponses: 0,
+            cost: {
+              currency: null,
+              actual: null,
+              estimated: null,
+              unreportedCount: 0,
+            },
+          },
+          retentionDays: 30,
+        };
+      }
       const partition =
         row.partition === null || row.partition === undefined
           ? null
@@ -294,19 +350,24 @@ export function createGenerationActivityStore(
       const rawEvents = row.events;
       if (!Array.isArray(rawEvents)) unavailable();
       const hasMore = rawEvents.length > limit;
-      const page = rawEvents.slice(0, limit).map((event) => storedEvent(event, identity));
-      // The SQL page is newest first; display order is chronological.
-      const items = page.reverse();
+      const page = rawEvents
+        .slice(0, limit)
+        .map((event) => storedEvent(event, identity));
+      // Forward catch-up is already oldest-first; history and initial reads are
+      // newest-first and are reversed into chronological display order.
+      const items = after !== null ? page : page.reverse();
       // Continuation depends on the requested direction. An incremental poll
       // needs the newest cursor even when it is caught up, while history paging
       // needs the oldest row only when another older page exists.
       let nextCursor: string | null = null;
-      if (options.before) {
+      if (after !== null) {
+        nextCursor = items.length
+          ? items[items.length - 1].cursor
+          : options.after ?? null;
+      } else if (options.before) {
         if (hasMore && items.length) nextCursor = items[0].cursor;
       } else if (items.length) {
         nextCursor = items[items.length - 1].cursor;
-      } else {
-        nextCursor = options.after ?? null;
       }
       return {
         identity,

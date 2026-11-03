@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   pruneGenerationActivity,
   runGenerationActivityPrune,
+  scheduledReconciliation,
 } from "../src/operations/reconcile";
 import type { OperationsSql } from "../src/operations/store";
 
@@ -51,6 +52,19 @@ describe("generation activity retention", () => {
       pruneGenerationActivity({ GENERATION_ACTIVITY_ENABLED: "true" }, sql),
     ).resolves.toEqual({ deleted: 6, batches: 2 });
     expect(calls).toHaveLength(2);
+  });
+
+  it("prunes even when lifecycle reconciliation is disabled", async () => {
+    const { sql, calls } = fake(() => [{ deleted: 0, remaining: false }]);
+    await scheduledReconciliation(
+      {
+        GENERATION_ACTIVITY_ENABLED: "true",
+        OPERATIONS_DATABASE_URL: "postgresql://example.invalid/db",
+      },
+      sql,
+    );
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.text).toContain("prune_activity");
   });
 
   it("reports a retention failure without throwing", async () => {

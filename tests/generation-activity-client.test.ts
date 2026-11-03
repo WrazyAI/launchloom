@@ -223,6 +223,33 @@ describe("generation activity producer", () => {
     expect(stats.rejected).toBe(0);
   });
 
+  it("unrefs its periodic timers so a script can exit", () => {
+    const handles: { unref: ReturnType<typeof vi.fn> }[] = [];
+    const clock = {
+      now: () => Date.now(),
+      setTimeout: () => {
+        const handle = { unref: vi.fn() };
+        handles.push(handle);
+        return handle;
+      },
+      clearTimeout: () => {},
+      randomUUID: () => crypto.randomUUID(),
+    };
+    const producer = createActivityProducer({
+      context: BASE_CONTEXT,
+      privacy,
+      transport: { async send() { return { status: 200 }; } },
+      clock,
+      limits: TRACE_LIMITS,
+    });
+    producer.emit("model_started", modelStarted());
+    expect(handles.length).toBeGreaterThanOrEqual(2);
+    expect(handles.every((handle) => handle.unref.mock.calls.length === 1)).toBe(
+      true,
+    );
+    void producer.close();
+  });
+
   it("drops an event that fails validation without throwing", () => {
     const { producer } = harness();
     expect(

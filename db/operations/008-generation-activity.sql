@@ -438,7 +438,7 @@ BEGIN
       ) u
     ),
     'events', coalesce((
-      select json_agg(e order by e.cursor desc) from (
+      select json_agg(e) from (
         select cursor, event_id, kind, producer_sequence, context, payload,
                (extract(epoch from emitted_at) * 1000)::double precision as emitted_ms,
                (extract(epoch from received_at) * 1000)::double precision as received_ms
@@ -446,7 +446,9 @@ BEGIN
          where namespace = p_namespace and attempt_id = p_attempt
            and (p_after is null or cursor > p_after)
            and (p_before is null or cursor < p_before)
-         order by cursor desc
+         -- Forward catch-up reads the oldest unseen rows so a large burst can
+         -- never skip the middle of the stream. History reads newest first.
+         order by case when p_after is not null then cursor else -cursor end asc
          limit p_limit + 1
       ) e
     ), '[]'::json)

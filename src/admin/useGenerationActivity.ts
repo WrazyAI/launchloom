@@ -83,7 +83,7 @@ export function useGenerationActivity({
     const next =
       mode === "append"
         ? [...eventsRef.current, ...fresh].slice(-ACTIVITY_WINDOW)
-        : [...fresh, ...eventsRef.current];
+        : [...fresh, ...eventsRef.current].slice(0, 2_000);
     eventsRef.current = next;
     // Rebuild the dedupe index when it grows well beyond the visible window.
     if (ids.current.size > 5_000) ids.current = new Set(next.map((event) => event.eventId));

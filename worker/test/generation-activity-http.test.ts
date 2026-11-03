@@ -255,6 +255,56 @@ describe("generation activity ingest", () => {
     expect(store.appended).toHaveLength(0);
   });
 
+  it("retains scrubbed model output and contact-shaped errors", async () => {
+    const store = new FakeStore();
+    const identity = { namespace: "operations" as const, attemptId };
+    const call = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    const output = traceEvent({
+      context: contextFor(identity),
+      eventId: "12121212-1212-4212-8212-121212121212",
+      sequence: 1,
+      kind: "output",
+      payload: {
+        callId: call,
+        message: { kind: "text", text: "Visible generated copy." },
+      },
+    });
+    const error = traceEvent({
+      context: contextFor(identity),
+      eventId: "13131313-1313-4313-8313-131313131313",
+      sequence: 2,
+      kind: "error",
+      payload: {
+        scope: "action",
+        code: "action_failed",
+        message: {
+          kind: "text",
+          text: "Failed for client@example.test or 512-555-0199 after retry.",
+        },
+      },
+    });
+    const response = await generationActivityIngest(
+      ingestRequest(
+        { identity, events: [output, error] },
+        { Authorization: `Bearer ${await token()}` },
+      ),
+      enabledEnv,
+      { store, policy: policy() },
+    );
+    expect(response.status).toBe(200);
+    const stored = store.appended[0]?.events ?? [];
+    expect(stored.find((event) => event.kind === "output")?.payload).toMatchObject({
+      message: { kind: "text", text: "Visible generated copy." },
+    });
+    const errorText = JSON.stringify(
+      stored.find((event) => event.kind === "error"),
+    );
+    expect(errorText).not.toContain("client@example.test");
+    expect(errorText).not.toContain("512-555-0199");
+    expect(errorText).toContain("(email redacted)");
+    expect(errorText).toContain("(phone redacted)");
+  });
+
   it("uses the store ownership boundary for operations identities", async () => {
     const store = new FakeStore();
     const identity = { namespace: "operations" as const, attemptId };

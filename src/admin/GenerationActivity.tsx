@@ -418,6 +418,8 @@ export function GenerationActivity({
     follow.current = false;
   }
 
+  if (!enabled) return null;
+
   function jumpToLatest() {
     follow.current = true;
     const feed = feedRef.current;

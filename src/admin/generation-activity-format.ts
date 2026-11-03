@@ -266,10 +266,15 @@ export function activityStages(
     });
   }
   const list = [...stages.values()].sort((a, b) => a.lastAt - b.lastAt);
-  for (const stage of list) stage.state = "done";
-  if (list.length) {
+  for (const stage of list) {
+    const open = entries.some(
+      (entry) => entry.stage === stage.stage && isOpenEntry(entry),
+    );
+    stage.state = open ? "active" : "done";
+  }
+  if (list.length && live) {
     const latest = list[list.length - 1];
-    if (live) latest.state = "active";
+    if (latest.state !== "active") latest.state = "active";
   }
   return list;
 }
@@ -355,7 +360,12 @@ export function heartbeatNotice(
   if (page.recording !== "recording") return null;
   if (page.lastHeartbeatAt === null)
     return "Waiting for the first producer signal.";
-  const silence = now - page.lastHeartbeatAt;
+  // Compare server receipt times so client clock skew cannot shift the warning.
+  const reference =
+    typeof page.observedAt === "number" && page.observedAt > 0
+      ? page.observedAt
+      : now;
+  const silence = Math.max(0, reference - page.lastHeartbeatAt);
   if (silence > 60_000) return "Activity may be incomplete: no signal for over a minute.";
   if (silence > 30_000) return "No recent activity signal.";
   return null;

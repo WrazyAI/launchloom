@@ -2965,7 +2965,7 @@ it("keeps studio navigation and summary actions usable on desktop and mobile", a
 
 }, 60_000);
 
-  it("shows the disabled activity state without inventing a trace", async () => {
+  it("omits the activity section when the capability is disabled", async () => {
     activityEnabled = false;
     const { page, errors } = await openPage({
       path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
@@ -2976,11 +2976,11 @@ it("keeps studio navigation and summary actions usable on desktop and mobile", a
         name: "Attempt attempt-diagnostic",
       });
       await visible(inspector);
-      const activity = inspector.locator(".admin-activity");
-      await visible(activity);
-      await expect
-        .poll(() => activity.textContent())
-        .toContain("Detailed activity is not enabled in this environment.");
+      // Disabling the feature restores the existing inspector exactly.
+      expect(await inspector.locator(".admin-activity").count()).toBe(0);
+      await visible(
+        inspector.getByRole("heading", { name: "Attempt attempt-diagnostic" }),
+      );
       autoErrors(errors);
     } finally {
       await page.close();

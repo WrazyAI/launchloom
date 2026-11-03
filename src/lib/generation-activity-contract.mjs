@@ -222,6 +222,14 @@ const CREDENTIAL_PATTERNS = Object.freeze([
   ],
 ]);
 
+const CONTACT_PATTERNS = Object.freeze([
+  [/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/gu, "(email redacted)"],
+  [
+    /(?:\+?1[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}/gu,
+    "(phone redacted)",
+  ],
+]);
+
 const URL_PATTERN = /https?:\/\/[^\s<>"'`]+/giu;
 const GITHUB_EVIDENCE =
   /^https:\/\/github\.com\/WrazyAI\/launchloom\/(?:actions\/runs\/\d+(?:\/attempts\/\d+)?|issues\/\d+|pull\/\d+)\/?$/iu;
@@ -255,6 +263,14 @@ export function createPrivacyPolicy({
  * truncation boundary is never partially kept), then credentials and links.
  * Truncation happens last, on a code-point boundary.
  */
+/** Contact shapes are removed from failures and labels, never from site copy. */
+export function scrubContactText(value) {
+  let text = value;
+  for (const [pattern, replacement] of CONTACT_PATTERNS)
+    text = text.replace(pattern, replacement);
+  return text;
+}
+
 export function scrubTraceText(
   value,
   policy,
@@ -284,14 +300,17 @@ export function projectTraceText(value, policy, { mode = "text" } = {}) {
     return { kind: "withheld", reason: "oversize" };
   if (mode === "source" && policy.allowSourceText !== true)
     return { kind: "withheld", reason: "unsupported" };
-  const scrubbed = scrubTraceText(value, policy);
+  let scrubbed = scrubTraceText(value, policy);
+  if (mode === "error") scrubbed = scrubContactText(scrubbed);
   if (!scrubbed) return { kind: "withheld", reason: "sensitive" };
   return { kind: "text", text: scrubbed };
 }
 
 function shortLabel(value, label) {
   if (typeof value !== "string") fail(`${label}_not_string`);
-  const text = value.replace(/[\u0000-\u001f\u007f]/gu, " ").trim();
+  const text = scrubContactText(
+    value.replace(/[\u0000-\u001f\u007f]/gu, " "),
+  ).trim();
   if (!text || text.length > TRACE_LIMITS.maxLabel || !SAFE_LABEL.test(text))
     fail(`${label}_invalid`);
   return text;
@@ -539,7 +558,9 @@ function validatePayload(kind, payload, policy) {
       return {
         scope: payload.scope,
         code: identifier(payload.code, CODE, "error_code"),
-        message: traceText(payload.message, policy, "error_message"),
+        message: traceText(payload.message, policy, "error_message", {
+          mode: "error",
+        }),
       };
     }
     case "coverage": {

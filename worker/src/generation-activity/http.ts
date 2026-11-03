@@ -1,4 +1,5 @@
 import {
+  createPrivacyPolicy,
   isTraceIdentity,
   validateTraceBatch,
 } from "../../../src/lib/generation-activity-contract.mjs";
@@ -28,6 +29,9 @@ import { workspaceCapabilities } from "../admin/workspace-capabilities";
 const INTERNAL_PATH = "/api/internal/generation-activity";
 const MAX_INGEST_BYTES = 256 * 1024;
 const WORKSPACE_PREFIX = "/api/admin/onboarding-invites/workspace";
+// Diagnostic output text is eligible evidence after the producer's scoped
+// redaction. Withholding it here would defeat the feature.
+const INGEST_POLICY = createPrivacyPolicy({ allowSourceText: true });
 const ACTIVITY_ROUTE =
   /^\/(legacy\/attempts|operations\/records)\/([^/]+)\/activity$/u;
 const UUID =
@@ -144,6 +148,8 @@ function parseIdentity(value: unknown): TraceIdentity {
 function operationError(error: OperationsError): Response {
   if (error.code === "invalid")
     return workspaceError("invalid_input", "Invalid activity request.", 400);
+  if (error.code === "forbidden")
+    return workspaceError("forbidden", "Activity is not owned by this run.", 403);
   if (error.code === "not_found")
     return workspaceError("not_found", "Generation activity not found.", 404);
   if (error.code === "conflict")
@@ -214,7 +220,10 @@ export async function generationActivityIngest(
   let events;
   try {
     identity = parseIdentity((body as { identity: unknown }).identity);
-    events = validateTraceBatch((body as { events: unknown }).events);
+    events = validateTraceBatch(
+      (body as { events: unknown }).events,
+      INGEST_POLICY,
+    );
   } catch {
     return workspaceError("invalid_input", "Invalid activity request.", 400);
   }

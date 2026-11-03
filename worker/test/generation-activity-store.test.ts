@@ -156,6 +156,23 @@ describe("generation activity store adapter", () => {
     );
   });
 
+  it("classifies permanent SQL rejections so producers do not retry them", async () => {
+    for (const [message, code] of [
+      ["ERROR: activity_conflict", "conflict"],
+      ["ERROR: activity_not_owned", "forbidden"],
+      ["ERROR: activity_invalid", "invalid"],
+    ] as const) {
+      const sql = new FakeSql(() => {
+        throw new Error(message);
+      });
+      const store = createGenerationActivityStore(sql);
+      await expect(store.append(owner, [traceEvent()])).rejects.toMatchObject({
+        name: "OperationsError",
+        code,
+      });
+    }
+  });
+
   it("bounds prune requests", async () => {
     const sql = new FakeSql(() => ({ deleted: 0, remaining: false }));
     const store = createGenerationActivityStore(sql);

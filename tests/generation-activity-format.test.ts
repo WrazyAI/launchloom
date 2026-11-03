@@ -152,28 +152,32 @@ describe("generation activity presentation", () => {
     );
   });
 
-  it("orders stages and marks the latest active stage", () => {
+  it("keeps an unfinished stage active instead of marking it done", () => {
+    const authoring = traceEvent().context;
     const entries = groupActivity([
-      stored(
-        {
-          sequence: 1,
-          context: { ...traceEvent().context, stage: "authoring" },
-        },
-        1,
-      ),
+      stored({ sequence: 1 }, 1),
       stored(
         {
           sequence: 2,
-          eventId: "88888888-8888-4888-8888-888888888888",
-          context: { ...traceEvent().context, stage: "creative_render" },
-          kind: "coverage",
-          payload: {
-            boundary: "action.creative_render_repair",
-            status: "limited",
-            detail: null,
-          },
+          eventId: "99999999-9999-4999-8999-999999999999",
+          kind: "model_finished",
+          payload: { callId: BASE_CALL_ID, status: "completed" },
         },
         2,
+      ),
+      stored(
+        {
+          sequence: 3,
+          eventId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          context: { ...authoring, stage: "creative_render" },
+          kind: "action_started",
+          payload: {
+            actionId: "render:1",
+            name: "render_candidate",
+            input: { path: "src/index.astro" },
+          },
+        },
+        3,
       ),
     ]);
     const live = activityStages(entries, true);
@@ -183,7 +187,8 @@ describe("generation activity presentation", () => {
     ]);
     expect(live[0]?.state).toBe("done");
     expect(live[1]?.state).toBe("active");
-    expect(activityStages(entries, false)[1]?.state).toBe("done");
+    // An unpaired action stays active even when the run is no longer live.
+    expect(activityStages(entries, false)[1]?.state).toBe("active");
   });
 
   it("formats token totals compactly and keeps unknown distinct", () => {

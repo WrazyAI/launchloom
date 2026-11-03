@@ -1,3 +1,7 @@
+import { execFile } from "node:child_process";
+import path from "node:path";
+import { promisify } from "node:util";
+import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   activityFromEnv,
@@ -109,6 +113,41 @@ describe("generation activity environment context", () => {
     });
     await producer.close();
   });
+
+  it("lets a Node script exit without an explicit close", async () => {
+    // Regression: a ref'd heartbeat timer used to keep generate-site-config
+    // alive when the feature was enabled.
+    const moduleUrl = pathToFileURL(
+      path.resolve("scripts/generation-activity-context.mjs"),
+    ).href;
+    const script = `
+      import { processActivity } from ${JSON.stringify(moduleUrl)};
+      const producer = processActivity(
+        { stage: "test" },
+        {
+          spoolDir: null,
+          transport: { async send() { return { status: 200 }; } },
+        },
+      );
+      producer.emit("heartbeat", { intervalMs: 10000 });
+    `;
+    const run = promisify(execFile);
+    const result = await run(
+      process.execPath,
+      ["--input-type=module", "-e", script],
+      {
+        timeout: 8_000,
+        env: {
+          PATH: process.env.PATH,
+          GENERATION_ACTIVITY_ENABLED: "true",
+          OPERATION_ID: env.OPERATION_ID,
+          TRACK_ATTEMPT: env.TRACK_ATTEMPT,
+          LAUNCHLOOM_API_URL: env.LAUNCHLOOM_API_URL,
+        },
+      },
+    );
+    expect(result.stderr).toBe("");
+  }, 15_000);
 
   it("keeps only one sanitized spool file and removes it after delivery", async () => {
     const files = new Map<string, { data: string; mode: number }>();

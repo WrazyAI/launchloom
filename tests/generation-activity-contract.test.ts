@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   TRACE_EVENT_KINDS as RUNTIME_EVENT_KINDS,
@@ -215,6 +216,44 @@ describe("generation activity contract", () => {
     expect(JSON.stringify(event)).not.toContain("eyJhbGciOiJIUzI1NiJ9");
   });
 
+  it("redacts contact shapes from failures but not from site copy", () => {
+    const error = buildTraceEvent(
+      traceEvent({
+        kind: "error",
+        payload: {
+          scope: "action",
+          code: "action_failed",
+          message: {
+            kind: "text",
+            text: "Failed for client@example.test or 512-555-0199",
+          },
+        },
+      }),
+      policy,
+    );
+    expect(JSON.stringify(error)).not.toContain("client@example.test");
+    expect(JSON.stringify(error)).not.toContain("512-555-0199");
+    const retry = buildTraceEvent(
+      traceEvent({
+        kind: "retry",
+        payload: {
+          scope: "provider",
+          attempt: 2,
+          maxAttempts: 3,
+          reason: "Retry for client@example.test",
+        },
+      }),
+      policy,
+    );
+    expect(JSON.stringify(retry)).not.toContain("client@example.test");
+    const output = buildTraceEvent(
+      textEvent("Call the studio on 512-555-0100."),
+      policy,
+    );
+    // Public business contact copy remains reviewable model output.
+    expect(JSON.stringify(output)).toContain("512-555-0100");
+  });
+
   it("only accepts allowlisted flat action fields", () => {
     const fields = buildSafeFields(
       { path: "src/pages/index.astro", route: "/", dropped: "raw stdout" },
@@ -358,6 +397,32 @@ describe("generation activity contract", () => {
         env: { HOME: "/root" },
       } as unknown as TraceEvent),
     ).toThrow(/event_unknown_field/u);
+  });
+
+  it("keeps the coverage inventory explicit and pointed at real sources", () => {
+    const inventory = JSON.parse(
+      fs.readFileSync("data/generation-activity-coverage.json", "utf8"),
+    ) as {
+      schemaVersion: number;
+      boundaries: Array<{ id: string; status: string; source: string }>;
+    };
+    expect(inventory.schemaVersion).toBe(1);
+    const ids = new Set<string>();
+    for (const boundary of inventory.boundaries) {
+      expect(boundary.id.length).toBeGreaterThan(0);
+      expect(ids.has(boundary.id)).toBe(false);
+      ids.add(boundary.id);
+      expect([
+        "instrumented",
+        "not_applicable",
+        "unsupported",
+        "limited",
+      ]).toContain(boundary.status);
+      if (boundary.id !== "provider_internal.actions" && boundary.id !== "action.github_job_scheduling") {
+        expect(fs.existsSync(boundary.source.split(" ")[0]!)).toBe(true);
+      }
+    }
+    expect(inventory.boundaries.length).toBeGreaterThanOrEqual(15);
   });
 
   it("keeps a benign structured action observable", () => {

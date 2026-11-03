@@ -21,6 +21,11 @@ function defaultClock() {
   };
 }
 
+function unref(handle) {
+  if (handle && typeof handle.unref === "function") handle.unref();
+  return handle;
+}
+
 function emptySpool() {
   return {
     async write() {},
@@ -56,14 +61,19 @@ export function createActivityProducer({
   let heartbeatAt = null;
   let dropped = 0;
   let rejected = 0;
+  let deliveryFailed = false;
   let suppressed = false;
 
   function schedule() {
     if (closed || timer) return;
-    timer = clock.setTimeout(() => {
-      timer = null;
-      void flush();
-    }, limits.flushIntervalMs);
+    // Periodic timers must never keep a finished Node process alive. The
+    // process-scoped beforeExit hook flushes the final queue.
+    timer = unref(
+      clock.setTimeout(() => {
+        timer = null;
+        void flush();
+      }, limits.flushIntervalMs),
+    );
   }
 
   function removeIds(ids) {
@@ -182,7 +192,10 @@ export function createActivityProducer({
         // A broken spool must not stop delivery or the generation.
       }
       const result = await sendBatch(batch);
-      if (!result.ok) return;
+      if (!result.ok) {
+        deliveryFailed = true;
+        return;
+      }
       removeIds(ids);
       try {
         await spool.clear();
@@ -202,15 +215,17 @@ export function createActivityProducer({
   }
 
   function startHeartbeat() {
-    heartbeat = clock.setTimeout(function beat() {
-      if (closed) return;
-      if (emit("heartbeat", { intervalMs: limits.heartbeatMs }))
-        heartbeatAt = clock.now();
-      heartbeat = clock.setTimeout(beat, limits.heartbeatMs);
-    }, limits.heartbeatMs);
+    heartbeat = unref(
+      clock.setTimeout(function beat() {
+        if (closed) return;
+        if (emit("heartbeat", { intervalMs: limits.heartbeatMs }))
+          heartbeatAt = clock.now();
+        heartbeat = unref(clock.setTimeout(beat, limits.heartbeatMs));
+      }, limits.heartbeatMs),
+    );
   }
 
-  function emitTerminal() {
+  function emitGaps() {
     if (dropped > 0 || rejected > 0) {
       emit("coverage", {
         boundary: "trace.producer",
@@ -221,11 +236,6 @@ export function createActivityProducer({
         },
       });
     }
-    emit("producer_finished", {
-      status:
-        dropped > 0 || rejected > 0 || suppressed ? "incomplete" : "complete",
-      detail: null,
-    });
   }
 
   const api = {
@@ -250,12 +260,27 @@ export function createActivityProducer({
       if (heartbeat) clock.clearTimeout(heartbeat);
       timer = null;
       heartbeat = null;
-      emitTerminal();
+      emitGaps();
+      // Deliver what is already queued before judging completeness. Any
+      // unacknowledged evidence keeps the terminal status honest.
       let deadline = null;
-      const ceiling = new Promise((resolve) => {
-        deadline = clock.setTimeout(resolve, limits.closeTimeoutMs);
+      const ceiling = () =>
+        new Promise((resolve) => {
+          deadline = clock.setTimeout(resolve, limits.closeTimeoutMs);
+        });
+      await Promise.race([flush(), ceiling()]);
+      if (deadline) clock.clearTimeout(deadline);
+      const incomplete =
+        dropped > 0 ||
+        rejected > 0 ||
+        suppressed ||
+        deliveryFailed ||
+        queue.length > 0;
+      emit("producer_finished", {
+        status: incomplete ? "incomplete" : "complete",
+        detail: null,
       });
-      await Promise.race([flush(), ceiling]);
+      await Promise.race([flush(), ceiling()]);
       if (deadline) clock.clearTimeout(deadline);
       finishing = false;
     },

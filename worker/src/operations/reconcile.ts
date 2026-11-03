@@ -295,10 +295,20 @@ export async function scheduledReconciliation(
   env: ReconciliationEnvironment,
   sql?: OperationsSql,
 ): Promise<void> {
+  const connection =
+    sql ??
+    (env.OPERATIONS_DATABASE_URL
+      ? operationsDatabaseSql(env.OPERATIONS_DATABASE_URL)
+      : null);
+  if (!connection) {
+    if (env.OPERATIONS_RECONCILE_MODE === "observe-v1")
+      throw Error("Operations reconciliation unavailable.");
+    return;
+  }
+  // Retention is independent housekeeping and runs even when lifecycle
+  // reconciliation is disabled. A failure is logged, never fatal.
+  await runGenerationActivityPrune(env, connection);
   if (env.OPERATIONS_RECONCILE_MODE !== "observe-v1") return;
-  if (!env.OPERATIONS_DATABASE_URL && !sql)
-    throw Error("Operations reconciliation unavailable.");
-  const connection = sql ?? operationsDatabaseSql(env.OPERATIONS_DATABASE_URL!);
   const store = createOperationsStore(connection);
   const reconciler = createAttemptReconciler(
     store,
@@ -319,8 +329,6 @@ export async function scheduledReconciliation(
         attemptId: alert.attemptId,
       }),
     );
-  // Retention is independent housekeeping; never let it block reconciliation.
-  await runGenerationActivityPrune(env, connection);
 }
 
 /** Non-throwing scheduled wrapper; retention failure is reported, not fatal. */
