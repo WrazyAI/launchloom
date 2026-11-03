@@ -643,7 +643,12 @@ export function ClientsView({
       ) : null}
 
       {clients.length > 0 ? (
-        <div className="admin-client-table-wrap">
+        <div
+          className="admin-table-wrap admin-client-table-wrap"
+          role="region"
+          aria-label="Client directory table"
+          tabIndex={0}
+        >
           <table className="admin-client-table">
             <caption className="admin-visually-hidden">
               Accepted clients across the shared workspace

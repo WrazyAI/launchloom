@@ -294,14 +294,6 @@
   line-height: 1.05;
 }
 
-.admin-topbar__description {
-  max-width: 48rem;
-  margin: 8px 0 0;
-  color: var(--admin-muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
 .admin-page .admin-eyebrow {
   margin: 0;
   color: var(--admin-muted);

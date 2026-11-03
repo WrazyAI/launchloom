@@ -1,0 +1,605 @@
+.admin-page .admin-ledger-groups,
+.admin-page .admin-ledger-groups > section,
+.admin-page .admin-ledger-wrap,
+.admin-page .admin-client-view,
+.admin-page .admin-client-table-wrap {
+  min-width: 0;
+}
+
+/* Keep the row action reachable while the rest of the row scrolls. */
+.admin-page .admin-client-table th:last-child,
+.admin-page .admin-client-table td:last-child,
+.admin-page .admin-ledger th:last-child,
+.admin-page .admin-ledger td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: var(--admin-paper);
+}
+
+.admin-page .admin-client-table th:last-child,
+.admin-page .admin-ledger th:last-child {
+  background: #fbfaf5;
+}
+
+.admin-page .admin-client-table tbody tr:hover td:last-child,
+.admin-page .admin-ledger tbody tr:hover td:last-child {
+  background: #f8f7f0;
+}
+
+.admin-page .admin-client-table tbody tr[aria-selected="true"] td:last-child,
+.admin-page .admin-ledger tbody tr[aria-selected="true"] td:last-child {
+  background: #eef4ea;
+}
+
+.admin-page .admin-client-table td:last-child::before,
+.admin-page .admin-ledger td:last-child::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1px;
+  background: var(--admin-line);
+}
+
+/* Compact thumbnail: a hatch marks an uncaptured preview without cramming text. */
+.admin-page .admin-preview .admin-preview__placeholder,
+.admin-page .admin-site-timeline__preview .admin-preview__placeholder {
+  padding: 0;
+  color: transparent;
+  font-size: 0;
+  background-image: repeating-linear-gradient(
+    135deg,
+    #dfe4da 0 4px,
+    #eaeee5 4px 8px
+  );
+}
+
+/* Invitations keeps its own table inside the shared scroll surface. */
+.admin-page .admin-table th:first-child,
+.admin-page .admin-table td:first-child {
+  padding-left: 20px;
+}
+
+.admin-page .admin-table th:last-child,
+.admin-page .admin-table td:last-child {
+  padding-right: 20px;
+}
+
+/* Data surfaces: client directory, generation ledger and site timeline. */
+.admin-page .admin-table-wrap,
+.admin-page .admin-client-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  border: 1px solid var(--admin-line);
+  border-radius: 12px;
+  background: var(--admin-paper);
+  scrollbar-gutter: stable;
+}
+
+.admin-page .admin-table-wrap:focus-visible {
+  outline: 2px solid var(--admin-forest);
+  outline-offset: 2px;
+}
+
+.admin-page .admin-client-table,
+.admin-page .admin-ledger {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: "Manrope", "Avenir Next", system-ui, sans-serif;
+}
+
+.admin-page .admin-client-table {
+  min-width: 880px;
+}
+
+.admin-page .admin-ledger {
+  min-width: 900px;
+}
+
+.admin-page .admin-client-table th,
+.admin-page .admin-ledger th {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--admin-line);
+  background: #fbfaf5;
+  color: var(--admin-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.admin-page .admin-client-table td,
+.admin-page .admin-ledger td {
+  padding: 14px 16px;
+  border-top: 1px solid #e7e9e2;
+  vertical-align: middle;
+}
+
+.admin-page .admin-client-table tbody tr,
+.admin-page .admin-ledger tbody tr {
+  cursor: pointer;
+}
+
+.admin-page .admin-client-table tbody tr:hover td,
+.admin-page .admin-ledger tbody tr:hover td {
+  background: #f8f7f0;
+}
+
+.admin-page .admin-client-table tbody tr[aria-selected="true"] td,
+.admin-page .admin-ledger tbody tr[aria-selected="true"] td {
+  background: #eef4ea;
+}
+
+.admin-page .admin-client-table tbody tr[aria-selected="true"] td:first-child,
+.admin-page .admin-ledger tbody tr[aria-selected="true"] td:first-child {
+  box-shadow: inset 3px 0 0 var(--admin-forest);
+}
+
+.admin-page .admin-client-table tbody tr:focus-visible,
+.admin-page .admin-ledger tbody tr:focus-visible {
+  outline: 2px solid var(--admin-forest);
+  outline-offset: -2px;
+}
+
+/* Column rhythm: identity first, action last with room to breathe. */
+.admin-page .admin-client-table th:nth-child(1) {
+  width: 34%;
+}
+.admin-page .admin-client-table th:nth-child(2) {
+  width: 24%;
+}
+.admin-page .admin-client-table th:nth-child(3) {
+  width: 13%;
+}
+.admin-page .admin-client-table th:nth-child(4) {
+  width: 17%;
+}
+.admin-page .admin-client-table th:nth-child(5) {
+  width: 12%;
+}
+
+.admin-page .admin-ledger th:nth-child(1) {
+  width: 36%;
+}
+.admin-page .admin-ledger th:nth-child(2) {
+  width: 15%;
+}
+.admin-page .admin-ledger th:nth-child(3) {
+  width: 21%;
+}
+.admin-page .admin-ledger th:nth-child(4) {
+  width: 15%;
+}
+.admin-page .admin-ledger th:nth-child(5) {
+  width: 13%;
+}
+
+.admin-page .admin-client-table th:last-child,
+.admin-page .admin-client-table td:last-child,
+.admin-page .admin-ledger th:last-child,
+.admin-page .admin-ledger td:last-child {
+  text-align: right;
+}
+
+.admin-page .admin-client-table td:first-child {
+  padding-left: 16px;
+}
+
+.admin-page .admin-client-table td:last-child,
+.admin-page .admin-ledger td:last-child {
+  padding-right: 16px;
+}
+
+.admin-client-cell {
+  gap: 14px;
+}
+
+.admin-client-monogram {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.admin-client-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.admin-client-name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.admin-client-meta,
+.admin-client-contact-email {
+  color: var(--admin-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.admin-client-contact-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.admin-client-date {
+  color: var(--admin-forest);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-client-site-link {
+  justify-self: start;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* One consistent row action for both tables. */
+.admin-page .admin-row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  background: var(--admin-paper);
+  color: var(--admin-forest);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.admin-page .admin-row-action:hover {
+  border-color: var(--admin-forest);
+  background: var(--admin-forest);
+  color: var(--admin-paper);
+}
+
+.admin-page .admin-row-action[aria-expanded="true"] {
+  border-color: var(--admin-forest);
+  background: var(--admin-forest);
+  color: var(--admin-paper);
+}
+
+/* Generation ledger cells. */
+.admin-gen-cell {
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-preview {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 36px;
+  overflow: hidden;
+  border: 1px solid #d5dbd1;
+  border-radius: 7px;
+  background: #e8ece3;
+}
+
+.admin-gen-name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.admin-gen-meta,
+.admin-gen-substatus {
+  color: var(--admin-muted);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.admin-status {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.admin-time {
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.admin-time span {
+  color: var(--admin-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.admin-avatar {
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+}
+
+.admin-actor__copy strong {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.admin-ledger .admin-actor__copy span {
+  font-size: 11px;
+}
+
+/* Site timeline cards. */
+.admin-site-groups {
+  gap: 20px;
+}
+
+.admin-page .admin-site-group {
+  overflow: hidden;
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  background: var(--admin-paper);
+  transition: border-color 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.admin-page .admin-site-group:hover {
+  border-color: #c3cdc0;
+}
+
+.admin-site-head {
+  gap: 20px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--admin-line);
+  background: var(--admin-paper);
+}
+
+.admin-site-name {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.admin-site-meta {
+  margin-top: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.admin-site-meta a {
+  color: var(--admin-forest);
+  text-decoration-color: #a9b8ae;
+  text-underline-offset: 2px;
+}
+
+.admin-site-head__actions {
+  gap: 10px;
+}
+
+.admin-site-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.admin-site-status::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.admin-site-status--success {
+  background: #e4f1e3;
+  color: #27633a;
+}
+.admin-site-status--running {
+  background: #fdf2dd;
+  color: #8a5a12;
+}
+.admin-site-status--failure {
+  background: #fbe8e5;
+  color: #8f2c21;
+}
+.admin-site-status--warning {
+  background: #fdf2dd;
+  color: #8a5a12;
+}
+.admin-site-status--neutral {
+  background: #eef0e8;
+  color: #4c5b52;
+}
+
+.admin-site-open {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-site-timeline {
+  padding: 6px 20px 10px;
+}
+
+.admin-site-timeline__row {
+  grid-template-columns: 12px 96px minmax(0, 1.5fr) minmax(0, 1fr) 56px 60px;
+  gap: 16px;
+  padding: 13px 10px;
+  margin-inline: -10px;
+  border-top: 1px solid #eceee6;
+  border-radius: 8px;
+}
+
+.admin-site-timeline__time {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-site-timeline__row:hover,
+.admin-site-timeline__row:focus-visible {
+  background: #f8f7f0;
+}
+
+.admin-site-timeline__dot {
+  width: 7px;
+  height: 7px;
+  margin-inline: auto;
+}
+
+.admin-site-timeline__when strong,
+.admin-site-timeline__what strong {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.admin-site-timeline__when span,
+.admin-site-timeline__what span,
+.admin-site-timeline__time {
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.admin-site-timeline__status {
+  gap: 4px;
+}
+
+.admin-site-timeline__preview {
+  width: 56px;
+  height: 38px;
+  border-radius: 6px;
+}
+
+.admin-site-expand {
+  margin: 4px 20px 16px;
+  padding: 6px 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-site-expand:hover,
+.admin-site-expand:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .admin-page .admin-client-table-wrap,
+  .admin-page .admin-ledger-wrap {
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .admin-page .admin-client-table,
+  .admin-page .admin-ledger {
+    min-width: 0;
+  }
+
+  .admin-page .admin-client-table th:last-child,
+  .admin-page .admin-client-table td:last-child,
+  .admin-page .admin-ledger th:last-child,
+  .admin-page .admin-ledger td:last-child {
+    position: static;
+    background: transparent;
+  }
+
+  .admin-page .admin-client-table td:last-child::before,
+  .admin-page .admin-ledger td:last-child::before {
+    content: none;
+  }
+
+  /* Name and action on one line, details beneath. */
+  .admin-page .admin-client-table tbody tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "client action"
+      "contact contact"
+      "submitted admin";
+    gap: 14px 16px;
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .admin-page .admin-client-table td:nth-child(1) {
+    grid-area: client;
+  }
+  .admin-page .admin-client-table td:nth-child(2) {
+    grid-area: contact;
+  }
+  .admin-page .admin-client-table td:nth-child(3) {
+    grid-area: submitted;
+  }
+  .admin-page .admin-client-table td:nth-child(4) {
+    grid-area: admin;
+  }
+  .admin-page .admin-client-table td:nth-child(5) {
+    grid-area: action;
+    align-self: start;
+    justify-self: end;
+  }
+
+  .admin-client-name {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-site-head {
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .admin-site-head__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .admin-site-timeline {
+    padding: 4px 16px 8px;
+  }
+
+  .admin-site-timeline__row {
+    grid-template-columns: 12px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px 12px;
+  }
+}
+
+@media (max-width: 620px) {
+  .admin-client-name,
+  .admin-gen-name {
+    font-size: 13.5px;
+  }
+
+  .admin-page .admin-site-group {
+    border-radius: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-page .admin-row-action,
+  .admin-page .admin-site-group {
+    transition: none;
+  }
+}

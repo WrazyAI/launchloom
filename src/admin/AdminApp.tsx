@@ -41,51 +41,34 @@ function readHistoryCursorTrail(value: unknown): string[] {
     .slice(-50);
 }
 
-const VIEW_COPY: Record<
-  AdminView,
-  { label: string; title: string; description: string }
-> = {
+const VIEW_COPY: Record<AdminView, { label: string; title: string }> = {
   operations: {
     label: "Operations",
     title: "Current operations",
-    description:
-      "Postgres-backed intake and generation records, with dispatch, execution, delivery, cost and telemetry reported separately.",
   },
   generations: {
     label: "Sites",
     title: "Client sites",
-    description:
-      "Verified site status and generation history, grouped by business. Read-only.",
   },
   clients: {
     label: "Clients",
     title: "Client directory",
-    description:
-      "Accepted clients stay linked to their invitations, verified details and complete attempt history.",
   },
   invitations: {
     label: "Invitations",
     title: "Private invitations",
-    description:
-      "Create private, single-use links and keep invitation creation attribution separate from generation initiation.",
   },
   team: {
     label: "Team",
     title: "Team and profiles",
-    description:
-      "Owners manage workspace membership and roles. Admins can review the same shared records and edit their own profile.",
   },
   integrations: {
     label: "Integrations",
     title: "Integrations",
-    description:
-      "Third-party connections are described here only when they are actually available.",
   },
   settings: {
     label: "Settings",
     title: "Workspace settings",
-    description:
-      "Your verified account profile, role and sign-in controls for this workspace.",
   },
 };
 
@@ -204,7 +187,6 @@ export function AdminApp() {
       onNavigate={selectView}
       eyebrow={copy.label}
       title={copy.title}
-      description={copy.description}
     >
       {state.view === "operations" && operationsRead === null ? (
         <p role="status">Loading workspace…</p>

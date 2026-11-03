@@ -12,12 +12,7 @@ import {
   it,
   vi,
 } from "vitest";
-import {
-  chromium,
-  type Browser,
-  type Locator,
-  type Page,
-} from "playwright";
+import { chromium, type Browser, type Locator, type Page } from "playwright";
 import { buildAdminWorkspace } from "../scripts/build-admin-workspace.mjs";
 
 vi.setConfig({ testTimeout: 30_000 });
@@ -108,11 +103,7 @@ let listDelay = 0;
 let listFailOnce = false;
 let backfilled = 0;
 
-function sendJson(
-  response: http.ServerResponse,
-  body: unknown,
-  status = 200,
-) {
+function sendJson(response: http.ServerResponse, body: unknown, status = 200) {
   response.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
@@ -216,7 +207,13 @@ async function serve(
   // invitation action requests tracked by this fixture.
   if (pathname === "/api/admin/onboarding-invites/workspace/me") {
     sendJson(response, {
-      principal: { id: `access:${"d".repeat(64)}`, email: "admin@example.test", displayName: null, role: "admin", authSource: "cloudflare-access" },
+      principal: {
+        id: `access:${"d".repeat(64)}`,
+        email: "admin@example.test",
+        displayName: null,
+        role: "admin",
+        authSource: "cloudflare-access",
+      },
       capabilities: { operationsRead: false },
     });
     return;
@@ -236,7 +233,8 @@ async function serve(
   });
 
   if (request.method === "GET") {
-    if (listDelay) await new Promise((resolve) => setTimeout(resolve, listDelay));
+    if (listDelay)
+      await new Promise((resolve) => setTimeout(resolve, listDelay));
     if (listFailOnce) {
       listFailOnce = false;
       sendJson(
@@ -314,11 +312,7 @@ async function serve(
     }
     const invite = invites.find((item) => item.inviteId === body?.inviteId);
     if (!invite || invite.status !== "unused") {
-      sendJson(
-        response,
-        { error: "Invitation cannot be revoked." },
-        409,
-      );
+      sendJson(response, { error: "Invitation cannot be revoked." }, 409);
       return;
     }
     invite.status = "revoked";
@@ -375,9 +369,7 @@ beforeAll(async () => {
   server = http.createServer((request, response) => {
     void serve(request, response);
   });
-  await new Promise<void>((resolve) =>
-    server.listen(0, "127.0.0.1", resolve),
-  );
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   browser = await chromium.launch({ headless: true });
 }, 120_000);
@@ -452,15 +444,16 @@ function listReads() {
 }
 
 function activeText(page: Page) {
-  return page.evaluate(
-    () => document.activeElement?.textContent?.trim() || "",
-  );
+  return page.evaluate(() => document.activeElement?.textContent?.trim() || "");
 }
 
 function unexpectedErrors(errors: string[], allow503 = false) {
   const unexpected = allow503
     ? errors.filter(
-        (error) => !/Failed to load resource: .*503 \(Service Unavailable\)/u.test(error),
+        (error) =>
+          !/Failed to load resource: .*503 \(Service Unavailable\)/u.test(
+            error,
+          ),
       )
     : errors;
   expect(unexpected).toEqual([]);
@@ -482,10 +475,12 @@ describe("real invitation flows against the built admin bundle", () => {
       expect(await page.locator("#invitations-view tbody tr").count()).toBe(3);
 
       const unknown = rowFor(page, UNKNOWN_CREATOR);
-      await expect(unknown.getByText("Not recorded", { exact: true }).count())
-        .resolves.toBeGreaterThan(0);
-      await expect(unknown.getByText("Unused", { exact: true }).count())
-        .resolves.toBe(1);
+      await expect(
+        unknown.getByText("Not recorded", { exact: true }).count(),
+      ).resolves.toBeGreaterThan(0);
+      await expect(
+        unknown.getByText("Unused", { exact: true }).count(),
+      ).resolves.toBe(1);
       await expect(
         rowFor(page, EXPIRED_INVITE)
           .getByText("Expired", { exact: true })
@@ -503,8 +498,9 @@ describe("real invitation flows against the built admin bundle", () => {
       ).resolves.toBe(1);
       const expiredText = await rowFor(page, EXPIRED_INVITE).innerText();
       expect(expiredText).toContain("01 Oct 2026");
-      expect(await page.getByText(/The coordinator returns at most 100/u).count())
-        .toBe(1);
+      expect(
+        await page.getByText(/The coordinator returns at most 100/u).count(),
+      ).toBe(1);
       unexpectedErrors(errors);
     } finally {
       await page.close();
@@ -519,10 +515,15 @@ describe("real invitation flows against the built admin bundle", () => {
       await page.getByRole("button", { name: "Create invitation" }).click();
       const result = page.locator(".admin-invite-result");
       await visible(result);
-      await expect(result.getByLabel("New invitation link").inputValue())
-        .resolves.toBe(
-          "https://onboard.example.test/onboard/#invite=secret-token-1",
-        );
+      await visible(result.getByText(/Expires /u));
+      expect(
+        await page.getByText(/Expires 14 days after creation/u).count(),
+      ).toBe(0);
+      await expect(
+        result.getByLabel("New invitation link").inputValue(),
+      ).resolves.toBe(
+        "https://onboard.example.test/onboard/#invite=secret-token-1",
+      );
       expect(posts("create")).toHaveLength(1);
       expect(posts("create")[0].body).toEqual({
         action: "create",
@@ -541,9 +542,7 @@ describe("real invitation flows against the built admin bundle", () => {
       await visible(page.getByText("Copied to clipboard.", { exact: false }));
       await expect
         .poll(() => page.evaluate(() => navigator.clipboard.readText()))
-        .toBe(
-          "https://onboard.example.test/onboard/#invite=secret-token-1",
-        );
+        .toBe("https://onboard.example.test/onboard/#invite=secret-token-1");
       await expect
         .poll(() =>
           page.getByRole("button", { name: "Create invitation" }).isEnabled(),
@@ -558,7 +557,9 @@ describe("real invitation flows against the built admin bundle", () => {
       expect(page.url()).not.toContain("#invite=");
       expect(page.url()).not.toContain("secret-token");
       expect(
-        [...messages, ...errors].some((entry) => entry.includes("secret-token")),
+        [...messages, ...errors].some((entry) =>
+          entry.includes("secret-token"),
+        ),
       ).toBe(false);
       expect(
         requests.some((entry) => entry.path.includes("secret-token")),
@@ -579,7 +580,9 @@ describe("real invitation flows against the built admin bundle", () => {
       expect(posts("create")).toHaveLength(1);
       expect(posts("create")[0].body).toEqual({ action: "create" });
       await expect(
-        result.getByText("Not bound to a client email.", { exact: false }).count(),
+        result
+          .getByText("Not bound to a client email.", { exact: false })
+          .count(),
       ).resolves.toBe(1);
       unexpectedErrors(errors);
     } finally {
@@ -606,8 +609,9 @@ describe("real invitation flows against the built admin bundle", () => {
           { exact: false },
         ),
       );
-      await expect(result.getByLabel("New invitation link").inputValue())
-        .resolves.toContain("#invite=secret-token-1");
+      await expect(
+        result.getByLabel("New invitation link").inputValue(),
+      ).resolves.toContain("#invite=secret-token-1");
       expect(posts("create")).toHaveLength(1);
       expect(await storedKeys(page)).toEqual({
         local: [],
@@ -634,30 +638,30 @@ describe("real invitation flows against the built admin bundle", () => {
       );
       expect(posts("create")).toHaveLength(1);
       await expect(
-        page
-          .getByRole("button", { name: "Creation unconfirmed" })
-          .isDisabled(),
+        page.getByRole("button", { name: "Creation unconfirmed" }).isDisabled(),
       ).resolves.toBe(true);
 
       const readsBefore = listReads().length;
       listFailOnce = true;
-      await page.getByRole("button", {
-        name: "Check invitation list before retrying",
-      }).click();
+      await page
+        .getByRole("button", {
+          name: "Check invitation list before retrying",
+        })
+        .click();
       await expect.poll(() => listReads().length).toBe(readsBefore + 1);
       await visible(
         page.getByText("Invitations could not be loaded.", { exact: true }),
       );
       await expect(
-        page
-          .getByRole("button", { name: "Creation unconfirmed" })
-          .isDisabled(),
+        page.getByRole("button", { name: "Creation unconfirmed" }).isDisabled(),
       ).resolves.toBe(true);
       expect(posts("create")).toHaveLength(1);
 
-      await page.getByRole("button", {
-        name: "Check invitation list before retrying",
-      }).click();
+      await page
+        .getByRole("button", {
+          name: "Check invitation list before retrying",
+        })
+        .click();
       await expect.poll(() => listReads().length).toBe(readsBefore + 2);
       await expect
         .poll(() =>
@@ -718,7 +722,9 @@ describe("real invitation flows against the built admin bundle", () => {
       });
       await expect
         .poll(() =>
-          rowFor(page, UNKNOWN_CREATOR).getByText("Revoked", { exact: true }).count(),
+          rowFor(page, UNKNOWN_CREATOR)
+            .getByText("Revoked", { exact: true })
+            .count(),
         )
         .toBe(1);
       unexpectedErrors(errors);
@@ -765,14 +771,18 @@ describe("real invitation flows against the built admin bundle", () => {
     const { page, errors } = await openPage();
     try {
       await waitForInvitations(page);
-      await page.getByRole("button", { name: "Backfill client emails" }).click();
+      await page
+        .getByRole("button", { name: "Backfill client emails" })
+        .click();
       await visible(page.getByText("Backfill finished.", { exact: false }));
       expect(posts("backfill")).toHaveLength(1);
       expect(posts("backfill")[0].body).toEqual({ action: "backfill" });
       await expect(
-        page.getByText("Updated 2 invitations. 1 still missing a client email.", {
-          exact: true,
-        }).count(),
+        page
+          .getByText("Updated 2 invitations. 1 still missing a client email.", {
+            exact: true,
+          })
+          .count(),
       ).resolves.toBe(1);
       expect(backfilled).toBe(2);
       unexpectedErrors(errors);
@@ -787,9 +797,9 @@ describe("real invitation flows against the built admin bundle", () => {
       await waitForInvitations(page);
       const submit = page.getByRole("button", { name: "Record recovery" });
       await expect(submit.isDisabled()).resolves.toBe(true);
-      await page.getByLabel("Invitation requiring recovery").selectOption(
-        RECOVERY_INVITE,
-      );
+      await page
+        .getByLabel("Invitation requiring recovery")
+        .selectOption(RECOVERY_INVITE);
       await page.getByLabel("Reviewed issue number").fill("12001");
       await expect(submit.isDisabled()).resolves.toBe(true);
       await page.getByLabel(/I reviewed the original issue/u).check();
@@ -817,9 +827,9 @@ describe("real invitation flows against the built admin bundle", () => {
     const { page, errors } = await openPage();
     try {
       await waitForInvitations(page);
-      await page.getByLabel("Invitation requiring recovery").selectOption(
-        RECOVERY_INVITE,
-      );
+      await page
+        .getByLabel("Invitation requiring recovery")
+        .selectOption(RECOVERY_INVITE);
       await page.getByLabel("Reviewed issue number").fill("12001");
       await page.getByLabel(/I reviewed the original issue/u).check();
       recoveryMode = "unavailable";
@@ -857,9 +867,7 @@ describe("real invitation flows against the built admin bundle", () => {
       const trigger = row.getByRole("button", { name: "Revoke" });
       await trigger.focus();
       await trigger.click();
-      await expect
-        .poll(() => activeText(page))
-        .toBe("Confirm revoke");
+      await expect.poll(() => activeText(page)).toBe("Confirm revoke");
       await row.getByRole("button", { name: "Keep invitation" }).click();
       await expect.poll(() => activeText(page)).toBe("Revoke");
       await expect
@@ -912,9 +920,12 @@ describe("real invitation flows against the built admin bundle", () => {
       );
       await expect.poll(() => activeText(page)).toBe("Keep link");
       await result.getByRole("button", { name: "Keep link" }).click();
-      await expect.poll(() => activeText(page)).toBe("Create another invitation");
-      await expect(result.getByLabel("New invitation link").inputValue())
-        .resolves.toContain("#invite=secret-token-1");
+      await expect
+        .poll(() => activeText(page))
+        .toBe("Create another invitation");
+      await expect(
+        result.getByLabel("New invitation link").inputValue(),
+      ).resolves.toContain("#invite=secret-token-1");
 
       await dismiss.click();
       await result.getByRole("button", { name: "Discard link" }).click();
@@ -935,6 +946,9 @@ describe("real invitation flows against the built admin bundle", () => {
     });
     try {
       await waitForInvitations(page);
+      expect(
+        await page.getByText(/Expires 14 days after creation/u).count(),
+      ).toBe(0);
       const metrics = await page.evaluate(() => ({
         documentWidth: document.documentElement.scrollWidth,
         bodyWidth: document.body.scrollWidth,
