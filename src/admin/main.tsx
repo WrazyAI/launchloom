@@ -8,6 +8,7 @@ import "./redesign.css";
 import "./studio.css";
 import "./detail-panels.css";
 import "./tables.css";
+import "./generation-activity.css";
 
 const root = document.getElementById("admin-root");
 

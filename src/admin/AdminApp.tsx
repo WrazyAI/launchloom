@@ -100,6 +100,7 @@ export function AdminApp() {
   const [state, setState, cursorTrail, setCursorTrail] = useRouteState();
   const [api] = useState(createAdminApi);
   const [operationsRead, setOperationsRead] = useState<boolean | null>(null);
+  const [generationActivityRead, setGenerationActivityRead] = useState(false);
   const [principal, setPrincipal] = useState<WorkspacePrincipal | null>(null);
   const pendingOperations =
     state.view === "operations" && operationsRead === null;
@@ -119,6 +120,7 @@ export function AdminApp() {
         if (!controller.signal.aborted) {
           setPrincipal(workspace.principal);
           setOperationsRead(workspace.capabilities.operationsRead);
+          setGenerationActivityRead(workspace.capabilities.generationActivityRead);
         }
       })
       .catch(() => {
@@ -196,6 +198,7 @@ export function AdminApp() {
           state={state}
           cursorTrail={cursorTrail}
           onNavigate={commit}
+          activityEnabled={generationActivityRead}
         />
       ) : view === "generations" ? (
         <GenerationsView
@@ -203,6 +206,7 @@ export function AdminApp() {
           state={visibleState}
           cursorTrail={cursorTrail}
           onNavigate={commit}
+          activityEnabled={generationActivityRead}
         />
       ) : state.view === "clients" ? (
         <ClientsView

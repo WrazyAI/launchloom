@@ -16,6 +16,10 @@ import type {
   Page,
   WorkspaceCapabilities,
 } from "../lib/admin-contracts";
+import type {
+  GenerationActivityPage,
+  TraceIdentity,
+} from "../lib/generation-activity";
 
 const ADMIN_API_PREFIX = "/api/admin/";
 const WORKSPACE_PREFIX = "/api/admin/onboarding-invites/workspace";
@@ -359,6 +363,15 @@ export type AdminApi = {
     limit?: number,
     signal?: AbortSignal,
   ): Promise<Page<AttemptEventRecord>>;
+  getGenerationActivity(
+    identity: TraceIdentity,
+    options?: {
+      after?: string | null;
+      before?: string | null;
+      limit?: number;
+      signal?: AbortSignal;
+    },
+  ): Promise<GenerationActivityPage>;
   listClients(
     filters: ClientFilters,
     options?: AdminRequestOptions,
@@ -423,6 +436,39 @@ function isAttemptEnvelope(
     isRecord(value) &&
     isRecord(value.attempt) &&
     typeof value.attempt.attemptId === "string"
+  );
+}
+
+function isActivityEnvelope(
+  value: unknown,
+): value is { activity: GenerationActivityPage } {
+  if (!isRecord(value) || !isRecord(value.activity)) return false;
+  const activity = value.activity;
+  return (
+    isRecord(activity.identity) &&
+    (activity.identity.namespace === "legacy" ||
+      activity.identity.namespace === "operations") &&
+    typeof activity.identity.attemptId === "string" &&
+    Array.isArray(activity.items) &&
+    activity.items.every(
+      (item) =>
+        isRecord(item) &&
+        typeof item.eventId === "string" &&
+        typeof item.cursor === "string" &&
+        typeof item.kind === "string" &&
+        isRecord(item.payload),
+    ) &&
+    (activity.nextCursor === null || typeof activity.nextCursor === "string") &&
+    typeof activity.hasMore === "boolean" &&
+    typeof activity.observedAt === "number" &&
+    (activity.lastHeartbeatAt === null ||
+      typeof activity.lastHeartbeatAt === "number") &&
+    ["disabled", "not_recorded", "recording", "complete", "incomplete", "expired"].includes(
+      String(activity.recording),
+    ) &&
+    Array.isArray(activity.coverage) &&
+    isRecord(activity.usage) &&
+    typeof activity.retentionDays === "number"
   );
 }
 
@@ -1142,6 +1188,23 @@ export function createAdminApi(
         { signal: options?.signal, validate: isAttemptEnvelope },
       );
       return payload.attempt;
+    },
+    async getGenerationActivity(identity, options = {}) {
+      const base =
+        identity.namespace === "legacy"
+          ? `${WORKSPACE_PREFIX}/legacy/attempts/${encodeURIComponent(identity.attemptId)}/activity`
+          : `${WORKSPACE_PREFIX}/operations/records/${encodeURIComponent(identity.attemptId)}/activity`;
+      const params = new URLSearchParams();
+      add(params, "after", options.after);
+      add(params, "before", options.before);
+      if (Number.isSafeInteger(options.limit) && options.limit! >= 1 && options.limit! <= 100)
+        add(params, "limit", String(options.limit));
+      const query = params.toString();
+      const payload = await fetcher<{ activity: GenerationActivityPage }>(
+        `${base}${query ? `?${query}` : ""}`,
+        { signal: options.signal, validate: isActivityEnvelope },
+      );
+      return payload.activity;
     },
     getAttemptEvents(id, cursor, limit, signal) {
       const params = new URLSearchParams();

@@ -9,6 +9,8 @@ import { AdminIcon } from "./AdminIcon";
 import { isSiteGeneration } from "./site-groups";
 import { GenerationPreview } from "./GenerationPreview";
 import { DetailValue } from "./DetailValue";
+import { GenerationActivity } from "./GenerationActivity";
+import type { AdminApi } from "./api";
 import {
   DeliveryStatusBadge,
   ExecutionStatusBadge,
@@ -27,6 +29,7 @@ import {
 } from "./format";
 
 export type AttemptInspectorProps = {
+  api: AdminApi;
   attempt: AttemptDetail | null;
   client: ClientRecord | null;
   loading: boolean;
@@ -36,6 +39,7 @@ export type AttemptInspectorProps = {
   eventCount: number;
   eventsLoading: boolean;
   eventsError: string | null;
+  activityEnabled?: boolean;
   headingRef: RefObject<HTMLHeadingElement | null>;
   onClose: () => void;
   onRetry: () => void;
@@ -228,6 +232,7 @@ function EventTimeline({
 }
 
 export function AttemptInspector({
+  api,
   attempt,
   client,
   loading,
@@ -237,6 +242,7 @@ export function AttemptInspector({
   eventCount,
   eventsLoading,
   eventsError,
+  activityEnabled = false,
   headingRef,
   onClose,
   onRetry,
@@ -446,6 +452,16 @@ export function AttemptInspector({
                 </span>
               </div>
             ) : null}
+
+            <GenerationActivity
+              api={api}
+              identity={{ namespace: "legacy", attemptId: attempt.attemptId }}
+              active={
+                attempt.executionStatus === "running" ||
+                attempt.executionStatus === "queued"
+              }
+              enabled={activityEnabled}
+            />
 
             <EventTimeline
               events={events}

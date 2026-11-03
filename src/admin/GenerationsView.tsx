@@ -92,6 +92,7 @@ export function GenerationsView({
   state,
   cursorTrail,
   onNavigate,
+  activityEnabled = false,
 }: {
   api: AdminApi;
   state: AdminRouteState;
@@ -100,6 +101,7 @@ export function GenerationsView({
     next: AdminRouteState,
     options?: { cursorTrail?: string[] },
   ) => void;
+  activityEnabled?: boolean;
 }) {
   const filters = state.filters;
   const cursor = state.cursor;
@@ -1059,6 +1061,7 @@ export function GenerationsView({
 
       {selectedId ? (
         <AttemptInspector
+          api={api}
           attempt={detail}
           client={detailClient}
           loading={detailLoading}
@@ -1068,6 +1071,7 @@ export function GenerationsView({
           eventCount={eventCount}
           eventsLoading={eventsLoading}
           eventsError={eventsError}
+          activityEnabled={activityEnabled}
           headingRef={headingRef}
           onClose={() => navigate({ ...state, attemptId: null })}
           onRetry={() => setDetailToken((token) => token + 1)}
