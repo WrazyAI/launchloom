@@ -349,6 +349,10 @@ export function GenerationActivity({
   active: boolean;
   enabled: boolean;
 }) {
+  const activityIdentity = useMemo(
+    () => ({ namespace: identity.namespace, attemptId: identity.attemptId }),
+    [identity.namespace, identity.attemptId],
+  );
   const [filter, setFilter] = useState<ActivityFilter>("all");
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -363,7 +367,12 @@ export function GenerationActivity({
     loadingOlder,
     loadOlder,
     refresh,
-  } = useGenerationActivity({ api, identity, active, enabled });
+  } = useGenerationActivity({
+    api,
+    identity: activityIdentity,
+    active,
+    enabled,
+  });
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
