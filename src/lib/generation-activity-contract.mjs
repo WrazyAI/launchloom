@@ -52,6 +52,7 @@ export const TRACE_LIMITS = Object.freeze({
   flushIntervalMs: 1_000,
   flushEvents: 20,
   sendTimeoutMs: 3_000,
+  closeTimeoutMs: 10_000,
   maxDeliveryAttempts: 3,
   heartbeatMs: 10_000,
   quietWarnMs: 30_000,

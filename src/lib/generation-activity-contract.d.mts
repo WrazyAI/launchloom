@@ -47,6 +47,7 @@ export const TRACE_LIMITS: Readonly<{
   flushIntervalMs: number;
   flushEvents: number;
   sendTimeoutMs: number;
+  closeTimeoutMs: number;
   maxDeliveryAttempts: number;
   heartbeatMs: number;
   quietWarnMs: number;

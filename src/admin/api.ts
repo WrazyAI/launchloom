@@ -970,6 +970,9 @@ export function createAdminApi(
           operationsRead:
             isRecord(payload.capabilities) &&
             payload.capabilities.operationsRead === true,
+          generationActivityRead:
+            isRecord(payload.capabilities) &&
+            payload.capabilities.generationActivityRead === true,
         },
       };
     },
