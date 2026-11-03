@@ -71,6 +71,17 @@ if (shouldBuild) {
   );
   const workspace = path.join(workdir, "site");
   copyTree(template, workspace);
+  // A fixture config may sit beside a synthetic public/ directory. Copy those
+  // test-only assets so the rendered gate exercises the media it references
+  // instead of failing on missing placeholder files.
+  const fixturePublic = path.join(
+    path.dirname(resolvedConfig),
+    "..",
+    "public",
+  );
+  if (fs.existsSync(fixturePublic)) {
+    copyTree(fixturePublic, path.join(workspace, "public"));
+  }
   fs.writeFileSync(
     path.join(workspace, "src/site.config.json"),
     `${JSON.stringify(config, null, 2)}\n`,
