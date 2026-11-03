@@ -7,15 +7,15 @@
       "id": "model.complete_generation",
       "kind": "model",
       "source": "scripts/generation-inference.mjs",
-      "status": "unsupported",
-      "detail": "Shared completion boundary for authoring, site config and creative-lane adapters. Instrumented in Task 5."
+      "status": "instrumented",
+      "detail": "Instrumented at the shared completion boundary; emits start, visible output, usage and normalized status."
     },
     {
       "id": "model.openrouter_legacy",
       "kind": "model",
       "source": "scripts/openrouter-client.mjs",
-      "status": "unsupported",
-      "detail": "Legacy OpenRouter envelope reached through the shared completion boundary. Instrumented in Task 5."
+      "status": "instrumented",
+      "detail": "Legacy OpenRouter dispatch is observed through the shared completion boundary."
     },
     {
       "id": "model.seo_research",
@@ -28,43 +28,43 @@
       "id": "model.reference_analysis",
       "kind": "model",
       "source": "scripts/analyze-reference-dna.mjs",
-      "status": "unsupported",
-      "detail": "Reference DNA analysis through the creative lane."
+      "status": "limited",
+      "detail": "The creative-lane transport accepts an activity producer; this caller does not yet pass one."
     },
     {
       "id": "model.visual_quality_gate",
       "kind": "model",
       "source": "scripts/visual-quality-gate.mjs",
-      "status": "unsupported",
-      "detail": "Rendered visual judging through the creative lane."
+      "status": "limited",
+      "detail": "The creative-lane transport accepts an activity producer; this caller does not yet pass one."
     },
     {
       "id": "model.rendered_reference_fidelity",
       "kind": "model",
       "source": "scripts/rendered-reference-fidelity.mjs",
-      "status": "unsupported",
-      "detail": "Rendered reference comparison through the creative lane."
+      "status": "limited",
+      "detail": "The creative-lane transport accepts an activity producer; this caller does not yet pass one."
     },
     {
       "id": "model.human_revision_gate",
       "kind": "model",
       "source": "scripts/human-revision-gate.mjs",
-      "status": "unsupported",
-      "detail": "Revision review inference."
+      "status": "limited",
+      "detail": "The shared boundary supports observation; this caller does not yet pass a producer."
     },
     {
       "id": "model.revision_engine",
       "kind": "model",
       "source": "scripts/revision-engine.mjs",
-      "status": "unsupported",
-      "detail": "Client feedback revision inference."
+      "status": "limited",
+      "detail": "The shared boundary supports observation; this caller does not yet pass a producer."
     },
     {
       "id": "model.seo_intent_planner",
       "kind": "model",
       "source": "scripts/seo-intent-planner.mjs",
-      "status": "unsupported",
-      "detail": "Query planning inference."
+      "status": "limited",
+      "detail": "The shared boundary supports observation; this caller does not yet pass a producer."
     },
     {
       "id": "provider_internal.actions",

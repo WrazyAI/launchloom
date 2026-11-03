@@ -54,3 +54,9 @@ export function activityFromEnv(
   semantic?: ActivitySemantic,
   dependencies?: ActivityDependencies,
 ): ActivityProducer;
+
+export function processActivity(
+  semantic?: ActivitySemantic,
+  dependencies?: ActivityDependencies,
+): ActivityProducer;
+export function resetProcessActivity(): void;

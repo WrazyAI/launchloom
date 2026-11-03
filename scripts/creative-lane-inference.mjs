@@ -221,6 +221,8 @@ export async function completeGoCreative({
   retryDelayMs = 1500,
   sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   logger = null,
+  activity = null,
+  activityStage = null,
 }) {
   if (!env.OPENCODE_GO_API_KEY)
     throw new Error(
@@ -241,6 +243,17 @@ export async function completeGoCreative({
         request,
         ...(fetchImpl ? { fetchImpl } : {}),
       },
+      ...(activity
+        ? {
+            activity: {
+              producer: activity,
+              context: {
+                stage: activityStage ?? "creative",
+                actor: { kind: "model", role: "creative_lane" },
+              },
+            },
+          }
+        : {}),
     });
     result = completion?.result || {};
     if (result.status === "completed") return result;

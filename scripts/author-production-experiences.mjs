@@ -28,6 +28,7 @@ import {
   creativeLocationPageShape,
   creativeServicePageShape,
 } from "./production-experience-author.mjs";
+import { activityFromEnv } from "./generation-activity-context.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
@@ -108,6 +109,24 @@ const opencodeGoProfile =
     : null;
 const usage = [];
 const promptEvidence = [];
+const activity = activityFromEnv(process.env, {
+  stage: "authoring",
+  actor: { kind: "model", role: "candidate_author" },
+});
+
+function activityContext(request) {
+  return {
+    stage: "authoring",
+    substep: String(request.stage || "authoring")
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/gu, "_")
+      .slice(0, 80),
+    candidateId: String(request.route?.id || "")
+      .replace(/[^A-Za-z0-9:._-]/gu, "-")
+      .slice(0, 119) || null,
+    actor: { kind: "model", role: "candidate_author" },
+  };
+}
 
 function promptDigest(value) {
   return createHash("sha256").update(value).digest("hex");
@@ -628,6 +647,7 @@ async function requestStage(request) {
                 sessionId,
               }),
             },
+            activity: { producer: activity, context: activityContext(request) },
           });
           const goUsage = goCompletion?.result?.usage || null;
           const goUsageRecord = {
@@ -715,6 +735,7 @@ async function requestStage(request) {
               ],
             },
           },
+          activity: { producer: activity, context: activityContext(request) },
         });
         const {
           response,
@@ -1025,4 +1046,6 @@ try {
   console.error(
     `production_experience_status=failed ${safeAuthorFailureText(error)}`,
   );
+} finally {
+  await activity.close();
 }

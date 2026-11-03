@@ -178,3 +178,24 @@ export function activityFromEnv(env = process.env, semantic = {}, dependencies =
     limits: TRACE_LIMITS,
   });
 }
+
+let processProducer = null;
+
+/**
+ * One producer per Node process for script-scoped instrumentation. Flushes on
+ * normal event-loop drain; a hard termination loses unflushed events, which
+ * stays visible as incomplete coverage rather than a durability claim.
+ */
+export function processActivity(semantic = {}, dependencies = {}) {
+  if (processProducer) return processProducer;
+  processProducer = activityFromEnv(process.env, semantic, dependencies);
+  process.once("beforeExit", () => {
+    void processProducer.close();
+  });
+  return processProducer;
+}
+
+/** Test-only reset hook; never used by production scripts. */
+export function resetProcessActivity() {
+  processProducer = null;
+}
