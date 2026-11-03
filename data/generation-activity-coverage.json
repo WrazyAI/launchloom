@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-03",
+  "description": "Boundaries that can emit generation activity. Each entry must state whether it is instrumented, not applicable to this generation branch, unsupported, or limited. Never describe the trace as complete while any active boundary is unsupported.",
+  "boundaries": [
+    {
+      "id": "model.complete_generation",
+      "kind": "model",
+      "source": "scripts/generation-inference.mjs",
+      "status": "unsupported",
+      "detail": "Shared completion boundary for authoring, site config and creative-lane adapters. Instrumented in Task 5."
+    },
+    {
+      "id": "model.openrouter_legacy",
+      "kind": "model",
+      "source": "scripts/openrouter-client.mjs",
+      "status": "unsupported",
+      "detail": "Legacy OpenRouter envelope reached through the shared completion boundary. Instrumented in Task 5."
+    },
+    {
+      "id": "model.seo_research",
+      "kind": "model",
+      "source": "scripts/seo-research.mjs",
+      "status": "unsupported",
+      "detail": "Provider-hosted web search tool. Starts and completions can be observed; internal provider tool actions cannot."
+    },
+    {
+      "id": "model.reference_analysis",
+      "kind": "model",
+      "source": "scripts/analyze-reference-dna.mjs",
+      "status": "unsupported",
+      "detail": "Reference DNA analysis through the creative lane."
+    },
+    {
+      "id": "model.visual_quality_gate",
+      "kind": "model",
+      "source": "scripts/visual-quality-gate.mjs",
+      "status": "unsupported",
+      "detail": "Rendered visual judging through the creative lane."
+    },
+    {
+      "id": "model.rendered_reference_fidelity",
+      "kind": "model",
+      "source": "scripts/rendered-reference-fidelity.mjs",
+      "status": "unsupported",
+      "detail": "Rendered reference comparison through the creative lane."
+    },
+    {
+      "id": "model.human_revision_gate",
+      "kind": "model",
+      "source": "scripts/human-revision-gate.mjs",
+      "status": "unsupported",
+      "detail": "Revision review inference."
+    },
+    {
+      "id": "model.revision_engine",
+      "kind": "model",
+      "source": "scripts/revision-engine.mjs",
+      "status": "unsupported",
+      "detail": "Client feedback revision inference."
+    },
+    {
+      "id": "model.seo_intent_planner",
+      "kind": "model",
+      "source": "scripts/seo-intent-planner.mjs",
+      "status": "unsupported",
+      "detail": "Query planning inference."
+    },
+    {
+      "id": "provider_internal.actions",
+      "kind": "provider_internal",
+      "source": "hosted model provider",
+      "status": "unsupported",
+      "detail": "Provider-side tool execution and reasoning are not observable and are never inferred."
+    },
+    {
+      "id": "action.workflow_stage",
+      "kind": "stage",
+      "source": "scripts/record-generation-stage.mjs",
+      "status": "unsupported",
+      "detail": "Existing lifecycle stage transitions; activity mirrors them without replacing lifecycle authority."
+    },
+    {
+      "id": "action.site_config",
+      "kind": "action",
+      "source": "scripts/generate-site-config.mjs",
+      "status": "unsupported",
+      "detail": "Configuration and copy compilation."
+    },
+    {
+      "id": "action.contextual_imagery",
+      "kind": "action",
+      "source": "scripts/generate-contextual-assets.mjs",
+      "status": "unsupported",
+      "detail": "Image generation and reviewed fallback selection."
+    },
+    {
+      "id": "action.creative_authoring",
+      "kind": "action",
+      "source": "scripts/author-production-experiences.mjs",
+      "status": "unsupported",
+      "detail": "Independent candidate authoring and bounded repair."
+    },
+    {
+      "id": "action.creative_render_repair",
+      "kind": "action",
+      "source": "scripts/run-rendered-creative-repair.mjs",
+      "status": "unsupported",
+      "detail": "Rendered candidate checks and repair passes."
+    },
+    {
+      "id": "action.preview_deploy",
+      "kind": "action",
+      "source": ".github/workflows/generate-client.yml",
+      "status": "unsupported",
+      "detail": "Preview build and deployment orchestrated by the workflow."
+    },
+    {
+      "id": "action.handoff_telemetry",
+      "kind": "action",
+      "source": "scripts/record-operations-telemetry.mjs",
+      "status": "not_applicable",
+      "detail": "Authoritative lifecycle telemetry. Activity must never duplicate or weaken it."
+    },
+    {
+      "id": "action.github_job_scheduling",
+      "kind": "action",
+      "source": "GitHub Actions",
+      "status": "unsupported",
+      "detail": "Queue time before a job starts is not observable from inside the run."
+    }
+  ]
+}
