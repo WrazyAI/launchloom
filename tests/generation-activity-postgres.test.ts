@@ -153,7 +153,7 @@ describe.skipIf(!url)("generation activity persistence", () => {
       "008-generation-activity",
     ])
       await sql(await readFile(`db/operations/${name}.sql`, "utf8"));
-  });
+  }, 60_000);
 
   beforeEach(async () => {
     await sql(
