@@ -118,6 +118,20 @@
   padding: 14px 16px;
   border-top: 1px solid #e7e9e2;
   vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+
+.admin-page .admin-client-table .admin-actor,
+.admin-page .admin-ledger .admin-actor {
+  min-width: 0;
+}
+
+.admin-page .admin-actor__copy {
+  min-width: 0;
+}
+
+.admin-page .admin-actor__name {
+  overflow-wrap: anywhere;
 }
 
 .admin-page .admin-client-table tbody tr,
