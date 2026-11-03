@@ -307,6 +307,20 @@ preview at `https://4c260519.launchloom-pipeline-preview.pages.dev`.
 - Re-run the plumbing review after these fixes. The layout, mobile hero, and
   imagery are now close enough that the remaining blockers are concrete.
 
+### Addendum fix status
+
+Commit `f7352523` fixes the focus-state contrast defect. Interaction states now
+carry the default-state verdict per target, and a target that was clean in the
+default state but becomes unresolved in a focus or hover state is proven from
+that state's rendered pixels instead of being skipped as out of scope. Targets
+that were already unresolved in the default state remain fail-closed.
+
+The fix was verified on the actual selected Alder & Iron service page. The
+pre-fix module produced exactly one unresolved focus finding for "What is
+happening, and what comes next"; the fixed module produced zero findings and
+passed. The new positive and fail-closed regression tests pass, and the six
+contrast test files pass 128 tests.
+
 ## Boundaries
 
 This is an owned fictional QA intake. No public production, no invented
