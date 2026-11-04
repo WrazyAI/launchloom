@@ -7,6 +7,7 @@ import {
   activityFromEnv,
   activityIdentity,
   collectSensitiveValues,
+  createActivityTransport,
   createFileSpool,
 } from "../scripts/generation-activity-context.mjs";
 import { TRACE_LIMITS } from "../src/lib/generation-activity-contract.mjs";
@@ -112,6 +113,40 @@ describe("generation activity environment context", () => {
       actor: { kind: "model", role: "site_builder" },
     });
     await producer.close();
+  });
+
+  it("sends with a cached OIDC token", async () => {
+    const payload = Buffer.from(
+      JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 600 }),
+    ).toString("base64url");
+    const jwt = `eyJhbGciOiJSUzI1NiJ9.${payload}.sig`;
+    const calls: string[] = [];
+    const fetchImpl = (async (url: string | URL | Request) => {
+      const target = String(url);
+      calls.push(target.includes("pipelines.actions.githubusercontent.com") ? "oidc" : "worker");
+      const body = target.includes("pipelines.actions.githubusercontent.com")
+        ? { value: jwt }
+        : { accepted: 1 };
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }) as typeof fetch;
+    const transport = createActivityTransport({
+      env: {
+        ACTIONS_ID_TOKEN_REQUEST_URL:
+          "https://pipelines.actions.githubusercontent.com/token?api-version=2.0",
+        ACTIONS_ID_TOKEN_REQUEST_TOKEN: "request-token",
+        LAUNCHLOOM_API_URL: "https://api.launchloom.wrazyos.com",
+      },
+      identity: { namespace: "legacy", attemptId: "test" },
+      fetchImpl,
+    });
+    await expect(
+      transport.send([], { signal: AbortSignal.timeout(2_000) }),
+    ).resolves.toMatchObject({ status: 200 });
+    await transport.send([], { signal: AbortSignal.timeout(2_000) });
+    expect(calls).toEqual(["oidc", "worker", "worker"]);
   });
 
   it("lets a Node script exit without an explicit close", async () => {
