@@ -78,6 +78,14 @@ export function createActivityTransport({
         },
       );
       const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        // Controlled status/code only. Never log the token, body or evidence.
+        console.warn(
+          `generation_activity_delivery=rejected status=${response.status} code=${
+            body?.error?.code || "unknown"
+          }`,
+        );
+      }
       return {
         status: response.status,
         suppressed: body?.suppressed === true,
