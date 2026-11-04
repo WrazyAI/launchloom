@@ -170,9 +170,23 @@ export function buildGoCreativeRequest({
       `Unsupported creative-lane content part for OpenCode Go: ${String(part?.type || "unknown")}.`,
     );
   }
+  // The Go Responses gateway rejects schema-free JSON mode when the prompt
+  // does not contain the word "json". Make that requirement explicit instead
+  // of surfacing a 400 for an otherwise valid request.
+  const jsonMode = !(schema && schemaName);
+  const promptText = [
+    String(systemPrompt ?? ""),
+    ...content
+      .filter((part) => part.type === "text")
+      .map((part) => String(part.text ?? "")),
+  ].join(" ");
+  const effectiveSystemPrompt =
+    jsonMode && !/\bjson\b/iu.test(promptText)
+      ? `${systemPrompt} Return JSON only.`
+      : systemPrompt;
   return {
     messages: [
-      { role: "system", content: String(systemPrompt ?? "") },
+      { role: "system", content: String(effectiveSystemPrompt ?? "") },
       { role: "user", content },
     ],
     maxOutputTokens: Number(maxOutputTokens),

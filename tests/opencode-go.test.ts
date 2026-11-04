@@ -518,4 +518,29 @@ describe("creative lane Go transport retries", () => {
     });
     expect(calls).toBe(3);
   });
+
+  it("adds the JSON instruction required by Go schema-free JSON mode", async () => {
+    const module = await import("../scripts/creative-lane-inference.mjs");
+    const withoutJson = module.buildGoCreativeRequest({
+      systemPrompt: "Describe the image in one sentence.",
+      userContent: [{ type: "text", text: "Describe this image." }],
+      maxOutputTokens: 100,
+      sessionId: "launchloom:test-session",
+    });
+    expect(withoutJson.messages[0]).toMatchObject({
+      role: "system",
+      content: expect.stringMatching(/\bjson\b/iu),
+    });
+
+    const withJson = module.buildGoCreativeRequest({
+      systemPrompt: "Return JSON.",
+      userContent: [{ type: "text", text: "Say ok." }],
+      maxOutputTokens: 100,
+      sessionId: "launchloom:test-session",
+    });
+    expect(withJson.messages[0]).toMatchObject({
+      role: "system",
+      content: "Return JSON.",
+    });
+  });
 });
