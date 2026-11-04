@@ -75,7 +75,7 @@ export function createActivityTransport({
   }
   return {
     async send(events, { signal } = {}) {
-      const token = await token();
+      const bearer = await token();
       const response = await fetchImpl(
         `${api}/api/internal/generation-activity`,
         {
@@ -83,7 +83,7 @@ export function createActivityTransport({
           redirect: "error",
           signal,
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${bearer}`,
             "Content-Type": "application/json",
             "User-Agent": "LaunchLoom-Activity",
           },
