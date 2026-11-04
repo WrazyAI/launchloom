@@ -97,8 +97,9 @@ an action, not a model tool call. Provider-hosted tool execution is unsupported.
 
 ## Transport and limits
 
-Producers flush every second or at 20 events, with a 3s delivery deadline and at
-most two retries for transient failures. Authentication/validation rejections
+Producers flush every second or at 20 events, with an 8s delivery deadline and at
+most two retries for transient failures. The GitHub OIDC token is cached until
+shortly before expiry so a cold token request cannot consume the whole deadline. Authentication/validation rejections
 (400/401/403/404) are not retried and never fall back to another channel.
 
 | Limit | Value |
@@ -110,7 +111,7 @@ most two retries for transient failures. Authentication/validation rejections
 | Events per attempt | 10,000, reserving 32 metadata/control slots |
 | Retained content per attempt | 10 MiB |
 | Diagnostic retention | 30 days |
-| Producer close ceiling | 10 seconds |
+| Producer close ceiling | 15 seconds |
 
 At the content limit, verbose events stop and a `trace.capacity` coverage entry is
 recorded. Control evidence (errors, coverage, heartbeats, terminal events) keeps

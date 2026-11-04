@@ -41,6 +41,10 @@ export async function finalizeGenerationActivity({
     return { recorded: true, complete };
   } finally {
     await producer.close();
+    const stats = producer.stats();
+    console.log(
+      `generation_activity_producer dropped=${stats.dropped} rejected=${stats.rejected} queued=${stats.queued} suppressed=${stats.suppressed}`,
+    );
   }
 }
 
