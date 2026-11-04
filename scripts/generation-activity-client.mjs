@@ -177,8 +177,14 @@ export function createActivityProducer({
           rejected += events.length;
           return { ok: true, permanent: true };
         }
-      } catch {
+      } catch (error) {
         clock.clearTimeout(deadline);
+        if (attempt === 1) {
+          const code = String(error?.code || error?.name || "unknown")
+            .replace(/[^a-z0-9_-]/giu, "")
+            .slice(0, 40);
+          console.warn(`generation_activity_delivery=transport-error code=${code}`);
+        }
       }
       if (attempt < limits.maxDeliveryAttempts) {
         await new Promise((resolve) =>
