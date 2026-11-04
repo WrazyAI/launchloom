@@ -1004,3 +1004,29 @@ describe("GenerationLedger attempt history", () => {
     expect((await store.listAttempts({})).total).toBe(3);
   });
 });
+
+describe("GenerationLedger activity ownership", () => {
+  it("returns only the verified run binding for a bound attempt", async () => {
+    const store = ledger();
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "activity-bound",
+        repository: "WrazyAI/launchloom",
+        runId: "9001",
+        runAttempt: 2,
+      }),
+    );
+    await expect(store.getActivityOwner("activity-bound")).resolves.toEqual({
+      repository: "WrazyAI/launchloom",
+      runId: "9001",
+      runAttempt: 2,
+    });
+  });
+
+  it("returns null for an unbound or unknown attempt", async () => {
+    const store = ledger();
+    await store.upsertAttempt(attempt({ attemptId: "activity-unbound" }));
+    await expect(store.getActivityOwner("activity-unbound")).resolves.toBeNull();
+    await expect(store.getActivityOwner("activity-missing")).resolves.toBeNull();
+  });
+});

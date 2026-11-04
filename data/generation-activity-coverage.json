@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-03",
+  "description": "Boundaries that can emit generation activity. Each entry must state whether it is instrumented, not applicable to this generation branch, unsupported, or limited. Never describe the trace as complete while any active boundary is unsupported.",
+  "boundaries": [
+    {
+      "id": "model.complete_generation",
+      "kind": "model",
+      "source": "scripts/generation-inference.mjs",
+      "status": "instrumented",
+      "detail": "Instrumented at the shared completion boundary; emits start, visible output, usage and normalized status."
+    },
+    {
+      "id": "model.openrouter_legacy",
+      "kind": "model",
+      "source": "scripts/openrouter-client.mjs",
+      "status": "instrumented",
+      "detail": "Legacy OpenRouter dispatch is observed through the shared completion boundary."
+    },
+    {
+      "id": "model.seo_research",
+      "kind": "model",
+      "source": "scripts/seo-research.mjs",
+      "status": "unsupported",
+      "detail": "Provider-hosted web search tool. Starts and completions can be observed; internal provider tool actions cannot."
+    },
+    {
+      "id": "model.reference_analysis",
+      "kind": "model",
+      "source": "scripts/analyze-reference-dna.mjs",
+      "status": "limited",
+      "detail": "The creative-lane transport accepts an activity producer; this caller does not yet pass one."
+    },
+    {
+      "id": "model.visual_quality_gate",
+      "kind": "model",
+      "source": "scripts/visual-quality-gate.mjs",
+      "status": "limited",
+      "detail": "The creative-lane transport accepts an activity producer; this caller does not yet pass one."
+    },
+    {
+      "id": "model.rendered_reference_fidelity",
+      "kind": "model",
+      "source": "scripts/rendered-reference-fidelity.mjs",
+      "status": "limited",
+      "detail": "The creative-lane transport accepts an activity producer; this caller does not yet pass one."
+    },
+    {
+      "id": "model.human_revision_gate",
+      "kind": "model",
+      "source": "scripts/human-revision-gate.mjs",
+      "status": "limited",
+      "detail": "The shared boundary supports observation; this caller does not yet pass a producer."
+    },
+    {
+      "id": "model.revision_engine",
+      "kind": "model",
+      "source": "scripts/revision-engine.mjs",
+      "status": "limited",
+      "detail": "The shared boundary supports observation; this caller does not yet pass a producer."
+    },
+    {
+      "id": "model.seo_intent_planner",
+      "kind": "model",
+      "source": "scripts/seo-intent-planner.mjs",
+      "status": "limited",
+      "detail": "The shared boundary supports observation; this caller does not yet pass a producer."
+    },
+    {
+      "id": "provider_internal.actions",
+      "kind": "provider_internal",
+      "source": "hosted model provider",
+      "status": "unsupported",
+      "detail": "Provider-side tool execution and reasoning are not observable and are never inferred."
+    },
+    {
+      "id": "action.workflow_stage",
+      "kind": "stage",
+      "source": "scripts/record-generation-stage.mjs",
+      "status": "not_applicable",
+      "detail": "Lifecycle stage evidence stays authoritative in the existing stage timeline; the diagnostic trace does not duplicate it."
+    },
+    {
+      "id": "action.site_config",
+      "kind": "action",
+      "source": "scripts/generate-site-config.mjs",
+      "status": "instrumented",
+      "detail": "OpenCode Go copy dispatch is observed. The legacy OpenRouter copy dispatch remains limited and reports coverage status limited."
+    },
+    {
+      "id": "action.contextual_imagery",
+      "kind": "action",
+      "source": "scripts/generate-contextual-assets.mjs",
+      "status": "limited",
+      "detail": "Image generation is orchestrated by an uninstrumented script in this version."
+    },
+    {
+      "id": "action.creative_authoring",
+      "kind": "action",
+      "source": "scripts/author-production-experiences.mjs",
+      "status": "instrumented",
+      "detail": "Candidate authoring is wrapped as a real pipeline action; each model dispatch is observed separately."
+    },
+    {
+      "id": "action.creative_render_repair",
+      "kind": "action",
+      "source": "scripts/run-rendered-creative-repair.mjs",
+      "status": "limited",
+      "detail": "Rendered repair is orchestrated by an uninstrumented script in this version."
+    },
+    {
+      "id": "action.preview_deploy",
+      "kind": "action",
+      "source": ".github/workflows/generate-client.yml",
+      "status": "limited",
+      "detail": "The workflow shell deploys the preview; no diagnostic producer runs inside the deployment step."
+    },
+    {
+      "id": "action.handoff_telemetry",
+      "kind": "action",
+      "source": "scripts/record-operations-telemetry.mjs",
+      "status": "not_applicable",
+      "detail": "Authoritative lifecycle telemetry must never depend on the diagnostic trace."
+    },
+    {
+      "id": "action.github_job_scheduling",
+      "kind": "action",
+      "source": "GitHub Actions",
+      "status": "unsupported",
+      "detail": "Queue time before a job starts is not observable from inside the run."
+    },
+    {
+      "id": "workflow.finalizer",
+      "kind": "stage",
+      "source": "scripts/finalize-generation-activity.mjs",
+      "status": "instrumented",
+      "detail": "The only producer allowed to declare the trace complete; runs after every workflow outcome."
+    }
+  ]
+}

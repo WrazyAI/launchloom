@@ -36,7 +36,7 @@ export type OperationsSql = {
 export class OperationsError extends Error {
   constructor(
     readonly code:
-      "invalid" | "conflict" | "not_found" | "dependency_unavailable",
+      "invalid" | "conflict" | "forbidden" | "not_found" | "dependency_unavailable",
     message: string,
   ) {
     super(message);

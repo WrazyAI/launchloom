@@ -10,6 +10,7 @@ import {
   openRouterChatCompletion,
   readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
+import { observeModelCall } from "./generation-activity-model.mjs";
 
 export class GenerationInferenceError extends Error {
   constructor(result) {
@@ -28,37 +29,59 @@ export class GenerationInferenceError extends Error {
  * OpenRouter envelope or invented usage/cost fields.
  * @param {{openRouter?: Record<string, any>, inference?: Record<string, any>}} options
  */
-export async function completeGeneration({ openRouter, inference }) {
+export async function completeGeneration({
+  openRouter,
+  inference,
+  activity = null,
+}) {
   if (Boolean(openRouter) === Boolean(inference))
     throw new InferenceContractError(
       "Choose exactly one generation transport.",
     );
-  if (inference) {
-    const result = await inferenceCompletion(inference);
-    return { result, legacy: null };
-  }
-  const response = await openRouterChatCompletion(openRouter);
-  const envelope = await readOpenRouterResponseEnvelope(response);
-  // These capabilities are deliberately text-only and never used for request
-  // selection. This profile describes the legacy response protocol, not model
-  // capability acceptance or permission to dispatch a new request.
-  const responseProfile = {
-    provider: "openrouter",
-    model: openRouter.body?.model,
-    protocol: "chat-completions",
-    endpoint: OPENROUTER_CHAT_COMPLETIONS_URL,
-    auth: "bearer",
-    capabilities: {
-      maxOutputTokens: 1,
-      outputFormats: ["text"],
-      completionTokenField: "max_tokens",
-    },
+  const dispatch = async () => {
+    if (inference) {
+      const result = await inferenceCompletion(inference);
+      return { result, legacy: null };
+    }
+    const response = await openRouterChatCompletion(openRouter);
+    const envelope = await readOpenRouterResponseEnvelope(response);
+    // These capabilities are deliberately text-only and never used for request
+    // selection. This profile describes the legacy response protocol, not model
+    // capability acceptance or permission to dispatch a new request.
+    const responseProfile = {
+      provider: "openrouter",
+      model: openRouter.body?.model,
+      protocol: "chat-completions",
+      endpoint: OPENROUTER_CHAT_COMPLETIONS_URL,
+      auth: "bearer",
+      capabilities: {
+        maxOutputTokens: 1,
+        outputFormats: ["text"],
+        completionTokenField: "max_tokens",
+      },
+    };
+    const result = normalizeInferenceResponse(
+      responseProfile,
+      envelope.payload,
+      {
+        httpStatus: response.status,
+        headers: response.headers,
+      },
+    );
+    return { result, legacy: { response, ...envelope } };
   };
-  const result = normalizeInferenceResponse(responseProfile, envelope.payload, {
-    httpStatus: response.status,
-    headers: response.headers,
+  if (!activity?.producer) return dispatch();
+  const producer = activity.producer.withContext({
+    ...(activity.context || {}),
+    actor: activity.context?.actor ?? { kind: "model", role: "model" },
   });
-  return { result, legacy: { response, ...envelope } };
+  return observeModelCall({
+    producer,
+    provider: inference ? inference.profile.provider : "openrouter",
+    model: inference ? inference.profile.model : openRouter.body?.model,
+    callId: activity.callId,
+    invoke: dispatch,
+  });
 }
 
 /** All generation callers must pass the completion gate before JSON parsing. */

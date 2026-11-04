@@ -284,10 +284,10 @@ describe("accounts API authorization and profiles", () => {
 
   it.each([false, true])("includes the server-provided read capability on Neon bootstrap: %s", async enabled => {
     const response = await accountsApi(jsonRequest("/me", "GET"), {
-      ...deps(fakeStore(), admin), capabilities: { operationsRead: enabled },
+      ...deps(fakeStore(), admin), capabilities: { operationsRead: enabled, generationActivityRead: false },
     });
     expect(response.status).toBe(200);
-    expect(await body(response)).toMatchObject({ capabilities: { operationsRead: enabled } });
+    expect(await body(response)).toMatchObject({ capabilities: { operationsRead: enabled, generationActivityRead: false } });
   });
 
   it("defaults Neon bootstrap to operations reads disabled", async () => {

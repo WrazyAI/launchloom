@@ -44,6 +44,7 @@ jobs:
       SENTRY_ORG: ${{ vars.SENTRY_ORG }}
       SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
       PUBLIC_LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+      GENERATION_ACTIVITY_ENABLED: ${{ vars.GENERATION_ACTIVITY_ENABLED || 'false' }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -131,6 +132,7 @@ jobs:
             --var "ONBOARDING_ACCESS_AUD:$ONBOARDING_ACCESS_AUD"
             --var "ADMIN_AUTH_MODE:${ADMIN_AUTH_MODE:-access}"
             --var "PREVIEW_ORIGIN:$PREVIEW_ORIGIN"
+            --var "GENERATION_ACTIVITY_ENABLED:${GENERATION_ACTIVITY_ENABLED:-false}"
           )
           if [ "${ADMIN_AUTH_MODE:-access}" = "neon" ]; then
             deploy_vars+=(

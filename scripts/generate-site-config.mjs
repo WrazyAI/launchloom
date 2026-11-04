@@ -27,6 +27,7 @@ import {
   opencodeGoResponsesProfile,
   opencodeGoUsageMetrics,
 } from "./opencode-go.mjs";
+import { processActivity } from "./generation-activity-context.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import { fontFamilyById } from "./font-catalog.mjs";
 import { fictionalPipelineDemoNotice } from "./synthetic-demo-notice.mjs";
@@ -79,6 +80,10 @@ async function siteCopyOpencodeGoCompletion({
   maxOutputTokens,
   model,
 }) {
+  const activity = processActivity({
+    stage: "site_config",
+    actor: { kind: "model", role: "site_copy" },
+  });
   const completion = await completeGeneration({
     inference: {
       profile: opencodeGoResponsesProfile({ logicalModel: model }),
@@ -90,6 +95,10 @@ async function siteCopyOpencodeGoCompletion({
         effort,
         sessionId,
       }),
+    },
+    activity: {
+      producer: activity,
+      context: { stage: "site_config", substep: "site_copy" },
     },
   });
   const usage = completion?.result?.usage || null;
@@ -3436,6 +3445,25 @@ export async function generateSiteConfigWithModel(intake, model = siteCopyDefaul
   } else if (!process.env.OPENROUTER_API_KEY) {
     throw new Error("OPENROUTER_API_KEY is required to generate client copy.");
   }
+  const activity = processActivity({
+    stage: "site_config",
+    actor: { kind: "model", role: "site_copy" },
+  });
+  activity.emit("coverage", {
+    boundary: "action.site_config",
+    status: provider === "opencode-go" ? "instrumented" : "limited",
+    detail:
+      provider === "opencode-go"
+        ? null
+        : {
+            kind: "text",
+            text: "Legacy OpenRouter copy dispatch is not instrumented.",
+          },
+  });
+  const business = intake?.business || {};
+  activity.addSensitiveValues(
+    [business.phone, business.email, business.address].filter(Boolean),
+  );
   const groundedIntake = prepareGenerationIntake(intake);
   let draft;
   let modelOutput;

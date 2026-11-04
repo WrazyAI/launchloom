@@ -3,6 +3,14 @@ import type {
   InferenceRequest,
   InferenceResult,
 } from "./inference-client.mjs";
+import type { TraceContext } from "../src/lib/generation-activity";
+import type { ActivityProducer } from "./generation-activity-client.mjs";
+
+type ActivityOptions = {
+  producer: ActivityProducer;
+  context?: Partial<TraceContext>;
+  callId?: string;
+};
 
 type LegacyOptions = {
   apiKey?: string;
@@ -38,10 +46,12 @@ export class GenerationInferenceError extends Error {
 export function completeGeneration(options: {
   openRouter: LegacyOptions;
   inference?: never;
+  activity?: ActivityOptions | null;
 }): Promise<LegacyCompletion>;
 export function completeGeneration(options: {
   inference: NeutralOptions;
   openRouter?: never;
+  activity?: ActivityOptions | null;
 }): Promise<NeutralCompletion>;
 export function parseGenerationOutput(
   completion: LegacyCompletion | NeutralCompletion,

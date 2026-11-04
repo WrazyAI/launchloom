@@ -465,6 +465,11 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
     return this.attempts.getAttemptEvents(id, cursor, limit);
   }
 
+  /** Run binding only; diagnostic ingest never reads attempt payloads. */
+  async getActivityOwner(id: string) {
+    return this.attempts.getActivityOwner(id);
+  }
+
   async getHealth() {
     return this.attempts.getHealth();
   }

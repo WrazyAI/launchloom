@@ -21,6 +21,7 @@ export function createInferenceAuthorAdapter({
   prepareRequest,
   fetchImpl = fetch,
   signal,
+  activity = null,
 }) {
   const target = structuredClone(validateInferenceProfile(profile));
   if (typeof prepareRequest !== "function")
@@ -54,6 +55,19 @@ export function createInferenceAuthorAdapter({
         fetchImpl,
         signal: signal ? AbortSignal.any([signal, deadline]) : deadline,
       },
+      ...(activity
+        ? {
+            activity: {
+              producer: activity,
+              context: {
+                stage: "authoring",
+                substep: stageRequest.stage,
+                candidateId: stageRequest.candidateId ?? null,
+                actor: { kind: "model", role: "candidate_author" },
+              },
+            },
+          }
+        : {}),
     });
     return parseGenerationOutput(completion);
   };

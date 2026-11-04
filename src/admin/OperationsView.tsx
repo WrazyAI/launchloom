@@ -7,6 +7,7 @@ import type {
 import { ApiRequestError, type AdminApi } from "./api";
 import type { AdminRouteState } from "./route-state";
 import { AdminIcon } from "./AdminIcon";
+import { GenerationActivity } from "./GenerationActivity";
 import { formatTimestamp, isAbortError, requestErrorMessage } from "./format";
 import {
   costKindLabel,
@@ -106,15 +107,19 @@ function EventList({ events }: { events: OperationEvent[] }) {
 }
 
 function OperationDetailPanel({
+  api,
   detail,
   loading,
   error,
+  activityEnabled,
   onClose,
   onRetry,
 }: {
+  api: AdminApi;
   detail: OperationDetail | null;
   loading: boolean;
   error: string | null;
+  activityEnabled: boolean;
   onClose: () => void;
   onRetry: () => void;
 }) {
@@ -180,6 +185,15 @@ function OperationDetailPanel({
           Close detail
         </button>
       </div>
+
+      <GenerationActivity
+        api={api}
+        identity={{ namespace: "operations", attemptId: detail.attemptId }}
+        active={
+          detail.status === "running" || detail.status === "waiting_to_start"
+        }
+        enabled={activityEnabled}
+      />
 
       <div className="admin-operations-detail__grid">
         <div>
@@ -332,6 +346,7 @@ export function OperationsView({
   state,
   cursorTrail,
   onNavigate,
+  activityEnabled = false,
 }: {
   api: AdminApi;
   state: AdminRouteState;
@@ -340,6 +355,7 @@ export function OperationsView({
     next: AdminRouteState,
     options?: { cursorTrail?: string[] },
   ) => void;
+  activityEnabled?: boolean;
 }) {
   const cursor = state.cursor;
   const [records, setRecords] = useState<OperationRecord[]>([]);
@@ -696,6 +712,8 @@ export function OperationsView({
 
       {state.attemptId ? (
         <OperationDetailPanel
+          api={api}
+          activityEnabled={activityEnabled}
           detail={detail}
           loading={detailLoading}
           error={detailError}

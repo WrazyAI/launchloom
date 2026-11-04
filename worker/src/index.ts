@@ -38,6 +38,10 @@ import {
   operationsDashboardApi,
 } from "./admin/workspace-api";
 import {
+  generationActivityIngest,
+  generationActivityRead,
+} from "./generation-activity/http";
+import {
   operationsAdminApi, scheduledReconciliation, type ReconciliationEnvironment,
 } from "./operations/reconcile";
 import {
@@ -139,6 +143,7 @@ export interface Env {
   OPERATIONS_INTAKE_MODE?: string;
   OPERATIONS_OIDC_AUDIENCE?: string;
   OPERATIONS_OIDC_REPOSITORY_ID?: string;
+  GENERATION_ACTIVITY_ENABLED?: string;
   CLOUDFLARE_ACCESS_CLIENT_ID?: string;
   CLOUDFLARE_ACCESS_CLIENT_SECRET?: string;
   PREVIEW_PROXY_HOSTS?: string;
@@ -408,7 +413,14 @@ async function authenticatedWorkspace(
   if (mode === "neon") {
     if (suffix === "/enrollments/accept") return enrollmentAccept(request, env);
     return guardedAdminRoute(request, env, ctx, async (guard) =>
-      suffix === "/me" || suffix === "/team" || suffix.startsWith("/team/")
+      /^\/(?:legacy\/attempts|operations\/records)\/[^/]+\/activity$/u.test(suffix)
+        ? generationActivityRead(
+            request,
+            env,
+            guard.principal,
+            new URL(request.url).pathname,
+          )
+        : suffix === "/me" || suffix === "/team" || suffix.startsWith("/team/")
         ? accountsApi(request, {
             store: guard.store!,
             principal: guard.principal,
@@ -455,6 +467,15 @@ async function authenticatedWorkspace(
       "forbidden",
       "Membership management requires a Neon account.",
       403,
+    );
+  if (
+    /^\/(?:legacy\/attempts|operations\/records)\/[^/]+\/activity$/u.test(suffix)
+  )
+    return generationActivityRead(
+      request,
+      env,
+      await legacyAccessPrincipal(verifiedEmail),
+      new URL(request.url).pathname,
     );
   if (
     suffix === "/operations/records" ||
@@ -4053,6 +4074,8 @@ export default {
       );
     if (path === "/api/internal/operations/events")
       return operationsEvent(request, env);
+    if (path === "/api/internal/generation-activity")
+      return generationActivityIngest(request, env);
     if (path === '/api/internal/generation-attempts' || path === '/api/internal/generation-reconciliation') {
       if (!env.GENERATION_TRACKING_SECRET) return workspaceError('unavailable','Generation tracking is not configured.',503);
       if (!internalSecretAuthorized(request,env.GENERATION_TRACKING_SECRET)) return workspaceError('unauthorized','Unauthorized.',401);

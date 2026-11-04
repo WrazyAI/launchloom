@@ -28,6 +28,8 @@ import {
   creativeLocationPageShape,
   creativeServicePageShape,
 } from "./production-experience-author.mjs";
+import { activityFromEnv } from "./generation-activity-context.mjs";
+import { observePipelineAction } from "./generation-activity-action.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
@@ -108,6 +110,30 @@ const opencodeGoProfile =
     : null;
 const usage = [];
 const promptEvidence = [];
+const activity = activityFromEnv(process.env, {
+  stage: "authoring",
+  actor: { kind: "model", role: "candidate_author" },
+});
+
+activity.emit("coverage", {
+  boundary: "action.creative_authoring",
+  status: "instrumented",
+  detail: null,
+});
+
+function activityContext(request) {
+  return {
+    stage: "authoring",
+    substep: String(request.stage || "authoring")
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/gu, "_")
+      .slice(0, 80),
+    candidateId: String(request.route?.id || "")
+      .replace(/[^A-Za-z0-9:._-]/gu, "-")
+      .slice(0, 119) || null,
+    actor: { kind: "model", role: "candidate_author" },
+  };
+}
 
 function promptDigest(value) {
   return createHash("sha256").update(value).digest("hex");
@@ -628,6 +654,7 @@ async function requestStage(request) {
                 sessionId,
               }),
             },
+            activity: { producer: activity, context: activityContext(request) },
           });
           const goUsage = goCompletion?.result?.usage || null;
           const goUsageRecord = {
@@ -715,6 +742,7 @@ async function requestStage(request) {
               ],
             },
           },
+          activity: { producer: activity, context: activityContext(request) },
         });
         const {
           response,
@@ -973,13 +1001,30 @@ try {
     fs.readFile(inspirationPath, "utf8").then(JSON.parse),
   ]);
   assertReferenceDossierPack(inspirationPack);
-  const result = await authorExperienceCandidates({
-    site,
-    inspirationPack,
-    generate: requestStage,
-    model,
-    creativeSession,
-    testProfile: testPolicy.profile,
+  activity.addSensitiveValues(
+    [
+      site?.business?.phone,
+      site?.business?.email,
+      site?.business?.address,
+    ].filter(Boolean),
+  );
+  const result = await observePipelineAction({
+    producer: activity,
+    actionId: "authoring:candidates",
+    name: "author_candidates",
+    input: { step: "authoring" },
+    invoke: () =>
+      authorExperienceCandidates({
+        site,
+        inspirationPack,
+        generate: requestStage,
+        model,
+        creativeSession,
+        testProfile: testPolicy.profile,
+      }),
+    projectResult: (value) => ({
+      count: Array.isArray(value?.candidates) ? value.candidates.length : 0,
+    }),
   });
   await writeResult(result);
   console.log(`production_experience_candidates=${outputPath}`);
@@ -1025,4 +1070,6 @@ try {
   console.error(
     `production_experience_status=failed ${safeAuthorFailureText(error)}`,
   );
+} finally {
+  await activity.close();
 }

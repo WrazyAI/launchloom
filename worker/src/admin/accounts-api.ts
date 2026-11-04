@@ -116,7 +116,10 @@ export async function accountsApi(
       const member = await deps.store.get(deps.principal.id);
       if (!member || !member.active)
         throw new MembershipError("forbidden", "This membership is inactive.");
-      return json({ principal: member, capabilities: deps.capabilities ?? { operationsRead: false } });
+      return json({ principal: member, capabilities: deps.capabilities ?? {
+          operationsRead: false,
+          generationActivityRead: false,
+        } });
     }
 
     if (suffix === "/me" && method === "PATCH") {

@@ -368,7 +368,7 @@ describe("interim Access principal", () => {
       principal: Record<string, unknown>;
     };
     expect(payload).toEqual({
-      capabilities: { operationsRead: false },
+      capabilities: { operationsRead: false, generationActivityRead: false },
       principal: {
         id: await expectedId("admin@example.test"),
         email: "admin@example.test",

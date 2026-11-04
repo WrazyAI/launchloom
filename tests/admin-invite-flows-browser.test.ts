@@ -214,7 +214,7 @@ async function serve(
         role: "admin",
         authSource: "cloudflare-access",
       },
-      capabilities: { operationsRead: false },
+      capabilities: { operationsRead: false, generationActivityRead: false },
     });
     return;
   }

@@ -4,6 +4,7 @@ import {
   operationsDatabaseSql,
   type OperationsSql,
 } from "./store";
+import { createGenerationActivityStore } from "../generation-activity/store";
 
 export type ReconcileResult = "updated" | "unchanged" | "attention";
 type Snapshot = { attemptId: string; run: RunIdentity | null; state: string };
@@ -219,6 +220,7 @@ export async function operationsResolutionApi(
 }
 
 export type ReconciliationEnvironment = {
+  GENERATION_ACTIVITY_ENABLED?: string;
   OPERATIONS_RECONCILE_MODE?: string;
   OPERATIONS_DATABASE_URL?: string;
   OPERATIONS_DISPATCH_REPOSITORY?: string;
@@ -266,14 +268,47 @@ export async function operationsAdminApi(
     return reply({ error: "unavailable" }, 503);
   }
 }
+/**
+ * Bounded retention for diagnostic trace content. Deliberately isolated from
+ * reconciliation: a trace failure never blocks lifecycle verification, and no
+ * lifecycle or cost row is ever deleted here.
+ */
+export async function pruneGenerationActivity(
+  env: { GENERATION_ACTIVITY_ENABLED?: string },
+  sql: OperationsSql,
+): Promise<{ deleted: number; batches: number }> {
+  if (env.GENERATION_ACTIVITY_ENABLED !== "true")
+    return { deleted: 0, batches: 0 };
+  const store = createGenerationActivityStore(sql);
+  let deleted = 0;
+  let batches = 0;
+  for (let index = 0; index < 5; index += 1) {
+    const result = await store.pruneExpired(100);
+    batches += 1;
+    deleted += result.deleted;
+    if (!result.hasMore) break;
+  }
+  return { deleted, batches };
+}
+
 export async function scheduledReconciliation(
   env: ReconciliationEnvironment,
   sql?: OperationsSql,
 ): Promise<void> {
+  const connection =
+    sql ??
+    (env.OPERATIONS_DATABASE_URL
+      ? operationsDatabaseSql(env.OPERATIONS_DATABASE_URL)
+      : null);
+  if (!connection) {
+    if (env.OPERATIONS_RECONCILE_MODE === "observe-v1")
+      throw Error("Operations reconciliation unavailable.");
+    return;
+  }
+  // Retention is independent housekeeping and runs even when lifecycle
+  // reconciliation is disabled. A failure is logged, never fatal.
+  await runGenerationActivityPrune(env, connection);
   if (env.OPERATIONS_RECONCILE_MODE !== "observe-v1") return;
-  if (!env.OPERATIONS_DATABASE_URL && !sql)
-    throw Error("Operations reconciliation unavailable.");
-  const connection = sql ?? operationsDatabaseSql(env.OPERATIONS_DATABASE_URL!);
   const store = createOperationsStore(connection);
   const reconciler = createAttemptReconciler(
     store,
@@ -294,4 +329,17 @@ export async function scheduledReconciliation(
         attemptId: alert.attemptId,
       }),
     );
+}
+
+/** Non-throwing scheduled wrapper; retention failure is reported, not fatal. */
+export async function runGenerationActivityPrune(
+  env: { GENERATION_ACTIVITY_ENABLED?: string },
+  sql: OperationsSql,
+): Promise<{ deleted: number; batches: number }> {
+  try {
+    return await pruneGenerationActivity(env, sql);
+  } catch {
+    console.warn("generation_activity_prune=failed");
+    return { deleted: 0, batches: 0 };
+  }
 }

@@ -70,6 +70,8 @@ type HeroMode = "ok" | "notFound" | "unauthorized";
 let heroMode: HeroMode = "ok";
 let heroPng: Buffer;
 let operationsReadCapability = false;
+let activityEnabled = false;
+let activityFixture: unknown = null;
 
 function sendJson(response: http.ServerResponse, body: unknown, status = 200) {
   response.writeHead(status, {
@@ -325,7 +327,10 @@ async function serve(
   if (suffix === "/me") {
     sendJson(response, {
       principal: adminPrincipal,
-      capabilities: { operationsRead: operationsReadCapability },
+      capabilities: {
+          operationsRead: operationsReadCapability,
+          generationActivityRead: activityEnabled,
+        },
     });
     return;
   }
@@ -368,6 +373,16 @@ async function serve(
       return;
     }
     sendJson(response, { client });
+    return;
+  }
+
+  const activityMatch = /^\/legacy\/attempts\/([^/]+)\/activity$/u.exec(suffix);
+  if (activityMatch) {
+    const id = decodeURIComponent(activityMatch[1]);
+    sendJson(
+      response,
+      activityFixture ?? activityPageFor(id),
+    );
     return;
   }
 
@@ -452,6 +467,8 @@ afterAll(async () => {
 
 beforeEach(() => {
   operationsReadCapability = false;
+  activityEnabled = false;
+  activityFixture = null;
   requests = [];
   health = fixtureHealth();
   delays = new Map();
@@ -467,6 +484,159 @@ type OpenOptions = {
   viewport?: { width: number; height: number };
   path?: string;
 };
+
+function activityEvent(
+  index: number,
+  overrides: Record<string, unknown> = {},
+) {
+  return {
+    schemaVersion: 1,
+    eventId: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+    context: {
+      namespace: "legacy",
+      attemptId: "attempt-diagnostic",
+      producerId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      stage: "authoring",
+      substep: null,
+      taskId: null,
+      parentTaskId: null,
+      candidateId: "candidate-1",
+      repairPass: null,
+      actor: { kind: "model", role: "site_builder" },
+    },
+    sequence: index,
+    emittedAt: new Date(Date.now() - (10 - index) * 1_000).toISOString(),
+    kind: "model_started",
+    payload: {
+      callId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      provider: "opencode-go",
+      model: "deepseek-v4.1-flash",
+    },
+    ...overrides,
+  };
+}
+
+function activityPageFor(attemptId: string) {
+  const now = Date.now();
+  const withAttempt = (event: ReturnType<typeof activityEvent>) => ({
+    ...event,
+    context: { ...event.context, attemptId },
+    cursor: `v1.${event.sequence.toString(16)}.abcdabcd`,
+    receivedAt: now - (10 - event.sequence) * 1_000,
+  });
+  const items = [
+    activityEvent(1),
+    activityEvent(2, {
+      kind: "model_finished",
+      payload: {
+        callId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        status: "completed",
+      },
+    }),
+    activityEvent(3, {
+      kind: "output",
+      payload: {
+        callId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        message: {
+          kind: "text",
+          text: "I am building the opening section around the approved service scope.",
+        },
+      },
+    }),
+    activityEvent(4, {
+      kind: "usage",
+      payload: {
+        callId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        usage: {
+          inputTokens: 1200,
+          outputTokens: 340,
+          cachedInputTokens: null,
+          cacheWriteTokens: null,
+          reasoningTokens: null,
+          costUsd: "0.12000000",
+          costKind: "actual",
+        },
+      },
+    }),
+    activityEvent(5, {
+      context: {
+        ...activityEvent(5).context,
+        actor: { kind: "orchestrator", role: "renderer" },
+      },
+      kind: "action_started",
+      payload: {
+        actionId: "render:1",
+        name: "render_candidate",
+        input: { path: "src/pages/index.astro" },
+      },
+    }),
+    activityEvent(6, {
+      context: {
+        ...activityEvent(6).context,
+        actor: { kind: "orchestrator", role: "renderer" },
+      },
+      kind: "action_finished",
+      payload: {
+        actionId: "render:1",
+        name: "render_candidate",
+        status: "succeeded",
+        durationMs: 420,
+        result: { count: 1 },
+      },
+    }),
+    activityEvent(7, {
+      kind: "error",
+      payload: {
+        scope: "action",
+        code: "render_error",
+        message: { kind: "text", text: "The candidate render retried once." },
+      },
+    }),
+    activityEvent(8, {
+      kind: "coverage",
+      payload: {
+        boundary: "action.creative_authoring",
+        status: "instrumented",
+        detail: null,
+      },
+    }),
+  ].map((event) => withAttempt(event as ReturnType<typeof activityEvent>));
+  return {
+    activity: {
+      identity: { namespace: "legacy", attemptId },
+      items,
+      nextCursor: null,
+      hasMore: false,
+      observedAt: now,
+      lastHeartbeatAt: now - 5_000,
+      recording: "recording",
+      coverage: [
+        {
+          boundary: "action.creative_authoring",
+          status: "instrumented",
+          detail: null,
+        },
+      ],
+      usage: {
+        inputTokens: 1200,
+        outputTokens: 340,
+        cachedInputTokens: null,
+        cacheWriteTokens: null,
+        reasoningTokens: null,
+        responses: 1,
+        unknownResponses: 0,
+        cost: {
+          currency: "USD",
+          actual: "0.12000000",
+          estimated: null,
+          unreportedCount: 0,
+        },
+      },
+      retentionDays: 30,
+    },
+    readOnly: true,
+  };
+}
 
 async function openPage(options: OpenOptions = {}) {
   const page = await browser.newPage({
@@ -2792,4 +2962,149 @@ it("keeps studio navigation and summary actions usable on desktop and mobile", a
       await page.close();
     }
   }
+
 }, 60_000);
+
+  it("omits the activity section when the capability is disabled", async () => {
+    activityEnabled = false;
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+    });
+    try {
+      await waitForGenerations(page);
+      const inspector = page.getByRole("dialog", {
+        name: "Attempt attempt-diagnostic",
+      });
+      await visible(inspector);
+      // Disabling the feature restores the existing inspector exactly.
+      expect(await inspector.locator(".admin-activity").count()).toBe(0);
+      await visible(
+        inspector.getByRole("heading", { name: "Attempt attempt-diagnostic" }),
+      );
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("renders model calls, actions, usage and inspectable evidence", async () => {
+    activityEnabled = true;
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+    });
+    try {
+      await waitForGenerations(page);
+      const inspector = page.getByRole("dialog", {
+        name: "Attempt attempt-diagnostic",
+      });
+      await visible(inspector);
+      const activity = inspector.locator(".admin-activity");
+      await visible(activity);
+      await expect
+        .poll(() => activity.locator(".admin-activity__entry").count())
+        .toBeGreaterThanOrEqual(4);
+      expect(await activity.locator('[data-kind="model"]').count()).toBe(1);
+      expect(await activity.locator('[data-kind="action"]').count()).toBe(1);
+      await expect
+        .poll(() => activity.locator(".admin-activity__summary").textContent())
+        .toContain("1.2k in");
+      await expect
+        .poll(() => activity.locator(".admin-activity__summary").textContent())
+        .toContain("$0.1200 actual");
+      await expect
+        .poll(() => activity.locator(".admin-activity__coverage summary").textContent())
+        .toContain("Coverage: 1 instrumented");
+
+      await activity.getByRole("button", { name: /Model request/u }).click();
+      const evidence = activity.locator(".admin-activity__evidence");
+      await visible(evidence);
+      await expect
+        .poll(() => evidence.textContent())
+        .toContain("I am building the opening section around the approved service scope.");
+      await expect
+        .poll(() => evidence.textContent())
+        .toContain("Reported usage");
+
+      await activity.getByRole("button", { name: "Actions", exact: true }).click();
+      await expect
+        .poll(() => activity.locator('[data-kind="model"]').count())
+        .toBe(0);
+      expect(await activity.locator('[data-kind="action"]').count()).toBe(1);
+      await activity.getByRole("button", { name: "Issues", exact: true }).click();
+      await expect
+        .poll(() => activity.locator('[data-kind="error"]').count())
+        .toBe(1);
+      await activity.getByRole("button", { name: "Model", exact: true }).click();
+      await expect
+        .poll(() => activity.locator('[data-kind="action"]').count())
+        .toBe(0);
+      expect(await activity.locator('[data-kind="model"]').count()).toBe(1);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("distinguishes a run that never recorded activity", async () => {
+    activityEnabled = true;
+    activityFixture = {
+      activity: {
+        ...activityPageFor("attempt-diagnostic").activity,
+        items: [],
+        recording: "not_recorded",
+      },
+      readOnly: true,
+    };
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+    });
+    try {
+      await waitForGenerations(page);
+      const inspector = page.getByRole("dialog", {
+        name: "Attempt attempt-diagnostic",
+      });
+      await visible(inspector);
+      const activity = inspector.locator(".admin-activity");
+      await visible(activity);
+      await expect
+        .poll(() => activity.textContent())
+        .toContain("Detailed activity was not recorded for this run.");
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("keeps the activity inspector inside the viewport at 390px", async () => {
+    activityEnabled = true;
+    const { page, errors } = await openPage({
+      viewport: { width: 390, height: 844 },
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+    });
+    try {
+      await waitForGenerations(page);
+      const inspector = page.getByRole("dialog", {
+        name: "Attempt attempt-diagnostic",
+      });
+      await visible(inspector);
+      const activity = inspector.locator(".admin-activity");
+      await visible(activity);
+      await activity.getByRole("button", { name: /Model request/u }).click();
+      await visible(activity.locator(".admin-activity__evidence"));
+      const metrics = await page.evaluate(() => ({
+        documentWidth: document.documentElement.scrollWidth,
+        viewport: window.innerWidth,
+      }));
+      expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewport);
+      const feed = await activity
+        .locator(".admin-activity__feed")
+        .evaluate((element) => ({
+          scrollWidth: element.scrollWidth,
+          clientWidth: element.clientWidth,
+        }));
+      expect(feed.scrollWidth).toBeLessThanOrEqual(feed.clientWidth + 1);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
