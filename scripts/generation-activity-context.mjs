@@ -54,9 +54,28 @@ export function createActivityTransport({
       "https://api.launchloom.wrazyos.com",
   );
   const audience = env.OPERATIONS_OIDC_AUDIENCE || "launchloom-operations";
+  // Reuse the short-lived OIDC token across sends. Acquiring a fresh token for
+  // every batch can exceed the delivery deadline on a cold runner.
+  let cached = null;
+  async function token() {
+    if (cached && cached.expiresAt > Date.now() + 60_000) return cached.value;
+    const value = await requestOidcToken({ audience, env, fetchImpl });
+    let expiresAt = Date.now() + 4 * 60_000;
+    try {
+      const payload = JSON.parse(
+        Buffer.from(value.split(".")[1], "base64url").toString("utf8"),
+      );
+      if (Number.isSafeInteger(payload?.exp))
+        expiresAt = payload.exp * 1000;
+    } catch {
+      // Keep the bounded conservative fallback.
+    }
+    cached = { value, expiresAt };
+    return value;
+  }
   return {
     async send(events, { signal } = {}) {
-      const token = await requestOidcToken({ audience, env, fetchImpl });
+      const token = await token();
       const response = await fetchImpl(
         `${api}/api/internal/generation-activity`,
         {
