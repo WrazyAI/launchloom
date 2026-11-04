@@ -4,6 +4,7 @@ import path from "node:path";
 import { fal as defaultFal } from "@fal-ai/client";
 import sharp from "sharp";
 import { buildRouteContract } from "./creative-compiler.mjs";
+import { creativeModelActivity, observeCreativeAction } from "./creative-activity.mjs";
 import {
   openRouterApiError,
   openRouterChatCompletion,
@@ -390,6 +391,7 @@ function assetReviewReasonCodes(checks) {
  * @param {{ imageData: Buffer, placement: string, businessKind?: string, services?: string[], familyId?: string, model?: string, apiKey?: string, timeoutMs?: number }} input
  */
 export async function reviewGeneratedAsset({
+  activity = null,
   imageData,
   placement,
   businessKind = "local business",
@@ -445,6 +447,9 @@ export async function reviewGeneratedAsset({
       let diagnostics = { model, imageBytes: imageData?.byteLength };
       for (let reviewAttempt = 1; reviewAttempt <= 2; reviewAttempt += 1) {
         const result = await completeGoCreative({
+          activity: creativeModelActivity("model.contextual_image_review", {
+            stage: "contextual_imagery", substep: placement,
+          }, activity),
           logicalModel: model,
           signal: controller.signal,
           env: process.env,
@@ -1048,7 +1053,25 @@ function setImage(site, placement, value) {
   site.images = { ...(site.images || {}), [placement.id]: value };
 }
 
-async function generateContextualAssetsForRoute({
+async function generateContextualAssetsForRoute(options = {}) {
+  const route = options.inspiration?.routes?.[0];
+  return observeCreativeAction({
+    activity: options.activity,
+    boundary: "action.contextual_imagery",
+    stage: "contextual_imagery",
+    name: "generate_contextual_images",
+    input: { route: route?.id || "default" },
+    invoke: () => generateContextualAssetsForRouteImpl(options),
+    projectResult: ({ manifest, requests }) => ({
+      count: manifest.placements.length,
+      attempt: requests,
+      outcome: manifest.skipped.length ? "generated_or_fallback" : "generated_or_reused",
+    }),
+  });
+}
+
+async function generateContextualAssetsForRouteImpl({
+  activity = null,
   site,
   inspiration,
   outputDir,
@@ -1252,6 +1275,7 @@ async function generateContextualAssetsForRoute({
             );
           try {
             review = await imageReviewer({
+              activity,
               imageData: normalized.data,
               placement: placement.id,
               businessKind:

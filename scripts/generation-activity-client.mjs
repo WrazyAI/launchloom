@@ -251,6 +251,7 @@ export function createActivityProducer({
     withContext(overrides) {
       return {
         context: () => ({ ...base, ...overrides }),
+        withContext: (next) => api.withContext({ ...overrides, ...next }),
         emit: (kind, payload) => emit(kind, payload, { context: overrides }),
         addSensitiveValues: (values) => api.addSensitiveValues(values),
         flush,

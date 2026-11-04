@@ -71,6 +71,22 @@ the run finalizer are instrumented. Several callers and scripts remain listed as
 limited or unsupported, and the UI must not claim full coverage. Provider-internal
 actions and GitHub queue time cannot be observed.
 
+Creative reference analysis, rendered fidelity/diversity, visual quality,
+image review and repair inference now supply stage/substep context on OpenCode
+Go. Fidelity and repair include the real candidate and repair pass when the
+caller has them. Reference analysis labels its route as a substep, not an
+invented candidate. Direct legacy OpenRouter callers in these modules remain
+limited. Whole-bakeoff and diversity work has no single candidate ID.
+
+Rendered repair wraps actual bakeoff, deterministic hero checks, repair calls,
+visual checks and human revision checks. Contextual imagery wraps each route's
+generation/reuse/fallback operation, reporting aggregate counts only. These
+are orchestration actions, not provider tools. An action returning successfully
+does not mean a quality check passed: its authoritative report still decides
+that. Internal browser operations, individual FAL requests, preview upload and
+promotion are not separately traced by these wrappers. Failure events omit raw
+action exception prose because it may contain prompts or provider details.
+
 Distinguish **model-requested tool calls** from **pipeline actions**. The
 generation pipeline is script-orchestrated; a script writing a generated file is
 an action, not a model tool call. Provider-hosted tool execution is unsupported.

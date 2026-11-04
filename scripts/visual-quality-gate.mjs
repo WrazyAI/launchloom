@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { creativeModelActivity } from "./creative-activity.mjs";
 import path from "node:path";
 import {
   VISUAL_GATE_MODEL,
@@ -195,6 +196,14 @@ async function requestAudit(manifest) {
       ];
       if (creativeProvider === "opencode-go") {
         const goResult = await completeGoCreative({
+          activity: creativeModelActivity("model.visual_quality_gate", {
+            stage: "visual_quality_gate", substep: mode,
+            candidateId: args.candidate || null,
+            repairPass: (() => {
+              const value = Number(args["repair-pass"]);
+              return Number.isSafeInteger(value) && value >= 0 ? value : null;
+            })(),
+          }),
           logicalModel: model,
           signal: controller.signal,
           request: buildGoCreativeRequest({

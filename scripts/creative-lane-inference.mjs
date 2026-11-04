@@ -208,6 +208,8 @@ const TRANSIENT_GO_ERROR_CODES = new Set([
  *   retryDelayMs?: number,
  *   sleep?: (ms: number) => Promise<void>,
  *   logger?: ((line: string) => void) | null,
+ *   activity?: import("./generation-activity-client.mjs").ActivityChildProducer | null,
+ *   activityStage?: string | null,
  * }} input
  * @returns {Promise<Record<string, any>>}
  */
@@ -248,8 +250,8 @@ export async function completeGoCreative({
             activity: {
               producer: activity,
               context: {
-                stage: activityStage ?? "creative",
-                actor: { kind: "model", role: "creative_lane" },
+                stage: activityStage ?? activity.context()?.stage ?? "creative",
+                actor: { kind: "model", role: activity.context()?.actor?.role ?? "creative_lane" },
               },
             },
           }

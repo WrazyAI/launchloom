@@ -1,4 +1,5 @@
 import { createQaRepairCallBudget, initializeQaRepairReceipt } from "./creative-repair-experiment.mjs";
+import { observeCreativeAction } from "./creative-activity.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -703,10 +704,12 @@ function spawnCapture(command, args, { cwd, env } = {}) {
 }
 
 /**
- * @param {{siteDir: string, screenshotsDir: string, reportPath: string, configPath?: string, visualGateScript?: string}} options
+ * @param {{siteDir: string, screenshotsDir: string, reportPath: string, configPath?: string, visualGateScript?: string, candidateId?: string | null, round?: number | null}} options
  * @returns {Promise<Record<string, any> & {processExitCode: number}>}
  */
 export async function runVisualGateProcess({
+  candidateId = null,
+  round = null,
   siteDir,
   screenshotsDir,
   reportPath,
@@ -726,6 +729,8 @@ export async function runVisualGateProcess({
       screenshotsDir,
       "--report",
       reportPath,
+      ...(candidateId ? ["--candidate", candidateId] : []),
+      ...(round != null ? ["--repair-pass", String(round)] : []),
     ],
     { cwd: siteDir },
   );
@@ -914,6 +919,8 @@ export function colorLiterals(source) {
  * @returns {Promise<{experience: string, styles: string, motion: string}>}
  */
 export async function defaultRepairCandidate({
+  activity = null,
+  cycle = null,
   candidateDir,
   findings,
   screenshots,
@@ -945,6 +952,8 @@ export async function defaultRepairCandidate({
       new Error("Human repair candidate omitted its resolved section scope."),
     );
   const repairResponse = await requestRepair({
+    activity,
+    repairPass: cycle,
     model,
     candidateId: metadata.candidateId,
     interactionEvidence,
@@ -1291,10 +1300,12 @@ function safeRepairRejectionMessage(error) {
  *   runHumanGateImpl?: (options: Record<string, unknown>) => Promise<Record<string, any>>,
  *   repairCandidateImpl?: (options: Record<string, unknown>) => Promise<Record<string, string> | void> | Record<string, string> | void,
  *   promoteImpl?: (options: Record<string, unknown>) => Promise<Record<string, any>>,
+ *   activity?: import("./generation-activity-client.mjs").ActivityChildProducer | null,
  * }} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function runRenderedCreativeRepair({
+  activity = null,
   siteDir = "templates/client-site",
   candidatesDir = ".launchloom/generated-experiences",
   outDir = ".launchloom/creative-repair",
@@ -1313,6 +1324,12 @@ export async function runRenderedCreativeRepair({
   repairCandidateImpl = defaultRepairCandidate,
   promoteImpl = promoteCreativeCandidate,
 } = {}) {
+  const observe = (name, candidateId, repairPass, invoke) => observeCreativeAction({
+    activity, boundary: "action.creative_render_repair", stage: "creative_repair",
+    name, candidateId, repairPass,
+    input: { candidateId, repairPass }, invoke,
+    projectResult: () => ({ outcome: "returned" }),
+  });
   const resolvedModel =
     model ||
     creativeSession?.creativeModel ||
@@ -1546,10 +1563,10 @@ export async function runRenderedCreativeRepair({
       candidateRoot,
       candidateDirectory,
     );
-    const deterministicHero = await applyDeterministicHeroOverlay({
+    const deterministicHero = await observe("deterministic_hero_check", candidateId, round, () => applyDeterministicHeroOverlay({
       candidateDir,
       findings,
-    });
+    }));
     if (deterministicHero.applied) {
       await persistRepairEvidence({
         outDir: evidenceRoot,
@@ -1596,7 +1613,8 @@ export async function runRenderedCreativeRepair({
       try {
         const repairCallStartedAt = Date.now();
         try {
-          await repairCandidateImpl({
+          await observe("repair_candidate", candidateId, appliedSoFar + 1, () => repairCandidateImpl({
+            activity,
             candidateDir,
             candidateId,
             findings: activeFindings,
@@ -1609,7 +1627,7 @@ export async function runRenderedCreativeRepair({
             maxCycles: appliedLimit,
             ...(providerBudget ? { automaticSpanRepair: true, fetchImpl: providerBudget.forCandidate(candidateId) } : {}),
             onUsage: (record) => repairUsage.push(record),
-          });
+          }));
           recordRunTiming({
             category: "repair",
             name: candidateId,
@@ -1878,7 +1896,7 @@ export async function runRenderedCreativeRepair({
     const gateReportPath = path.join(roundDir, "near-miss-visual-gate.json");
     let visualGate = null;
     try {
-      visualGate = await runVisualGateImpl({
+      visualGate = await observe("near_miss_visual_check", candidateId, round, () => runVisualGateImpl({
         siteDir: root,
         screenshotsDir: gateScreenshots,
         reportPath: gateReportPath,
@@ -1886,7 +1904,7 @@ export async function runRenderedCreativeRepair({
         round,
         configPath: gateConfigPath,
         ...(visualGateScript ? { visualGateScript } : {}),
-      });
+      }));
     } catch (error) {
       console.warn(
         `near-miss visual gate could not run: ${error?.message || error}`,
@@ -2011,7 +2029,8 @@ export async function runRenderedCreativeRepair({
     let report;
     const bakeoffStartedAt = Date.now();
     try {
-      report = await runBakeoffImpl({
+      report = await observe("rendered_bakeoff", null, round, () => runBakeoffImpl({
+        activity, repairPass: round,
         siteDir: root,
         candidatesDir: candidateRoot,
         reportPath,
@@ -2028,7 +2047,7 @@ export async function runRenderedCreativeRepair({
         ...(reuseEvidenceEnabled
           ? { evidenceCacheDir: path.join(evidenceRoot, "evidence-cache") }
           : {}),
-      });
+      }));
       finalRoundContext = { round, roundLabel, report, roundDir, screenshotsDir };
       await uploadLiveCandidatePreview({ report, screenshotsDir }).catch(
         () => {},
@@ -2322,7 +2341,7 @@ export async function runRenderedCreativeRepair({
     const gateStartedAt = Date.now();
     let visualGate;
     try {
-      visualGate = await runVisualGateImpl({
+      visualGate = await observe("visual_quality_check", selectedId, round, () => runVisualGateImpl({
         siteDir: root,
         screenshotsDir: gateScreenshots,
         reportPath: gateReportPath,
@@ -2330,7 +2349,7 @@ export async function runRenderedCreativeRepair({
         round,
         configPath: gateConfigPath,
         ...(visualGateScript ? { visualGateScript } : {}),
-      });
+      }));
     } catch (error) {
       recordRunTiming({
         category: "gate",
@@ -2425,12 +2444,12 @@ export async function runRenderedCreativeRepair({
       const humanGateStartedAt = Date.now();
       let humanGate;
       try {
-        humanGate = await runHumanGateImpl({
+        humanGate = await observe("human_revision_check", selectedId, round, () => runHumanGateImpl({
           configPath: gateConfigPath,
           screenshotsDir: gateScreenshots,
           feedback: humanFeedback,
           reportPath: humanGateReportPath,
-        });
+        }));
       } catch (error) {
         recordRunTiming({
           category: "human-gate",

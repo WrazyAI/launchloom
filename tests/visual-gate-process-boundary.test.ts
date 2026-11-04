@@ -111,6 +111,12 @@ await import(${JSON.stringify(path.resolve("scripts/visual-quality-gate.mjs"))})
       `
 process.env.CREATIVE_EXPERIENCE_PROVIDER = 'opencode-go';
 process.env.OPENCODE_GO_API_KEY = 'test-only-go-key';
+process.env.GENERATION_ACTIVITY_ENABLED = 'true';
+process.env.TRACK_ATTEMPT = 'offline-visual-gate';
+delete process.env.OPERATION_ID;
+const { processActivity } = await import(${JSON.stringify(path.resolve("scripts/generation-activity-context.mjs"))});
+const events = [];
+const activity = processActivity({}, { spoolDir: null, transport: { async send(batch) { events.push(...batch); return { status: 200 }; } } });
 globalThis.fetch = async () => Response.json({
   id: 'resp_gate_go',
   status: 'completed',
@@ -118,6 +124,8 @@ globalThis.fetch = async () => Response.json({
   usage: { input_tokens: 900, output_tokens: 300 },
 });
 await import(${JSON.stringify(path.resolve("scripts/visual-quality-gate.mjs"))});
+await activity.close();
+await (await import('node:fs/promises')).writeFile(${JSON.stringify(path.join(root, "activity.json"))}, JSON.stringify(events));
 `,
     );
     const result = await runVisualGateProcess({
@@ -125,11 +133,18 @@ await import(${JSON.stringify(path.resolve("scripts/visual-quality-gate.mjs"))})
       screenshotsDir,
       reportPath: path.join(root, "report.json"),
       visualGateScript: script,
+      candidateId: "candidate-a", round: 2,
     });
     expect(result.processExitCode).toBe(2);
     expect(result.status).toBe("quality-blocked");
     expect(result.audit.verdict).toBe("revise");
     expect(result.blockers).toEqual([finding]);
+    const events = JSON.parse(await fs.readFile(path.join(root, "activity.json"), "utf8"));
+    expect(events.find((event: any) => event.kind === "model_started")?.context).toMatchObject({
+      stage: "visual_quality_gate", substep: "verify", candidateId: "candidate-a", repairPass: 2,
+    });
+    expect(JSON.stringify(events)).not.toContain("test-only-go-key");
+    expect(JSON.stringify(events)).not.toContain("opencode.ai");
   });
 
   it("returns actionable failed quality to the repair caller without calling it a pass", async () => {

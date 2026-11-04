@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-11-03",
+  "updatedAt": "2026-11-04",
   "description": "Boundaries that can emit generation activity. Each entry must state whether it is instrumented, not applicable to this generation branch, unsupported, or limited. Never describe the trace as complete while any active boundary is unsupported.",
   "boundaries": [
     {
@@ -29,21 +29,35 @@
       "kind": "model",
       "source": "scripts/analyze-reference-dna.mjs",
       "status": "limited",
-      "detail": "The creative-lane transport accepts an activity producer; this caller does not yet pass one."
+      "detail": "OpenCode Go calls pass a producer with reference-analysis stage and route substep. The direct legacy OpenRouter caller remains unobserved."
     },
     {
       "id": "model.visual_quality_gate",
       "kind": "model",
       "source": "scripts/visual-quality-gate.mjs",
       "status": "limited",
-      "detail": "The creative-lane transport accepts an activity producer; this caller does not yet pass one."
+      "detail": "OpenCode Go calls pass visual-gate stage, mode, and candidate/repair context when supplied by rendered repair. The direct legacy OpenRouter caller remains unobserved."
     },
     {
       "id": "model.rendered_reference_fidelity",
       "kind": "model",
       "source": "scripts/rendered-reference-fidelity.mjs",
       "status": "limited",
-      "detail": "The creative-lane transport accepts an activity producer; this caller does not yet pass one."
+      "detail": "OpenCode Go fidelity/diversity calls pass judge stage and substep; individual fidelity includes candidate and repair pass when available. Diversity is a multi-candidate action without an invented candidate ID. The direct legacy OpenRouter caller remains unobserved."
+    },
+    {
+      "id": "model.creative_repair",
+      "kind": "model",
+      "source": "scripts/creative-repair-loop.mjs",
+      "status": "limited",
+      "detail": "OpenCode Go repair dispatches pass actual candidate and applied repair cycle context. Standalone callers without a cycle leave repairPass null. Direct legacy OpenRouter calls remain unobserved."
+    },
+    {
+      "id": "model.contextual_image_review",
+      "kind": "model",
+      "source": "scripts/generate-contextual-assets.mjs",
+      "status": "limited",
+      "detail": "OpenCode Go image review dispatches pass contextual-imagery stage and placement substep. The direct legacy OpenRouter caller remains unobserved."
     },
     {
       "id": "model.human_revision_gate",
@@ -91,8 +105,8 @@
       "id": "action.contextual_imagery",
       "kind": "action",
       "source": "scripts/generate-contextual-assets.mjs",
-      "status": "limited",
-      "detail": "Image generation is orchestrated by an uninstrumented script in this version."
+      "status": "instrumented",
+      "detail": "Each route's actual generation/reuse/fallback operation emits action start/finish and safe aggregate result counts. Individual FAL requests and provider internals are not separately traced; prompts and provider URLs are never projected."
     },
     {
       "id": "action.creative_authoring",
@@ -105,8 +119,8 @@
       "id": "action.creative_render_repair",
       "kind": "action",
       "source": "scripts/run-rendered-creative-repair.mjs",
-      "status": "limited",
-      "detail": "Rendered repair is orchestrated by an uninstrumented script in this version."
+      "status": "instrumented",
+      "detail": "Actual bakeoff, deterministic hero check, candidate repair, visual checks and human revision checks emit action start/finish. Candidate and repair pass are included where applicable; whole-bakeoff actions have no single candidate. Promotion/upload and internal browser operations are not individually traced."
     },
     {
       "id": "action.preview_deploy",

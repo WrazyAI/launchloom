@@ -10,6 +10,38 @@ import {
   reviewGeneratedAsset,
 } from "../scripts/generate-contextual-assets.mjs";
 import { CREATIVE_FAMILIES } from "../scripts/creative-compiler.mjs";
+import { captureActivity } from "./fixtures/generation-activity-capture";
+
+describe("contextual image activity", () => {
+  it("wraps the real fallback operation without projecting prompts or asset URLs", async () => {
+    const { producer: activity, events } = captureActivity();
+    const outputDir = await mkdtemp(join(tmpdir(), "activity-images-"));
+    const result = await generate({ activity, site: fixture(), outputDir, key: "", maxImages: 1 });
+    expect(result.requests).toBe(0);
+    expect(result.manifest.skipped.length).toBeGreaterThan(0);
+    expect(events.map((event) => event.kind)).toEqual(["coverage", "action_started", "action_finished"]);
+    expect(events[2]).toMatchObject({ payload: { status: "succeeded", result: { count: 0, attempt: 0, outcome: "generated_or_fallback" } } });
+    const payload = JSON.stringify(events);
+    expect(payload).not.toContain("prompt");
+    expect(payload).not.toContain("https://");
+    expect(payload).not.toContain("Minneapolis");
+  });
+
+  it("starts before an actual image request and finishes after fallback, withholding provider prose", async () => {
+    const { producer: activity, events } = captureActivity();
+    const outputDir = await mkdtemp(join(tmpdir(), "activity-images-"));
+    const subscribe = vi.fn(async () => {
+      expect(events.at(-1)?.kind).toBe("action_started");
+      throw new Error("PRIVATE_IMAGE_PROMPT https://provider.example/private?key=secret");
+    });
+    await generate({ activity, site: fixture(), outputDir, key: "offline-key", maxRequests: 1,
+      falClient: { config: vi.fn(), subscribe },
+    });
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    expect(events.at(-1)).toMatchObject({ kind: "action_finished", payload: { status: "succeeded" } });
+    expect(JSON.stringify(events)).not.toMatch(/PRIVATE_IMAGE_PROMPT|provider\.example|offline-key/);
+  });
+});
 
 const generate = (options: any): Promise<any> =>
   generateContextualAssets({

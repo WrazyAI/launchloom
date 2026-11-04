@@ -45,6 +45,7 @@ export type ActivityProducerStats = {
 export type ActivityChildProducer = {
   context(): TraceContext;
   addSensitiveValues(values: readonly unknown[]): void;
+  withContext(overrides: Partial<TraceContext>): ActivityChildProducer;
   emit<K extends TraceEventKind>(kind: K, payload: TracePayloads[K]): boolean;
   flush(): Promise<void>;
   close(): Promise<void>;

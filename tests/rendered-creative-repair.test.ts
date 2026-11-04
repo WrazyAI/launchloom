@@ -1,4 +1,5 @@
 import { buildRepairSpanCatalog } from "../scripts/creative-repair-spans.mjs";
+import { captureActivity } from "./fixtures/generation-activity-capture";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
@@ -709,7 +710,25 @@ export default function Experience({ content, runtime }) { return <main><section
     expect(repairText).not.toContain("You may change composition, layout, hierarchy");
   });
 
+  it("records a real rendered check failure and propagates its original error", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const { producer: activity, events } = captureActivity();
+    const error = new Error("PRIVATE_CHECK_PROMPT https://provider.example/private");
+    await expect(runRenderedCreativeRepair({
+      activity, siteDir: root, candidatesDir: candidates, outDir: path.join(root, "evidence"),
+      runBakeoffImpl: async () => {
+        expect(events.at(-1)).toMatchObject({ kind: "action_started", payload: { name: "rendered_bakeoff" } });
+        throw error;
+      },
+    })).rejects.toBe(error);
+    expect(events.find((event) => event.kind === "action_finished")).toMatchObject({
+      payload: { name: "rendered_bakeoff", status: "failed" }, context: { repairPass: 0, candidateId: null },
+    });
+    expect(JSON.stringify(events)).not.toMatch(/PRIVATE_CHECK_PROMPT|provider\.example/);
+  });
+
   it("retries a rejected repair output once within the candidate's cycle budget", async () => {
+    const { producer: activity, events } = captureActivity();
     const { root, candidates } = await fixture(["candidate-a"]);
     const repairFindings: any[][] = [];
     const excludedCandidates: string[][] = [];
@@ -720,6 +739,7 @@ export default function Experience({ content, runtime }) { return <main><section
     Object.assign(rejection, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
 
     const result = await runRenderedCreativeRepair({
+      activity,
       siteDir: root,
       candidatesDir: candidates,
       outDir: path.join(root, "evidence"),
@@ -753,6 +773,8 @@ export default function Experience({ content, runtime }) { return <main><section
       },
       runVisualGateImpl: (options: any) => visualGate(options, "pass"),
       repairCandidateImpl: async ({ findings }: any) => {
+        expect(events.at(-1)).toMatchObject({ kind: "action_started", payload: { name: "repair_candidate" },
+          context: { candidateId: "candidate-a", repairPass: 1 } });
         repairFindings.push(findings);
         if (repairFindings.length === 1) throw rejection;
       },
@@ -762,6 +784,14 @@ export default function Experience({ content, runtime }) { return <main><section
     });
 
     expect(result.status).toBe("passed");
+    const repairs = events.filter((event) => event.payload.name === "repair_candidate");
+    expect(repairs.map((event) => [event.kind, event.payload.status])).toEqual([
+      ["action_started", undefined], ["action_finished", "failed"],
+      ["action_started", undefined], ["action_finished", "succeeded"],
+    ]);
+    expect(events.some((event) => event.payload.name === "rendered_bakeoff")).toBe(true);
+    expect(events.some((event) => event.payload.name === "visual_quality_check")).toBe(true);
+    expect(JSON.stringify(events)).not.toContain("the early conversion anchor was removed");
     expect(repairFindings).toHaveLength(2);
     expect(repairFindings[1]).toEqual(
       expect.arrayContaining([

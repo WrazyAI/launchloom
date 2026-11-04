@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
+import { captureActivity } from "./fixtures/generation-activity-capture";
 import {
   applyMeasuredReferenceAnalysis,
   enrichInspirationPack,
@@ -559,6 +560,7 @@ describe("Reference DNA", () => {
   }, 20_000);
 
   it("retries a transient Go provider error before analyzing the reference", async () => {
+    const { producer: activity, events } = captureActivity();
     vi.resetModules();
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
     vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
@@ -592,9 +594,16 @@ describe("Reference DNA", () => {
       const enriched = await enrichGo(pack, {
         fetchImpl: fetchImpl as typeof fetch,
         sleep,
+        activity,
       });
       // route-01 retries once, then routes 02 and 03 complete first time.
       expect(calls).toBe(4);
+      const callsObserved = events.filter((event) => event.kind === "model_started");
+      expect(callsObserved).toHaveLength(4);
+      expect(callsObserved[0]?.context).toMatchObject({
+        stage: "reference_analysis", substep: "analyze_route_01", candidateId: null,
+      });
+      expect(JSON.stringify(events)).not.toContain("opencode.ai");
       expect(enriched.routes).toHaveLength(3);
       expect(sleep).toHaveBeenCalledTimes(1);
       expect(sleep).toHaveBeenCalledWith(4_000);

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { captureActivity } from "./fixtures/generation-activity-capture";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -136,8 +137,9 @@ describe("rendered reference request retries", () => {
     vi.spyOn(fs, "readFile").mockResolvedValue(Buffer.from("pixel-evidence"));
   });
 
-  function evaluate(fetchImpl: typeof fetch) {
+  function evaluate(fetchImpl: typeof fetch, activity: any = null) {
     return evaluateRenderedReferenceFidelity({
+      activity, candidateId: "candidate-a", repairPass: 2,
       referenceDna: dna(files),
       candidateScreenshots: {
         desktop: files.candidateDesktop,
@@ -149,6 +151,7 @@ describe("rendered reference request retries", () => {
   }
 
   it("judges on OpenCode Go when the provider selects it", async () => {
+    const { producer: activity, events } = captureActivity();
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
     vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
     try {
@@ -174,7 +177,11 @@ describe("rendered reference request retries", () => {
           { status: 200, headers: { "content-type": "application/json" } },
         ),
       );
-      const result = await evaluate(fetchImpl);
+      const result = await evaluate(fetchImpl, activity);
+      expect(events.find((event) => event.kind === "model_started")?.context).toMatchObject({
+        stage: "rendered_reference_fidelity", substep: "reference_judge", candidateId: "candidate-a", repairPass: 2,
+      });
+      expect(JSON.stringify(events)).not.toContain("opencode.ai");
       expect(result.audit.overallScore).toBe(audit.overallScore);
       expect(fetchImpl).toHaveBeenCalledTimes(1);
       const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];

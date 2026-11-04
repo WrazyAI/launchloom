@@ -18,21 +18,26 @@ export async function observePipelineAction({
   now = () => Date.now(),
 }) {
   if (!producer) return invoke();
+  const emit = (kind, payload) => {
+    try { producer.emit(kind, payload); } catch { /* Diagnostic evidence is best effort. */ }
+  };
   const id = actionId || crypto.randomUUID();
-  producer.emit("action_started", { actionId: id, name, input });
+  emit("action_started", { actionId: id, name, input });
   const startedAt = now();
   try {
     const value = await invoke();
-    producer.emit("action_finished", {
+    let result = {};
+    try { result = projectResult(value) || {}; } catch { /* Never turn success into failure. */ }
+    emit("action_finished", {
       actionId: id,
       name,
       status: "succeeded",
       durationMs: Math.max(0, now() - startedAt),
-      result: projectResult(value) || {},
+      result,
     });
     return value;
   } catch (error) {
-    producer.emit("action_finished", {
+    emit("action_finished", {
       actionId: id,
       name,
       status: "failed",
@@ -40,12 +45,14 @@ export async function observePipelineAction({
       result: {},
     });
     const code = String(error?.code ?? "");
-    producer.emit("error", {
+    emit("error", {
       scope: "action",
       code: CODE.test(code) ? code : "action_failed",
       message: {
         kind: "text",
-        text: String(error?.message || `${name} failed.`),
+        // Action errors can echo prompts, candidate source or provider URLs.
+        // Keep the trace to a code and point at authoritative evidence.
+        text: "Pipeline action failed. See authoritative generation evidence for details.",
       },
     });
     throw error;

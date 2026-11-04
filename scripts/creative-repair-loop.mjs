@@ -1,4 +1,5 @@
 import { buildRepairSpanCatalog, compileRepairSpanEdits } from "./creative-repair-spans.mjs";
+import { creativeModelActivity } from "./creative-activity.mjs";
 import {
   REPAIR_FILE_ORDER, REPAIR_INNER_PAGE_KEYS, REPAIR_EDITABLE_FILE_NAMES,
   MAX_REPAIR_EDITS, MAX_REPAIR_EDIT_FRAGMENT_CHARS,
@@ -913,10 +914,14 @@ export function modelBoundRepairFindings(findings = []) {
  *   automaticSpanRepair?: boolean,
  *   fetchImpl?: typeof fetch,
  *   onUsage?: (record: Record<string, any>) => void | Promise<void> | null,
+ *   activity?: import("./generation-activity-client.mjs").ActivityChildProducer | null,
+ *   repairPass?: number | null,
  * }} [options]
  * @returns {Promise<Record<string, any>>}
  */
 export async function requestRepair({
+  activity = null,
+  repairPass = null,
   model,
   candidateId,
   interactionEvidence = null,
@@ -1307,6 +1312,9 @@ Return a complete replacement for only this requested file. Keep source non-empt
         let goResult;
         try {
           goResult = await completeGoCreative({
+            activity: creativeModelActivity("model.creative_repair", {
+              stage: "creative_repair", substep: "repair_inference", candidateId, repairPass,
+            }, activity),
             logicalModel: model,
             fetchImpl,
             request: buildGoCreativeRequest({

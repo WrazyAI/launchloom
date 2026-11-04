@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { validateReferenceDna } from "./reference-dna.mjs";
+import { creativeModelActivity } from "./creative-activity.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
@@ -262,6 +263,7 @@ async function imageSize(file) {
 }
 
 async function requestJson({
+  activity = null,
   model,
   schema,
   content,
@@ -313,6 +315,7 @@ async function requestJson({
         let goResult;
         try {
           goResult = await completeGoCreative({
+            activity,
             logicalModel: activeModel,
             signal: controller.signal,
             fetchImpl,
@@ -557,10 +560,12 @@ function scorePass(audit, thresholds = RENDERED_REFERENCE_THRESHOLDS) {
 }
 
 /**
- * @param {{referenceDna: any, visualBrief?: Record<string, any>, candidateScreenshots?: {desktop?: string, compact?: string, mobile?: string, fullDesktop?: string}, renderedGeometry?: Record<string, any>, interactionEvidence?: Record<string, any>, candidateId?: string, sourceDigest?: string, model?: string, fetchImpl?: typeof fetch}} options
+ * @param {{referenceDna: any, visualBrief?: Record<string, any>, candidateScreenshots?: {desktop?: string, compact?: string, mobile?: string, fullDesktop?: string}, renderedGeometry?: Record<string, any>, interactionEvidence?: Record<string, any>, candidateId?: string, sourceDigest?: string, model?: string, fetchImpl?: typeof fetch, activity?: import("./generation-activity-client.mjs").ActivityChildProducer | null, repairPass?: number | null}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function evaluateRenderedReferenceFidelity({
+  activity = null,
+  repairPass = null,
   referenceDna,
   visualBrief = {},
   candidateScreenshots,
@@ -676,6 +681,9 @@ Treat this as binding client art direction layered onto the reference mechanics.
     stableReferenceDna,
   );
   const result = await requestJson({
+    activity: creativeModelActivity("model.rendered_reference_fidelity", {
+      stage: "rendered_reference_fidelity", substep: "reference_judge", candidateId, repairPass,
+    }, activity),
     model,
     schema: auditSchema,
     content,
@@ -698,6 +706,8 @@ Treat this as binding client art direction layered onto the reference mechanics.
  * @returns {Promise<{version: number, model: string, pass: boolean, score: number, minimumPairDistance?: number, audit: any, [key: string]: any}>}
  */
 export async function evaluateRenderedDiversity({
+  activity = null,
+  repairPass = null,
   candidates,
   model = RENDERED_REFERENCE_MODEL,
   fetchImpl = fetch,
@@ -728,6 +738,9 @@ export async function evaluateRenderedDiversity({
     content.push(await imagePart(candidate.mobile, { detail: "high" }));
   }
   const result = await requestJson({
+    activity: creativeModelActivity("model.rendered_reference_fidelity", {
+      stage: "rendered_reference_fidelity", substep: "diversity_judge", candidateId: null, repairPass,
+    }, activity),
     model,
     schema: diversitySchema,
     content,

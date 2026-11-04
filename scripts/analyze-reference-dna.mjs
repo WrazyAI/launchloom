@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { creativeModelActivity } from "./creative-activity.mjs";
 import {
   assertReferenceDossierPack,
   referenceDossierPromptBlock,
@@ -312,7 +313,7 @@ const ANALYZER_GO_MAX_ATTEMPTS = 4;
 const ANALYZER_GO_RETRY_DELAY_MS = 4_000;
 const ANALYZER_TIMEOUT_MS = 300_000;
 
-async function analyzeRoute(route, { fetchImpl = fetch, sleep } = {}) {
+async function analyzeRoute(route, { fetchImpl = fetch, sleep, activity = null } = {}) {
   const dna = route.referenceDna || {};
   const desktop = dna.evidence?.desktopScreenshot?.path;
   const mobile = dna.evidence?.mobileScreenshot?.available
@@ -431,6 +432,9 @@ Rules:
         let result;
         try {
           result = await completeGoCreative({
+            activity: creativeModelActivity("model.reference_analysis", {
+              stage: "reference_analysis", substep: `analyze_${String(route.id || "route").replace(/[^a-z0-9_]/gu, "_").slice(0, 60)}`,
+            }, activity),
             logicalModel: attemptModel,
             signal: controller.signal,
             fetchImpl,
@@ -669,11 +673,12 @@ export function dossierAnalysisFallback(route, error) {
  * @param {{
  *   fetchImpl?: typeof fetch,
  *   sleep?: (ms: number) => Promise<void>,
+ *   activity?: import("./generation-activity-client.mjs").ActivityChildProducer | null,
  * }} [options]
  */
 export async function enrichInspirationPack(
   pack,
-  { fetchImpl = fetch, sleep } = {},
+  { fetchImpl = fetch, sleep, activity = null } = {},
 ) {
   if (!Array.isArray(pack?.routes) || !pack.routes.length)
     throw new Error("Reference DNA analysis requires inspiration routes.");
@@ -698,7 +703,7 @@ export async function enrichInspirationPack(
   const routes = [];
   for (const route of pack.routes) {
     try {
-      const analyzed = await analyzeRoute(route, { fetchImpl, sleep });
+      const analyzed = await analyzeRoute(route, { fetchImpl, sleep, activity });
       routes.push(applyMeasuredReferenceAnalysis(route, analyzed));
     } catch (error) {
       const fallback = dossierAnalysisFallback(route, error);

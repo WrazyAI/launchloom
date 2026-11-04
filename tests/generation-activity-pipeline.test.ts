@@ -8,6 +8,9 @@ import {
 } from "../src/lib/generation-activity-contract.mjs";
 import type { TraceEvent } from "../src/lib/generation-activity";
 import { BASE_CONTEXT } from "./fixtures/generation-activity";
+import { captureActivity } from "./fixtures/generation-activity-capture";
+import { creativeModelActivity } from "../scripts/creative-activity.mjs";
+import { completeGoCreative, buildGoCreativeRequest } from "../scripts/creative-lane-inference.mjs";
 
 const privacy = createPrivacyPolicy({ allowSourceText: true });
 
@@ -30,6 +33,68 @@ function capture() {
 }
 
 describe("pipeline action instrumentation", () => {
+  it("does not let emitter or result projection failures change the action", async () => {
+    const producer = { emit() { throw new Error("diagnostic unavailable"); } } as never;
+    await expect(observePipelineAction({
+      producer, name: "repair_candidate", invoke: async () => 42,
+      projectResult: () => { throw new Error("projection failed"); },
+    })).resolves.toBe(42);
+    const error = new Error("original failure with raw private prompt");
+    await expect(observePipelineAction({
+      producer, name: "repair_candidate", invoke: async () => { throw error; },
+    })).rejects.toBe(error);
+  });
+
+  it("keeps nested candidate context through the real Go dispatch without request payloads", async () => {
+    const { producer, events } = captureActivity();
+    const activity = creativeModelActivity("model.creative_repair", {
+      stage: "creative_repair", substep: "repair_inference", candidateId: "candidate-a", repairPass: 2,
+    }, producer);
+    const result = await completeGoCreative({
+      activity, logicalModel: "opencode-go/deepseek-v4.1-flash",
+      env: { OPENCODE_GO_API_KEY: "offline-private-key" },
+      request: buildGoCreativeRequest({
+        systemPrompt: "PRIVATE_SYSTEM_PROMPT",
+        userContent: [
+          {
+            type: "text",
+            text: "PRIVATE_USER_PROMPT https://provider.example/private",
+          },
+        ],
+        maxOutputTokens: 100, sessionId: "offline-activity-test",
+      }),
+      fetchImpl: async () => {
+        expect(events.at(-1)?.kind).toBe("model_started");
+        return new Response(JSON.stringify({ status: "completed", output: [{
+          type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", text: "{}" }],
+        }] }), { headers: { "content-type": "application/json" } });
+      },
+    });
+    expect(result.status).toBe("completed");
+    const model = events.filter((event) => event.kind.startsWith("model_"));
+    expect(model.map((event) => event.kind)).toEqual(["model_started", "model_finished"]);
+    for (const event of model) expect(event.context).toMatchObject({
+      stage: "creative_repair", substep: "repair_inference", candidateId: "candidate-a", repairPass: 2,
+      actor: { kind: "model", role: "creative_repair" },
+    });
+    const payload = JSON.stringify(events);
+    for (const privateText of ["PRIVATE_SYSTEM_PROMPT", "PRIVATE_USER_PROMPT", "provider.example", "offline-private-key"])
+      expect(payload).not.toContain(privateText);
+  });
+
+  it("retains nested context with the real sanitized producer", async () => {
+    const sent: TraceEvent[] = [];
+    const producer = createActivityProducer({ context: BASE_CONTEXT, privacy, limits: TRACE_LIMITS,
+      transport: { async send(events) { sent.push(...events as TraceEvent[]); return { status: 200 }; } },
+    });
+    producer.withContext({ stage: "creative_repair", candidateId: "candidate-a", repairPass: 2 })
+      .withContext({ substep: "repair_inference", actor: { kind: "model", role: "creative_repair" } })
+      .emit("model_started", { callId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", provider: "opencode-go", model: "deepseek-v4.1-flash" });
+    await producer.close();
+    expect(sent.find((event) => event.kind === "model_started")?.context).toMatchObject({
+      stage: "creative_repair", candidateId: "candidate-a", repairPass: 2, substep: "repair_inference",
+    });
+  });
   it("records a start before the action and a finish after it", async () => {
     const { producer, events } = capture();
     let release!: () => void;

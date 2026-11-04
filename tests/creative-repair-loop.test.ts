@@ -9,6 +9,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { interactionSourceDigest } from "../scripts/rendered-interaction-evidence.mjs";
+import { captureActivity } from "./fixtures/generation-activity-capture";
 import {
   applyCreativeRepairEdits,
   applyCreativeVisualSafetyRepairs,
@@ -448,6 +449,7 @@ describe("creative repair loop", () => {
   });
 
   it("repairs on OpenCode Go when the provider selects it", async () => {
+    const { producer: activity, events } = captureActivity();
     vi.resetModules();
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
     vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
@@ -501,6 +503,7 @@ describe("creative repair loop", () => {
         "../scripts/creative-repair-loop.mjs"
       );
       const result = await requestRepairOnGo({
+        activity, candidateId: "candidate-a", repairPass: 2,
         model: "opencode-go/deepseek-v4.1-flash",
         referenceDna: {
           familyId: "editorial",
@@ -523,6 +526,11 @@ describe("creative repair loop", () => {
         },
       });
       expect(result).toEqual(edits);
+      expect(events.find((event) => event.kind === "model_started")?.context).toMatchObject({
+        stage: "creative_repair", substep: "repair_inference", candidateId: "candidate-a", repairPass: 2,
+      });
+      expect(JSON.stringify(events)).not.toContain("Improve the hero layout.");
+      expect(JSON.stringify(events)).not.toContain("opencode.ai");
       const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
       expect(String(url)).toContain("opencode.ai/inference/go");
       const body = JSON.parse(String(init?.body));

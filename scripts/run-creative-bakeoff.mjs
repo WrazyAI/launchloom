@@ -907,6 +907,8 @@ function renderedPairMetrics(visualDiversity, candidateIds) {
  * @returns {Promise<Record<string, any>>}
  */
 export async function runCreativeBakeoff({
+  activity = null,
+  repairPass = null,
   siteDir = "templates/client-site",
   candidatesDir = ".launchloom/generated-experiences",
   reportPath,
@@ -1178,6 +1180,7 @@ export async function runCreativeBakeoff({
           const judgeStartedAt = Date.now();
           try {
             return await renderedReferenceEvaluator({
+              activity, repairPass,
               candidateId: candidate.manifest.candidateId,
               sourceDigest: candidateResult.interactionEvidence?.sourceDigest,
               interactionEvidence: candidateResult.interactionEvidence,
@@ -2009,6 +2012,7 @@ export async function runCreativeBakeoff({
       "candidate-set",
       () =>
         renderedDiversityEvaluator({
+          activity, repairPass,
           candidates: pixelCandidates.map((candidate) => ({
             candidateId: candidate.candidateId,
             desktop: path.join(
