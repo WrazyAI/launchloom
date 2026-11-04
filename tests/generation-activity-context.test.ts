@@ -143,9 +143,9 @@ describe("generation activity environment context", () => {
       fetchImpl,
     });
     await expect(
-      transport.send([], { signal: AbortSignal.timeout(2_000) }),
+      transport.send([], { signal: AbortSignal.timeout(2_000), attempt: 1 }),
     ).resolves.toMatchObject({ status: 200 });
-    await transport.send([], { signal: AbortSignal.timeout(2_000) });
+    await transport.send([], { signal: AbortSignal.timeout(2_000), attempt: 1 });
     expect(calls).toEqual(["oidc", "worker", "worker"]);
   });
 
