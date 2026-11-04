@@ -1265,31 +1265,84 @@ function conciseHeadline(value, fallback = "", charLimit = 72, wordLimit = 10) {
     .trim();
 }
 
-function conciseSentence(
-  value,
-  fallback = "",
-  charLimit = 150,
-  wordLimit = 22,
-) {
-  const cleaned = text(value || fallback, 360);
-  const firstSentence = cleaned.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim();
-  const source =
-    firstSentence && firstSentence.length >= 35 ? firstSentence : cleaned;
-  const words = source.split(/\s+/).filter(Boolean);
-  let result = words.slice(0, wordLimit).join(" ");
-  if (result.length > charLimit) {
-    const wordEnd = result.lastIndexOf(" ", charLimit);
-    result = result.slice(0, wordEnd > 0 ? wordEnd : charLimit);
+// Long-form copy needs enough source text to reach a sentence boundary before
+// the completeness gate sees it. The final rendered limits are enforced in
+// evaluateDraft, not by cutting the model's sentence in half.
+const COPY_CHAR_LIMITS = Object.freeze({
+  aboutBody: 480,
+  heroBody: 240,
+  servicesIntro: 240,
+  formIntro: 240,
+});
+
+const TERMINAL_COPY_CONNECTOR =
+  /\b(?:a|an|the|and|or|but|so|because|although|though|while|if|when|whenever|where|wherever|which|that|who|whom|whose|to|of|in|on|at|by|for|from|with|without|into|onto|over|under|between|among|before|after|during|through|about|as|than|then|be|am|is|are|was|were|been|being|can|could|will|would|shall|should|may|might|must|do|does|did|has|have|had)\s*[.!?]?$/iu;
+
+function endsWithIncompleteConnector(value) {
+  return TERMINAL_COPY_CONNECTOR.test(text(value, 2000).trim());
+}
+
+const SENTENCE_ABBREVIATIONS = new Set([
+  "co",
+  "inc",
+  "ltd",
+  "llc",
+  "plc",
+  "corp",
+  "dr",
+  "mr",
+  "mrs",
+  "ms",
+  "st",
+  "vs",
+  "etc",
+  "jr",
+  "sr",
+  "no",
+  "fig",
+  "approx",
+  "dept",
+  "est",
+  "ave",
+  "blvd",
+  "rd",
+]);
+
+function firstCompleteSentence(value) {
+  const source = String(value || "");
+  for (const match of source.matchAll(/[.!?](?=\s|$)/gu)) {
+    const token = (
+      source.slice(0, match.index).match(/([A-Za-z]+)$/u)?.[1] || ""
+    ).toLowerCase();
+    // "Alder & Iron Plumbing Co. provides ..." is one sentence, not a
+    // fragment ending at the company suffix. Skip known abbreviations and
+    // initials, then take the next real boundary.
+    if (
+      match[0] === "." &&
+      (token.length === 1 || SENTENCE_ABBREVIATIONS.has(token))
+    )
+      continue;
+    return source.slice(0, match.index + 1).trim();
   }
-  result = result.replace(/[,;:]$/, "").trim();
-  if (result && !/[.!?]$/.test(result)) result += ".";
-  return result;
+  return source.trim();
+}
+
+function conciseSentence(value, fallback = "") {
+  const cleaned = text(value || fallback, 600);
+  const firstSentence = firstCompleteSentence(cleaned);
+  // Never manufacture a shorter sentence by cutting a complete one. If the
+  // first sentence exceeds the caller's budget, return it intact and let the
+  // copy completeness gate ask for a rewrite. Cutting here produced fragments
+  // such as "... before work begins, so."
+  return firstSentence && firstSentence.length >= 35
+    ? firstSentence
+    : cleaned;
 }
 
 function proofStatements(value) {
   const cleaned = text(value, 2000);
   return (cleaned.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [])
-    .map((statement) => conciseSentence(statement, statement, 190, 26))
+    .map((statement) => conciseSentence(statement, statement))
     .filter(Boolean);
 }
 
@@ -1345,7 +1398,7 @@ function fontChoicesFromIntake(intake) {
 }
 
 function usefulServiceDescription(value, serviceName) {
-  const candidate = conciseSentence(value, "", 125, 20);
+  const candidate = conciseSentence(value, "");
   const generic =
     /tailored to your needs|personalized support|quality you can trust|when it matters|next level/i;
   if (candidate.length >= 28 && !generic.test(candidate)) return candidate;
@@ -2294,6 +2347,10 @@ export function evaluateDraft(config, { modelOutput, intake, narrative } = {}) {
     wordCount(copy.heroHeading || config.business?.tagline) > 10 ||
     text(copy.heroHeading || config.business?.tagline, 200).length > 72 ||
     wordCount(copy.heroBody || config.business?.description) > 28 ||
+    wordCount(copy.servicesIntro) > 22 ||
+    text(copy.servicesIntro, 200).length > 145 ||
+    wordCount(copy.aboutBody) > 28 ||
+    text(copy.aboutBody, 400).length > 180 ||
     services.some(
       (service) =>
         wordCount(service.description) > 20 ||
@@ -2302,6 +2359,29 @@ export function evaluateDraft(config, { modelOutput, intake, narrative } = {}) {
   )
     issues.push(
       "The opening or service cards are too verbose to scan quickly.",
+    );
+  const incompleteCopy = [
+    ["copy.heroBody", copy.heroBody],
+    ["copy.servicesIntro", copy.servicesIntro],
+    ["copy.aboutBody", copy.aboutBody],
+    ...services.map((service, index) => [
+      `services[${index}].description`,
+      service.description,
+    ]),
+    ...process.map((step, index) => [
+      `conversion.process[${index}]`,
+      step,
+    ]),
+    ...faqs.flatMap((faq, index) => [
+      [`conversion.faqs[${index}].question`, faq.question],
+      [`conversion.faqs[${index}].answer`, faq.answer],
+    ]),
+  ].filter(([, value]) => endsWithIncompleteConnector(value));
+  if (incompleteCopy.length)
+    issues.push(
+      `Generated copy ends a sentence with an incomplete connector at ${incompleteCopy
+        .map(([field]) => field)
+        .join(", ")}. Rewrite each sentence so it finishes the thought.`,
     );
   if (text(config.business?.primaryCta, 80).length < 4)
     issues.push("The primary conversion action is unclear.");
@@ -2756,7 +2836,7 @@ export function normalise(candidate, intake) {
         candidateValue,
         defaultSiteCopy[key] || "",
         clientSource,
-        180,
+        COPY_CHAR_LIMITS[key] || 180,
         clientLanguageFallback,
       ),
     ]),
@@ -2768,7 +2848,7 @@ export function normalise(candidate, intake) {
         suppliedCopy[key] || fallbackValue,
         fallbackValue,
         clientSource,
-        180,
+        COPY_CHAR_LIMITS[key] || 180,
         clientLanguageFallback,
       ),
     ]),
@@ -2780,8 +2860,6 @@ export function normalise(candidate, intake) {
   copy.heroBody = conciseSentence(
     suppliedCopy.heroBody || copy.heroBody || business.description,
     business.description,
-    170,
-    28,
   );
   copy.servicesHeading = conciseHeadline(
     suppliedCopy.servicesHeading || copy.servicesHeading,
@@ -2792,14 +2870,10 @@ export function normalise(candidate, intake) {
   copy.servicesIntro = conciseSentence(
     suppliedCopy.servicesIntro || copy.servicesIntro,
     copy.servicesIntro,
-    145,
-    22,
   );
   copy.aboutBody = conciseSentence(
     suppliedCopy.aboutBody || copy.aboutBody || business.description,
     business.description,
-    180,
-    28,
   );
   if (
     isDirectionsCta(business) &&

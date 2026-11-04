@@ -1504,7 +1504,7 @@ describe("site configuration", () => {
           {
             name: "Slow-Fermented Organic Sourdough and Specialty Breads",
             description:
-              "Loaves built on a 48-hour wild-yeast fermentation with organic heirloom grains, baked daily for the cafe counter and special orders.",
+              "Loaves built on a 48-hour wild-yeast fermentation with organic heirloom grains, baked daily for the cafe.",
           },
         ],
         copy: {
@@ -1557,6 +1557,56 @@ describe("site configuration", () => {
     expect(config.copy.aboutBody).toMatch(/[.!?]$/);
     expect(config.copy.aboutBody).toBe(
       "Lumiere was built around a simple conviction: bread and pastry deserve time.",
+    );
+  });
+
+  it("keeps a complete sentence intact instead of cutting it into a fragment", () => {
+    const longSentence =
+      "Lumiere was built around a simple conviction: bread and pastry deserve time, and every loaf should be fermented slowly, shaped by hand, and baked early enough for the neighborhood to smell it.";
+    const intake = {
+      businessName: "Lumiere Artisan Bakery and Cafe",
+      services: "Sourdough bread",
+      industry: "hospitality",
+      preset: "home-services",
+    };
+    const config = normalise({ copy: { aboutBody: longSentence } }, intake);
+    expect(config.copy.aboutBody).toBe(longSentence);
+    expect(evaluateDraft(config, { intake }).issues).toContain(
+      "The opening or service cards are too verbose to scan quickly.",
+    );
+  });
+
+  it("does not end a sentence at a company abbreviation", () => {
+    const heroBody =
+      "For homeowners in Beaverton and nearby areas, Alder & Iron Plumbing Co. provides leak-first diagnosis and a clear next step.";
+    const intake = {
+      businessName: "Alder & Iron Plumbing Co.",
+      services: "Drain cleaning",
+      industry: "home-services",
+      preset: "home-services",
+    };
+    const config = normalise({ copy: { heroBody } }, intake);
+    expect(config.copy.heroBody).toBe(heroBody);
+  });
+
+  it("rejects copy that ends on an incomplete connector", () => {
+    const intake = {
+      businessName: "Lumiere Artisan Bakery and Cafe",
+      services: "Sourdough bread",
+      industry: "hospitality",
+      preset: "home-services",
+    };
+    const config = normalise(
+      {
+        copy: {
+          aboutBody:
+            "Lumiere bakes bread for the neighborhood and provides a warm place to pause, so",
+        },
+      },
+      intake,
+    );
+    expect(evaluateDraft(config, { intake }).issues).toContain(
+      "Generated copy ends a sentence with an incomplete connector at copy.aboutBody. Rewrite each sentence so it finishes the thought.",
     );
   });
 

@@ -45,6 +45,7 @@ import {
   summarizeGateHealth,
 } from "./gate-health.mjs";
 import {
+  classifyJudgeFinding,
   nearMissAssessment,
   NEAR_MISS_PREVIEW_DEFAULTS,
   splitFailureLines,
@@ -1894,13 +1895,17 @@ export async function runRenderedCreativeRepair({
       return null;
     }
     const gateAudit = visualGate?.audit || {};
-    const gateCritical = (gateAudit.findings || []).filter(
-      (finding) => String(finding?.severity) === "critical",
+    // A near-miss preview may carry design-fidelity observations, never a
+    // critical finding or a major content-integrity or accessibility defect.
+    // Those are hard gate failures even when the judge's overall verdict is
+    // merely "revise".
+    const gateHard = (gateAudit.findings || []).filter(
+      (finding) => classifyJudgeFinding(finding) !== "open",
     );
     if (
       visualGate?.status === "error" ||
       !["pass", "revise"].includes(gateAudit.verdict) ||
-      gateCritical.length
+      gateHard.length
     )
       return null;
     const openFindings = [

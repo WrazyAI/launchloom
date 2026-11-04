@@ -3121,6 +3121,34 @@ process.exit(2);
     blockers: [],
   });
 
+  const hardJudgeGate = async () => ({
+    version: 1,
+    mode: "verify",
+    status: "quality-blocked",
+    audit: {
+      verdict: "revise",
+      findings: [
+        {
+          severity: "major",
+          category: "content-integrity",
+          viewport: "desktop",
+          evidence: "hero and about copy trail off mid-sentence",
+          recommendation: "finish every sentence",
+        },
+      ],
+      operations: [],
+    },
+    blockers: [
+      {
+        severity: "major",
+        category: "content-integrity",
+        viewport: "desktop",
+        evidence: "hero and about copy trail off mid-sentence",
+        recommendation: "finish every sentence",
+      },
+    ],
+  });
+
   it("delivers a near-miss preview with open findings when the strict budget is exhausted", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     const promotions: any[] = [];
@@ -3469,6 +3497,35 @@ process.exit(2);
             }),
           ),
         runVisualGateImpl: nearMissGate,
+        repairCandidateImpl: async () => {},
+        promoteImpl: async (options: any) => {
+          promotions.push(options);
+          return { candidateId: "candidate-a" };
+        },
+      }),
+    ).rejects.toThrow(/repair budget is exhausted/u);
+    expect(promotions).toHaveLength(0);
+  });
+
+  it("refuses near-miss delivery for a major content-integrity finding", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const promotions: any[] = [];
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "preview",
+        maxCycles: 1,
+        runBakeoffImpl: async (options: any) =>
+          writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [nearMissCandidate()],
+            }),
+          ),
+        runVisualGateImpl: hardJudgeGate,
         repairCandidateImpl: async () => {},
         promoteImpl: async (options: any) => {
           promotions.push(options);
