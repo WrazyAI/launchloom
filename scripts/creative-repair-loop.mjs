@@ -1181,6 +1181,8 @@ If the CLIENT VISUAL BRIEF explicitly asks for a purposeful interaction, guide, 
 
 RENDERED DESIGN CORRECTION GUIDANCE
 A purposeful selector must reveal useful choice-specific information in a stable visible panel, expose the selected state, and restore the original choice. Changing only button styling or echoing the selected label is not a useful guide.
+The default state must show substantive choice-specific detail, not only the section heading and intro. If the default state has no detail, make the first service the default or remove the panel and selector.
+Do not render a decorative poster, video, or media frame with no real image, title, or caption. A play triangle over an empty frame is a placeholder; omit it or use a real labeled still.
 Keep a reference-led transition at its chapter weight with verified scope, service-area or process facts when awards or reviews were not supplied. Never fabricate proof or leave an empty one-line divider.
 The data-ll-action marker is only for deliberately filled actions, not ordinary navigation, wordmarks, service rows, or secondary text and phone links.
 For media-overlay references, preserve the focal artwork and open composition instead of an oversized copy card that hides the media. Use an accessible compact mobile disclosure when wrapping all navigation links would consume the opening.

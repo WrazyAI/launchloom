@@ -314,6 +314,20 @@ function normalizeReviewChecks(value) {
   return checks;
 }
 
+function reviewRetryable(review) {
+  if (review?.status !== "unavailable") return false;
+  if (review.failureCode === "not_configured") return false;
+  const status = Number(review.httpStatus);
+  if (
+    Number.isInteger(status) &&
+    status >= 400 &&
+    status < 500 &&
+    status !== 429
+  )
+    return false;
+  return true;
+}
+
 function normalizeImageReview(
   review,
   fallbackModel = GENERATED_ASSET_REVIEW_MODEL,
@@ -1048,6 +1062,10 @@ async function generateContextualAssetsForRoute({
     DEFAULT_MAX_REQUESTS,
   ),
   timeoutMs = Number(process.env.FAL_IMAGE_TIMEOUT_MS) || 120_000,
+  // A reviewer outage is transient and must not skip an otherwise usable
+  // hero. Retry the same normalized image on a bounded schedule before failing
+  // closed; the schedule is injectable so tests do not wait.
+  reviewRetryDelaysMs = [0, 2_000, 8_000, 20_000],
   falClient = /** @type {any} */ (defaultFal),
   fetchImpl = fetch,
   imageReviewer = reviewGeneratedAsset,
@@ -1216,9 +1234,22 @@ async function generateContextualAssetsForRoute({
         let review;
         let reviewSummary;
         // A reviewer outage is not a content rejection. Retry the same
-        // normalized image once before failing closed; reserve generation
-        // retries for images the reviewer actually rejected.
-        for (let reviewAttempt = 0; reviewAttempt < 2; reviewAttempt += 1) {
+        // normalized image on a bounded schedule before failing closed;
+        // reserve generation retries for images the reviewer actually
+        // rejected. A permanent configuration or 4xx error stops immediately.
+        const reviewSchedule =
+          Array.isArray(reviewRetryDelaysMs) && reviewRetryDelaysMs.length
+            ? reviewRetryDelaysMs
+            : [0];
+        for (
+          let reviewAttempt = 0;
+          reviewAttempt < reviewSchedule.length;
+          reviewAttempt += 1
+        ) {
+          if (reviewAttempt > 0)
+            await new Promise((resolve) =>
+              setTimeout(resolve, reviewSchedule[reviewAttempt]),
+            );
           try {
             review = await imageReviewer({
               imageData: normalized.data,
@@ -1243,6 +1274,7 @@ async function generateContextualAssetsForRoute({
           }
           reviewSummary = normalizeImageReview(review);
           if (reviewSummary.status !== "unavailable") break;
+          if (!reviewRetryable(reviewSummary)) break;
         }
         imageReviews.push(reviewSummary);
         finalReview = reviewSummary;

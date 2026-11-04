@@ -224,6 +224,111 @@ with `verdict: failed` and delivered a preview at
   layout is close enough that a pass is plausible; another run without the
   image fix will fail on imagery again.
 
+## Addendum: run 41478356973 (2026-11-02)
+
+Run `41478356973` (issue #217, OpenRouter, DeepSeek V4.1 Flash, commit
+`1e734f8b`) completed after 2h40m with `verdict: failed` and delivered a
+preview at `https://4c260519.launchloom-pipeline-preview.pages.dev`.
+
+- `prepare`, `configure`, `author`, `creative`, `select`, `deploy`, `notify`,
+  and `persist` passed; `technical` failed; `research`, `reuse`, and `seo` did
+  not run in this profile.
+- The dossier analyzer fallback worked. Route-02 (Roto-Rooter) returned
+  `Reference analyzer returned no content` and continued with
+  `analyzerModel=dossier-fallback`; route-01 and route-03 analyzed normally.
+  Authoring started and completed instead of failing before the first model
+  call.
+- Imagery improved from 0/15 placements to 3 placements. Route-03's hero was
+  approved, but route-01 and route-02 hero requests were skipped with
+  `image-review-unavailable`. The selected route-02 used only a secondary
+  placement; the rendered hero is a people-free plumbing still life.
+- No candidate was valid: all three were `score: -1000` on contrast failures.
+  Near-miss fallback selected candidate-b (typographic-poster), with visual
+  gate overall 77 and 28 open findings. The gate recorded two major blockers:
+  the light services panel repeats the section heading and intro with no
+  service detail and a large blank area, and the FAQ area renders a bordered
+  frame with only a play triangle and no poster, title, or caption.
+  `promotionReady` is false; the creative stage passed only through the
+  near-miss path, not as a green candidate.
+- Mobile hero fit improved substantially: candidate-b's hero bottom is 877px
+  against an 844px viewport (1.04 viewports), with media from 131px and 300px
+  visible. This is just 33px over the fold, down from the previous 1.45
+  viewports with media below the fold.
+- Technical contrast failed with 15 unresolved findings and 0 repairs. The 15
+  findings are five unique elements, one per service detail route: the same
+  `h2` "What is happening, and what comes next" in the `focus` state. Its
+  foreground is white on `#0f3d3e`, an actual ratio of 11.95:1 against the
+  required 3:1. The audit marks it unresolved because
+  `overlapping non-ancestor paint requires rendered review` and
+  `repairEligible` is false. This is not a low-contrast pair; it is a
+  state-scoping and rendered-proof gap.
+- The dashboard's live candidate thumbnail did not upload. The stored hero
+  endpoint returned 404 for both `github:41478356973:1` and `issue:217`. The
+  focused reusable workflow sets `GENERATION_TRACKING_SECRET` but not
+  `LAUNCHLOOM_API_URL`, `TRACK_PROFILE`, or `TRACK_ISSUE`, so
+  `uploadLiveCandidatePreview` returns `tracking-disabled` or `no-generation-id`
+  before any upload.
+
+### Addendum findings
+
+9. **The analyzer fallback is proven end to end.** A provider refusal on one
+   route no longer kills the run before authoring.
+10. **The image path is partly fixed, but the reviewer outage remains.** The
+    people-free still-life prompt produces usable plumbing imagery, yet two of
+    three hero requests never reached a verdict. The selected route therefore
+    had no hero placement even though the rendered page uses a suitable
+    secondary image.
+11. **Near-miss creative is not a green creative pass.** Candidate-b is
+    visually coherent and close to the reference language, but the hollow
+    services panel and empty FAQ frame are real content-integrity defects, and
+    28 findings remain open. Counting the near-miss as a pass hides them.
+12. **The focus-state contrast failure is a gate defect.** One heading
+    repeated across five routes, at 11.95:1, is reported unresolved only in the
+    focus state. Non-default states collect out-of-scope text targets and then
+    skip their rendered-pixel resolution, so a scroll-induced overlap finding
+    fails the page even though the target's paint did not change.
+13. **The live thumbnail feature is not wired for focused runs.** The code
+    exists and is tested with synthetic env, but the workflow never supplies
+    the API URL or the focused generation id, so no upload happens in practice.
+
+### Addendum recommendations
+
+- Resolve newly unresolved out-of-scope text targets from rendered pixels in
+  non-default states, or carry the proven default verdict when the target's
+  paint did not change. Do not fail a page for an element the interaction did
+  not touch.
+- Supply `LAUNCHLOOM_API_URL`, `TRACK_PROFILE`, and `TRACK_ISSUE` to the
+  focused workflow, and add a test that uses those exact names so the live
+  candidate path cannot regress silently.
+- Remove the hollow services panel and the empty FAQ media frame, or require
+  the content that fills them before the candidate can be selected.
+- Make the image reviewer outage explicit in the image plan and retry beyond
+  the current bound, so a route is not silently left without a hero.
+- Re-run the plumbing review after these fixes. The layout, mobile hero, and
+  imagery are now close enough that the remaining blockers are concrete.
+
+### Addendum fix status
+
+Commit `f7352523` fixes the focus-state contrast defect. Interaction states now
+carry the default-state verdict per target, and a target that was clean in the
+default state but becomes unresolved in a focus or hover state is proven from
+that state's rendered pixels instead of being skipped as out of scope. Targets
+that were already unresolved in the default state remain fail-closed.
+
+The fix was verified on the actual selected Alder & Iron service page. The
+pre-fix module produced exactly one unresolved focus finding for "What is
+happening, and what comes next"; the fixed module produced zero findings and
+passed. The new positive and fail-closed regression tests pass, and the six
+contrast test files pass 128 tests.
+
+Commit `c32fa415` adds deterministic rendered failures for the two content
+placeholders: a purposeful selector whose default panel only repeats the
+section heading and intro, and a media or poster frame with no image, label, or
+caption. Both now fail the bakeoff before the visual judge, and the authoring
+and repair prompts carry the same rules. On the selected candidate the detector
+reports one hollow panel and one empty media frame on the home page, and zero
+of both on the service detail page.
+
 ## Boundaries
 
 This is an owned fictional QA intake. No public production, no invented

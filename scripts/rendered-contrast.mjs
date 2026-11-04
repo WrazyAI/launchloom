@@ -181,6 +181,20 @@ export const RENDERED_UNPROVABLE_ISSUES = Object.freeze([
 ]);
 
 /**
+ * A target's identity across states. The same element can produce a text,
+ * icon, or focus target, so the paint property is part of the key.
+ */
+function contrastTargetKey(target) {
+  return [
+    target.route,
+    target.selector,
+    target.kind,
+    target.text,
+    target.paintProperty,
+  ].join("|");
+}
+
+/**
  * Maximum absolute channel difference between two stride-matched decodes.
  * Used to decide whether hidden glyph paint actually changes the pixels: an
  * occluded or same-color text renders identically with and without its paint.
@@ -279,7 +293,12 @@ export async function resolveRenderedBackdrop(
   // Marked scope: hover/focus/menu states resolve only the paints of the
   // interacted control subtree. Everything else was already measured in the
   // default state; unresolved targets outside the scope stay unresolved in
-  // that state, exactly as the DOM contract reported them before.
+  // that state, exactly as the DOM contract reported them before. The one
+  // exception is a target that was clean in the default state and only becomes
+  // unresolved in this state. For example, a focus or scroll revealed painted
+  // layer can newly overlap an untouched heading. That target must be proven
+  // from this state's pixels; skipping it would turn an unproven paint order
+  // into a false failure.
   const inScope = async (locator) => {
     if (!scoped) return true;
     return locator
@@ -382,7 +401,8 @@ export async function resolveRenderedBackdrop(
     let png = null;
     let effectiveForeground = null;
     try {
-      if (!partialPlate && !(await inScope(locator))) continue;
+      if (!partialPlate && !target.forceResolve && !(await inScope(locator)))
+        continue;
       // Element-level filters change how the foreground actually renders.
       // Only opacity-only filters have a provable effect on the foreground
       // alpha; any other filter (blur, brightness, blend, ...) is not
@@ -1563,6 +1583,7 @@ export async function inspectContrastPage(
 ) {
   const targets = [],
     visited = [];
+  const defaultTargets = new Map();
   let pixelResolved = 0;
   const settle = async () => {
     await page.evaluate(async () => {
@@ -1606,6 +1627,20 @@ export async function inspectContrastPage(
     const measured = (
       await page.evaluate(collectContrastTargets, { route, state })
     ).map(measure);
+    if (state === "default") {
+      for (const target of measured)
+        defaultTargets.set(contrastTargetKey(target), target);
+    } else {
+      for (const target of measured) {
+        if (target.status !== "unresolved") continue;
+        const prior = defaultTargets.get(contrastTargetKey(target));
+        // Targets that were already unresolved in the default state stay
+        // unresolved in the interaction state unless they are in scope. A
+        // target that was clean and only became unresolved in this state must
+        // still be proven from this state's pixels.
+        if (!prior || prior.status === "pass") target.forceResolve = true;
+      }
+    }
     const viewport = page.viewportSize();
     const stateTargets = measured.filter((target) => {
       if (
@@ -1639,6 +1674,7 @@ export async function inspectContrastPage(
       });
       pixelResolved += resolution.resolved;
     }
+    for (const target of stateTargets) delete target.forceResolve;
     targets.push(...stateTargets);
   };
   const markScope = async (elements) => {

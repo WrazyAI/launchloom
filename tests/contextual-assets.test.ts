@@ -448,6 +448,136 @@ describe("contextual image generation", () => {
     expect(result.manifest.placements).toHaveLength(1);
   });
 
+  it("retries a transient reviewer outage without spending another image request", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-review-retry-"));
+    let reviews = 0;
+    let imageRequests = 0;
+    const result = await generateContextualAssets({
+      site: fixture(),
+      inspiration: { routes: [{ id: "review-retry-route" }] },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 1,
+      reviewRetryDelaysMs: [0, 0],
+      falClient: {
+        config() {},
+        async subscribe() {
+          imageRequests += 1;
+          return {
+            data: { images: [{ url: "https://fal.example/retry.jpg" }] },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+      imageReviewer: async () => {
+        reviews += 1;
+        if (reviews === 1)
+          return {
+            available: false,
+            approved: false,
+            reasonCodes: ["review_unavailable"],
+            failureCode: "transport_error",
+            model: "test-reviewer",
+          };
+        return {
+          available: true,
+          approved: true,
+          reasonCodes: [],
+          model: "test-reviewer",
+        };
+      },
+    });
+
+    expect(reviews).toBe(2);
+    expect(imageRequests).toBe(1);
+    expect(result.site.images.hero).toMatch(/^\/images\/generated\/hero-/);
+    expect(result.manifest.placements[0].imageReview.status).toBe("approved");
+  });
+
+  it("stops immediately on a permanent reviewer error", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-review-permanent-"),
+    );
+    let reviews = 0;
+    const result = await generateContextualAssets({
+      site: fixture(),
+      inspiration: { routes: [{ id: "review-permanent-route" }] },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 1,
+      reviewRetryDelaysMs: [0, 0, 0],
+      falClient: {
+        config() {},
+        async subscribe() {
+          return {
+            data: { images: [{ url: "https://fal.example/permanent.jpg" }] },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+      imageReviewer: async () => {
+        reviews += 1;
+        return {
+          available: false,
+          approved: false,
+          reasonCodes: ["review_unavailable"],
+          failureCode: "http_error",
+          httpStatus: 401,
+          model: "test-reviewer",
+        };
+      },
+    });
+
+    expect(reviews).toBe(1);
+    expect(result.manifest.skipped[0]).toMatchObject({
+      placement: "hero",
+      reason: "image-review-unavailable",
+    });
+  });
+
+  it("stops after the bounded schedule on a lasting transient outage", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-review-exhausted-"),
+    );
+    let reviews = 0;
+    const result = await generateContextualAssets({
+      site: fixture(),
+      inspiration: { routes: [{ id: "review-exhausted-route" }] },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 1,
+      reviewRetryDelaysMs: [0, 0, 0],
+      falClient: {
+        config() {},
+        async subscribe() {
+          return {
+            data: { images: [{ url: "https://fal.example/exhausted.jpg" }] },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+      imageReviewer: async () => {
+        reviews += 1;
+        return {
+          available: false,
+          approved: false,
+          reasonCodes: ["review_unavailable"],
+          failureCode: "timeout",
+          model: "test-reviewer",
+        };
+      },
+    });
+
+    expect(reviews).toBe(3);
+    expect(result.manifest.skipped[0]).toMatchObject({
+      placement: "hero",
+      reason: "image-review-unavailable",
+    });
+  });
+
   it("records sanitized OpenRouter visual-review failure diagnostics", async () => {
     const outputDir = await mkdtemp(
       join(tmpdir(), "launchloom-image-review-error-"),
@@ -487,6 +617,7 @@ describe("contextual image generation", () => {
         key: "test-fal-key",
         maxImages: 1,
         maxRequests: 1,
+        reviewRetryDelaysMs: [0],
         falClient: {
           config() {},
           async subscribe() {
@@ -1334,9 +1465,7 @@ describe("contextual image generation", () => {
           prompts.push(options.input.prompt);
           return {
             data: {
-              images: [
-                { url: `https://fal.example/coverage-${calls}.jpg` },
-              ],
+              images: [{ url: `https://fal.example/coverage-${calls}.jpg` }],
             },
           };
         },
@@ -1356,9 +1485,10 @@ describe("contextual image generation", () => {
     expect(
       result.manifest.placements.map((entry: any) => entry.placement),
     ).toEqual(["secondary"]);
-    expect(
-      result.manifest.skipped.map((entry: any) => entry.reason),
-    ).toEqual(["image-review-rejected", "image-review-rejected"]);
+    expect(result.manifest.skipped.map((entry: any) => entry.reason)).toEqual([
+      "image-review-rejected",
+      "image-review-rejected",
+    ]);
     expect(
       result.manifest.skipped.some(
         (entry: any) => entry.reason === "request-budget-exhausted",
@@ -1532,7 +1662,12 @@ describe("generated asset review integrity policy", () => {
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
     vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
     const image = await sharp({
-      create: { width: 16, height: 16, channels: 3, background: { r: 10, g: 60, b: 40 } },
+      create: {
+        width: 16,
+        height: 16,
+        channels: 3,
+        background: { r: 10, g: 60, b: 40 },
+      },
     })
       .webp()
       .toBuffer();
@@ -1602,7 +1737,12 @@ describe("generated asset review integrity policy", () => {
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
     vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
     const image = await sharp({
-      create: { width: 16, height: 16, channels: 3, background: { r: 30, g: 30, b: 30 } },
+      create: {
+        width: 16,
+        height: 16,
+        channels: 3,
+        background: { r: 30, g: 30, b: 30 },
+      },
     })
       .webp()
       .toBuffer();

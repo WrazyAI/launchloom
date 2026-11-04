@@ -172,8 +172,121 @@ async function startServer(root) {
   return { server, origin: `http://127.0.0.1:${address.port}` };
 }
 
+/**
+ * Detect two visible placeholder patterns that the rendered judge has had to
+ * catch by eye: a purposeful selector whose default panel only repeats the
+ * section heading and intro, and a media or poster frame with no real image,
+ * label, or caption. Both are deterministic content-integrity failures.
+ *
+ * Runs inside the page. Keep it free of module-scope references so Playwright
+ * can serialize it, and so it can be exercised directly by tests.
+ */
+export function contentCompletenessEvidence() {
+  const root = document.querySelector("[data-creative-candidate]");
+  if (!root)
+    return { hollowInteractionPanels: 0, emptyMediaFrames: 0 };
+  const normalize = (value) =>
+    String(value || "")
+      .replace(/\s+/gu, " ")
+      .trim()
+      .toLowerCase();
+  const visible = (element) => {
+    const style = window.getComputedStyle(element);
+    if (
+      style.display === "none" ||
+      style.visibility !== "visible" ||
+      Number(style.opacity) === 0
+    )
+      return false;
+    const box = element.getBoundingClientRect();
+    return box.width > 0 && box.height > 0;
+  };
+  const services = root.querySelector("#services") || root;
+  const repeated = [
+    normalize(services.querySelector("h2")?.textContent),
+    normalize(services.querySelector("p")?.textContent),
+  ].filter(Boolean);
+
+  let hollowInteractionPanels = 0;
+  for (const interaction of root.querySelectorAll(
+    "[data-purposeful-interaction]",
+  )) {
+    if (!visible(interaction)) continue;
+    const contentSelector =
+      "p,dd,dt,li,figcaption,blockquote,td,[aria-live]";
+    const leaves = [
+      ...interaction.querySelectorAll(contentSelector),
+    ].filter(
+      (node) =>
+        visible(node) &&
+        !node.closest(
+          "label,legend,button,summary,option,[role='radio'],[role='tab']",
+        ) &&
+        ![...node.querySelectorAll(contentSelector)].some((child) =>
+          visible(child),
+        ),
+    );
+    let panelText = normalize(
+      leaves.map((node) => node.textContent).join(" "),
+    );
+    for (const phrase of repeated)
+      panelText = panelText.replace(phrase, " ");
+    const words = panelText
+      .split(/\s+/u)
+      .filter((word) => word.length > 2 && /[a-z0-9]/iu.test(word));
+    // Eight words is the low end of a useful sentence. A panel that only
+    // repeats the section heading and intro leaves zero after subtraction.
+    if (words.length < 8) hollowInteractionPanels += 1;
+  }
+
+  const mediaClassPattern =
+    /(?:^|[-_])(?:poster|player|video|media|film|reel)(?:$|[-_])/iu;
+  const looksMedia = (element) => {
+    if (!visible(element)) return false;
+    return (
+      ["data-media", "data-video", "data-poster"].some((name) =>
+        element.hasAttribute(name),
+      ) ||
+      [...element.classList].some((name) => mediaClassPattern.test(name))
+    );
+  };
+  const outermostMedia = [
+    ...root.querySelectorAll("*"),
+  ].filter((element) => {
+    if (!looksMedia(element)) return false;
+    for (
+      let parent = element.parentElement;
+      parent && parent !== root.parentElement;
+      parent = parent.parentElement
+    ) {
+      if (looksMedia(parent)) return false;
+    }
+    return true;
+  });
+  const emptyMediaFrames = outermostMedia.filter((element) => {
+    if (
+      element.querySelector("img,video,iframe,picture,canvas,svg[role='img']")
+    )
+      return false;
+    const style = window.getComputedStyle(element);
+    if (style.backgroundImage !== "none") return false;
+    if (
+      normalize(
+        element.getAttribute("aria-label") ||
+          element.getAttribute("title") ||
+          "",
+      ).length
+    )
+      return false;
+    if (normalize(element.textContent).length >= 8) return false;
+    return true;
+  }).length;
+
+  return { hollowInteractionPanels, emptyMediaFrames };
+}
+
 async function inspect(page) {
-  return page.evaluate((imageBackgroundPattern) => {
+  const evidence = await page.evaluate((imageBackgroundPattern) => {
     const hasImageBackground = new RegExp(imageBackgroundPattern, "iu");
     const root = document.querySelector("[data-creative-candidate]");
     const hero = root?.querySelector("[data-hero]");
@@ -512,6 +625,8 @@ async function inspect(page) {
       },
     };
   }, CSS_IMAGE_URL_PATTERN.source);
+  const completeness = await page.evaluate(contentCompletenessEvidence);
+  return { ...evidence, ...completeness };
 }
 
 export function hardFailures(
@@ -560,6 +675,10 @@ export function hardFailures(
     evidence.overflow && "horizontal overflow",
     evidence.brokenImages > 0 && "broken image",
     evidence.emDashes > 0 && "em dash found",
+    evidence.hollowInteractionPanels > 0 &&
+      "purposeful interaction default panel repeats the section heading and intro without choice-specific detail",
+    evidence.emptyMediaFrames > 0 &&
+      "empty media frame has no image, label, or caption",
     evidence.creativeRenderer !== "creative-candidate" &&
       "creative renderer marker missing",
   ].filter(Boolean);
