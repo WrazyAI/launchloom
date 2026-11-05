@@ -203,7 +203,7 @@ describe("GitHub OIDC run identity", () => {
     const network = vi.fn().mockRejectedValue(new Error("synthetic network outage"));
     expect(
       await authCode(await token(claims(), { kid: "rotated-key" }), { keys: undefined, fetch: network }),
-    ).toBe("keys_unavailable");
+    ).toBe("keys_fetch");
 
     const unavailable = vi.fn().mockResolvedValue(new Response("no", { status: 503 }));
     expect(
@@ -211,7 +211,7 @@ describe("GitHub OIDC run identity", () => {
         keys: undefined,
         fetch: unavailable,
       }),
-    ).toBe("keys_unavailable");
+    ).toBe("keys_fetch");
   });
 
   it("rejects an unknown key id instead of trusting an unlisted key", async () => {
