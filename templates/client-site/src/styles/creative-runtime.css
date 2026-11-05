@@ -150,6 +150,20 @@
   font-weight: 700;
 }
 
+/* The services index hero must stack on mobile. A generated two-column grid
+   at 390px squeezes the copy into a sliver and can place the image over it. */
+@media (max-width: 719px) {
+  [data-services-index-hero] > div {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 24px !important;
+  }
+
+  [data-services-index-hero] > div > * {
+    min-width: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
