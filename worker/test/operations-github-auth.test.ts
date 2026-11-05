@@ -211,7 +211,7 @@ describe("GitHub OIDC run identity", () => {
         keys: undefined,
         fetch: unavailable,
       }),
-    ).toBe("keys_fetch");
+    ).toBe("keys_http");
   });
 
   it("rejects an unknown key id instead of trusting an unlisted key", async () => {
