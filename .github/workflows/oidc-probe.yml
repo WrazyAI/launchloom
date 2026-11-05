@@ -18,7 +18,7 @@ jobs:
             node -e 'const u=new URL(process.env.ACTIONS_ID_TOKEN_REQUEST_URL); console.log("probe_protocol="+u.protocol+" probe_hostname="+u.hostname+" probe_user="+Boolean(u.username)+" probe_password="+Boolean(u.password)+" probe_hash="+Boolean(u.hash))'
             code=$(curl -sS -o /tmp/oidc.json -w '%{http_code}' -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-none}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=launchloom-operations" || true)
             echo "oidc_http=$code"
-            head -c 40 /tmp/oidc.json | sed 's/[A-Za-z0-9._-]\{20,\}/<redacted>/g' || true
+            node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync("/tmp/oidc.json","utf8"));const c=JSON.parse(Buffer.from(j.value.split(".")[1],"base64url"));console.log(JSON.stringify({sub:c.sub,aud:c.aud,event_name:c.event_name,repository_id:c.repository_id,repository:c.repository,ref:c.ref,workflow_ref:c.workflow_ref,ref_type:c.ref_type}))'
           fi
   probe_custom:
     runs-on: ubuntu-24.04
