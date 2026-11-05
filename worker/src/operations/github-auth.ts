@@ -267,8 +267,27 @@ export async function verifyRunIdentity(
   if (claims.iss !== policy.issuer) deny("issuer");
   if (claims.aud !== policy.audience) deny("audience");
 
-  const expectedSubject = `repo:${policy.repository}:ref:${policy.ref}`;
-  if (claims.sub !== expectedSubject) deny("subject");
+  // Repositories created or renamed after 15 July 2026 use GitHub's immutable
+  // subject format: repo:owner@ownerId/repo@repoId:ref:refs/heads/main. Accept
+  // both formats, but bind the immutable form to the fixed owner, name,
+  // repository ID and ref so a recycled namespace cannot pass.
+  const [ownerName, repositoryName] = policy.repository.split("/");
+  const legacySubject = `repo:${policy.repository}:ref:${policy.ref}`;
+  let subjectMatches = claims.sub === legacySubject;
+  if (!subjectMatches && typeof claims.sub === "string") {
+    const immutable =
+      /^repo:([^@/]+)@[0-9]+\/([^@/]+)@([1-9][0-9]{0,19}):ref:(.+)$/u.exec(
+        claims.sub,
+      );
+    subjectMatches = Boolean(
+      immutable &&
+        immutable[1] === ownerName &&
+        immutable[2] === repositoryName &&
+        immutable[3] === policy.repositoryId &&
+        immutable[4] === policy.ref,
+    );
+  }
+  if (!subjectMatches) deny("subject");
   if (typeof claims.environment === "string" && claims.environment) deny("subject");
 
   if (claims.repository !== policy.repository) deny("repository");

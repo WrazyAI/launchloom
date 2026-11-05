@@ -155,6 +155,30 @@ describe("GitHub OIDC run identity", () => {
     });
   });
 
+  it("accepts GitHub's immutable subject format for the same repository and ref", async () => {
+    const value = await token(
+      claims({
+        sub: "repo:WrazyAI@289751878/launchloom@1352728020:ref:refs/heads/main",
+      }),
+    );
+    await expect(verifyRunIdentity(value, policy())).resolves.toEqual({
+      repositoryId,
+      runId: "424242",
+      runAttempt: 1,
+    });
+  });
+
+  it("rejects immutable subjects for another repository, owner, id or ref", async () => {
+    for (const sub of [
+      "repo:WrazyAI@289751878/launchloom@999:ref:refs/heads/main",
+      "repo:WrazyAI@289751878/other@1352728020:ref:refs/heads/main",
+      "repo:Other@289751878/launchloom@1352728020:ref:refs/heads/main",
+      "repo:WrazyAI@289751878/launchloom@1352728020:ref:refs/heads/dev",
+    ]) {
+      expect(await authCode(await token(claims({ sub })))).toBe("subject");
+    }
+  });
+
   it("fetches current GitHub keys for a token kid and requires RS256", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ keys }), {
