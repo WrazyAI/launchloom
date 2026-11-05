@@ -71,6 +71,26 @@ function siteCopyProvider() {
 // OpenCode Go transport for the site-copy lane. The provider does not return a
 // per-request cash cost, so the ledger records tokens/provenance plus cost
 // computed from the published Go price table.
+const SITE_COPY_GO_MAX_ATTEMPTS = 3;
+const SITE_COPY_GO_RETRY_DELAY_MS = 2_000;
+const TRANSIENT_SITE_COPY_ERROR_CODES = new Set([
+  "transport",
+  "rate-limit",
+  "timeout",
+  "upstream",
+  "provider-error",
+]);
+
+function siteCopyRetryDelayMs(attempt) {
+  const configured = Number(
+    process.env.SITE_COPY_GO_RETRY_DELAY_MS ?? SITE_COPY_GO_RETRY_DELAY_MS,
+  );
+  const base = Number.isFinite(configured)
+    ? Math.max(0, configured)
+    : SITE_COPY_GO_RETRY_DELAY_MS;
+  return base * attempt;
+}
+
 async function siteCopyOpencodeGoCompletion({
   label,
   effort,
@@ -84,23 +104,40 @@ async function siteCopyOpencodeGoCompletion({
     stage: "site_config",
     actor: { kind: "model", role: "site_copy" },
   });
-  const completion = await completeGeneration({
-    inference: {
-      profile: opencodeGoResponsesProfile({ logicalModel: model }),
-      apiKey: process.env.OPENCODE_GO_API_KEY,
-      request: buildSiteCopyResponsesRequest({
-        systemPrompt,
-        userPrompt,
-        maxOutputTokens,
-        effort,
-        sessionId,
-      }),
-    },
-    activity: {
-      producer: activity,
-      context: { stage: "site_config", substep: "site_copy" },
-    },
-  });
+  let completion;
+  let attempts = 0;
+  for (let attempt = 1; attempt <= SITE_COPY_GO_MAX_ATTEMPTS; attempt += 1) {
+    attempts = attempt;
+    completion = await completeGeneration({
+      inference: {
+        profile: opencodeGoResponsesProfile({ logicalModel: model }),
+        apiKey: process.env.OPENCODE_GO_API_KEY,
+        request: buildSiteCopyResponsesRequest({
+          systemPrompt,
+          userPrompt,
+          maxOutputTokens,
+          effort,
+          sessionId,
+        }),
+      },
+      activity: {
+        producer: activity,
+        context: { stage: "site_config", substep: "site_copy" },
+      },
+    });
+    const result = completion?.result;
+    const errorCode = String(result?.error?.code || "");
+    const transient =
+      result?.status === "error" &&
+      TRANSIENT_SITE_COPY_ERROR_CODES.has(errorCode);
+    if (!transient || attempt === SITE_COPY_GO_MAX_ATTEMPTS) break;
+    const delayMs = siteCopyRetryDelayMs(attempt);
+    console.warn(
+      `site_copy_go_retry label=${label} code=${errorCode} http_status=${result?.error?.httpStatus ?? "none"} attempt=${attempt}/${SITE_COPY_GO_MAX_ATTEMPTS} retry_in_ms=${delayMs}`,
+    );
+    if (delayMs > 0)
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
   const usage = completion?.result?.usage || null;
   const metrics = opencodeGoUsageMetrics(usage, { label, logger: console.log });
   // Persist the computed cash cost with the normalized usage so the shared
@@ -124,7 +161,7 @@ async function siteCopyOpencodeGoCompletion({
       completion?.result?.error?.code ||
       "request failed";
     const error = new Error(
-      `OpenCode Go ${label} ${completion?.result?.status || "error"}: ${incompleteReason}.`,
+      `OpenCode Go ${label} ${completion?.result?.status || "error"}: ${incompleteReason} after ${attempts} attempt(s).`,
     );
     if (completion?.result?.status === "incomplete")
       error.code = "SITE_COPY_OUTPUT_TRUNCATED";

@@ -167,6 +167,31 @@ function stubCopyModelResponses(
   return fetchMock;
 }
 
+function goCopyResponse(content: any) {
+  return new Response(
+    JSON.stringify({
+      id: "resp_test",
+      object: "response",
+      status: "completed",
+      output: [
+        {
+          type: "message",
+          role: "assistant",
+          status: "completed",
+          content: [{ type: "output_text", text: JSON.stringify(content) }],
+        },
+      ],
+      usage: {
+        input_tokens: 10,
+        output_tokens: 10,
+        input_tokens_details: { cached_tokens: 0 },
+        output_tokens_details: { reasoning_tokens: 0 },
+      },
+    }),
+    { status: 200, headers: { "content-type": "application/json" } },
+  );
+}
+
 describe("site configuration", () => {
   it("gives comma-separated service intake as separate copywriter services", async () => {
     const candidate = repairOutcomeCandidate("A clearer path to plumbing help");
@@ -212,6 +237,60 @@ describe("site configuration", () => {
       "Drain cleaning",
       "Water heater repair",
     ]);
+  });
+
+  it("retries a transient Go site-copy upstream error before failing", async () => {
+    const candidate = repairOutcomeCandidate(
+      "A clearer path to plumbing help",
+    );
+    candidate.business = {
+      name: "Harbor Plumbing",
+      tagline: "A clearer path to plumbing help",
+      description:
+        "Harbor Plumbing helps Tacoma homeowners discuss drain and water heater concerns.",
+    };
+    const previousProvider = process.env.SITE_COPY_PROVIDER;
+    const previousKey = process.env.OPENCODE_GO_API_KEY;
+    const previousDelay = process.env.SITE_COPY_GO_RETRY_DELAY_MS;
+    process.env.SITE_COPY_PROVIDER = "opencode-go";
+    process.env.OPENCODE_GO_API_KEY = "test-go-key";
+    process.env.SITE_COPY_GO_RETRY_DELAY_MS = "0";
+    let calls = 0;
+    vi.stubGlobal("fetch", async () => {
+      calls += 1;
+      if (calls === 1)
+        return new Response(
+          JSON.stringify({
+            error: {
+              code: "server_error",
+              type: "server_error",
+              message: "Upstream response was invalid",
+            },
+          }),
+          { status: 400, headers: { "content-type": "application/json" } },
+        );
+      return goCopyResponse(candidate);
+    });
+    try {
+      const config = await generateSiteConfigWithModel({
+        businessName: "Harbor Plumbing",
+        industry: "home-services",
+        services: "Drain cleaning, Water heater repair",
+        serviceAreas: "Tacoma, WA",
+        primaryCity: "Tacoma, WA",
+        phone: "(253) 555-0146",
+      });
+      expect(calls).toBe(3);
+      expect(config.business.name).toBe("Harbor Plumbing");
+    } finally {
+      if (previousProvider === undefined) delete process.env.SITE_COPY_PROVIDER;
+      else process.env.SITE_COPY_PROVIDER = previousProvider;
+      if (previousKey === undefined) delete process.env.OPENCODE_GO_API_KEY;
+      else process.env.OPENCODE_GO_API_KEY = previousKey;
+      if (previousDelay === undefined)
+        delete process.env.SITE_COPY_GO_RETRY_DELAY_MS;
+      else process.env.SITE_COPY_GO_RETRY_DELAY_MS = previousDelay;
+    }
   });
 
   it("keeps the narrative spine in the private quality report", async () => {
