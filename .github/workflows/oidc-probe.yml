@@ -1,5 +1,8 @@
 name: OIDC probe
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [oidc-probe]
 permissions:
   contents: read
   id-token: write
@@ -16,3 +19,17 @@ jobs:
             echo "oidc_http=$code"
             head -c 40 /tmp/oidc.json | sed 's/[A-Za-z0-9._-]\{20,\}/<redacted>/g' || true
           fi
+  probe_custom:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        shell: bash scripts/private-run.sh {0}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check OIDC through the custom shell
+        run: |
+          if [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then echo "custom_url=present"; else echo "custom_url=missing"; fi
+          if [ -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then echo "custom_token=present"; else echo "custom_token=missing"; fi
