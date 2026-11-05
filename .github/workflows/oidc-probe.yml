@@ -1,5 +1,8 @@
 name: OIDC probe
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [oidc-probe]
 permissions:
   contents: read
   id-token: write
