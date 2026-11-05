@@ -65,6 +65,12 @@ export type OperationsAuthErrorCode =
   | "malformed"
   | "invalid_signature"
   | "keys_unavailable"
+  | "keys_fetch"
+  | "keys_http"
+  | "keys_content_type"
+  | "keys_parse"
+  | "keys_shape"
+  | "keys_invalid"
   | "claims"
   | "issuer"
   | "audience"
@@ -176,22 +182,26 @@ async function publishedKeys(
       },
     });
   } catch {
-    return deny("keys_unavailable");
+    return deny("keys_fetch");
   }
-  if (!response.ok || !String(response.headers.get("content-type") || "").includes("application/json")) {
+  if (!response.ok) {
     await response.body?.cancel();
-    return deny("keys_unavailable");
+    return deny("keys_http");
+  }
+  if (!String(response.headers.get("content-type") || "").includes("application/json")) {
+    await response.body?.cancel();
+    return deny("keys_content_type");
   }
   let body: unknown;
   try {
     body = await response.json();
   } catch {
-    return deny("keys_unavailable");
+    return deny("keys_parse");
   }
   if (!record(body) || !Array.isArray(body.keys) || body.keys.length < 1 || body.keys.length > 20)
-    return deny("keys_unavailable");
+    return deny("keys_shape");
   const keys = body.keys.filter(validKey) as GitHubOidcKey[];
-  if (!keys.length) deny("keys_unavailable");
+  if (!keys.length) deny("keys_invalid");
   keyCache = { keys, expiresAt: nowMilliseconds + KEY_CACHE_MILLISECONDS };
   return keys;
 }
