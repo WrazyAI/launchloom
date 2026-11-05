@@ -310,7 +310,7 @@ function parseChoice(payload) {
 // invalid request) still fail after the first response and never loop.
 const ANALYZER_GO_MAX_ATTEMPTS = 4;
 const ANALYZER_GO_RETRY_DELAY_MS = 4_000;
-const ANALYZER_TIMEOUT_MS = 300_000;
+const ANALYZER_TIMEOUT_MS = 600_000;
 
 async function analyzeRoute(route, { fetchImpl = fetch, sleep } = {}) {
   const dna = route.referenceDna || {};
@@ -443,9 +443,10 @@ Rules:
               userContent: attemptContent,
               schemaName: schema.name,
               schema: schema.schema,
-              // DeepSeek at max effort spends a large reasoning budget before
-              // the answer; the analyzer answer itself is a few thousand tokens.
-              maxOutputTokens: 48_000,
+              // DeepSeek at max effort can spend a large reasoning budget
+              // before the answer. The Go allowance is generous; keep enough
+              // room that a complex reference never exhausts the output cap.
+              maxOutputTokens: 128_000,
               effort: analyzerEffort,
               sessionId,
             }),

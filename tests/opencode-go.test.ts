@@ -148,6 +148,12 @@ describe("opencode go profile and request contracts", () => {
     });
   });
 
+  it("allows a 128k Go output ceiling for deep reasoning", () => {
+    expect(opencodeGoResponsesProfile().capabilities.maxOutputTokens).toBe(
+      128_000,
+    );
+  });
+
   it("refuses temperature because the Go model rejects it", () => {
     const profile = opencodeGoResponsesProfile();
     expect(() =>

@@ -62,7 +62,10 @@ export function opencodeGoWireModel(logicalModel) {
  */
 export function opencodeGoResponsesProfile({
   logicalModel = "opencode-go/deepseek-v4.1-flash",
-  maxOutputTokens = 48_000,
+  // The Go allowance is deliberately generous. DeepSeek V4.1 Flash can spend
+  // a large reasoning budget before its visible answer, so callers must be
+  // able to request well above the old 48k ceiling.
+  maxOutputTokens = 128_000,
 } = {}) {
   return {
     provider: "opencode-go",
