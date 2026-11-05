@@ -148,9 +148,13 @@ export async function requestOidcToken({
   } catch {
     fail("oidc_invalid_url", EXIT.oidc);
   }
+  // GitHub serves the OIDC request endpoint from pipelines.* and from sharded
+  // run-actions-* hosts. Accept only those exact GitHub-controlled hosts.
+  const oidcHost =
+    /^(?:pipelines|run-actions-[a-z0-9-]+)\.actions\.githubusercontent\.com$/u;
   if (
     url.protocol !== "https:" ||
-    url.hostname !== "pipelines.actions.githubusercontent.com" ||
+    !oidcHost.test(url.hostname) ||
     url.username ||
     url.password ||
     url.hash

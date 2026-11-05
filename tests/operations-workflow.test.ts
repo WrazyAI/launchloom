@@ -84,6 +84,41 @@ describe("operations client", () => {
     );
   });
 
+  it("accepts sharded GitHub OIDC hosts and rejects unrelated hosts", async () => {
+    for (const host of [
+      "pipelines.actions.githubusercontent.com",
+      "run-actions-2-azure-eastus.actions.githubusercontent.com",
+    ]) {
+      const harness = clientHarness(() => jsonResponse({ value: syntheticJwt }));
+      const token = await requestOidcToken({
+        audience: OPERATIONS_DEFAULT_AUDIENCE,
+        env: {
+          ...harness.deps.env,
+          ACTIONS_ID_TOKEN_REQUEST_URL: `https://${host}/token?api-version=2.0`,
+        },
+        fetchImpl: harness.fetchImpl,
+      });
+      expect(token).toBe(syntheticJwt);
+    }
+    for (const host of [
+      "evil.actions.githubusercontent.com",
+      "run-actions-x.attacker.test",
+      "pipelines.actions.githubusercontent.com.evil.test",
+    ]) {
+      const harness = clientHarness(() => jsonResponse({ value: syntheticJwt }));
+      await expect(
+        requestOidcToken({
+          audience: OPERATIONS_DEFAULT_AUDIENCE,
+          env: {
+            ...harness.deps.env,
+            ACTIONS_ID_TOKEN_REQUEST_URL: `https://${host}/token?api-version=2.0`,
+          },
+          fetchImpl: harness.fetchImpl,
+        }),
+      ).rejects.toMatchObject({ code: "oidc_invalid_url" });
+    }
+  });
+
   it("claims with the verified identity flow and never sends a body-supplied run identity", async () => {
     const directory = await workspace();
     const output = path.join(directory, "github-output");
