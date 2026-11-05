@@ -195,8 +195,11 @@ export async function generationActivityIngest(
       dependencies.policy ?? activityWorkflowPolicy(env),
     );
   } catch (error) {
-    if (error instanceof OperationsAuthError)
-      return workspaceError("unauthorized", "Unauthorized.", 401);
+    if (error instanceof OperationsAuthError) {
+      // Controlled verifier code only; never the token or claims.
+      console.warn(`generation_activity_auth=${error.code}`);
+      return workspaceError(error.code, "Unauthorized.", 401);
+    }
     return workspaceError("unavailable", "Authorization unavailable.", 503);
   }
 
