@@ -174,14 +174,19 @@ async function publishedKeys(
   try {
     response = await (policy.fetch ?? fetch)(GITHUB_OIDC_JWKS_URL, {
       method: "GET",
-      redirect: "error",
+      // GitHub may redirect the fixed JWKS URL to a regional host. Follow only
+      // this trusted URL; the parsed key set is still validated below.
+      redirect: "follow",
       signal: AbortSignal.timeout(5_000),
       headers: {
         Accept: "application/json",
         "User-Agent": "LaunchLoom-Operations",
       },
     });
-  } catch {
+  } catch (error) {
+    console.warn(
+      `jwks_fetch=${String((error as Error)?.name || "error").replace(/[^a-z0-9_-]/giu, "").slice(0, 40)}`,
+    );
     return deny("keys_fetch");
   }
   if (!response.ok) {
