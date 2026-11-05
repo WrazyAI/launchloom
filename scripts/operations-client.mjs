@@ -141,12 +141,12 @@ export async function requestOidcToken({
 } = {}) {
   const requestUrl = env.ACTIONS_ID_TOKEN_REQUEST_URL;
   const requestToken = env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
-  if (!requestUrl || !requestToken) fail("oidc_unavailable", EXIT.oidc);
+  if (!requestUrl || !requestToken) fail("oidc_missing_environment", EXIT.oidc);
   let url;
   try {
     url = new URL(requestUrl);
   } catch {
-    fail("oidc_unavailable", EXIT.oidc);
+    fail("oidc_invalid_url", EXIT.oidc);
   }
   if (
     url.protocol !== "https:" ||
@@ -155,7 +155,7 @@ export async function requestOidcToken({
     url.password ||
     url.hash
   )
-    fail("oidc_unavailable", EXIT.oidc);
+    fail("oidc_invalid_url", EXIT.oidc);
   url.searchParams.set("audience", audience);
   let response;
   try {
@@ -170,17 +170,17 @@ export async function requestOidcToken({
       },
     });
   } catch {
-    fail("oidc_unavailable", EXIT.oidc);
+    fail("oidc_transport", EXIT.oidc);
   }
   if (!response.ok) {
     await response.body?.cancel();
-    fail("oidc_unavailable", EXIT.oidc);
+    fail(`oidc_http_${response.status}`, EXIT.oidc);
   }
   let payload;
   try {
     payload = await response.json();
   } catch {
-    fail("oidc_unavailable", EXIT.oidc);
+    fail("oidc_invalid_response", EXIT.oidc);
   }
   const value = payload?.value;
   if (
@@ -189,7 +189,7 @@ export async function requestOidcToken({
     value.length > 8_192 ||
     !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u.test(value)
   )
-    fail("oidc_unavailable", EXIT.oidc);
+    fail("oidc_invalid_response", EXIT.oidc);
   return value;
 }
 
