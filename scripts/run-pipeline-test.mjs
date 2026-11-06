@@ -443,8 +443,14 @@ export async function runPipelineTest(input, dependencies) {
         nearMissDelivery &&
         error?.code === "PIPELINE_QUALITY_GATE" &&
         Array.isArray(error.gates) &&
-        error.gates.length > 0 &&
-        error.gates.every((gate) => !gate.passed && gate.name === "contrast");
+        error.gates.some(
+          (gate) => gate.name === "rendered" && gate.passed === true,
+        ) &&
+        error.gates
+          .filter((gate) => !gate.passed)
+          .every(
+            (gate) => gate.name === "contrast" && gate.advisory === true,
+          );
       if (nearMissContrastOnly) {
         report.deliveryMode = "creative-near-miss";
         report.stages[name] = {
@@ -519,21 +525,22 @@ export async function runPipelineTest(input, dependencies) {
         : input.profile === "creative-only"
           ? ["author", "creative", "select", "technical"]
           : ["research", "author", "creative", "select", "technical", "seo"];
-    report.verdict = relevant.every(
+    const qualityPassed = relevant.every(
       (name) => report.stages[name].status === "passed",
-    )
-      ? "passed"
-      : "failed";
+    );
+    // The verdict is provisional until deployment confirms a live preview.
+    report.verdict = qualityPassed ? "passed" : "failed";
     // A combined preview is the end-to-end acceptance canary. Unlike the
     // isolated diagnostic profiles, it is deployed only after both quality
     // lanes and all shared rendered gates pass.
-    if (input.profile === "full-preview" && report.verdict !== "passed")
-      return report;
+    if (input.profile === "full-preview" && !qualityPassed) return report;
     const deployment = await stage("deploy");
     if (deployment?.url) {
       report.previewUrl = deployment.url;
       report.previewDelivered = true;
       await stage("notify");
+    } else {
+      report.verdict = "failed";
     }
     return report;
   } finally {
@@ -1408,7 +1415,20 @@ export function createCloudDependencies(
       } catch (error) {
         const finding = classifyDiagnosticQualityGateFailure("contrast", error);
         if (!finding) throw error;
-        gates.push(finding);
+        const contrastReport = await readJson(
+          path.join(evidence, "contrast-report.json"),
+        ).catch(() => null);
+        const findings = Array.isArray(contrastReport?.after?.findings)
+          ? contrastReport.after.findings
+          : null;
+        const hard = findings?.filter((item) => item?.status === "fail") || [];
+        gates.push({
+          ...finding,
+          // Only a measured report with no provable failure may travel as an
+          // advisory finding. Missing or contradictory evidence stays hard.
+          advisory: Boolean(findings?.length && hard.length === 0),
+          findings: findings?.slice(0, 20) || [],
+        });
       }
       if (gates.some((gate) => !gate.passed))
         throw pipelineQualityGateError(gates);
@@ -1514,6 +1534,14 @@ export function createCloudDependencies(
       if (!response.ok)
         throw new Error(
           "Live diagnostic did not return a successful homepage response.",
+        );
+      const rendered = await response.text();
+      if (
+        input.profile === "creative-only" &&
+        !rendered.includes('data-creative-host="true"')
+      )
+        throw new Error(
+          "Creative renderer marker missing from the live diagnostic preview.",
         );
       report.previewUrl = url;
       return { url, access: previewAccess };

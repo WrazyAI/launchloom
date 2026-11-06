@@ -765,7 +765,10 @@ describe("focused pipeline orchestration", () => {
       calls.push("technical");
       const error: any = new Error("Rendered quality checks did not pass.");
       error.code = "PIPELINE_QUALITY_GATE";
-      error.gates = [{ name: "contrast", passed: false }];
+      error.gates = [
+        { name: "rendered", passed: true },
+        { name: "contrast", passed: false, advisory: true, findings: [] },
+      ];
       throw error;
     };
 
@@ -783,9 +786,48 @@ describe("focused pipeline orchestration", () => {
       "creative-near-miss",
     );
     expect((report.stages.technical as any).gates).toEqual([
-      { name: "contrast", passed: false },
+      { name: "rendered", passed: true },
+      { name: "contrast", passed: false, advisory: true, findings: [] },
     ]);
     expect(calls).toContain("deploy");
+  });
+
+  it("keeps a provable contrast failure hard for a near-miss delivery", async () => {
+    const { dependencies } = adapter();
+    dependencies.creative = async () => ({
+      nearMiss: { candidateId: "candidate-b", overall: 55 },
+    });
+    dependencies.technical = async () => {
+      const error: any = new Error("Rendered quality checks did not pass.");
+      error.code = "PIPELINE_QUALITY_GATE";
+      error.gates = [
+        { name: "rendered", passed: true },
+        { name: "contrast", passed: false, advisory: false, findings: [] },
+      ];
+      throw error;
+    };
+
+    const report = await runPipelineTest(
+      { ...input, profile: "creative-only" },
+      dependencies,
+    );
+
+    expect(report.verdict).toBe("failed");
+    expect(report.stages.technical.status).toBe("failed");
+  });
+
+  it("fails the verdict when deployment returns no live preview", async () => {
+    const { calls, dependencies } = adapter();
+    dependencies.deploy = async () => {
+      calls.push("deploy");
+      return null;
+    };
+
+    const report = await runPipelineTest(input, dependencies);
+
+    expect(report.verdict).toBe("failed");
+    expect(report.previewDelivered).toBe(false);
+    expect(calls).not.toContain("notify");
   });
 
   it("still fails a near-miss delivery when a structural gate failed", async () => {
