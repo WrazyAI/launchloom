@@ -1262,9 +1262,18 @@ jobs:
             exit 0
           fi
           test -f .launchloom/creative-bakeoff.json || { echo "Creative promotion report missing"; exit 1; }
-          jq -e '(.design.experience.renderer == "creative-candidate") and (.design.experience.candidateId != null) and (.design.experience.selectionMode == "creative-preview" or .design.experience.selectionMode == "creative-bakeoff")' src/site.config.json >/dev/null || { echo "Authored creative renderer was not selected"; exit 1; }
+          node "$GITHUB_WORKSPACE/scripts/validate-creative-preview-selection.mjs" \
+            --config src/site.config.json \
+            --bakeoff .launchloom/creative-bakeoff.json \
+            --gate .launchloom/creative-repair/final/visual-gate.json \
+            --out "$RUNNER_TEMP/creative-preview-decision.json"
+          CREATIVE_DECISION=$(jq -r '.decision' "$RUNNER_TEMP/creative-preview-decision.json")
+          CREATIVE_WARNINGS=$(jq -r '.warnings | length' "$RUNNER_TEMP/creative-preview-decision.json")
+          echo "creative_decision=$CREATIVE_DECISION" >> "$GITHUB_OUTPUT"
+          echo "creative_warnings=$CREATIVE_WARNINGS" >> "$GITHUB_OUTPUT"
+          echo "generation_delivery=$CREATIVE_DECISION"
+          echo "generation_warnings=$CREATIVE_WARNINGS"
           CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
-          jq -e --arg candidate "$CANDIDATE_ID" '.selectedCandidateId == $candidate and .fallback == false' .launchloom/creative-bakeoff.json >/dev/null || { echo "No authored creative candidate passed the preview gates"; exit 1; }
           # Service and location detail routes intentionally retain their
           # deterministic SEO renderer. The homepage itself must be the authored
           # candidate after the fresh production build below.
@@ -1281,8 +1290,6 @@ jobs:
           PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
           node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/route-technical-report.json"
           CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
-          FINAL_REPAIR_GATE=.launchloom/creative-repair/final/visual-gate.json
-          jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$FINAL_REPAIR_GATE" >/dev/null || { echo "Rendered creative repair did not finish with a passing visual gate"; exit 1; }
           REPAIR_SCREENSHOTS=.launchloom/creative-repair/final/screenshots
           for VIEWPORT in desktop compact mobile; do
             if [ -f "$REPAIR_SCREENSHOTS/${CANDIDATE_ID}-${VIEWPORT}.png" ]; then
@@ -1307,6 +1314,7 @@ jobs:
           npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$FINAL_BUILD_SHA" --commit-message "Initial LaunchLoom preview"
           echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
           echo "sha=$FINAL_BUILD_SHA" >> "$GITHUB_OUTPUT"
+          echo "delivery=$CREATIVE_DECISION" >> "$GITHUB_OUTPUT"
       # Recording previews keeps rotation useful during internal testing. A
       # failure here must not block generation, preview deployment, or handoff.
       - name: Record preview deploy stage
