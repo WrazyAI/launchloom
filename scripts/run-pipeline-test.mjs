@@ -370,6 +370,8 @@ export async function sendPipelineTestNotification({
 export function validatePipelineTestInput(input) {
   if (!["full-preview", "seo-only", "creative-only"].includes(input.profile))
     throw new Error("A focused test profile is required.");
+  if (input.fastLane !== undefined && typeof input.fastLane !== "boolean")
+    throw new Error("fastLane must be boolean.");
   if (!/^[1-9]\d*$/u.test(input.issue))
     throw new Error("Issue must be a positive integer.");
   if (!/^[a-f0-9]{40}$/u.test(input.sourceSha))
@@ -393,6 +395,7 @@ export async function runPipelineTest(input, dependencies) {
   validatePipelineTestInput(input);
   const policy = resolvePipelineTestPolicy({
     profile: input.profile,
+    fastLane: input.fastLane === true,
     eventName:
       input.eventName || process.env.GITHUB_EVENT_NAME || "workflow_dispatch",
   });
@@ -680,6 +683,14 @@ export function createCloudDependencies(
     PUBLIC_REVIEW_MODE: "true",
     PUBLIC_PIPELINE_TEST_MODE: input.profile,
   };
+  const fastEnv = policy.fast
+    ? {
+        CREATIVE_EXPERIENCE_REASONING_EFFORT: "medium",
+        CREATIVE_REPAIR_EFFORT: "medium",
+        CREATIVE_REFERENCE_JUDGE_EFFORT: "low",
+        CREATIVE_REFERENCE_ANALYZER_EFFORT: "low",
+      }
+    : {};
   let selected;
   const node = (script, args = [], options = {}) =>
     command(process.execPath, [path.join(root, "scripts", script), ...args], {
@@ -1195,19 +1206,24 @@ export function createCloudDependencies(
     },
     async author() {
       await initializeAuthorship();
-      await node("author-production-experiences.mjs", [
-        "--config",
-        config,
-        "--inspiration",
-        inspiration,
-        "--out",
-        candidates,
-        ...(await sessionArgs()),
-        "--failure-mode",
-        "throw",
-        "--test-profile",
-        input.profile,
-      ]);
+      await node(
+        "author-production-experiences.mjs",
+        [
+          "--config",
+          config,
+          "--inspiration",
+          inspiration,
+          "--out",
+          candidates,
+          ...(await sessionArgs()),
+          "--failure-mode",
+          "throw",
+          "--test-profile",
+          input.profile,
+          ...(policy.fast ? ["--fast-lane"] : []),
+        ],
+        { env: fastEnv },
+      );
       const authored = await readJson(
         path.join(candidates, "creative-run.json"),
       );
@@ -1234,10 +1250,13 @@ export function createCloudDependencies(
           "preview",
           "--max-cycles",
           String(policy.repairCycles),
+          ...(policy.candidateCount === 1
+            ? ["--require-diversity", "false"]
+            : []),
           "--visual-gate-script",
           path.join(root, "scripts/visual-quality-gate.mjs"),
         ],
-        { env: reviewEnv },
+        { env: { ...reviewEnv, ...fastEnv } },
       );
       const summary = await readJson(
         path.join(evidence, "creative-repair/summary.json"),
@@ -1704,6 +1723,7 @@ if (
   const args = parsePipelineTestArgs(process.argv.slice(2));
   const input = {
     profile: args.profile,
+    fastLane: args.fast === true,
     issue: args.issue,
     sourceSha: process.env.GITHUB_SHA,
     runId: `${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT || "1"}`,

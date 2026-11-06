@@ -3939,6 +3939,7 @@ function safeAuthorFailureStack(error) {
  *   model?: string;
  *   creativeSession?: Record<string, any> | null;
  *   testProfile?: "full" | "full-preview" | "seo-only" | "creative-only";
+ *   fastLane?: boolean;
  * }} input
  */
 export async function authorExperienceCandidates({
@@ -3948,13 +3949,17 @@ export async function authorExperienceCandidates({
   model = creativeLaneDefaultModel(),
   creativeSession = null,
   testProfile = "full",
+  fastLane = false,
 }) {
   if (typeof generate !== "function")
     throw new Error("A generation adapter is required.");
   const contentManifest = buildCreativeContentManifest(site);
   const rules = authorRules();
 
-  const policy = resolvePipelineTestPolicy({ profile: testProfile });
+  const policy = resolvePipelineTestPolicy({
+    profile: testProfile,
+    fastLane,
+  });
   // Validate the complete reference contract first; a focused test limits
   // provider work, not reference/source safety or normal intake diversity.
   const routes = assertInspirationPack(inspirationPack).slice(

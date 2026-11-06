@@ -83,4 +83,31 @@ describe("focused pipeline execution policy", () => {
   it("does not interpret string false as an enabled bypass", () => {
     expect(resolvePipelineTestPolicy({ skipSeoAddon: "false" }).profile).toBe("full");
   });
+  it("fast lane authors one candidate with one repair cycle", () => {
+    expect(
+      resolvePipelineTestPolicy({ profile: "creative-only", fastLane: true }),
+    ).toMatchObject({
+      fast: true,
+      candidateCount: 1,
+      repairCycles: 1,
+      runSeoResearch: false,
+      runCreativeChecks: true,
+    });
+  });
+  it("fast lane requires the creative-only profile", () => {
+    expect(() =>
+      resolvePipelineTestPolicy({ profile: "full-preview", fastLane: true }),
+    ).toThrow(/creative-only/i);
+  });
+  it("parses the valueless fast-lane switch", () => {
+    expect(
+      parsePipelineTestArgs([
+        "--test-profile",
+        "creative-only",
+        "--fast-lane",
+        "--issue",
+        "217",
+      ]),
+    ).toMatchObject({ fast: true, issue: "217" });
+  });
 });

@@ -55,6 +55,12 @@ on:
         type: boolean
         default: false
 
+      fast_lane:
+        description: One-candidate, one-repair-cycle creative-only fast lane
+        required: false
+        type: boolean
+        default: false
+
       inference_provider:
         description: Force the author and site-copy inference provider for this dispatch; leave empty for repository defaults (acceptance uses opencode-go)
         required: false
@@ -235,6 +241,7 @@ jobs:
     with:
       issue: ${{ inputs.issue }}
       test_profile: ${{ needs.profile_policy.outputs.profile }}
+      fast_lane: ${{ inputs.fast_lane || false }}
       candidate_repository: ${{ inputs.candidate_repository || '' }}
       inference_provider: ${{ inputs.inference_provider || '' }}
     secrets: inherit

@@ -75,6 +75,7 @@ import {
 const args = parsePipelineTestArgs(process.argv.slice(2));
 const testPolicy = resolvePipelineTestPolicy({
   profile: args.profile,
+  fastLane: args["fast-lane"] ?? false,
   eventName: process.env.GITHUB_EVENT_NAME || "workflow_dispatch",
 });
 const configPath = path.resolve(args.config || "src/site.config.json");
@@ -1021,6 +1022,7 @@ try {
         model,
         creativeSession,
         testProfile: testPolicy.profile,
+        fastLane: testPolicy.fast,
       }),
     projectResult: (value) => ({
       count: Array.isArray(value?.candidates) ? value.candidates.length : 0,

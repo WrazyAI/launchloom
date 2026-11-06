@@ -2,9 +2,9 @@ import { hasTestOnlySite } from "../templates/client-site/src/lib/seo-readiness.
 
 /**
  * One execution policy shared by workflow, author and focused runner.
- * @param {{profile?: string, skipCreativeAuthorChecks?: boolean|string, skipSeoAddon?: boolean|string, eventName?: string}} [input]
+ * @param {{profile?: string, skipCreativeAuthorChecks?: boolean|string, skipSeoAddon?: boolean|string, fastLane?: boolean|string, eventName?: string}} [input]
  */
-export function resolvePipelineTestPolicy({ profile, skipCreativeAuthorChecks = false, skipSeoAddon = false, eventName = "workflow_dispatch" } = {}) {
+export function resolvePipelineTestPolicy({ profile, skipCreativeAuthorChecks = false, skipSeoAddon = false, fastLane = false, eventName = "workflow_dispatch" } = {}) {
   const enabled = (value) => {
     if (value === true || value === "true") return true;
     if (value === false || value === "false") return false;
@@ -12,19 +12,22 @@ export function resolvePipelineTestPolicy({ profile, skipCreativeAuthorChecks = 
   };
   const skipCreative = enabled(skipCreativeAuthorChecks);
   const skipSeo = enabled(skipSeoAddon);
+  const fast = enabled(fastLane);
   if (skipCreative && skipSeo) throw new Error("Conflicting test skip flags.");
   const alias = skipCreative ? "seo-only" : skipSeo ? "creative-only" : null;
   if (profile && alias && profile !== alias) throw new Error("Conflicting test profile and skip flag.");
   const selected = profile || alias || "full";
   if (!["full", "full-preview", "seo-only", "creative-only"].includes(selected)) throw new Error("Unknown pipeline test profile.");
   if (selected !== "full" && eventName !== "workflow_dispatch") throw new Error("Isolated profiles require a manual workflow dispatch.");
+  if (fast && selected !== "creative-only") throw new Error("The fast lane requires the creative-only profile.");
   return Object.freeze({
     profile: selected,
     testOnly: selected !== "full",
-    candidateCount: selected === "seo-only" ? 1 : 3,
+    fast,
+    candidateCount: fast ? 1 : selected === "seo-only" ? 1 : 3,
     runSeoResearch: selected !== "creative-only",
     runCreativeChecks: selected !== "seo-only",
-    repairCycles: selected === "seo-only" ? 0 : 3,
+    repairCycles: fast ? 1 : selected === "seo-only" ? 0 : 3,
   });
 }
 
@@ -67,7 +70,11 @@ export function resolveWorkflowTestDispatch({
 
 export function parsePipelineTestArgs(argv = []) {
   const args = {};
-  const switches = new Set(["skip-creative-author-checks", "skip-seo-addon"]);
+  const switches = new Set([
+    "skip-creative-author-checks",
+    "skip-seo-addon",
+    "fast-lane",
+  ]);
   for (let i = 0; i < argv.length; i++) {
     const option = argv[i];
     if (!option.startsWith("--")) throw new Error("Expected a named pipeline test option.");
@@ -84,8 +91,9 @@ export function parsePipelineTestArgs(argv = []) {
     profile: args["test-profile"],
     skipCreativeAuthorChecks: args["skip-creative-author-checks"] ?? false,
     skipSeoAddon: args["skip-seo-addon"] ?? false,
+    fastLane: args["fast-lane"] ?? false,
   });
-  return { ...args, profile: policy.profile };
+  return { ...args, profile: policy.profile, fast: policy.fast };
 }
 
 

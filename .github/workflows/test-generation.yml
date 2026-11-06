@@ -11,6 +11,10 @@ on:
       test_profile:
         required: true
         type: string
+      fast_lane:
+        required: false
+        default: false
+        type: boolean
       candidate_repository:
         required: false
         default: ""
@@ -111,9 +115,13 @@ jobs:
         env:
           TEST_ISSUE: ${{ inputs.issue }}
           TEST_PROFILE: ${{ inputs.test_profile }}
+          TEST_FAST_LANE: ${{ inputs.fast_lane }}
           CANDIDATE_REPOSITORY: ${{ inputs.candidate_repository }}
         run: |
           ARGS=(--issue "$TEST_ISSUE" --test-profile "$TEST_PROFILE")
+          if [ "$TEST_FAST_LANE" = "true" ]; then
+            ARGS+=(--fast-lane)
+          fi
           if [ -n "$CANDIDATE_REPOSITORY" ]; then
             ARGS+=(--candidate-repository "$CANDIDATE_REPOSITORY")
           fi

@@ -748,6 +748,16 @@ describe("focused pipeline orchestration", () => {
     expect(calls).not.toContain("notify");
     expect(calls.at(-1)).toBe("persist");
   });
+  it("uses a one-candidate target for the fast lane", async () => {
+    const { dependencies } = adapter("", 1);
+    const report = await runPipelineTest(
+      { ...input, profile: "creative-only", fastLane: true },
+      dependencies,
+    );
+    expect(report.candidateTarget).toBe(1);
+    expect(report.verdict).toBe("passed");
+  });
+
   it("concludes a creative-only near-miss delivery as a successful run", async () => {
     const { calls, dependencies } = adapter();
     dependencies.creative = async () => {
