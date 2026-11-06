@@ -20,6 +20,8 @@ describe("creative preview workflow", () => {
     );
     expect(workflow).toContain("generation_delivery=");
     expect(workflow).toContain("generation_warnings=");
+    expect((workflow.match(/generation_delivery=/gu) || []).length).toBe(1);
+    expect((workflow.match(/generation_warnings=/gu) || []).length).toBe(1);
     expect(workflow).toContain(".launchloom/delivery-warnings.json");
     expect(workflow).toContain("--detail-code preview_with_warnings");
     expect(workflow).toContain(
