@@ -181,3 +181,90 @@ export function nearMissAssessment(
     scores,
   };
 }
+
+function describeBlocker(blocker) {
+  if (!blocker || typeof blocker !== "object") return "unclassified blocker";
+  const severity = String(blocker.severity || "major");
+  const category = String(blocker.category || "unclassified");
+  const detail = String(
+    blocker.evidence || blocker.message || blocker.recommendation || "",
+  )
+    .replace(/\s+/gu, " ")
+    .trim()
+    .slice(0, 180);
+  return `${severity} ${category}: ${detail}`;
+}
+
+/**
+ * Decide whether a final visual gate report can deliver a preview.
+ *
+ * Clean means the strict gate passed with no findings. Warned means only
+ * open design findings remain and every hard integrity finding is absent.
+ * Reject covers missing evidence, gate errors, unknown verdicts, critical
+ * findings, content/accessibility majors, and unclassified blockers.
+ *
+ * @param {Record<string, any> | null | undefined} report
+ * @returns {{decision: "clean" | "warned" | "reject", hard: string[], warnings: string[], reasons: string[]}}
+ */
+export function classifyVisualGateReport(report) {
+  if (!report || typeof report !== "object")
+    return {
+      decision: "reject",
+      hard: ["missing report"],
+      warnings: [],
+      reasons: ["missing report"],
+    };
+  if (report.status === "error")
+    return {
+      decision: "reject",
+      hard: ["gate error"],
+      warnings: [],
+      reasons: ["gate error"],
+    };
+  const verdict = report.audit?.verdict;
+  if (!["pass", "revise", "block"].includes(verdict))
+    return {
+      decision: "reject",
+      hard: ["unknown verdict"],
+      warnings: [],
+      reasons: ["unknown verdict"],
+    };
+  const findings = Array.isArray(report.audit?.findings)
+    ? report.audit.findings
+    : [];
+  const hard = [];
+  const warnings = [];
+  for (const finding of findings) {
+    const classification = classifyJudgeFinding(finding);
+    if (classification === "critical" || classification === "hard")
+      hard.push(describeJudgment(finding));
+    else warnings.push(describeJudgment(finding));
+  }
+  for (const blocker of Array.isArray(report.blockers) ? report.blockers : []) {
+    if (
+      !blocker ||
+      typeof blocker !== "object" ||
+      !blocker.severity ||
+      !blocker.category
+    ) {
+      hard.push(describeBlocker(blocker));
+      continue;
+    }
+    const classification = classifyJudgeFinding(blocker);
+    if (classification === "critical" || classification === "hard")
+      hard.push(describeBlocker(blocker));
+    else warnings.push(describeBlocker(blocker));
+  }
+  if (hard.length)
+    return { decision: "reject", hard, warnings, reasons: hard };
+  if (verdict === "pass" && warnings.length === 0)
+    return { decision: "clean", hard: [], warnings: [], reasons: [] };
+  if (verdict === "pass" || verdict === "revise")
+    return { decision: "warned", hard: [], warnings, reasons: [] };
+  return {
+    decision: "reject",
+    hard: ["blocked verdict"],
+    warnings,
+    reasons: ["blocked verdict"],
+  };
+}

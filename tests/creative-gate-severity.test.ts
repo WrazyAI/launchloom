@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   classifyFailureLine,
   classifyJudgeFinding,
+  classifyVisualGateReport,
   HARD_JUDGE_CATEGORIES,
   nearMissAssessment,
   splitFailureLines,
@@ -164,5 +165,95 @@ describe("near-miss assessment", () => {
       "major hero-geometry: drift",
     ]);
     expect(assessment.hardFailures).toEqual(["desktop: horizontal overflow"]);
+  });
+});
+
+describe("visual gate report classification", () => {
+  function report(overrides: Record<string, any> = {}) {
+    return {
+      version: 1,
+      mode: "verify",
+      status: "quality-blocked",
+      audit: { verdict: "revise", findings: [], operations: [] },
+      blockers: [],
+      ...overrides,
+    };
+  }
+
+  it("marks a passing report with no findings as clean", () => {
+    expect(
+      classifyVisualGateReport(
+        report({ status: "ok", audit: { verdict: "pass", findings: [] } }),
+      ),
+    ).toMatchObject({ decision: "clean", hard: [], warnings: [] });
+  });
+
+  it("marks open design findings as a warned preview", () => {
+    const result = classifyVisualGateReport(
+      report({
+        audit: {
+          verdict: "revise",
+          findings: [
+            {
+              severity: "major",
+              category: "hero-geometry",
+              viewport: "both",
+              evidence: "hero geometry drifts",
+              recommendation: "tighten the hero",
+            },
+          ],
+        },
+        blockers: [
+          {
+            severity: "major",
+            category: "hero-geometry",
+            viewport: "both",
+            evidence: "hero geometry drifts",
+            recommendation: "tighten the hero",
+          },
+        ],
+      }),
+    );
+    expect(result.decision).toBe("warned");
+    expect(result.hard).toEqual([]);
+    expect(result.warnings.length).toBeGreaterThan(0);
+  });
+
+  it("rejects critical findings, hard majors, and unknown blockers", () => {
+    expect(
+      classifyVisualGateReport(
+        report({
+          audit: {
+            verdict: "revise",
+            findings: [{ severity: "critical", category: "hero-geometry" }],
+          },
+        }),
+      ).decision,
+    ).toBe("reject");
+    expect(
+      classifyVisualGateReport(
+        report({
+          audit: {
+            verdict: "revise",
+            findings: [{ severity: "major", category: "accessibility" }],
+          },
+        }),
+      ).decision,
+    ).toBe("reject");
+    expect(
+      classifyVisualGateReport(report({ blockers: [{ unexpected: true }] }))
+        .decision,
+    ).toBe("reject");
+  });
+
+  it("rejects a missing, errored, or unknown report", () => {
+    expect(classifyVisualGateReport(null).decision).toBe("reject");
+    expect(classifyVisualGateReport(report({ status: "error" })).decision).toBe(
+      "reject",
+    );
+    expect(
+      classifyVisualGateReport(report({ audit: { verdict: "unknown" } }))
+        .decision,
+    ).toBe("reject");
   });
 });
