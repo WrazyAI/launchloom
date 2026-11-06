@@ -30,7 +30,8 @@ describe("creative gate severity classification", () => {
       "open",
     ],
     ["desktop: horizontal overflow", "hard"],
-    ["mobile: hero exceeds desktop viewport", "hard"],
+    ["compact: hero exceeds desktop viewport", "open"],
+    ["mobile: hero action exceeds mobile viewport", "hard"],
     ["compact: broken image", "hard"],
     ["desktop: browser error", "hard"],
     ["desktop: expected one h1", "hard"],
@@ -57,15 +58,17 @@ describe("creative gate severity classification", () => {
       "desktop: horizontal overflow",
       "rendered-reference: composition drift",
       "contrast unresolved: / mobile (unresolved; required 4.5)",
-      "mobile: hero exceeds desktop viewport",
+      "compact: hero exceeds desktop viewport",
+      "mobile: hero action exceeds mobile viewport",
     ]);
     expect(hard).toEqual([
       "desktop: horizontal overflow",
-      "mobile: hero exceeds desktop viewport",
+      "mobile: hero action exceeds mobile viewport",
     ]);
     expect(open).toEqual([
       "rendered-reference: composition drift",
       "contrast unresolved: / mobile (unresolved; required 4.5)",
+      "compact: hero exceeds desktop viewport",
     ]);
   });
 });
@@ -79,8 +82,10 @@ describe("judge finding classification", () => {
     [{ severity: "major", category: "hero-geometry" }, "open"],
     [{ severity: "major", category: "imagery" }, "open"],
     [{ severity: "minor", category: "content-integrity" }, "open"],
-    [{ severity: "", category: "" }, "open"],
-    [undefined, "open"],
+    [{ severity: "major", category: "unmapped-new-category" }, "hard"],
+    [{ severity: "urgent", category: "hero-geometry" }, "hard"],
+    [{ severity: "", category: "" }, "hard"],
+    [undefined, "hard"],
   ])("classifies %j as %s", (finding, expected) => {
     expect(classifyJudgeFinding(finding as any)).toBe(expected);
   });
@@ -114,6 +119,18 @@ describe("near-miss assessment", () => {
     expect(assessment.openFindings).toEqual([
       "major hero-geometry: drift",
     ]);
+  });
+
+  it("allows a desktop hero height overage as an open design finding", () => {
+    const assessment = nearMissAssessment(
+      candidate({
+        failures: ["compact: hero exceeds desktop viewport"],
+      }),
+    );
+    expect(assessment.eligible).toBe(true);
+    expect(assessment.openFindings).toContain(
+      "compact: hero exceeds desktop viewport",
+    );
   });
 
   it("blocks hard failures, critical findings, low overall, and floor misses", () => {
@@ -243,6 +260,28 @@ describe("visual gate report classification", () => {
     expect(
       classifyVisualGateReport(report({ blockers: [{ unexpected: true }] }))
         .decision,
+    ).toBe("reject");
+  });
+
+  it("rejects missing evidence and unknown finding categories", () => {
+    expect(
+      classifyVisualGateReport(report({ audit: { verdict: "revise" } }))
+        .decision,
+    ).toBe("reject");
+    expect(
+      classifyVisualGateReport(
+        report({
+          audit: {
+            verdict: "revise",
+            findings: [
+              { severity: "major", category: "unmapped-new-category" },
+            ],
+          },
+        }),
+      ).decision,
+    ).toBe("reject");
+    expect(
+      classifyVisualGateReport(report({ blockers: undefined })).decision,
     ).toBe("reject");
   });
 

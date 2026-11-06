@@ -1,7 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { classifyVisualGateReport } from "./creative-gate-severity.mjs";
+import {
+  classifyVisualGateReport,
+  splitFailureLines,
+} from "./creative-gate-severity.mjs";
 
 /**
  * Decide whether a creative selection may deploy a preview.
@@ -34,6 +37,26 @@ export function validateCreativePreviewSelection({ config, bakeoff, gate } = {})
   const gateResult = classifyVisualGateReport(gate);
   if (gateResult.decision === "reject")
     reasons.push(...gateResult.reasons);
+
+  const candidates = Array.isArray(bakeoff?.candidates)
+    ? bakeoff.candidates
+    : null;
+  if (!candidates) reasons.push("creative bakeoff candidates are missing");
+  const selectedCandidate =
+    candidates?.find((candidate) => candidate?.candidateId === candidateId) ||
+    null;
+  if (!selectedCandidate)
+    reasons.push("selected candidate is missing from the bakeoff report");
+  if (selectedCandidate) {
+    const { hard } = splitFailureLines(selectedCandidate.failures || []);
+    if (hard.length)
+      reasons.push("selected candidate has hard deterministic failures");
+    if (
+      selectionMode === "creative-near-miss" &&
+      !selectedCandidate.renderedReferenceFidelity?.audit
+    )
+      reasons.push("selected candidate audit evidence is missing");
+  }
 
   if (
     selectionMode === "creative-preview" ||

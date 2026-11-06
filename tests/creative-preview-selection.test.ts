@@ -18,6 +18,19 @@ function bakeoff(overrides: Record<string, any> = {}) {
   return {
     selectedCandidateId: "candidate-a",
     fallback: false,
+    candidates: [
+      {
+        candidateId: "candidate-a",
+        failures: [],
+        renderedReferenceFidelity: {
+          audit: {
+            overallScore: 72,
+            scores: { spatialRhythm: 60, imagery: 55, paletteAdherence: 90 },
+            findings: [],
+          },
+        },
+      },
+    ],
     ...overrides,
   };
 }
@@ -157,6 +170,78 @@ describe("creative preview selection", () => {
         }),
         bakeoff: bakeoff(),
         gate: gate(),
+      }).decision,
+    ).toBe("reject");
+  });
+
+  it("rejects a selected candidate with a hard deterministic failure", () => {
+    expect(
+      validateCreativePreviewSelection({
+        config: config({
+          design: {
+            experience: {
+              renderer: "creative-candidate",
+              candidateId: "candidate-a",
+              selectionMode: "creative-near-miss",
+            },
+          },
+        }),
+        bakeoff: bakeoff({
+          nearMissSelection: true,
+          fallback: true,
+          candidates: [
+            {
+              candidateId: "candidate-a",
+              failures: ["desktop: horizontal overflow"],
+              renderedReferenceFidelity: { audit: { findings: [] } },
+            },
+          ],
+        }),
+        gate: gate({
+          status: "quality-blocked",
+          audit: {
+            verdict: "revise",
+            findings: [
+              { severity: "major", category: "hero-geometry", evidence: "drift" },
+            ],
+          },
+          blockers: [
+            { severity: "major", category: "hero-geometry", evidence: "drift" },
+          ],
+        }),
+      }).decision,
+    ).toBe("reject");
+  });
+
+  it("rejects a near-miss without selected-candidate audit evidence", () => {
+    expect(
+      validateCreativePreviewSelection({
+        config: config({
+          design: {
+            experience: {
+              renderer: "creative-candidate",
+              candidateId: "candidate-a",
+              selectionMode: "creative-near-miss",
+            },
+          },
+        }),
+        bakeoff: bakeoff({
+          nearMissSelection: true,
+          fallback: true,
+          candidates: [{ candidateId: "candidate-a", failures: [] }],
+        }),
+        gate: gate({
+          status: "quality-blocked",
+          audit: {
+            verdict: "revise",
+            findings: [
+              { severity: "major", category: "hero-geometry", evidence: "drift" },
+            ],
+          },
+          blockers: [
+            { severity: "major", category: "hero-geometry", evidence: "drift" },
+          ],
+        }),
       }).decision,
     ).toBe("reject");
   });

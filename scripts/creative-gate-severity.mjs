@@ -47,6 +47,9 @@ export function classifyFailureLine(line) {
   const viewport = withoutPage.match(VIEWPORT_PREFIX);
   const inner = viewport ? withoutPage.slice(viewport[0].length) : withoutPage;
   if (inner.startsWith("rendered composition:")) return "open";
+  // A full-height desktop hero is a composition preference; the mobile CTA
+  // visibility lines stay hard because they describe a real conversion defect.
+  if (inner === "hero exceeds desktop viewport") return "open";
   if (/missing after hydration/iu.test(inner)) return "open";
   return "hard";
 }
@@ -77,14 +80,44 @@ export const HARD_JUDGE_CATEGORIES = Object.freeze([
   "accessibility",
 ]);
 
+/** Severities and categories the current judge schemas can emit. */
+const KNOWN_JUDGE_SEVERITIES = new Set(["critical", "major", "minor"]);
+const KNOWN_JUDGE_CATEGORIES = new Set([
+  ...HARD_JUDGE_CATEGORIES,
+  "hero-geometry",
+  "typography",
+  "spatial-rhythm",
+  "imagery",
+  "service-presentation",
+  "navigation",
+  "cta-placement",
+  "mobile-recomposition",
+  "interaction-evidence",
+  "palette-adherence",
+  "client-art-direction",
+  "generic-grammar",
+  "industry-fit",
+  "hierarchy",
+  "conversion",
+  "distinctiveness",
+  "responsive-layout",
+]);
+
 /**
- * Classify one rendered-judge finding.
+ * Classify one rendered-judge finding. Unknown severities and categories are
+ * hard: a new judge output must make an explicit classification decision
+ * before it can travel as an advisory finding.
  * @param {Record<string, any>} finding
  * @returns {"critical" | "hard" | "open"}
  */
 export function classifyJudgeFinding(finding) {
   const severity = String(finding?.severity || "").toLowerCase();
   const category = String(finding?.category || "").toLowerCase();
+  if (
+    !KNOWN_JUDGE_SEVERITIES.has(severity) ||
+    !KNOWN_JUDGE_CATEGORIES.has(category)
+  )
+    return "hard";
   if (severity === "critical") return "critical";
   if (severity === "major" && HARD_JUDGE_CATEGORIES.includes(category))
     return "hard";
@@ -221,7 +254,14 @@ export function classifyVisualGateReport(report) {
       warnings: [],
       reasons: ["gate error"],
     };
-  const verdict = report.audit?.verdict;
+  if (!report.audit || typeof report.audit !== "object")
+    return {
+      decision: "reject",
+      hard: ["missing audit"],
+      warnings: [],
+      reasons: ["missing audit"],
+    };
+  const verdict = report.audit.verdict;
   if (!["pass", "revise", "block"].includes(verdict))
     return {
       decision: "reject",
@@ -229,12 +269,28 @@ export function classifyVisualGateReport(report) {
       warnings: [],
       reasons: ["unknown verdict"],
     };
-  const findings = Array.isArray(report.audit?.findings)
-    ? report.audit.findings
-    : [];
+  if (!Array.isArray(report.audit.findings))
+    return {
+      decision: "reject",
+      hard: ["missing findings"],
+      warnings: [],
+      reasons: ["missing findings"],
+    };
+  if (report.status === "quality-blocked" && !Array.isArray(report.blockers))
+    return {
+      decision: "reject",
+      hard: ["missing blockers"],
+      warnings: [],
+      reasons: ["missing blockers"],
+    };
+  const findings = report.audit.findings;
   const hard = [];
   const warnings = [];
   for (const finding of findings) {
+    if (!finding || typeof finding !== "object") {
+      hard.push("unclassified finding");
+      continue;
+    }
     const classification = classifyJudgeFinding(finding);
     if (classification === "critical" || classification === "hard")
       hard.push(describeJudgment(finding));
