@@ -683,7 +683,13 @@ export function createCloudDependencies(
     PUBLIC_REVIEW_MODE: "true",
     PUBLIC_PIPELINE_TEST_MODE: input.profile,
   };
-  const fastEnv = policy.fast
+  const fastPolicy = resolvePipelineTestPolicy({
+    profile: input.profile,
+    fastLane: input.fastLane === true,
+    eventName:
+      input.eventName || process.env.GITHUB_EVENT_NAME || "workflow_dispatch",
+  });
+  const fastEnv = fastPolicy.fast
     ? {
         CREATIVE_EXPERIENCE_REASONING_EFFORT: "medium",
         CREATIVE_REPAIR_EFFORT: "medium",
@@ -1204,7 +1210,7 @@ export function createCloudDependencies(
         rejectedCount: rejected.length,
       };
     },
-    async author() {
+    async author({ policy }) {
       await initializeAuthorship();
       await node(
         "author-production-experiences.mjs",
