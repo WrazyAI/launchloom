@@ -322,7 +322,8 @@ describe("experience-pack compiler", () => {
       workflow.indexOf("name: Build and direct-upload public preview"),
     );
     expect(creativeRender).not.toContain("continue-on-error: true");
-    expect(workflow).toContain("Authored creative renderer was not selected");
+    expect(workflow).toContain("validate-creative-preview-selection.mjs");
+    expect(workflow).toContain("creative-preview-decision.json");
     expect(workflow).toContain("CANDIDATE_ID=$(jq -r");
     expect(workflow).toContain("deepseek/deepseek-v4.1-flash");
     expect(workflow).toContain(
