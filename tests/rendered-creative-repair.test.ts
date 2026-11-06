@@ -3152,28 +3152,36 @@ process.exit(2);
   it("delivers a near-miss preview with open findings when the strict budget is exhausted", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     const promotions: any[] = [];
+    let bakeoffCalls = 0;
+    let repairCalls = 0;
     const result = await runRenderedCreativeRepair({
       siteDir: root,
       candidatesDir: candidates,
       outDir: path.join(root, "evidence"),
       mode: "preview",
       maxCycles: 1,
-      runBakeoffImpl: async (options: any) =>
-        writeBakeoffEvidence(
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
           options,
           report({
             selectedCandidateId: null,
             candidates: [nearMissCandidate()],
           }),
-        ),
+        );
+      },
       runVisualGateImpl: nearMissGate,
-      repairCandidateImpl: async () => {},
+      repairCandidateImpl: async () => {
+        repairCalls += 1;
+      },
       promoteImpl: async (options: any) => {
         promotions.push(options);
         return { candidateId: "candidate-a" };
       },
     });
     expect(result.status).toBe("previewed-with-open-findings");
+    expect(bakeoffCalls).toBe(1);
+    expect(repairCalls).toBe(0);
     expect(result.promotionReady).toBe(false);
     expect(result.nearMiss).toMatchObject({
       candidateId: "candidate-a",

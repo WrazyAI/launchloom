@@ -2093,6 +2093,37 @@ export async function runRenderedCreativeRepair({
     history.push(record);
     await rememberBestState(report, round);
 
+    // The owner chose delivery over in-loop design polish. When a candidate
+    // already clears every hard gate and the near-miss floor, deliver the
+    // bounded preview now instead of spending repair cycles on design fidelity
+    // that a local design agent can address after delivery.
+    if (
+      candidateCount === 1 &&
+      requestedMode === "preview" &&
+      !humanFeedback &&
+      nearMissPreviewEnabled &&
+      !report.selectedCandidateId
+    ) {
+      const earlyNearMiss = await attemptNearMissPreview({
+        round,
+        roundLabel,
+        report,
+        roundDir,
+        screenshotsDir,
+      });
+      if (earlyNearMiss) {
+        record.nearMiss = {
+          candidateId: earlyNearMiss.nearMiss.candidateId,
+          openFindings: earlyNearMiss.nearMiss.openFindings.length,
+        };
+        await persistRunTiming();
+        logTimingSummary("creative-repair", {
+          categories: runTiming.summary(),
+        });
+        return earlyNearMiss;
+      }
+    }
+
     if (humanRepairPending && (report.candidates || []).length !== 1)
       throw new Error(
         "Human creative feedback requires an isolated selected candidate.",
