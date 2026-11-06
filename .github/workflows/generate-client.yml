@@ -1361,7 +1361,18 @@ jobs:
           gh label create launchloom-delivery-pending --repo "${{ steps.client.outputs.repo }}" --color e4e669 --force
           gh pr edit "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --add-label launchloom-delivery-pending
       - name: Wait for secure preview URL
-        run: node scripts/wait-for-pages-preview.mjs --url "${{ steps.deploy.outputs.preview }}"
+        run: |
+          MARKER_ARGS=()
+          if [ "$GENERATION_RENDERER" = "creative" ]; then
+            MARKER_ARGS=(--marker 'data-creative-host="true"')
+          elif [ "$GENERATION_RENDERER" = "foundation" ]; then
+            FOUNDATION_ID=$(jq -r '.design.experience.foundationId' "${{ steps.branch.outputs.dir }}/src/site.config.json")
+            MARKER_ARGS=(--marker "data-foundation-dossier=\"$FOUNDATION_ID\"")
+          elif [ "$GENERATION_RENDERER" = "pack" ]; then
+            PACK_ID=$(jq -r '.design.experience.packId' "${{ steps.branch.outputs.dir }}/src/site.config.json")
+            MARKER_ARGS=(--marker "data-experience-pack=\"$PACK_ID\"")
+          fi
+          node scripts/wait-for-pages-preview.mjs --url "${{ steps.deploy.outputs.preview }}" "${MARKER_ARGS[@]}"
       - name: Record preview ready
         id: preview_telemetry
         continue-on-error: true

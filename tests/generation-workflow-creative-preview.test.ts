@@ -25,5 +25,8 @@ describe("creative preview workflow", () => {
     expect(workflow).toContain(
       'if [ "${{ steps.deploy.outputs.creative_decision }}" = "warned" ]; then STATUS=attention; fi',
     );
+    expect(workflow).toContain('data-creative-host="true"');
+    expect(workflow).toContain("data-foundation-dossier");
+    expect(workflow).toContain("data-experience-pack");
   });
 });

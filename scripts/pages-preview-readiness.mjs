@@ -6,7 +6,12 @@ function isAccessLogin(location) {
 
 export function parseWaitForPagesPreviewArgs(argv = []) {
   const args = {};
-  const valueFlags = new Set(["url", "timeout-seconds", "interval-seconds"]);
+  const valueFlags = new Set([
+    "url",
+    "timeout-seconds",
+    "interval-seconds",
+    "marker",
+  ]);
   for (let index = 0; index < argv.length; index += 1) {
     const token = String(argv[index] || "");
     if (!token.startsWith("--"))
@@ -54,6 +59,7 @@ export function classifyPagesPreviewResponse({
  *   timeoutSeconds?: number,
  *   intervalSeconds?: number,
  *   protectedPreview?: boolean,
+ *   marker?: string,
  *   send?: (url: URL, init: RequestInit) => Promise<Response>,
  *   wait?: (milliseconds: number) => Promise<void>,
  *   now?: () => number,
@@ -66,6 +72,7 @@ export async function waitForPagesPreview({
   timeoutSeconds = 600,
   intervalSeconds = 10,
   protectedPreview = false,
+  marker = "",
   send = fetch,
   wait = (milliseconds) =>
     new Promise((resolve) => setTimeout(resolve, milliseconds)),
@@ -111,14 +118,20 @@ export async function waitForPagesPreview({
         location: response.headers.get("location") || "",
         protectedPreview,
       });
-      if (state === "ready") return { state, status: response.status };
-      if (state === "access-challenge")
+      if (state === "ready") {
+        if (!marker) return { state, status: response.status };
+        const body = await response.text().catch(() => "");
+        if (body.includes(marker)) return { state, status: response.status };
+        lastFailure = "renderer marker missing";
+      } else if (state === "access-challenge") {
         return { state, status: response.status };
-      if (state === "unsafe-public")
+      } else if (state === "unsafe-public") {
         throw new Error(
           `Protected Pages preview returned HTTP ${response.status} without an Access challenge. Refusing any client-content deployment.`,
         );
-      lastFailure = `HTTP ${response.status}`;
+      } else {
+        lastFailure = `HTTP ${response.status}`;
+      }
     } catch (error) {
       if (
         error instanceof Error &&

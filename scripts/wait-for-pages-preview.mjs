@@ -10,6 +10,7 @@ const result = await waitForPagesPreview({
   timeoutSeconds: Number.parseInt(String(args["timeout-seconds"] || "600"), 10),
   intervalSeconds: Number.parseInt(String(args["interval-seconds"] || "10"), 10),
   protectedPreview,
+  marker: String(args.marker || ""),
   onAttempt: (message) => console.log(message),
 });
 console.log(
