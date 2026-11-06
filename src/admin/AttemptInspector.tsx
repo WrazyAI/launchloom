@@ -358,6 +358,12 @@ export function AttemptInspector({
               </p>
             ) : null}
 
+            {attempt.deliveryStatus === "attention" ? (
+              <p className="admin-notice admin-notice--attention">
+                Delivery has open review warnings. The preview is usable, but the listed findings are unresolved.
+              </p>
+            ) : null}
+
             <dl className="admin-panel-outcomes" data-attempt-outcomes>
               <div>
                 <dt>Execution</dt>

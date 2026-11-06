@@ -10,7 +10,10 @@ import {
 } from "node:fs/promises";
 import { readGenerationCostInputs } from "../scripts/generation-cost-summary.mjs";
 import { recordOperationsTelemetry } from "../scripts/record-operations-telemetry.mjs";
-import { postOperationsEvent } from "../scripts/record-generation-event.mjs";
+import {
+  buildOperationsEvent,
+  postOperationsEvent,
+} from "../scripts/record-generation-event.mjs";
 
 const attempt = "11111111-1111-4111-8111-111111111111";
 const sha = "a".repeat(40);
@@ -27,6 +30,24 @@ async function fixture() {
   };
 }
 describe("review: guarded telemetry preparation", () => {
+  it("carries a controlled warning detail code on the handoff event", () => {
+    const event = buildOperationsEvent(attempt, {
+      stage: "handoff",
+      "stage-status": "completed",
+      sha,
+      "detail-code": "preview_with_warnings",
+    });
+    expect(event.detailCode).toBe("preview_with_warnings");
+    expect(() =>
+      buildOperationsEvent(attempt, {
+        stage: "handoff",
+        "stage-status": "completed",
+        sha,
+        "detail-code": "Not A Code!",
+      }),
+    ).toThrow("Invalid operations detail code.");
+  });
+
   it.each(["authoring", "creative_render", "preview_deploy"])(
     "collects available paid usage after %s failure without altering execution or delivery",
     async (stage) => {
@@ -124,6 +145,36 @@ describe("review: guarded telemetry preparation", () => {
         costKind: "unreported",
       });
       expect(bodies[0]).not.toHaveProperty("amount");
+    } finally {
+      await rm(dir, { recursive: true });
+    }
+  });
+  it("forwards a warning detail code from preview telemetry", async () => {
+    const { dir, env } = await fixture();
+    try {
+      const bodies: any[] = [];
+      await recordOperationsTelemetry(
+        {
+          mode: "preview",
+          buildSha: sha,
+          detailCode: "preview_with_warnings",
+          paths: {},
+        },
+        {
+          env,
+          token: "token",
+          fetchImpl: async (_url, init) => {
+            bodies.push(JSON.parse(String(init?.body)));
+            return Response.json({ status: "inserted" });
+          },
+        },
+      );
+      expect(bodies).toHaveLength(1);
+      expect(bodies[0]).toMatchObject({
+        stage: "preview_telemetry",
+        transition: "completed",
+        detailCode: "preview_with_warnings",
+      });
     } finally {
       await rm(dir, { recursive: true });
     }

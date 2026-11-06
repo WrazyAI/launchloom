@@ -1269,6 +1269,7 @@ jobs:
             --out "$RUNNER_TEMP/creative-preview-decision.json"
           CREATIVE_DECISION=$(jq -r '.decision' "$RUNNER_TEMP/creative-preview-decision.json")
           CREATIVE_WARNINGS=$(jq -r '.warnings | length' "$RUNNER_TEMP/creative-preview-decision.json")
+          jq '{decision, candidateId, warnings, reasons}' "$RUNNER_TEMP/creative-preview-decision.json" > .launchloom/delivery-warnings.json
           echo "creative_decision=$CREATIVE_DECISION" >> "$GITHUB_OUTPUT"
           echo "creative_warnings=$CREATIVE_WARNINGS" >> "$GITHUB_OUTPUT"
           echo "generation_delivery=$CREATIVE_DECISION"
@@ -1298,7 +1299,7 @@ jobs:
           done
           rm -rf .launchloom/generated-experiences
           cp -R /tmp/generated-experiences .launchloom/generated-experiences
-          git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
+          git add .launchloom/delivery-warnings.json .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
           if ! git diff --cached --quiet; then
             git commit -m "Record repaired creative candidate"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
@@ -1384,6 +1385,7 @@ jobs:
           STATUS=preview_ready
           if [ "${{ steps.creative_recovery.outputs.repair_available }}" = "true" ]; then STATUS=attention; fi
           if [ "${{ steps.deploy.outputs.diagnostic }}" = "true" ]; then STATUS=attention; fi
+          if [ "${{ steps.deploy.outputs.creative_decision }}" = "warned" ]; then STATUS=attention; fi
           node scripts/generation-cost-summary.mjs \
             --seo /tmp/seo-research.json \
             --site-config-usage /tmp/site-config-usage.json \
@@ -1440,12 +1442,20 @@ jobs:
             TITLE="## Diagnostic developer preview (noindex)"
             ISSUE_TITLE="## Diagnostic preview ready for developer review"
           fi
+          WARNINGS_SECTION=""
+          if [ "${{ steps.deploy.outputs.creative_decision }}" = "warned" ]; then
+            WARNINGS_SECTION=$(jq -r '"Open review warnings:\n" + ([.warnings[:5][] | "- " + .] | join("\n"))' "$RUNNER_TEMP/creative-preview-decision.json")
+          fi
           LAYOUT=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.conversion?.layout || "editorial-authority")')
           CLIENT_ASSET_SUMMARY=$(node -e 'const x=require("/tmp/site.config.json"); console.log((x.assetReport?.used || []).map(a => a.asset + " -> " + a.placement).join(", ") || "No supplied image used; approved contextual fallback or brand art selected.")')
           RESEARCH_MODE=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(x.mode)')
           RESEARCH_COST=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')
           RESEARCH_QUERIES=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "No measured queries")')
-          gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nLayout: %s\nClient assets used: %s\nSEO research mode: %s\nValidated queries: %s\nRecorded research cost: $%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' "$TITLE" "$LAYOUT" "$CLIENT_ASSET_SUMMARY" "$RESEARCH_MODE" "$RESEARCH_QUERIES" "$RESEARCH_COST" "$PREVIEW_URL" "$DEVELOPER_REVIEW_LINK")"
+          BODY=$(printf '%s\n\n%s\n\nLayout: %s\nClient assets used: %s\nSEO research mode: %s\nValidated queries: %s\nRecorded research cost: $%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' "$TITLE" "$LAYOUT" "$CLIENT_ASSET_SUMMARY" "$RESEARCH_MODE" "$RESEARCH_QUERIES" "$RESEARCH_COST" "$PREVIEW_URL" "$DEVELOPER_REVIEW_LINK")
+          if [ -n "$WARNINGS_SECTION" ]; then
+            BODY=$(printf '%s\n\n%s' "$BODY" "$WARNINGS_SECTION")
+          fi
+          gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "$BODY"
           if [ -n "$INTAKE_ISSUE" ]; then
             gh issue comment "$INTAKE_ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s' '<!-- launchloom-developer-review-ready -->' "$ISSUE_TITLE" "$CLIENT_REPO" "$CLIENT_PROJECT" "$PREVIEW_URL")"
           else
@@ -1461,7 +1471,12 @@ jobs:
         run: |
           DEVELOPER_REVIEW_LINK=$(cat "$RUNNER_TEMP/developer-review-link")
           BUSINESS_NAME=$(node -e 'const x=require("/tmp/site.config.json"); process.stdout.write(String(x.business?.name || "LaunchLoom client"))')
-          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
+          FEEDBACK_ARGS=()
+          if [ "${{ steps.deploy.outputs.creative_decision }}" = "warned" ]; then
+            jq -r '"Open review warnings:\n" + ([.warnings[:5][] | "- " + .] | join("\n"))' "$RUNNER_TEMP/creative-preview-decision.json" > "$RUNNER_TEMP/creative-preview-warnings.txt"
+            FEEDBACK_ARGS=(--feedback-file "$RUNNER_TEMP/creative-preview-warnings.txt")
+          fi
+          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt "${FEEDBACK_ARGS[@]}" --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-initial-email:$DEPLOY_SHA -->"
           if [ "${{ steps.deploy.outputs.diagnostic }}" != "true" ]; then
             gh pr edit "$REVIEW_PR" --repo "$CLIENT_REPO" --remove-label launchloom-delivery-pending
@@ -1474,8 +1489,13 @@ jobs:
         env:
           SELECTED_BUILD_SHA: ${{ steps.deploy.outputs.sha }}
         run: |
+          DETAIL_ARGS=()
+          if [ "${{ steps.deploy.outputs.creative_decision }}" = "warned" ]; then
+            DETAIL_ARGS=(--detail-code preview_with_warnings)
+          fi
           node scripts/record-generation-event.mjs \
-            --stage handoff --stage-status completed --sha "$SELECTED_BUILD_SHA"
+            --stage handoff --stage-status completed --sha "$SELECTED_BUILD_SHA" \
+            "${DETAIL_ARGS[@]}"
       - name: Mark intake handoff complete
         if: ${{ inputs.operation_id == '' && steps.deploy.outputs.diagnostic != 'true' }}
         env:

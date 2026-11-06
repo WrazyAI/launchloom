@@ -26,6 +26,11 @@ export function buildOperationsEvent(attemptId, args = {}) {
     if (transition !== 'completed' || !/^[a-f0-9]{40}$/u.test(args.sha || '')) throw Error('Invalid handoff evidence.');
     event.buildSha = args.sha;
   }
+  const detailCode = String(args['detail-code'] || '').trim();
+  if (detailCode) {
+    if (!/^[a-z0-9_]{1,80}$/u.test(detailCode)) throw Error('Invalid operations detail code.');
+    event.detailCode = detailCode;
+  }
   return event;
 }
 

@@ -51,12 +51,12 @@ async function prepareSummary(paths, output, mode, env) {
 
 /** One boundary owns preparation AND posting. A killed/skipped command cannot
  * produce the positive attempt/build receipt required by the later handoff.
- * @param {({mode: 'failure', buildSha?: string} | {mode: 'preview', buildSha: string}) & {stage?: string, paths?: TelemetryPaths}} options
+ * @param {({mode: 'failure', buildSha?: string} | {mode: 'preview', buildSha: string}) & {stage?: string, detailCode?: string, paths?: TelemetryPaths}} options
  * @param {import('./operations-client.mjs').OperationsDependencies} [dependencies]
  * @returns {Promise<void>}
  */
 export async function recordOperationsTelemetry(
-  { mode, stage = "workflow", buildSha, paths = {} },
+  { mode, stage = "workflow", buildSha, detailCode, paths = {} },
   dependencies = {},
 ) {
   const { env = process.env } = dependencies;
@@ -89,6 +89,7 @@ export async function recordOperationsTelemetry(
         stage: mode === "preview" ? "preview_telemetry" : stage,
         "stage-status": mode === "preview" ? "completed" : "failed",
         "cost-summary": output,
+        ...(detailCode ? { "detail-code": detailCode } : {}),
       },
       dependencies,
     );

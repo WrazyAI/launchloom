@@ -20,5 +20,10 @@ describe("creative preview workflow", () => {
     );
     expect(workflow).toContain("generation_delivery=");
     expect(workflow).toContain("generation_warnings=");
+    expect(workflow).toContain(".launchloom/delivery-warnings.json");
+    expect(workflow).toContain("--detail-code preview_with_warnings");
+    expect(workflow).toContain(
+      'if [ "${{ steps.deploy.outputs.creative_decision }}" = "warned" ]; then STATUS=attention; fi',
+    );
   });
 });

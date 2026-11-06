@@ -1714,6 +1714,35 @@ describe("real admin workspace browser behavior", () => {
     }
   });
 
+  it("shows the open-warning notice for an attention delivery", async () => {
+    const diagnostic = ATTEMPTS.find(
+      (attempt) => attempt.attemptId === "attempt-diagnostic",
+    );
+    if (!diagnostic) throw new Error("diagnostic fixture missing");
+    const original = diagnostic.deliveryStatus;
+    Object.assign(diagnostic, { deliveryStatus: "attention" });
+    const { page, errors } = await openPage({
+      viewport: { width: 1200, height: 844 },
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+    });
+    try {
+      await waitForGenerations(page);
+      const dialog = page.getByRole("dialog", {
+        name: "Attempt attempt-diagnostic",
+      });
+      await visible(dialog);
+      await visible(
+        dialog.getByText(
+          "Delivery has open review warnings. The preview is usable, but the listed findings are unresolved.",
+        ),
+      );
+      autoErrors(errors);
+    } finally {
+      Object.assign(diagnostic, { deliveryStatus: original });
+      await page.close();
+    }
+  });
+
   it("opens the desktop inspector as a side sheet", async () => {
     const { page, errors } = await openPage();
     try {
