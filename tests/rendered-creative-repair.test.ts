@@ -3204,6 +3204,104 @@ process.exit(2);
     expect(finalReport.nearMissSelection).toBe(true);
   });
 
+  it("restores the best measured state before delivering a near-miss preview", async () => {
+    const { root, candidates } = await fixture(["candidate-a", "candidate-b"]);
+    const promotions: any[] = [];
+    let bakeoffCalls = 0;
+    let repairCalls = 0;
+    const regressed = () =>
+      candidate("candidate-a", {
+        valid: false,
+        eligible: false,
+        failures: ["rendered-reference: severe regression"],
+        renderedReferenceFidelity: {
+          pass: false,
+          audit: {
+            overallScore: 40,
+            scores: { spatialRhythm: 40, imagery: 38, paletteAdherence: 42 },
+            findings: [],
+          },
+        },
+      });
+    const sibling = candidate("candidate-b", {
+      valid: false,
+      eligible: false,
+      failures: ["rendered-reference: sibling drift"],
+      renderedReferenceFidelity: {
+        pass: false,
+        audit: {
+          overallScore: 40,
+          scores: { spatialRhythm: 40, imagery: 38, paletteAdherence: 42 },
+          findings: [],
+        },
+      },
+    });
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 2,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        const written = await writeBakeoffEvidence(
+          options,
+          report({
+            selectedCandidateId: null,
+            candidates: [
+              bakeoffCalls === 1 ? nearMissCandidate() : regressed(),
+              sibling,
+            ],
+          }),
+        );
+        for (const viewport of ["desktop", "compact", "mobile"])
+          await fs.writeFile(
+            path.join(options.screenshotsDir, `candidate-a-${viewport}.png`),
+            `round-${bakeoffCalls}`,
+          );
+        return written;
+      },
+      runVisualGateImpl: nearMissGate,
+      repairCandidateImpl: async () => {
+        repairCalls += 1;
+      },
+      promoteImpl: async (options: any) => {
+        promotions.push(options);
+        return { candidateId: "candidate-a" };
+      },
+    });
+
+    expect(result.status).toBe("previewed-with-open-findings");
+    expect(result.nearMiss.candidateId).toBe("candidate-a");
+    expect(repairCalls).toBeGreaterThan(0);
+    expect(promotions).toHaveLength(1);
+    expect(promotions[0].selectionMode).toBe("creative-near-miss");
+    const finalShot = await fs.readFile(
+      path.join(
+        root,
+        "evidence",
+        "final",
+        "screenshots",
+        "candidate-a-desktop.png",
+      ),
+      "utf8",
+    );
+    expect(finalShot).toBe("round-1");
+  });
+
+  it("finalizes the round cap without a loop-scoped record", async () => {
+    const source = await fs.readFile(
+      "scripts/run-rendered-creative-repair.mjs",
+      "utf8",
+    );
+    const terminal = source.slice(
+      source.lastIndexOf("// The round cap is a terminal path"),
+    );
+    expect(terminal).toContain("finalizeTerminalState");
+    expect(terminal).not.toMatch(/^\s*record\./mu);
+  });
+
   it("counts the near-miss paid gate once after promotion copies it to final", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     const outDir = path.join(root, "evidence");
