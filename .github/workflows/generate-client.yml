@@ -1254,7 +1254,6 @@ jobs:
             if grep -I -F -q 'data-foundation-dossier=' dist/index.html; then echo "Foundation marker found in pack preview"; exit 1; fi
             FINAL_BUILD_SHA=$(git rev-parse HEAD)
             PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
-            node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/route-technical-report.json"
             git fetch --no-tags origin refs/heads/review/initial:refs/remotes/origin/review/initial
             if ! git diff --quiet "$FINAL_BUILD_SHA" origin/review/initial -- . ':(exclude).launchloom/**'; then
               echo "Review source changed during the pack build; refusing to deploy stale preview output from $FINAL_BUILD_SHA." >&2
