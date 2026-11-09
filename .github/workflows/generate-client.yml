@@ -1113,6 +1113,35 @@ jobs:
             git commit -m "Prepare private creative recovery review"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
+      - name: Prepare pack fallback after creative failure
+        id: pack_fallback
+        if: env.GENERATION_RENDERER == 'creative' && failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') && steps.branch.outputs.dir != '' && (steps.authoring.outcome == 'failure' || steps.creative_render.outcome == 'failure' || steps.authored_evidence.outcome == 'failure')
+        continue-on-error: true
+        run: |
+          cd "${{ steps.branch.outputs.dir }}"
+          git config user.name "LaunchLoom"
+          git config user.email "automation@launchloom.app"
+          PACK_ID=$(jq -r '.design.experience.packId // ""' /tmp/site.config.json)
+          PACK_VARIANT=$(jq -r '.design.experience.variantId // "standard"' /tmp/site.config.json)
+          if [ -z "$PACK_ID" ]; then
+            echo "No pack is available for the creative fallback."
+            exit 0
+          fi
+          jq --arg pack "$PACK_ID" --arg variant "$PACK_VARIANT" \
+            '.design.experience = ({packId:$pack, selectionMode:"pack-fallback"} + (if $variant != "" then {variantId:$variant} else {} end))' \
+            src/site.config.json > /tmp/site.config.pack-fallback.json
+          mv /tmp/site.config.pack-fallback.json src/site.config.json
+          git add src/site.config.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Fall back to experience pack $PACK_ID"
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
+          fi
+          echo "GENERATION_RENDERER=pack" >> "$GITHUB_ENV"
+          echo "PACK_ID=$PACK_ID" >> "$GITHUB_ENV"
+          echo "PACK_VARIANT=$PACK_VARIANT" >> "$GITHUB_ENV"
+          echo "RENDERER_FALLBACK_REASON=creative-authoring-or-render-failure" >> "$GITHUB_ENV"
+          echo "active=true" >> "$GITHUB_OUTPUT"
+          echo "::warning title=Renderer fallback::Creative authoring or rendering failed; delivering a pack preview instead."
       - name: Build and deploy noindex diagnostic preview
         id: diagnostic_preview
         if: env.GENERATION_RENDERER == 'creative' && always() && steps.creative_recovery.outputs.repair_available == 'true' && steps.creative_recovery.outputs.diagnostic_eligible == 'true'
@@ -1219,6 +1248,7 @@ jobs:
         run: node scripts/record-generation-stage.mjs --stage preview_deploy --status started --detail "Building and uploading the public preview."
       - name: Build and direct-upload public preview
         id: deploy
+        if: always() && (success() || steps.pack_fallback.outputs.active == 'true')
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
@@ -1399,6 +1429,7 @@ jobs:
           gh label create launchloom-delivery-pending --repo "${{ steps.client.outputs.repo }}" --color e4e669 --force
           gh pr edit "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --add-label launchloom-delivery-pending
       - name: Wait for secure preview URL
+        if: always() && steps.deploy.outputs.preview != ''
         run: |
           MARKER_ARGS=()
           if [ "$GENERATION_RENDERER" = "creative" ]; then
@@ -1413,6 +1444,7 @@ jobs:
           node scripts/wait-for-pages-preview.mjs --url "${{ steps.deploy.outputs.preview }}" "${MARKER_ARGS[@]}"
       - name: Record preview ready
         id: preview_telemetry
+        if: always() && steps.deploy.outputs.preview != ''
         continue-on-error: true
         env:
           SUBMISSION_ID: ${{ github.event.client_payload.submission_id }}
@@ -1464,10 +1496,12 @@ jobs:
             --hero "$RUNNER_TEMP/initial-screenshots/desktop.png" \
             --completed-at "$(date +%s%3N)"
       - name: Record preview ready stage
+        if: always() && steps.deploy.outputs.preview != ''
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage preview_ready --status completed --detail "Preview ready state recorded."
       - name: Create secure review link
         id: review
+        if: always() && steps.deploy.outputs.preview != ''
         run: |
           PREVIEW="${{ steps.deploy.outputs.preview }}"
           ORIGINS="$PREVIEW,https://${{ steps.client.outputs.project }}.pages.dev"
@@ -1477,6 +1511,7 @@ jobs:
           umask 077
           printf '%s' "$PREVIEW?review=$TOKEN" > "$RUNNER_TEMP/developer-review-link"
       - name: Post handoff links
+        if: always() && steps.deploy.outputs.preview != ''
         env:
           CLIENT_PROJECT: ${{ steps.client.outputs.project }}
           CLIENT_REPO: ${{ steps.client.outputs.repo }}
@@ -1518,6 +1553,7 @@ jobs:
             echo "New-mode generation has no intake issue; private review and email carry the handoff."
           fi
       - name: Send developer preview email
+        if: always() && steps.deploy.outputs.preview != ''
         env:
           CLIENT_PROJECT: ${{ steps.client.outputs.project }}
           CLIENT_REPO: ${{ steps.client.outputs.repo }}
@@ -1545,7 +1581,7 @@ jobs:
       # existing build, deployment, rendered verification and delivery gates and
       # binds the selected client build, not the workflow's source revision.
       - name: Record authenticated operations handoff
-        if: ${{ inputs.operation_id != '' && steps.claim.outputs.claimed == 'true' && steps.preview_telemetry.outcome == 'success' }}
+        if: ${{ always() && inputs.operation_id != '' && steps.claim.outputs.claimed == 'true' && steps.preview_telemetry.outcome == 'success' }}
         env:
           SELECTED_BUILD_SHA: ${{ steps.deploy.outputs.sha }}
         run: |
@@ -1560,13 +1596,13 @@ jobs:
             --stage handoff --stage-status completed --sha "$SELECTED_BUILD_SHA" \
             "${DETAIL_ARGS[@]}"
       - name: Mark intake handoff complete
-        if: ${{ inputs.operation_id == '' && steps.deploy.outputs.diagnostic != 'true' }}
+        if: ${{ always() && inputs.operation_id == '' && steps.deploy.outputs.diagnostic != 'true' && steps.deploy.outputs.preview != '' }}
         env:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
         run: |
           gh issue comment "$ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s' '<!-- launchloom-generation-handoff:complete -->' 'Initial developer preview handoff completed.')"
       - name: Notify developer when generation stops
-        if: ${{ failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') }}
+        if: ${{ failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') && steps.deploy.outputs.preview == '' }}
         env:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
           INTAKE_REF: ${{ steps.intake.outputs.intake_ref }}
@@ -1603,7 +1639,7 @@ jobs:
             node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "$ISSUE_URL" --review "https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}" --kind generation-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-failed-$INTAKE_REF-${{ github.run_id }}"
           fi
       - name: Record generation failure
-        if: ${{ failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') }}
+        if: ${{ failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') && steps.deploy.outputs.preview == '' }}
         continue-on-error: true
         env:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}

@@ -60,3 +60,23 @@ This increment recovers reference shortage before authoring. Authoring and
 render failures inside the creative stage still use the existing recovery and
 diagnostic paths. Extending the same effective-renderer decision across those
 mid-job failures is a later increment.
+
+## Mid-job authoring or render failure
+
+When creative authoring, authored evidence, or creative rendering fails, the
+job prepares the pack fallback in the same client checkout:
+
+1. Read the pack selected by the intake.
+2. Rewrite `design.experience` to that pack with `selectionMode: "pack-fallback"`.
+3. Set `GENERATION_RENDERER=pack` and the fallback reason.
+4. Let the normal preview step run with `always()`.
+
+The pack branch then builds, verifies, and deploys the preview. The normal
+handoff steps run whenever a preview exists, and the fallback is named in the
+review comment, intake comment, developer email, and operations handoff.
+
+The failed creative step remains visible in the run history, so the job
+conclusion can stay failed even though the pack preview was delivered. The
+delivery funnel counts the preview and the handoff, not the run conclusion.
+Foundation fallback after a mid-job creative failure is not part of this
+increment; the preflight can still choose foundation when no pack is available.

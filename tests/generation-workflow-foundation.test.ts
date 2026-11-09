@@ -386,7 +386,7 @@ describe("generation workflow pack renderer", () => {
       "Diagnostic developer preview (noindex)",
     );
     expect(step("Mark intake handoff complete").if).toBe(
-      "${{ inputs.operation_id == '' && steps.deploy.outputs.diagnostic != 'true' }}",
+      "${{ always() && inputs.operation_id == '' && steps.deploy.outputs.diagnostic != 'true' && steps.deploy.outputs.preview != '' }}",
     );
   });
 
