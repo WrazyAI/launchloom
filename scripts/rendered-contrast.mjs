@@ -171,36 +171,6 @@ export function worstCasePixelRatio(foreground, pixels) {
 }
 
 /**
- * Return the single opaque background when every recorded backdrop is the
- * same colour. A uniform DOM pair is more reliable than a pixel plate that
- * may include neighbouring card paint.
- * @param {number[][]} backgrounds
- * @returns {number[] | null}
- */
-export function uniformOpaqueBackground(backgrounds) {
-  if (!Array.isArray(backgrounds) || backgrounds.length === 0) return null;
-  const first = backgrounds[0];
-  if (!Array.isArray(first) || first.length < 4 || first[3] !== 1) return null;
-  const same = backgrounds.every(
-    (background) =>
-      Array.isArray(background) &&
-      background.length >= 4 &&
-      background[0] === first[0] &&
-      background[1] === first[1] &&
-      background[2] === first[2] &&
-      background[3] === 1,
-  );
-  return same ? first : null;
-}
-
-/** Contrast ratio for a foreground composited over a solid background. */
-export function flatContrastRatio(foreground, background) {
-  const a = relativeLuminance(composite(foreground, background));
-  const b = relativeLuminance(background);
-  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
-}
-
-/**
  * Issue classes a single rendered frame cannot prove: an unsettled paint
  * animation changes color over time, and text-clipped backgrounds paint the
  * glyphs themselves (hiding glyph paint would hide the measured foreground).
@@ -570,25 +540,7 @@ export async function resolveRenderedBackdrop(
           continue;
         }
       }
-      // A uniform opaque DOM pair is stronger evidence than a pixel plate
-      // that may include neighbouring card paint. Use the measured colours
-      // when they are provable; keep the plate for variable or translucent
-      // backdrops. Partial plates, inset outlines, and text-clipped paint can
-      // still change the rendered backdrop even when the DOM pair is uniform.
-      const unsafeFlatPair = (target.issues || []).some((issue) =>
-        /background plate only partially covers text|inset focus outline overlaps unmeasured border paint|text-clipped background/u.test(
-          String(issue),
-        ),
-      );
-      const flatBackground =
-        target.variable === false && !unsafeFlatPair
-          ? uniformOpaqueBackground(target.backgrounds)
-          : null;
-      const flatRatio =
-        flatBackground && target.minimum != null && effectiveForeground
-          ? flatContrastRatio(effectiveForeground, flatBackground)
-          : null;
-      ratio = flatRatio ?? analysis.ratio;
+      ratio = analysis.ratio;
     } catch {
       continue; // decode failure: stays unresolved
     }
