@@ -75,6 +75,20 @@ describe("effective renderer workflow", () => {
     }
   });
 
+  it("allows the explicit preview-only canary through the full intake guard", async () => {
+    const source = await fs.readFile(
+      ".github/workflows/generate-client.yml",
+      "utf8",
+    );
+    expect(source).toContain("GUARD_PROFILE=full");
+    expect(source).toContain(
+      'if [ "$PREVIEW_ONLY" = "true" ]; then GUARD_PROFILE=full-preview; fi',
+    );
+    expect(
+      (source.match(/assert-client-generation-mode\.mjs/gu) || []).length,
+    ).toBe(2);
+  });
+
   it("keeps the workflow parseable", async () => {
     const document = yaml.parse(
       await fs.readFile(".github/workflows/generate-client.yml", "utf8"),

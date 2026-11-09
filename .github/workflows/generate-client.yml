@@ -490,9 +490,11 @@ jobs:
           # as later steps. Never substitute a numeric issue in Postgres mode.
           export LAUNCHLOOM_INTAKE_ID="$INTAKE_KEY"
           test -s /tmp/intake.md || { echo "Missing intake payload" >&2; exit 1; }
+          GUARD_PROFILE=full
+          if [ "$PREVIEW_ONLY" = "true" ]; then GUARD_PROFILE=full-preview; fi
           if [ "$REUSE_AUTHORED_CANDIDATES" != "true" ]; then
             node scripts/internal-qa-intake.mjs /tmp/intake.md
-            node scripts/assert-client-generation-mode.mjs --intake /tmp/intake.md --profile full
+            node scripts/assert-client-generation-mode.mjs --intake /tmp/intake.md --profile "$GUARD_PROFILE"
           fi
           if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then
             case "$REUSABLE_CANDIDATE_REPO" in
@@ -578,7 +580,10 @@ jobs:
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage seo_research --status completed --detail "SEO research and cost summary recorded."
       - name: Reject synthetic demos from the production intake path
-        run: node scripts/assert-client-generation-mode.mjs --config /tmp/site.config.json --profile full
+        run: |
+          GUARD_PROFILE=full
+          if [ "$PREVIEW_ONLY" = "true" ]; then GUARD_PROFILE=full-preview; fi
+          node scripts/assert-client-generation-mode.mjs --config /tmp/site.config.json --profile "$GUARD_PROFILE"
       # The owner's target is a delivered preview, not a specific renderer.
       # If the creative reference library cannot supply a pack for this business
       # kind, switch to the site's already-selected pack before authoring spends
