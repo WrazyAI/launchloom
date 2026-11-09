@@ -573,9 +573,15 @@ export async function resolveRenderedBackdrop(
       // A uniform opaque DOM pair is stronger evidence than a pixel plate
       // that may include neighbouring card paint. Use the measured colours
       // when they are provable; keep the plate for variable or translucent
-      // backdrops.
+      // backdrops. Partial plates, inset outlines, and text-clipped paint can
+      // still change the rendered backdrop even when the DOM pair is uniform.
+      const unsafeFlatPair = (target.issues || []).some((issue) =>
+        /background plate only partially covers text|inset focus outline overlaps unmeasured border paint|text-clipped background/u.test(
+          String(issue),
+        ),
+      );
       const flatBackground =
-        target.variable === false
+        target.variable === false && !unsafeFlatPair
           ? uniformOpaqueBackground(target.backgrounds)
           : null;
       const flatRatio =
