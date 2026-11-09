@@ -48,6 +48,8 @@
     "verify:site-route-fixtures": "node scripts/verify-site-route-fixtures.mjs",
     "report:generation-success": "node scripts/generation-success-rate.mjs",
     "report:delivery-funnel": "node scripts/generation-delivery-funnel.mjs",
+    "repair:bundle": "node scripts/build-repair-bundle.mjs",
+    "repair:bundle": "node scripts/build-repair-bundle.mjs",
     "verify:local-release": "node scripts/local-release-check.mjs"
   },
   "dependencies": {
