@@ -38,9 +38,9 @@ export async function completeGeneration({
     throw new InferenceContractError(
       "Choose exactly one generation transport.",
     );
-  const dispatch = async () => {
+  const dispatch = async (onProgress) => {
     if (inference) {
-      const result = await inferenceCompletion(inference);
+      const result = await inferenceCompletion({ ...inference, onProgress });
       return { result, legacy: null };
     }
     const response = await openRouterChatCompletion(openRouter);

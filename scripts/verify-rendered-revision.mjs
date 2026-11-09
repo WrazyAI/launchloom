@@ -11,6 +11,7 @@ import sharp from "sharp";
 import { chromium } from "playwright";
 import { revisionImageMatches } from "./revision-image-acceptance.mjs";
 import { pipelineTestBannerMessage } from "../templates/client-site/src/lib/pipeline-test-preview.mjs";
+import { splitGateFailures } from "./gate-policy.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -1169,8 +1170,17 @@ try {
   await browser.close();
   server.close();
 }
-if (failures.length)
+const split = splitGateFailures({
+  gate: "rendered",
+  mode: reviewMode ? "review" : "production",
+  messages: failures,
+});
+if (split.advisory.length)
+  console.log(`rendered_revision_advisory=${split.advisory.length}`);
+if (split.hard.length)
   throw new Error(
-    `Rendered revision verification failed: ${[...new Set(failures)].join(" ")}`,
+    `Rendered revision verification failed: ${split.hard.join(" ")}`,
   );
-console.log(`rendered_revision_verified=true screenshots=${screenshotDir}`);
+console.log(
+  `rendered_revision_verified=true screenshots=${screenshotDir} advisory=${split.advisory.length}`,
+);

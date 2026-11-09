@@ -47,6 +47,10 @@
     "report:creative-timings": "node scripts/report-creative-timings.mjs",
     "verify:site-route-fixtures": "node scripts/verify-site-route-fixtures.mjs",
     "report:generation-success": "node scripts/generation-success-rate.mjs",
+    "report:delivery-funnel": "node scripts/generation-delivery-funnel.mjs",
+    "repair:bundle": "node scripts/build-repair-bundle.mjs",
+    "renderer:probe": "node scripts/reference-availability.mjs",
+    "renderer:resolve": "node scripts/resolve-effective-renderer.mjs",
     "verify:local-release": "node scripts/local-release-check.mjs"
   },
   "dependencies": {

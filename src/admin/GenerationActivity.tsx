@@ -8,6 +8,7 @@ import type {
 } from "../lib/generation-activity";
 import type { AdminApi } from "./api";
 import {
+  activityProgress,
   activityStages,
   filterActivity,
   formatClock,
@@ -147,8 +148,8 @@ function Evidence({ event }: { event: StoredTraceEvent }) {
             </div>
           </dl>
           <p className="admin-activity__note">
-            Waiting for the provider response. The current transport is not
-            streaming, so output appears when the response completes.
+            Live progress is an estimate while the provider streams. The
+            completed output and reported usage remain authoritative.
           </p>
           {meta}
         </>
@@ -158,6 +159,34 @@ function Evidence({ event }: { event: StoredTraceEvent }) {
         <>
           <h4>Response finished</h4>
           <p>{event.payload.status.replace(/_/gu, " ")}</p>
+          {meta}
+        </>
+      );
+    case "output_delta":
+      return (
+        <>
+          <h4>Streamed progress</h4>
+          <dl className="admin-activity__facts">
+            <div>
+              <dt>Estimated output</dt>
+              <dd>
+                ~{Math.ceil(event.payload.visibleChars / 4)} tokens (
+                {event.payload.visibleChars} characters)
+              </dd>
+            </div>
+            <div>
+              <dt>Reasoning deltas</dt>
+              <dd>{event.payload.reasoningTokens}</dd>
+            </div>
+            <div>
+              <dt>Elapsed</dt>
+              <dd>{(event.payload.elapsedMs / 1000).toFixed(1)} s</dd>
+            </div>
+          </dl>
+          <p className="admin-activity__note">
+            Estimated while streaming. The completed output and reported usage
+            are authoritative.
+          </p>
           {meta}
         </>
       );
@@ -308,6 +337,7 @@ function EntryRow({
   onSelect: (id: string) => void;
 }) {
   const open = isOpenEntry(entry);
+  const progress = entry.kind === "model" ? activityProgress(entry) : null;
   const subtitle =
     entry.kind === "model"
       ? `${entry.role.replace(/_/gu, " ")} · model call`
@@ -336,6 +366,12 @@ function EntryRow({
         <span className="admin-activity__copy">
           <span className="admin-activity__title">{entry.title}</span>
           <span className="admin-activity__sub">{subtitle}</span>
+          {progress ? (
+            <span className="admin-activity__sub">
+              ~{Math.ceil(progress.visibleChars / 4)} output tokens estimated
+              while streaming · {progress.reasoningTokens} reasoning deltas
+            </span>
+          ) : null}
         </span>
         {open ? (
           <span className="admin-activity__status admin-activity__status--live">
@@ -484,11 +520,17 @@ export function GenerationActivity({
       ) : (
         <>
           {usage ? (
-            <div className="admin-activity__summary">
-              <span>{usage.responses}</span>
-              <span>{usage.tokens}</span>
-              <span>{usage.cost}</span>
-            </div>
+            <>
+              <div className="admin-activity__summary">
+                <span>{usage.responses}</span>
+                <span>{usage.tokens}</span>
+                <span>{usage.cost}</span>
+              </div>
+              <p className="admin-activity__note">
+                Token totals cover completed calls only, not live token growth.
+                Streaming rows are labeled as estimates.
+              </p>
+            </>
           ) : null}
 
           {notice ? (

@@ -87,4 +87,12 @@ export function inferenceCompletion(options: {
   apiKey: string;
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
+  onProgress?: (
+    progress: {
+      visibleChars: number;
+      reasoningDeltas: number;
+      elapsedMs: number;
+    },
+  ) => void;
+  now?: () => number;
 }): Promise<InferenceResult>;

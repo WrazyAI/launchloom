@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  activityProgress,
   activityStages,
   filterActivity,
   formatTokens,
@@ -75,6 +76,33 @@ describe("generation activity presentation", () => {
     const entries = groupActivity([modelEvents[0]!]);
     expect(entries[0]?.status).toBeNull();
     expect(isOpenEntry(entries[0]!)).toBe(true);
+  });
+
+  it("groups an output delta into the active model call", () => {
+    const delta = stored(
+      {
+        sequence: 2,
+        eventId: "22222222-2222-4222-8222-222222222223",
+        kind: "output_delta",
+        payload: {
+          callId: BASE_CALL_ID,
+          visibleChars: 120,
+          reasoningTokens: 4,
+          elapsedMs: 1500,
+        },
+      },
+      2,
+    );
+    const entries = groupActivity([modelEvents[0]!, delta]);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.kind).toBe("model");
+    expect(entries[0]?.evidence).toHaveLength(2);
+    expect(activityProgress(entries[0]!)).toEqual({
+      visibleChars: 120,
+      reasoningTokens: 4,
+      elapsedMs: 1500,
+    });
+    expect(groupActivity([delta])).toHaveLength(0);
   });
 
   it("merges an action and preserves failures", () => {

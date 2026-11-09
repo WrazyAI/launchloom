@@ -11,7 +11,11 @@ export function observeModelCall<T>(options: {
   provider: string;
   model: string;
   callId?: string;
-  invoke(): Promise<T>;
+  invoke(onProgress?: (progress: {
+    visibleChars: number;
+    reasoningDeltas: number;
+    elapsedMs: number;
+  }) => void): Promise<T>;
   normalize?(value: T): {
     status?: unknown;
     text?: unknown;

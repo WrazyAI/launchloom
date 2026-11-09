@@ -555,6 +555,7 @@ describe("workflow job graph and public-log privacy", () => {
     );
     expect(failureSteps.map((step) => step.name)).toEqual([
       "Prepare private creative-recovery report",
+      "Prepare pack fallback after creative failure",
       "Notify developer when generation stops",
       "Record generation failure",
     ]);

@@ -19,6 +19,7 @@ export const TRACE_EVENT_KINDS: readonly [
   "action_started",
   "action_finished",
   "output",
+  "output_delta",
   "usage",
   "retry",
   "error",
