@@ -64,8 +64,7 @@ on:
       inference_provider:
         description: Force the author and site-copy inference provider for this dispatch; leave empty for repository defaults (acceptance uses opencode-go)
         required: false
-        type: choice
-        options: ["", openrouter, opencode-go]
+        type: string
         default: ""
       renderer:
         description: Visual renderer for a full generation
