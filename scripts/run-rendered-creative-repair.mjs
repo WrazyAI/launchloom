@@ -1804,6 +1804,7 @@ export async function runRenderedCreativeRepair({
       await fs.cp(directory, snapshotDir, { recursive: true });
       bestState.set(candidate.candidateId, {
         ...state,
+        candidate: structuredClone(candidate),
         directory: candidate.directory,
         snapshotDir,
         screenshotsDir: path.join(
@@ -1824,6 +1825,30 @@ export async function runRenderedCreativeRepair({
     await fs.rm(target, { recursive: true, force: true });
     await fs.cp(best.snapshotDir, target, { recursive: true });
     return true;
+  }
+
+  async function restoreBetterStates(report) {
+    let restored = false;
+    for (const candidate of report?.candidates || []) {
+      const best = bestState.get(candidate.candidateId);
+      if (
+        best &&
+        isBetterState(best, repairState(report, candidate)) &&
+        (await restoreBestState(candidate.candidateId))
+      )
+        restored = true;
+    }
+    return restored;
+  }
+
+  function reportForBestStates(report) {
+    return {
+      ...report,
+      candidates: (report?.candidates || []).map((candidate) => {
+        const best = bestState.get(candidate.candidateId);
+        return best?.candidate ? structuredClone(best.candidate) : candidate;
+      }),
+    };
   }
 
   function combinedRepairCycles() {
@@ -1855,6 +1880,7 @@ export async function runRenderedCreativeRepair({
     report,
     roundDir,
     screenshotsDir,
+    screenshotsFor = null,
   }) {
     if (requestedMode !== "preview") return null;
     if (!nearMissPreviewEnabled) return null;
@@ -1883,8 +1909,9 @@ export async function runRenderedCreativeRepair({
       selectionMode: "creative-near-miss",
     });
     const gateScreenshots = path.join(roundDir, "near-miss-gate-screenshots");
+    const sourceScreenshots = screenshotsFor?.(candidateId) || screenshotsDir;
     await copySelectedScreenshots({
-      screenshotsDir,
+      screenshotsDir: sourceScreenshots,
       candidateId,
       targetDir: gateScreenshots,
     });
@@ -1969,9 +1996,7 @@ export async function runRenderedCreativeRepair({
     const finalDir = path.join(evidenceRoot, "final");
     await fs.rm(finalDir, { recursive: true, force: true });
     await fs.mkdir(finalDir, { recursive: true });
-    const finalReport = JSON.parse(
-      await fs.readFile(path.join(roundDir, "creative-bakeoff.json"), "utf8"),
-    );
+    const finalReport = structuredClone(report);
     finalReport.selectedCandidateId = candidateId;
     finalReport.nearMissSelection = true;
     await fs.writeFile(
@@ -1986,7 +2011,7 @@ export async function runRenderedCreativeRepair({
     await fs.mkdir(finalScreenshots, { recursive: true });
     for (const viewport of VIEWPORTS)
       await fs.copyFile(
-        path.join(screenshotsDir, `${candidateId}-${viewport}.png`),
+        path.join(sourceScreenshots, `${candidateId}-${viewport}.png`),
         path.join(finalScreenshots, `${candidateId}-${viewport}.png`),
       );
     const summary = {
@@ -2037,6 +2062,50 @@ export async function runRenderedCreativeRepair({
       }),
     );
     return summary;
+  }
+
+  // One terminal path for budget exhaustion and the round cap. Restore the
+  // best measured candidate state, then attempt a near-miss preview with the
+  // screenshots that belong to that state. Never reach for a loop-scoped
+  // record here; the last history entry owns the outcome.
+  async function finalizeTerminalState({
+    round,
+    roundLabel,
+    report,
+    roundDir,
+    screenshotsDir,
+    reason,
+    stagnationDetail = "",
+  }) {
+    await restoreBetterStates(report);
+    const screenshotsFor = (candidateId) =>
+      bestState.get(candidateId)?.screenshotsDir || screenshotsDir;
+    const nearMissSummary = await attemptNearMissPreview({
+      round,
+      roundLabel,
+      report: reportForBestStates(report),
+      roundDir,
+      screenshotsDir,
+      screenshotsFor,
+    });
+    if (nearMissSummary) {
+      const entry = history[history.length - 1];
+      if (entry)
+        entry.nearMiss = {
+          candidateId: nearMissSummary.nearMiss.candidateId,
+          openFindings: nearMissSummary.nearMiss.openFindings.length,
+        };
+      await persistRunTiming();
+      logTimingSummary("creative-repair", { categories: runTiming.summary() });
+      return nearMissSummary;
+    }
+    await persistRunTiming();
+    logTimingSummary("creative-repair", { categories: runTiming.summary() });
+    throw new Error(
+      reason === "budget"
+        ? `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.${stagnationDetail}`
+        : `Rendered creative repair exceeded its bounded orchestration rounds (${maxRounds}).`,
+    );
   }
 
   for (let round = 0; round < maxRounds; round += 1) {
@@ -2230,47 +2299,24 @@ export async function runRenderedCreativeRepair({
             !excludedCandidateIds.has(candidate.candidateId),
         );
         if (coolingDown && round + 1 < maxRounds) continue;
-        // No candidate has repair budget left. Before giving up, put every
-        // candidate back to its best measured state and judge once more.
-        let restored = false;
-        for (const candidate of report.candidates || []) {
-          const best = bestState.get(candidate.candidateId);
-          if (
-            best &&
-            isBetterState(best, repairState(report, candidate)) &&
-            (await restoreBestState(candidate.candidateId))
-          )
-            restored = true;
-        }
-        if (restored && !restoredFinalState) {
+        // No candidate has repair budget left. Restore the best measured state
+        // and re-evaluate it once before declaring the budget exhausted.
+        if ((await restoreBetterStates(report)) && !restoredFinalState) {
           restoredFinalState = true;
           continue;
         }
         const stagnationDetail = stagnatedCandidateIds.size
           ? ` Stagnation guard: blockers did not change across ${MAX_STAGNANT_REPAIRS} consecutive repairs for ${[...stagnatedCandidateIds].sort().join(", ")}.`
           : "";
-        const nearMissSummary = await attemptNearMissPreview({
+        return await finalizeTerminalState({
           round,
           roundLabel,
           report,
           roundDir,
           screenshotsDir,
+          reason: "budget",
+          stagnationDetail,
         });
-        if (nearMissSummary) {
-          record.nearMiss = {
-            candidateId: nearMissSummary.nearMiss.candidateId,
-            openFindings: nearMissSummary.nearMiss.openFindings.length,
-          };
-          await persistRunTiming();
-          logTimingSummary("creative-repair", {
-            categories: runTiming.summary(),
-          });
-          return nearMissSummary;
-        }
-        await persistRunTiming();
-        throw new Error(
-          `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.${stagnationDetail}`,
-        );
       }
 
       const best = target.finding ? null : bestState.get(target.candidateId);
@@ -2721,23 +2767,14 @@ export async function runRenderedCreativeRepair({
     return { ...passedSummary, bakeoff: report, visualGate };
   }
 
-  // The round cap is a terminal path like budget exhaustion: a hard-clean
-  // candidate delivered mid-loop must still become a near-miss preview
-  // instead of dying with the cap error.
-  if (finalRoundContext) {
-    const nearMissSummary = await attemptNearMissPreview(finalRoundContext);
-    if (nearMissSummary) {
-      record.nearMiss = {
-        candidateId: nearMissSummary.nearMiss.candidateId,
-        openFindings: nearMissSummary.nearMiss.openFindings.length,
-      };
-      await persistRunTiming();
-      logTimingSummary("creative-repair", {
-        categories: runTiming.summary(),
-      });
-      return nearMissSummary;
-    }
-  }
+  // The round cap is a terminal path like budget exhaustion. Restore the best
+  // measured state and attempt the near-miss once, using the last history
+  // entry rather than a loop-scoped record.
+  if (finalRoundContext)
+    return await finalizeTerminalState({
+      ...finalRoundContext,
+      reason: "rounds",
+    });
   await persistRunTiming();
   logTimingSummary("creative-repair", { categories: runTiming.summary() });
   throw new Error(

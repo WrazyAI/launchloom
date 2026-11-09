@@ -75,9 +75,24 @@ export async function observeModelCall({
 }) {
   if (!producer) return invoke();
   producer.emit("model_started", { callId, provider, model });
+  const onProgress = ({ visibleChars, reasoningDeltas, elapsedMs } = {}) => {
+    producer.emit("output_delta", {
+      callId,
+      visibleChars:
+        Number.isSafeInteger(visibleChars) && visibleChars >= 0
+          ? visibleChars
+          : 0,
+      reasoningTokens:
+        Number.isSafeInteger(reasoningDeltas) && reasoningDeltas >= 0
+          ? reasoningDeltas
+          : 0,
+      elapsedMs:
+        Number.isSafeInteger(elapsedMs) && elapsedMs >= 0 ? elapsedMs : 0,
+    });
+  };
   let value;
   try {
-    value = await invoke();
+    value = await invoke(onProgress);
   } catch (error) {
     producer.emit("model_finished", { callId, status: "error" });
     const code = String(error?.code ?? "");

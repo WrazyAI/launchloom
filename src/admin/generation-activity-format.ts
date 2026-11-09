@@ -32,6 +32,31 @@ export type ActivityEntry = {
   evidence: StoredTraceEvent[];
 };
 
+export type ActivityProgress = {
+  visibleChars: number;
+  reasoningTokens: number;
+  elapsedMs: number;
+};
+
+/**
+ * Latest streamed estimate for a model call. The completed `output` and `usage`
+ * events remain authoritative; this value is only a live hint.
+ */
+export function activityProgress(
+  entry: ActivityEntry,
+): ActivityProgress | null {
+  for (let index = entry.evidence.length - 1; index >= 0; index -= 1) {
+    const event = entry.evidence[index];
+    if (event.kind === "output_delta")
+      return {
+        visibleChars: event.payload.visibleChars,
+        reasoningTokens: event.payload.reasoningTokens,
+        elapsedMs: event.payload.elapsedMs,
+      };
+  }
+  return null;
+}
+
 export type ActivityStage = {
   stage: string;
   label: string;
@@ -160,6 +185,11 @@ export function groupActivity(events: StoredTraceEvent[]): ActivityEntry[] {
         break;
       }
       case "usage": {
+        const entry = calls.get(event.payload.callId);
+        if (entry) entry.evidence.push(event);
+        break;
+      }
+      case "output_delta": {
         const entry = calls.get(event.payload.callId);
         if (entry) entry.evidence.push(event);
         break;

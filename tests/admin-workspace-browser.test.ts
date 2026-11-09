@@ -3043,6 +3043,9 @@ it("keeps studio navigation and summary actions usable on desktop and mobile", a
       await expect
         .poll(() => activity.locator(".admin-activity__coverage summary").textContent())
         .toContain("Coverage: 1 instrumented");
+      await visible(
+        activity.getByText(/Token totals cover completed calls only/u),
+      );
 
       await activity.getByRole("button", { name: /Model request/u }).click();
       const evidence = activity.locator(".admin-activity__evidence");

@@ -66,6 +66,57 @@ describe("generation activity contract", () => {
     ).toThrow(/event_unknown_field/u);
   });
 
+  it("accepts a bounded output delta and rejects extra or negative fields", () => {
+    const accepted = buildTraceEvent(
+      traceEvent({
+        kind: "output_delta",
+        payload: {
+          callId: BASE_CALL_ID,
+          visibleChars: 120,
+          reasoningTokens: 3,
+          elapsedMs: 1500,
+        },
+      }),
+      policy,
+    );
+    expect(accepted.payload).toEqual({
+      callId: BASE_CALL_ID,
+      visibleChars: 120,
+      reasoningTokens: 3,
+      elapsedMs: 1500,
+    });
+    for (const payload of [
+      {
+        callId: BASE_CALL_ID,
+        visibleChars: 1,
+        reasoningTokens: 0,
+        elapsedMs: 0,
+        text: "private delta text",
+      },
+      {
+        callId: BASE_CALL_ID,
+        visibleChars: -1,
+        reasoningTokens: 0,
+        elapsedMs: 0,
+      },
+      {
+        callId: BASE_CALL_ID,
+        visibleChars: 1,
+        reasoningTokens: -1,
+        elapsedMs: 0,
+      },
+      {
+        callId: BASE_CALL_ID,
+        visibleChars: 1,
+        reasoningTokens: 0,
+        elapsedMs: -1,
+      },
+    ])
+      expect(() =>
+        buildTraceEvent(traceEvent({ kind: "output_delta", payload }), policy),
+      ).toThrow();
+  });
+
   it("keeps zero usage at zero and missing usage unknown", () => {
     const zero = buildTraceEvent(
       traceEvent({

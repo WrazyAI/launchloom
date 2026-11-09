@@ -94,6 +94,7 @@ describe("trusted attempt producer", () => {
       profile: "creative-only",
       issue: 185,
       runId: "9001-2",
+      eventName: "workflow_dispatch",
     };
     const dependencies = createCloudDependencies(siteInput, {
       work: "/tmp/runner",

@@ -799,4 +799,84 @@ describe("explicit transport and OpenRouter compatibility", () => {
       }),
     ).toBe(raw);
   });
+
+  it("streams bounded progress and keeps the completed response authoritative", async () => {
+    const events = [
+      { type: "response.reasoning_summary_text.delta", delta: "checking" },
+      { type: "response.output_text.delta", delta: '{"source":' },
+      { type: "response.output_text.delta", delta: '"complete"}' },
+      { type: "response.completed", response: completed("responses") },
+    ];
+    const body = new ReadableStream({
+      start(controller) {
+        for (const event of events)
+          controller.enqueue(
+            new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`),
+          );
+        controller.close();
+      },
+    });
+    const transport = vi.fn(
+      async () =>
+        new Response(body, {
+          status: 200,
+          headers: { "content-type": "text/event-stream" },
+        }),
+    );
+    let clock = 0;
+    const progress: any[] = [];
+    const result = await inferenceCompletion({
+      profile: profileFor("responses"),
+      request: requestFor(),
+      apiKey: "fixture-only",
+      fetchImpl: transport,
+      now: () => (clock += 600),
+      onProgress: (value: any) => progress.push(value),
+    });
+    expect(requireCompletedInference(result)).toBe('{"source":"complete"}');
+    const [, init] = transport.mock.calls[0] as any;
+    expect(JSON.parse(init.body).stream).toBe(true);
+    expect(progress.length).toBeGreaterThan(0);
+    expect(progress.at(-1)).toMatchObject({ reasoningDeltas: 1 });
+    expect(progress.at(-1).visibleChars).toBeGreaterThan(0);
+  });
+
+  it("treats a stream without a completion event as a transport failure", async () => {
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(
+          new TextEncoder().encode(
+            'data: {"type":"response.output_text.delta","delta":"partial"}\n\n',
+          ),
+        );
+        controller.close();
+      },
+    });
+    const result = await inferenceCompletion({
+      profile: profileFor("responses"),
+      request: requestFor(),
+      apiKey: "fixture-only",
+      fetchImpl: async () =>
+        new Response(body, {
+          status: 200,
+          headers: { "content-type": "text/event-stream" },
+        }),
+      onProgress: () => {},
+    });
+    expect(result.error?.code).toBe("transport");
+    expect(result.status).not.toBe("completed");
+  });
+
+  it("does not stream when no progress callback is provided", async () => {
+    const transport = vi.fn(async () => Response.json(completed("responses")));
+    const result = await inferenceCompletion({
+      profile: profileFor("responses"),
+      request: requestFor(),
+      apiKey: "fixture-only",
+      fetchImpl: transport,
+    });
+    expect(requireCompletedInference(result)).toBe('{"source":"complete"}');
+    const [, init] = transport.mock.calls[0] as any;
+    expect(JSON.parse(init.body).stream).toBeUndefined();
+  });
 });

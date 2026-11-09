@@ -755,8 +755,101 @@ export function requireCompletedInference(result) {
 }
 
 /**
+ * Read a Responses SSE body. Only `data:` lines are parsed. Reasoning text is
+ * counted, never stored. The `response.completed` envelope is authoritative for
+ * text and usage; a stream without a terminal envelope is a transport failure.
+ */
+async function readResponsesStream(response, { onProgress, now, signal }) {
+  const reader = response.body?.getReader();
+  if (!reader) return null;
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let visibleChars = 0;
+  let reasoningDeltas = 0;
+  let completed = null;
+  const startedAt = now();
+  let lastEmitAt = 0;
+  let lastVisible = -1;
+  let lastReasoning = -1;
+  const emit = () => {
+    if (signal?.aborted) return;
+    if (
+      visibleChars === lastVisible &&
+      reasoningDeltas === lastReasoning
+    )
+      return;
+    const at = now();
+    if (at - lastEmitAt < 1_000) return;
+    lastEmitAt = at;
+    lastVisible = visibleChars;
+    lastReasoning = reasoningDeltas;
+    onProgress({
+      visibleChars,
+      reasoningDeltas,
+      elapsedMs: Math.max(0, at - startedAt),
+    });
+  };
+  const consume = (block) => {
+    const data = block
+      .split(/\r?\n/u)
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice(5).replace(/^ /u, ""))
+      .join("\n");
+    if (!data || data === "[DONE]") return;
+    let event;
+    try {
+      event = JSON.parse(data);
+    } catch {
+      return;
+    }
+    if (
+      event?.type === "response.output_text.delta" &&
+      typeof event.delta === "string"
+    ) {
+      visibleChars += event.delta.length;
+      emit();
+      return;
+    }
+    if (event?.type === "response.reasoning_summary_text.delta") {
+      reasoningDeltas += 1;
+      emit();
+      return;
+    }
+    if (
+      ["response.completed", "response.failed", "response.incomplete"].includes(
+        event?.type,
+      )
+    )
+      completed = event.response || null;
+  };
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let boundary = buffer.search(/\r?\n\r?\n/u);
+      while (boundary !== -1) {
+        const block = buffer.slice(0, boundary);
+        const separator = buffer.slice(boundary).match(/^(\r?\n\r?\n)/u);
+        buffer = buffer.slice(boundary + (separator?.[1].length || 2));
+        consume(block);
+        boundary = buffer.search(/\r?\n\r?\n/u);
+      }
+    }
+    buffer += decoder.decode();
+    if (buffer.trim()) consume(buffer);
+    emit();
+  } catch {
+    return null;
+  } finally {
+    reader.releaseLock?.();
+  }
+  return completed;
+}
+
+/**
  * Explicit opt-in API for new callers; no environment-controlled provider cutover.
- * @param {{profile: Record<string, any>, request: Record<string, any>, apiKey: string, signal?: AbortSignal, fetchImpl?: typeof fetch}} options
+ * @param {{profile: Record<string, any>, request: Record<string, any>, apiKey: string, signal?: AbortSignal, fetchImpl?: typeof fetch, onProgress?: ((progress: {visibleChars: number, reasoningDeltas: number, elapsedMs: number}) => void) | null, now?: () => number}} options
  */
 export async function inferenceCompletion({
   profile,
@@ -764,11 +857,16 @@ export async function inferenceCompletion({
   apiKey,
   signal = undefined,
   fetchImpl = fetch,
+  onProgress = null,
+  now = () => Date.now(),
 }) {
-  const wire = buildInferenceRequest(profile, request);
   // Freeze response provenance/capabilities for this dispatch even if the
   // caller later updates its shared role configuration while a request is in flight.
   const target = structuredClone(profile);
+  const wire = buildInferenceRequest(profile, request);
+  const wantsStream =
+    typeof onProgress === "function" && target.protocol === "responses";
+  if (wantsStream) wire.body.stream = true;
   headerValue(apiKey, "Inference credential");
   wire.headers[target.auth === "bearer" ? "Authorization" : "x-api-key"] =
     target.auth === "bearer" ? `Bearer ${apiKey}` : apiKey;
@@ -794,11 +892,24 @@ export async function inferenceCompletion({
     return transportFailure();
   }
   let payload;
-  try {
-    payload = await response.json();
-  } catch {
-    if (signal?.aborted) return transportFailure();
-    payload = null;
+  const streamed =
+    wantsStream &&
+    response.ok &&
+    /text\/event-stream/iu.test(response.headers.get("content-type") || "");
+  if (streamed) {
+    payload = await readResponsesStream(response, {
+      onProgress,
+      now,
+      signal,
+    });
+    if (!payload) return transportFailure();
+  } else {
+    try {
+      payload = await response.json();
+    } catch {
+      if (signal?.aborted) return transportFailure();
+      payload = null;
+    }
   }
   return normalizeInferenceResponse(target, payload, {
     httpStatus: response.status,

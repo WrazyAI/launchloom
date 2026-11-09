@@ -25,6 +25,7 @@ export const TRACE_EVENT_KINDS = Object.freeze([
   "action_started",
   "action_finished",
   "output",
+  "output_delta",
   "usage",
   "retry",
   "error",
@@ -517,6 +518,28 @@ function validatePayload(kind, payload, policy) {
         callId: uuid(payload.callId, "call_id"),
         message: traceText(payload.message, policy, "message", {
           mode: "source",
+        }),
+      };
+    }
+    case "output_delta": {
+      exactObject(
+        payload,
+        ["callId", "visibleChars", "reasoningTokens", "elapsedMs"],
+        kind,
+      );
+      return {
+        callId: uuid(payload.callId, "call_id"),
+        visibleChars: integer(payload.visibleChars, "visible_chars", {
+          min: 0,
+          max: 10_000_000,
+        }),
+        reasoningTokens: integer(payload.reasoningTokens, "reasoning_tokens", {
+          min: 0,
+          max: 10_000_000,
+        }),
+        elapsedMs: integer(payload.elapsedMs, "elapsed_ms", {
+          min: 0,
+          max: 86_400_000,
         }),
       };
     }

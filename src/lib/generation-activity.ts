@@ -89,6 +89,12 @@ export type TracePayloads = {
     result: TraceSafeFields;
   };
   output: { callId: string; message: TraceText };
+  output_delta: {
+    callId: string;
+    visibleChars: number;
+    reasoningTokens: number;
+    elapsedMs: number;
+  };
   usage: { callId: string; usage: TraceUsage };
   retry: {
     scope: "provider" | "action" | "stage";
