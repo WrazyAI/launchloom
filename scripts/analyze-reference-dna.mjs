@@ -670,11 +670,12 @@ export function dossierAnalysisFallback(route, error) {
  * @param {{
  *   fetchImpl?: typeof fetch,
  *   sleep?: (ms: number) => Promise<void>,
+ *   fallbackOnly?: boolean,
  * }} [options]
  */
 export async function enrichInspirationPack(
   pack,
-  { fetchImpl = fetch, sleep } = {},
+  { fetchImpl = fetch, sleep, fallbackOnly = false } = {},
 ) {
   if (!Array.isArray(pack?.routes) || !pack.routes.length)
     throw new Error("Reference DNA analysis requires inspiration routes.");
@@ -684,7 +685,7 @@ export async function enrichInspirationPack(
       route.referenceDna?.canonical !== true ||
       !route.referenceDna?.measurements,
   );
-  if (requiresModelAnalysis) {
+  if (requiresModelAnalysis && !fallbackOnly) {
     if (creativeProvider === "opencode-go") {
       if (!process.env.OPENCODE_GO_API_KEY)
         throw new Error(
@@ -698,6 +699,18 @@ export async function enrichInspirationPack(
   }
   const routes = [];
   for (const route of pack.routes) {
+    if (fallbackOnly) {
+      const fallback = dossierAnalysisFallback(
+        route,
+        new Error("Fast lane: no content analysis requested; use the reviewed dossier."),
+      );
+      if (!fallback) throw new Error("No reviewed dossier fallback is available.");
+      console.warn(
+        `reference_dna_fallback route=${route.id} source=dossier reason=fast-lane`,
+      );
+      routes.push(fallback);
+      continue;
+    }
     try {
       const analyzed = await analyzeRoute(route, { fetchImpl, sleep });
       routes.push(applyMeasuredReferenceAnalysis(route, analyzed));
@@ -792,7 +805,9 @@ async function main() {
   const input = path.resolve(args.inspiration);
   const output = path.resolve(args.out || args.inspiration);
   const pack = JSON.parse(await fs.readFile(input, "utf8"));
-  const enriched = await enrichInspirationPack(pack);
+  const enriched = await enrichInspirationPack(pack, {
+    fallbackOnly: args["fallback-only"] === "true",
+  });
   await fs.writeFile(output, `${JSON.stringify(enriched, null, 2)}\n`);
   if (args["usage-out"])
     await fs.writeFile(

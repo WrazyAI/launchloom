@@ -811,6 +811,7 @@ export function createCloudDependencies(
       inspiration,
       "--usage-out",
       path.join(evidence, "reference-dna-usage.json"),
+      ...(fastPolicy.fast ? ["--fallback-only", "true"] : []),
     ]);
     // The adaptive reasoning preflight is a GPT-6 Luna mechanism with its own
     // allowlist and frozen-session contract. Other creative models (for

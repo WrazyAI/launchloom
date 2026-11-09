@@ -406,6 +406,33 @@ describe("Reference DNA", () => {
     }
   }, 15_000);
 
+  it("uses the reviewed dossier fallback without a model call in the fast lane", async () => {
+    const pack = buildInspirationPack(
+      {
+        seed: "reference-fast-fallback",
+        industry: "legal-services",
+        styleTerms: [],
+        recentReferenceIds: [],
+        recentRouteSignatures: [],
+      },
+      productionRegistry,
+    );
+    const fetchImpl = vi.fn(() => {
+      throw new Error("model call not allowed");
+    });
+    const enriched = await enrichInspirationPack(pack, {
+      fetchImpl: fetchImpl as typeof fetch,
+      fallbackOnly: true,
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(enriched.referenceDnaAnalyzerModel).toBe("dossier-fallback");
+    expect(
+      enriched.routes.every(
+        (route: any) => route.referenceDna.analyzerModel === "dossier-fallback",
+      ),
+    ).toBe(true);
+  });
+
   it("runs the reference analyzer on OpenCode Go when the provider selects it", async () => {
     vi.resetModules();
     vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
