@@ -403,6 +403,8 @@ jobs:
       GENERATION_RENDERER: ${{ needs.renderer_policy.outputs.renderer }}
       FOUNDATION_ID: ${{ needs.renderer_policy.outputs.foundation_id }}
       FOUNDATION_POLICY: ${{ needs.renderer_policy.outputs.foundation_policy }}
+      PACK_ID: ${{ needs.renderer_policy.outputs.pack_id }}
+      PACK_VARIANT: ${{ needs.renderer_policy.outputs.pack_variant }}
     steps:
       - uses: actions/checkout@v5
       # New-mode authorization is deliberately the first run step after checkout
@@ -577,12 +579,42 @@ jobs:
         run: node scripts/record-generation-stage.mjs --stage seo_research --status completed --detail "SEO research and cost summary recorded."
       - name: Reject synthetic demos from the production intake path
         run: node scripts/assert-client-generation-mode.mjs --config /tmp/site.config.json --profile full
+      # The owner's target is a delivered preview, not a specific renderer.
+      # If the creative reference library cannot supply a pack for this business
+      # kind, switch to the site's already-selected pack before authoring spends
+      # time and tokens. Unknown registry failures still stop the run.
+      - name: Resolve effective renderer
+        if: env.GENERATION_RENDERER == 'creative' && needs.profile_policy.outputs.profile == 'full' && env.REUSE_AUTHORED_CANDIDATES != 'true'
+        run: |
+          INDUSTRY=$(jq -r '.industry // ""' /tmp/site.config.json)
+          PACK_ID=$(jq -r '.design.experience.packId // ""' /tmp/site.config.json)
+          PACK_VARIANT=$(jq -r '.design.experience.variantId // "standard"' /tmp/site.config.json)
+          FOUNDATION_ID=$(jq -r '.design.experience.foundationId // ""' /tmp/site.config.json)
+          test -n "$INDUSTRY" || { echo "No business kind for renderer preflight"; exit 0; }
+          PROBE=$(node scripts/reference-availability.mjs --industry "$INDUSTRY")
+          AVAILABLE=$(printf '%s' "$PROBE" | jq -r '.available')
+          DECISION=$(node scripts/resolve-effective-renderer.mjs --requested creative --profile full --creative-references-available "$AVAILABLE" --pack "$PACK_ID" --variant "$PACK_VARIANT" --foundation "$FOUNDATION_ID")
+          EFFECTIVE=$(printf '%s' "$DECISION" | jq -r '.effective // empty')
+          REASON=$(printf '%s' "$DECISION" | jq -r '.reason')
+          if [ -z "$EFFECTIVE" ]; then
+            echo "No renderer can build this intake: $REASON" >&2
+            exit 1
+          fi
+          if [ "$EFFECTIVE" != "creative" ]; then
+            echo "GENERATION_RENDERER=$EFFECTIVE" >> "$GITHUB_ENV"
+            echo "PACK_ID=$PACK_ID" >> "$GITHUB_ENV"
+            echo "PACK_VARIANT=$PACK_VARIANT" >> "$GITHUB_ENV"
+            echo "FOUNDATION_ID=$FOUNDATION_ID" >> "$GITHUB_ENV"
+            echo "RENDERER_FALLBACK_REASON=$REASON" >> "$GITHUB_ENV"
+            echo "::warning title=Renderer fallback::Creative references are short for $INDUSTRY; delivering a $EFFECTIVE preview instead."
+          fi
       # Reserve visual routes against the latest main history before expensive
       # reference analysis or authoring. Branch preview-only canaries read the
       # same history without writing hypothetical attempts into production.
       # If a production intake wins the push race, reselect from latest main.
       - name: Reserve inspiration routes
         if: >-
+          env.GENERATION_RENDERER == 'creative' &&
           (github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main' ||
           (github.event_name == 'workflow_dispatch' && inputs.preview_only)) &&
           env.REUSE_AUTHORED_CANDIDATES != 'true'
@@ -649,11 +681,11 @@ jobs:
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage inspiration_selection --status completed --detail "Production reference routes reserved."
       - name: Record reference analysis started
-        if: needs.renderer_policy.outputs.renderer == 'creative'
+        if: env.GENERATION_RENDERER == 'creative'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage reference_analysis --status started --detail "Analyzing reference evidence and freezing the creative session."
       - name: Analyze reserved inspiration and freeze creative session
-        if: needs.renderer_policy.outputs.renderer == 'creative'
+        if: env.GENERATION_RENDERER == 'creative'
         env:
           LAUNCHLOOM_INTAKE_ID: ${{ steps.intake.outputs.intake_key }}
         run: |
@@ -692,7 +724,7 @@ jobs:
             echo "reasoning_fallback=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Record reference analysis stage
-        if: needs.renderer_policy.outputs.renderer == 'creative'
+        if: env.GENERATION_RENDERER == 'creative'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage reference_analysis --status completed --detail "Reference DNA analyzed and creative session frozen."
       - name: Create private repository and Cloudflare Pages project
@@ -865,14 +897,14 @@ jobs:
         run: node scripts/record-generation-stage.mjs --stage imagery --status completed --detail "Contextual imagery generated or reviewed fallback retained."
       - name: Select experience pack
         id: pack
-        if: needs.renderer_policy.outputs.renderer == 'pack'
+        if: env.GENERATION_RENDERER == 'pack'
         env:
-          RENDERER_PACK_ID: ${{ needs.renderer_policy.outputs.pack_id }}
-          RENDERER_PACK_VARIANT: ${{ needs.renderer_policy.outputs.pack_variant }}
+          RENDERER_PACK_ID: ${{ env.PACK_ID }}
+          RENDERER_PACK_VARIANT: ${{ env.PACK_VARIANT }}
         run: |
           cd "${{ steps.branch.outputs.dir }}"
-          PACK_ID="$RENDERER_PACK_ID"
-          PACK_VARIANT="$RENDERER_PACK_VARIANT"
+          PACK_ID="${RENDERER_PACK_ID:-$PACK_ID}"
+          PACK_VARIANT="${RENDERER_PACK_VARIANT:-$PACK_VARIANT}"
           jq --arg pack "$PACK_ID" --arg variant "$PACK_VARIANT" \
             '.design.experience = ({packId:$pack, selectionMode:"pack-preview"} + (if $variant != "" then {variantId:$variant} else {} end))' \
             src/site.config.json > /tmp/site.config.pack.json
@@ -884,14 +916,14 @@ jobs:
           fi
           echo "pack_id=$PACK_ID" >> "$GITHUB_OUTPUT"
       - name: Record pack select stage
-        if: needs.renderer_policy.outputs.renderer == 'pack'
+        if: env.GENERATION_RENDERER == 'pack'
         continue-on-error: true
         env:
-          PACK_ID: ${{ needs.renderer_policy.outputs.pack_id }}
+          PACK_ID: ${{ env.PACK_ID }}
         run: node scripts/record-generation-stage.mjs --stage pack_select --status completed --detail "Experience pack selected $PACK_ID."
       - name: Select source foundation
         id: foundation
-        if: needs.renderer_policy.outputs.renderer == 'foundation'
+        if: env.GENERATION_RENDERER == 'foundation'
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           FOUNDATION_SOURCE="$GITHUB_WORKSPACE/data/reference-library/dossiers/$FOUNDATION_ID/foundation"
@@ -922,18 +954,18 @@ jobs:
           echo "fingerprint=$FINGERPRINT" >> "$GITHUB_OUTPUT"
           echo "manifest=$FOUNDATION_SOURCE/manifest.json" >> "$GITHUB_OUTPUT"
       - name: Record foundation select stage
-        if: needs.renderer_policy.outputs.renderer == 'foundation'
+        if: env.GENERATION_RENDERER == 'foundation'
         continue-on-error: true
         env:
           FOUNDATION_ID: ${{ needs.renderer_policy.outputs.foundation_id }}
           FOUNDATION_COMPATIBILITY: ${{ steps.foundation.outputs.compatibility }}
         run: node scripts/record-generation-stage.mjs --stage foundation_select --status completed --detail "Source foundation selected $FOUNDATION_ID ($FOUNDATION_COMPATIBILITY)."
       - name: Record authoring started
-        if: needs.renderer_policy.outputs.renderer == 'creative'
+        if: env.GENERATION_RENDERER == 'creative'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage authoring --status started --detail "Authoring independent experience candidates."
       - name: Author independent experience candidates
-        if: needs.renderer_policy.outputs.renderer == 'creative'
+        if: env.GENERATION_RENDERER == 'creative'
         id: authoring
         # Luna authors three independent candidates in separate stages, now
         # including the authored service, location, and services-index pages
@@ -965,11 +997,11 @@ jobs:
               --failure-mode throw
           fi
       - name: Record authoring stage
-        if: needs.renderer_policy.outputs.renderer == 'creative'
+        if: env.GENERATION_RENDERER == 'creative'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage authoring --status completed --detail "Independent experience candidates authored."
       - name: Commit authored experience evidence
-        if: needs.renderer_policy.outputs.renderer == 'creative'
+        if: env.GENERATION_RENDERER == 'creative'
         id: authored_evidence
         run: |
           cd "${{ steps.branch.outputs.dir }}"
@@ -986,15 +1018,15 @@ jobs:
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
       - name: Record authored evidence stage
-        if: needs.renderer_policy.outputs.renderer == 'creative'
+        if: env.GENERATION_RENDERER == 'creative'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage authored_evidence --status completed --detail "Authored candidate evidence committed."
       - name: Record creative render started
-        if: needs.renderer_policy.outputs.renderer == 'creative'
+        if: env.GENERATION_RENDERER == 'creative'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage creative_render --status started --detail "Rendering and repairing creative candidates."
       - name: Render and repair creative candidates in the production shell
-        if: needs.renderer_policy.outputs.renderer == 'creative'
+        if: env.GENERATION_RENDERER == 'creative'
         id: creative_render
         run: |
           cd "${{ steps.branch.outputs.dir }}"
@@ -1028,12 +1060,12 @@ jobs:
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
       - name: Record creative render stage
-        if: needs.renderer_policy.outputs.renderer == 'creative'
+        if: env.GENERATION_RENDERER == 'creative'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage creative_render --status completed --detail "Creative candidates rendered and repaired."
       - name: Prepare private creative-recovery report
         id: creative_recovery
-        if: needs.renderer_policy.outputs.renderer == 'creative' && failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') && steps.branch.outputs.dir != '' && (steps.authoring.outcome == 'failure' || steps.creative_render.outcome == 'failure' || steps.authored_evidence.outcome == 'failure')
+        if: env.GENERATION_RENDERER == 'creative' && failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') && steps.branch.outputs.dir != '' && (steps.authoring.outcome == 'failure' || steps.creative_render.outcome == 'failure' || steps.authored_evidence.outcome == 'failure')
         continue-on-error: true
         run: |
           cd "${{ steps.branch.outputs.dir }}"
@@ -1083,7 +1115,7 @@ jobs:
           fi
       - name: Build and deploy noindex diagnostic preview
         id: diagnostic_preview
-        if: needs.renderer_policy.outputs.renderer == 'creative' && always() && steps.creative_recovery.outputs.repair_available == 'true' && steps.creative_recovery.outputs.diagnostic_eligible == 'true'
+        if: env.GENERATION_RENDERER == 'creative' && always() && steps.creative_recovery.outputs.repair_available == 'true' && steps.creative_recovery.outputs.diagnostic_eligible == 'true'
         continue-on-error: true
         env:
           LAUNCHLOOM_TEST_PAGES_PROJECT: ${{ vars.LAUNCHLOOM_TEST_PAGES_PROJECT || 'launchloom-pipeline-preview' }}
@@ -1114,12 +1146,12 @@ jobs:
           PREVIEW=$(printf '%s' "$PREVIEW_RESULT" | jq -er '.url')
           echo "preview=$PREVIEW" >> "$GITHUB_OUTPUT"
       - name: Record diagnostic preview stage
-        if: needs.renderer_policy.outputs.renderer == 'creative'
+        if: env.GENERATION_RENDERER == 'creative'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage diagnostic_preview --status completed --detail "Noindex diagnostic preview deployed."
       - name: Register one-time repair session and create signed review link
         id: creative_repair_link
-        if: needs.renderer_policy.outputs.renderer == 'creative' && always() && steps.creative_recovery.outputs.repair_available == 'true'
+        if: env.GENERATION_RENDERER == 'creative' && always() && steps.creative_recovery.outputs.repair_available == 'true'
         env:
           CLIENT_REPO: ${{ steps.client.outputs.repo }}
           CLIENT_PR: ${{ steps.branch.outputs.pr }}
@@ -1175,11 +1207,11 @@ jobs:
           jq -e '.status == "available" and .repairAvailable == true' "$RUNNER_TEMP/creative-repair-registration.json" >/dev/null
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-creative-recovery -->' '## Creative preview needs another pass' 'The authored candidate did not clear all quality checks. Review the rendered findings and request the single final repair here:' "$REVIEW_LINK")"
       - name: Record foundation render started
-        if: needs.renderer_policy.outputs.renderer == 'foundation'
+        if: env.GENERATION_RENDERER == 'foundation'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage foundation_render --status started --detail "Rendering the source foundation preview."
       - name: Record pack render started
-        if: needs.renderer_policy.outputs.renderer == 'pack'
+        if: env.GENERATION_RENDERER == 'pack'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage pack_render --status started --detail "Rendering the experience pack preview."
       - name: Record preview deploy started
@@ -1328,11 +1360,11 @@ jobs:
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage preview_deploy --status completed --detail "Public preview deployed."
       - name: Record foundation render stage
-        if: needs.renderer_policy.outputs.renderer == 'foundation'
+        if: env.GENERATION_RENDERER == 'foundation'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage foundation_render --status completed --detail "Source foundation preview rendered."
       - name: Record pack render stage
-        if: needs.renderer_policy.outputs.renderer == 'pack'
+        if: env.GENERATION_RENDERER == 'pack'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage pack_render --status completed --detail "Experience pack preview rendered."
       - name: Record launch signature for rotation
@@ -1463,6 +1495,10 @@ jobs:
           if [ "${{ steps.deploy.outputs.creative_decision }}" = "warned" ]; then
             WARNINGS_SECTION=$(jq -r '"Open review warnings:\n" + ([.warnings[:5][] | "- " + .] | join("\n"))' "$RUNNER_TEMP/creative-preview-decision.json")
           fi
+          RENDERER_NOTE=""
+          if [ -n "$RENDERER_FALLBACK_REASON" ]; then
+            RENDERER_NOTE="Renderer fallback: creative references were short, so this preview uses $GENERATION_RENDERER."
+          fi
           LAYOUT=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.conversion?.layout || "editorial-authority")')
           CLIENT_ASSET_SUMMARY=$(node -e 'const x=require("/tmp/site.config.json"); console.log((x.assetReport?.used || []).map(a => a.asset + " -> " + a.placement).join(", ") || "No supplied image used; approved contextual fallback or brand art selected.")')
           RESEARCH_MODE=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(x.mode)')
@@ -1472,9 +1508,12 @@ jobs:
           if [ -n "$WARNINGS_SECTION" ]; then
             BODY=$(printf '%s\n\n%s' "$BODY" "$WARNINGS_SECTION")
           fi
+          if [ -n "$RENDERER_NOTE" ]; then
+            BODY=$(printf '%s\n\n%s' "$BODY" "$RENDERER_NOTE")
+          fi
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "$BODY"
           if [ -n "$INTAKE_ISSUE" ]; then
-            gh issue comment "$INTAKE_ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s' '<!-- launchloom-developer-review-ready -->' "$ISSUE_TITLE" "$CLIENT_REPO" "$CLIENT_PROJECT" "$PREVIEW_URL")"
+            gh issue comment "$INTAKE_ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s\n\n%s' '<!-- launchloom-developer-review-ready -->' "$ISSUE_TITLE" "$CLIENT_REPO" "$CLIENT_PROJECT" "$PREVIEW_URL" "$RENDERER_NOTE")"
           else
             echo "New-mode generation has no intake issue; private review and email carry the handoff."
           fi
@@ -1493,6 +1532,10 @@ jobs:
             jq -r '"Open review warnings:\n" + ([.warnings[:5][] | "- " + .] | join("\n"))' "$RUNNER_TEMP/creative-preview-decision.json" > "$RUNNER_TEMP/creative-preview-warnings.txt"
             FEEDBACK_ARGS=(--feedback-file "$RUNNER_TEMP/creative-preview-warnings.txt")
           fi
+          if [ -n "$RENDERER_FALLBACK_REASON" ]; then
+            printf 'Renderer fallback: creative references were short, so this preview uses %s.\n' "$GENERATION_RENDERER" > "$RUNNER_TEMP/renderer-fallback.txt"
+            FEEDBACK_ARGS+=(--feedback-file "$RUNNER_TEMP/renderer-fallback.txt")
+          fi
           node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt "${FEEDBACK_ARGS[@]}" --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-initial-email:$DEPLOY_SHA -->"
           if [ "${{ steps.deploy.outputs.diagnostic }}" != "true" ]; then
@@ -1507,6 +1550,9 @@ jobs:
           SELECTED_BUILD_SHA: ${{ steps.deploy.outputs.sha }}
         run: |
           DETAIL_ARGS=()
+          if [ -n "$RENDERER_FALLBACK_REASON" ]; then
+            DETAIL_ARGS=(--detail-code renderer_fallback)
+          fi
           if [ "${{ steps.deploy.outputs.creative_decision }}" = "warned" ]; then
             DETAIL_ARGS=(--detail-code preview_with_warnings)
           fi

@@ -81,7 +81,7 @@ describe("generation workflow foundation renderer", () => {
       "Record reference analysis stage",
     ]) {
       expect(step(name).if).toContain(
-        "needs.renderer_policy.outputs.renderer == 'creative'",
+        "env.GENERATION_RENDERER == 'creative'",
       );
     }
   });
@@ -93,7 +93,7 @@ describe("generation workflow foundation renderer", () => {
     expect(names).toContain("Record foundation render started");
     expect(names).toContain("Record foundation render stage");
     expect(step("Select source foundation").if).toBe(
-      "needs.renderer_policy.outputs.renderer == 'foundation'",
+      "env.GENERATION_RENDERER == 'foundation'",
     );
     expect(step("Select source foundation").run).toContain(
       'renderer:"foundation"',
@@ -321,17 +321,17 @@ describe("generation workflow pack renderer", () => {
 
   it("selects the pack and records its stage before preview", () => {
     const select = step("Select experience pack");
-    expect(select.if).toBe("needs.renderer_policy.outputs.renderer == 'pack'");
+    expect(select.if).toBe("env.GENERATION_RENDERER == 'pack'");
     expect(select.run).toContain("selectionMode:\"pack-preview\"");
     expect(select.run).toContain("Select experience pack $PACK_ID");
     expect(step("Record pack select stage").if).toBe(
-      "needs.renderer_policy.outputs.renderer == 'pack'",
+      "env.GENERATION_RENDERER == 'pack'",
     );
     expect(step("Record pack render started").if).toBe(
-      "needs.renderer_policy.outputs.renderer == 'pack'",
+      "env.GENERATION_RENDERER == 'pack'",
     );
     expect(step("Record pack render stage").if).toBe(
-      "needs.renderer_policy.outputs.renderer == 'pack'",
+      "env.GENERATION_RENDERER == 'pack'",
     );
   });
 
@@ -348,11 +348,13 @@ describe("generation workflow pack renderer", () => {
   it("passes validated pack selectors through env, not shell source", () => {
     const select = step("Select experience pack");
     expect(select.run).not.toContain("${{ needs.renderer_policy.outputs");
-    expect(select.run).toContain('PACK_ID="$RENDERER_PACK_ID"');
-    expect(select.run).toContain('PACK_VARIANT="$RENDERER_PACK_VARIANT"');
+    expect(select.run).toContain('PACK_ID="${RENDERER_PACK_ID:-$PACK_ID}"');
+    expect(select.run).toContain(
+      'PACK_VARIANT="${RENDERER_PACK_VARIANT:-$PACK_VARIANT}"',
+    );
     const record = step("Record pack select stage");
     expect(record.run).not.toContain("${{ needs.renderer_policy.outputs");
-    expect(record.env?.PACK_ID).toBe("${{ needs.renderer_policy.outputs.pack_id }}");
+    expect(record.env?.PACK_ID).toBe("${{ env.PACK_ID }}");
   });
 
   it("rejects a stale pack preview before upload", () => {
