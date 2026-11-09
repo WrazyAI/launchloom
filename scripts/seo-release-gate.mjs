@@ -1,5 +1,6 @@
 import { sanitizeVerificationReport } from "./route-verification-handoff.mjs";
 import { auditRouteContent } from "./route-content-audit.mjs";
+import { splitGateFailures } from "./gate-policy.mjs";
 import {
   pageBriefReadiness,
   pageBriefFor,
@@ -342,8 +343,13 @@ export async function inspectSeoRelease({ mode, config, dist, origin = "" }) {
     mode,
   });
   failures.push(...audit.failures);
+  const split = splitGateFailures({
+    gate: "seo",
+    mode,
+    messages: [...new Set(failures)],
+  });
   for (const route of audit.routes) {
-    const prior = failures.filter((failure) =>
+    const prior = split.hard.filter((failure) =>
       failure.startsWith(route.path + ":"),
     );
     if (prior.length) route.status = "fail";
@@ -354,10 +360,12 @@ export async function inspectSeoRelease({ mode, config, dist, origin = "" }) {
       scope: "technical-content",
       mode,
       origin: origin || null,
-      status: failures.length ? "fail" : "pass",
+      status: split.hard.length ? "fail" : "pass",
       routes: audit.routes,
       diagnostics: audit.diagnostics,
-      failures: [...new Set(failures)],
+      failures: split.hard,
+      advisory: split.advisory,
+      classified: split.classified,
     },
     config,
   );

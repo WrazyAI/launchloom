@@ -3,7 +3,10 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { checkSeoRelease } from "../scripts/seo-release-gate.mjs";
+import {
+  checkSeoRelease,
+  inspectSeoRelease,
+} from "../scripts/seo-release-gate.mjs";
 
 const origin = "https://launchloom-gate-fixture.pages.dev";
 const config = {
@@ -657,4 +660,74 @@ it("compares entity-escaped supported metadata as decoded text", async () => {
   expect(failures.some((failure) => failure.includes("metadata differs"))).toBe(
     false,
   );
+});
+
+async function stripDescriptions(dist: string) {
+  for (const route of [
+    "/",
+    "/services/",
+    "/services/consultation/",
+    "/about/",
+    "/contact/",
+  ]) {
+    const file = path.join(dist, route, "index.html");
+    const html = await fs.readFile(file, "utf8");
+    await fs.writeFile(
+      file,
+      html.replace(/<meta name="description" content="[^"]*">/u, ""),
+    );
+  }
+}
+
+describe("review-mode gate policy", () => {
+  it("passes a review preview with advisory metadata findings", async () => {
+    const dist = await fixture(true);
+    await stripDescriptions(dist);
+    const report = await inspectSeoRelease({ mode: "review", config, dist });
+    expect(report.status).toBe("pass");
+    expect(report.failures).toEqual([]);
+    expect(report.advisory.join(" ")).toContain("useful meta description");
+    expect(report.classified).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ severity: "advisory" }),
+      ]),
+    );
+  });
+
+  it("still blocks a review preview with a hard finding", async () => {
+    const dist = await fixture(true);
+    for (const route of [
+      "/",
+      "/services/",
+      "/services/consultation/",
+      "/about/",
+      "/contact/",
+    ]) {
+      const file = path.join(dist, route, "index.html");
+      await fs.writeFile(
+        file,
+        (await fs.readFile(file, "utf8")).replace(
+          'content="noindex, nofollow"',
+          'content="noindexing, nofollow"',
+        ),
+      );
+    }
+    const report = await inspectSeoRelease({ mode: "review", config, dist });
+    expect(report.status).toBe("fail");
+    expect(report.failures.join(" ")).toContain("not marked noindex");
+  });
+
+  it("keeps advisory findings blocking in production", async () => {
+    const dist = await fixture();
+    await stripDescriptions(dist);
+    const report = await inspectSeoRelease({
+      mode: "production",
+      config,
+      dist,
+      origin,
+    });
+    expect(report.status).toBe("fail");
+    expect(report.failures.join(" ")).toContain("useful meta description");
+    expect(report.advisory).toEqual([]);
+  });
 });
