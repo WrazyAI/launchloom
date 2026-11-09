@@ -59,20 +59,6 @@
   cursor: pointer;
 }
 
-[data-creative-host="true"] .launchloom-lead-form button {
-  background: var(--ll-action, #0f3d3e);
-  color: var(--ll-on-action, #ffffff);
-  border-color: transparent;
-}
-
-[data-creative-host="true"] .launchloom-lead-form label {
-  color: var(--ll-text, #14201d);
-}
-
-[data-creative-host="true"] .breadcrumb-list li + li::before {
-  color: var(--ll-muted-text, #6b716d);
-}
-
 [data-creative-host="true"] .launchloom-lead-form small {
   color: var(--ll-muted-text, var(--ll-creative-muted, currentColor));
   font-size: 0.75rem;
