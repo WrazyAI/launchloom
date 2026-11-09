@@ -130,6 +130,38 @@ describe("model activity instrumentation", () => {
     });
   });
 
+  it("emits a bounded output delta from the transport progress callback", async () => {
+    const { producer, events } = capture();
+    const callId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    await observeModelCall({
+      producer,
+      provider: "opencode-go",
+      model: "deepseek-v4.1-flash",
+      callId,
+      invoke: async (onProgress) => {
+        onProgress?.({
+          visibleChars: 120,
+          reasoningDeltas: 3,
+          elapsedMs: 1400,
+        });
+        return { status: "completed", text: "done", usage: {} };
+      },
+    });
+    expect(events.map((event) => event.kind)).toEqual([
+      "model_started",
+      "output_delta",
+      "model_finished",
+      "output",
+      "usage",
+    ]);
+    expect(events[1]?.payload).toEqual({
+      callId,
+      visibleChars: 120,
+      reasoningTokens: 3,
+      elapsedMs: 1400,
+    });
+  });
+
   it("maps a provider-reported cost to an exact actual decimal", async () => {
     const { producer, events } = capture();
     await completeGeneration({
