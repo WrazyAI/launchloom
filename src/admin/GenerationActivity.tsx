@@ -520,11 +520,17 @@ export function GenerationActivity({
       ) : (
         <>
           {usage ? (
-            <div className="admin-activity__summary">
-              <span>{usage.responses}</span>
-              <span>{usage.tokens}</span>
-              <span>{usage.cost}</span>
-            </div>
+            <>
+              <div className="admin-activity__summary">
+                <span>{usage.responses}</span>
+                <span>{usage.tokens}</span>
+                <span>{usage.cost}</span>
+              </div>
+              <p className="admin-activity__note">
+                Token totals cover completed calls only, not live token growth.
+                Streaming rows are labeled as estimates.
+              </p>
+            </>
           ) : null}
 
           {notice ? (
