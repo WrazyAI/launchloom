@@ -575,9 +575,10 @@ export async function resolveRenderedBackdrop(
       // when they are provable; keep the plate for variable or translucent
       // backdrops.
       const flatBackground =
-        target.variable === false
+        target.selfBackground ||
+        (target.variable === false
           ? uniformOpaqueBackground(target.backgrounds)
-          : null;
+          : null);
       const flatRatio =
         flatBackground && target.minimum != null && effectiveForeground
           ? flatContrastRatio(effectiveForeground, flatBackground)
@@ -1182,6 +1183,10 @@ export function collectContrastTargets({
     return false;
   };
   const backdrop = (el, rect, options = {}) => {
+    const selfStyle = styleFor(el);
+    const selfColor = color(selfStyle.backgroundColor);
+    const selfBackground =
+      selfColor && selfColor[3] === 1 ? selfColor : null;
     const chain = [];
     let effects = [];
     for (let p = el; p; p = p.parentElement) {
@@ -1298,6 +1303,7 @@ export function collectContrastTargets({
     return {
       backgrounds,
       variable,
+      selfBackground,
       issues: [...new Set([...issues, ...effects])],
     };
   };
