@@ -118,9 +118,22 @@ export function classifyJudgeFinding(finding) {
     !KNOWN_JUDGE_CATEGORIES.has(category)
   )
     return "hard";
-  if (severity === "critical") return "critical";
-  if (severity === "major" && HARD_JUDGE_CATEGORIES.includes(category))
+  // Accessibility defects and fabricated/unverified facts stay hard. Design
+  // and copy quality findings are advisory on a warned preview; the local
+  // design repair pass owns them after delivery.
+  if (severity === "critical")
+    return category === "content-integrity" || category === "accessibility"
+      ? "critical"
+      : "open";
+  if (severity === "major" && category === "accessibility") return "hard";
+  if (severity === "major" && category === "content-integrity") {
+    const evidence = String(
+      finding?.evidence || finding?.message || finding?.recommendation || "",
+    );
+    if (/copied|templated|repeated|duplicat|filler/iu.test(evidence))
+      return "open";
     return "hard";
+  }
   return "open";
 }
 

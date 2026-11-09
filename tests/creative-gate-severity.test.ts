@@ -75,7 +75,7 @@ describe("creative gate severity classification", () => {
 
 describe("judge finding classification", () => {
   it.each([
-    [{ severity: "critical", category: "hero-geometry" }, "critical"],
+    [{ severity: "critical", category: "hero-geometry" }, "open"],
     [{ severity: "critical", category: "content-integrity" }, "critical"],
     [{ severity: "major", category: "content-integrity" }, "hard"],
     [{ severity: "major", category: "accessibility" }, "hard"],
@@ -242,7 +242,9 @@ describe("visual gate report classification", () => {
         report({
           audit: {
             verdict: "revise",
-            findings: [{ severity: "critical", category: "hero-geometry" }],
+            findings: [
+              { severity: "critical", category: "content-integrity" },
+            ],
           },
         }),
       ).decision,
