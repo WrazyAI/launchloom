@@ -407,6 +407,8 @@ export function buildSafeVisualManifest(config) {
       description: publicText(config.business?.description, 600),
       primaryCta: publicText(config.business?.primaryCta, 100),
       offer: publicText(config.business?.offer, 180),
+      phone: publicText(config.business?.phone, 40),
+      hasEmail: Boolean(config.business?.email),
       serviceAreas: (config.business?.serviceAreas || [])
         .map((area) => publicText(area, 100))
         .filter(Boolean)
@@ -442,6 +444,7 @@ export function buildSafeVisualManifest(config) {
         .filter((key) => config.copy?.[key])
         .map((key) => [key, publicText(config.copy[key], 600)]),
     ),
+    testOnly: Boolean(config.pipelineTest || config.demoNotice),
     design: safeDesignManifest(config),
     assets: {
       hasLogo: Boolean(config.assets?.logo),

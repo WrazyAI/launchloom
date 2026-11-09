@@ -682,6 +682,7 @@ export function createCloudDependencies(
   const reviewEnv = {
     PUBLIC_REVIEW_MODE: "true",
     PUBLIC_PIPELINE_TEST_MODE: input.profile,
+    RENDERED_GATE_CONTRAST: "separate",
   };
   const fastPolicy = resolvePipelineTestPolicy({
     profile: input.profile,

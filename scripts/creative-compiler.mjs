@@ -269,6 +269,14 @@ export function buildRouteContract(route, index = 0) {
   });
 }
 
+/** Rename the services-index footer link when it duplicates the #services label. */
+export function repairDuplicateFooterLabels(source) {
+  return String(source || "").replace(
+    /(<a\s+href="\/services\/"[^>]*>)\s*Services\s*(<\/a>)/iu,
+    "$1All services$2",
+  );
+}
+
 export function assertIndependentRoutes(routes, expected = 3) {
   if (!Array.isArray(routes) || routes.length !== expected)
     throw new Error(`Creative compilation requires exactly ${expected} routes.`);

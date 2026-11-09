@@ -3121,6 +3121,33 @@ process.exit(2);
     blockers: [],
   });
 
+  const blockDesignGate = async () => ({
+    version: 1,
+    mode: "verify",
+    status: "quality-blocked",
+    audit: {
+      verdict: "block",
+      findings: [
+        {
+          severity: "major",
+          category: "imagery",
+          viewport: "desktop",
+          evidence: "The hero image is not industry-relevant.",
+          recommendation: "replace the image",
+        },
+        {
+          severity: "major",
+          category: "hierarchy",
+          viewport: "desktop",
+          evidence: "The hero repeats the same promise.",
+          recommendation: "tighten the hierarchy",
+        },
+      ],
+      operations: [],
+    },
+    blockers: [],
+  });
+
   const hardJudgeGate = async () => ({
     version: 1,
     mode: "verify",
@@ -3202,6 +3229,30 @@ process.exit(2);
     );
     expect(finalReport.selectedCandidateId).toBe("candidate-a");
     expect(finalReport.nearMissSelection).toBe(true);
+  });
+
+  it("delivers a near-miss when the visual gate blocks on design findings only", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) =>
+        writeBakeoffEvidence(
+          options,
+          report({
+            selectedCandidateId: null,
+            candidates: [nearMissCandidate()],
+          }),
+        ),
+      runVisualGateImpl: blockDesignGate,
+      repairCandidateImpl: async () => {},
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+    expect(result.status).toBe("previewed-with-open-findings");
+    expect(result.nearMiss.openFindings.join(" ")).toMatch(/imagery|hierarchy/);
   });
 
   it("counts the near-miss paid gate once after promotion copies it to final", async () => {

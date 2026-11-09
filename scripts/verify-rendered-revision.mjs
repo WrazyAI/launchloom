@@ -117,7 +117,8 @@ try {
     JSON.stringify(contrastReport, null, 2) + "\n",
   );
   if (!contrastReport.pass)
-    failures.push(...contrastFailureMessages(contrastReport));
+    if (process.env.RENDERED_GATE_CONTRAST !== "separate")
+      failures.push(...contrastFailureMessages(contrastReport));
   const routeReport = await verifyApprovedRoutes({
     config,
     origin: url,

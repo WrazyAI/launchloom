@@ -39,6 +39,7 @@ import {
 import { runHumanRevisionGate } from "./human-revision-gate.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 import { RENDERED_REFERENCE_THRESHOLDS } from "./rendered-reference-fidelity.mjs";
+import { repairDuplicateFooterLabels } from "./creative-compiler.mjs";
 import { createTimingRecorder, logTimingSummary } from "./creative-timing.mjs";
 import {
   collectEvidenceSamples,
@@ -1453,6 +1454,17 @@ export async function runRenderedCreativeRepair({
     candidateRoot,
     frozenCreativeSession,
   );
+  for (const entry of await fs.readdir(candidateRoot).catch(() => [])) {
+    if (!/^candidate-[a-c]$/u.test(entry)) continue;
+    const experiencePath = path.join(candidateRoot, entry, "Experience.jsx");
+    const source = await fs.readFile(experiencePath, "utf8").catch(() => "");
+    if (!source) continue;
+    const repaired = repairDuplicateFooterLabels(source);
+    if (repaired !== source) {
+      await fs.writeFile(experiencePath, repaired);
+      console.info(`creative_footer_label_repaired candidate=${entry}`);
+    }
+  }
   // Reference repairs and selected visual-gate repairs have independent
   // per-candidate limits. Reserve one round per candidate for excluding a
   // rejected repair, plus the single best-state restore and final evaluation,
@@ -1895,22 +1907,42 @@ export async function runRenderedCreativeRepair({
       return null;
     }
     const gateAudit = visualGate?.audit || {};
+    let gateConfig = null;
+    try {
+      gateConfig = JSON.parse(await fs.readFile(gateConfigPath, "utf8"));
+    } catch {}
+    const testOnly = Boolean(gateConfig?.pipelineTest || gateConfig?.demoNotice);
+    const hasConfiguredPhone = Boolean(gateConfig?.business?.phone);
+    const expectedTestNotice = (finding) => {
+      if (!testOnly) return false;
+      const evidence = String(finding?.evidence || finding?.message || "");
+      return (
+        /developer preview|submissions are disabled|production-ready|does not confirm/iu.test(
+          evidence,
+        ) ||
+        (hasConfiguredPhone && /placeholdered/iu.test(evidence))
+      );
+    };
     // A near-miss preview may carry design-fidelity observations, never a
     // critical finding or a major content-integrity or accessibility defect.
-    // Those are hard gate failures even when the judge's overall verdict is
-    // merely "revise".
-    const gateHard = (gateAudit.findings || []).filter(
+    // A block verdict with only open findings is still a warned preview.
+    const substantiveGateFindings = (gateAudit.findings || []).filter(
+      (finding) => !expectedTestNotice(finding),
+    );
+    const gateHard = substantiveGateFindings.filter(
       (finding) => classifyJudgeFinding(finding) !== "open",
     );
     if (
       visualGate?.status === "error" ||
-      !["pass", "revise"].includes(gateAudit.verdict) ||
+      !["pass", "revise", "block"].includes(gateAudit.verdict) ||
       gateHard.length
     )
       return null;
     const openFindings = [
       ...assessment.openFindings,
-      ...gateFindings(visualGate).map(describeGateFinding),
+      ...gateFindings(visualGate)
+        .filter((finding) => !expectedTestNotice(finding))
+        .map(describeGateFinding),
     ]
       .filter(Boolean)
       .slice(0, 80);

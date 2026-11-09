@@ -9,6 +9,7 @@ import {
   fingerprintDistance,
   imageCompletenessScore,
   rankFallbackCandidates,
+  repairDuplicateFooterLabels,
   routeRequiresHeroImage,
   validateCandidateManifest,
 } from "../scripts/creative-compiler.mjs";
@@ -51,6 +52,21 @@ const routes = [
     signature: "archive-rail-signature",
   },
 ];
+
+describe("footer link repair", () => {
+  it("renames the services-index link when it duplicates the services label", () => {
+    const source = '<nav><a href="#services">Services</a><a href="/services/">Services</a></nav>';
+    expect(repairDuplicateFooterLabels(source)).toContain(
+      '<a href="/services/">All services</a>',
+    );
+    expect(repairDuplicateFooterLabels(source)).toContain(
+      '<a href="#services">Services</a>',
+    );
+    expect(
+      repairDuplicateFooterLabels('<a href="/services/">All services</a>'),
+    ).toBe('<a href="/services/">All services</a>');
+  });
+});
 
 describe("creative compiler", () => {
   it("normalizes routes into independent design families", () => {
