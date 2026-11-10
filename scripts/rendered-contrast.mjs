@@ -574,10 +574,11 @@ export async function resolveRenderedBackdrop(
         ),
       );
       const flatBackground =
-        !unsafeFlatPair && target.variable === false
-          ? target.selfBackground ||
-            uniformOpaqueBackground(target.backgrounds)
-          : null;
+        target.kind === "text" && target.selfBackground
+          ? target.selfBackground
+          : !unsafeFlatPair && target.variable === false
+            ? uniformOpaqueBackground(target.backgrounds)
+            : null;
       const flatRatio =
         flatBackground && target.minimum != null && effectiveForeground
           ? flatContrastRatio(effectiveForeground, flatBackground)
