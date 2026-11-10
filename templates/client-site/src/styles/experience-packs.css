@@ -2670,7 +2670,7 @@
   color: var(--on-brand-surface, #ffffff);
 }
 .xp-guide__contact a:focus-visible {
-  color: var(--on-brand-surface, #ffffff);
+  color: var(--on-brand-surface, #ffffff) !important;
 }
 .inner-experience-bold-utility .inner-hero .breadcrumb,
 .inner-experience-bold-utility .inner-hero .breadcrumb a,
@@ -2678,8 +2678,9 @@
 .inner-experience-bold-utility .inner-hero a {
   color: var(--ink, #14201d);
 }
-.inner-experience-bold-utility .inner-hero a:focus-visible {
-  color: var(--ink, #14201d);
+.inner-experience-bold-utility .inner-hero a:focus-visible,
+.inner-experience-bold-utility .inner-hero .breadcrumb a:focus-visible {
+  color: var(--ink, #14201d) !important;
 }
 .footer :is(a, span, p, strong, .legal) {
   color: var(--ll-text, #e5eee7);
