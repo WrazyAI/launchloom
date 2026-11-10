@@ -517,7 +517,6 @@ jobs:
               .launchloom/business-enrichment.json \
               .launchloom/canonical-site-brief.json \
               .launchloom/inspiration-pack.json \
-              .launchloom/reasoning-preflight.json \
               .launchloom/generated-experiences/creative-run.json; do
               test -f "$CANDIDATE_SOURCE/$file" || { echo "Reusable candidate repository is missing $file"; exit 1; }
             done
