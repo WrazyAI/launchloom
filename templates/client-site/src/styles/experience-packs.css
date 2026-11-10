@@ -2665,28 +2665,6 @@
 
 /* Pack contrast safety: contact, breadcrumb, and footer links follow the
    surface text role instead of the global brand link color. */
-.xp-guide__contact a,
-.xp-guide__contact a:visited {
-  color: var(--on-brand-surface, #ffffff);
-}
-.xp-guide__contact a:focus-visible {
-  color: var(--on-brand-surface, #ffffff) !important;
-}
-.inner-experience-bold-utility .inner-hero .breadcrumb,
-.inner-experience-bold-utility .inner-hero .breadcrumb a,
-.inner-experience-bold-utility .inner-hero .breadcrumb a:visited,
-.inner-experience-bold-utility .inner-hero a {
-  color: var(--ink, #14201d);
-}
-.inner-experience-bold-utility .inner-hero a:focus-visible,
-.inner-experience-bold-utility .inner-hero .breadcrumb a:focus-visible {
-  color: var(--ink, #14201d) !important;
-}
-.footer :is(a, span, p, strong, .legal) {
-  color: var(--ll-text, #e5eee7);
-}
-
-/* Focus indicators follow the same surface pair as their links. */
 [class*="__contact"] a,
 [class*="__contact"] a:visited {
   color: var(--on-brand-surface, #ffffff);
@@ -2695,7 +2673,10 @@
   color: var(--on-brand-surface, #ffffff) !important;
   outline-color: var(--on-brand-surface, #ffffff) !important;
 }
-.inner-experience-bold-utility .inner-hero a:focus-visible,
-.inner-experience-bold-utility .inner-hero .breadcrumb a:focus-visible {
-  outline-color: var(--ink, #14201d) !important;
+.footer :is(a, span, p, strong, .legal) {
+  color: var(--ll-text, #e5eee7);
+}
+.inner-experience-bold-utility .inner-hero .breadcrumb a,
+.inner-experience-bold-utility .inner-hero .breadcrumb a:visited {
+  color: inherit;
 }
