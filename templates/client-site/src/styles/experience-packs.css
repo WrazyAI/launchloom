@@ -2685,3 +2685,17 @@
 .footer :is(a, span, p, strong, .legal) {
   color: var(--ll-text, #e5eee7);
 }
+
+/* Focus indicators follow the same surface pair as their links. */
+[class*="__contact"] a,
+[class*="__contact"] a:visited {
+  color: var(--on-brand-surface, #ffffff);
+}
+[class*="__contact"] a:focus-visible {
+  color: var(--on-brand-surface, #ffffff) !important;
+  outline-color: var(--on-brand-surface, #ffffff) !important;
+}
+.inner-experience-bold-utility .inner-hero a:focus-visible,
+.inner-experience-bold-utility .inner-hero .breadcrumb a:focus-visible {
+  outline-color: var(--ink, #14201d) !important;
+}
