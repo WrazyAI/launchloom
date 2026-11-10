@@ -103,7 +103,9 @@ export function resolveEffectiveRenderer({
   };
 }
 
-function parseArgs(argv) {
+const EMPTY_OPTIONAL = new Set(["pack", "variant", "foundation"]);
+
+export function parseEffectiveRendererArgs(argv) {
   const args = {};
   for (let index = 0; index < argv.length; index += 1) {
     const token = String(argv[index] || "");
@@ -119,7 +121,10 @@ function parseArgs(argv) {
     ].includes(key))
       throw new Error(`Unknown option: ${token}`);
     const value = String(argv[index + 1] || "");
-    if (!value || value.startsWith("--"))
+    if (
+      value.startsWith("--") ||
+      (!value && !EMPTY_OPTIONAL.has(key))
+    )
       throw new Error(`Missing value for ${token}`);
     args[key] = value;
     index += 1;
@@ -128,7 +133,7 @@ function parseArgs(argv) {
 }
 
 function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const args = parseEffectiveRendererArgs(process.argv.slice(2));
   const decision = resolveEffectiveRenderer({
     requested: args.requested || "creative",
     profile: args.profile || "full",
