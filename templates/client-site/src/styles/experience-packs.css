@@ -2662,3 +2662,26 @@
   :is(h1, h2, h3) {
   font-family: var(--font-heading, Arial, sans-serif);
 }
+
+/* Pack contrast safety: contact, breadcrumb, and footer links follow the
+   surface text role instead of the global brand link color. */
+[class*="__contact"] a,
+[class*="__contact"] a:visited {
+  color: var(--on-brand-surface, #ffffff);
+}
+[class*="__contact"] a:focus-visible {
+  color: var(--on-brand-surface, #ffffff) !important;
+  outline-color: var(--on-brand-surface, #ffffff) !important;
+}
+.footer :is(a, span, p, strong, .legal) {
+  color: var(--ll-text, #e5eee7);
+}
+.inner-experience-bold-utility .inner-hero .breadcrumb a,
+.inner-experience-bold-utility .inner-hero .breadcrumb a:visited {
+  color: inherit;
+}
+
+.inner-experience-bold-utility .inner-hero a:focus-visible,
+.inner-experience-bold-utility .inner-hero .breadcrumb a:focus-visible {
+  outline-color: var(--ink, #14201d) !important;
+}
