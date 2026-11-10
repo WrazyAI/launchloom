@@ -1889,7 +1889,9 @@ export async function runRenderedCreativeRepair({
     const assessments = (report.candidates || [])
       .map((candidate) => ({
         candidate,
-        assessment: nearMissAssessment(candidate),
+        assessment: nearMissAssessment(candidate, {
+          allowContrastWarnings: true,
+        }),
       }))
       .filter((entry) => entry.assessment.eligible);
     if (!assessments.length) return null;

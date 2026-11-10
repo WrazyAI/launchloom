@@ -121,6 +121,22 @@ describe("near-miss assessment", () => {
     ]);
   });
 
+  it("can carry a provable preview contrast finding as a warning", () => {
+    const preview = nearMissAssessment(
+      candidate({ failures: ["contrast fail: / desktop default button"] }),
+      { allowContrastWarnings: true },
+    );
+    expect(preview.eligible).toBe(true);
+    expect(preview.openFindings).toContain(
+      "contrast fail: / desktop default button",
+    );
+    expect(
+      nearMissAssessment(
+        candidate({ failures: ["contrast fail: / desktop default button"] }),
+      ).eligible,
+    ).toBe(false);
+  });
+
   it("allows a desktop hero height overage as an open design finding", () => {
     const assessment = nearMissAssessment(
       candidate({

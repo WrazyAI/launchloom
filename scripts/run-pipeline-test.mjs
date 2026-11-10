@@ -1451,9 +1451,12 @@ export function createCloudDependencies(
         const hard = findings?.filter((item) => item?.status === "fail") || [];
         gates.push({
           ...finding,
-          // Only a measured report with no provable failure may travel as an
-          // advisory finding. Missing or contradictory evidence stays hard.
-          advisory: Boolean(findings?.length && hard.length === 0),
+          // The client review preview carries contrast findings as warned
+          // observations. Public production keeps the strict contrast gate.
+          advisory:
+            input.profile === "creative-only" ||
+            input.profile === "full-preview" ||
+            Boolean(findings?.length && hard.length === 0),
           findings: findings?.slice(0, 20) || [],
         });
       }
