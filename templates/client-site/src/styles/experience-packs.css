@@ -2662,3 +2662,21 @@
   :is(h1, h2, h3) {
   font-family: var(--font-heading, Arial, sans-serif);
 }
+
+/* Pack contrast safety: contact, breadcrumb, and footer links follow the
+   surface text role instead of the global brand link color. */
+.xp-guide__contact a,
+.xp-guide__contact a:visited {
+  color: var(--on-brand-surface, #ffffff);
+}
+.inner-experience-bold-utility .inner-hero .breadcrumb,
+.inner-experience-bold-utility .inner-hero .breadcrumb a,
+.inner-experience-bold-utility .inner-hero .breadcrumb a:visited,
+.inner-experience-bold-utility .inner-hero a {
+  color: #f5f3ec;
+}
+.xp-guide__footer,
+.xp-guide__footer a,
+.xp-guide__footer a:visited {
+  color: var(--ink, #14201d);
+}
