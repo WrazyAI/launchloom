@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolveEffectiveRenderer } from "../scripts/resolve-effective-renderer.mjs";
+import {
+  parseEffectiveRendererArgs,
+  resolveEffectiveRenderer,
+} from "../scripts/resolve-effective-renderer.mjs";
 
 describe("effective renderer policy", () => {
   it("keeps creative when production references are available", () => {
@@ -104,5 +107,27 @@ describe("effective renderer policy", () => {
         profile: "full",
       }),
     ).toMatchObject({ effective: null, reason: "foundation-unavailable" });
+  });
+
+  it("allows empty optional identifiers from the workflow", () => {
+    expect(
+      parseEffectiveRendererArgs([
+        "--requested",
+        "creative",
+        "--profile",
+        "full",
+        "--creative-references-available",
+        "true",
+        "--pack",
+        "",
+        "--variant",
+        "",
+        "--foundation",
+        "",
+      ]),
+    ).toMatchObject({ pack: "", variant: "", foundation: "" });
+    expect(() => parseEffectiveRendererArgs(["--requested"])).toThrow(
+      /Missing value/u,
+    );
   });
 });
