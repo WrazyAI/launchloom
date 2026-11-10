@@ -2669,14 +2669,18 @@
 .xp-guide__contact a:visited {
   color: var(--on-brand-surface, #ffffff);
 }
+.xp-guide__contact a:focus-visible {
+  color: var(--on-brand-surface, #ffffff);
+}
 .inner-experience-bold-utility .inner-hero .breadcrumb,
 .inner-experience-bold-utility .inner-hero .breadcrumb a,
 .inner-experience-bold-utility .inner-hero .breadcrumb a:visited,
 .inner-experience-bold-utility .inner-hero a {
-  color: #f5f3ec;
-}
-.xp-guide__footer,
-.xp-guide__footer a,
-.xp-guide__footer a:visited {
   color: var(--ink, #14201d);
+}
+.inner-experience-bold-utility .inner-hero a:focus-visible {
+  color: var(--ink, #14201d);
+}
+.footer :is(a, span, p, strong, .legal) {
+  color: var(--ll-text, #e5eee7);
 }
