@@ -1489,17 +1489,30 @@ export function createCloudDependencies(
         path.join(evidence, "seo-research-readiness.json"),
         readiness,
       );
-      if (!readiness.allowed)
-        throw new Error(
-          readiness.error || "SEO research readiness did not pass.",
+      if (!readiness.allowed) {
+        const previewWarning =
+          input.profile === "full-preview" &&
+          readiness.code === "seo_research_required";
+        if (!previewWarning)
+          throw new Error(
+            readiness.error || "SEO research readiness did not pass.",
+          );
+        console.warn(
+          `seo_preview_warning mode=${readiness.mode || "unknown"} ${readiness.error || ""}`,
         );
+      }
       const pageReadiness = pageBriefReadiness(finalConfig);
       if (!pageReadiness.allowed)
         throw new Error(
           pageReadiness.error ||
             "Route-specific content readiness did not pass.",
         );
-      return { artifact: ".launchloom/seo-review-report.json" };
+      return {
+        artifact: ".launchloom/seo-review-report.json",
+        ...(readiness.allowed
+          ? {}
+          : { warning: readiness.error, mode: readiness.mode }),
+      };
     },
     async deploy({ report }) {
       await fs.writeFile(
