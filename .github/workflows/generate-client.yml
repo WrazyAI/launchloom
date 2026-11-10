@@ -1073,7 +1073,7 @@ jobs:
         run: node scripts/record-generation-stage.mjs --stage creative_render --status completed --detail "Creative candidates rendered and repaired."
       - name: Prepare private creative-recovery report
         id: creative_recovery
-        if: env.GENERATION_RENDERER == 'creative' && failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') && steps.branch.outputs.dir != '' && (steps.authoring.outcome == 'failure' || steps.creative_render.outcome == 'failure' || steps.authored_evidence.outcome == 'failure' || steps.reference_analysis.outcome == 'failure')
+        if: env.GENERATION_RENDERER == 'creative' && failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') && steps.branch.outputs.dir != '' && steps.client.outputs.project != ''
         continue-on-error: true
         run: |
           cd "${{ steps.branch.outputs.dir }}"
