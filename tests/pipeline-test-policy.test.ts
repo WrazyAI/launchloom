@@ -94,10 +94,21 @@ describe("focused pipeline execution policy", () => {
       runCreativeChecks: true,
     });
   });
-  it("fast lane requires the creative-only profile", () => {
+  it("fast lane is limited to the test preview lanes", () => {
     expect(() =>
+      resolvePipelineTestPolicy({ profile: "full", fastLane: true }),
+    ).toThrow(/creative-only|full-preview/i);
+  });
+  it("fast lane keeps the full-preview SEO canary", () => {
+    expect(
       resolvePipelineTestPolicy({ profile: "full-preview", fastLane: true }),
-    ).toThrow(/creative-only/i);
+    ).toMatchObject({
+      fast: true,
+      candidateCount: 1,
+      repairCycles: 1,
+      runSeoResearch: true,
+      runCreativeChecks: true,
+    });
   });
   it("parses the valueless fast-lane switch", () => {
     expect(

@@ -19,7 +19,8 @@ export function resolvePipelineTestPolicy({ profile, skipCreativeAuthorChecks = 
   const selected = profile || alias || "full";
   if (!["full", "full-preview", "seo-only", "creative-only"].includes(selected)) throw new Error("Unknown pipeline test profile.");
   if (selected !== "full" && eventName !== "workflow_dispatch") throw new Error("Isolated profiles require a manual workflow dispatch.");
-  if (fast && selected !== "creative-only") throw new Error("The fast lane requires the creative-only profile.");
+  if (fast && !["creative-only", "full-preview"].includes(selected))
+    throw new Error("The fast lane requires the creative-only or full-preview profile.");
   return Object.freeze({
     profile: selected,
     testOnly: selected !== "full",
