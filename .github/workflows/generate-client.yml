@@ -311,7 +311,7 @@ jobs:
           && (inputs.operation_id != ''
               || (needs.intake_handoff_check.result == 'success'
                   && (needs.intake_handoff_check.outputs.completed != 'true'
-                      || (github.event_name == 'workflow_dispatch' && (inputs.reuse_authored_candidates || inputs.preview_only)))) }}
+                      || (github.event_name == 'workflow_dispatch' && (inputs.reuse_authored_candidates || inputs.preview_only))))) }}
     runs-on: ubuntu-24.04
     outputs:
       claimed: ${{ steps.claim.outputs.claimed }}
