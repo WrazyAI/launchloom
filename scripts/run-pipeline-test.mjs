@@ -692,7 +692,7 @@ export function createCloudDependencies(
   });
   const fastEnv = fastPolicy.fast
     ? {
-        CREATIVE_EXPERIENCE_REASONING_EFFORT: "low",
+        CREATIVE_EXPERIENCE_REASONING_EFFORT: "medium",
         CREATIVE_REPAIR_EFFORT: "low",
         CREATIVE_REFERENCE_JUDGE_EFFORT: "low",
         CREATIVE_REFERENCE_ANALYZER_EFFORT: "low",
