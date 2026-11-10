@@ -526,7 +526,11 @@ jobs:
             cp "$CANDIDATE_SOURCE/.launchloom/business-enrichment.json" /tmp/business-enrichment.json
             cp "$CANDIDATE_SOURCE/.launchloom/canonical-site-brief.json" /tmp/canonical-site-brief.json
             cp "$CANDIDATE_SOURCE/.launchloom/inspiration-pack.json" /tmp/inspiration-pack.json
-            cp "$CANDIDATE_SOURCE/.launchloom/reasoning-preflight.json" /tmp/reasoning-preflight.json
+            if [ -f "$CANDIDATE_SOURCE/.launchloom/reasoning-preflight.json" ]; then
+              cp "$CANDIDATE_SOURCE/.launchloom/reasoning-preflight.json" /tmp/reasoning-preflight.json
+            else
+              rm -f /tmp/reasoning-preflight.json
+            fi
             mkdir -p "$RUNNER_TEMP/reusable-authored-candidates"
             cp -R "$CANDIDATE_SOURCE/.launchloom/generated-experiences/." "$RUNNER_TEMP/reusable-authored-candidates/"
             echo "Reusable private candidate artifacts loaded; fresh authoring and SEO/config model calls are skipped."
