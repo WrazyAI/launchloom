@@ -5,6 +5,8 @@ import {
   decodeRgbaPixels,
   resolveRenderedBackdrop,
   worstCasePixelRatio,
+  uniformOpaqueBackground,
+  flatContrastRatio,
 } from "../scripts/rendered-contrast.mjs";
 
 const browsers: Array<any> = [];
@@ -54,6 +56,15 @@ function target(overrides: Record<string, any>) {
     ...overrides,
   };
 }
+
+describe("uniform opaque backdrop resolution", () => {
+  it("prefers a provable DOM pair over a neighbouring pixel plate", () => {
+    expect(flatContrastRatio([255, 255, 255, 1], [15, 61, 62, 1])).toBeGreaterThan(4.5);
+    expect(flatContrastRatio([20, 32, 29, 1], [248, 246, 240, 1])).toBeGreaterThan(4.5);
+    expect(uniformOpaqueBackground([[15, 61, 62, 1], [15, 61, 62, 1]])).toEqual([15, 61, 62, 1]);
+    expect(uniformOpaqueBackground([[0, 0, 0, 1], [255, 255, 255, 1]])).toBeNull();
+  });
+});
 
 describe("rendered pixel contrast resolution", () => {
   it("computes the worst-case ratio against decoded pixels", async () => {

@@ -170,6 +170,30 @@ export function worstCasePixelRatio(foreground, pixels) {
   return analyzePixelBackdrop(foreground, pixels).ratio;
 }
 
+/** Return the single opaque background when every recorded backdrop is equal. */
+export function uniformOpaqueBackground(backgrounds) {
+  if (!Array.isArray(backgrounds) || backgrounds.length === 0) return null;
+  const first = backgrounds[0];
+  if (!Array.isArray(first) || first.length < 4 || first[3] !== 1) return null;
+  const same = backgrounds.every(
+    (background) =>
+      Array.isArray(background) &&
+      background.length >= 4 &&
+      background[0] === first[0] &&
+      background[1] === first[1] &&
+      background[2] === first[2] &&
+      background[3] === 1,
+  );
+  return same ? first : null;
+}
+
+/** Contrast ratio for a foreground composited over a solid background. */
+export function flatContrastRatio(foreground, background) {
+  const a = relativeLuminance(composite(foreground, background));
+  const b = relativeLuminance(background);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
 /**
  * Issue classes a single rendered frame cannot prove: an unsettled paint
  * animation changes color over time, and text-clipped backgrounds paint the
@@ -540,7 +564,25 @@ export async function resolveRenderedBackdrop(
           continue;
         }
       }
-      ratio = analysis.ratio;
+      // A uniform opaque DOM pair is stronger evidence than a pixel plate
+      // that may include neighbouring card paint. Partial plates, inset
+      // outlines, and text-clipped paint can still change the backdrop, so
+      // those keep the plate.
+      const unsafeFlatPair = (target.issues || []).some((issue) =>
+        /background plate only partially covers text|inset focus outline overlaps unmeasured border paint|text-clipped background/u.test(
+          String(issue),
+        ),
+      );
+      const flatBackground =
+        !unsafeFlatPair && target.variable === false
+          ? target.selfBackground ||
+            uniformOpaqueBackground(target.backgrounds)
+          : null;
+      const flatRatio =
+        flatBackground && target.minimum != null && effectiveForeground
+          ? flatContrastRatio(effectiveForeground, flatBackground)
+          : null;
+      ratio = flatRatio ?? analysis.ratio;
     } catch {
       continue; // decode failure: stays unresolved
     }
@@ -1140,6 +1182,10 @@ export function collectContrastTargets({
     return false;
   };
   const backdrop = (el, rect, options = {}) => {
+    const selfStyle = styleFor(el);
+    const selfColor = color(selfStyle.backgroundColor);
+    const selfBackground =
+      selfColor && selfColor[3] === 1 ? selfColor : null;
     const chain = [];
     let effects = [];
     for (let p = el; p; p = p.parentElement) {
@@ -1256,6 +1302,7 @@ export function collectContrastTargets({
     return {
       backgrounds,
       variable,
+      selfBackground,
       issues: [...new Set([...issues, ...effects])],
     };
   };
