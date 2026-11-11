@@ -18,6 +18,10 @@ export const OPERATIONS_REF = "refs/heads/main";
 export const OPERATIONS_EVENT = "workflow_dispatch";
 export const OPERATIONS_WORKFLOW_REF =
   `${OPERATIONS_REPOSITORY}/${OPERATIONS_WORKFLOW_PATH}@${OPERATIONS_REF}`;
+export const TEST_GENERATION_WORKFLOW_PATH =
+  ".github/workflows/test-generation.yml";
+export const TEST_GENERATION_WORKFLOW_REF =
+  `${OPERATIONS_REPOSITORY}/${TEST_GENERATION_WORKFLOW_PATH}@${OPERATIONS_REF}`;
 /** Requested by the workflow when it asks GitHub for an ID token. */
 export const OPERATIONS_OIDC_AUDIENCE = "launchloom-operations";
 
@@ -50,6 +54,8 @@ export type WorkflowPolicy = {
   repositoryId: string;
   repository: string;
   workflowRef: string;
+  /** Optional reusable-workflow allowlist; defaults to `workflowRef`. */
+  jobWorkflowRefs?: string[];
   ref: string;
   eventName: string;
   /** Optional explicit allowlist; defaults to exactly `eventName`. */
@@ -309,7 +315,11 @@ export async function verifyRunIdentity(
   if (claims.repository_id !== policy.repositoryId) deny("repository");
 
   if (claims.workflow_ref !== policy.workflowRef) deny("workflow");
-  if (claims.job_workflow_ref !== undefined && claims.job_workflow_ref !== policy.workflowRef)
+  const allowedJobRefs = policy.jobWorkflowRefs ?? [policy.workflowRef];
+  if (
+    claims.job_workflow_ref !== undefined &&
+    !allowedJobRefs.includes(claims.job_workflow_ref)
+  )
     deny("workflow");
 
   if (claims.ref !== policy.ref) deny("ref");
@@ -667,5 +677,6 @@ export function activityWorkflowPolicy(env: {
   return {
     ...operationsWorkflowPolicy(env),
     eventNames: [OPERATIONS_EVENT, "repository_dispatch"],
+    jobWorkflowRefs: [OPERATIONS_WORKFLOW_REF, TEST_GENERATION_WORKFLOW_REF],
   };
 }

@@ -236,6 +236,10 @@ jobs:
   focused_test:
     needs: profile_policy
     if: ${{ needs.profile_policy.outputs.profile == 'full-preview' || needs.profile_policy.outputs.profile == 'seo-only' || needs.profile_policy.outputs.profile == 'creative-only' }}
+    permissions:
+      contents: read
+      issues: read
+      id-token: write
     uses: ./.github/workflows/test-generation.yml
     with:
       issue: ${{ inputs.issue }}
