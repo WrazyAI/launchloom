@@ -876,6 +876,32 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       .toArray()[0];
   }
 
+  /** Read-only timeline for the authenticated admin workspace. */
+  async list(limit = 20) {
+    const rows = this.ctx.storage.sql
+      .exec<RevisionRow>(
+        "SELECT * FROM revision_requests ORDER BY created_at DESC LIMIT ?",
+        Math.min(Math.max(Number(limit) || 20, 1), 50),
+      )
+      .toArray();
+    return {
+      version: 1,
+      requests: rows.map((row) => ({
+        requestId: row.request_id,
+        stage: row.stage,
+        status: row.status,
+        category: row.category,
+        feedback: String(row.feedback || "").slice(0, 500),
+        reviewedPage: row.reviewed_page,
+        pr: row.pr,
+        createdAt: row.created_at,
+        startedAt: row.started_at,
+        completedAt: row.completed_at,
+        failure: row.failure ? String(row.failure).slice(0, 300) : null,
+      })),
+    };
+  }
+
   async allowAiChat(
     visitorKey: string,
     now = Date.now(),
