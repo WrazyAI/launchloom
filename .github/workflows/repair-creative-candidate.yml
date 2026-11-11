@@ -62,7 +62,7 @@ jobs:
         if: steps.claim.outputs.run == 'true'
         run: |
           npm ci
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium || npx playwright install chromium
 
       - name: Fetch the exact private review commit
         id: client
