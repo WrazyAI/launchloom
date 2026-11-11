@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-11T19:47:38.888Z",
+  "updatedAt": "2026-11-11T22:25:01.181Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -1193,6 +1193,41 @@
         "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
         "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
       ]
+    },
+    {
+      "id": "2026-11-11-cedar-stone-plumbing-attempt-278-run-43110671669-attempt-1",
+      "launchedAt": "2026-11-11T22:25:01.179Z",
+      "stage": "attempt",
+      "reservationKey": "278-run-43110671669-attempt-1",
+      "businessName": "Cedar & Stone Plumbing",
+      "businessKind": "home-services",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "colorlib-fixwell-quote-desk",
+        "typographic-poster",
+        "utility-diagnostic",
+        "web-homeservices-morris-jenkins",
+        "web-homeservices-roto-rooter"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form"
+      ],
+      "referenceIds": [
+        "colorlib-fixwell-quote-desk",
+        "web-homeservices-morris-jenkins",
+        "web-homeservices-roto-rooter"
+      ],
+      "routeSignatures": [
+        "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
+        "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
+        "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
+      ]
     }
   ],
   "launchesByBusinessKind": {
@@ -2248,6 +2283,41 @@
         "launchedAt": "2026-11-11T19:47:38.885Z",
         "stage": "attempt",
         "reservationKey": "278-run-43086631930-attempt-1",
+        "businessName": "Cedar & Stone Plumbing",
+        "businessKind": "home-services",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "colorlib-fixwell-quote-desk",
+          "typographic-poster",
+          "utility-diagnostic",
+          "web-homeservices-morris-jenkins",
+          "web-homeservices-roto-rooter"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form"
+        ],
+        "referenceIds": [
+          "colorlib-fixwell-quote-desk",
+          "web-homeservices-morris-jenkins",
+          "web-homeservices-roto-rooter"
+        ],
+        "routeSignatures": [
+          "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
+          "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
+          "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
+        ]
+      },
+      {
+        "id": "2026-11-11-cedar-stone-plumbing-attempt-278-run-43110671669-attempt-1",
+        "launchedAt": "2026-11-11T22:25:01.179Z",
+        "stage": "attempt",
+        "reservationKey": "278-run-43110671669-attempt-1",
         "businessName": "Cedar & Stone Plumbing",
         "businessKind": "home-services",
         "recipe": "local-trades",
