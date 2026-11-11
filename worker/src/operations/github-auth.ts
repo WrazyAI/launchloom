@@ -316,11 +316,14 @@ export async function verifyRunIdentity(
 
   if (claims.workflow_ref !== policy.workflowRef) deny("workflow");
   const allowedJobRefs = policy.jobWorkflowRefs ?? [policy.workflowRef];
-  if (
-    claims.job_workflow_ref !== undefined &&
-    !allowedJobRefs.includes(claims.job_workflow_ref)
-  )
-    deny("workflow");
+  if (claims.job_workflow_ref !== undefined) {
+    const jobWorkflowRef =
+      typeof claims.job_workflow_ref === "string"
+        ? claims.job_workflow_ref
+        : null;
+    if (!jobWorkflowRef || !allowedJobRefs.includes(jobWorkflowRef))
+      deny("workflow");
+  }
 
   if (claims.ref !== policy.ref) deny("ref");
   if (claims.ref_type !== "branch") deny("ref");
