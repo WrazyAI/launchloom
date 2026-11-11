@@ -508,6 +508,19 @@ export async function workspaceApi(
         legacyHeaders,
       );
     if (suffix === "/invites") return json(await coordinator.listPage(filters));
+    if (suffix === "/revisions") {
+      const repo = String(url.searchParams.get("repo") || "");
+      if (!/^WrazyAI\/[a-z0-9][a-z0-9-]{0,100}$/u.test(repo))
+        return workspaceError(
+          "invalid_repo",
+          "A client repository is required.",
+          400,
+        );
+      const revisionCoordinator = env.REVISION_COORDINATOR.getByName(
+        repo.toLowerCase(),
+      );
+      return json(await revisionCoordinator.list(20), 200, legacyHeaders);
+    }
     if (suffix === "/clients") {
       const [page, health] = await Promise.all([
         ledger.listClients(filters),

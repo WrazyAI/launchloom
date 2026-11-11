@@ -647,6 +647,9 @@ async function openPage(options: OpenOptions = {}) {
     if (message.type() === "error") errors.push(message.text());
   });
   page.on("pageerror", (error) => errors.push(error.message));
+  await page.route("**/workspace/revisions?**", (route) =>
+    route.fulfill({ json: { version: 1, requests: [] } }),
+  );
   await page.goto(
     `${origin}${options.path || "/admin/onboarding-invites?view=generations"}`,
     { waitUntil: "domcontentloaded" },

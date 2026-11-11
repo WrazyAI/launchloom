@@ -330,3 +330,18 @@ export type WorkspaceCapabilities = {
   operationsRead: boolean;
   generationActivityRead: boolean;
 };
+
+export type RevisionStage = "developer" | "client";
+export type RevisionSummary = {
+  requestId: string;
+  stage: RevisionStage;
+  status: string;
+  category: string;
+  feedback: string;
+  reviewedPage: string;
+  pr: number | null;
+  createdAt: number;
+  startedAt: number | null;
+  completedAt: number | null;
+  failure: string | null;
+};

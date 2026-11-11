@@ -10,6 +10,7 @@ import { isSiteGeneration } from "./site-groups";
 import { GenerationPreview } from "./GenerationPreview";
 import { DetailValue } from "./DetailValue";
 import { GenerationActivity } from "./GenerationActivity";
+import { RevisionTimeline } from "./RevisionTimeline";
 import type { AdminApi } from "./api";
 import {
   DeliveryStatusBadge,
@@ -468,6 +469,8 @@ export function AttemptInspector({
               }
               enabled={activityEnabled}
             />
+
+            <RevisionTimeline api={api} repository={attempt.repository} />
 
             <EventTimeline
               events={events}
