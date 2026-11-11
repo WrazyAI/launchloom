@@ -105,6 +105,13 @@ describe("judge finding classification", () => {
         evidence: "The footer shows a fabricated phone number.",
       }),
     ).toBe("critical");
+    expect(
+      classifyJudgeFinding({
+        severity: "critical",
+        category: "content-integrity",
+        evidence: "Fabricated credentials appear alongside clipped text.",
+      }),
+    ).toBe("critical");
   });
 
   it("declares the hard judge categories", () => {

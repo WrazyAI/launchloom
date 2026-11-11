@@ -127,8 +127,15 @@ export function classifyJudgeFinding(finding) {
       const evidence = String(
         finding?.evidence || finding?.message || finding?.recommendation || "",
       );
-      if (/clipped|cropped|malformed|stray|truncated|overlap|fragment/iu.test(evidence))
-        return "open";
+      const copyDefect =
+        /clipped|cropped|malformed|stray|truncated|overlap|fragment/iu.test(
+          evidence,
+        );
+      const factDefect =
+        /fabricat|invent|unverified|not present|missing from|credential|price|review|guarantee|licen[cs]e|contact|phone|email|address/iu.test(
+          evidence,
+        );
+      if (copyDefect && !factDefect) return "open";
       return "critical";
     }
     return "open";

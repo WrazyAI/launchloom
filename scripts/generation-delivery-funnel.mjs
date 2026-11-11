@@ -27,7 +27,11 @@ function classifyDelivery(record) {
   if (record?.deliveryReportMissing === true) return "unknown";
   const status = record?.deliveryStatus;
   if (status === "preview_ready" || status === "published")
-    return hasWarnings(record) ? "warned" : "clean";
+    return hasPreview(record)
+      ? hasWarnings(record)
+        ? "warned"
+        : "clean"
+      : "unknown";
   if (status === "attention")
     return hasPreview(record) ? "warned" : "unknown";
   if (status === "diagnostic") return "failed";

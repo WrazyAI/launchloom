@@ -7,6 +7,7 @@ function record(overrides: Record<string, any> = {}) {
     profile: "full",
     executionStatus: "succeeded",
     deliveryStatus: "preview_ready",
+    previewUrl: "https://review-initial.example.pages.dev",
     startedAt: 1_000,
     completedAt: 1_000 + 10 * 60_000,
     ...overrides,

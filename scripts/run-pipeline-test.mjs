@@ -1592,7 +1592,7 @@ export function createCloudDependencies(
         );
       const rendered = await response.text();
       if (
-        input.profile === "creative-only" &&
+        ["creative-only", "full-preview"].includes(input.profile) &&
         !rendered.includes('data-creative-host="true"')
       )
         throw new Error(
