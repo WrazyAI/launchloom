@@ -573,10 +573,17 @@ export async function resolveRenderedBackdrop(
           String(issue),
         ),
       );
+      const renderedReviewRequired = (target.issues || []).some((issue) =>
+        /requires rendered review/u.test(String(issue)),
+      );
       const flatBackground =
-        target.kind === "text" && target.selfBackground
+        target.kind === "text" &&
+        target.selfBackground &&
+        !renderedReviewRequired
           ? target.selfBackground
-          : !unsafeFlatPair && target.variable === false
+          : !renderedReviewRequired &&
+              !unsafeFlatPair &&
+              target.variable === false
             ? uniformOpaqueBackground(target.backgrounds)
             : null;
       const flatRatio =

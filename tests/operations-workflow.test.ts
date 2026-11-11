@@ -285,12 +285,13 @@ describe("new-mode workflow authorization", () => {
     return next < 0 ? rest : rest.slice(0, next + 1);
   }
 
-  it("mints an OIDC token only in the generation job", async () => {
+  it("mints an OIDC token only in the generation and focused lanes", async () => {
     const source = await workflow();
-    expect(source.match(/^\s+id-token: write\s*$/gmu)).toHaveLength(1);
+    expect(source.match(/^\s+id-token: write\s*$/gmu)).toHaveLength(2);
     const generate = jobBlock(source, "generate");
     expect(generate).toMatch(/permissions:\s*\n\s+contents: write\s*\n\s+issues: write\s*\n\s+id-token: write/u);
-    for (const other of ["track_execution", "profile_policy", "renderer_policy", "intake_handoff_check", "focused_test", "private_preview_access_smoke"]) {
+    expect(jobBlock(source, "focused_test")).toContain("id-token: write");
+    for (const other of ["track_execution", "profile_policy", "renderer_policy", "intake_handoff_check", "private_preview_access_smoke"]) {
       expect(jobBlock(source, other)).not.toContain("id-token: write");
     }
   });
