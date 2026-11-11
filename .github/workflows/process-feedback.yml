@@ -51,7 +51,7 @@ jobs:
         if: steps.claim.outputs.run == 'true'
         run: |
           npm ci
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium || npx playwright install chromium
       - name: Clone review branch
         if: steps.claim.outputs.run == 'true'
         id: branch

@@ -108,7 +108,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Install rendered acceptance browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium || npx playwright install chromium
       - name: Configure private QA repository authentication
         run: gh auth setup-git
       - name: Run focused profile

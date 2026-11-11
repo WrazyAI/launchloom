@@ -54,7 +54,7 @@ jobs:
         if: steps.claim.outputs.run == 'true'
         run: |
           npm ci
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium || npx playwright install chromium
       - name: Create or reuse the active client revision PR
         if: steps.claim.outputs.run == 'true'
         id: revision
