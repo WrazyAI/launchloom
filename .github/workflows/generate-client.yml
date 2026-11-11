@@ -362,6 +362,11 @@ jobs:
       # Repairs are bounded edits; high effort leaves output headroom for
       # max-effort-adjacent reasoning without truncating the answer.
       CREATIVE_REPAIR_EFFORT: ${{ vars.CREATIVE_REPAIR_EFFORT || 'high' }}
+      # The reference analyzer is a structured-vision extraction, not code
+      # authoring. Medium effort finishes inside the provider gateway deadline;
+      # max effort repeatedly hit the five-minute transport timeout and forced
+      # a dossier-only fallback that fails the measured-reference gate.
+      CREATIVE_REFERENCE_ANALYZER_EFFORT: ${{ vars.CREATIVE_REFERENCE_ANALYZER_EFFORT || 'medium' }}
       # Creative-stage performance switches. Defaults match the code; flipping
       # a variable back is the manual rollback (see
       # docs/creative-generation-performance.md).
