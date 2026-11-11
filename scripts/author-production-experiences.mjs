@@ -1009,6 +1009,32 @@ try {
       site?.business?.address,
     ].filter(Boolean),
   );
+  const generateWithTransientRetry = async (request) => {
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        return await requestStage(request);
+      } catch (error) {
+        const status = Number(
+          error?.result?.error?.httpStatus ??
+            error?.providerHttpStatus ??
+            error?.status,
+        );
+        const code = String(
+          error?.result?.error?.code ?? error?.code ?? "",
+        );
+        const message = String(error?.message || "");
+        const transient =
+          [429, 500, 502, 503, 504].includes(status) ||
+          /rate-limit|transport|timeout|upstream|provider-error/iu.test(code) ||
+          /rate-limit|http_status=429/iu.test(message);
+        if (!transient || attempt === 3) throw error;
+        console.warn(
+          `production_experience_transient_retry route=${request?.route?.id || "unknown"} stage=${request?.stage || "unknown"} attempt=${attempt} status=${status || code}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 2_000 * attempt));
+      }
+    }
+  };
   const result = await observePipelineAction({
     producer: activity,
     actionId: "authoring:candidates",
@@ -1018,7 +1044,7 @@ try {
       authorExperienceCandidates({
         site,
         inspirationPack,
-        generate: requestStage,
+        generate: generateWithTransientRetry,
         model,
         creativeSession,
         testProfile: testPolicy.profile,
