@@ -15,8 +15,8 @@ describe("SERP redirect domains", () => {
     const called: string[] = [];
     const result = await resolveSerpResultDomains(
       serps,
-      async (url: string) => {
-        called.push(url);
+      async (input: any) => {
+        called.push(String(input));
         return {
           url: "https://radiantplumbing.com/service-area/austin/",
           status: 403,
