@@ -90,6 +90,23 @@ describe("judge finding classification", () => {
     expect(classifyJudgeFinding(finding as any)).toBe(expected);
   });
 
+  it("warns on clipped or malformed copy but keeps fabricated facts critical", () => {
+    expect(
+      classifyJudgeFinding({
+        severity: "critical",
+        category: "content-integrity",
+        evidence: "The hero eyebrow is clipped by the sticky header.",
+      }),
+    ).toBe("open");
+    expect(
+      classifyJudgeFinding({
+        severity: "critical",
+        category: "content-integrity",
+        evidence: "The footer shows a fabricated phone number.",
+      }),
+    ).toBe("critical");
+  });
+
   it("declares the hard judge categories", () => {
     expect(HARD_JUDGE_CATEGORIES).toEqual(["content-integrity", "accessibility"]);
   });
