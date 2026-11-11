@@ -802,6 +802,29 @@ describe("focused pipeline orchestration", () => {
     expect(calls).toContain("deploy");
   });
 
+  it("passes the full-preview technical stage when contrast is advisory", async () => {
+    const { dependencies } = adapter();
+    dependencies.creative = async () => ({
+      nearMiss: { candidateId: "candidate-b", overall: 55 },
+    });
+    dependencies.technical = async () => {
+      const error: any = new Error("Rendered quality checks did not pass.");
+      error.code = "PIPELINE_QUALITY_GATE";
+      error.gates = [
+        { name: "rendered", passed: true },
+        { name: "contrast", passed: false, advisory: true, findings: [] },
+      ];
+      throw error;
+    };
+    const report = await runPipelineTest(
+      { ...input, profile: "full-preview" },
+      dependencies,
+    );
+    expect(report.stages.technical.status).toBe("passed");
+    expect(report.verdict).toBe("passed");
+    expect(report.previewDelivered).toBe(true);
+  });
+
   it("keeps a provable contrast failure hard for a near-miss delivery", async () => {
     const { dependencies } = adapter();
     dependencies.creative = async () => ({

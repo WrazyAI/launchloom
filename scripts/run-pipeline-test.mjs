@@ -442,7 +442,8 @@ export async function runPipelineTest(input, dependencies) {
       // fails, and the production canary profile is never softened.
       const nearMissContrastOnly =
         name === "technical" &&
-        input.profile === "creative-only" &&
+        (input.profile === "creative-only" ||
+          input.profile === "full-preview") &&
         nearMissDelivery &&
         error?.code === "PIPELINE_QUALITY_GATE" &&
         Array.isArray(error.gates) &&
