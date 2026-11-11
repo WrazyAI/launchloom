@@ -418,11 +418,15 @@ export async function runPipelineTest(input, dependencies) {
   };
   const context = { input, policy, report };
   let nearMissDelivery = false;
+  let nearMissOpenFindings = 0;
   async function stage(name) {
     const started = Date.now();
     try {
       const result = await dependencies[name](context);
-      if (name === "creative" && result?.nearMiss) nearMissDelivery = true;
+      if (name === "creative" && result?.nearMiss) {
+        nearMissDelivery = true;
+        nearMissOpenFindings = Number(result.nearMiss.openFindings) || 0;
+      }
       report.stages[name] = {
         status: "passed",
         durationMs: Date.now() - started,
@@ -543,6 +547,13 @@ export async function runPipelineTest(input, dependencies) {
       report.previewUrl = deployment.url;
       report.previewDelivered = true;
       await stage("notify");
+      if (nearMissDelivery && qualityPassed) {
+        report.deliveryMode = "creative-near-miss";
+        report.warningSummary = {
+          mode: "warned",
+          count: nearMissOpenFindings,
+        };
+      }
     } else {
       report.verdict = "failed";
     }
