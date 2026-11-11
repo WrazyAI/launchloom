@@ -718,11 +718,10 @@ const STOCK_PACKS = {
     secondary:
       "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=1200&q=85",
   },
-  "home-services": {
-    hero: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=85",
-    secondary:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1200&q=85",
-  },
+  // The previous Unsplash pair had no reviewed provenance metadata, so the
+  // SEO release gate correctly rejected the hosted URLs. Generated route
+  // imagery or brand art supplies the visual instead.
+  "home-services": {},
   "professional-services": {
     hero: "/images/packs/professional-services-advisory-v1.png",
     metadata: {
