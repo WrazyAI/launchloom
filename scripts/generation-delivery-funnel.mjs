@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const FULL_PROFILES = new Set(["full", "full-preview"]);
+const FULL_PROFILES = new Set(["full"]);
 const DEFAULT_LIMIT = 20;
 
 function hasWarnings(record) {
@@ -18,6 +18,7 @@ function hasWarnings(record) {
 function hasPreview(record) {
   return Boolean(
     record?.previewUrl ||
+      record?.siteUrl ||
       record?.previewDelivered === true ||
       record?.deliveryEvidence?.previewDelivered === true,
   );
