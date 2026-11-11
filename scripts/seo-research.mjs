@@ -1070,6 +1070,10 @@ function isSearchEngineRedirectHost(host) {
  * publisher URL. Resolve those links to their final host so competitor and
  * market-map evidence counts the publisher, not the search engine.
  */
+/**
+ * @param {any[]} serps
+ * @param {(input: any, init?: any) => Promise<any>} [fetchImpl]
+ */
 export async function resolveSerpResultDomains(serps, fetchImpl = fetch) {
   const targets = [];
   for (const serp of serps || [])
