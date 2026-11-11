@@ -3940,6 +3940,7 @@ function safeAuthorFailureStack(error) {
  *   creativeSession?: Record<string, any> | null;
  *   testProfile?: "full" | "full-preview" | "seo-only" | "creative-only";
  *   fastLane?: boolean;
+ *   candidateCount?: number;
  * }} input
  */
 export async function authorExperienceCandidates({
@@ -3950,6 +3951,7 @@ export async function authorExperienceCandidates({
   creativeSession = null,
   testProfile = "full",
   fastLane = false,
+  candidateCount = undefined,
 }) {
   if (typeof generate !== "function")
     throw new Error("A generation adapter is required.");
@@ -3962,9 +3964,13 @@ export async function authorExperienceCandidates({
   });
   // Validate the complete reference contract first; a focused test limits
   // provider work, not reference/source safety or normal intake diversity.
+  const requestedCandidates =
+    Number.isInteger(candidateCount) && candidateCount > 0
+      ? Math.min(3, candidateCount)
+      : policy.candidateCount;
   const routes = assertInspirationPack(inspirationPack).slice(
     0,
-    policy.candidateCount,
+    requestedCandidates,
   );
   // OpenRouter's in-flight budget is shared across the account. Keep the
   // independent candidates, but never put more than two model stages in

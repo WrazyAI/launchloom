@@ -1049,6 +1049,9 @@ try {
         creativeSession,
         testProfile: testPolicy.profile,
         fastLane: testPolicy.fast,
+        candidateCount: args["candidate-count"]
+          ? Number(args["candidate-count"])
+          : undefined,
       }),
     projectResult: (value) => ({
       count: Array.isArray(value?.candidates) ? value.candidates.length : 0,
