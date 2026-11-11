@@ -1007,7 +1007,7 @@ function aggregateCompetitors(serps) {
       const domain = text(result.domain, 180)
         .toLocaleLowerCase()
         .replace(/^www\./u, "");
-      if (!domain) continue;
+      if (!domain || isSearchEngineRedirectHost(domain)) continue;
       if (!domains.has(domain))
         domains.set(domain, {
           domain,
