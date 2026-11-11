@@ -509,7 +509,7 @@ export async function workspaceApi(
       );
     if (suffix === "/invites") return json(await coordinator.listPage(filters));
     if (suffix === "/revisions") {
-      const repo = String(filters.repo || "");
+      const repo = String(url.searchParams.get("repo") || "");
       if (!/^WrazyAI\/[a-z0-9][a-z0-9-]{0,100}$/u.test(repo))
         return workspaceError(
           "invalid_repo",
