@@ -1440,6 +1440,33 @@ describe("contextual image generation", () => {
     },
   );
 
+  it("never exposes external template placeholders as sealed creative assets", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const site = fixture();
+    site.images = {
+      hero: "https://images.unsplash.com/photo-hero?auto=format&w=1600",
+      secondary:
+        "https://images.unsplash.com/photo-secondary?auto=format&w=1200",
+      tertiary:
+        "https://images.unsplash.com/photo-tertiary?auto=format&w=1200",
+    };
+    const routes = [1, 2].map((number) => ({
+      id: `route-external-${number}`,
+      signature: `external-placeholder-${number}`,
+    }));
+    const result = await generate({
+      site,
+      inspiration: { routes },
+      outputDir,
+      key: "",
+    });
+    for (const route of routes) {
+      expect(result.site.creativeAssets[route.id].hero).toBe("");
+      expect(result.site.creativeAssets[route.id].secondary).toBe("");
+      expect(result.site.creativeAssets[route.id].tertiary).toBe("");
+    }
+  });
+
   it("gives every placement an attempt before a rejected hero can retry", async () => {
     const outputDir = await mkdtemp(
       join(tmpdir(), "launchloom-coverage-first-"),

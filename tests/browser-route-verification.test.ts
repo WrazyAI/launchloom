@@ -77,6 +77,7 @@ async function server(
     soft404?: boolean;
     broken?: boolean;
     asset?: boolean;
+    lazyAsset?: boolean;
     fakeSuccess?: boolean;
     noForms?: boolean;
     fragmentLink?: boolean;
@@ -99,6 +100,16 @@ async function server(
     if (req.method === "POST") mutations++;
     const route = new URL(req.url!, "http://localhost").pathname;
     if (route === "/unexpected-submission") deliveries++;
+    if (route === "/lazy.png") {
+      res.setHeader("Content-Type", "image/png");
+      res.end(
+        Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/axbY4sAAAAASUVORK5CYII=",
+          "base64",
+        ),
+      );
+      return;
+    }
     if (
       ![
         "/",
@@ -161,13 +172,19 @@ async function server(
       );
       return;
     }
+    let page = options.fakeSuccess
+      ? html(route, options.broken, options.h1OutsideMain).replace(
+          "dispatchEvent(new CustomEvent('launchloom:lead-submitted'));",
+          "",
+        )
+      : html(route, options.broken, options.h1OutsideMain);
+    if (options.lazyAsset)
+      page = page.replace(
+        "</main>",
+        '<div style="height:10000px"></div><img loading="lazy" src="/lazy.png" alt="Lazy context"></main>',
+      );
     res.end(
-      (options.fakeSuccess
-        ? html(route, options.broken, options.h1OutsideMain).replace(
-            "dispatchEvent(new CustomEvent('launchloom:lead-submitted'));",
-            "",
-          )
-        : html(route, options.broken, options.h1OutsideMain)) +
+      page +
         (options.asset
           ? '<img src="/missing.webp" alt="Missing context">'
           : ""),
@@ -475,6 +492,19 @@ it("detects missing assets through browser network/loading evidence", async () =
   });
   expect(report.status).toBe("fail");
   expect(report.failures.join(" ")).toContain("asset");
+});
+
+it("loads lazy images before judging the media assertion", async () => {
+  const s = await server({ lazyAsset: true });
+  const report: any = await verifyApprovedRoutes({
+    config,
+    origin: s.origin,
+    formMode: "mocked",
+    viewports: [{ name: "mobile", width: 390, height: 844 }],
+    timeout: 1500,
+  });
+  expect(report.status).toBe("pass");
+  expect(report.failures).toEqual([]);
 });
 
 it("rejects a success message without the actual success lifecycle event", async () => {

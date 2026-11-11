@@ -561,6 +561,27 @@ export async function verifyApprovedRoutes({
               "Supported page-specific content remains visible after hydration/disclosure.",
             );
           }
+          // Lazy images below the fold have not been requested when the audit
+          // starts. Force them eager and wait for load or error so the verdict
+          // is about the asset, not about the viewport's scroll position.
+          await page
+            .locator("main img")
+            .evaluateAll(async (nodes) => {
+              await Promise.all(
+                nodes.map((node) => {
+                  node.loading = "eager";
+                  if (node.complete)
+                    return node.decode?.().catch(() => undefined);
+                  return new Promise((resolve) => {
+                    const finish = () => resolve(undefined);
+                    node.addEventListener("load", finish, { once: true });
+                    node.addEventListener("error", finish, { once: true });
+                    setTimeout(finish, 5000);
+                  });
+                }),
+              );
+            })
+            .catch(() => {});
           const images = await page.locator("main img").evaluateAll((nodes) =>
             nodes.map((node) => ({
               loaded: node.complete && node.naturalWidth > 0,

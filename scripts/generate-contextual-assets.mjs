@@ -589,6 +589,21 @@ function clientAssetPath(site, placement) {
   return slot ? site.assets?.[slot] || "" : "";
 }
 
+/**
+ * Sealed creative assets may only reference local files, inline images, or the
+ * LaunchLoom asset host. Template placeholders use external stock URLs that the
+ * authoring seal correctly rejects, so never pass those through as sealed
+ * content. A missing placement stays empty and renders as a text-led treatment.
+ */
+function sealedCreativeAsset(value) {
+  const url = String(value || "").trim();
+  if (!url) return "";
+  if (url.startsWith("/") && !url.startsWith("//")) return url;
+  if (/^data:image\/(?:png|jpeg|webp|avif);base64,/iu.test(url)) return url;
+  if (/^https:\/\/assets\.launchloom\.wrazyos\.com\//u.test(url)) return url;
+  return "";
+}
+
 function visualDirection(site) {
   const style = site.style || {};
   return [style.visualDirection, style.preference, style.tone]
@@ -1452,16 +1467,15 @@ export async function generateContextualAssets(options = {}) {
     routeManifests.push(result.manifest);
     if (!firstRouteSite) firstRouteSite = result.site;
     creativeAssets[route.id] = {
-      hero:
-        clientAssetPath(site, PLACEMENTS[0]) || result.site.images?.hero || "",
-      secondary:
-        clientAssetPath(site, PLACEMENTS[1]) ||
-        result.site.images?.secondary ||
-        "",
-      tertiary:
-        clientAssetPath(site, PLACEMENTS[2]) ||
-        result.site.images?.tertiary ||
-        "",
+      hero: sealedCreativeAsset(
+        clientAssetPath(site, PLACEMENTS[0]) || result.site.images?.hero,
+      ),
+      secondary: sealedCreativeAsset(
+        clientAssetPath(site, PLACEMENTS[1]) || result.site.images?.secondary,
+      ),
+      tertiary: sealedCreativeAsset(
+        clientAssetPath(site, PLACEMENTS[2]) || result.site.images?.tertiary,
+      ),
       familyId: result.manifest.familyId,
       routeFingerprint: result.manifest.routeFingerprint,
     };
