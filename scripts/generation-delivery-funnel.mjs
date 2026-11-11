@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const FULL_PROFILES = new Set(["full", "full-preview"]);
+const FULL_PROFILES = new Set(["full"]);
 const DEFAULT_LIMIT = 20;
 
 function hasWarnings(record) {
@@ -18,6 +18,7 @@ function hasWarnings(record) {
 function hasPreview(record) {
   return Boolean(
     record?.previewUrl ||
+      record?.siteUrl ||
       record?.previewDelivered === true ||
       record?.deliveryEvidence?.previewDelivered === true,
   );
@@ -27,7 +28,11 @@ function classifyDelivery(record) {
   if (record?.deliveryReportMissing === true) return "unknown";
   const status = record?.deliveryStatus;
   if (status === "preview_ready" || status === "published")
-    return hasWarnings(record) ? "warned" : "clean";
+    return hasPreview(record)
+      ? hasWarnings(record)
+        ? "warned"
+        : "clean"
+      : "unknown";
   if (status === "attention")
     return hasPreview(record) ? "warned" : "unknown";
   if (status === "diagnostic") return "failed";

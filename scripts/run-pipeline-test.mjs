@@ -1592,7 +1592,7 @@ export function createCloudDependencies(
         );
       const rendered = await response.text();
       if (
-        input.profile === "creative-only" &&
+        ["creative-only", "full-preview"].includes(input.profile) &&
         !rendered.includes('data-creative-host="true"')
       )
         throw new Error(
@@ -1766,6 +1766,40 @@ if (
     candidateRepository: args["candidate-repository"] || "",
   };
   validatePipelineTestInput(input);
+  try {
+    const runId = String(process.env.GITHUB_RUN_ID || "").trim();
+    const runAttempt = Number(process.env.GITHUB_RUN_ATTEMPT || 1);
+    if (
+      /^[1-9]\d{0,19}$/u.test(runId) &&
+      Number.isSafeInteger(runAttempt) &&
+      runAttempt >= 1
+    ) {
+      const observation = buildAttemptObservation({
+        repository: process.env.GITHUB_REPOSITORY || "WrazyAI/launchloom",
+        runId,
+        runAttempt,
+        requestId: null,
+        attemptId: null,
+        profile: input.profile,
+        issueNumber: Number(input.issue) || null,
+        triggeringActor: process.env.GITHUB_TRIGGERING_ACTOR || null,
+        executionStatus: "running",
+        deliveryStatus: "none",
+        observedAt: Date.now(),
+        startedAt: Date.now(),
+        completedAt: null,
+        failure: {},
+      });
+      await postAttemptTracking({ observation, events: [] });
+      console.log(`attempt_start_tracking=posted profile=${input.profile}`);
+    }
+  } catch (error) {
+    console.warn(
+      `attempt_start_tracking=skipped reason=${String(
+        error?.message || error,
+      ).slice(0, 120)}`,
+    );
+  }
   const dependencies = createCloudDependencies(input);
   const report = await runPipelineTest(input, dependencies);
   try {

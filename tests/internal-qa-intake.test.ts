@@ -123,7 +123,9 @@ describe("QA experiment preconditions", () => {
     const source = fs.readFileSync(".github/workflows/generate-client.yml", "utf8");
     expect(source).toContain("qa_repair_experiment:");
     expect(source).toContain("QA_REPAIR_EXPERIMENT:");
-    expect(source).toContain('REPAIR_ARGS=(--max-cycles 1 --qa-repair-experiment true)');
+    expect(source).toContain(
+      'REPAIR_ARGS=(--max-cycles 1 --qa-repair-experiment true --require-diversity false)',
+    );
   });
 });
 
