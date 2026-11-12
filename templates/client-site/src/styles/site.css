@@ -1240,7 +1240,10 @@ h2 {
   gap: 24px;
 }
 .faq-list summary span {
-  color: var(--brand);
+  /* The disclosure marker is a non-text graphic and needs >= 3:1. --brand is a
+     fill colour and can be a pale accent that disappears on a light card, so
+     use the text-safe brand ink role instead. */
+  color: var(--brand-ink, var(--ink, #14201d));
   font:
     400 1.6rem/1 var(--font-body, Arial, sans-serif);
 }
