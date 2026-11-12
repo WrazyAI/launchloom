@@ -30,3 +30,18 @@ describe("creative render model resolution", () => {
     ).toBe("opencode-go/deepseek-v4.1-flash");
   });
 });
+
+describe("render CLI session precedence", () => {
+  it("does not let a saved session override the pinned model", async () => {
+    const fs = await import("node:fs");
+    const source = fs.readFileSync(
+      "scripts/run-rendered-creative-repair.mjs",
+      "utf8",
+    );
+    const main = source.slice(source.indexOf("async function main()"));
+    // The CLI must forward only an explicit --model flag; resolving the
+    // session model into `model` made it outrank the environment pin.
+    expect(main).toMatch(/model:\s*args\.model,/u);
+    expect(main).not.toMatch(/model:\s*\n?\s*args\.model\s*\|\|/u);
+  });
+});

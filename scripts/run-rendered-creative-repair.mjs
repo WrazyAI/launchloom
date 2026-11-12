@@ -2825,11 +2825,10 @@ async function main() {
     candidatesDir: args.candidates || ".launchloom/generated-experiences",
     outDir: args.out || ".launchloom/creative-repair",
     mode: args.mode || "preview",
-    model:
-      args.model ||
-      creativeSession?.creativeModel ||
-      process.env.CREATIVE_EXPERIENCE_MODEL ||
-      "opencode-go/deepseek-v4.1-flash",
+    // Only an explicit --model flag is a real override. A session file is a
+    // saved artifact and may be stale: it must never outrank the pinned
+    // environment model, or a leftover gpt-6-luna session blocks the render.
+    model: args.model,
     creativeSession,
     maxCycles: args["max-cycles"] || 2,
     qaRepairExperiment: args["qa-repair-experiment"] === "true",
