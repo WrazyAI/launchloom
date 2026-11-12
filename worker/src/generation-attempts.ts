@@ -19,6 +19,7 @@ import type {
 } from "../../src/lib/admin-contracts";
 import { pageRecords } from "./admin/pagination";
 import {
+  safeClientPreviewUrl,
   safeDiagnosticPreviewUrl,
   type AttemptObservation,
 } from "../../scripts/generation-tracking-contract.mjs";
@@ -877,7 +878,7 @@ export class GenerationAttempts {
     return {
       ...attempt,
       clientId,
-      previewUrl: safeDiagnosticPreviewUrl(attempt.previewUrl),
+      previewUrl: safeClientPreviewUrl(attempt.previewUrl),
       clientName,
       costs: {
         actualUsd: costs.actual,

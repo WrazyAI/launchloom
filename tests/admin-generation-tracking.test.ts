@@ -600,3 +600,37 @@ describe("trusted attempt producer", () => {
     ).toBeNull();
   });
 });
+
+describe("client preview display", () => {
+  it("keeps a real client Pages preview instead of nulling it", () => {
+    const url =
+      "https://review-initial.launchloom-83-apex-air-conditioning-hea.pages.dev/";
+    expect(contract.safeClientPreviewUrl(url)).toBe(url);
+  });
+
+  it("still rejects non-Pages hosts, credentials, ports and paths", () => {
+    for (const bad of [
+      "https://evil.example.com/",
+      "https://user:pw@x.pages.dev/",
+      "https://x.pages.dev:8443/",
+      "https://x.pages.dev/landing",
+      "https://x.pages.dev/?q=1",
+      "http://x.pages.dev/",
+    ])
+      expect(contract.safeClientPreviewUrl(bad)).toBeNull();
+  });
+
+  it("keeps the Access proxy allowlist narrow", () => {
+    // The proxy validator must not be widened by this display fix.
+    expect(
+      contract.safeDiagnosticPreviewUrl(
+        "https://abc.launchloom-pipeline-preview.pages.dev/",
+      ),
+    ).toBeTruthy();
+    expect(
+      contract.safeDiagnosticPreviewUrl(
+        "https://review-initial.some-client.pages.dev/",
+      ),
+    ).toBeNull();
+  });
+});

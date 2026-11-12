@@ -101,6 +101,39 @@ export function safeDiagnosticPreviewUrl(value) {
     return null;
   }
 }
+/**
+ * Sanitise a delivered client preview for display and reporting.
+ *
+ * `safeDiagnosticPreviewUrl` is deliberately narrow: it gates the Cloudflare
+ * Access proxy, which may only forward its service token to the focused test
+ * project. A real client preview lives at `<project>.pages.dev`, so reusing
+ * that allowlist here silently nulled every delivered preview URL and made a
+ * delivered site look like a missing one. This accepts any Cloudflare Pages
+ * preview host while still refusing credentials, ports, queries, fragments and
+ * non-root paths.
+ */
+export function safeClientPreviewUrl(value) {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.port ||
+      url.pathname !== "/" ||
+      url.search ||
+      url.hash ||
+      !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+pages\.dev$/u.test(
+        url.hostname,
+      )
+    )
+      return null;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
 export function buildAttemptObservation(input) {
   strictKeys(input, [
     "repository",
