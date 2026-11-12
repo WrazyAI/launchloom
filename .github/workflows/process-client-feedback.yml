@@ -96,7 +96,7 @@ jobs:
           if [ -n "$PUBLICATION_BASE_SHA" ]; then
             git -C "$RUNNER_TEMP/client" merge-base --is-ancestor "$PUBLICATION_BASE_SHA" HEAD || { echo "Revision branch does not contain the published base"; exit 1; }
           fi
-          node scripts/revision-checkpoint.mjs \
+          node "$GITHUB_WORKSPACE/scripts/revision-checkpoint.mjs" \
             --action prepare \
             --repo "$RUNNER_TEMP/client" \
             --request-id "$REVISION_REQUEST_ID" \
@@ -117,7 +117,7 @@ jobs:
         if: steps.claim.outputs.run == 'true' && steps.revision.outputs.replay != 'true'
         id: preflight
         run: |
-          if ! node scripts/revision-scope.mjs preflight --client "$RUNNER_TEMP/client" --base "$(cat "$RUNNER_TEMP/client-base-sha")" > "$RUNNER_TEMP/revision-preflight.log" 2>&1; then
+          if ! node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" preflight --client "$RUNNER_TEMP/client" --base "$(cat "$RUNNER_TEMP/client-base-sha")" > "$RUNNER_TEMP/revision-preflight.log" 2>&1; then
             cat "$RUNNER_TEMP/revision-preflight.log" >&2
             printf 'Safe-write preflight failed before feedback was applied.\n' > "$RUNNER_TEMP/client-feedback.txt"
             cat "$RUNNER_TEMP/revision-preflight.log" > "$RUNNER_TEMP/revision-outcome.txt"
