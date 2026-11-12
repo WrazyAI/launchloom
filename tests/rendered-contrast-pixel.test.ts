@@ -207,3 +207,98 @@ describe("rendered pixel contrast resolution", () => {
     expect(resolvedOverlay?.issues).toContain("resolved from rendered pixels");
   }, 20000);
 });
+
+describe("focus ring band capture", () => {
+  // Measured production bug: an outset ring paints outside the border box, so
+  // an element-box screenshot never contains it. Hiding the ring then changes
+  // no pixels, and the checker scored a clearly visible ring 1.000
+  // ("indistinguishable from its rendered backdrop"). These assertions pin the
+  // geometry that makes the padded band necessary.
+  async function ringPage() {
+    const browser = await chromium.launch({ headless: true });
+    browsers.push(browser);
+    const page = await browser.newPage({
+      viewport: { width: 800, height: 400 },
+    });
+    await page.setContent(`
+      <style>
+        body { margin: 0; background: #f8f6f0; }
+        header { background: #f8f6f0; padding: 40px; }
+        header a { display: inline-block; line-height: 0; }
+        header :where(a):focus-visible {
+          outline: 2px solid #bd552d;
+          outline-offset: 3px;
+        }
+        header img { width: 48px; height: 48px; display: block; }
+      </style>
+      <header>
+        <a href="#" id="logo" aria-label="Home">
+          <img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Crect width='48' height='48' fill='%2314201d'/%3E%3C/svg%3E">
+        </a>
+      </header>
+    `);
+    return page;
+  }
+
+  const maxDelta = (a: Uint8Array, b: Uint8Array) => {
+    let worst = 0;
+    for (let index = 0; index < Math.min(a.length, b.length); index += 1)
+      worst = Math.max(worst, Math.abs(a[index] - b[index]));
+    return worst;
+  };
+
+  it("proves an outset ring is invisible to an element-box capture", async () => {
+    const page = await ringPage();
+    await page.keyboard.press("Tab");
+    const locator = page.locator("#logo");
+    const withRing = (
+      await decodeRgbaPixels(await locator.screenshot({ type: "png" }))
+    ).pixels;
+    await locator.evaluate((element) =>
+      element.setAttribute("style", "outline-color:transparent !important"),
+    );
+    const withoutRing = (
+      await decodeRgbaPixels(await locator.screenshot({ type: "png" }))
+    ).pixels;
+    // The ring contributes nothing inside the border box: the capture is blind
+    // to it, which is exactly why the old code false-reported 1.000.
+    expect(maxDelta(withRing, withoutRing)).toBe(0);
+  });
+
+  it("shows the same ring in a padded band capture", async () => {
+    const page = await ringPage();
+    await page.keyboard.press("Tab");
+    const locator = page.locator("#logo");
+    const rect = await locator.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return {
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        pad:
+          (parseFloat(style.outlineOffset) || 0) +
+          (parseFloat(style.outlineWidth) || 0) +
+          5,
+      };
+    });
+    const clip = {
+      x: rect.x - rect.pad,
+      y: rect.y - rect.pad,
+      width: rect.width + rect.pad * 2,
+      height: rect.height + rect.pad * 2,
+    };
+    const withRing = (
+      await decodeRgbaPixels(await page.screenshot({ type: "png", clip }))
+    ).pixels;
+    await locator.evaluate((element) =>
+      element.setAttribute("style", "outline-color:transparent !important"),
+    );
+    const withoutRing = (
+      await decodeRgbaPixels(await page.screenshot({ type: "png", clip }))
+    ).pixels;
+    // The padded band does contain the ring, so hiding it is detectable.
+    expect(maxDelta(withRing, withoutRing)).toBeGreaterThan(50);
+  });
+});
