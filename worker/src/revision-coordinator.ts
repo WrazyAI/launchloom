@@ -1223,6 +1223,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
                 baseSha: row.base_sha,
                 originalStage: row.stage,
                 reviewedSha: row.reviewed_sha,
+                publicationId: row.publication_id,
               }
             : {}),
         },
