@@ -123,3 +123,17 @@ it("keeps the client revision branch alias a valid DNS label", async () => {
     expect(candidate).toMatch(/^[a-z0-9-]+$/u);
   }
 });
+
+it("uses the deployment URL Cloudflare reports, not a guessed branch alias", async () => {
+  const source = await fs.readFile(
+    ".github/workflows/process-client-feedback.yml",
+    "utf8",
+  );
+  const deploy = source.slice(source.indexOf("npx wrangler pages deploy dist"));
+  // Cloudflare truncates branch aliases to 28 characters, so a full-name
+  // alias can 404 forever even after a successful deploy.
+  expect(deploy).toContain("tee \"$DEPLOY_LOG\"");
+  expect(deploy).toContain("DEPLOY_URL=$(grep -Eo");
+  expect(deploy).toContain('echo "preview=$DEPLOY_URL"');
+  expect(deploy).not.toContain('echo "preview=https://$BRANCH_SAFE');
+});
