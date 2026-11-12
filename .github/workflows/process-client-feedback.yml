@@ -212,10 +212,16 @@ jobs:
             node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$RUNNER_TEMP/client" --manifest "$RUNNER_TEMP/revision-scope.json"
           fi
           BRANCH_SAFE=$(printf '%s' "$REVISION_BRANCH" | tr '/' '-')
-          npx wrangler pages deploy dist --project-name "$PROJECT" --branch "$BRANCH_SAFE" --commit-hash "$(git rev-parse HEAD)" --commit-message "Client feedback developer preview"
+          DEPLOY_LOG=$(mktemp)
+          npx wrangler pages deploy dist --project-name "$PROJECT" --branch "$BRANCH_SAFE" --commit-hash "$(git rev-parse HEAD)" --commit-message "Client feedback developer preview" 2>&1 | tee "$DEPLOY_LOG"
+          # Cloudflare truncates branch aliases to 28 characters and may not
+          # publish one at all, so the deployment URL is the only origin we
+          # can prove exists. Use it for readiness, the review token and email.
+          DEPLOY_URL=$(grep -Eo 'https://[a-z0-9-]+\.'$PROJECT'\.pages\.dev' "$DEPLOY_LOG" | tail -1)
+          test -n "$DEPLOY_URL" || { echo "Cloudflare did not report a deployment URL" >&2; exit 1; }
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "project=$PROJECT" >> "$GITHUB_OUTPUT"
-          echo "preview=https://$BRANCH_SAFE.$PROJECT.pages.dev" >> "$GITHUB_OUTPUT"
+          echo "preview=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Send the revised preview to the developer
         id: review_delivery
