@@ -76,6 +76,9 @@ function siteCopyProvider() {
 // computed from the published Go price table.
 const SITE_COPY_GO_MAX_ATTEMPTS = 3;
 const SITE_COPY_GO_RETRY_DELAY_MS = 2_000;
+// A rate limit needs real recovery time. Retrying after 2s and 4s burned all
+// three attempts during a provider throttle and failed the whole intake.
+const SITE_COPY_GO_RATE_LIMIT_DELAY_MS = 30_000;
 const TRANSIENT_SITE_COPY_ERROR_CODES = new Set([
   "transport",
   "rate-limit",
@@ -84,14 +87,18 @@ const TRANSIENT_SITE_COPY_ERROR_CODES = new Set([
   "provider-error",
 ]);
 
-function siteCopyRetryDelayMs(attempt) {
+function siteCopyRetryDelayMs(attempt, errorCode = "") {
   const configured = Number(
     process.env.SITE_COPY_GO_RETRY_DELAY_MS ?? SITE_COPY_GO_RETRY_DELAY_MS,
   );
   const base = Number.isFinite(configured)
     ? Math.max(0, configured)
     : SITE_COPY_GO_RETRY_DELAY_MS;
-  return base * attempt;
+  // Back off exponentially, and give a throttle the longer floor it needs.
+  const backoff = base * 2 ** (attempt - 1);
+  return errorCode === "rate-limit"
+    ? Math.max(backoff, SITE_COPY_GO_RATE_LIMIT_DELAY_MS * attempt)
+    : backoff;
 }
 
 async function siteCopyOpencodeGoCompletion({
@@ -134,7 +141,7 @@ async function siteCopyOpencodeGoCompletion({
       result?.status === "error" &&
       TRANSIENT_SITE_COPY_ERROR_CODES.has(errorCode);
     if (!transient || attempt === SITE_COPY_GO_MAX_ATTEMPTS) break;
-    const delayMs = siteCopyRetryDelayMs(attempt);
+    const delayMs = siteCopyRetryDelayMs(attempt, errorCode);
     console.warn(
       `site_copy_go_retry label=${label} code=${errorCode} http_status=${result?.error?.httpStatus ?? "none"} attempt=${attempt}/${SITE_COPY_GO_MAX_ATTEMPTS} retry_in_ms=${delayMs}`,
     );

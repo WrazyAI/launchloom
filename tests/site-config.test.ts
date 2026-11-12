@@ -3048,3 +3048,15 @@ describe("unsupported differentiator sanitisation", () => {
     ]);
   });
 });
+
+describe("site-copy rate-limit backoff", () => {
+  it("gives a throttle real recovery time instead of 2s and 4s", async () => {
+    const fs = await import("node:fs");
+    const source = fs.readFileSync("scripts/generate-site-config.mjs", "utf8");
+    // The retry helper must treat rate limits specially; a 2s/4s ladder burned
+    // all three attempts during a provider throttle and failed the intake.
+    expect(source).toContain("SITE_COPY_GO_RATE_LIMIT_DELAY_MS");
+    expect(source).toMatch(/errorCode === "rate-limit"/u);
+    expect(source).toMatch(/siteCopyRetryDelayMs\(attempt, errorCode\)/u);
+  });
+});
