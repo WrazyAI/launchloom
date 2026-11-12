@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-11T23:49:20.930Z",
+  "updatedAt": "2026-11-12T17:29:02.400Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -1263,6 +1263,42 @@
         "small white service navigation with a gold estimate action|a coastal-house image carries a navy overlay, stacked gold-and-white statement, |service list for interior, exterior, cabinetry, and wood staining followed by pr|large modern sans statements, small uppercase labels, and compact practical copy|coastal-home and form hero -> navy business introduction -> three audience cards|residential project photography with a few before-and-after work scenes",
         "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
       ]
+    },
+    {
+      "id": "2026-11-12-apex-air-conditioning-heating-attempt-83-run-43268593738-attempt-1",
+      "launchedAt": "2026-11-12T17:29:02.397Z",
+      "stage": "attempt",
+      "reservationKey": "83-run-43268593738-attempt-1",
+      "businessName": "Apex Air Conditioning & Heating",
+      "businessKind": "hvac",
+      "recipe": "local-trades",
+      "packId": "results-ledger",
+      "variantId": "standard",
+      "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "archive-rail",
+        "hvac-equipment-montage-opening",
+        "hvac-local-aerial-hero",
+        "hvac-mountain-photo-plus-diagnostic-promise",
+        "typographic-poster",
+        "utility-diagnostic"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "object-product-stage"
+      ],
+      "referenceIds": [
+        "web-hvac-alamo-austin-air",
+        "web-hvac-russell-comfort",
+        "web-hvac-trg-heating-cooling"
+      ],
+      "routeSignatures": [
+        "Narrow local address/phone strip, simple home-gallery-services-contact links and|A bright product-equipment composition and centered booking action lead into a b|Use two compact columns of verified heating, cooling, ventilation and maintenanc|All-caps aqua headings, compact dark body copy and utilitarian plain service lis|equipment-led opening -> local company introduction -> service index -> area ind|Equipment montage opens; community mark strip, review overlay and city skyline c",
+        "Small company mark, phone number and practical service/product links share the d|An aerial Austin bridge photograph supports a centered white condensed service p|Lead with heating, cooling, maintenance and air quality as distinct confirmed se|Tall condensed uppercase display for section headings, short sans support copy a|local photo hero and service quartet -> crew introduction split -> customer proo|Local aerial imagery, technician group portrait, customer home scenes and a mapp",
+        "Thin utility bar and straightforward heating, cooling and service links above th|A Colorado mountain image under deep navy frames a large white repair promise, r|Explain repair, installation and maintenance separately, followed by a realistic|Heavy readable sans statements, compact explanatory cards and clear red action l|mountain repair hero -> service taxonomy -> diagnosis promise band -> post-servi|Mountain and Denver location scenes are sparse; most of the long page is text, p"
+      ]
     }
   ],
   "launchesByBusinessKind": {
@@ -1296,6 +1332,42 @@
           "Blue service link line and a bright quote control above the hero, with contact r|A suburban-home photo carries the firm introduction while a conspicuous three-pa|Use a heating/cooling/air-quality/ductless service grid only for services the cl|Direct sans headings in saturated blue, slim body paragraphs and red underline/C|house-photo opening -> phone-and-quote ribbon -> service two-by-two image grid -|Technician action photos form a two-by-two service grid; family/team, financing,",
           "Small company mark, phone number and practical service/product links share the d|An aerial Austin bridge photograph supports a centered white condensed service p|Lead with heating, cooling, maintenance and air quality as distinct confirmed se|Tall condensed uppercase display for section headings, short sans support copy a|local photo hero and service quartet -> crew introduction split -> customer proo|Local aerial imagery, technician group portrait, customer home scenes and a mapp",
           "Thin service-area utility line, white brand row, service links, call number and |A dark technician-at-condenser photograph supports a left-aligned plainspoken re|Start with what the system is doing, route to confirmed AC/heating/maintenance s|Large friendly sans headlines, compact status labels and concise visitor-centere|technician hero -> symptom-choice cards -> service photograph grid -> diagnosis |Authentic technician scenes fill a service photo grid, while a simple circular m"
+        ]
+      },
+      {
+        "id": "2026-11-12-apex-air-conditioning-heating-attempt-83-run-43268593738-attempt-1",
+        "launchedAt": "2026-11-12T17:29:02.397Z",
+        "stage": "attempt",
+        "reservationKey": "83-run-43268593738-attempt-1",
+        "businessName": "Apex Air Conditioning & Heating",
+        "businessKind": "hvac",
+        "recipe": "local-trades",
+        "packId": "results-ledger",
+        "variantId": "standard",
+        "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "archive-rail",
+          "hvac-equipment-montage-opening",
+          "hvac-local-aerial-hero",
+          "hvac-mountain-photo-plus-diagnostic-promise",
+          "typographic-poster",
+          "utility-diagnostic"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "object-product-stage"
+        ],
+        "referenceIds": [
+          "web-hvac-alamo-austin-air",
+          "web-hvac-russell-comfort",
+          "web-hvac-trg-heating-cooling"
+        ],
+        "routeSignatures": [
+          "Narrow local address/phone strip, simple home-gallery-services-contact links and|A bright product-equipment composition and centered booking action lead into a b|Use two compact columns of verified heating, cooling, ventilation and maintenanc|All-caps aqua headings, compact dark body copy and utilitarian plain service lis|equipment-led opening -> local company introduction -> service index -> area ind|Equipment montage opens; community mark strip, review overlay and city skyline c",
+          "Small company mark, phone number and practical service/product links share the d|An aerial Austin bridge photograph supports a centered white condensed service p|Lead with heating, cooling, maintenance and air quality as distinct confirmed se|Tall condensed uppercase display for section headings, short sans support copy a|local photo hero and service quartet -> crew introduction split -> customer proo|Local aerial imagery, technician group portrait, customer home scenes and a mapp",
+          "Thin utility bar and straightforward heating, cooling and service links above th|A Colorado mountain image under deep navy frames a large white repair promise, r|Explain repair, installation and maintenance separately, followed by a realistic|Heavy readable sans statements, compact explanatory cards and clear red action l|mountain repair hero -> service taxonomy -> diagnosis promise band -> post-servi|Mountain and Denver location scenes are sparse; most of the long page is text, p"
         ]
       }
     ],
