@@ -195,7 +195,17 @@ export function resolvePalette(input = {}) {
   const palette = {
     primaryColor,
     contrastColor: readableOn(primaryColor),
-    brandTextColor: readableAccent(primaryColor, surfaceColor, inkColor),
+    // Brand-coloured text lands on the page canvas and on the light pack
+    // bands (#f7f5ee is one of them). Proving it only against the page surface
+    // left 4.474:1 on that band, so prove it against the darkest band it can
+    // paint on. A dark page keeps the page-surface pairing.
+    brandTextColor:
+      readableOn(surfaceColor) === "#000000"
+        ? ensureContrast(
+            readableAccent(primaryColor, surfaceColor, inkColor),
+            darkestLightBand,
+          )
+        : readableAccent(primaryColor, surfaceColor, inkColor),
     brandSurfaceColor: brandSurface.color,
     brandSurfaceTextColor: brandSurface.foreground,
     surfaceColor,

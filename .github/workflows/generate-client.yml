@@ -1046,8 +1046,13 @@ jobs:
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
           SESSION_ARGS=()
-          if [ -f "$PWD/.launchloom/reasoning-preflight.json" ]; then
-            SESSION_ARGS=(--session "$PWD/.launchloom/reasoning-preflight.json")
+          # Only the session this run produced is authoritative. A committed
+          # .launchloom/reasoning-preflight.json survives across runs in the
+          # client repo, so reading it here let an October gpt-6-luna session
+          # override the pinned DeepSeek model and fail the render before it
+          # started. The author step already reads /tmp for the same reason.
+          if [ -f /tmp/reasoning-preflight.json ]; then
+            SESSION_ARGS=(--session /tmp/reasoning-preflight.json)
           fi
           REPAIR_ARGS=(--max-cycles 1 --require-diversity false)
           if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then

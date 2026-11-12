@@ -228,7 +228,11 @@ describe("experience-pack compiler", () => {
       "TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY || secrets.JEV_API_KEY }}",
     );
     expect(workflow).toContain("--session /tmp/reasoning-preflight.json");
-    expect(workflow).toContain(
+    // The repair step must read only the session this run produced. A committed
+    // .launchloom/reasoning-preflight.json survives across runs in the client
+    // repo, and reading it let a stale gpt-6-luna session override the pinned
+    // DeepSeek model, failing the render before it started.
+    expect(workflow).not.toContain(
       '--session "$PWD/.launchloom/reasoning-preflight.json"',
     );
     expect(workflow).toContain(
