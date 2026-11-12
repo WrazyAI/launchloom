@@ -65,8 +65,14 @@ jobs:
             PR=$(printf '%s' "$OPEN" | jq -r .number)
             BRANCH=$(printf '%s' "$OPEN" | jq -r .headRefName)
           else
-            SAFE_REQUEST=$(printf '%s' "$REVISION_REQUEST_ID" | tr -cd '[:alnum:]_-' | cut -c1-24)
+            # Trimming a UUID can leave a trailing hyphen, and a Cloudflare
+            # Pages branch alias is also a DNS label: it must not start or end
+            # with a hyphen. Strip edges after the trim, then re-check.
+            SAFE_REQUEST=$(printf '%s' "$REVISION_REQUEST_ID" | tr -cd '[:alnum:]_-' | cut -c1-24 | sed -e 's/^-*//' -e 's/-*$//')
             test -n "$SAFE_REQUEST" || SAFE_REQUEST="${GITHUB_RUN_ID}"
+            case "$SAFE_REQUEST" in
+              *[!a-z0-9-]*|"") echo "Unsafe revision branch token" >&2; exit 1 ;;
+            esac
             BRANCH="review/client-revision-$SAFE_REQUEST"
             gh label create launchloom-client-revision --repo "$CLIENT_REPO" --color 1D76DB --description "LaunchLoom client revision awaiting developer approval" --force
             git clone "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"

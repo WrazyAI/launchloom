@@ -165,6 +165,11 @@ function exactTextReplacement(config, note) {
   }
   for (const [index, value] of (config.differentiators || []).entries())
     if (typeof value === "string") targets.push({ owner: config.differentiators, key: index, path: `differentiators[${index}]` });
+  // Primary action and story fields are rendered copy too. A client who
+  // quotes the button label must reach the same verified fragment path as
+  // any other sentence, and the single-match rule still guards ambiguity.
+  for (const key of ["primaryCta", "tagline", "offer"])
+    add(config.business, key, `business.${key}`);
   const matches = targets.filter(({ owner, key }) => owner[key].includes(oldValue));
   if (matches.length !== 1) return null;
   const target = matches[0];
