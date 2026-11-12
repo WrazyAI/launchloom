@@ -100,3 +100,26 @@ it("uses the intake feedback issue id instead of a nonexistent revision-step out
   );
   expect(reviewDelivery).toContain('--feedback-issue "$FEEDBACK_ISSUE"');
 });
+
+it("keeps the client revision branch alias a valid DNS label", async () => {
+  const source = await fs.readFile(
+    ".github/workflows/process-client-feedback.yml",
+    "utf8",
+  );
+  // Cloudflare Pages exposes each branch as a DNS label. A UUID trimmed to a
+  // fixed width can end in a hyphen, which no alias can ever serve.
+  const token = source.slice(
+    source.indexOf("SAFE_REQUEST=$(printf"),
+    source.indexOf('BRANCH="review/client-revision-'),
+  );
+  expect(token).toContain("-e 's/-*$//'");
+  expect(token).toContain("*[!a-z0-9-]*");
+  const candidates = [
+    "2428ef16-47a7-4fea-8fe4-f00d8b86e3db",
+    "9e791a55-b550-4f69-9398-49cfe804f284",
+  ].map((id) => id.replace(/[^a-z0-9_-]/gu, "").slice(0, 24).replace(/^-*/u, "").replace(/-*$/u, ""));
+  for (const candidate of candidates) {
+    expect(candidate).not.toMatch(/^-|-$/u);
+    expect(candidate).toMatch(/^[a-z0-9-]+$/u);
+  }
+});
