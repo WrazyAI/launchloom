@@ -1486,6 +1486,10 @@ jobs:
           if [ "${{ steps.creative_recovery.outputs.repair_available }}" = "true" ]; then STATUS=attention; fi
           if [ "${{ steps.deploy.outputs.diagnostic }}" = "true" ]; then STATUS=attention; fi
           if [ "${{ steps.deploy.outputs.creative_decision }}" = "warned" ]; then STATUS=attention; fi
+          # A requested creative render that silently fell back to a pack is a
+          # warned delivery, not a clean one. Without this the funnel counted a
+          # failed creative run as clean purely because a preview still shipped.
+          if [ -n "$RENDERER_FALLBACK_REASON" ]; then STATUS=attention; fi
           node scripts/generation-cost-summary.mjs \
             --seo /tmp/seo-research.json \
             --site-config-usage /tmp/site-config-usage.json \
