@@ -1,0 +1,42 @@
+name: Revision queue operator
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: Client repository
+        required: true
+      request_id:
+        description: Revision request id
+        required: true
+      action:
+        description: Coordinator action
+        required: true
+        type: choice
+        options: [dismiss, resume]
+      reason:
+        description: Resolution note
+        required: false
+        default: Superseded by a successful revision.
+
+permissions:
+  contents: read
+
+jobs:
+  operate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Apply coordinator action
+        env:
+          REVISION_QUEUE_ACTION: ${{ inputs.action }}
+          CLIENT_REPO: ${{ inputs.repo }}
+          REVISION_REQUEST_ID: ${{ inputs.request_id }}
+          REVISION_FAILURE_REASON: ${{ inputs.reason }}
+          REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
+          LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+        run: node scripts/revision-queue-client.mjs
