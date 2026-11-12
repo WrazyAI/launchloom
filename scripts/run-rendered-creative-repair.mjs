@@ -1268,6 +1268,24 @@ function safeRepairRejectionMessage(error) {
     .slice(0, 800);
 }
 
+export function resolveCodeAuthoringModel({
+  requested = "",
+  sessionModel = "",
+  envModel = process.env.CREATIVE_EXPERIENCE_MODEL || "",
+} = {}) {
+  if (sessionModel && envModel && sessionModel !== envModel) {
+    console.warn(
+      `creative_session_model_ignored session=${sessionModel} using=${envModel}`,
+    );
+  }
+  return (
+    requested ||
+    envModel ||
+    sessionModel ||
+    "opencode-go/deepseek-v4.1-flash"
+  );
+}
+
 /**
  * Render -> judge -> repair -> rerender orchestration for authored candidates.
  * Pixel-level reference fidelity and rendered diversity remain owned by
@@ -1315,11 +1333,11 @@ export async function runRenderedCreativeRepair({
   repairCandidateImpl = defaultRepairCandidate,
   promoteImpl = promoteCreativeCandidate,
 } = {}) {
-  const resolvedModel =
-    model ||
-    creativeSession?.creativeModel ||
-    process.env.CREATIVE_EXPERIENCE_MODEL ||
-    "opencode-go/deepseek-v4.1-flash";
+  const resolvedModel = resolveCodeAuthoringModel({
+    requested: model,
+    sessionModel: creativeSession?.creativeModel,
+    envModel: process.env.CREATIVE_EXPERIENCE_MODEL,
+  });
   assertCodeAuthoringModel(resolvedModel, { provider: creativeLaneProvider() });
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
