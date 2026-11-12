@@ -1217,10 +1217,8 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           repo: row.repo,
           pr: row.pr,
           feedbackIssue: row.feedback_issue,
-          siteId: row.site_id,
-          clientEmail: row.client_email,
           reviewedPage: row.reviewed_page,
-          ...(row.base_sha ? {baseSha:row.base_sha,originalStage:row.stage,reviewedSha:row.reviewed_sha,publicationId:row.publication_id} : {}),
+          ...(row.base_sha ? { baseSha: row.base_sha, originalStage: row.stage } : {}),
         },
       }),
     });
