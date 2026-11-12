@@ -2203,7 +2203,9 @@ function validateAuthoredUrlAttributes(source, route, content) {
       if (attributeName === "src" && tag === "img") {
         if (!isSealedImageExpression(expression, file))
           throw new Error(
-            `Candidate ${route.id} image source must use a sealed image content token.`,
+            `Candidate ${route.id} image source must use a sealed image content token (received ${
+              expression ? expressionPath(expression, file).slice(0, 120) : "no expression"
+            }).`,
           );
         const value = resolvedImageValue(property, content);
         const imagePath = expressionPath(expression, file);
