@@ -43,7 +43,10 @@ import {
   selectExperiencePackId,
   selectExperienceVariantId,
 } from "../templates/client-site/src/lib/experience-pack.ts";
-import { findUnsupportedBusinessClaimLocations } from "./business-copy-claims.mjs";
+import {
+  findUnsupportedBusinessClaimLocations,
+  findUnsupportedBusinessClaimMatches,
+} from "./business-copy-claims.mjs";
 
 // Bounded per-process usage evidence so the generation workflow can report
 // provider cost without parsing runner logs. Never changes the generated
@@ -420,6 +423,22 @@ function copywriterContext(intake = {}) {
       customerQuestions: [...new Set(customerQuestions)],
     },
   };
+}
+
+/**
+ * Remove optional marketing bullets that assert an unsupported business claim.
+ *
+ * A differentiator is optional supporting copy: dropping one that invents
+ * licensing, insurance, a warranty or availability removes the fabricated claim
+ * without discarding an otherwise deliverable site. Required copy (hero body,
+ * service descriptions, FAQs) is still validated and fails closed.
+ */
+function withoutUnsupportedDifferentiators(differentiators, intake = {}) {
+  return (Array.isArray(differentiators) ? differentiators : []).filter(
+    (entry) =>
+      typeof entry !== "string" ||
+      findUnsupportedBusinessClaimMatches(entry, intake).length === 0,
+  );
 }
 
 function copyRefinementDraft(draft = {}) {
@@ -3056,7 +3075,12 @@ export function normalise(candidate, intake) {
         : {}),
     },
     services: services.length ? services : base.services,
-    differentiators: different.length ? different : base.differentiators,
+    // Optional marketing bullets: drop any that assert an unsupported claim
+    // rather than failing the whole site on invented credentials or warranty.
+    differentiators: withoutUnsupportedDifferentiators(
+      different.length ? different : base.differentiators,
+      intake,
+    ),
     blogArticles: normaliseBlogArticles(intake.blogArticles),
     locations:
       base.industry === "home-services"

@@ -3007,3 +3007,44 @@ describe("narrative spine", () => {
     expect(audit.warnings.join(" ")).toContain("may not answer");
   });
 });
+
+describe("unsupported differentiator sanitisation", () => {
+  const intake = {
+    businessName: "Apex Air Conditioning & Heating",
+    services: ["AC Repair", "Heat Pump Installation"],
+  };
+  const candidate = {
+    differentiators: [
+      "Licensed and insured technicians on every visit.",
+      "Backed by a lifetime warranty on all repairs.",
+      "Clear arrival windows confirmed when you book.",
+    ],
+  };
+
+  it("drops invented credentials and guarantees instead of failing the site", () => {
+    const config = normalise(candidate, intake);
+    expect(config.differentiators).toEqual([
+      "Clear arrival windows confirmed when you book.",
+    ]);
+  });
+
+  it("keeps a credential the client actually supplied", () => {
+    const config = normalise(
+      { differentiators: ["Licensed and insured technicians."] },
+      { ...intake, credentials: "Licensed and insured technicians" },
+    );
+    expect(config.differentiators).toEqual([
+      "Licensed and insured technicians.",
+    ]);
+  });
+
+  it("leaves an intake with no claims untouched", () => {
+    const config = normalise(
+      { differentiators: ["Clear arrival windows confirmed when you book."] },
+      intake,
+    );
+    expect(config.differentiators).toEqual([
+      "Clear arrival windows confirmed when you book.",
+    ]);
+  });
+});
