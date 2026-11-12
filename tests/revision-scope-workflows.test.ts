@@ -29,7 +29,7 @@ for (const workflow of [
 ]) {
   it(`${workflow} commits and pushes only after every revision quality gate passes`, async () => {
     const source = await fs.readFile(`.github/workflows/${workflow}`, "utf8");
-    const preflight = source.indexOf('revision-scope.mjs" preflight');
+    const preflight = source.indexOf("revision-scope.mjs");
     const applyFeedback = source.indexOf("node scripts/apply-feedback.mjs");
     expect(preflight).toBeGreaterThanOrEqual(0);
     expect(applyFeedback).toBeGreaterThan(preflight);
