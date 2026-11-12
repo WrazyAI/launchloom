@@ -77,6 +77,11 @@ const claimRules = [
     pattern:
       /\b(?:24\s*\/\s*7|same[- ]day|emergency\s+(?:service|repair|response)|within\s+\d+\s+(?:minutes?|hours?|days?)|respond\s+(?:within|in)\s+\d+\s+(?:minutes?|hours?)|available\s+(?:today|now)|open\s+(?:now|24\s*\/\s*7))\b/giu,
     fields: ["availability", "responseTime", "emergencyAvailability", "hours"],
+    // A service the client submitted under this exact name is a client-stated
+    // fact, so its own wording may be reused. Without this, a submitted
+    // "24/7 Rapid Emergency AC Repair" name made every faithful FAQ question
+    // about that service look like an invented availability promise.
+    submittedServiceNames: true,
   },
   {
     category: "outcomes",
@@ -125,6 +130,20 @@ function isCautiousInquiry(text, index) {
 
 function evidenceFor(intake, fields) {
   return fields.flatMap((field) => textValues(getPath(intake, field)));
+}
+
+/**
+ * Service names the client submitted, in either intake spelling. A business
+ * that submits "24/7 Rapid Emergency AC Repair" has stated that fact itself;
+ * copy may reuse that wording without being treated as an invented promise.
+ */
+function submittedServiceNames(intake) {
+  return [
+    ...textValues(getPath(intake, "confirmedServices")),
+    ...textValues(getPath(intake, "services")),
+  ]
+    .map((value) => normalize(value))
+    .filter(Boolean);
 }
 
 function containsWholePhrase(text, phrase) {
@@ -245,8 +264,37 @@ function hasStreetAddress(value) {
   );
 }
 
+/**
+ * Numeric and always-on availability facts a client states directly. These are
+ * unambiguous: "24/7" and "same-day" mean the same thing wherever they appear,
+ * so a client who submitted the service name has stated that fact itself.
+ */
+const EMERGENCY_CARE =
+  /\bemergency\b[^.!?;\n]{0,20}\b(?:service|repair|response|call[- ]?out)\b/u;
+
+function statedAvailabilityFacts(intake, evidence = []) {
+  const facts = new Set();
+  for (const value of [...submittedServiceNames(intake), ...evidence]) {
+    if (/\b24\s*\/\s*7\b/u.test(value)) facts.add("always-on");
+    if (/\bsame[- ]day\b/u.test(value)) facts.add("same-day");
+    if (EMERGENCY_CARE.test(value)) facts.add("emergency");
+  }
+  return facts;
+}
+
+function availabilityClaimFact(claim) {
+  if (/\b24\s*\/\s*7\b/u.test(claim)) return "always-on";
+  if (/\bsame[- ]day\b/u.test(claim)) return "same-day";
+  if (EMERGENCY_CARE.test(claim)) return "emergency";
+  return "";
+}
+
 function supportedByEvidence(rule, match, intake, text) {
   const evidence = evidenceFor(intake, rule.fields).map(normalize);
+  // Fall back to the client's own submitted service names for rules that allow
+  // reusing client-stated wording.
+  if (rule.submittedServiceNames)
+    evidence.push(...submittedServiceNames(intake));
   if (rule.category === "physical location") {
     if (
       intake.addressVisibility === "private" ||
@@ -265,6 +313,11 @@ function supportedByEvidence(rule, match, intake, text) {
     );
   }
   const claim = normalize(match[0]);
+  if (rule.category === "availability") {
+    const fact = availabilityClaimFact(claim);
+    if (fact && statedAvailabilityFacts(intake, evidence).has(fact))
+      return true;
+  }
   if (rule.category === "experience")
     return supportsStructuredExperience(match, evidence);
   if (rule.category === "guarantees")

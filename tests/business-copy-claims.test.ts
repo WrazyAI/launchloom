@@ -155,4 +155,60 @@ describe("auditUnsupportedBusinessClaims", () => {
       ),
     ).toContain("guarantees");
   });
+
+  it("accepts availability wording the client submitted as a service name", () => {
+    const intake = {
+      businessName: "Apex Air Conditioning & Heating",
+      services: ["24/7 Rapid Emergency AC Repair & Diagnostics"],
+    };
+    const config = {
+      pageContent: {
+        service: {
+          "24/7 Rapid Emergency AC Repair & Diagnostics": {
+            faqs: [
+              { question: "Do you offer 24/7 emergency AC repair?", answer: "Contact us to confirm the next step." },
+              { question: "Is 24/7 emergency service available on weekends?", answer: "Contact us to confirm coverage." },
+            ],
+          },
+        },
+      },
+    };
+    expect(auditUnsupportedBusinessClaims(config, intake)).toEqual([]);
+  });
+
+  it("accepts a submitted service name supplied as confirmedServices", () => {
+    expect(
+      auditUnsupportedBusinessClaims(
+        { copy: { servicesIntro: "Same-day repairs are available." } },
+        { confirmedServices: ["Same-day repairs"] },
+      ),
+    ).toEqual([]);
+  });
+
+  it("still blocks availability the client never claimed", () => {
+    expect(
+      auditUnsupportedBusinessClaims(
+        { copy: { servicesIntro: "24/7 emergency service is available." } },
+        { services: ["AC Repair"] },
+      ),
+    ).toContain("availability");
+  });
+
+  it("does not let a submitted service name excuse a different claim", () => {
+    expect(
+      auditUnsupportedBusinessClaims(
+        {
+          pageContent: {
+            service: {
+              "24/7 Rapid Emergency AC Repair": {
+                faqs: [{ question: "Is same-day service included?", answer: "Contact us." }],
+              },
+            },
+          },
+        },
+        { services: ["24/7 Rapid Emergency AC Repair"] },
+      ),
+    ).toContain("availability");
+  });
 });
+
