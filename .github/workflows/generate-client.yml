@@ -919,7 +919,7 @@ jobs:
           PACK_ID="${RENDERER_PACK_ID:-$PACK_ID}"
           PACK_VARIANT="${RENDERER_PACK_VARIANT:-$PACK_VARIANT}"
           jq --arg pack "$PACK_ID" --arg variant "$PACK_VARIANT" \
-            '.design.experience = ({packId:$pack, selectionMode:"pack-preview"} + (if $variant != "" then {variantId:$variant} else {} end))' \
+            '.design.experience = ({packId:$pack, blueprintVersion:2, selectionMode:"pack-preview"} + (if $variant != "" then {variantId:$variant} else {} end))' \
             src/site.config.json > /tmp/site.config.pack.json
           mv /tmp/site.config.pack.json src/site.config.json
           git add src/site.config.json

@@ -323,6 +323,7 @@ describe("generation workflow pack renderer", () => {
     const select = step("Select experience pack");
     expect(select.if).toBe("env.GENERATION_RENDERER == 'pack'");
     expect(select.run).toContain("selectionMode:\"pack-preview\"");
+    expect(select.run).toContain("blueprintVersion:2");
     expect(select.run).toContain("Select experience pack $PACK_ID");
     expect(step("Record pack select stage").if).toBe(
       "env.GENERATION_RENDERER == 'pack'",
