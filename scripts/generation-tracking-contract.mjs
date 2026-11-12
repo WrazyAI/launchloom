@@ -168,12 +168,21 @@ export function buildAttemptObservation(input) {
   if (!deliveries.includes(input.deliveryStatus)) fail("delivery_status");
   let previewUrl = null;
   if (input.previewUrl != null) {
-    if (
-      input.deliveryStatus !== "diagnostic" ||
-      !["creative-only", "seo-only", "full-preview"].includes(input.profile)
-    )
-      fail("preview_delivery");
-    previewUrl = safeDiagnosticPreviewUrl(input.previewUrl);
+    // A delivered preview may be a real client site, not only a focused
+    // diagnostic. Recording one used to be impossible for a full-profile
+    // delivery, so a delivered site was stored with no URL and counted as
+    // unknown. Any delivery that actually delivered a preview may record it;
+    // a "none" delivery may not.
+    const focused = ["creative-only", "seo-only", "full-preview"].includes(
+      input.profile,
+    );
+    const delivered = ["diagnostic", "attention", "preview_ready", "published"];
+    if (!delivered.includes(input.deliveryStatus)) fail("preview_delivery");
+    // Focused previews stay bound to the Access-proxied test project; a real
+    // client preview is any Pages host.
+    previewUrl = focused
+      ? safeDiagnosticPreviewUrl(input.previewUrl)
+      : safeClientPreviewUrl(input.previewUrl);
     if (!previewUrl) fail("preview_url");
   }
   const source = input.source ?? "callback";

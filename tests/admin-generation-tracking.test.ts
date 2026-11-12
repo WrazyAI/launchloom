@@ -634,3 +634,50 @@ describe("client preview display", () => {
     ).toBeNull();
   });
 });
+
+describe("full-profile preview recording", () => {
+  const base = {
+    repository: "WrazyAI/launchloom",
+    runId: "1",
+    runAttempt: 1,
+    requestId: null,
+    attemptId: "a",
+    profile: "full",
+    issueNumber: 83,
+    triggeringActor: null,
+    executionStatus: "succeeded",
+    observedAt: Date.now(),
+  };
+
+  it("records a real client preview on a delivered full-profile attempt", () => {
+    const url = "https://review-initial.launchloom-83-apex.pages.dev/";
+    for (const deliveryStatus of ["preview_ready", "attention", "published"])
+      expect(
+        contract.buildAttemptObservation({
+          ...base,
+          deliveryStatus,
+          previewUrl: url,
+        }).previewUrl,
+      ).toBe(url);
+  });
+
+  it("refuses a preview URL on an undelivered attempt", () => {
+    expect(() =>
+      contract.buildAttemptObservation({
+        ...base,
+        deliveryStatus: "none",
+        previewUrl: "https://review-initial.x.pages.dev/",
+      }),
+    ).toThrow();
+  });
+
+  it("still refuses a non-Pages preview host", () => {
+    expect(() =>
+      contract.buildAttemptObservation({
+        ...base,
+        deliveryStatus: "preview_ready",
+        previewUrl: "https://evil.example.com/",
+      }),
+    ).toThrow();
+  });
+});
