@@ -1594,7 +1594,9 @@ jobs:
           node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt "${FEEDBACK_ARGS[@]}" --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-initial-email:$DEPLOY_SHA -->"
           if [ "${{ steps.deploy.outputs.diagnostic }}" != "true" ]; then
-            gh pr edit "$REVIEW_PR" --repo "$CLIENT_REPO" --remove-label launchloom-delivery-pending
+            # Bookkeeping only. A delivery that already sent its email must not
+            # be reported as failed because the pending label was never added.
+            gh pr edit "$REVIEW_PR" --repo "$CLIENT_REPO" --remove-label launchloom-delivery-pending >/dev/null 2>&1 || true
           fi
       # This is the only new-mode preview handoff attestation. It runs after all
       # existing build, deployment, rendered verification and delivery gates and
