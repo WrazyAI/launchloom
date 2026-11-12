@@ -193,3 +193,27 @@ describe("optional accent color", () => {
     );
   });
 });
+
+describe("muted copy on darker light bands", () => {
+  it("keeps muted body copy readable on the contact band", () => {
+    // The exact #83 palette: page #f8f6f0, contact band #ece7dc, muted #6b716d.
+    // Muted was only proved against the page surface, which left 4.047:1 on
+    // the darker contact band and blocked the rendered gate.
+    const palette = resolvePalette({
+      surfaceColor: "#f8f6f0",
+      inkColor: "#14201d",
+      mutedColor: "#6b716d",
+      primaryColor: "#bd552d",
+    });
+    expect(contrast(palette.mutedColor, "#ece7dc")).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(palette.mutedColor, palette.surfaceColor)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("does not push muted copy off a dark page onto a light band", () => {
+    const palette = resolvePalette({
+      surfaceColor: "#18211e",
+      inkColor: "#14201d",
+    });
+    expect(contrast(palette.mutedColor, palette.surfaceColor)).toBeGreaterThanOrEqual(4.5);
+  });
+});

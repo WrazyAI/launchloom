@@ -135,10 +135,6 @@ export function resolvePalette(input = {}) {
     input.heroColor,
     surfaceIsDark ? mix(surfaceColor, "#ffffff", 0.05) : "#e8eee5",
   );
-  const mutedColor = ensureContrast(
-    safeHex(input.mutedColor, mix(inkColor, surfaceColor, 0.38)),
-    surfaceColor,
-  );
   const lineColor = safeHex(input.lineColor, mix(inkColor, surfaceColor, 0.8));
   const exceptionallyBright = contrast("#000000", primaryColor) >= 10;
   const requestedBrandSurfaceColor = safeHex(
@@ -164,6 +160,20 @@ export function resolvePalette(input = {}) {
       ? candidate
       : darkest,
   );
+  // On a light page, muted copy is painted on the page canvas and on the
+  // darker light pack bands (the contact band is #ece7dc). Repairing it only
+  // against the page surface left 4.047:1 body copy on the contact band, so
+  // prove it against the darkest band it can land on. A dark page keeps the
+  // page-surface repair: forcing it toward a light band would make body copy
+  // unreadable on the dark canvas it actually sits on.
+  const mutedBase = ensureContrast(
+    safeHex(input.mutedColor, mix(inkColor, surfaceColor, 0.38)),
+    surfaceColor,
+  );
+  const mutedColor =
+    readableOn(surfaceColor) === "#000000"
+      ? ensureContrast(mutedBase, darkestLightBand)
+      : mutedBase;
   // The accent is optional: absent it, sites keep exactly the palette shape
   // they had before. When a client adopts one, text on the accent fill and
   // accent-colored text on the page surface are both contrast-repaired, and
