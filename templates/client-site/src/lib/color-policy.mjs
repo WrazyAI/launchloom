@@ -166,6 +166,23 @@ export function resolvePalette(input = {}) {
   // prove it against the darkest band it can land on. A dark page keeps the
   // page-surface repair: forcing it toward a light band would make body copy
   // unreadable on the dark canvas it actually sits on.
+  // Dark pack bands that carry accent text. The guide coverage band is a
+  // 30% brand mix over the deepest forest, so it is the lightest of them.
+  const darkBandSurfaces = [
+    "#14201d",
+    "#101b19",
+    "#0c1713",
+    "#16241e",
+    // guide-green is 30% brand over the deep forest, i.e. mostly forest.
+    mix("#101b19", primaryColor, 0.3),
+  ];
+  // Lightest = lowest contrast against white, and therefore the worst case for
+  // light accent text.
+  const lightestDarkBand = darkBandSurfaces.reduce((lightest, candidate) =>
+    contrast("#ffffff", candidate) < contrast("#ffffff", lightest)
+      ? candidate
+      : lightest,
+  );
   const mutedBase = ensureContrast(
     safeHex(input.mutedColor, mix(inkColor, surfaceColor, 0.38)),
     surfaceColor,
@@ -187,7 +204,11 @@ export function resolvePalette(input = {}) {
         accentMarkColor: ensureContrast(accentColor, surfaceColor, 3),
         accentTextHero: ensureContrast(accentColor, heroColor),
         accentTextBrand: ensureContrast(accentColor, brandSurface.color),
-        accentTextDark: ensureContrast(accentColor, "#14201d"),
+        // Accent text sits on several dark pack bands, not only #14201d. The
+        // guide pack paints it on a 30%-brand teal (#30534b for a mint brand),
+        // where a #14201d-repaired accent measured 4.203. Repair against the
+        // lightest dark band so the worst case still clears 4.5.
+        accentTextDark: ensureContrast(accentColor, lightestDarkBand),
         accentTextLightBand: ensureContrast(accentColor, darkestLightBand),
       }
     : {};

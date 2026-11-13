@@ -217,3 +217,18 @@ describe("muted copy on darker light bands", () => {
     expect(contrast(palette.mutedColor, palette.surfaceColor)).toBeGreaterThanOrEqual(4.5);
   });
 });
+
+describe("accent text on dark pack bands", () => {
+  it("keeps accent text readable on the lightest dark band", () => {
+    // #146 paints the client accent #c8b2a2 as the guide coverage eyebrow on a
+    // 30%-brand teal (#30534b), while the accent was repaired only against
+    // #14201d. That measured 4.203.
+    const palette = resolvePalette({
+      primaryColor: "#7cd5c1",
+      surfaceColor: "#f8f6f0",
+      accentColor: "#c8b2a2",
+    });
+    for (const band of ["#30534b", "#14201d", "#101b19", "#0c1713", "#16241e"])
+      expect(contrast(palette.accentTextDark, band)).toBeGreaterThanOrEqual(4.5);
+  });
+});
