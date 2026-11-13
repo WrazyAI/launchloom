@@ -715,23 +715,43 @@ export async function runVisualGateProcess({
   configPath = path.join(siteDir, "src/site.config.json"),
   visualGateScript = path.resolve("scripts/visual-quality-gate.mjs"),
 } = {}) {
-  await fs.rm(reportPath, { force: true });
-  const result = await spawnCapture(
-    process.execPath,
-    [
-      visualGateScript,
-      "--mode",
-      "verify",
-      "--config",
-      configPath,
-      "--screenshots",
-      screenshotsDir,
-      "--report",
-      reportPath,
-    ],
-    { cwd: siteDir },
-  );
-  const report = await readJson(reportPath).catch(() => null);
+  // The gate calls a vision judge over the network and can die on a transient
+  // reset. One retry keeps a flaky socket from failing an otherwise valid
+  // creative render; a deterministic failure still fails on both attempts.
+  const TRANSIENT_GATE =
+    /ECONNRESET|ETIMEDOUT|EPIPE|socket hang up|terminated|fetch failed/iu;
+  let result;
+  let report = null;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    await fs.rm(reportPath, { force: true });
+    result = await spawnCapture(
+      process.execPath,
+      [
+        visualGateScript,
+        "--mode",
+        "verify",
+        "--config",
+        configPath,
+        "--screenshots",
+        screenshotsDir,
+        "--report",
+        reportPath,
+      ],
+      { cwd: siteDir },
+    );
+    report = await readJson(reportPath).catch(() => null);
+    const transient =
+      result.code !== 0 &&
+      TRANSIENT_GATE.test(`${report?.error || ""} ${result.stderr}`);
+    if (!report && !transient) break;
+    if (!transient) break;
+    if (attempt === 2) break;
+    console.warn(
+      `creative_visual_gate_retry attempt=1 error=${String(
+        report?.error || "transient network failure",
+      ).slice(0, 120)}`,
+    );
+  }
   if (!report)
     throw new Error(
       `Creative visual gate produced no report (exit ${result.code}): ${result.stderr.slice(-1200)}`,

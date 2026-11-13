@@ -232,3 +232,14 @@ describe("accent text on dark pack bands", () => {
       expect(contrast(palette.accentTextDark, band)).toBeGreaterThanOrEqual(4.5);
   });
 });
+
+describe("link text on dark light-bands", () => {
+  it("keeps nav link text readable on every light band", () => {
+    const palette = resolvePalette({
+      primaryColor: "#7cd5c1",
+      surfaceColor: "#f8f6f0",
+    });
+    for (const band of ["#f8f6f0", "#f7f5ee", "#ece7dc", "#e7e2d7"])
+      expect(contrast(palette.surfaces.nav.link, band)).toBeGreaterThanOrEqual(4.5);
+  });
+});
