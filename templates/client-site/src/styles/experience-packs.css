@@ -2663,15 +2663,53 @@
   font-family: var(--font-heading, Arial, sans-serif);
 }
 
-/* Pack contrast safety: contact, breadcrumb, and footer links follow the
-   surface text role instead of the global brand link color. */
-[class*="__contact"] a,
-[class*="__contact"] a:visited {
+/* Pack contrast safety: contact and footer links follow the surface text role
+   instead of the global brand link colour. This must stay scoped to packs whose
+   contact band is actually the brand surface: forcing on-brand-surface white
+   onto a light paper band produced 1.1:1 white-on-#f5f4f0 copy. Light-paper
+   packs keep their own ink/navy/signal link colours, which already pass. */
+.xp-guide__contact a,
+.xp-guide__contact a:visited {
   color: var(--on-brand-surface, #ffffff);
 }
-[class*="__contact"] a:focus-visible {
+.xp-guide__contact a:focus-visible {
   color: var(--on-brand-surface, #ffffff) !important;
   outline-color: var(--on-brand-surface, #ffffff) !important;
+}
+.xp-folio__contact a,
+.xp-folio__contact a:visited {
+  color: var(--folio-paper);
+}
+.xp-folio__contact a:focus-visible {
+  outline-color: var(--folio-paper) !important;
+}
+.xp-stage__contact a,
+.xp-stage__contact a:visited {
+  color: var(--stage-brass-text);
+}
+.xp-stage__contact a:focus-visible {
+  outline-color: var(--stage-brass-text) !important;
+}
+.xp-ledger__contact a,
+.xp-ledger__contact a:visited {
+  color: var(--ledger-navy);
+}
+.xp-ledger__contact a:focus-visible {
+  outline-color: var(--ledger-navy) !important;
+}
+.xp-results__contact a,
+.xp-results__contact a:visited {
+  color: var(--results-signal);
+}
+.xp-results__contact a:focus-visible {
+  outline-color: var(--results-signal) !important;
+}
+.xp-service__contact a,
+.xp-service__contact a:visited {
+  color: var(--service-dark);
+}
+.xp-service__contact a:focus-visible {
+  outline-color: var(--service-dark) !important;
 }
 .footer :is(a, span, p, strong, .legal) {
   color: var(--ll-text, #e5eee7);

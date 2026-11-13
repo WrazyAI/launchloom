@@ -121,10 +121,25 @@ export function classifyJudgeFinding(finding) {
   // Accessibility defects and fabricated/unverified facts stay hard. Design
   // and copy quality findings are advisory on a warned preview; the local
   // design repair pass owns them after delivery.
-  if (severity === "critical")
-    return category === "content-integrity" || category === "accessibility"
-      ? "critical"
-      : "open";
+  if (severity === "critical") {
+    if (category === "accessibility") return "critical";
+    if (category === "content-integrity") {
+      const evidence = String(
+        finding?.evidence || finding?.message || finding?.recommendation || "",
+      );
+      const copyDefect =
+        /clipped|cropped|malformed|stray|truncated|overlap|fragment/iu.test(
+          evidence,
+        );
+      const factDefect =
+        /fabricat|invent|unverified|not present|missing from|credential|price|review|guarantee|licen[cs]e|contact|phone|email|address/iu.test(
+          evidence,
+        );
+      if (copyDefect && !factDefect) return "open";
+      return "critical";
+    }
+    return "open";
+  }
   if (severity === "major" && category === "accessibility") return "hard";
   if (severity === "major" && category === "content-integrity") {
     const evidence = String(
@@ -166,7 +181,7 @@ export const NEAR_MISS_PREVIEW_DEFAULTS = Object.freeze({
  * absolute floor. Design-fidelity findings travel as open findings.
  *
  * @param {Record<string, any>} candidate bakeoff candidate result
- * @param {{overallBar?: number, dimensionFloor?: number}} [options]
+ * @param {{overallBar?: number, dimensionFloor?: number, allowContrastWarnings?: boolean}} [options]
  * @returns {{eligible: boolean, reasons: string[], openFindings: string[], hardFailures: string[], criticalFindings: string[], overall: number | null, scores: Record<string, number> | null}}
  */
 export function nearMissAssessment(
@@ -174,10 +189,20 @@ export function nearMissAssessment(
   {
     overallBar = NEAR_MISS_PREVIEW_DEFAULTS.overallBar,
     dimensionFloor = NEAR_MISS_PREVIEW_DEFAULTS.dimensionFloor,
+    allowContrastWarnings = false,
   } = {},
 ) {
   const audit = candidate?.renderedReferenceFidelity?.audit || null;
-  const { hard, open } = splitFailureLines(candidate?.failures || []);
+  const split = splitFailureLines(candidate?.failures || []);
+  const hard = [...split.hard];
+  const open = [...split.open];
+  if (allowContrastWarnings) {
+    for (let index = hard.length - 1; index >= 0; index -= 1) {
+      if (/^contrast fail/u.test(hard[index])) {
+        open.unshift(...hard.splice(index, 1));
+      }
+    }
+  }
   const judgments = (audit?.findings || []).map((finding) => ({
     classification: classifyJudgeFinding(finding),
     description: describeJudgment(finding),

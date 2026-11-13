@@ -30,6 +30,7 @@ export const GENERATION_PROFILES: string[];
 export function strictKeys(value: unknown, keys: string[]): void;
 export function safeEvidenceUrl(value: unknown): string | null;
 export function safeDiagnosticPreviewUrl(value: unknown): string | null;
+export function safeClientPreviewUrl(value: unknown): string | null;
 export function redactTrackingText(
   value: unknown,
   limit?: number,

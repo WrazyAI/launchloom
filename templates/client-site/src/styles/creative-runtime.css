@@ -73,6 +73,16 @@
   color: var(--ll-muted-text, #6b716d);
 }
 
+[data-creative-host="true"] .coverage__area {
+  background: var(--ll-surface, #f8f6f0);
+}
+
+[data-creative-host="true"] :is(.hero-cta, .hero-panel button, .contact-form button, .contact-panel button):focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: -4px;
+  box-shadow: 0 0 0 3px #0f3d3e;
+}
+
 [data-creative-host="true"] .launchloom-lead-form small {
   color: var(--ll-muted-text, var(--ll-creative-muted, currentColor));
   font-size: 0.75rem;

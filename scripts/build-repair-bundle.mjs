@@ -152,13 +152,22 @@ export async function buildRepairBundle({
   );
   if (findings) files.findings = findings;
 
+  const repairBranch = `repair-${String(attemptId).replace(
+    /[^A-Za-z0-9._-]/gu,
+    "-",
+  )}`;
   const redeployCommand = [
     `git clone https://github.com/${clientRepo}.git ${projectName}`,
     `cd ${projectName}`,
     `git checkout ${buildSha}`,
+    `git switch -c ${repairBranch}`,
+    "cp -R ../candidate/. src/generated-experiences/selected/",
+    "cp ../site.config.json src/site.config.json",
+    "git add src/generated-experiences/selected src/site.config.json",
+    `git commit -m "Apply repaired design ${attemptId}"`,
     "npm ci",
     "npm run build",
-    `npx wrangler pages deploy dist --project-name ${projectName} --branch review-initial --commit-hash ${buildSha} --commit-message "Repair redeploy ${attemptId}"`,
+    `npx wrangler pages deploy dist --project-name ${projectName} --branch review-initial --commit-hash "$(git rev-parse HEAD)" --commit-message "Repair redeploy ${attemptId}"`,
   ].join(" && ");
 
   const manifest = {
@@ -205,7 +214,7 @@ export async function buildRepairBundle({
   return manifest;
 }
 
-function parseArgs(argv) {
+export function parseRepairBundleArgs(argv) {
   const args = {};
   for (let index = 0; index < argv.length; index += 1) {
     const token = String(argv[index] || "");
@@ -222,18 +231,18 @@ function parseArgs(argv) {
 }
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const args = parseRepairBundleArgs(process.argv.slice(2));
   const manifest = await buildRepairBundle({
-    outputDir: args.out || args.output || args["output-dir"],
-    attemptId: args.attempt || args["attempt-id"],
-    clientRepo: args.repo || args["client-repo"],
-    projectName: args.project || args["project-name"],
-    buildSha: args.sha || args["build-sha"],
+    outputDir: args.out || args.output || args.outputDir,
+    attemptId: args.attempt || args.attemptId,
+    clientRepo: args.repo || args.clientRepo,
+    projectName: args.project || args.projectName,
+    buildSha: args.sha || args.buildSha,
     renderer: args.renderer,
     candidateId: args.candidate || null,
     previewUrl: args.preview || null,
-    candidateDir: args["candidate-dir"] || null,
-    screenshotsDir: args["screenshots-dir"] || null,
+    candidateDir: args.candidateDir || null,
+    screenshotsDir: args.screenshotsDir || null,
     configPath: args.config || null,
     findingsPaths: args.findings || [],
   });

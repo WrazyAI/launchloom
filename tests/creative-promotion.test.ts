@@ -19,7 +19,7 @@ export default function ServicePage({ content, runtime, service }) {
     <section data-service-related><ul>{service.related.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}</ul></section>
     {service.process.length > 0 && <ol>{service.process.map((step) => <li key={step}>{step}</li>)}</ol>}
     {service.faqs.length > 0 && <section>{service.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>}
-    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+    <section id="contact" data-ll-surface="page"><LeadForm content={content} runtime={runtime} /></section>
   </main>;
 }`;
 
@@ -30,7 +30,7 @@ export default function LocationPage({ content, runtime, location }) {
     <section data-location-hero><h1>{location.name}</h1><p>{location.description}</p></section>
     <section data-location-coverage><p>{location.localNote}</p></section>
     <section data-location-related><ul>{location.services.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}{location.otherAreas.map((area) => <li key={area.slug}><a href={\`/locations/\${area.slug}/\`}>{area.name}</a></li>)}</ul></section>
-    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+    <section id="contact" data-ll-surface="page"><LeadForm content={content} runtime={runtime} /></section>
   </main>;
 }`;
 
@@ -40,7 +40,7 @@ export default function ServicesIndexPage({ content, runtime }) {
     <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
     <section data-services-index-hero><h1>{content.copy.servicesHeading || content.hero.heading}</h1><p>{content.copy.servicesIntro}</p></section>
     <section data-services-index-list><ul>{content.services.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}</ul></section>
-    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+    <section id="contact" data-ll-surface="page"><LeadForm content={content} runtime={runtime} /></section>
   </main>;
 }`;
 
@@ -133,7 +133,7 @@ export default function Experience({ content, runtime }) {
   return <main><nav><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav><section data-hero><div data-hero-copy><h1>{content.hero.heading}</h1><button data-early-conversion>{content.hero.primaryLabel}</button></div><img src={content.hero.image} alt={content.hero.heading} data-hero-media hidden /></section>
     <section id="services">{content.services.map((service) => <p key={service.name}>{service.name}</p>)}</section>
     <section id="faqs">{content.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary></details>)}</section>
-    <section id="contact"><LeadForm content={content} runtime={runtime} /></section></main>;
+    <section id="contact" data-ll-surface="page"><LeadForm content={content} runtime={runtime} /></section></main>;
 }`,
   );
   await fs.writeFile(

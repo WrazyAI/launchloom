@@ -504,7 +504,11 @@ Rules:
           model: attemptModel,
           temperature: 0,
           reasoning: { effort: "medium", exclude: true },
-          max_tokens: 9000,
+          // DeepSeek spends hidden reasoning tokens before emitting any content,
+          // and those count against max_tokens. 9000 left nothing for the JSON
+          // on OpenRouter, so every route came back with empty content. The Go
+          // transport already allows 128k for the same reason.
+          max_tokens: 128_000,
           response_format: { type: "json_schema", json_schema: schema },
           messages: [
             { role: "system", content: ANALYZER_SYSTEM_PROMPT },

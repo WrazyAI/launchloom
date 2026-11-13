@@ -7,6 +7,7 @@ function record(overrides: Record<string, any> = {}) {
     profile: "full",
     executionStatus: "succeeded",
     deliveryStatus: "preview_ready",
+    siteUrl: "https://review-initial.example.pages.dev",
     startedAt: 1_000,
     completedAt: 1_000 + 10 * 60_000,
     ...overrides,
@@ -32,6 +33,13 @@ describe("generation delivery funnel", () => {
       failed: 0,
       unknown: 0,
     });
+  });
+
+  it("does not count a status-only delivery without a reachable site", () => {
+    const summary = summariseDeliveryFunnel([
+      record({ attemptId: "status-only", siteUrl: null, previewUrl: null }),
+    ]);
+    expect(summary).toMatchObject({ eligible: 1, delivered: 0, unknown: 1 });
   });
 
   it("counts a failed run as failed and a missing report as unknown", () => {
@@ -60,6 +68,7 @@ describe("generation delivery funnel", () => {
       record({ attemptId: "full" }),
       record({ attemptId: "creative", profile: "creative-only" }),
       record({ attemptId: "seo", profile: "seo-only" }),
+      record({ attemptId: "preview", profile: "full-preview" }),
       record({ attemptId: "access", profile: "access-only" }),
       record({ attemptId: "cancelled", executionStatus: "cancelled" }),
       record({ attemptId: "fast", fastLane: true }),

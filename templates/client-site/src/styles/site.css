@@ -599,7 +599,10 @@ h2 {
   background: transparent;
 }
 .quick-answers__launcher:focus-visible {
-  outline: 3px solid var(--on-brand, #fff);
+  /* The launcher sits on --brand-surface, not --brand. --on-brand is the text
+     colour for the primary fill and can be black, which measured 1.569 against
+     the dark brand surface. Pair the ring with the surface it is painted on. */
+  outline: 3px solid var(--on-brand-surface, #fff);
   outline-offset: -5px;
 }
 .quick-answers__panel {
@@ -1240,7 +1243,10 @@ h2 {
   gap: 24px;
 }
 .faq-list summary span {
-  color: var(--brand);
+  /* The disclosure marker is a non-text graphic and needs >= 3:1. --brand is a
+     fill colour and can be a pale accent that disappears on a light card, so
+     use the text-safe brand ink role instead. */
+  color: var(--brand-ink, var(--ink, #14201d));
   font:
     400 1.6rem/1 var(--font-body, Arial, sans-serif);
 }

@@ -27,6 +27,7 @@ on:
 permissions:
   contents: read
   issues: read
+  id-token: write
 
 concurrency:
   group: focused-generation-${{ inputs.issue }}-${{ inputs.test_profile }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -73,6 +74,7 @@ jobs:
       TRACK_ISSUE: ${{ inputs.issue }}
       TRACK_ATTEMPT: github:${{ github.run_id }}:${{ github.run_attempt }}
       TRACK_ACTOR: ${{ github.triggering_actor }}
+      GENERATION_ACTIVITY_ENABLED: ${{ vars.GENERATION_ACTIVITY_ENABLED || 'false' }}
       GITHUB_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
@@ -108,7 +110,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Install rendered acceptance browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium || npx playwright install chromium
       - name: Configure private QA repository authentication
         run: gh auth setup-git
       - name: Run focused profile

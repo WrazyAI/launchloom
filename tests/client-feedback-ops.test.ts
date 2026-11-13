@@ -87,6 +87,22 @@ describe("bounded client feedback", () => {
     expect(rejected.results[0].status).toBe("manual");
   });
 
+  it("replaces the primary action and story copy when the quoted fragment is unique", () => {
+    const config = { ...baseConfig(), business: { ...baseConfig().business, primaryCta: "Request a visit", tagline: "Clear plumbing help" } };
+    const result = applyBoundedClientFeedback(config, [
+      '[Text] Change "Clear plumbing help" to "Calm plumbing help for Austin homes".',
+    ]);
+    expect(result.ok).toBe(true);
+    expect(result.config.business.tagline).toBe("Calm plumbing help for Austin homes");
+
+    const shared = applyBoundedClientFeedback(
+      { ...baseConfig(), business: { ...baseConfig().business, primaryCta: "Request a visit" }, copy: { contactKicker: "Request a visit" } },
+      ['[Text] Change "Request a visit" to "Book a visit".'],
+    );
+    expect(shared.ok).toBe(false);
+    expect(shared.results[0].status).toBe("manual");
+  });
+
   it("updates contact and business facts only when the requested field is explicit", () => {
     const result = applyBoundedClientFeedback(baseConfig(), [
       "[Contact details] Phone: (555) 555-0144",

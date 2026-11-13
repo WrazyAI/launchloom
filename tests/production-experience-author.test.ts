@@ -264,6 +264,14 @@ describe("production experience author", () => {
         generate,
       });
       expect(result.candidates).toHaveLength(3);
+      const oneCandidate = await authorExperienceCandidates({
+        site,
+        inspirationPack,
+        model: "fixture-author",
+        generate,
+        candidateCount: 1,
+      });
+      expect(oneCandidate.candidates).toHaveLength(1);
       expect(seen).toEqual(
         expect.arrayContaining([
           "contract",

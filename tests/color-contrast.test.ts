@@ -193,3 +193,42 @@ describe("optional accent color", () => {
     );
   });
 });
+
+describe("muted copy on darker light bands", () => {
+  it("keeps muted body copy readable on the contact band", () => {
+    // The exact #83 palette: page #f8f6f0, contact band #ece7dc, muted #6b716d.
+    // Muted was only proved against the page surface, which left 4.047:1 on
+    // the darker contact band and blocked the rendered gate.
+    const palette = resolvePalette({
+      surfaceColor: "#f8f6f0",
+      inkColor: "#14201d",
+      mutedColor: "#6b716d",
+      primaryColor: "#bd552d",
+    });
+    expect(contrast(palette.mutedColor, "#ece7dc")).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(palette.mutedColor, palette.surfaceColor)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("does not push muted copy off a dark page onto a light band", () => {
+    const palette = resolvePalette({
+      surfaceColor: "#18211e",
+      inkColor: "#14201d",
+    });
+    expect(contrast(palette.mutedColor, palette.surfaceColor)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("accent text on dark pack bands", () => {
+  it("keeps accent text readable on the lightest dark band", () => {
+    // #146 paints the client accent #c8b2a2 as the guide coverage eyebrow on a
+    // 30%-brand teal (#30534b), while the accent was repaired only against
+    // #14201d. That measured 4.203.
+    const palette = resolvePalette({
+      primaryColor: "#7cd5c1",
+      surfaceColor: "#f8f6f0",
+      accentColor: "#c8b2a2",
+    });
+    for (const band of ["#30534b", "#14201d", "#101b19", "#0c1713", "#16241e"])
+      expect(contrast(palette.accentTextDark, band)).toBeGreaterThanOrEqual(4.5);
+  });
+});

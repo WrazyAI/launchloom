@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-10T00:16:22.548Z",
+  "updatedAt": "2026-11-13T15:50:23.010Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -1123,6 +1123,429 @@
         "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
         "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
       ]
+    },
+    {
+      "id": "2026-11-11-cedar-stone-plumbing-attempt-278-run-43064737383-attempt-1",
+      "launchedAt": "2026-11-11T17:13:20.118Z",
+      "stage": "attempt",
+      "reservationKey": "278-run-43064737383-attempt-1",
+      "businessName": "Cedar & Stone Plumbing",
+      "businessKind": "home-services",
+      "recipe": "local-trades",
+      "packId": "kinetic-poster",
+      "variantId": "standard",
+      "layoutFingerprint": "kinetic-poster|standard|command-bar|poster-split|quick-request|diagnostic-list|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/coverage/process/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "colorlib-fixwell-quote-desk",
+        "typographic-poster",
+        "utility-diagnostic",
+        "web-homeservices-morris-jenkins",
+        "web-homeservices-roto-rooter"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form"
+      ],
+      "referenceIds": [
+        "colorlib-fixwell-quote-desk",
+        "web-homeservices-morris-jenkins",
+        "web-homeservices-roto-rooter"
+      ],
+      "routeSignatures": [
+        "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
+        "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
+        "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
+      ]
+    },
+    {
+      "id": "2026-11-11-cedar-stone-plumbing-attempt-278-run-43086631930-attempt-1",
+      "launchedAt": "2026-11-11T19:47:38.885Z",
+      "stage": "attempt",
+      "reservationKey": "278-run-43086631930-attempt-1",
+      "businessName": "Cedar & Stone Plumbing",
+      "businessKind": "home-services",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "colorlib-fixwell-quote-desk",
+        "typographic-poster",
+        "utility-diagnostic",
+        "web-homeservices-morris-jenkins",
+        "web-homeservices-roto-rooter"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form"
+      ],
+      "referenceIds": [
+        "colorlib-fixwell-quote-desk",
+        "web-homeservices-morris-jenkins",
+        "web-homeservices-roto-rooter"
+      ],
+      "routeSignatures": [
+        "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
+        "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
+        "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
+      ]
+    },
+    {
+      "id": "2026-11-11-cedar-stone-plumbing-attempt-278-run-43110671669-attempt-1",
+      "launchedAt": "2026-11-11T22:25:01.179Z",
+      "stage": "attempt",
+      "reservationKey": "278-run-43110671669-attempt-1",
+      "businessName": "Cedar & Stone Plumbing",
+      "businessKind": "home-services",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "colorlib-fixwell-quote-desk",
+        "typographic-poster",
+        "utility-diagnostic",
+        "web-homeservices-morris-jenkins",
+        "web-homeservices-roto-rooter"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form"
+      ],
+      "referenceIds": [
+        "colorlib-fixwell-quote-desk",
+        "web-homeservices-morris-jenkins",
+        "web-homeservices-roto-rooter"
+      ],
+      "routeSignatures": [
+        "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
+        "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
+        "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
+      ]
+    },
+    {
+      "id": "2026-11-11-coastal-brush-painting-co-attempt-146-run-43122074600-attempt-1",
+      "launchedAt": "2026-11-11T23:49:20.927Z",
+      "stage": "attempt",
+      "reservationKey": "146-run-43122074600-attempt-1",
+      "businessName": "Coastal Brush Painting Co.",
+      "businessKind": "painting",
+      "recipe": "local-trades",
+      "packId": "results-ledger",
+      "variantId": "standard",
+      "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "archive-rail",
+        "utility-diagnostic",
+        "web-painting-concept-pro",
+        "web-painting-house-doctor",
+        "web-painting-mfl"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form"
+      ],
+      "referenceIds": [
+        "web-painting-concept-pro",
+        "web-painting-house-doctor",
+        "web-painting-mfl"
+      ],
+      "routeSignatures": [
+        "minimal charcoal service links and light estimate controls|a low-light exterior-home photograph anchors a dark charcoal layout with a float|compact dark service cards followed by a visual before-and-after comparison|clean geometric sans with large centered statements and compact utility labels|dark image and form hero -> horizontal service strip -> four service cards -> be|darkened finished-home scenes, before-and-after slider, interior projects, and s",
+        "small white service navigation with a gold estimate action|a coastal-house image carries a navy overlay, stacked gold-and-white statement, |service list for interior, exterior, cabinetry, and wood staining followed by pr|large modern sans statements, small uppercase labels, and compact practical copy|coastal-home and form hero -> navy business introduction -> three audience cards|residential project photography with a few before-and-after work scenes",
+        "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
+      ]
+    },
+    {
+      "id": "2026-11-12-apex-air-conditioning-heating-attempt-83-run-43268593738-attempt-1",
+      "launchedAt": "2026-11-12T17:29:02.397Z",
+      "stage": "attempt",
+      "reservationKey": "83-run-43268593738-attempt-1",
+      "businessName": "Apex Air Conditioning & Heating",
+      "businessKind": "hvac",
+      "recipe": "local-trades",
+      "packId": "results-ledger",
+      "variantId": "standard",
+      "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "archive-rail",
+        "hvac-equipment-montage-opening",
+        "hvac-local-aerial-hero",
+        "hvac-mountain-photo-plus-diagnostic-promise",
+        "typographic-poster",
+        "utility-diagnostic"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "object-product-stage"
+      ],
+      "referenceIds": [
+        "web-hvac-alamo-austin-air",
+        "web-hvac-russell-comfort",
+        "web-hvac-trg-heating-cooling"
+      ],
+      "routeSignatures": [
+        "Narrow local address/phone strip, simple home-gallery-services-contact links and|A bright product-equipment composition and centered booking action lead into a b|Use two compact columns of verified heating, cooling, ventilation and maintenanc|All-caps aqua headings, compact dark body copy and utilitarian plain service lis|equipment-led opening -> local company introduction -> service index -> area ind|Equipment montage opens; community mark strip, review overlay and city skyline c",
+        "Small company mark, phone number and practical service/product links share the d|An aerial Austin bridge photograph supports a centered white condensed service p|Lead with heating, cooling, maintenance and air quality as distinct confirmed se|Tall condensed uppercase display for section headings, short sans support copy a|local photo hero and service quartet -> crew introduction split -> customer proo|Local aerial imagery, technician group portrait, customer home scenes and a mapp",
+        "Thin utility bar and straightforward heating, cooling and service links above th|A Colorado mountain image under deep navy frames a large white repair promise, r|Explain repair, installation and maintenance separately, followed by a realistic|Heavy readable sans statements, compact explanatory cards and clear red action l|mountain repair hero -> service taxonomy -> diagnosis promise band -> post-servi|Mountain and Denver location scenes are sparse; most of the long page is text, p"
+      ]
+    },
+    {
+      "id": "2026-11-12-apex-air-conditioning-heating-attempt-83-run-43288778926-attempt-1",
+      "launchedAt": "2026-11-12T19:24:02.535Z",
+      "stage": "attempt",
+      "reservationKey": "83-run-43288778926-attempt-1",
+      "businessName": "Apex Air Conditioning & Heating",
+      "businessKind": "hvac",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "archive-rail",
+        "editorial-monument",
+        "hvac-dense-phone-first-header",
+        "hvac-symptom-first-choice-grid",
+        "hvac-three-part-contact-ribbon",
+        "utility-diagnostic"
+      ],
+      "heroArchetypes": [
+        "contact-ribbon",
+        "image-overlay",
+        "split-media-copy"
+      ],
+      "referenceIds": [
+        "web-hvac-allied-air-heat",
+        "web-hvac-city-wide-austin",
+        "web-hvac-finish-line-denver"
+      ],
+      "routeSignatures": [
+        "Blue service link line and a bright quote control above the hero, with contact r|A suburban-home photo carries the firm introduction while a conspicuous three-pa|Use a heating/cooling/air-quality/ductless service grid only for services the cl|Direct sans headings in saturated blue, slim body paragraphs and red underline/C|house-photo opening -> phone-and-quote ribbon -> service two-by-two image grid -|Technician action photos form a two-by-two service grid; family/team, financing,",
+        "Dark blue horizontal home, product/service, resource and appointment links below|A dense logo-phone header leads into a skyline banner; the main explanation then|Place confirmed AC, furnace, boiler and comfort categories into a clear technica|Condensed blue uppercase section labels over smaller practical sans body copy.|utility identity and phone -> skyline banner -> equipment-and-copy split -> blue|Denver skyline, HVAC product cutouts and recent service-article thumbnails, with",
+        "Thin service-area utility line, white brand row, service links, call number and |A dark technician-at-condenser photograph supports a left-aligned plainspoken re|Start with what the system is doing, route to confirmed AC/heating/maintenance s|Large friendly sans headlines, compact status labels and concise visitor-centere|technician hero -> symptom-choice cards -> service photograph grid -> diagnosis |Authentic technician scenes fill a service photo grid, while a simple circular m"
+      ]
+    },
+    {
+      "id": "2026-11-12-apex-air-conditioning-heating-attempt-83-run-43308054941-attempt-1",
+      "launchedAt": "2026-11-12T21:17:46.664Z",
+      "stage": "attempt",
+      "reservationKey": "83-run-43308054941-attempt-1",
+      "businessName": "Apex Air Conditioning & Heating",
+      "businessKind": "hvac",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "archive-rail",
+        "hvac-dense-phone-first-header",
+        "hvac-equipment-montage-opening",
+        "hvac-mountain-photo-plus-diagnostic-promise",
+        "utility-diagnostic"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "object-product-stage",
+        "split-media-copy"
+      ],
+      "referenceIds": [
+        "web-hvac-finish-line-denver",
+        "web-hvac-russell-comfort",
+        "web-hvac-trg-heating-cooling"
+      ],
+      "routeSignatures": [
+        "Dark blue horizontal home, product/service, resource and appointment links below|A dense logo-phone header leads into a skyline banner; the main explanation then|Place confirmed AC, furnace, boiler and comfort categories into a clear technica|Condensed blue uppercase section labels over smaller practical sans body copy.|utility identity and phone -> skyline banner -> equipment-and-copy split -> blue|Denver skyline, HVAC product cutouts and recent service-article thumbnails, with",
+        "Narrow local address/phone strip, simple home-gallery-services-contact links and|A bright product-equipment composition and centered booking action lead into a b|Use two compact columns of verified heating, cooling, ventilation and maintenanc|All-caps aqua headings, compact dark body copy and utilitarian plain service lis|equipment-led opening -> local company introduction -> service index -> area ind|Equipment montage opens; community mark strip, review overlay and city skyline c",
+        "Thin utility bar and straightforward heating, cooling and service links above th|A Colorado mountain image under deep navy frames a large white repair promise, r|Explain repair, installation and maintenance separately, followed by a realistic|Heavy readable sans statements, compact explanatory cards and clear red action l|mountain repair hero -> service taxonomy -> diagnosis promise band -> post-servi|Mountain and Denver location scenes are sparse; most of the long page is text, p"
+      ]
+    },
+    {
+      "id": "2026-11-12-apex-air-conditioning-heating-attempt-83-run-43315165917-attempt-1",
+      "launchedAt": "2026-11-12T22:00:48.656Z",
+      "stage": "attempt",
+      "reservationKey": "83-run-43315165917-attempt-1",
+      "businessName": "Apex Air Conditioning & Heating",
+      "businessKind": "hvac",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "hvac-local-aerial-hero",
+        "hvac-mountain-photo-plus-diagnostic-promise",
+        "hvac-symptom-first-choice-grid",
+        "typographic-poster",
+        "utility-diagnostic"
+      ],
+      "heroArchetypes": [
+        "image-overlay"
+      ],
+      "referenceIds": [
+        "web-hvac-alamo-austin-air",
+        "web-hvac-city-wide-austin",
+        "web-hvac-russell-comfort"
+      ],
+      "routeSignatures": [
+        "Small company mark, phone number and practical service/product links share the d|An aerial Austin bridge photograph supports a centered white condensed service p|Lead with heating, cooling, maintenance and air quality as distinct confirmed se|Tall condensed uppercase display for section headings, short sans support copy a|local photo hero and service quartet -> crew introduction split -> customer proo|Local aerial imagery, technician group portrait, customer home scenes and a mapp",
+        "Thin service-area utility line, white brand row, service links, call number and |A dark technician-at-condenser photograph supports a left-aligned plainspoken re|Start with what the system is doing, route to confirmed AC/heating/maintenance s|Large friendly sans headlines, compact status labels and concise visitor-centere|technician hero -> symptom-choice cards -> service photograph grid -> diagnosis |Authentic technician scenes fill a service photo grid, while a simple circular m",
+        "Thin utility bar and straightforward heating, cooling and service links above th|A Colorado mountain image under deep navy frames a large white repair promise, r|Explain repair, installation and maintenance separately, followed by a realistic|Heavy readable sans statements, compact explanatory cards and clear red action l|mountain repair hero -> service taxonomy -> diagnosis promise band -> post-servi|Mountain and Denver location scenes are sparse; most of the long page is text, p"
+      ]
+    },
+    {
+      "id": "2026-11-12-coastal-brush-painting-co-attempt-146-run-43325913732-attempt-1",
+      "launchedAt": "2026-11-12T23:09:59.445Z",
+      "stage": "attempt",
+      "reservationKey": "146-run-43325913732-attempt-1",
+      "businessName": "Coastal Brush Painting Co.",
+      "businessKind": "painting",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "editorial-monument",
+        "typographic-poster",
+        "web-painting-av",
+        "web-painting-novak",
+        "web-painting-southern"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form"
+      ],
+      "referenceIds": [
+        "web-painting-av",
+        "web-painting-novak",
+        "web-painting-southern"
+      ],
+      "routeSignatures": [
+        "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
+        "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
+        "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
+      ]
+    },
+    {
+      "id": "2026-11-13-coastal-brush-painting-co-attempt-146-run-43450540177-attempt-1",
+      "launchedAt": "2026-11-13T15:18:57.010Z",
+      "stage": "attempt",
+      "reservationKey": "146-run-43450540177-attempt-1",
+      "businessName": "Coastal Brush Painting Co.",
+      "businessKind": "painting",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "archive-rail",
+        "typographic-poster",
+        "web-painting-house-doctor",
+        "web-painting-mfl",
+        "web-painting-southern"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form"
+      ],
+      "referenceIds": [
+        "web-painting-house-doctor",
+        "web-painting-mfl",
+        "web-painting-southern"
+      ],
+      "routeSignatures": [
+        "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
+        "small white service navigation with a gold estimate action|a coastal-house image carries a navy overlay, stacked gold-and-white statement, |service list for interior, exterior, cabinetry, and wood staining followed by pr|large modern sans statements, small uppercase labels, and compact practical copy|coastal-home and form hero -> navy business introduction -> three audience cards|residential project photography with a few before-and-after work scenes",
+        "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
+      ]
+    },
+    {
+      "id": "2026-11-13-coastal-brush-painting-co-attempt-146-run-43452226394-attempt-1",
+      "launchedAt": "2026-11-13T15:27:59.632Z",
+      "stage": "attempt",
+      "reservationKey": "146-run-43452226394-attempt-1",
+      "businessName": "Coastal Brush Painting Co.",
+      "businessKind": "painting",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "editorial-monument",
+        "utility-diagnostic",
+        "web-painting-av",
+        "web-painting-concept-pro",
+        "web-painting-novak"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form"
+      ],
+      "referenceIds": [
+        "web-painting-av",
+        "web-painting-concept-pro",
+        "web-painting-novak"
+      ],
+      "routeSignatures": [
+        "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
+        "minimal charcoal service links and light estimate controls|a low-light exterior-home photograph anchors a dark charcoal layout with a float|compact dark service cards followed by a visual before-and-after comparison|clean geometric sans with large centered statements and compact utility labels|dark image and form hero -> horizontal service strip -> four service cards -> be|darkened finished-home scenes, before-and-after slider, interior projects, and s",
+        "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
+      ]
+    },
+    {
+      "id": "2026-11-13-coastal-brush-painting-co-attempt-146-run-43456014419-attempt-1",
+      "launchedAt": "2026-11-13T15:50:23.007Z",
+      "stage": "attempt",
+      "reservationKey": "146-run-43456014419-attempt-1",
+      "businessName": "Coastal Brush Painting Co.",
+      "businessKind": "painting",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "archive-rail",
+        "editorial-monument",
+        "typographic-poster",
+        "web-painting-mfl",
+        "web-painting-novak",
+        "web-painting-southern"
+      ],
+      "heroArchetypes": [
+        "split-form"
+      ],
+      "referenceIds": [
+        "web-painting-mfl",
+        "web-painting-novak",
+        "web-painting-southern"
+      ],
+      "routeSignatures": [
+        "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
+        "small white service navigation with a gold estimate action|a coastal-house image carries a navy overlay, stacked gold-and-white statement, |service list for interior, exterior, cabinetry, and wood staining followed by pr|large modern sans statements, small uppercase labels, and compact practical copy|coastal-home and form hero -> navy business introduction -> three audience cards|residential project photography with a few before-and-after work scenes",
+        "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
+      ]
     }
   ],
   "launchesByBusinessKind": {
@@ -1156,6 +1579,149 @@
           "Blue service link line and a bright quote control above the hero, with contact r|A suburban-home photo carries the firm introduction while a conspicuous three-pa|Use a heating/cooling/air-quality/ductless service grid only for services the cl|Direct sans headings in saturated blue, slim body paragraphs and red underline/C|house-photo opening -> phone-and-quote ribbon -> service two-by-two image grid -|Technician action photos form a two-by-two service grid; family/team, financing,",
           "Small company mark, phone number and practical service/product links share the d|An aerial Austin bridge photograph supports a centered white condensed service p|Lead with heating, cooling, maintenance and air quality as distinct confirmed se|Tall condensed uppercase display for section headings, short sans support copy a|local photo hero and service quartet -> crew introduction split -> customer proo|Local aerial imagery, technician group portrait, customer home scenes and a mapp",
           "Thin service-area utility line, white brand row, service links, call number and |A dark technician-at-condenser photograph supports a left-aligned plainspoken re|Start with what the system is doing, route to confirmed AC/heating/maintenance s|Large friendly sans headlines, compact status labels and concise visitor-centere|technician hero -> symptom-choice cards -> service photograph grid -> diagnosis |Authentic technician scenes fill a service photo grid, while a simple circular m"
+        ]
+      },
+      {
+        "id": "2026-11-12-apex-air-conditioning-heating-attempt-83-run-43268593738-attempt-1",
+        "launchedAt": "2026-11-12T17:29:02.397Z",
+        "stage": "attempt",
+        "reservationKey": "83-run-43268593738-attempt-1",
+        "businessName": "Apex Air Conditioning & Heating",
+        "businessKind": "hvac",
+        "recipe": "local-trades",
+        "packId": "results-ledger",
+        "variantId": "standard",
+        "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "archive-rail",
+          "hvac-equipment-montage-opening",
+          "hvac-local-aerial-hero",
+          "hvac-mountain-photo-plus-diagnostic-promise",
+          "typographic-poster",
+          "utility-diagnostic"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "object-product-stage"
+        ],
+        "referenceIds": [
+          "web-hvac-alamo-austin-air",
+          "web-hvac-russell-comfort",
+          "web-hvac-trg-heating-cooling"
+        ],
+        "routeSignatures": [
+          "Narrow local address/phone strip, simple home-gallery-services-contact links and|A bright product-equipment composition and centered booking action lead into a b|Use two compact columns of verified heating, cooling, ventilation and maintenanc|All-caps aqua headings, compact dark body copy and utilitarian plain service lis|equipment-led opening -> local company introduction -> service index -> area ind|Equipment montage opens; community mark strip, review overlay and city skyline c",
+          "Small company mark, phone number and practical service/product links share the d|An aerial Austin bridge photograph supports a centered white condensed service p|Lead with heating, cooling, maintenance and air quality as distinct confirmed se|Tall condensed uppercase display for section headings, short sans support copy a|local photo hero and service quartet -> crew introduction split -> customer proo|Local aerial imagery, technician group portrait, customer home scenes and a mapp",
+          "Thin utility bar and straightforward heating, cooling and service links above th|A Colorado mountain image under deep navy frames a large white repair promise, r|Explain repair, installation and maintenance separately, followed by a realistic|Heavy readable sans statements, compact explanatory cards and clear red action l|mountain repair hero -> service taxonomy -> diagnosis promise band -> post-servi|Mountain and Denver location scenes are sparse; most of the long page is text, p"
+        ]
+      },
+      {
+        "id": "2026-11-12-apex-air-conditioning-heating-attempt-83-run-43288778926-attempt-1",
+        "launchedAt": "2026-11-12T19:24:02.535Z",
+        "stage": "attempt",
+        "reservationKey": "83-run-43288778926-attempt-1",
+        "businessName": "Apex Air Conditioning & Heating",
+        "businessKind": "hvac",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "archive-rail",
+          "editorial-monument",
+          "hvac-dense-phone-first-header",
+          "hvac-symptom-first-choice-grid",
+          "hvac-three-part-contact-ribbon",
+          "utility-diagnostic"
+        ],
+        "heroArchetypes": [
+          "contact-ribbon",
+          "image-overlay",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "web-hvac-allied-air-heat",
+          "web-hvac-city-wide-austin",
+          "web-hvac-finish-line-denver"
+        ],
+        "routeSignatures": [
+          "Blue service link line and a bright quote control above the hero, with contact r|A suburban-home photo carries the firm introduction while a conspicuous three-pa|Use a heating/cooling/air-quality/ductless service grid only for services the cl|Direct sans headings in saturated blue, slim body paragraphs and red underline/C|house-photo opening -> phone-and-quote ribbon -> service two-by-two image grid -|Technician action photos form a two-by-two service grid; family/team, financing,",
+          "Dark blue horizontal home, product/service, resource and appointment links below|A dense logo-phone header leads into a skyline banner; the main explanation then|Place confirmed AC, furnace, boiler and comfort categories into a clear technica|Condensed blue uppercase section labels over smaller practical sans body copy.|utility identity and phone -> skyline banner -> equipment-and-copy split -> blue|Denver skyline, HVAC product cutouts and recent service-article thumbnails, with",
+          "Thin service-area utility line, white brand row, service links, call number and |A dark technician-at-condenser photograph supports a left-aligned plainspoken re|Start with what the system is doing, route to confirmed AC/heating/maintenance s|Large friendly sans headlines, compact status labels and concise visitor-centere|technician hero -> symptom-choice cards -> service photograph grid -> diagnosis |Authentic technician scenes fill a service photo grid, while a simple circular m"
+        ]
+      },
+      {
+        "id": "2026-11-12-apex-air-conditioning-heating-attempt-83-run-43308054941-attempt-1",
+        "launchedAt": "2026-11-12T21:17:46.664Z",
+        "stage": "attempt",
+        "reservationKey": "83-run-43308054941-attempt-1",
+        "businessName": "Apex Air Conditioning & Heating",
+        "businessKind": "hvac",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "archive-rail",
+          "hvac-dense-phone-first-header",
+          "hvac-equipment-montage-opening",
+          "hvac-mountain-photo-plus-diagnostic-promise",
+          "utility-diagnostic"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "object-product-stage",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "web-hvac-finish-line-denver",
+          "web-hvac-russell-comfort",
+          "web-hvac-trg-heating-cooling"
+        ],
+        "routeSignatures": [
+          "Dark blue horizontal home, product/service, resource and appointment links below|A dense logo-phone header leads into a skyline banner; the main explanation then|Place confirmed AC, furnace, boiler and comfort categories into a clear technica|Condensed blue uppercase section labels over smaller practical sans body copy.|utility identity and phone -> skyline banner -> equipment-and-copy split -> blue|Denver skyline, HVAC product cutouts and recent service-article thumbnails, with",
+          "Narrow local address/phone strip, simple home-gallery-services-contact links and|A bright product-equipment composition and centered booking action lead into a b|Use two compact columns of verified heating, cooling, ventilation and maintenanc|All-caps aqua headings, compact dark body copy and utilitarian plain service lis|equipment-led opening -> local company introduction -> service index -> area ind|Equipment montage opens; community mark strip, review overlay and city skyline c",
+          "Thin utility bar and straightforward heating, cooling and service links above th|A Colorado mountain image under deep navy frames a large white repair promise, r|Explain repair, installation and maintenance separately, followed by a realistic|Heavy readable sans statements, compact explanatory cards and clear red action l|mountain repair hero -> service taxonomy -> diagnosis promise band -> post-servi|Mountain and Denver location scenes are sparse; most of the long page is text, p"
+        ]
+      },
+      {
+        "id": "2026-11-12-apex-air-conditioning-heating-attempt-83-run-43315165917-attempt-1",
+        "launchedAt": "2026-11-12T22:00:48.656Z",
+        "stage": "attempt",
+        "reservationKey": "83-run-43315165917-attempt-1",
+        "businessName": "Apex Air Conditioning & Heating",
+        "businessKind": "hvac",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "hvac-local-aerial-hero",
+          "hvac-mountain-photo-plus-diagnostic-promise",
+          "hvac-symptom-first-choice-grid",
+          "typographic-poster",
+          "utility-diagnostic"
+        ],
+        "heroArchetypes": [
+          "image-overlay"
+        ],
+        "referenceIds": [
+          "web-hvac-alamo-austin-air",
+          "web-hvac-city-wide-austin",
+          "web-hvac-russell-comfort"
+        ],
+        "routeSignatures": [
+          "Small company mark, phone number and practical service/product links share the d|An aerial Austin bridge photograph supports a centered white condensed service p|Lead with heating, cooling, maintenance and air quality as distinct confirmed se|Tall condensed uppercase display for section headings, short sans support copy a|local photo hero and service quartet -> crew introduction split -> customer proo|Local aerial imagery, technician group portrait, customer home scenes and a mapp",
+          "Thin service-area utility line, white brand row, service links, call number and |A dark technician-at-condenser photograph supports a left-aligned plainspoken re|Start with what the system is doing, route to confirmed AC/heating/maintenance s|Large friendly sans headlines, compact status labels and concise visitor-centere|technician hero -> symptom-choice cards -> service photograph grid -> diagnosis |Authentic technician scenes fill a service photo grid, while a simple circular m",
+          "Thin utility bar and straightforward heating, cooling and service links above th|A Colorado mountain image under deep navy frames a large white repair promise, r|Explain repair, installation and maintenance separately, followed by a realistic|Heavy readable sans statements, compact explanatory cards and clear red action l|mountain repair hero -> service taxonomy -> diagnosis promise band -> post-servi|Mountain and Denver location scenes are sparse; most of the long page is text, p"
         ]
       }
     ],
@@ -1407,6 +1973,181 @@
           "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
           "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri",
           "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
+        ]
+      },
+      {
+        "id": "2026-11-11-coastal-brush-painting-co-attempt-146-run-43122074600-attempt-1",
+        "launchedAt": "2026-11-11T23:49:20.927Z",
+        "stage": "attempt",
+        "reservationKey": "146-run-43122074600-attempt-1",
+        "businessName": "Coastal Brush Painting Co.",
+        "businessKind": "painting",
+        "recipe": "local-trades",
+        "packId": "results-ledger",
+        "variantId": "standard",
+        "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "archive-rail",
+          "utility-diagnostic",
+          "web-painting-concept-pro",
+          "web-painting-house-doctor",
+          "web-painting-mfl"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form"
+        ],
+        "referenceIds": [
+          "web-painting-concept-pro",
+          "web-painting-house-doctor",
+          "web-painting-mfl"
+        ],
+        "routeSignatures": [
+          "minimal charcoal service links and light estimate controls|a low-light exterior-home photograph anchors a dark charcoal layout with a float|compact dark service cards followed by a visual before-and-after comparison|clean geometric sans with large centered statements and compact utility labels|dark image and form hero -> horizontal service strip -> four service cards -> be|darkened finished-home scenes, before-and-after slider, interior projects, and s",
+          "small white service navigation with a gold estimate action|a coastal-house image carries a navy overlay, stacked gold-and-white statement, |service list for interior, exterior, cabinetry, and wood staining followed by pr|large modern sans statements, small uppercase labels, and compact practical copy|coastal-home and form hero -> navy business introduction -> three audience cards|residential project photography with a few before-and-after work scenes",
+          "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
+        ]
+      },
+      {
+        "id": "2026-11-12-coastal-brush-painting-co-attempt-146-run-43325913732-attempt-1",
+        "launchedAt": "2026-11-12T23:09:59.445Z",
+        "stage": "attempt",
+        "reservationKey": "146-run-43325913732-attempt-1",
+        "businessName": "Coastal Brush Painting Co.",
+        "businessKind": "painting",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "editorial-monument",
+          "typographic-poster",
+          "web-painting-av",
+          "web-painting-novak",
+          "web-painting-southern"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form"
+        ],
+        "referenceIds": [
+          "web-painting-av",
+          "web-painting-novak",
+          "web-painting-southern"
+        ],
+        "routeSignatures": [
+          "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
+          "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
+          "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
+        ]
+      },
+      {
+        "id": "2026-11-13-coastal-brush-painting-co-attempt-146-run-43450540177-attempt-1",
+        "launchedAt": "2026-11-13T15:18:57.010Z",
+        "stage": "attempt",
+        "reservationKey": "146-run-43450540177-attempt-1",
+        "businessName": "Coastal Brush Painting Co.",
+        "businessKind": "painting",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "archive-rail",
+          "typographic-poster",
+          "web-painting-house-doctor",
+          "web-painting-mfl",
+          "web-painting-southern"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form"
+        ],
+        "referenceIds": [
+          "web-painting-house-doctor",
+          "web-painting-mfl",
+          "web-painting-southern"
+        ],
+        "routeSignatures": [
+          "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
+          "small white service navigation with a gold estimate action|a coastal-house image carries a navy overlay, stacked gold-and-white statement, |service list for interior, exterior, cabinetry, and wood staining followed by pr|large modern sans statements, small uppercase labels, and compact practical copy|coastal-home and form hero -> navy business introduction -> three audience cards|residential project photography with a few before-and-after work scenes",
+          "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
+        ]
+      },
+      {
+        "id": "2026-11-13-coastal-brush-painting-co-attempt-146-run-43452226394-attempt-1",
+        "launchedAt": "2026-11-13T15:27:59.632Z",
+        "stage": "attempt",
+        "reservationKey": "146-run-43452226394-attempt-1",
+        "businessName": "Coastal Brush Painting Co.",
+        "businessKind": "painting",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "editorial-monument",
+          "utility-diagnostic",
+          "web-painting-av",
+          "web-painting-concept-pro",
+          "web-painting-novak"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form"
+        ],
+        "referenceIds": [
+          "web-painting-av",
+          "web-painting-concept-pro",
+          "web-painting-novak"
+        ],
+        "routeSignatures": [
+          "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
+          "minimal charcoal service links and light estimate controls|a low-light exterior-home photograph anchors a dark charcoal layout with a float|compact dark service cards followed by a visual before-and-after comparison|clean geometric sans with large centered statements and compact utility labels|dark image and form hero -> horizontal service strip -> four service cards -> be|darkened finished-home scenes, before-and-after slider, interior projects, and s",
+          "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
+        ]
+      },
+      {
+        "id": "2026-11-13-coastal-brush-painting-co-attempt-146-run-43456014419-attempt-1",
+        "launchedAt": "2026-11-13T15:50:23.007Z",
+        "stage": "attempt",
+        "reservationKey": "146-run-43456014419-attempt-1",
+        "businessName": "Coastal Brush Painting Co.",
+        "businessKind": "painting",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "archive-rail",
+          "editorial-monument",
+          "typographic-poster",
+          "web-painting-mfl",
+          "web-painting-novak",
+          "web-painting-southern"
+        ],
+        "heroArchetypes": [
+          "split-form"
+        ],
+        "referenceIds": [
+          "web-painting-mfl",
+          "web-painting-novak",
+          "web-painting-southern"
+        ],
+        "routeSignatures": [
+          "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
+          "small white service navigation with a gold estimate action|a coastal-house image carries a navy overlay, stacked gold-and-white statement, |service list for interior, exterior, cabinetry, and wood staining followed by pr|large modern sans statements, small uppercase labels, and compact practical copy|coastal-home and form hero -> navy business introduction -> three audience cards|residential project photography with a few before-and-after work scenes",
+          "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
         ]
       }
     ],
@@ -2109,6 +2850,111 @@
         "stage": "attempt",
         "reservationKey": "217-run-42726217139-attempt-1",
         "businessName": "Alder & Iron Plumbing Co.",
+        "businessKind": "home-services",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "colorlib-fixwell-quote-desk",
+          "typographic-poster",
+          "utility-diagnostic",
+          "web-homeservices-morris-jenkins",
+          "web-homeservices-roto-rooter"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form"
+        ],
+        "referenceIds": [
+          "colorlib-fixwell-quote-desk",
+          "web-homeservices-morris-jenkins",
+          "web-homeservices-roto-rooter"
+        ],
+        "routeSignatures": [
+          "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
+          "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
+          "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
+        ]
+      },
+      {
+        "id": "2026-11-11-cedar-stone-plumbing-attempt-278-run-43064737383-attempt-1",
+        "launchedAt": "2026-11-11T17:13:20.118Z",
+        "stage": "attempt",
+        "reservationKey": "278-run-43064737383-attempt-1",
+        "businessName": "Cedar & Stone Plumbing",
+        "businessKind": "home-services",
+        "recipe": "local-trades",
+        "packId": "kinetic-poster",
+        "variantId": "standard",
+        "layoutFingerprint": "kinetic-poster|standard|command-bar|poster-split|quick-request|diagnostic-list|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/coverage/process/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "colorlib-fixwell-quote-desk",
+          "typographic-poster",
+          "utility-diagnostic",
+          "web-homeservices-morris-jenkins",
+          "web-homeservices-roto-rooter"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form"
+        ],
+        "referenceIds": [
+          "colorlib-fixwell-quote-desk",
+          "web-homeservices-morris-jenkins",
+          "web-homeservices-roto-rooter"
+        ],
+        "routeSignatures": [
+          "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
+          "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
+          "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
+        ]
+      },
+      {
+        "id": "2026-11-11-cedar-stone-plumbing-attempt-278-run-43086631930-attempt-1",
+        "launchedAt": "2026-11-11T19:47:38.885Z",
+        "stage": "attempt",
+        "reservationKey": "278-run-43086631930-attempt-1",
+        "businessName": "Cedar & Stone Plumbing",
+        "businessKind": "home-services",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "colorlib-fixwell-quote-desk",
+          "typographic-poster",
+          "utility-diagnostic",
+          "web-homeservices-morris-jenkins",
+          "web-homeservices-roto-rooter"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form"
+        ],
+        "referenceIds": [
+          "colorlib-fixwell-quote-desk",
+          "web-homeservices-morris-jenkins",
+          "web-homeservices-roto-rooter"
+        ],
+        "routeSignatures": [
+          "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
+          "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
+          "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
+        ]
+      },
+      {
+        "id": "2026-11-11-cedar-stone-plumbing-attempt-278-run-43110671669-attempt-1",
+        "launchedAt": "2026-11-11T22:25:01.179Z",
+        "stage": "attempt",
+        "reservationKey": "278-run-43110671669-attempt-1",
+        "businessName": "Cedar & Stone Plumbing",
         "businessKind": "home-services",
         "recipe": "local-trades",
         "packId": "bold-utility",

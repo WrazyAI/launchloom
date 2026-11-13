@@ -43,7 +43,10 @@ import {
   selectExperiencePackId,
   selectExperienceVariantId,
 } from "../templates/client-site/src/lib/experience-pack.ts";
-import { findUnsupportedBusinessClaimLocations } from "./business-copy-claims.mjs";
+import {
+  findUnsupportedBusinessClaimLocations,
+  findUnsupportedBusinessClaimMatches,
+} from "./business-copy-claims.mjs";
 
 // Bounded per-process usage evidence so the generation workflow can report
 // provider cost without parsing runner logs. Never changes the generated
@@ -73,6 +76,9 @@ function siteCopyProvider() {
 // computed from the published Go price table.
 const SITE_COPY_GO_MAX_ATTEMPTS = 3;
 const SITE_COPY_GO_RETRY_DELAY_MS = 2_000;
+// A rate limit needs real recovery time. Retrying after 2s and 4s burned all
+// three attempts during a provider throttle and failed the whole intake.
+const SITE_COPY_GO_RATE_LIMIT_DELAY_MS = 30_000;
 const TRANSIENT_SITE_COPY_ERROR_CODES = new Set([
   "transport",
   "rate-limit",
@@ -81,14 +87,18 @@ const TRANSIENT_SITE_COPY_ERROR_CODES = new Set([
   "provider-error",
 ]);
 
-function siteCopyRetryDelayMs(attempt) {
+function siteCopyRetryDelayMs(attempt, errorCode = "") {
   const configured = Number(
     process.env.SITE_COPY_GO_RETRY_DELAY_MS ?? SITE_COPY_GO_RETRY_DELAY_MS,
   );
   const base = Number.isFinite(configured)
     ? Math.max(0, configured)
     : SITE_COPY_GO_RETRY_DELAY_MS;
-  return base * attempt;
+  // Back off exponentially, and give a throttle the longer floor it needs.
+  const backoff = base * 2 ** (attempt - 1);
+  return errorCode === "rate-limit"
+    ? Math.max(backoff, SITE_COPY_GO_RATE_LIMIT_DELAY_MS * attempt)
+    : backoff;
 }
 
 async function siteCopyOpencodeGoCompletion({
@@ -131,7 +141,7 @@ async function siteCopyOpencodeGoCompletion({
       result?.status === "error" &&
       TRANSIENT_SITE_COPY_ERROR_CODES.has(errorCode);
     if (!transient || attempt === SITE_COPY_GO_MAX_ATTEMPTS) break;
-    const delayMs = siteCopyRetryDelayMs(attempt);
+    const delayMs = siteCopyRetryDelayMs(attempt, errorCode);
     console.warn(
       `site_copy_go_retry label=${label} code=${errorCode} http_status=${result?.error?.httpStatus ?? "none"} attempt=${attempt}/${SITE_COPY_GO_MAX_ATTEMPTS} retry_in_ms=${delayMs}`,
     );
@@ -420,6 +430,22 @@ function copywriterContext(intake = {}) {
       customerQuestions: [...new Set(customerQuestions)],
     },
   };
+}
+
+/**
+ * Remove optional marketing bullets that assert an unsupported business claim.
+ *
+ * A differentiator is optional supporting copy: dropping one that invents
+ * licensing, insurance, a warranty or availability removes the fabricated claim
+ * without discarding an otherwise deliverable site. Required copy (hero body,
+ * service descriptions, FAQs) is still validated and fails closed.
+ */
+function withoutUnsupportedDifferentiators(differentiators, intake = {}) {
+  return (Array.isArray(differentiators) ? differentiators : []).filter(
+    (entry) =>
+      typeof entry !== "string" ||
+      findUnsupportedBusinessClaimMatches(entry, intake).length === 0,
+  );
 }
 
 function copyRefinementDraft(draft = {}) {
@@ -718,11 +744,10 @@ const STOCK_PACKS = {
     secondary:
       "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=1200&q=85",
   },
-  "home-services": {
-    hero: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=85",
-    secondary:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1200&q=85",
-  },
+  // The previous Unsplash pair had no reviewed provenance metadata, so the
+  // SEO release gate correctly rejected the hosted URLs. Generated route
+  // imagery or brand art supplies the visual instead.
+  "home-services": {},
   "professional-services": {
     hero: "/images/packs/professional-services-advisory-v1.png",
     metadata: {
@@ -3057,7 +3082,12 @@ export function normalise(candidate, intake) {
         : {}),
     },
     services: services.length ? services : base.services,
-    differentiators: different.length ? different : base.differentiators,
+    // Optional marketing bullets: drop any that assert an unsupported claim
+    // rather than failing the whole site on invented credentials or warranty.
+    differentiators: withoutUnsupportedDifferentiators(
+      different.length ? different : base.differentiators,
+      intake,
+    ),
     blogArticles: normaliseBlogArticles(intake.blogArticles),
     locations:
       base.industry === "home-services"
@@ -3391,7 +3421,7 @@ async function askModel(intake, effort, model = siteCopyDefaultModel()) {
 NARRATIVE SPINE
 Before writing any copy, decide the page narrative and return it in narrative:
 { audience, offer, primaryAction, secondaryAction, objections: [{ objection, answer, section }], proof: [{ claim, evidence }], sectionJobs: { hero, services, process, about, faq, contact }, pageArgument: [steps] }.
-Use exactly three visitor objections. section must be one of hero, services, process, about, faq, contact. Each answer must use only verified facts or a cautious next step. proof may contain only proof supplied in the brief, and evidence must be a verbatim phrase from the brief; if no proof is supplied, return an empty array. Each section job must be distinct and must not repeat another section's claim. primaryAction must match business.primaryCta. Then write the copy so every section performs its job and every objection is answered somewhere in the page. Do not invent proof, policies, prices, credentials, staff, reviews, or outcomes.
+Use exactly three visitor objections. section must be one of hero, services, process, about, faq, contact. Each answer must use only verified facts or a cautious next step. proof may contain only proof supplied in the brief, and evidence must be a verbatim phrase from the brief; if no proof is supplied, return an empty array. Each section job must be distinct and must not repeat another section's claim. primaryAction must match business.primaryCta. Then write the copy so every section performs its job and every objection is answered somewhere in the page. Do not invent proof, policies, prices, credentials, staff, reviews, or outcomes. Every differentiator must restate something the brief actually states. Never add licensing, insurance, bonding, certification, warranties, guarantees, availability (such as 24/7, same-day, or emergency response), or reputation claims (such as award-winning, five-star, top-rated, rated, star ratings, or review/customer counts) unless the brief supplies that exact fact; when the brief supplies no differentiators, return an empty array instead of inventing them. This applies to every field, including decisionSupport scope, preparation and nextStep.
 
 COPY SPECIFICITY
 The narrative is a plan, not the copy. Do not restate the narrative in the page. Every sentence must be more specific than the plan.

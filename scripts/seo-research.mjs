@@ -1007,7 +1007,7 @@ function aggregateCompetitors(serps) {
       const domain = text(result.domain, 180)
         .toLocaleLowerCase()
         .replace(/^www\./u, "");
-      if (!domain) continue;
+      if (!domain || isSearchEngineRedirectHost(domain)) continue;
       if (!domains.has(domain))
         domains.set(domain, {
           domain,
@@ -1052,6 +1052,76 @@ function aggregateCompetitors(serps) {
         b.results.length - a.results.length || a.domain.localeCompare(b.domain),
     )
     .slice(0, 6);
+}
+
+const SEARCH_ENGINE_REDIRECT_HOST =
+  /(^|\.)(?:google\.[a-z.]+|bing\.com|duckduckgo\.com|search\.yahoo\.com|search\.brave\.com)$/u;
+
+function isSearchEngineRedirectHost(host) {
+  return SEARCH_ENGINE_REDIRECT_HOST.test(
+    String(host || "")
+      .toLocaleLowerCase()
+      .replace(/^www\./u, ""),
+  );
+}
+
+/**
+ * DataForSEO can return Google `/goto` redirect tokens instead of the
+ * publisher URL. Resolve those links to their final host so competitor and
+ * market-map evidence counts the publisher, not the search engine.
+ */
+/**
+ * @param {any[]} serps
+ * @param {(input: any, init?: any) => Promise<any>} [fetchImpl]
+ */
+export async function resolveSerpResultDomains(serps, fetchImpl = fetch) {
+  const targets = [];
+  for (const serp of serps || [])
+    for (const result of serp?.results || [])
+      if (
+        result &&
+        result.url &&
+        isSearchEngineRedirectHost(result.domain || safeDomain(result.url))
+      )
+        targets.push(result);
+  const urls = [...new Set(targets.map((result) => result.url))].slice(0, 40);
+  const resolved = new Map();
+  let cursor = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(6, urls.length) }, async () => {
+      while (cursor < urls.length) {
+        const url = urls[cursor++];
+        try {
+          const response = await fetchImpl(url, {
+            redirect: "follow",
+            headers: {
+              "user-agent":
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+              accept: "text/html,application/xhtml+xml",
+            },
+            signal: AbortSignal.timeout(12_000),
+          });
+          try {
+            await response.body?.cancel();
+          } catch {}
+          const host = new URL(response.url).hostname
+            .toLocaleLowerCase()
+            .replace(/^www\./u, "");
+          if (host && !isSearchEngineRedirectHost(host))
+            resolved.set(url, host);
+        } catch {
+          /* unresolved links stay fail-closed */
+        }
+      }
+    }),
+  );
+  let unresolved = 0;
+  for (const result of targets) {
+    const host = resolved.get(result.url);
+    if (host) result.domain = host;
+    else unresolved += 1;
+  }
+  return { resolved: resolved.size, unresolved };
 }
 
 function makeBlogOpportunities(metrics, questionEvidence) {
@@ -2410,6 +2480,14 @@ async function researchSingleCity(intake = {}, options = {}) {
     });
     base.completeness.serviceSerps += 1;
   }
+  const serpDomainResolution = await resolveSerpResultDomains(
+    allSerps,
+    options.fetchImpl || fetch,
+  );
+  if (serpDomainResolution.unresolved)
+    warnings.push(
+      "Some search-result links could not be resolved to their publisher domain; competitor coverage may be incomplete.",
+    );
   base.completeness.competitors = aggregateCompetitors(allSerps).length;
   if (base.completeness.serviceSerps < seo.services.length)
     warnings.push(

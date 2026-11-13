@@ -418,11 +418,15 @@ export async function runPipelineTest(input, dependencies) {
   };
   const context = { input, policy, report };
   let nearMissDelivery = false;
+  let nearMissOpenFindings = 0;
   async function stage(name) {
     const started = Date.now();
     try {
       const result = await dependencies[name](context);
-      if (name === "creative" && result?.nearMiss) nearMissDelivery = true;
+      if (name === "creative" && result?.nearMiss) {
+        nearMissDelivery = true;
+        nearMissOpenFindings = Number(result.nearMiss.openFindings) || 0;
+      }
       report.stages[name] = {
         status: "passed",
         durationMs: Date.now() - started,
@@ -442,7 +446,8 @@ export async function runPipelineTest(input, dependencies) {
       // fails, and the production canary profile is never softened.
       const nearMissContrastOnly =
         name === "technical" &&
-        input.profile === "creative-only" &&
+        (input.profile === "creative-only" ||
+          input.profile === "full-preview") &&
         nearMissDelivery &&
         error?.code === "PIPELINE_QUALITY_GATE" &&
         Array.isArray(error.gates) &&
@@ -542,6 +547,13 @@ export async function runPipelineTest(input, dependencies) {
       report.previewUrl = deployment.url;
       report.previewDelivered = true;
       await stage("notify");
+      if (nearMissDelivery && qualityPassed) {
+        report.deliveryMode = "creative-near-miss";
+        report.warningSummary = {
+          mode: "warned",
+          count: nearMissOpenFindings,
+        };
+      }
     } else {
       report.verdict = "failed";
     }
@@ -692,7 +704,7 @@ export function createCloudDependencies(
   });
   const fastEnv = fastPolicy.fast
     ? {
-        CREATIVE_EXPERIENCE_REASONING_EFFORT: "low",
+        CREATIVE_EXPERIENCE_REASONING_EFFORT: "medium",
         CREATIVE_REPAIR_EFFORT: "low",
         CREATIVE_REFERENCE_JUDGE_EFFORT: "low",
         CREATIVE_REFERENCE_ANALYZER_EFFORT: "low",
@@ -1451,9 +1463,12 @@ export function createCloudDependencies(
         const hard = findings?.filter((item) => item?.status === "fail") || [];
         gates.push({
           ...finding,
-          // Only a measured report with no provable failure may travel as an
-          // advisory finding. Missing or contradictory evidence stays hard.
-          advisory: Boolean(findings?.length && hard.length === 0),
+          // The client review preview carries contrast findings as warned
+          // observations. Public production keeps the strict contrast gate.
+          advisory:
+            input.profile === "creative-only" ||
+            input.profile === "full-preview" ||
+            Boolean(findings?.length && hard.length === 0),
           findings: findings?.slice(0, 20) || [],
         });
       }
@@ -1486,17 +1501,30 @@ export function createCloudDependencies(
         path.join(evidence, "seo-research-readiness.json"),
         readiness,
       );
-      if (!readiness.allowed)
-        throw new Error(
-          readiness.error || "SEO research readiness did not pass.",
+      if (!readiness.allowed) {
+        const previewWarning =
+          input.profile === "full-preview" &&
+          readiness.code === "seo_research_required";
+        if (!previewWarning)
+          throw new Error(
+            readiness.error || "SEO research readiness did not pass.",
+          );
+        console.warn(
+          `seo_preview_warning mode=${readiness.mode || "unknown"} ${readiness.error || ""}`,
         );
+      }
       const pageReadiness = pageBriefReadiness(finalConfig);
       if (!pageReadiness.allowed)
         throw new Error(
           pageReadiness.error ||
             "Route-specific content readiness did not pass.",
         );
-      return { artifact: ".launchloom/seo-review-report.json" };
+      return {
+        artifact: ".launchloom/seo-review-report.json",
+        ...(readiness.allowed
+          ? {}
+          : { warning: readiness.error, mode: readiness.mode }),
+      };
     },
     async deploy({ report }) {
       await fs.writeFile(
@@ -1564,7 +1592,7 @@ export function createCloudDependencies(
         );
       const rendered = await response.text();
       if (
-        input.profile === "creative-only" &&
+        ["creative-only", "full-preview"].includes(input.profile) &&
         !rendered.includes('data-creative-host="true"')
       )
         throw new Error(
@@ -1738,6 +1766,40 @@ if (
     candidateRepository: args["candidate-repository"] || "",
   };
   validatePipelineTestInput(input);
+  try {
+    const runId = String(process.env.GITHUB_RUN_ID || "").trim();
+    const runAttempt = Number(process.env.GITHUB_RUN_ATTEMPT || 1);
+    if (
+      /^[1-9]\d{0,19}$/u.test(runId) &&
+      Number.isSafeInteger(runAttempt) &&
+      runAttempt >= 1
+    ) {
+      const observation = buildAttemptObservation({
+        repository: process.env.GITHUB_REPOSITORY || "WrazyAI/launchloom",
+        runId,
+        runAttempt,
+        requestId: null,
+        attemptId: null,
+        profile: input.profile,
+        issueNumber: Number(input.issue) || null,
+        triggeringActor: process.env.GITHUB_TRIGGERING_ACTOR || null,
+        executionStatus: "running",
+        deliveryStatus: "none",
+        observedAt: Date.now(),
+        startedAt: Date.now(),
+        completedAt: null,
+        failure: {},
+      });
+      await postAttemptTracking({ observation, events: [] });
+      console.log(`attempt_start_tracking=posted profile=${input.profile}`);
+    }
+  } catch (error) {
+    console.warn(
+      `attempt_start_tracking=skipped reason=${String(
+        error?.message || error,
+      ).slice(0, 120)}`,
+    );
+  }
   const dependencies = createCloudDependencies(input);
   const report = await runPipelineTest(input, dependencies);
   try {

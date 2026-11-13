@@ -54,7 +54,7 @@ jobs:
         if: steps.claim.outputs.run == 'true'
         run: |
           npm ci
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium || npx playwright install chromium
       - name: Create or reuse the active client revision PR
         if: steps.claim.outputs.run == 'true'
         id: revision
@@ -65,8 +65,14 @@ jobs:
             PR=$(printf '%s' "$OPEN" | jq -r .number)
             BRANCH=$(printf '%s' "$OPEN" | jq -r .headRefName)
           else
-            SAFE_REQUEST=$(printf '%s' "$REVISION_REQUEST_ID" | tr -cd '[:alnum:]_-' | cut -c1-24)
+            # Trimming a UUID can leave a trailing hyphen, and a Cloudflare
+            # Pages branch alias is also a DNS label: it must not start or end
+            # with a hyphen. Strip edges after the trim, then re-check.
+            SAFE_REQUEST=$(printf '%s' "$REVISION_REQUEST_ID" | tr -cd '[:alnum:]_-' | cut -c1-24 | sed -e 's/^-*//' -e 's/-*$//')
             test -n "$SAFE_REQUEST" || SAFE_REQUEST="${GITHUB_RUN_ID}"
+            case "$SAFE_REQUEST" in
+              *[!a-z0-9-]*|"") echo "Unsafe revision branch token" >&2; exit 1 ;;
+            esac
             BRANCH="review/client-revision-$SAFE_REQUEST"
             gh label create launchloom-client-revision --repo "$CLIENT_REPO" --color 1D76DB --description "LaunchLoom client revision awaiting developer approval" --force
             git clone "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"
@@ -96,7 +102,7 @@ jobs:
           if [ -n "$PUBLICATION_BASE_SHA" ]; then
             git -C "$RUNNER_TEMP/client" merge-base --is-ancestor "$PUBLICATION_BASE_SHA" HEAD || { echo "Revision branch does not contain the published base"; exit 1; }
           fi
-          node scripts/revision-checkpoint.mjs \
+          node "$GITHUB_WORKSPACE/scripts/revision-checkpoint.mjs" \
             --action prepare \
             --repo "$RUNNER_TEMP/client" \
             --request-id "$REVISION_REQUEST_ID" \
@@ -117,7 +123,7 @@ jobs:
         if: steps.claim.outputs.run == 'true' && steps.revision.outputs.replay != 'true'
         id: preflight
         run: |
-          if ! node scripts/revision-scope.mjs preflight --client "$RUNNER_TEMP/client" --base "$(cat "$RUNNER_TEMP/client-base-sha")" > "$RUNNER_TEMP/revision-preflight.log" 2>&1; then
+          if ! node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" preflight --client "$RUNNER_TEMP/client" --base "$(cat "$RUNNER_TEMP/client-base-sha")" > "$RUNNER_TEMP/revision-preflight.log" 2>&1; then
             cat "$RUNNER_TEMP/revision-preflight.log" >&2
             printf 'Safe-write preflight failed before feedback was applied.\n' > "$RUNNER_TEMP/client-feedback.txt"
             cat "$RUNNER_TEMP/revision-preflight.log" > "$RUNNER_TEMP/revision-outcome.txt"
@@ -206,10 +212,16 @@ jobs:
             node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$RUNNER_TEMP/client" --manifest "$RUNNER_TEMP/revision-scope.json"
           fi
           BRANCH_SAFE=$(printf '%s' "$REVISION_BRANCH" | tr '/' '-')
-          npx wrangler pages deploy dist --project-name "$PROJECT" --branch "$BRANCH_SAFE" --commit-hash "$(git rev-parse HEAD)" --commit-message "Client feedback developer preview"
+          DEPLOY_LOG=$(mktemp)
+          npx wrangler pages deploy dist --project-name "$PROJECT" --branch "$BRANCH_SAFE" --commit-hash "$(git rev-parse HEAD)" --commit-message "Client feedback developer preview" 2>&1 | tee "$DEPLOY_LOG"
+          # Cloudflare truncates branch aliases to 28 characters and may not
+          # publish one at all, so the deployment URL is the only origin we
+          # can prove exists. Use it for readiness, the review token and email.
+          DEPLOY_URL=$(grep -Eo 'https://[a-z0-9-]+\.'$PROJECT'\.pages\.dev' "$DEPLOY_LOG" | tail -1)
+          test -n "$DEPLOY_URL" || { echo "Cloudflare did not report a deployment URL" >&2; exit 1; }
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "project=$PROJECT" >> "$GITHUB_OUTPUT"
-          echo "preview=https://$BRANCH_SAFE.$PROJECT.pages.dev" >> "$GITHUB_OUTPUT"
+          echo "preview=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Send the revised preview to the developer
         id: review_delivery

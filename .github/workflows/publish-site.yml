@@ -48,7 +48,7 @@ jobs:
         run: npm ci
       - name: Install contrast verifier browser
         if: steps.claim.outputs.run == 'true'
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium || npx playwright install chromium
       - name: Build and direct-upload approved client site
         if: steps.claim.outputs.run == 'true'
         id: publish
@@ -107,6 +107,10 @@ jobs:
           echo "::add-mask::$TOKEN"
           NAME="$(node -e 'const x=require("./src/site.config.json"); console.log(x.business.name)')"
           REVIEW_URL="$PRODUCTION?review=$TOKEN"
+          CLIENT_LINK_MARKER="<!-- launchloom-client-review:$APPROVED_SHA -->"
+          if ! gh api "repos/$CLIENT_REPO/issues/$CLIENT_PR/comments?per_page=100" --paginate --jq '.[].body' | grep -Fq "$CLIENT_LINK_MARKER"; then
+            gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s' "$CLIENT_LINK_MARKER" '## Client review link' "$REVIEW_URL")"
+          fi
           EMAIL_ARGS=(--to "$CLIENT_EMAIL" --name "$NAME" --preview "$PRODUCTION" --review "$REVIEW_URL" --kind published --audience client)
           EMAIL_KEY=$(printf '%s' "$APPROVED_SHA:$CLIENT_EMAIL" | sha256sum | cut -c1-24)
           EMAIL_ARGS+=(--idempotency-key "published-$EMAIL_KEY")

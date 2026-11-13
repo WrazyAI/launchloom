@@ -29,7 +29,7 @@ for (const workflow of [
 ]) {
   it(`${workflow} commits and pushes only after every revision quality gate passes`, async () => {
     const source = await fs.readFile(`.github/workflows/${workflow}`, "utf8");
-    const preflight = source.indexOf("revision-scope.mjs preflight");
+    const preflight = source.indexOf("revision-scope.mjs");
     const applyFeedback = source.indexOf("node scripts/apply-feedback.mjs");
     expect(preflight).toBeGreaterThanOrEqual(0);
     expect(applyFeedback).toBeGreaterThan(preflight);
@@ -99,4 +99,41 @@ it("uses the intake feedback issue id instead of a nonexistent revision-step out
     source.indexOf("- name: Send the revised preview to the developer"),
   );
   expect(reviewDelivery).toContain('--feedback-issue "$FEEDBACK_ISSUE"');
+});
+
+it("keeps the client revision branch alias a valid DNS label", async () => {
+  const source = await fs.readFile(
+    ".github/workflows/process-client-feedback.yml",
+    "utf8",
+  );
+  // Cloudflare Pages exposes each branch as a DNS label. A UUID trimmed to a
+  // fixed width can end in a hyphen, which no alias can ever serve.
+  const token = source.slice(
+    source.indexOf("SAFE_REQUEST=$(printf"),
+    source.indexOf('BRANCH="review/client-revision-'),
+  );
+  expect(token).toContain("-e 's/-*$//'");
+  expect(token).toContain("*[!a-z0-9-]*");
+  const candidates = [
+    "2428ef16-47a7-4fea-8fe4-f00d8b86e3db",
+    "9e791a55-b550-4f69-9398-49cfe804f284",
+  ].map((id) => id.replace(/[^a-z0-9_-]/gu, "").slice(0, 24).replace(/^-*/u, "").replace(/-*$/u, ""));
+  for (const candidate of candidates) {
+    expect(candidate).not.toMatch(/^-|-$/u);
+    expect(candidate).toMatch(/^[a-z0-9-]+$/u);
+  }
+});
+
+it("uses the deployment URL Cloudflare reports, not a guessed branch alias", async () => {
+  const source = await fs.readFile(
+    ".github/workflows/process-client-feedback.yml",
+    "utf8",
+  );
+  const deploy = source.slice(source.indexOf("npx wrangler pages deploy dist"));
+  // Cloudflare truncates branch aliases to 28 characters, so a full-name
+  // alias can 404 forever even after a successful deploy.
+  expect(deploy).toContain("tee \"$DEPLOY_LOG\"");
+  expect(deploy).toContain("DEPLOY_URL=$(grep -Eo");
+  expect(deploy).toContain('echo "preview=$DEPLOY_URL"');
+  expect(deploy).not.toContain('echo "preview=https://$BRANCH_SAFE');
 });

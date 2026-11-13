@@ -419,6 +419,90 @@ export async function resolveRenderedBackdrop(
         .catch(() => {});
     }
   };
+  // A focus ring with a positive outline-offset paints entirely outside the
+  // element's border box, so an element-box screenshot never contains it.
+  // Hiding the ring then changes no pixels, and the target was false-reported
+  // as "indistinguishable from its backdrop" at 1.000. Capture the ring's own
+  // padded band so the ring is actually in frame.
+  const captureOutlineBand = async (locator, allowScroll) => {
+    const geometry = await locator.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      return {
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        offset: parseFloat(style.outlineOffset) || 0,
+        outlineWidth: parseFloat(style.outlineWidth) || 0,
+      };
+    });
+    // Only a ring painted outside the border box is missing from an element
+    // screenshot. An inset ring is already inside it, and its backdrop is the
+    // element's own fill, so that case keeps the element capture.
+    if (geometry.offset < 0) return null;
+    // Grow past the ring on every side and leave >= 5px of clear background
+    // outside it, so the 4px backdrop band can never sample the ring itself.
+    const pad = geometry.offset + geometry.outlineWidth + 5;
+    const band = {
+      x: geometry.x - pad,
+      y: geometry.y - pad,
+      width: geometry.width + pad * 2,
+      height: geometry.height + pad * 2,
+    };
+    const clip = visibleIntersection(band, page.viewportSize());
+    if (!clip) {
+      if (!allowScroll)
+        throw new Error("focus ring band is outside the state viewport");
+      const previousScroll = await page.evaluate(() => ({
+        x: scrollX,
+        y: scrollY,
+      }));
+      try {
+        await locator.evaluate((element) =>
+          element.scrollIntoView({
+            block: "center",
+            inline: "nearest",
+            behavior: "instant",
+          }),
+        );
+        const scrolled = await locator.evaluate((element) => {
+          const style = getComputedStyle(element);
+          const box = element.getBoundingClientRect();
+          return {
+            x: box.x,
+            y: box.y,
+            width: box.width,
+            height: box.height,
+            offset: parseFloat(style.outlineOffset) || 0,
+            outlineWidth: parseFloat(style.outlineWidth) || 0,
+          };
+        });
+        const scrolledPad = scrolled.offset + scrolled.outlineWidth + 5;
+        const scrolledClip = visibleIntersection(
+          {
+            x: scrolled.x - scrolledPad,
+            y: scrolled.y - scrolledPad,
+            width: scrolled.width + scrolledPad * 2,
+            height: scrolled.height + scrolledPad * 2,
+          },
+          page.viewportSize(),
+        );
+        if (!scrolledClip)
+          throw new Error("focus ring band is not visible after scrolling");
+        return await page.screenshot({
+          type: "png",
+          clip: scrolledClip,
+          timeout: 2500,
+        });
+      } finally {
+        await page
+          .evaluate(({ x, y }) => window.scrollTo(x, y), previousScroll)
+          .catch(() => {});
+      }
+    }
+    return page.screenshot({ type: "png", clip, timeout: 2500 });
+  };
   for (const target of candidates) {
     const locator = page.locator(target.selector).first();
     const partialPlate = partialPlateOnly(target);
@@ -488,9 +572,14 @@ export async function resolveRenderedBackdrop(
         { timeout: 1500 },
       );
       try {
-        png = partialPlate
-          ? await capturePartialPlate(locator, target.state === "default")
-          : await locator.screenshot({ type: "png", timeout: 2500 });
+        const outlinePng = outlineTargetOf(target)
+          ? await captureOutlineBand(locator, target.state === "default")
+          : null;
+        png =
+          outlinePng ??
+          (partialPlate
+            ? await capturePartialPlate(locator, target.state === "default")
+            : await locator.screenshot({ type: "png", timeout: 2500 }));
       } finally {
         await locator
           .evaluate(
@@ -515,12 +604,17 @@ export async function resolveRenderedBackdrop(
       // otherwise sample the occluder and false-pass the text.
       let visiblePixels = null;
       try {
-        const visibleCapture = partialPlate
-          ? await capturePartialPlate(locator, target.state === "default")
-          : await locator.screenshot({
-              type: "png",
-              timeout: 2500,
-            });
+        const outlineCapture = outlineTargetOf(target)
+          ? await captureOutlineBand(locator, target.state === "default")
+          : null;
+        const visibleCapture =
+          outlineCapture ??
+          (partialPlate
+            ? await capturePartialPlate(locator, target.state === "default")
+            : await locator.screenshot({
+                type: "png",
+                timeout: 2500,
+              }));
         visiblePixels = (await decodeRgbaPixels(visibleCapture)).pixels;
       } catch {
         visiblePixels = null;
@@ -573,11 +667,19 @@ export async function resolveRenderedBackdrop(
           String(issue),
         ),
       );
+      const renderedReviewRequired = (target.issues || []).some((issue) =>
+        /requires rendered review/u.test(String(issue)),
+      );
       const flatBackground =
-        !unsafeFlatPair && target.variable === false
-          ? target.selfBackground ||
-            uniformOpaqueBackground(target.backgrounds)
-          : null;
+        target.kind === "text" &&
+        target.selfBackground &&
+        !renderedReviewRequired
+          ? target.selfBackground
+          : !renderedReviewRequired &&
+              !unsafeFlatPair &&
+              target.variable === false
+            ? uniformOpaqueBackground(target.backgrounds)
+            : null;
       const flatRatio =
         flatBackground && target.minimum != null && effectiveForeground
           ? flatContrastRatio(effectiveForeground, flatBackground)

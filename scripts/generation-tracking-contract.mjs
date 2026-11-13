@@ -101,6 +101,39 @@ export function safeDiagnosticPreviewUrl(value) {
     return null;
   }
 }
+/**
+ * Sanitise a delivered client preview for display and reporting.
+ *
+ * `safeDiagnosticPreviewUrl` is deliberately narrow: it gates the Cloudflare
+ * Access proxy, which may only forward its service token to the focused test
+ * project. A real client preview lives at `<project>.pages.dev`, so reusing
+ * that allowlist here silently nulled every delivered preview URL and made a
+ * delivered site look like a missing one. This accepts any Cloudflare Pages
+ * preview host while still refusing credentials, ports, queries, fragments and
+ * non-root paths.
+ */
+export function safeClientPreviewUrl(value) {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.port ||
+      url.pathname !== "/" ||
+      url.search ||
+      url.hash ||
+      !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+pages\.dev$/u.test(
+        url.hostname,
+      )
+    )
+      return null;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
 export function buildAttemptObservation(input) {
   strictKeys(input, [
     "repository",
@@ -135,12 +168,21 @@ export function buildAttemptObservation(input) {
   if (!deliveries.includes(input.deliveryStatus)) fail("delivery_status");
   let previewUrl = null;
   if (input.previewUrl != null) {
-    if (
-      input.deliveryStatus !== "diagnostic" ||
-      !["creative-only", "seo-only", "full-preview"].includes(input.profile)
-    )
-      fail("preview_delivery");
-    previewUrl = safeDiagnosticPreviewUrl(input.previewUrl);
+    // A delivered preview may be a real client site, not only a focused
+    // diagnostic. Recording one used to be impossible for a full-profile
+    // delivery, so a delivered site was stored with no URL and counted as
+    // unknown. Any delivery that actually delivered a preview may record it;
+    // a "none" delivery may not.
+    const focused = ["creative-only", "seo-only", "full-preview"].includes(
+      input.profile,
+    );
+    const delivered = ["diagnostic", "attention", "preview_ready", "published"];
+    if (!delivered.includes(input.deliveryStatus)) fail("preview_delivery");
+    // Focused previews stay bound to the Access-proxied test project; a real
+    // client preview is any Pages host.
+    previewUrl = focused
+      ? safeDiagnosticPreviewUrl(input.previewUrl)
+      : safeClientPreviewUrl(input.previewUrl);
     if (!previewUrl) fail("preview_url");
   }
   const source = input.source ?? "callback";

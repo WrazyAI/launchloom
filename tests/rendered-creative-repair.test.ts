@@ -14,10 +14,31 @@ import {
   defaultRepairCandidate,
   normalizeRepair,
   findingsRequirePaletteChange,
+  resolveCodeAuthoringModel,
   runRenderedCreativeRepair,
   runVisualGateProcess,
   writeCandidate,
 } from "../scripts/run-rendered-creative-repair.mjs";
+
+describe("creative render model resolution", () => {
+  it("prefers the pinned environment model over a stale session model", () => {
+    expect(
+      resolveCodeAuthoringModel({
+        sessionModel: "openai/gpt-6-luna",
+        envModel: "deepseek/deepseek-v4.1-flash",
+      }),
+    ).toBe("deepseek/deepseek-v4.1-flash");
+  });
+
+  it("keeps the session model when no environment pin exists", () => {
+    expect(
+      resolveCodeAuthoringModel({
+        sessionModel: "opencode-go/deepseek-v4.1-flash",
+        envModel: "",
+      }),
+    ).toBe("opencode-go/deepseek-v4.1-flash");
+  });
+});
 import { inspect } from "node:util";
 import { requestRepair, privateRepairRejectionEvidence } from "../scripts/creative-repair-loop.mjs";
 import { RENDERED_REFERENCE_THRESHOLDS } from "../scripts/rendered-reference-fidelity.mjs";

@@ -3007,3 +3007,56 @@ describe("narrative spine", () => {
     expect(audit.warnings.join(" ")).toContain("may not answer");
   });
 });
+
+describe("unsupported differentiator sanitisation", () => {
+  const intake = {
+    businessName: "Apex Air Conditioning & Heating",
+    services: ["AC Repair", "Heat Pump Installation"],
+  };
+  const candidate = {
+    differentiators: [
+      "Licensed and insured technicians on every visit.",
+      "Backed by a lifetime warranty on all repairs.",
+      "Clear arrival windows confirmed when you book.",
+    ],
+  };
+
+  it("drops invented credentials and guarantees instead of failing the site", () => {
+    const config = normalise(candidate, intake);
+    expect(config.differentiators).toEqual([
+      "Clear arrival windows confirmed when you book.",
+    ]);
+  });
+
+  it("keeps a credential the client actually supplied", () => {
+    const config = normalise(
+      { differentiators: ["Licensed and insured technicians."] },
+      { ...intake, credentials: "Licensed and insured technicians" },
+    );
+    expect(config.differentiators).toEqual([
+      "Licensed and insured technicians.",
+    ]);
+  });
+
+  it("leaves an intake with no claims untouched", () => {
+    const config = normalise(
+      { differentiators: ["Clear arrival windows confirmed when you book."] },
+      intake,
+    );
+    expect(config.differentiators).toEqual([
+      "Clear arrival windows confirmed when you book.",
+    ]);
+  });
+});
+
+describe("site-copy rate-limit backoff", () => {
+  it("gives a throttle real recovery time instead of 2s and 4s", async () => {
+    const fs = await import("node:fs");
+    const source = fs.readFileSync("scripts/generate-site-config.mjs", "utf8");
+    // The retry helper must treat rate limits specially; a 2s/4s ladder burned
+    // all three attempts during a provider throttle and failed the intake.
+    expect(source).toContain("SITE_COPY_GO_RATE_LIMIT_DELAY_MS");
+    expect(source).toMatch(/errorCode === "rate-limit"/u);
+    expect(source).toMatch(/siteCopyRetryDelayMs\(attempt, errorCode\)/u);
+  });
+});

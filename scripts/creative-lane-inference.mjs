@@ -65,9 +65,13 @@ export function creativeLaneDefaultEffort(provider = creativeLaneProvider()) {
   return provider === "opencode-go" ? "max" : "xhigh";
 }
 
-/** Resolve one lane's reasoning effort: lane env, then the shared creative
+/**
+ * Resolve one lane's reasoning effort: lane env, then the shared creative
  * env, then the provider default. On OpenRouter each lane keeps its historical
- * default (`openrouterDefault`); the Go transport always defaults to `max`. */
+ * default (`openrouterDefault`); the Go transport always defaults to `max`.
+ * @param {Record<string, string | undefined>} [env]
+ * @param {{lane?: string | null, openrouterDefault?: string}} [options]
+ */
 export function creativeLaneEffort(
   env = process.env,
   { lane = null, openrouterDefault = "xhigh" } = {},

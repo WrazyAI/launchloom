@@ -236,6 +236,10 @@ jobs:
   focused_test:
     needs: profile_policy
     if: ${{ needs.profile_policy.outputs.profile == 'full-preview' || needs.profile_policy.outputs.profile == 'seo-only' || needs.profile_policy.outputs.profile == 'creative-only' }}
+    permissions:
+      contents: read
+      issues: read
+      id-token: write
     uses: ./.github/workflows/test-generation.yml
     with:
       issue: ${{ inputs.issue }}
@@ -358,6 +362,11 @@ jobs:
       # Repairs are bounded edits; high effort leaves output headroom for
       # max-effort-adjacent reasoning without truncating the answer.
       CREATIVE_REPAIR_EFFORT: ${{ vars.CREATIVE_REPAIR_EFFORT || 'high' }}
+      # The reference analyzer is a structured-vision extraction, not code
+      # authoring. Medium effort finishes inside the provider gateway deadline;
+      # max effort repeatedly hit the five-minute transport timeout and forced
+      # a dossier-only fallback that fails the measured-reference gate.
+      CREATIVE_REFERENCE_ANALYZER_EFFORT: ${{ vars.CREATIVE_REFERENCE_ANALYZER_EFFORT || 'medium' }}
       # Creative-stage performance switches. Defaults match the code; flipping
       # a variable back is the manual rollback (see
       # docs/creative-generation-performance.md).
@@ -435,7 +444,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Install rendered acceptance browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium || npx playwright install chromium
       - name: Verify required secrets
         run: |
           for key in GITHUB_ORG_TOKEN OPENROUTER_API_KEY REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_DEVELOPER_EMAIL; do test -n "${!key}" || { echo "Missing: $key"; exit 1; }; done
@@ -914,7 +923,7 @@ jobs:
           PACK_ID="${RENDERER_PACK_ID:-$PACK_ID}"
           PACK_VARIANT="${RENDERER_PACK_VARIANT:-$PACK_VARIANT}"
           jq --arg pack "$PACK_ID" --arg variant "$PACK_VARIANT" \
-            '.design.experience = ({packId:$pack, selectionMode:"pack-preview"} + (if $variant != "" then {variantId:$variant} else {} end))' \
+            '.design.experience = ({packId:$pack, blueprintVersion:2, selectionMode:"pack-preview"} + (if $variant != "" then {variantId:$variant} else {} end))' \
             src/site.config.json > /tmp/site.config.pack.json
           mv /tmp/site.config.pack.json src/site.config.json
           git add src/site.config.json
@@ -1002,6 +1011,7 @@ jobs:
               --inspiration /tmp/inspiration-pack.json \
               --out /tmp/generated-experiences \
               "${SESSION_ARGS[@]}" \
+              --candidate-count 1 \
               --failure-mode throw
           fi
       - name: Record authoring stage
@@ -1040,12 +1050,17 @@ jobs:
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
           SESSION_ARGS=()
-          if [ -f "$PWD/.launchloom/reasoning-preflight.json" ]; then
-            SESSION_ARGS=(--session "$PWD/.launchloom/reasoning-preflight.json")
+          # Only the session this run produced is authoritative. A committed
+          # .launchloom/reasoning-preflight.json survives across runs in the
+          # client repo, so reading it here let an October gpt-6-luna session
+          # override the pinned DeepSeek model and fail the render before it
+          # started. The author step already reads /tmp for the same reason.
+          if [ -f /tmp/reasoning-preflight.json ]; then
+            SESSION_ARGS=(--session /tmp/reasoning-preflight.json)
           fi
-          REPAIR_ARGS=(--max-cycles 3)
+          REPAIR_ARGS=(--max-cycles 1 --require-diversity false)
           if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
-            REPAIR_ARGS=(--max-cycles 1 --qa-repair-experiment true)
+            REPAIR_ARGS=(--max-cycles 1 --qa-repair-experiment true --require-diversity false)
           fi
           node "$GITHUB_WORKSPACE/scripts/run-rendered-creative-repair.mjs" \
             --site-dir "$PWD" \
@@ -1475,6 +1490,10 @@ jobs:
           if [ "${{ steps.creative_recovery.outputs.repair_available }}" = "true" ]; then STATUS=attention; fi
           if [ "${{ steps.deploy.outputs.diagnostic }}" = "true" ]; then STATUS=attention; fi
           if [ "${{ steps.deploy.outputs.creative_decision }}" = "warned" ]; then STATUS=attention; fi
+          # A requested creative render that silently fell back to a pack is a
+          # warned delivery, not a clean one. Without this the funnel counted a
+          # failed creative run as clean purely because a preview still shipped.
+          if [ -n "$RENDERER_FALLBACK_REASON" ]; then STATUS=attention; fi
           node scripts/generation-cost-summary.mjs \
             --seo /tmp/seo-research.json \
             --site-config-usage /tmp/site-config-usage.json \
@@ -1593,7 +1612,9 @@ jobs:
           node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt "${FEEDBACK_ARGS[@]}" --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-initial-email:$DEPLOY_SHA -->"
           if [ "${{ steps.deploy.outputs.diagnostic }}" != "true" ]; then
-            gh pr edit "$REVIEW_PR" --repo "$CLIENT_REPO" --remove-label launchloom-delivery-pending
+            # Bookkeeping only. A delivery that already sent its email must not
+            # be reported as failed because the pending label was never added.
+            gh pr edit "$REVIEW_PR" --repo "$CLIENT_REPO" --remove-label launchloom-delivery-pending >/dev/null 2>&1 || true
           fi
       # This is the only new-mode preview handoff attestation. It runs after all
       # existing build, deployment, rendered verification and delivery gates and

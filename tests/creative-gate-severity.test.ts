@@ -90,6 +90,30 @@ describe("judge finding classification", () => {
     expect(classifyJudgeFinding(finding as any)).toBe(expected);
   });
 
+  it("warns on clipped or malformed copy but keeps fabricated facts critical", () => {
+    expect(
+      classifyJudgeFinding({
+        severity: "critical",
+        category: "content-integrity",
+        evidence: "The hero eyebrow is clipped by the sticky header.",
+      }),
+    ).toBe("open");
+    expect(
+      classifyJudgeFinding({
+        severity: "critical",
+        category: "content-integrity",
+        evidence: "The footer shows a fabricated phone number.",
+      }),
+    ).toBe("critical");
+    expect(
+      classifyJudgeFinding({
+        severity: "critical",
+        category: "content-integrity",
+        evidence: "Fabricated credentials appear alongside clipped text.",
+      }),
+    ).toBe("critical");
+  });
+
   it("declares the hard judge categories", () => {
     expect(HARD_JUDGE_CATEGORIES).toEqual(["content-integrity", "accessibility"]);
   });
@@ -119,6 +143,22 @@ describe("near-miss assessment", () => {
     expect(assessment.openFindings).toEqual([
       "major hero-geometry: drift",
     ]);
+  });
+
+  it("can carry a provable preview contrast finding as a warning", () => {
+    const preview = nearMissAssessment(
+      candidate({ failures: ["contrast fail: / desktop default button"] }),
+      { allowContrastWarnings: true },
+    );
+    expect(preview.eligible).toBe(true);
+    expect(preview.openFindings).toContain(
+      "contrast fail: / desktop default button",
+    );
+    expect(
+      nearMissAssessment(
+        candidate({ failures: ["contrast fail: / desktop default button"] }),
+      ).eligible,
+    ).toBe(false);
   });
 
   it("allows a desktop hero height overage as an open design finding", () => {

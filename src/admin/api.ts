@@ -14,6 +14,7 @@ import type {
   OperationPage,
   OperationRecord,
   Page,
+  RevisionSummary,
   WorkspaceCapabilities,
 } from "../lib/admin-contracts";
 import type {
@@ -357,6 +358,10 @@ export type AdminApi = {
     options?: AdminRequestOptions,
   ): Promise<Page<AttemptSummary>>;
   getAttempt(id: string, options?: AdminRequestOptions): Promise<AttemptDetail>;
+  listRevisions(
+    repo: string,
+    options?: AdminRequestOptions,
+  ): Promise<RevisionSummary[]>;
   getAttemptEvents(
     id: string,
     cursor?: string | null,
@@ -1181,6 +1186,13 @@ export function createAdminApi(
             isPageShape(value),
         },
       );
+    },
+    async listRevisions(repo, options) {
+      const payload = await fetcher<{ requests?: RevisionSummary[] }>(
+        `${WORKSPACE_PREFIX}/revisions?repo=${encodeURIComponent(repo)}`,
+        { signal: options?.signal },
+      );
+      return Array.isArray(payload.requests) ? payload.requests : [];
     },
     async getAttempt(id, options) {
       const payload = await fetcher<{ attempt: AttemptDetail }>(

@@ -1268,6 +1268,24 @@ function safeRepairRejectionMessage(error) {
     .slice(0, 800);
 }
 
+export function resolveCodeAuthoringModel({
+  requested = "",
+  sessionModel = "",
+  envModel = process.env.CREATIVE_EXPERIENCE_MODEL || "",
+} = {}) {
+  if (sessionModel && envModel && sessionModel !== envModel) {
+    console.warn(
+      `creative_session_model_ignored session=${sessionModel} using=${envModel}`,
+    );
+  }
+  return (
+    requested ||
+    envModel ||
+    sessionModel ||
+    "opencode-go/deepseek-v4.1-flash"
+  );
+}
+
 /**
  * Render -> judge -> repair -> rerender orchestration for authored candidates.
  * Pixel-level reference fidelity and rendered diversity remain owned by
@@ -1315,11 +1333,11 @@ export async function runRenderedCreativeRepair({
   repairCandidateImpl = defaultRepairCandidate,
   promoteImpl = promoteCreativeCandidate,
 } = {}) {
-  const resolvedModel =
-    model ||
-    creativeSession?.creativeModel ||
-    process.env.CREATIVE_EXPERIENCE_MODEL ||
-    "opencode-go/deepseek-v4.1-flash";
+  const resolvedModel = resolveCodeAuthoringModel({
+    requested: model,
+    sessionModel: creativeSession?.creativeModel,
+    envModel: process.env.CREATIVE_EXPERIENCE_MODEL,
+  });
   assertCodeAuthoringModel(resolvedModel, { provider: creativeLaneProvider() });
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
@@ -1889,7 +1907,9 @@ export async function runRenderedCreativeRepair({
     const assessments = (report.candidates || [])
       .map((candidate) => ({
         candidate,
-        assessment: nearMissAssessment(candidate),
+        assessment: nearMissAssessment(candidate, {
+          allowContrastWarnings: true,
+        }),
       }))
       .filter((entry) => entry.assessment.eligible);
     if (!assessments.length) return null;
@@ -2805,11 +2825,10 @@ async function main() {
     candidatesDir: args.candidates || ".launchloom/generated-experiences",
     outDir: args.out || ".launchloom/creative-repair",
     mode: args.mode || "preview",
-    model:
-      args.model ||
-      creativeSession?.creativeModel ||
-      process.env.CREATIVE_EXPERIENCE_MODEL ||
-      "opencode-go/deepseek-v4.1-flash",
+    // Only an explicit --model flag is a real override. A session file is a
+    // saved artifact and may be stale: it must never outrank the pinned
+    // environment model, or a leftover gpt-6-luna session blocks the render.
+    model: args.model,
     creativeSession,
     maxCycles: args["max-cycles"] || 2,
     qaRepairExperiment: args["qa-repair-experiment"] === "true",
