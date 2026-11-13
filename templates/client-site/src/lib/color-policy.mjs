@@ -262,7 +262,13 @@ export function resolvePalette(input = {}) {
         safeHex(requested.mutedText, mutedColor),
         surface,
       ),
-      link: ensureContrast(primaryColor, surface),
+      // A light surface's link can be painted on the darker light pack bands
+      // (the header link measured 4.463 on #f7f5ee while proved only against
+      // the page canvas), so prove it against the darkest band as well.
+      link:
+        readableOn(surface) === "#000000"
+          ? ensureContrast(ensureContrast(primaryColor, surface), darkestLightBand)
+          : ensureContrast(primaryColor, surface),
       action: primaryColor,
       onAction: readableOn(primaryColor),
       border: ensureContrast(safeHex(requested.border, lineColor), surface, 3),
