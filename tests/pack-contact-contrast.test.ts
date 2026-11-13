@@ -49,3 +49,15 @@ describe("faq disclosure marker contrast", () => {
     expect(rule).not.toMatch(/color:\s*var\(--brand\);/u);
   });
 });
+
+describe("quick answers launcher focus ring", () => {
+  it("pairs the ring with the brand surface, not the primary fill", () => {
+    const rule =
+      site.match(/\.quick-answers__launcher:focus-visible \{([\s\S]*?)\}/u)?.[1] ||
+      "";
+    // --on-brand is the text colour for the primary fill and can be black,
+    // which measured 1.569 against the dark brand surface behind the launcher.
+    expect(rule).toContain("var(--on-brand-surface");
+    expect(rule).not.toMatch(/outline:\s*3px solid var\(--on-brand,/u);
+  });
+});
