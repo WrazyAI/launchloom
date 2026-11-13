@@ -878,7 +878,12 @@ export class GenerationAttempts {
     return {
       ...attempt,
       clientId,
-      previewUrl: safeClientPreviewUrl(attempt.previewUrl),
+      // Diagnostic evidence may only point at the focused preview project.
+      // Delivered client previews live on the client's own pages.dev project.
+      previewUrl:
+        attempt.deliveryStatus === "diagnostic"
+          ? safeDiagnosticPreviewUrl(attempt.previewUrl)
+          : safeClientPreviewUrl(attempt.previewUrl),
       clientName,
       costs: {
         actualUsd: costs.actual,
