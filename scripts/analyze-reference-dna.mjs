@@ -288,7 +288,15 @@ function argsFrom(argv) {
 
 function parseChoice(payload) {
   const raw = String(payload?.choices?.[0]?.message?.content || "").trim();
-  if (!raw) throw new Error("Reference analyzer returned no content.");
+  if (!raw) {
+    // An empty completion is a retryable analyzer outcome, exactly like invalid
+    // JSON. Without the code the caller threw straight to the dossier fallback
+    // and every route lost its measured evidence on the first empty response.
+    const empty = new Error("Reference analyzer returned no content.");
+    empty.code = "REFERENCE_ANALYZER_INVALID_JSON";
+    empty.finishReason = payload?.choices?.[0]?.finish_reason || "empty";
+    throw empty;
+  }
   try {
     return JSON.parse(
       raw.replace(/^```(?:json)?\s*/iu, "").replace(/\s*```$/u, ""),
