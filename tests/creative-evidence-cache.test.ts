@@ -7,6 +7,7 @@ import {
   collectCandidateEvidenceFileNames,
   computeCandidateEvidenceDigest,
   computeSharedEvidenceDigest,
+  computeToolchainDigest,
   CREATIVE_EVIDENCE_CACHE_VERSION,
   evidenceCacheKeys,
   readEvidenceBundle,
@@ -261,5 +262,19 @@ describe("creative evidence cache", () => {
     expect(
       await readEvidenceBundle(cacheRoot, keys, { evidenceDir }),
     ).toBeNull();
+  });
+});
+
+describe("toolchain digest", () => {
+  it("changes when the measurement code changes", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-toolchain-"));
+    await fs.writeFile(path.join(root, "gate.mjs"), "export const gate = 1;\n");
+    const before = await computeToolchainDigest(root);
+    await fs.writeFile(path.join(root, "gate.mjs"), "export const gate = 2;\n");
+    const after = await computeToolchainDigest(root);
+    // A gate fix changes verdicts without changing any client input, so it must
+    // invalidate cached rendered evidence or the old failures are replayed.
+    expect(after).not.toBe(before);
+    expect(await computeToolchainDigest(root)).toBe(after);
   });
 });

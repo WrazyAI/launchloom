@@ -121,6 +121,40 @@ export async function computeSharedEvidenceDigest(
 }
 
 /**
+ * Digest of the measurement toolchain itself.
+ *
+ * The render key covers the client site and the candidate sources, which is not
+ * enough: the contrast audit, the gate severity rules, and the bakeoff
+ * orchestrator live in the LaunchLoom repository, outside the client root. A fix
+ * there changes every verdict without changing a single input file, so cached
+ * evidence silently outlived the fix and reproduced the old failures. Hash the
+ * toolchain script directory so a gate change always invalidates the evidence.
+ *
+ * @param {string} scriptsDir absolute path to the LaunchLoom `scripts` directory
+ */
+export async function computeToolchainDigest(scriptsDir) {
+  const resolved = path.resolve(scriptsDir);
+  const entries = await fs.readdir(resolved, { withFileTypes: true });
+  const files = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".mjs"))
+    .map((entry) => entry.name)
+    .sort();
+  const hash = createHash("sha256");
+  hash.update(`toolchain-v${CREATIVE_EVIDENCE_CACHE_VERSION}\u0000`);
+  for (const name of files) {
+    const content = await fs
+      .readFile(path.join(resolved, name))
+      .catch(() => null);
+    if (content === null) continue;
+    hash.update(name);
+    hash.update("\u0000");
+    hash.update(content);
+    hash.update("\u0000");
+  }
+  return hash.digest("hex");
+}
+
+/**
  * Digest of one candidate directory. Managed contrast-correction blocks are
  * stripped from styles.css so a persisted auto-repair does not invalidate the
  * evidence it was derived from.

@@ -56,6 +56,7 @@ import {
   collectCandidateEvidenceFileNames,
   computeCandidateEvidenceDigest,
   computeSharedEvidenceDigest,
+  computeToolchainDigest,
   evidenceCacheKeys,
   readEvidenceBundle,
   restoreEvidenceFiles,
@@ -1087,8 +1088,14 @@ export async function runCreativeBakeoff({
         ],
       })
     : null;
+  const toolchainDigest = cacheRoot
+    ? await computeToolchainDigest(import.meta.dirname)
+    : null;
   const renderConfig = {
     version: BAKEOFF_RENDER_EVIDENCE_VERSION,
+    // A gate fix changes verdicts without changing any input file, so the
+    // measurement toolchain is part of the render key.
+    toolchainDigest,
     homepageViewports: HOMEPAGE_VIEWPORTS,
     authoredPageViewports: AUTHORED_PAGE_VIEWPORTS,
     settleMs: VIEWPORT_SETTLE_MS,
