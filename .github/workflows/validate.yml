@@ -82,7 +82,7 @@ jobs:
 
   validate:
     needs: classify
-    if: github.event_name != 'schedule' && needs.classify.outputs.runtime == 'true'
+    if: needs.classify.outputs.runtime == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
