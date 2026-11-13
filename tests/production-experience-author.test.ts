@@ -1,4 +1,8 @@
 import { describe, expect, it } from "vitest";
+import {
+  BOUNDED_CORRECTIONS_START,
+  BOUNDED_CORRECTIONS_END,
+} from "../scripts/bounded-corrections.mjs";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import ts from "typescript";
@@ -639,6 +643,43 @@ export default function Experience`,
     ).toThrow(
       /styles\.css exceeds the 80000-character repairable source limit/iu,
     );
+  });
+
+  it("ignores managed contrast corrections when bounding repairable source", () => {
+    const route = { id: "route-managed-corrections-size" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    // A real rendered pass appended 68k of corrections to a 24k authored
+    // stylesheet and promotion then rejected it as unrepairable, even though the
+    // corrections are regenerated and stripped before any repair.
+    const corrections = [
+      BOUNDED_CORRECTIONS_START,
+      `body ${"a".repeat(80_001)}{--ll-creative-auto-text:#000000;color:var(--ll-creative-auto-text)!important}`,
+      BOUNDED_CORRECTIONS_END,
+    ].join("\n");
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles: `${styles}\n${corrections}`,
+          motion,
+        },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).not.toThrow();
   });
 
   it("rejects CSS that only exceeds the repair bound after variable isolation", () => {

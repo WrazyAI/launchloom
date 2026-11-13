@@ -362,19 +362,25 @@ describe("text backdrop sampling scope", () => {
   }, 40000);
 
   it("does not sample the surrounding panel at the element edge", async () => {
-    const { inspectContrastPage } = await import(
-      "../scripts/rendered-contrast.mjs"
-    );
+    const { collectContrastTargets, measure, resolveRenderedBackdrop } =
+      await import("../scripts/rendered-contrast.mjs");
     const page = await heroPage();
-    const report = await inspectContrastPage(page, { route: "/", states: true });
+    // Drive the hover deterministically: the surrounding-panel sliver only
+    // appears when the element is actually painted in its hover state.
+    await page.hover(".primary");
+    await page.waitForTimeout(120);
+    const collected = await page.evaluate(collectContrastTargets, {
+      route: "/",
+      state: "hover",
+    });
+    const targets = collected.map(measure);
+    await resolveRenderedBackdrop(page, targets);
     // White label on the #027262 hover fill; the panel is #e8eee5.
-    const hoveredPrimary = (report.targets || []).find(
-      (entry: any) =>
-        entry.text === "Call now" &&
-        entry.state === "hover" &&
-        entry.color === "#ffffff",
+    const hoveredPrimary = targets.find(
+      (entry: any) => entry.text === "Call now" && entry.kind === "text",
     );
     expect(hoveredPrimary).toBeTruthy();
+    expect(hoveredPrimary.color).toBe("#ffffff");
     expect(hoveredPrimary.status).toBe("pass");
     expect(hoveredPrimary.ratio).toBeGreaterThan(4.5);
   }, 60000);

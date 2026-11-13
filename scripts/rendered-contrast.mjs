@@ -46,6 +46,7 @@ export function analyzePixelBackdrop(
     rowStep = 1,
     minimum = 0,
     inset = null,
+    mask = null,
   } = {},
 ) {
   let worst = Number.POSITIVE_INFINITY;
@@ -58,13 +59,15 @@ export function analyzePixelBackdrop(
   // covers (and a mid-gray icon could make every ring color unprovable).
   const colsCount =
     band > 0 && width > 0 ? Math.ceil(width / rowStep) : 0;
-  // A text backdrop is only the surface behind the glyphs, so the element's own
-  // painted edge is excluded when asked: a border in the text colour, the
-  // unpainted wedge of a rounded corner, and the sliver a clipped element
-  // screenshot can take from the surrounding surface are not behind any glyph.
-  // They used to be measured as backdrop and collapsed readable controls to
-  // exactly 1.000. Clamped to leave a non-empty interior, so this can only move
-  // a verdict toward the surface the text sits on.
+  // A text backdrop is only the surface behind the glyphs. A whole-element
+  // plate also contains the element's own border, a rounded corner's unpainted
+  // wedge, a decorative pseudo-element that never overlaps the label, and the
+  // sliver a clipped element screenshot can take from the surrounding surface.
+  // All of those used to be measured as backdrop, collapsing readable controls
+  // to exactly 1.000 and reporting 1.8:1 for grey captions beside an accent
+  // rule. `mask` holds the pixels the text paint actually covered (the exact
+  // answer). `inset` is the edge-only fallback used when the visible capture is
+  // unavailable. The band scope is for outline rings, which are not text.
   const insetCols = width > 0 ? Math.ceil(width / rowStep) : 0;
   const insetLeft = inset
     ? Math.min(
@@ -93,7 +96,25 @@ export function analyzePixelBackdrop(
   const insideInset = (x, y) =>
     x >= insetLeft && y >= insetTop && x < insetRight && y < insetBottom;
   const samples = pixels.length / 4;
+  // A clipped element screenshot can include one pixel outside the element on a
+  // fractional edge. That sliver is never the element's own glyph paint, so it
+  // is excluded even when the mask marks it (the two captures round the clip
+  // slightly differently).
+  const edgeIsSafe = width > 2 && height > 2;
+  const onClipEdge = (sample) => {
+    if (!edgeIsSafe || insetCols <= 0) return false;
+    const x = (sample % insetCols) * rowStep;
+    const y = Math.floor(sample / insetCols) * rowStep;
+    return x < 1 || y < 1 || x >= width - 1 || y >= height - 1;
+  };
   for (let sample = 0; sample < samples; sample += 1) {
+    if (mask) {
+      if (!mask[sample] || onClipEdge(sample)) continue;
+    } else if (inset && insetCols > 0) {
+      const x = (sample % insetCols) * rowStep;
+      const y = Math.floor(sample / insetCols) * rowStep;
+      if (!insideInset(x, y)) continue;
+    }
     const index = sample * 4;
     if (band > 0 && colsCount > 0) {
       const x = (sample % colsCount) * rowStep;
@@ -101,11 +122,6 @@ export function analyzePixelBackdrop(
       const inBand =
         x < band || y < band || x >= width - band || y >= height - band;
       if (!inBand) continue;
-    }
-    if (inset && insetCols > 0) {
-      const x = (sample % insetCols) * rowStep;
-      const y = Math.floor(sample / insetCols) * rowStep;
-      if (!insideInset(x, y)) continue;
     }
     const backdrop = [
       Number(pixels[index]),
@@ -140,17 +156,19 @@ export function analyzePixelBackdrop(
   if (Number.isFinite(parseMinimum) && parseMinimum > 1 && pixels.length >= 4) {
     const luminances = [];
     for (let sample = 0; sample < pixels.length / 4; sample += 1) {
+      if (mask) {
+        if (!mask[sample] || onClipEdge(sample)) continue;
+      } else if (inset && insetCols > 0) {
+        const x = (sample % insetCols) * rowStep;
+        const y = Math.floor(sample / insetCols) * rowStep;
+        if (!insideInset(x, y)) continue;
+      }
       if (band > 0 && colsCount > 0) {
         const x = (sample % colsCount) * rowStep;
         const y = Math.floor(sample / colsCount) * rowStep;
         const inBand =
           x < band || y < band || x >= width - band || y >= height - band;
         if (!inBand) continue;
-      }
-      if (inset && insetCols > 0) {
-        const x = (sample % insetCols) * rowStep;
-        const y = Math.floor(sample / insetCols) * rowStep;
-        if (!insideInset(x, y)) continue;
       }
       const offset = sample * 4;
       luminances.push(
@@ -284,6 +302,72 @@ export function maxChannelDelta(left, right) {
     if (delta > maximum) maximum = delta;
   }
   return maximum;
+}
+
+/**
+ * Mark the sampled pixels a text or icon paint actually covers, by comparing the
+ * same capture with that paint intact and hidden. This is the exact surface
+ * behind the glyphs: it excludes the element's own border, rounded-corner
+ * wedges, decorative pseudo-elements that never overlap the label, focus rings,
+ * and screenshot edge slivers. Antialiased glyph fringes are included on
+ * purpose; their hidden colour is still the true backdrop.
+ *
+ * @param {Uint8Array | number[]} visiblePixels
+ * @param {Uint8Array | number[]} hiddenPixels
+ * @param {{threshold?: number, minimumMarked?: number}} [options]
+ * @returns {{mask: Uint8Array | null, marked: number}}
+ */
+export function paintedPixelMask(
+  visiblePixels,
+  hiddenPixels,
+  { threshold = 8, minimumMarked = 16, width = 0 } = {},
+) {
+  if (!visiblePixels || !hiddenPixels) return { mask: null, marked: 0 };
+  if (visiblePixels.length !== hiddenPixels.length)
+    return { mask: null, marked: 0 };
+  const samples = Math.floor(visiblePixels.length / 4);
+  const painted = new Uint8Array(samples);
+  let marked = 0;
+  for (let sample = 0; sample < samples; sample += 1) {
+    const index = sample * 4;
+    const delta = Math.max(
+      Math.abs(visiblePixels[index] - hiddenPixels[index]),
+      Math.abs(visiblePixels[index + 1] - hiddenPixels[index + 1]),
+      Math.abs(visiblePixels[index + 2] - hiddenPixels[index + 2]),
+    );
+    if (delta > threshold) {
+      painted[sample] = 1;
+      marked += 1;
+    }
+  }
+  // Antialiased glyph fringes blend the text colour into the surface, and the
+  // hidden capture can retain a trace of that blend. The full-coverage interior
+  // of a glyph is the true backdrop, so erode the mask by one pixel. Keep the
+  // uneroded mask when a thin face leaves too little interior to measure.
+  const eroded = new Uint8Array(samples);
+  let interior = 0;
+  if (width > 2) {
+    for (let sample = 0; sample < samples; sample += 1) {
+      if (!painted[sample]) continue;
+      const x = sample % width;
+      const y = Math.floor(sample / width);
+      if (x < 1 || y < 1 || x >= width - 1) continue;
+      if (
+        painted[sample - 1] &&
+        painted[sample + 1] &&
+        painted[sample - width] &&
+        painted[sample + width]
+      ) {
+        eroded[sample] = 1;
+        interior += 1;
+      }
+    }
+  }
+  const mask = interior >= minimumMarked ? eroded : painted;
+  const measured = interior >= minimumMarked ? interior : marked;
+  // Too few painted pixels cannot describe a readable label, so the plate stays
+  // the authority rather than a mask that proves almost nothing.
+  return { mask: measured >= minimumMarked ? mask : null, marked: measured };
 }
 
 /**
@@ -716,29 +800,39 @@ export async function resolveRenderedBackdrop(
         rowStep: decoded.rowStep,
         minimum: Number(target.minimum),
       };
-      const analysis = analyzePixelBackdrop(
-        effectiveForeground,
-        decoded.pixels,
-        analysisOptions,
-      );
-      // The element's own edge is not behind its text: a border in the text
-      // colour, a rounded corner's unpainted wedge, and the sliver a clipped
-      // element screenshot can take from the surrounding surface all used to
-      // collapse a readable control to exactly 1.000. Re-measure without that
-      // edge and keep the better result, so excluding the edge can only rescue
-      // a failure, never invent one. A ring keeps its own perimeter band.
-      const edgeSafe =
-        edgeInset && !outlineTarget
-          ? analyzePixelBackdrop(effectiveForeground, decoded.pixels, {
-              ...analysisOptions,
-              inset: edgeInset,
-            })
-          : null;
-      if (edgeSafe && edgeSafe.ratio > analysis.ratio) {
-        analysis.ratio = edgeSafe.ratio;
-        analysis.darkPixel = edgeSafe.darkPixel;
-        analysis.lightPixel = edgeSafe.lightPixel;
-        if (edgeSafe.provable) analysis.provable = edgeSafe.provable;
+      // Measure the surface behind the paint, not the whole element box. A
+      // ring keeps its own perimeter band. When the visible capture survived,
+      // the mask marks exactly the pixels the glyphs covered; otherwise fall
+      // back to excluding the element's own edge, and only when that reads
+      // better than the full plate, so the fallback can rescue a failure but
+      // can never invent one.
+      const painted = outlineTarget
+        ? { mask: null }
+        : paintedPixelMask(visiblePixels, decoded.pixels, {
+            width: decoded.width,
+          });
+      let analysis;
+      if (painted.mask) {
+        analysis = analyzePixelBackdrop(
+          effectiveForeground,
+          decoded.pixels,
+          { ...analysisOptions, mask: painted.mask },
+        );
+      } else {
+        const plate = analyzePixelBackdrop(
+          effectiveForeground,
+          decoded.pixels,
+          analysisOptions,
+        );
+        const edgeSafe =
+          edgeInset && !outlineTarget
+            ? analyzePixelBackdrop(effectiveForeground, decoded.pixels, {
+                ...analysisOptions,
+                inset: edgeInset,
+              })
+            : null;
+        analysis =
+          edgeSafe && edgeSafe.ratio > plate.ratio ? edgeSafe : plate;
       }
       if (analysis.darkPixel && analysis.lightPixel)
         target.pixelBackdrop = {

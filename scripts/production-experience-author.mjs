@@ -1,6 +1,7 @@
 import { compilePageBriefs } from "../templates/client-site/src/lib/page-briefs.mjs";
 import { redactPrivateLocation } from "../templates/client-site/src/lib/business-facts.mjs";
 import { findUnsupportedBusinessClaimMatches } from "./business-copy-claims.mjs";
+import { stripBoundedCorrections } from "./bounded-corrections.mjs";
 import { routeLinkedContent } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import { fontFamilyById, resolveFontPairing } from "./font-catalog.mjs";
@@ -3537,7 +3538,16 @@ function validateExperience(source, route, content, visualBrief = {}) {
 }
 
 function validateStyles(source, route, visualBrief = {}) {
-  assertRepairableSourceSize(source, route, "styles.css");
+  // The repairable-source limit bounds what the repair model must rewrite, so it
+  // measures the authored stylesheet. The managed contrast-correction block is
+  // machine-generated, removed before every repair, and can legitimately be
+  // larger than the authored file; counting it rejected a 24k authored
+  // stylesheet because a render pass had appended 68k of corrections.
+  assertRepairableSourceSize(
+    stripBoundedCorrections(source),
+    route,
+    "styles.css",
+  );
   if (
     /<!doctype\s+html|<html\b|<head\b|<body\b|<script\b|<style\b/iu.test(source)
   )
@@ -3707,7 +3717,13 @@ export function validateProductionCandidateFiles({
   if (servicesIndexPage)
     validateServicesIndexPage(servicesIndexPage, route, content);
   const isolatedStyles = namespaceCreativeCss(styles);
-  assertRepairableSourceSize(isolatedStyles, route, "styles.css");
+  // Managed corrections are regenerated from the next render and are stripped
+  // before any repair, so they must not count against the repairable limit.
+  assertRepairableSourceSize(
+    stripBoundedCorrections(isolatedStyles),
+    route,
+    "styles.css",
+  );
   let referenceFidelity = null;
   if (referenceDna) {
     referenceFidelity = validateReferenceCandidate({
