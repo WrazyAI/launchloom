@@ -39,7 +39,14 @@ export async function decodeRgbaPixels(buffer, { maximumSamples = 250_000 } = {}
 export function analyzePixelBackdrop(
   foreground,
   pixels,
-  { band = 0, width = 0, height = 0, rowStep = 1, minimum = 0 } = {},
+  {
+    band = 0,
+    width = 0,
+    height = 0,
+    rowStep = 1,
+    minimum = 0,
+    inset = null,
+  } = {},
 ) {
   let worst = Number.POSITIVE_INFINITY;
   let darkPixel = null;
@@ -51,6 +58,40 @@ export function analyzePixelBackdrop(
   // covers (and a mid-gray icon could make every ring color unprovable).
   const colsCount =
     band > 0 && width > 0 ? Math.ceil(width / rowStep) : 0;
+  // A text backdrop is only the surface behind the glyphs, so the element's own
+  // painted edge is excluded when asked: a border in the text colour, the
+  // unpainted wedge of a rounded corner, and the sliver a clipped element
+  // screenshot can take from the surrounding surface are not behind any glyph.
+  // They used to be measured as backdrop and collapsed readable controls to
+  // exactly 1.000. Clamped to leave a non-empty interior, so this can only move
+  // a verdict toward the surface the text sits on.
+  const insetCols = width > 0 ? Math.ceil(width / rowStep) : 0;
+  const insetLeft = inset
+    ? Math.min(
+        Math.max(0, Math.floor(inset.left ?? inset.x ?? 0)),
+        Math.max(0, width - 1),
+      )
+    : 0;
+  const insetTop = inset
+    ? Math.min(
+        Math.max(0, Math.floor(inset.top ?? inset.y ?? 0)),
+        Math.max(0, height - 1),
+      )
+    : 0;
+  const insetRight = inset
+    ? Math.max(
+        insetLeft + 1,
+        width - Math.max(0, Math.floor(inset.right ?? inset.x ?? 0)),
+      )
+    : width;
+  const insetBottom = inset
+    ? Math.max(
+        insetTop + 1,
+        height - Math.max(0, Math.floor(inset.bottom ?? inset.y ?? 0)),
+      )
+    : height;
+  const insideInset = (x, y) =>
+    x >= insetLeft && y >= insetTop && x < insetRight && y < insetBottom;
   const samples = pixels.length / 4;
   for (let sample = 0; sample < samples; sample += 1) {
     const index = sample * 4;
@@ -60,6 +101,11 @@ export function analyzePixelBackdrop(
       const inBand =
         x < band || y < band || x >= width - band || y >= height - band;
       if (!inBand) continue;
+    }
+    if (inset && insetCols > 0) {
+      const x = (sample % insetCols) * rowStep;
+      const y = Math.floor(sample / insetCols) * rowStep;
+      if (!insideInset(x, y)) continue;
     }
     const backdrop = [
       Number(pixels[index]),
@@ -100,6 +146,11 @@ export function analyzePixelBackdrop(
         const inBand =
           x < band || y < band || x >= width - band || y >= height - band;
         if (!inBand) continue;
+      }
+      if (inset && insetCols > 0) {
+        const x = (sample % insetCols) * rowStep;
+        const y = Math.floor(sample / insetCols) * rowStep;
+        if (!insideInset(x, y)) continue;
       }
       const offset = sample * 4;
       luminances.push(
@@ -508,6 +559,9 @@ export async function resolveRenderedBackdrop(
     const partialPlate = partialPlateOnly(target);
     let png = null;
     let effectiveForeground = null;
+    // The measured element's own edge, known only inside the capture attempt
+    // but needed by the pixel analysis after it.
+    let edgeInset = null;
     try {
       if (!partialPlate && !target.forceResolve && !(await inScope(locator)))
         continue;
@@ -535,6 +589,33 @@ export async function resolveRenderedBackdrop(
             opacity,
             filter:
               style.filter && style.filter !== "none" ? style.filter : "",
+            // The box edge is not the text backdrop: the element's own border,
+            // a rounded corner's unpainted wedge, and the sliver an element
+            // screenshot may include from the surrounding surface all sit
+            // outside the surface behind the glyphs. Inset past the widest
+            // border and far enough into a corner to be inside the curve.
+            edge: (() => {
+              const box = element.getBoundingClientRect();
+              const radius = Math.max(
+                parseFloat(style.borderTopLeftRadius) || 0,
+                parseFloat(style.borderTopRightRadius) || 0,
+                parseFloat(style.borderBottomLeftRadius) || 0,
+                parseFloat(style.borderBottomRightRadius) || 0,
+              );
+              const cap = Math.floor(Math.min(box.width, box.height) / 4);
+              const corner = Math.round(radius * 0.3) + 1;
+              const side = (width) =>
+                Math.max(
+                  1,
+                  Math.min(cap, Math.max(Math.ceil(width) + 1, corner)),
+                );
+              return {
+                top: side(parseFloat(style.borderTopWidth) || 0),
+                right: side(parseFloat(style.borderRightWidth) || 0),
+                bottom: side(parseFloat(style.borderBottomWidth) || 0),
+                left: side(parseFloat(style.borderLeftWidth) || 0),
+              };
+            })(),
           };
         },
         undefined,
@@ -547,6 +628,7 @@ export async function resolveRenderedBackdrop(
         !effect.filter ||
         /^(?:opacity\([\d.]+\)\s*)+$/u.test(effect.filter);
       if (!onlyOpacityFilter) continue;
+      edgeInset = effect.edge || null;
       const effectiveAlpha =
         (Number(target.foreground?.[3]) || 1) *
         (Number.isFinite(effect.opacity) ? effect.opacity : 1) *
@@ -593,7 +675,13 @@ export async function resolveRenderedBackdrop(
           )
           .catch(() => {});
       }
-    } catch {
+    } catch (error) {
+      if (process.env.LL_CONTRAST_DEBUG === "1")
+        console.error(
+          "contrast_capture_failed",
+          target.selector,
+          error?.message,
+        );
       continue; // missing or unmeasurable element: stays unresolved
     }
     let ratio = null;
@@ -621,13 +709,37 @@ export async function resolveRenderedBackdrop(
       }
       const outlineTarget = outlineTargetOf(target);
       const decoded = await decodeRgbaPixels(png);
-      const analysis = analyzePixelBackdrop(effectiveForeground, decoded.pixels, {
+      const analysisOptions = {
         band: outlineTarget ? 4 : 0,
         width: decoded.width,
         height: decoded.height,
         rowStep: decoded.rowStep,
         minimum: Number(target.minimum),
-      });
+      };
+      const analysis = analyzePixelBackdrop(
+        effectiveForeground,
+        decoded.pixels,
+        analysisOptions,
+      );
+      // The element's own edge is not behind its text: a border in the text
+      // colour, a rounded corner's unpainted wedge, and the sliver a clipped
+      // element screenshot can take from the surrounding surface all used to
+      // collapse a readable control to exactly 1.000. Re-measure without that
+      // edge and keep the better result, so excluding the edge can only rescue
+      // a failure, never invent one. A ring keeps its own perimeter band.
+      const edgeSafe =
+        edgeInset && !outlineTarget
+          ? analyzePixelBackdrop(effectiveForeground, decoded.pixels, {
+              ...analysisOptions,
+              inset: edgeInset,
+            })
+          : null;
+      if (edgeSafe && edgeSafe.ratio > analysis.ratio) {
+        analysis.ratio = edgeSafe.ratio;
+        analysis.darkPixel = edgeSafe.darkPixel;
+        analysis.lightPixel = edgeSafe.lightPixel;
+        if (edgeSafe.provable) analysis.provable = edgeSafe.provable;
+      }
       if (analysis.darkPixel && analysis.lightPixel)
         target.pixelBackdrop = {
           dark: rgbHex(analysis.darkPixel),
@@ -685,7 +797,13 @@ export async function resolveRenderedBackdrop(
           ? flatContrastRatio(effectiveForeground, flatBackground)
           : null;
       ratio = flatRatio ?? analysis.ratio;
-    } catch {
+    } catch (error) {
+      if (process.env.LL_CONTRAST_DEBUG === "1")
+        console.error(
+          "contrast_decode_failed",
+          target.selector,
+          error?.message,
+        );
       continue; // decode failure: stays unresolved
     }
     target.pixelResolved = true;

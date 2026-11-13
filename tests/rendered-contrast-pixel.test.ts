@@ -302,3 +302,80 @@ describe("focus ring band capture", () => {
     expect(maxDelta(withRing, withoutRing)).toBeGreaterThan(50);
   });
 });
+
+describe("text backdrop sampling scope", () => {
+  // Measured production regression (intake 146, run 43483476413): the hero
+  // phone link read 1.000 twice with two different foregrounds, and the hero
+  // button read 1.180. Each time the element plate contained pixels that are
+  // not the backdrop behind the text: the link's own 1px border in the text
+  // colour, and a sliver of the surrounding panel caught at the element
+  // screenshot edge. The text was readable (13.2:1 and 5.4:1), so a readable
+  // control must not fail on its own painted edge.
+  async function heroPage() {
+    const browser = await chromium.launch({ headless: true });
+    browsers.push(browser);
+    const page = await browser.newPage({
+      viewport: { width: 1536, height: 864 },
+    });
+    await page.setContent(`
+      <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #f8f6f0; }
+        .hero { position: relative; height: 540px; background: #14201d; }
+        .photo { position: absolute; inset: 0;
+                 background: linear-gradient(120deg,#2b3a34,#0d1512 60%,#3d4a42); }
+        .panel { position: absolute; left: 56.4px; bottom: 40px; width: 560px;
+                 padding: 28px; background: #e8eee5; color: #14201d; }
+        .actions { display: flex; gap: 12px; align-items: center; }
+        .btn { display: inline-flex; align-items: center; min-height: 48px;
+               padding: 0 22px; border: 1px solid transparent;
+               font: 700 14.7px/1 sans-serif; text-decoration: none; }
+        .quiet { background: #e8eee5; color: #14201d; border-color: #14201d; }
+        .primary { background: #7cd5c1; color: #000; border-color: #7cd5c1; }
+        .primary:hover { background: #027262; color: #ffffff; border-color: #027262; }
+      </style>
+      <div class="hero"><div class="photo"></div>
+        <div class="panel">
+          <div class="actions">
+            <a class="btn primary" href="#x">Call now</a>
+            <a class="btn quiet" id="quiet" href="#y">0598020802</a>
+          </div>
+        </div>
+      </div>
+    `);
+    return page;
+  }
+
+  it("does not sample the element's own border as the text backdrop", async () => {
+    const { inspectContrastPage } = await import(
+      "../scripts/rendered-contrast.mjs"
+    );
+    const page = await heroPage();
+    const report = await inspectContrastPage(page, { route: "/", states: false });
+    // Border and text are both #14201d; the surface behind the label is #e8eee5.
+    const quiet = (report.targets || []).find(
+      (entry: any) => entry.text === "0598020802" && entry.kind === "text",
+    );
+    expect(quiet).toBeTruthy();
+    expect(quiet.status).toBe("pass");
+    expect(quiet.ratio).toBeGreaterThan(12);
+  }, 40000);
+
+  it("does not sample the surrounding panel at the element edge", async () => {
+    const { inspectContrastPage } = await import(
+      "../scripts/rendered-contrast.mjs"
+    );
+    const page = await heroPage();
+    const report = await inspectContrastPage(page, { route: "/", states: true });
+    // White label on the #027262 hover fill; the panel is #e8eee5.
+    const hoveredPrimary = (report.targets || []).find(
+      (entry: any) =>
+        entry.text === "Call now" &&
+        entry.state === "hover" &&
+        entry.color === "#ffffff",
+    );
+    expect(hoveredPrimary).toBeTruthy();
+    expect(hoveredPrimary.status).toBe("pass");
+    expect(hoveredPrimary.ratio).toBeGreaterThan(4.5);
+  }, 60000);
+});

@@ -243,3 +243,23 @@ describe("link text on dark light-bands", () => {
       expect(contrast(palette.surfaces.nav.link, band)).toBeGreaterThanOrEqual(4.5);
   });
 });
+
+describe("focus ring on every light band", () => {
+  it("keeps the ring at 3:1 wherever a floating control lands", () => {
+    const palette = resolvePalette({
+      primaryColor: "#7cd5c1",
+      surfaceColor: "#f8f6f0",
+    });
+    for (const band of [
+      "#f8f6f0",
+      "#f7f5ee",
+      "#f6f3eb",
+      "#e7e2d7",
+      "#eef1ea",
+      "#ece7dc",
+    ])
+      expect(contrast(palette.surfaces.page.focus, band)).toBeGreaterThanOrEqual(
+        3,
+      );
+  });
+});

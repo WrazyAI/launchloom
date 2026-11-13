@@ -267,12 +267,30 @@ export function resolvePalette(input = {}) {
       // the page canvas), so prove it against the darkest band as well.
       link:
         readableOn(surface) === "#000000"
-          ? ensureContrast(ensureContrast(primaryColor, surface), darkestLightBand)
+          ? ensureContrast(
+              ensureContrast(primaryColor, surface),
+              darkestLightBand,
+            )
           : ensureContrast(primaryColor, surface),
       action: primaryColor,
       onAction: readableOn(primaryColor),
       border: ensureContrast(safeHex(requested.border, lineColor), surface, 3),
-      focus: ensureContrast(primaryColor, surface, 3),
+      // A focus ring is painted on whatever band the control lands on, not only
+      // its own surface. The quick-answers launcher measured 2.647:1 against a
+      // light band while its ring was proved only against the page canvas, so
+      // prove it against the extremes too, like link text.
+      focus:
+        readableOn(surface) === "#000000"
+          ? ensureContrast(
+              ensureContrast(primaryColor, surface, 3),
+              darkestLightBand,
+              3,
+            )
+          : ensureContrast(
+              ensureContrast(primaryColor, surface, 3),
+              lightestDarkBand,
+              3,
+            ),
     };
   }
   return { ...palette, surfaces };

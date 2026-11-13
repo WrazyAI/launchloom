@@ -23,6 +23,11 @@ const bodyVars = [
   `--ink:${palette.inkColor || "#14201d"}`,
   `--muted:${palette.mutedColor || "#5e6b66"}`,
   `--line:${palette.lineColor || "#d8ded7"}`,
+  // Platform chrome such as the quick-answers launcher lives outside every
+  // [data-ll-surface] scope, so a candidate that writes var(--ll-focus) fell
+  // back to its own hardcoded ring and measured 2.647:1. Prove one ring against
+  // the darkest light band and expose it globally.
+  `--ll-focus:${palette.surfaces.page.focus}`,
   ...(pairing.headingStack ? [`--font-heading:${pairing.headingStack}`] : []),
   ...(pairing.bodyStack ? [`--font-body:${pairing.bodyStack}`] : []),
   ...(palette.accentColor
