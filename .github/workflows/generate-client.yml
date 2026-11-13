@@ -315,7 +315,7 @@ jobs:
           && (inputs.operation_id != ''
               || (needs.intake_handoff_check.result == 'success'
                   && (needs.intake_handoff_check.outputs.completed != 'true'
-                      || (github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates)))) }}
+                      || (github.event_name == 'workflow_dispatch' && (inputs.reuse_authored_candidates || inputs.preview_only))))) }}
     runs-on: ubuntu-24.04
     outputs:
       claimed: ${{ steps.claim.outputs.claimed }}
@@ -526,7 +526,6 @@ jobs:
               .launchloom/business-enrichment.json \
               .launchloom/canonical-site-brief.json \
               .launchloom/inspiration-pack.json \
-              .launchloom/reasoning-preflight.json \
               .launchloom/generated-experiences/creative-run.json; do
               test -f "$CANDIDATE_SOURCE/$file" || { echo "Reusable candidate repository is missing $file"; exit 1; }
             done
@@ -536,7 +535,11 @@ jobs:
             cp "$CANDIDATE_SOURCE/.launchloom/business-enrichment.json" /tmp/business-enrichment.json
             cp "$CANDIDATE_SOURCE/.launchloom/canonical-site-brief.json" /tmp/canonical-site-brief.json
             cp "$CANDIDATE_SOURCE/.launchloom/inspiration-pack.json" /tmp/inspiration-pack.json
-            cp "$CANDIDATE_SOURCE/.launchloom/reasoning-preflight.json" /tmp/reasoning-preflight.json
+            if [ -f "$CANDIDATE_SOURCE/.launchloom/reasoning-preflight.json" ]; then
+              cp "$CANDIDATE_SOURCE/.launchloom/reasoning-preflight.json" /tmp/reasoning-preflight.json
+            else
+              rm -f /tmp/reasoning-preflight.json
+            fi
             mkdir -p "$RUNNER_TEMP/reusable-authored-candidates"
             cp -R "$CANDIDATE_SOURCE/.launchloom/generated-experiences/." "$RUNNER_TEMP/reusable-authored-candidates/"
             echo "Reusable private candidate artifacts loaded; fresh authoring and SEO/config model calls are skipped."
@@ -698,6 +701,7 @@ jobs:
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage reference_analysis --status started --detail "Analyzing reference evidence and freezing the creative session."
       - name: Analyze reserved inspiration and freeze creative session
+        id: reference_analysis
         if: env.GENERATION_RENDERER == 'creative'
         env:
           LAUNCHLOOM_INTAKE_ID: ${{ steps.intake.outputs.intake_key }}
@@ -1084,7 +1088,7 @@ jobs:
         run: node scripts/record-generation-stage.mjs --stage creative_render --status completed --detail "Creative candidates rendered and repaired."
       - name: Prepare private creative-recovery report
         id: creative_recovery
-        if: env.GENERATION_RENDERER == 'creative' && failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') && steps.branch.outputs.dir != '' && (steps.authoring.outcome == 'failure' || steps.creative_render.outcome == 'failure' || steps.authored_evidence.outcome == 'failure')
+        if: env.GENERATION_RENDERER == 'creative' && failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') && steps.branch.outputs.dir != '' && steps.client.outputs.project != ''
         continue-on-error: true
         run: |
           cd "${{ steps.branch.outputs.dir }}"
@@ -1555,7 +1559,12 @@ jobs:
           fi
           RENDERER_NOTE=""
           if [ -n "$RENDERER_FALLBACK_REASON" ]; then
-            RENDERER_NOTE="Renderer fallback: creative references were short, so this preview uses $GENERATION_RENDERER."
+            case "$RENDERER_FALLBACK_REASON" in
+              creative-reference-shortage) RENDERER_REASON="creative references were short" ;;
+              creative-authoring-or-render-failure) RENDERER_REASON="creative authoring or rendering failed" ;;
+              *) RENDERER_REASON="$RENDERER_FALLBACK_REASON" ;;
+            esac
+            RENDERER_NOTE="Renderer fallback: $RENDERER_REASON. This preview uses $GENERATION_RENDERER."
           fi
           LAYOUT=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.conversion?.layout || "editorial-authority")')
           CLIENT_ASSET_SUMMARY=$(node -e 'const x=require("/tmp/site.config.json"); console.log((x.assetReport?.used || []).map(a => a.asset + " -> " + a.placement).join(", ") || "No supplied image used; approved contextual fallback or brand art selected.")')
@@ -1592,7 +1601,12 @@ jobs:
             FEEDBACK_ARGS=(--feedback-file "$RUNNER_TEMP/creative-preview-warnings.txt")
           fi
           if [ -n "$RENDERER_FALLBACK_REASON" ]; then
-            printf 'Renderer fallback: creative references were short, so this preview uses %s.\n' "$GENERATION_RENDERER" > "$RUNNER_TEMP/renderer-fallback.txt"
+            case "$RENDERER_FALLBACK_REASON" in
+              creative-reference-shortage) RENDERER_REASON="creative references were short" ;;
+              creative-authoring-or-render-failure) RENDERER_REASON="creative authoring or rendering failed" ;;
+              *) RENDERER_REASON="$RENDERER_FALLBACK_REASON" ;;
+            esac
+            printf 'Renderer fallback: %s. This preview uses %s.\n' "$RENDERER_REASON" "$GENERATION_RENDERER" > "$RUNNER_TEMP/renderer-fallback.txt"
             FEEDBACK_ARGS+=(--feedback-file "$RUNNER_TEMP/renderer-fallback.txt")
           fi
           node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt "${FEEDBACK_ARGS[@]}" --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
