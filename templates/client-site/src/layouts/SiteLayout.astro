@@ -44,6 +44,14 @@ const colorRoles = semanticColorCss(palette) + `
 .service-card:hover p { color: ${palette.surfaces.cardHover.mutedText}; }
 .lead-form :is(input,textarea,select) {border-color:var(--ll-border,${palette.surfaces.light.border});}
 .split-section :is(a,button):focus-visible {outline:2px solid ${palette.surfaces.brand.focus};outline-offset:3px;}
+/* styles.css is bundled into @layer legacy-site, so a layered rule can never
+   beat the unlayered experience-pack stylesheet that paints every anchor with
+   var(--ll-link). Keep the trades inner hero's own pairings unlayered: without
+   them the breadcrumb measured 2.847:1 on the dark hero and the CTA label
+   3.387:1 on its own fill. */
+.recipe-local-trades .inner-hero .cta {color:var(--on-brand,#000000);background:var(--brand,${palette.primaryColor});}
+.recipe-local-trades .inner-hero .breadcrumb {color:#bac9c4;}
+.recipe-local-trades .inner-hero .call-link {color:#ffffff;}
 `;
 const testPreview = hasTestOnlySite(site);
 const testProfile = site.pipelineTest?.profile || (site.demoNotice ? "fictional-demo" : undefined);
