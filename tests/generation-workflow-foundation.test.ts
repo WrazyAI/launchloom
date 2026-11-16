@@ -400,3 +400,23 @@ describe("generation workflow pack renderer", () => {
     expect(failure.run).toContain("FAILURE_CATEGORY=pack_render");
   });
 });
+
+it("starts every fresh preview from the client's current main", () => {
+  const source = fs.readFileSync(
+    ".github/workflows/generate-client.yml",
+    "utf8",
+  );
+  const bootstrap = source.slice(
+    source.indexOf("REMOTE_REFS="),
+    source.indexOf("node scripts/sync-client-guidelines.mjs"),
+  );
+  // A preview cloned from an older review/initial branch diverges after a
+  // publication or client revision and makes the approval merge conflict.
+  expect(bootstrap).toContain(
+    'if [ "$BOOTSTRAP" = review ] || [ "$BOOTSTRAP" = main ]; then',
+  );
+  expect(bootstrap).toContain(
+    'gh repo clone "$CLIENT_REPO" "$CLIENT_DIR" -- --branch main',
+  );
+  expect(bootstrap).not.toContain("-- --branch review/initial");
+});

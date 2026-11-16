@@ -1033,6 +1033,15 @@ class GithubRequestError extends Error {
   constructor(readonly status: number, message: string) { super(message); }
 }
 
+/** The reviewed branch no longer merges into the client's current main. */
+class PreviewConflictError extends Error {
+  readonly code = "preview_conflict";
+  constructor(message: string) {
+    super(message);
+    this.name = "PreviewConflictError";
+  }
+}
+
 async function github(env: Env, path: string, init: RequestInit = {}) {
   const response = await fetch(`https://api.github.com${path}`, {
     ...init,
@@ -1199,19 +1208,31 @@ async function mergeReviewedPr(
     throw new Error("This preview has changed. Ask for a fresh approval link.");
 
   if (retryingMergedApproval) return current.merge_commit_sha!;
-  const mergeResponse = await github(
-    env,
-    `/repos/${claims.repo}/pulls/${claims.pr!}/merge`,
-    {
-      method: "PUT",
-      signal: AbortSignal.timeout(20_000),
-      body: JSON.stringify({
-        sha: claims.headSha!,
-        merge_method: "squash",
-        commit_title: "LaunchLoom approved site",
-      }),
-    },
-  );
+  let mergeResponse: Response;
+  try {
+    mergeResponse = await github(
+      env,
+      `/repos/${claims.repo}/pulls/${claims.pr!}/merge`,
+      {
+        method: "PUT",
+        signal: AbortSignal.timeout(20_000),
+        body: JSON.stringify({
+          sha: claims.headSha!,
+          merge_method: "squash",
+          commit_title: "LaunchLoom approved site",
+        }),
+      },
+    );
+  } catch (error) {
+    if (
+      error instanceof GithubRequestError &&
+      (error.status === 405 || error.status === 409)
+    )
+      throw new PreviewConflictError(
+        "This preview is based on an older client site and cannot be merged. Generate a fresh preview before approving.",
+      );
+    throw error;
+  }
   const mergeResult = (await mergeResponse.json()) as {
     merged?: boolean;
     sha?: string;
@@ -3704,6 +3725,12 @@ async function approval(request: Request, env: Env) {
     return json(publication, publication.ok ? 200 : 409, cors(request, claims.allowedOrigins));
   } catch (error) {
     console.error("Approval failed", error);
+    if (error instanceof PreviewConflictError)
+      return json(
+        { ok: false, code: error.code, error: error.message },
+        409,
+        headers,
+      );
     return json(
       {
         error:

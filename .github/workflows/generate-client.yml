@@ -819,10 +819,10 @@ jobs:
           # repository is not mistaken for a failed clone.
           REMOTE_REFS=$(gh api --paginate "repos/$CLIENT_REPO/branches?per_page=100" --jq '.[] | [.commit.sha, ("refs/heads/" + .name)] | @tsv')
           BOOTSTRAP=$(printf '%s\n' "$REMOTE_REFS" | node scripts/client-repository-bootstrap.mjs)
-          if [ "$BOOTSTRAP" = review ]; then
-            gh repo clone "$CLIENT_REPO" "$CLIENT_DIR" -- --branch review/initial
-            cp -R templates/client-site/. "$CLIENT_DIR/"
-          elif [ "$BOOTSTRAP" = main ]; then
+          if [ "$BOOTSTRAP" = review ] || [ "$BOOTSTRAP" = main ]; then
+            # Always start a fresh preview from the client's current main.
+            # Reusing an older review/initial branch diverges after a
+            # publication or client revision and makes approval conflict.
             gh repo clone "$CLIENT_REPO" "$CLIENT_DIR" -- --branch main
             cp -R templates/client-site/. "$CLIENT_DIR/"
             cd "$CLIENT_DIR"
