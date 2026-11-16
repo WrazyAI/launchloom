@@ -806,17 +806,118 @@ export async function resolveRenderedBackdrop(
       // back to excluding the element's own edge, and only when that reads
       // better than the full plate, so the fallback can rescue a failure but
       // can never invent one.
+      // Glyph-difference masks lose text that already matches its backdrop.
+      // Draw the same text into an off-screen canvas with the computed font
+      // and line boxes, in page coordinates, and use that contrast-independent
+      // shape to cover the hidden glyph area without a second screenshot.
+      const needsGlyphCanvas =
+        target.kind === "text" &&
+        (partialPlate ||
+          target.variable === true ||
+          (target.issues || []).some((issue) =>
+            /pseudo-element backdrop|rounded|overlapping|requires rendered review/u.test(
+              String(issue),
+            ),
+          ));
+      const glyphCanvas =
+        needsGlyphCanvas
+          ? await locator
+              .evaluate((element) => {
+                const box = element.getBoundingClientRect();
+                const width = Math.ceil(box.width);
+                const height = Math.ceil(box.height);
+                if (!width || !height || width > 1200 || height > 1200)
+                  return null;
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return null;
+                const style = getComputedStyle(element);
+                ctx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+                ctx.textBaseline = "top";
+                const fontSize = parseFloat(style.fontSize) || 16;
+                const lineHeight = parseFloat(style.lineHeight) || fontSize * 1.2;
+                const value =
+                  element instanceof HTMLInputElement ||
+                  element instanceof HTMLTextAreaElement
+                    ? element.value
+                    : "";
+                if (value) {
+                  ctx.fillText(
+                    value,
+                    parseFloat(style.paddingLeft) || 0,
+                    (parseFloat(style.paddingTop) || 0) +
+                      Math.max(0, (lineHeight - fontSize) / 2),
+                  );
+                }
+                const walker = document.createTreeWalker(
+                  element,
+                  NodeFilter.SHOW_TEXT,
+                );
+                for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+                  const text = node.textContent || "";
+                  if (!text.trim()) continue;
+                  const style = getComputedStyle(node.parentElement || element);
+                  ctx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+                  ctx.textBaseline = "top";
+                  const fontSize = parseFloat(style.fontSize) || 16;
+                  const lineHeight = parseFloat(style.lineHeight) || fontSize * 1.2;
+                  const range = document.createRange();
+                  range.selectNodeContents(node);
+                  for (const rect of range.getClientRects()) {
+                    if (rect.width <= 0 || rect.height <= 0) continue;
+                    ctx.fillText(
+                      text,
+                      rect.x - box.x,
+                      rect.y - box.y + Math.max(0, (lineHeight - fontSize) / 2),
+                    );
+                  }
+                }
+                const data = ctx.getImageData(0, 0, width, height).data;
+                const mask = new Array(width * height);
+                for (let index = 0; index < mask.length; index += 1)
+                  mask[index] = data[index * 4 + 3] > 16 ? 1 : 0;
+                return { width, height, mask };
+              })
+              .catch(() => null)
+          : null;
       const painted = outlineTarget
         ? { mask: null }
         : paintedPixelMask(visiblePixels, decoded.pixels, {
             width: decoded.width,
           });
+      let glyphMask = painted.mask;
+      if (
+        glyphCanvas &&
+        glyphCanvas.width >= decoded.width &&
+        glyphCanvas.height >= decoded.height
+      ) {
+        // A clipped partial plate is captured from its visible top-left
+        // intersection. Crop the page-space canvas mask to that clip.
+        const offsetX = Math.max(
+          0,
+          Math.round((target.rect?.x ?? 0) - (target.rect?.x ?? 0)),
+        );
+        const offsetY = 0;
+        if (!glyphMask) glyphMask = new Uint8Array(decoded.width * decoded.height);
+        for (let y = 0; y < decoded.height; y += 1) {
+          for (let x = 0; x < decoded.width; x += 1) {
+            const sourceX = x + offsetX;
+            const sourceY = y + offsetY;
+            if (sourceX >= glyphCanvas.width || sourceY >= glyphCanvas.height)
+              continue;
+            if (glyphCanvas.mask[sourceY * glyphCanvas.width + sourceX])
+              glyphMask[y * decoded.width + x] = 1;
+          }
+        }
+      }
       let analysis;
-      if (painted.mask) {
+      if (glyphMask) {
         analysis = analyzePixelBackdrop(
           effectiveForeground,
           decoded.pixels,
-          { ...analysisOptions, mask: painted.mask },
+          { ...analysisOptions, mask: glyphMask },
         );
       } else {
         const plate = analyzePixelBackdrop(

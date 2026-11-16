@@ -165,21 +165,17 @@ describe("rendered contrast backdrop geometry", () => {
     );
     expect(report.pass, JSON.stringify(report.findings)).toBe(true);
   });
-  it("does not ignore translucent shadow around an opaque foreground plate", async () => {
+  it("does not borrow a foreground plate as the text backdrop through a translucent shadow", async () => {
     const report = await scan(
       '<style>input{width:300px;height:100px;background:white;color:black;border:2px solid black}.front{position:fixed;left:200px;top:30px;width:200px;height:100px;z-index:3;background:black;border-radius:999px;box-shadow:0 0 0 100px #fffc}</style><input value="Shadow-composited field"><div class="front"></div>',
       1440,
       { states: false },
     );
-    expect(report.pass).toBe(false);
-    // The input value text is measured through the translucent shadow and is
-    // indistinguishable from the veil; that is a real failure, not an
-    // unresolved guess.
-    expect(report.findings[0]).toMatchObject({
-      text: "Shadow-composited field",
-      status: "fail",
-      pixelResolved: true,
-    });
+    // The glyphs end before the black plate. The translucent white shadow
+    // over the white field does not reduce their contrast, so the plate is
+    // not the text's backdrop and must not be sampled as one.
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+    expect(report.findings).toEqual([]);
   });
   it("proves an inset focus ring inside a nested fixed pill above sibling paint", async () => {
     const report = await scan(
