@@ -577,3 +577,49 @@ it("merges once when two approval requests overlap", async () => {
   expect(results[0].publicationId).toBe(results[1].publicationId);
   expect(merges).toBe(1);
 });
+
+it("returns an actionable stale-preview error when the review branch conflicts", async () => {
+  network.use(
+    http.get('https://api.github.com/repos/WrazyAI/example-client/pulls/7', () =>
+      HttpResponse.json({
+        head: { sha: 'review-head-sha' },
+        state: 'open',
+        draft: false,
+        merged: false,
+        merge_commit_sha: null,
+      }),
+    ),
+    http.get(
+      'https://api.github.com/repos/WrazyAI/example-client/contents/src/site.config.json',
+      () =>
+        HttpResponse.json({
+          encoding: 'base64',
+          content: btoa(
+            JSON.stringify({
+              seoResearch: { mode: 'researched', publishReady: true },
+            }),
+          ),
+        }),
+    ),
+    http.put('https://api.github.com/repos/WrazyAI/example-client/pulls/7/merge', () =>
+      HttpResponse.json(
+        { message: 'Pull Request has merge conflicts' },
+        { status: 405 },
+      ),
+    ),
+  );
+  const token = await reviewToken();
+  const response = await SELF.fetch('https://api.launchloom.test/api/approval', {
+    method: 'POST',
+    headers: { Origin: origin, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token,
+      email: 'developer@example.com',
+      pageUrl: origin + '/?review=' + token,
+    }),
+  });
+  expect(response.status).toBe(409);
+  const body = (await response.json()) as { ok: boolean; code: string; error: string };
+  expect(body).toMatchObject({ ok: false, code: 'preview_conflict' });
+  expect(body.error).toContain('fresh preview');
+});
