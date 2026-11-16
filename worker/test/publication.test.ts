@@ -66,6 +66,85 @@ describe("ordered publication", () => {
     expect(a.publicationId).toBe(b.publicationId);
     expect([a.duplicate, b.duplicate].sort()).toEqual([false, true]);
   });
+  it("holds the client only while a reserved approval lease is active", async () => {
+    const coordinator = getCoordinator("publication-active-reservation");
+    expect(await coordinator.reservePublication(publication)).toMatchObject({
+      allowed: true,
+      state: "reserved",
+    });
+    expect(
+      await coordinator.reservePublication({
+        ...publication,
+        headSha: "replacement-review-head",
+      }),
+    ).toMatchObject({ allowed: false, code: "publication_in_progress" });
+  });
+  it("releases an abandoned reservation after its approval lease expires", async () => {
+    const coordinator = getCoordinator("publication-expired-reservation");
+    const abandoned = await coordinator.reservePublication(publication);
+    expect(abandoned).toMatchObject({ allowed: true, state: "reserved" });
+    await runInDurableObject(coordinator, (_, state) => {
+      state.storage.sql.exec(
+        "UPDATE publications SET approval_lease_until = ? WHERE id = ?",
+        Date.now() - 1,
+        abandoned.publicationId!,
+      );
+    });
+    expect(
+      await coordinator.reservePublication({
+        ...publication,
+        headSha: "replacement-review-head",
+      }),
+    ).toMatchObject({
+      allowed: true,
+      state: "reserved",
+      duplicate: false,
+    });
+  });
+  it("supersedes an unconfirmed merge after it escalates to attention", async () => {
+    const coordinator = getCoordinator("publication-unconfirmed-merge");
+    const abandoned = await coordinator.reservePublication(publication);
+    await runInDurableObject(coordinator, (_, state) => {
+      state.storage.sql.exec(
+        "UPDATE publications SET state = 'attention', approval_lease_until = 0, failure = ? WHERE id = ?",
+        "Exact approved merge could not be reconciled.",
+        abandoned.publicationId!,
+      );
+    });
+    expect(
+      await coordinator.reservePublication({
+        ...publication,
+        headSha: "replacement-review-head",
+      }),
+    ).toMatchObject({
+      allowed: true,
+      state: "reserved",
+      duplicate: false,
+    });
+  });
+  it("keeps an unrecovered released publication held for the client", async () => {
+    mocks();
+    const coordinator = getCoordinator("publication-attention-release");
+    const released = await coordinator.reservePublication(publication);
+    await coordinator.queuePublication(
+      released.publicationId!,
+      "merge-sha",
+      {},
+      released.approvalToken ?? undefined,
+    );
+    await runInDurableObject(coordinator, (_, state) => {
+      state.storage.sql.exec(
+        "UPDATE publications SET state = 'attention', dispatch_sent = 1, dispatch_lease_until = 0 WHERE id = ?",
+        released.publicationId!,
+      );
+    });
+    expect(
+      await coordinator.reservePublication({
+        ...publication,
+        headSha: "replacement-review-head",
+      }),
+    ).toMatchObject({ allowed: false, code: "publication_in_progress" });
+  });
   it("queues feedback while a publication owns the client and pauses it on failure", async () => {
     mocks();
     const coordinator = getCoordinator("publication-feedback");

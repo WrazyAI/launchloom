@@ -89,7 +89,7 @@ type Row = {
   approval_token: string | null;
   dispatch_lease_until: number;
 };
-const HOLD = "('reserved','queued','running','failed','attention')";
+const HOLD = "('queued','running','failed')";
 const RUN_WINDOW = 50 * 60_000;
 export class PublicationStore {
   constructor(
@@ -137,7 +137,15 @@ export class PublicationStore {
   held() {
     return this.storage.sql
       .exec<Row>(
-        `SELECT * FROM publications WHERE state IN ${HOLD} AND dismissed = 0 ORDER BY seq DESC LIMIT 1`,
+        `SELECT * FROM publications
+         WHERE dismissed = 0
+           AND (
+             state IN ${HOLD}
+             OR (state = 'reserved' AND approval_lease_until > ?)
+             OR (state = 'attention' AND (approved_sha IS NOT NULL OR dispatch_sent = 1 OR run_id IS NOT NULL))
+           )
+         ORDER BY seq DESC LIMIT 1`,
+        Date.now(),
       )
       .toArray()[0];
   }
@@ -217,12 +225,13 @@ export class PublicationStore {
           state: null,
           duplicate: false,
         };
-      if (this.held())
+      const held = this.held();
+      if (held)
         return {
           allowed: false,
           code: "publication_in_progress",
-          publicationId: null,
-          state: null,
+          publicationId: held.id,
+          state: held.state,
           duplicate: false,
         };
       if (
