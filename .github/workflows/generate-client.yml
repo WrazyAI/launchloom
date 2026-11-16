@@ -870,7 +870,12 @@ jobs:
           git add .
           if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi
           if [ "$BOOTSTRAP" = "review" ]; then
-            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
+            # A fresh preview replaces the previous review branch. The old
+            # branch may contain an approved publication commit, so replaying
+            # it onto main would conflict. Lease the exact remote head before
+            # replacing it so a concurrent writer is still rejected.
+            git fetch --no-tags origin refs/heads/review/initial:refs/remotes/origin/review/initial || true
+            git_push_with_retry --force-with-lease origin review/initial
           else
             git_push_with_retry --set-upstream origin review/initial
           fi

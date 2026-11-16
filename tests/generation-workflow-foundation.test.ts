@@ -420,3 +420,20 @@ it("starts every fresh preview from the client's current main", () => {
   );
   expect(bootstrap).not.toContain("-- --branch review/initial");
 });
+
+it("replaces an existing review branch from current main", () => {
+  const source = fs.readFileSync(
+    ".github/workflows/generate-client.yml",
+    "utf8",
+  );
+  const block = source.slice(
+    source.indexOf('if [ "$BOOTSTRAP" = "review" ]'),
+    source.indexOf("PR=$(gh pr list"),
+  );
+  // The previous review branch can contain an approved publication commit;
+  // replaying it onto main conflicts. Lease and replace it.
+  expect(block).toContain(
+    "git_push_with_retry --force-with-lease origin review/initial",
+  );
+  expect(block).not.toContain("push-client-review-branch.mjs");
+});
