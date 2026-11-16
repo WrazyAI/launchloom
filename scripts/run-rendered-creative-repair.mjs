@@ -30,6 +30,7 @@ export {
   resolveCreativeRevisionScope,
 };
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
+import { stripBoundedCorrections } from "./bounded-corrections.mjs";
 import {
   restoreImageAltsFromOriginal,
   restoreRequiredExperienceMarkers,
@@ -949,6 +950,12 @@ export async function defaultRepairCandidate({
 } = {}) {
   const { metadata, contentManifest, content, files } =
     await readCandidate(candidateDir);
+  // Managed contrast corrections are a deterministic product of the last render
+  // and are regenerated after this repair. Sending them to the model asks it to
+  // reproduce tens of thousands of machine-generated characters, which produced
+  // truncated and syntactically invalid stylesheets, and they make a truthful
+  // repair look like it removed palette colours.
+  files.styles = stripBoundedCorrections(files.styles);
   const referenceDna =
     metadata.creativeManifest?.referenceDna || metadata.referenceDna;
   if (!referenceDna)

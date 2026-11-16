@@ -279,6 +279,91 @@ describe("rendered creative repair orchestration", () => {
     expect(unchanged.locationPage).toBe(current.locationPage);
     expect(unchanged).not.toHaveProperty("servicesIndexPage");
   });
+  it("sends authored styles, not managed contrast corrections, to the repair model", async () => {
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-corrections-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "reference.png");
+    await fs.writeFile(desktop, "reference-evidence");
+    const candidateDir = path.join(root, "candidate-a");
+    await fs.mkdir(candidateDir);
+    const authoredStyles =
+      ':root { --ll-creative-paper: #f8f6f0; } [data-reference-section="hero"] h1 { color: #14201d; }';
+    const corrections = [
+      "/* launchloom: bounded rendered contrast corrections */",
+      '[data-reference-section="hero"] p{--ll-creative-auto-text:#101010;color:var(--ll-creative-auto-text)!important}',
+      "/* launchloom: end bounded rendered contrast corrections */",
+    ].join("\n");
+    const files = {
+      experience:
+        'export default function Experience({ content }) { return <main><section data-reference-section="hero"><h1>{content.hero.heading}</h1></section><section data-reference-section="services">Services</section><section data-reference-section="contact">Contact</section></main>; }',
+      styles: authoredStyles,
+      motion:
+        "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }",
+    };
+    await fs.writeFile(
+      path.join(candidateDir, "metadata.json"),
+      JSON.stringify({
+        candidateId: "candidate-a",
+        referenceDna: {
+          familyId: "test-editorial",
+          sectionSequence: ["hero", "services", "contact"],
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+      }),
+    );
+    await fs.writeFile(
+      path.join(candidateDir, "content-manifest.json"),
+      JSON.stringify({ values: {}, tokens: [] }),
+    );
+    for (const [name, value] of Object.entries({
+      "Experience.jsx": files.experience,
+      "styles.css": `${authoredStyles}\n${corrections}\n`,
+      "motion.js": files.motion,
+    }))
+      await fs.writeFile(path.join(candidateDir, name), value);
+
+    let requestBody = "";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_input: unknown, init?: { body?: unknown }) => {
+        requestBody = String(init?.body || "");
+        return Response.json({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: { content: JSON.stringify(files) },
+            },
+          ],
+          usage: { completion_tokens: 32 },
+        });
+      }),
+    );
+
+    // The fixture may still be rejected for unrelated contract reasons; the
+    // regression under test is what the model is asked to rewrite.
+    await defaultRepairCandidate({
+      candidateDir,
+      findings: ["contrast fail: hero body copy"],
+      screenshots: [],
+      model: "test/model",
+    }).catch(() => {});
+
+    // Machine-generated corrections are regenerated from the next render. Asking
+    // the model to reproduce them sent a 92k payload for a 24k authored file and
+    // produced truncated, syntactically invalid repair output.
+    expect(requestBody).not.toContain(
+      "/* launchloom: bounded rendered contrast corrections */",
+    );
+    expect(requestBody).not.toContain("--ll-creative-auto-text");
+    // A rejected repair must never destroy the evidence on disk.
+    expect(
+      await fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
+    ).toContain("launchloom: bounded rendered contrast corrections");
+  });
+
   it("rejects full-file human repair output before changing candidate files", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-full-file-rejection-"),
