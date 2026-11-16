@@ -30,6 +30,13 @@ const analyzerEffort = creativeLaneEffort(process.env, {
   openrouterDefault: "medium",
 });
 
+/** Output budget the analyzer reserves. OpenRouter prices the reservation, so
+ * an excessive cap fails closed on a modest balance. */
+const ANALYZER_MAX_OUTPUT_TOKENS = (() => {
+  const configured = Number(process.env.REFERENCE_ANALYZER_MAX_TOKENS);
+  return Number.isFinite(configured) && configured > 0 ? configured : 32_000;
+})();
+
 const ANALYZER_SYSTEM_PROMPT =
   "Return one syntactically valid JSON object only, matching the provided strict schema. Escape quotes and backslashes inside strings. Do not use markdown or surrounding prose. You are a senior visual systems designer extracting measurable, transferable design mechanics from screenshots.";
 
@@ -514,9 +521,13 @@ Rules:
           reasoning: { effort: "medium", exclude: true },
           // DeepSeek spends hidden reasoning tokens before emitting any content,
           // and those count against max_tokens. 9000 left nothing for the JSON
-          // on OpenRouter, so every route came back with empty content. The Go
-          // transport already allows 128k for the same reason.
-          max_tokens: 128_000,
+          // on OpenRouter, so every route came back with empty content.
+          //
+          // OpenRouter reserves credit for the whole max_tokens request, so 128k
+          // was refused with 402 "can only afford 8039" while the key still held
+          // $1.69. 32k leaves reasoning room and a quarter of the reservation,
+          // and stays tunable without a deploy.
+          max_tokens: ANALYZER_MAX_OUTPUT_TOKENS,
           response_format: { type: "json_schema", json_schema: schema },
           messages: [
             { role: "system", content: ANALYZER_SYSTEM_PROMPT },
