@@ -46,12 +46,14 @@ const colorRoles = semanticColorCss(palette) + `
 .split-section :is(a,button):focus-visible {outline:2px solid ${palette.surfaces.brand.focus};outline-offset:3px;}
 /* styles.css is bundled into @layer legacy-site, so a layered rule can never
    beat the unlayered experience-pack stylesheet that paints every anchor with
-   var(--ll-link). Keep the trades inner hero's own pairings unlayered: without
-   them the breadcrumb measured 2.847:1 on the dark hero and the CTA label
-   3.387:1 on its own fill. */
-.recipe-local-trades .inner-hero .cta {color:var(--on-brand,#000000);background:var(--brand,${palette.primaryColor});}
-.recipe-local-trades .inner-hero .breadcrumb {color:#bac9c4;}
-.recipe-local-trades .inner-hero .call-link {color:#ffffff;}
+   var(--ll-link). Keep the dark trades inner hero's own pairings unlayered:
+   without them the breadcrumb measured 2.847:1 on #10211f and the CTA label
+   3.387:1 on its own fill. Scope to the dark variant only: the service-detail
+   hero carries .service-hero over a light plate (#e4e3db), where the same
+   white pairing measured 1.292:1. */
+.recipe-local-trades .inner-hero:not(.service-hero) .cta {color:var(--on-brand,#000000);background:var(--brand,${palette.primaryColor});}
+.recipe-local-trades .inner-hero:not(.service-hero) .breadcrumb {color:#bac9c4;}
+.recipe-local-trades .inner-hero:not(.service-hero) .call-link {color:#ffffff;}
 `;
 const testPreview = hasTestOnlySite(site);
 const testProfile = site.pipelineTest?.profile || (site.demoNotice ? "fictional-demo" : undefined);
