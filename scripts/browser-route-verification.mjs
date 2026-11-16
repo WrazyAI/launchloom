@@ -418,6 +418,11 @@ export async function verifyApprovedRoutes({
         });
         const page = await context.newPage();
         page.setDefaultTimeout(timeout);
+        // A networkidle navigation on an image-heavy page can exceed the short
+        // assertion timeout on a loaded runner. The refresh and navigation
+        // checks are about what the page does, not how fast it settles, so give
+        // them their own budget instead of failing a deliverable on a 5s miss.
+        const navigationTimeout = Math.max(Number(timeout) || 0, 30_000);
         const phase = { value: "observe" };
         const requests = [];
         const runtime = [];
@@ -520,6 +525,9 @@ export async function verifyApprovedRoutes({
         try {
           const response = await page.goto(new URL(record.path, origin).href, {
             waitUntil: "networkidle",
+            // Navigating a real page is not an assertion; a 5s element timeout
+            // is too tight for a networkidle load on a loaded runner.
+            timeout: Math.max(Number(timeout) || 0, 30_000),
           });
           add(
             "direct-http",
@@ -673,7 +681,10 @@ export async function verifyApprovedRoutes({
               forms.flatMap((form) => form.failures).join(" ") +
                 " Close the page before navigation can replay a submission target.",
             );
-          const reload = await page.reload({ waitUntil: "networkidle" });
+          const reload = await page.reload({
+            waitUntil: "networkidle",
+            timeout: navigationTimeout,
+          });
           add(
             "refresh",
             reload?.status() === 200 &&
@@ -729,9 +740,13 @@ export async function verifyApprovedRoutes({
           );
           await page.goto(new URL(record.path, origin).href, {
             waitUntil: "networkidle",
+            timeout: navigationTimeout,
           });
           await page.emulateMedia({ reducedMotion: "reduce" });
-          await page.reload({ waitUntil: "networkidle" });
+          await page.reload({
+            waitUntil: "networkidle",
+            timeout: navigationTimeout,
+          });
           await sleep(page);
           const reduced = await page.evaluate(() => ({
             matches: matchMedia("(prefers-reduced-motion: reduce)").matches,
