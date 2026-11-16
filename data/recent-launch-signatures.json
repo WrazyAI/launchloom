@@ -1,23 +1,7 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-16T19:16:42.401Z",
+  "updatedAt": "2026-11-16T21:10:47.668Z",
   "launches": [
-    {
-      "id": "2026-09-20-aurora-ridge-observatory-pipeline-canary",
-      "launchedAt": "2026-09-20T23:48:43.038Z",
-      "stage": "preview",
-      "businessName": "Aurora Ridge Observatory [Pipeline Canary]",
-      "recipe": "general-editorial",
-      "packId": "kinetic-poster",
-      "variantId": "full-bleed",
-      "layoutFingerprint": "806f8f759f283dc5f96b40f0",
-      "referenceIds": [],
-      "routeSignatures": [
-        "fixed-bottom-conversation-pill|narrow-authored-column|project-marquee-and-pricing-pair|neo-grotesk-with-pixel-serif|essay-marquee-testimonial|wide-moving-project-strip",
-        "micro-menu-with-cart-counterpoint|editorial-face-and-type-collision|archive-collection-rail|fashion-grotesk-and-display-mix|campaign-spread-sequence|hard-cropped-fashion-portrait",
-        "performance-scoreboard-navigation|full-viewport-action-poster|horizontal-program-bands|oversized-athletic-condensed|impact-band-recovery|full-bleed-action-documentary"
-      ]
-    },
     {
       "id": "2026-09-24-precision-auto-care-attempt-63",
       "launchedAt": "2026-09-24T12:59:02.194Z",
@@ -1749,6 +1733,42 @@
         "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri",
         "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
       ]
+    },
+    {
+      "id": "2026-11-16-coastal-brush-painting-co-attempt-146-run-43955255341-attempt-1",
+      "launchedAt": "2026-11-16T21:10:47.665Z",
+      "stage": "attempt",
+      "reservationKey": "146-run-43955255341-attempt-1",
+      "businessName": "Coastal Brush Painting Co.",
+      "businessKind": "painting",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "archive-rail",
+        "typographic-poster",
+        "utility-diagnostic",
+        "web-painting-concept-pro",
+        "web-painting-house-doctor",
+        "web-painting-southern"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form"
+      ],
+      "referenceIds": [
+        "web-painting-concept-pro",
+        "web-painting-house-doctor",
+        "web-painting-southern"
+      ],
+      "routeSignatures": [
+        "minimal charcoal service links and light estimate controls|a low-light exterior-home photograph anchors a dark charcoal layout with a float|compact dark service cards followed by a visual before-and-after comparison|clean geometric sans with large centered statements and compact utility labels|dark image and form hero -> horizontal service strip -> four service cards -> be|darkened finished-home scenes, before-and-after slider, interior projects, and s",
+        "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
+        "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
+      ]
     }
   ],
   "launchesByBusinessKind": {
@@ -2601,6 +2621,42 @@
         "routeSignatures": [
           "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
           "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri",
+          "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
+        ]
+      },
+      {
+        "id": "2026-11-16-coastal-brush-painting-co-attempt-146-run-43955255341-attempt-1",
+        "launchedAt": "2026-11-16T21:10:47.665Z",
+        "stage": "attempt",
+        "reservationKey": "146-run-43955255341-attempt-1",
+        "businessName": "Coastal Brush Painting Co.",
+        "businessKind": "painting",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "archive-rail",
+          "typographic-poster",
+          "utility-diagnostic",
+          "web-painting-concept-pro",
+          "web-painting-house-doctor",
+          "web-painting-southern"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form"
+        ],
+        "referenceIds": [
+          "web-painting-concept-pro",
+          "web-painting-house-doctor",
+          "web-painting-southern"
+        ],
+        "routeSignatures": [
+          "minimal charcoal service links and light estimate controls|a low-light exterior-home photograph anchors a dark charcoal layout with a float|compact dark service cards followed by a visual before-and-after comparison|clean geometric sans with large centered statements and compact utility labels|dark image and form hero -> horizontal service strip -> four service cards -> be|darkened finished-home scenes, before-and-after slider, interior projects, and s",
+          "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
           "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
         ]
       }
