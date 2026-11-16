@@ -122,6 +122,56 @@ describe("ordered publication", () => {
       duplicate: false,
     });
   });
+  it("retires a superseded reservation before its alarm can dispatch", async () => {
+    const dispatches: string[] = [];
+    network.use(
+      http.get(
+        "https://api.github.com/repos/WrazyAI/example-client/pulls/7",
+        () =>
+          HttpResponse.json({
+            head: { sha: publication.headSha },
+            merged: true,
+            merge_commit_sha: "merge-sha",
+          }),
+      ),
+      http.get(
+        "https://api.github.com/repos/WrazyAI/example-client/git/ref/heads/main",
+        () => HttpResponse.json({ object: { sha: "merge-sha" } }),
+      ),
+      http.post(
+        "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+        () => {
+          dispatches.push("dispatch");
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
+    );
+    const coordinator = getCoordinator("publication-superseded-alarm");
+    const abandoned = await coordinator.reservePublication(publication);
+    await runInDurableObject(coordinator, (_, state) => {
+      state.storage.sql.exec(
+        "UPDATE publications SET approval_lease_until = ?, next_attempt_at = 0 WHERE id = ?",
+        Date.now() - 1,
+        abandoned.publicationId!,
+      );
+    });
+    expect(
+      await coordinator.reservePublication({
+        ...publication,
+        headSha: "replacement-review-head",
+      }),
+    ).toMatchObject({ allowed: true });
+    await runInDurableObject(coordinator, async (instance) => {
+      await instance.alarm!();
+    });
+    expect(
+      await coordinator.publicationCommand({
+        action: "status",
+        publicationId: abandoned.publicationId!,
+      }),
+    ).toMatchObject({ state: "reserved", dismissed: true });
+    expect(dispatches).toEqual([]);
+  });
   it("keeps an unrecovered released publication held for the client", async () => {
     mocks();
     const coordinator = getCoordinator("publication-attention-release");

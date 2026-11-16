@@ -333,6 +333,11 @@ export class PublicationStore {
       return this.status(id);
     if (!["reserved", "queued"].includes(row.state))
       throw Error("Publication needs explicit recovery.");
+    const latest = this.storage.sql
+      .exec<Row>("SELECT * FROM publications ORDER BY seq DESC LIMIT 1")
+      .toArray()[0];
+    if (!latest || latest.id !== row.id)
+      throw Error("Publication was superseded by a newer review.");
     if (row.dispatch_sent || row.dispatch_lease_until > Date.now())
       return this.status(id);
     const body = {
@@ -604,6 +609,18 @@ export class PublicationStore {
       .toArray();
     for (const r of rows) {
       if (r.state === "reserved") {
+        const latest = this.storage.sql
+          .exec<Row>("SELECT * FROM publications ORDER BY seq DESC LIMIT 1")
+          .toArray()[0];
+        if (!latest || latest.id !== r.id) {
+          this.storage.sql.exec(
+            "UPDATE publications SET dismissed = 1, approval_lease_until = 0, failure = ?, updated_at = ? WHERE id = ? AND state = 'reserved' AND dismissed = 0",
+            "Superseded by a newer review before publication.",
+            Date.now(),
+            r.id,
+          );
+          continue;
+        }
         // A lost merge response is reconciled against the exact reviewed PR.
         // Never issue another merge from the alarm or infer ownership from main alone.
         const token = crypto.randomUUID();
