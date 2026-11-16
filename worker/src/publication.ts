@@ -89,7 +89,7 @@ type Row = {
   approval_token: string | null;
   dispatch_lease_until: number;
 };
-const HOLD = "('reserved','queued','running','failed','attention')";
+const HOLD = "('queued','running','failed')";
 const RUN_WINDOW = 50 * 60_000;
 export class PublicationStore {
   constructor(
@@ -137,7 +137,15 @@ export class PublicationStore {
   held() {
     return this.storage.sql
       .exec<Row>(
-        `SELECT * FROM publications WHERE state IN ${HOLD} AND dismissed = 0 ORDER BY seq DESC LIMIT 1`,
+        `SELECT * FROM publications
+         WHERE dismissed = 0
+           AND (
+             state IN ${HOLD}
+             OR (state = 'reserved' AND approval_lease_until > ?)
+             OR (state = 'attention' AND (approved_sha IS NOT NULL OR dispatch_sent = 1 OR run_id IS NOT NULL))
+           )
+         ORDER BY seq DESC LIMIT 1`,
+        Date.now(),
       )
       .toArray()[0];
   }
@@ -217,12 +225,13 @@ export class PublicationStore {
           state: null,
           duplicate: false,
         };
-      if (this.held())
+      const held = this.held();
+      if (held)
         return {
           allowed: false,
           code: "publication_in_progress",
-          publicationId: null,
-          state: null,
+          publicationId: held.id,
+          state: held.state,
           duplicate: false,
         };
       if (
@@ -324,6 +333,11 @@ export class PublicationStore {
       return this.status(id);
     if (!["reserved", "queued"].includes(row.state))
       throw Error("Publication needs explicit recovery.");
+    const latest = this.storage.sql
+      .exec<Row>("SELECT * FROM publications ORDER BY seq DESC LIMIT 1")
+      .toArray()[0];
+    if (!latest || latest.id !== row.id)
+      throw Error("Publication was superseded by a newer review.");
     if (row.dispatch_sent || row.dispatch_lease_until > Date.now())
       return this.status(id);
     const body = {
@@ -595,6 +609,18 @@ export class PublicationStore {
       .toArray();
     for (const r of rows) {
       if (r.state === "reserved") {
+        const latest = this.storage.sql
+          .exec<Row>("SELECT * FROM publications ORDER BY seq DESC LIMIT 1")
+          .toArray()[0];
+        if (!latest || latest.id !== r.id) {
+          this.storage.sql.exec(
+            "UPDATE publications SET dismissed = 1, approval_lease_until = 0, failure = ?, updated_at = ? WHERE id = ? AND state = 'reserved' AND dismissed = 0",
+            "Superseded by a newer review before publication.",
+            Date.now(),
+            r.id,
+          );
+          continue;
+        }
         // A lost merge response is reconciled against the exact reviewed PR.
         // Never issue another merge from the alarm or infer ownership from main alone.
         const token = crypto.randomUUID();
