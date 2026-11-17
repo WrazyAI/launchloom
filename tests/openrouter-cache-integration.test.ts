@@ -27,7 +27,6 @@ describe("OpenRouter cache integration", () => {
     const expected = new Map([
       ["scripts/author-production-experiences.mjs", "creative-author"],
       ["scripts/generate-site-config.mjs", "site-copy"],
-      ["scripts/revision-engine.mjs", "revision-operations"],
       ["scripts/rendered-reference-fidelity.mjs", "rendered-reference"],
       ["scripts/visual-quality-gate.mjs", "visual-quality-gate"],
       ["scripts/analyze-reference-dna.mjs", "reference-dna"],
@@ -54,6 +53,14 @@ describe("OpenRouter cache integration", () => {
       expect(source, file).toContain("openRouterSessionId");
       expect(source, file).toContain(scope);
     }
+
+    const revision = fs.readFileSync("scripts/revision-engine.mjs", "utf8");
+    expect(revision).toContain('from "./creative-lane-inference.mjs"');
+    expect(revision).toContain("await completeGoCreative({");
+    expect(revision).toContain("buildGoCreativeRequest({");
+    expect(revision).toContain("openRouterSessionId");
+    expect(revision).toContain("revision-operations");
+    expect(revision).not.toContain("openRouterChatCompletion");
   });
 
   it("keeps measured SEO fields separate from bounded OpenRouter search evidence", () => {
@@ -237,7 +244,6 @@ describe("OpenRouter cache integration", () => {
     const expectedResponseCached = [
       "scripts/evaluate-visual-models.mjs",
       "scripts/rendered-reference-fidelity.mjs",
-      "scripts/revision-engine.mjs",
       "scripts/visual-quality-gate.mjs",
     ];
     for (const file of expectedResponseCached)
@@ -256,6 +262,7 @@ describe("OpenRouter cache integration", () => {
       "scripts/author-production-experiences.mjs",
       "scripts/generate-site-config.mjs",
       "scripts/creative-repair-loop.mjs",
+      "scripts/revision-engine.mjs",
     ])
       expect(fs.readFileSync(file, "utf8"), file).not.toContain(
         "responseCache: true",
