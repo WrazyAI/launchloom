@@ -12,7 +12,7 @@ export default defineConfig({
           REVIEW_SIGNING_SECRET: "test-review-secret",
           FAL_KEY: "test-fal-key",
           LEAD_SIGNING_SECRET: "test-lead-secret",
-          OPENROUTER_API_KEY: "test-openrouter-key",
+          OPENCODE_GO_API_KEY: "test-opencode-go-key",
           ONBOARDING_INVITE_SIGNING_SECRET: "test-onboarding-invite-secret",
           GENERATION_TRACKING_SECRET: "test-generation-tracking-secret",
           ONBOARDING_ORIGIN: "https://onboard.example.test",

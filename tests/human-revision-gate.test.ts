@@ -13,7 +13,7 @@ import {
 const roots: string[] = [];
 
 beforeEach(() => {
-  vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+  vi.stubEnv("OPENCODE_GO_API_KEY", "test-key");
 });
 
 afterEach(async () => {
@@ -101,11 +101,17 @@ describe("human revision rendered gate", () => {
     const { screenshotsDir, configPath } = await fixture({ feedback });
     const fetchImpl = vi.fn(async (_url: string, _options: RequestInit) =>
       Response.json({
-        choices: [
+        status: "completed",
+        model: "deepseek-v4.1-flash",
+        output: [
           {
-            finish_reason: "stop",
-            message: {
-              content: JSON.stringify({
+            type: "message",
+            role: "assistant",
+            status: "completed",
+            content: [
+              {
+                type: "output_text",
+                text: JSON.stringify({
                 summary: "The requested asymmetry is visible.",
                 verdict: "pass",
                 feedbackResults: [
@@ -118,11 +124,11 @@ describe("human revision rendered gate", () => {
                   },
                 ],
               }),
-            },
+              },
+            ],
           },
         ],
-        usage: { total_tokens: 123 },
-        provider: "test",
+        usage: { input_tokens: 123, output_tokens: 45 },
       }),
     );
 
@@ -137,8 +143,8 @@ describe("human revision rendered gate", () => {
     expect(report.audit.verdict).toBe("pass");
     expect(fetchImpl).toHaveBeenCalledOnce();
     const body = JSON.parse(fetchImpl.mock.calls[0][1].body as string);
-    const user = body.messages[1].content;
-    const prompt = user.find((part: any) => part.type === "text").text;
+    const user = body.input[1].content;
+    const prompt = user.find((part: any) => part.type === "input_text").text;
     expect(prompt).toContain(
       "Make the hero more cinematic and asymmetrical without changing the copy.",
     );
@@ -152,12 +158,12 @@ describe("human revision rendered gate", () => {
       }),
     ]);
     expect(report.audit.findings).toEqual([]);
-    expect(user.filter((part: any) => part.type === "image_url")).toHaveLength(
+    expect(user.filter((part: any) => part.type === "input_image")).toHaveLength(
       3,
     );
   });
 
-  it("normalizes oversized screenshots before sending them to OpenRouter", async () => {
+  it("normalizes oversized screenshots before sending them to the judge", async () => {
     const { screenshotsDir, configPath } = await fixture();
     const width = 1800;
     const height = 1200;
@@ -174,11 +180,17 @@ describe("human revision rendered gate", () => {
 
     const fetchImpl = vi.fn(async (_url: string, _options: RequestInit) =>
       Response.json({
-        choices: [
+        status: "completed",
+        model: "deepseek-v4.1-flash",
+        output: [
           {
-            finish_reason: "stop",
-            message: {
-              content: JSON.stringify({
+            type: "message",
+            role: "assistant",
+            status: "completed",
+            content: [
+              {
+                type: "output_text",
+                text: JSON.stringify({
                 summary: "The request is satisfied.",
                 verdict: "pass",
                 feedbackResults: [
@@ -190,7 +202,8 @@ describe("human revision rendered gate", () => {
                   },
                 ],
               }),
-            },
+              },
+            ],
           },
         ],
       }),
@@ -204,14 +217,18 @@ describe("human revision rendered gate", () => {
     });
 
     const body = JSON.parse(fetchImpl.mock.calls[0][1].body as string);
-    const images = body.messages[1].content.filter(
-      (part: any) => part.type === "image_url",
+    const images = body.input[1].content.filter(
+      (part: any) => part.type === "input_image",
     );
     expect(images).toHaveLength(3);
     let totalBytes = 0;
     for (const image of images) {
-      expect(image.image_url.url).toMatch(/^data:image\/webp;base64,/u);
-      const encoded = image.image_url.url.split(",", 2)[1];
+      const url =
+        typeof image.image_url === "string"
+          ? image.image_url
+          : image.image_url?.url;
+      expect(url).toMatch(/^data:image\/webp;base64,/u);
+      const encoded = url.split(",", 2)[1];
       const normalized = Buffer.from(encoded, "base64");
       totalBytes += normalized.byteLength;
       expect(normalized.byteLength).toBeLessThanOrEqual(
@@ -232,11 +249,17 @@ describe("human revision rendered gate", () => {
     });
     const fetchImpl = vi.fn(async () =>
       Response.json({
-        choices: [
+        status: "completed",
+        model: "deepseek-v4.1-flash",
+        output: [
           {
-            finish_reason: "stop",
-            message: {
-              content: JSON.stringify({
+            type: "message",
+            role: "assistant",
+            status: "completed",
+            content: [
+              {
+                type: "output_text",
+                text: JSON.stringify({
                 summary: "Not actually complete.",
                 verdict: "pass",
                 feedbackResults: [
@@ -256,7 +279,8 @@ describe("human revision rendered gate", () => {
                   },
                 ],
               }),
-            },
+              },
+            ],
           },
         ],
       }),
@@ -306,11 +330,17 @@ describe("human revision rendered gate", () => {
     await fs.writeFile(configPath, JSON.stringify(config));
     const fetchImpl = vi.fn(async (_url: string, _options: RequestInit) =>
       Response.json({
-        choices: [
+        status: "completed",
+        model: "deepseek-v4.1-flash",
+        output: [
           {
-            finish_reason: "stop",
-            message: {
-              content: JSON.stringify({
+            type: "message",
+            role: "assistant",
+            status: "completed",
+            content: [
+              {
+                type: "output_text",
+                text: JSON.stringify({
                 summary: "Both requested changes are visible.",
                 verdict: "pass",
                 feedbackResults: [
@@ -330,7 +360,8 @@ describe("human revision rendered gate", () => {
                   },
                 ],
               }),
-            },
+              },
+            ],
           },
         ],
         usage: { total_tokens: 88 },
@@ -346,8 +377,8 @@ describe("human revision rendered gate", () => {
     });
 
     const body = JSON.parse(fetchImpl.mock.calls[0][1].body as string);
-    const prompt = body.messages[1].content
-      .filter((part: any) => part.type === "text")
+    const prompt = body.input[1].content
+      .filter((part: any) => part.type === "input_text")
       .map((part: any) => part.text)
       .join("\n");
     expect(prompt).toContain('"feedbackIndex":2');
@@ -366,16 +397,23 @@ describe("human revision rendered gate", () => {
     const { screenshotsDir, configPath } = await fixture();
     const fetchImpl = vi.fn(async () =>
       Response.json({
-        choices: [
+        status: "completed",
+        model: "deepseek-v4.1-flash",
+        output: [
           {
-            finish_reason: "stop",
-            message: {
-              content: JSON.stringify({
+            type: "message",
+            role: "assistant",
+            status: "completed",
+            content: [
+              {
+                type: "output_text",
+                text: JSON.stringify({
                 summary: "Everything looks good.",
                 verdict: "pass",
                 findings: [],
               }),
-            },
+              },
+            ],
           },
         ],
       }),
@@ -409,11 +447,17 @@ describe("human revision rendered gate", () => {
     await fs.writeFile(configPath, JSON.stringify(config));
     const fetchImpl = vi.fn(async () =>
       Response.json({
-        choices: [
+        status: "completed",
+        model: "deepseek-v4.1-flash",
+        output: [
           {
-            finish_reason: "stop",
-            message: {
-              content: JSON.stringify({
+            type: "message",
+            role: "assistant",
+            status: "completed",
+            content: [
+              {
+                type: "output_text",
+                text: JSON.stringify({
                 summary: "One requested change remains incomplete.",
                 verdict: "revise",
                 feedbackResults: [
@@ -442,7 +486,8 @@ describe("human revision rendered gate", () => {
                   },
                 ],
               }),
-            },
+              },
+            ],
           },
         ],
       }),

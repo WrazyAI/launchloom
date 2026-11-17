@@ -7,8 +7,15 @@ import {
   readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
 import { parseModelJson } from "./model-json.mjs";
+import {
+  buildGoCreativeRequest,
+  completeGoCreative,
+  parseGoCreativeOutput,
+} from "./creative-lane-inference.mjs";
+import { opencodeGoCashCostUsd } from "./opencode-go.mjs";
 
 const DEFAULT_MODEL = "deepseek/deepseek-v4.1-flash";
+const GO_DEFAULT_MODEL = "opencode-go/deepseek-v4.1-flash";
 const MAX_OUTPUT_TOKENS = 768;
 const MAX_SERVICES = 5;
 const MAX_PHRASES_PER_SERVICE = 5;
@@ -26,6 +33,18 @@ const STOP_WORDS = new Set([
   "to",
   "with",
 ]);
+
+const INTENT_PLANNER_SYSTEM_PROMPT = [
+  "You are a local-search language planner for small businesses.",
+  'Return only a JSON object with this shape: {"services":[{"service":"exact confirmed service name","phrases":["customer query phrase"]}]}.',
+  "For every supplied service, propose up to five distinct customer search phrases: exact service wording, a common everyday equivalent, a customer need/problem phrase, and cost/quote or booking wording when relevant to that same confirmed service. At least two phrases per service must be compact 2-4 word searches rather than full questions, and should use ordinary customer language likely to appear in search results.",
+  "Prefer phrases that name the service or its close, accurate equivalent over abstract, subjective, or low-intent wording. Do not spend the phrase budget on multiple long-tail paraphrases that express the same intent.",
+  "Keep a meaningful word from the confirmed service in each phrase. Use a direct everyday synonym only when it clearly means the same offering.",
+  "Do not invent or broaden services, products, ingredients, attributes, delivery, urgency, prices, availability, guarantees, outcomes, or business policies.",
+  "Do not add a city, business name, or near-me wording; the research system adds location variants separately.",
+  "Avoid mechanically prefixing the business category to the service. If uncertain, use the exact service wording.",
+  "Use the exact confirmed service string in each service field. Never return prose, evidence claims, or keyword metrics.",
+].join(" ");
 
 function cleanText(value, limit = 160) {
   return String(value ?? "")
@@ -194,6 +213,55 @@ export function validateIntentQueryPlan(candidate, confirmedServices = []) {
   };
 }
 
+export function createOpenCodeGoIntentQueryPlanner({
+  apiKey = process.env.OPENCODE_GO_API_KEY,
+  fetchImpl = fetch,
+  model = process.env.SEO_QUERY_PLANNER_MODEL || GO_DEFAULT_MODEL,
+} = {}) {
+  if (!apiKey) throw new Error("OPENCODE_GO_API_KEY is required.");
+  return async (input = {}) => {
+    const context = sanitizePlannerContext(input);
+    if (!context.services.length)
+      return {
+        plan: { services: [] },
+        usage: null,
+        provider: "opencode-go",
+        model,
+      };
+    const result = await completeGoCreative({
+      logicalModel: model,
+      fetchImpl,
+      env: { ...process.env, OPENCODE_GO_API_KEY: apiKey },
+      signal: AbortSignal.timeout(20_000),
+      request: buildGoCreativeRequest({
+        systemPrompt: INTENT_PLANNER_SYSTEM_PROMPT,
+        userContent: [{ type: "text", text: JSON.stringify(context) }],
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
+        effort: "low",
+        sessionId: openRouterSessionId("seo-query-planner", model, context),
+      }),
+    });
+    const plan = parseGoCreativeOutput(result, {
+      invalidJsonCode: "SEO_QUERY_PLANNER_INVALID_JSON",
+      label: "OpenCode Go query planning",
+    });
+    return {
+      plan,
+      provider: "opencode-go",
+      model: result.model || model,
+      usage: {
+        costUsd: opencodeGoCashCostUsd(result.usage),
+        promptTokens: Number(result.usage?.inputTokens || 0),
+        completionTokens: Number(result.usage?.outputTokens || 0),
+        reasoningTokens: Number(result.usage?.reasoningTokens || 0),
+        cachedTokens: Number(result.usage?.cachedInputTokens || 0),
+        cacheStatus: null,
+        cacheDiscount: null,
+      },
+    };
+  };
+}
+
 export function createOpenRouterIntentQueryPlanner({
   apiKey = process.env.OPENROUTER_API_KEY,
   fetchImpl = fetch,
@@ -209,17 +277,7 @@ export function createOpenRouterIntentQueryPlanner({
         provider: "openrouter",
         model,
       };
-    const systemPrompt = [
-      "You are a local-search language planner for small businesses.",
-      'Return only a JSON object with this shape: {"services":[{"service":"exact confirmed service name","phrases":["customer query phrase"]}]}.',
-      "For every supplied service, propose up to five distinct customer search phrases: exact service wording, a common everyday equivalent, a customer need/problem phrase, and cost/quote or booking wording when relevant to that same confirmed service. At least two phrases per service must be compact 2-4 word searches rather than full questions, and should use ordinary customer language likely to appear in search results.",
-      "Prefer phrases that name the service or its close, accurate equivalent over abstract, subjective, or low-intent wording. Do not spend the phrase budget on multiple long-tail paraphrases that express the same intent.",
-      "Keep a meaningful word from the confirmed service in each phrase. Use a direct everyday synonym only when it clearly means the same offering.",
-      "Do not invent or broaden services, products, ingredients, attributes, delivery, urgency, prices, availability, guarantees, outcomes, or business policies.",
-      "Do not add a city, business name, or near-me wording; the research system adds location variants separately.",
-      "Avoid mechanically prefixing the business category to the service. If uncertain, use the exact service wording.",
-      "Use the exact confirmed service string in each service field. Never return prose, evidence claims, or keyword metrics.",
-    ].join(" ");
+    const systemPrompt = INTENT_PLANNER_SYSTEM_PROMPT;
     const response = await openRouterChatCompletion({
       apiKey,
       title: "LaunchLoom SEO query planning",

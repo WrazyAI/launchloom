@@ -19,10 +19,6 @@ on:
         required: false
         default: ""
         type: string
-      inference_provider:
-        required: false
-        default: ""
-        type: string
 
 permissions:
   contents: read
@@ -43,12 +39,11 @@ jobs:
     timeout-minutes: 210
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
-      # Focused profiles honor the per-dispatch acceptance override first, then
-      # the repository variable, then OpenRouter.
-      CREATIVE_EXPERIENCE_PROVIDER: ${{ inputs.inference_provider || vars.CREATIVE_EXPERIENCE_PROVIDER || 'openrouter' }}
-      SITE_COPY_PROVIDER: ${{ inputs.inference_provider || vars.SITE_COPY_PROVIDER || 'openrouter' }}
+      # OpenCode Go is the only production inference upstream. The code
+      # rejects `openrouter`.
+      CREATIVE_EXPERIENCE_PROVIDER: opencode-go
+      SITE_COPY_PROVIDER: opencode-go
       FAL_KEY: ${{ secrets.FAL_KEY }}
       FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}
       FAL_IMAGE_USD_PER_IMAGE: ${{ vars.FAL_IMAGE_USD_PER_IMAGE }}
@@ -109,6 +104,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Verify OpenCode Go credential
+        run: |
+          test -n "$OPENCODE_GO_API_KEY" || { echo "Missing: OPENCODE_GO_API_KEY" >&2; exit 1; }
       - name: Install rendered acceptance browser
         run: npx playwright install --with-deps chromium || npx playwright install chromium
       - name: Configure private QA repository authentication

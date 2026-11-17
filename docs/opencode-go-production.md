@@ -9,6 +9,10 @@ reusing the existing `OPENCODE_GO_API_KEY` as a CI secret, and requires one
 bounded unattended acceptance run on a synthetic client before the default
 flips.
 
+**Status 2026-11-17:** OpenRouter is disabled for production; every inference
+lane runs on OpenCode Go. The Work OS ledger entry for the cutover is
+`17b43745-ee8d-47d9-aa8e-d47f8c1b65c3`.
+
 **Status 2026-10-14:** active in production. The acceptance run
 (`38620904674`, intake #158, creative-only, Go forced) authored 3/3 candidates
 on Go with 23/23 parsed responses, zero retries and a computed cash cost of
@@ -41,21 +45,26 @@ GPT-6 Luna remains only for frozen legacy sessions. The defaults are guarded by
 
 ## Provider switch
 
-| Environment variable           | Default      | Values                      |
-| ------------------------------ | ------------ | --------------------------- |
-| `CREATIVE_EXPERIENCE_PROVIDER` | `openrouter` | `openrouter`, `opencode-go` |
-| `SITE_COPY_PROVIDER`           | `openrouter` | `openrouter`, `opencode-go` |
+OpenRouter is disabled for production. Both selectors default to
+`opencode-go` and the code rejects `openrouter` with an explicit error, so a
+stale repository variable or inherited environment cannot redirect a run.
+OpenRouter transport code remains only for the manual model-evaluation labs.
 
-- Production (`generate-client.yml`) reads `vars.CREATIVE_EXPERIENCE_PROVIDER`
-  and `vars.SITE_COPY_PROVIDER`, falling back to `openrouter`. Flipping those
-  repository variables is the switch; setting them back (or removing them) is
-  the manual rollback. There is no automatic provider fallback.
-- Focused test profiles (`test-generation.yml`) additionally honor the
-  per-dispatch `inference_provider` input, which is the acceptance lever; the
-  repository variables stay on `openrouter` until acceptance passes.
-- The Go path requires `OPENCODE_GO_API_KEY`; the OpenRouter path still
-  requires `OPENROUTER_API_KEY`. Both secrets are requested by the workflows;
-  `generate-client.yml` fails early when a Go-selected run has no Go key.
+| Environment variable           | Default       | Accepted values |
+| ------------------------------ | ------------- | --------------- |
+| `CREATIVE_EXPERIENCE_PROVIDER` | `opencode-go` | `opencode-go`   |
+| `SITE_COPY_PROVIDER`           | `opencode-go` | `opencode-go`   |
+
+- Production (`generate-client.yml`) and focused test profiles
+  (`test-generation.yml`) pin both variables to `opencode-go`. There is no
+  per-dispatch provider lever and no automatic provider fallback.
+- The only production key is `OPENCODE_GO_API_KEY`. `generate-client.yml`,
+  the revision workflows, and the platform deploy fail early when it is
+  missing. The Worker receives the same key for intake service suggestions and
+  the visitor AI assistant.
+- OpenRouter has no hosted web-search equivalent on OpenCode Go, so measured
+  SEO stays on DataForSEO and the deterministic query path. The SEO intent
+  planner runs on OpenCode Go.
 - The default creative-lane logical model is
   `deepseek/deepseek-v4.1-flash`; on OpenCode Go it resolves to the wire model
   `deepseek-v4.1-flash`. The legacy `openai/gpt-6-luna` session model remains
@@ -100,16 +109,13 @@ an account setting, not changed by this migration.
 
 ## Acceptance and rollback
 
-1. Merge the migration PR with the repository variables still unset
-   (production stays on OpenRouter).
-2. Dispatch `generate-client.yml` on a synthetic client with a focused
-   profile and `inference_provider: opencode-go`, then verify the authored
-   candidate, build and browser evidence in the run artifacts.
-3. On success, set `vars.CREATIVE_EXPERIENCE_PROVIDER=opencode-go` and
-   `vars.SITE_COPY_PROVIDER=opencode-go`. Record the switch and the run IDs in
-   the ledger.
-4. Rollback: set either variable back to `openrouter` (or remove it). The
-   OpenRouter paths remain wired and covered by tests.
+1. Production and focused workflows pin both selectors to `opencode-go`; the
+   code rejects `openrouter`, and every production job requires
+   `OPENCODE_GO_API_KEY`.
+2. Dispatch `generate-client.yml` on a focused profile and verify the authored
+   candidate, site copy, build, and browser evidence in the run artifacts.
+3. Rollback requires a reviewed code change that restores the OpenRouter
+   selector and its key. There is no environment-variable rollback.
 
 ## Verification
 
@@ -117,7 +123,7 @@ an account setting, not changed by this migration.
   serialization (including the temperature refusal), cash cost tiers, ledger
   metrics, image mapping, request builders, the site-copy Go round trip with a
   stubbed transport, and the author CLI provider gates.
-- Existing OpenRouter-path suites (`site-config`, `openrouter-cache-integration`,
-  `author-failure-evidence`, workflow-coupling tests) remain green.
-- A bounded unattended acceptance run is required before the default flips;
-  the capability probes above are not a substitute for it.
+- OpenRouter transport unit suites remain for the evaluation labs, but no
+  production workflow selects that provider.
+- A bounded unattended acceptance run is still required to prove the cutover
+  end to end; the capability probes above are not a substitute for it.

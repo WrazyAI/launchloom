@@ -6,14 +6,14 @@ import {
 } from "../templates/client-site/src/lib/page-briefs.mjs";
 import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { factText } from "../templates/client-site/src/lib/business-facts.mjs";
-import { parseModelJson } from "./model-json.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import {
-  logOpenRouterCacheUsage,
-  logOpenRouterResponseCacheUsage,
-  openRouterChatCompletion,
-  openRouterSessionId,
-} from "./openrouter-client.mjs";
+  buildGoCreativeRequest,
+  completeGoCreative,
+  creativeLaneDefaultModel,
+  parseGoCreativeOutput,
+} from "./creative-lane-inference.mjs";
+import { openRouterSessionId } from "./openrouter-client.mjs";
 
 const COPY_FIELDS = new Set([
   "heroKicker",
@@ -1234,9 +1234,9 @@ function contentTargetsSatisfied(targets, operations) {
 export async function modelOperations(
   feedbackItems,
   config,
-  model = "deepseek/deepseek-v4.1-flash",
+  model = creativeLaneDefaultModel(),
 ) {
-  if (!process.env.OPENROUTER_API_KEY) return [];
+  if (!process.env.OPENCODE_GO_API_KEY) return [];
   const items = Array.isArray(feedbackItems) ? feedbackItems : [feedbackItems];
   const sessionId = openRouterSessionId("revision-operations", model, {
     businessName: config.business?.name || "",
@@ -1244,36 +1244,23 @@ export async function modelOperations(
     phone: config.business?.phone || "",
     domain: config.business?.domain || "",
   });
+  const systemPrompt = `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_page_content',routeId,field:'introduction'|'metadataDescription'|'faqs'|'localContext'|'media',value}; existing page evidence and its exact supported wording must be reused, never grant new confirmation or create evidence. A route-specific FAQ, image, local detail, introduction or metadata request must use the exact approved route ID and may not edit company-wide content. {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep hero headings to 4-10 memorable words, hero bodies to one sentence under 28 words, and service-card descriptions to one sentence under 22 words. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. When feedback names specific section(s), only edit those sections; never use page-wide design treatment or edit another section to satisfy a section-specific request. If the allowed operations cannot express the requested scope, return no operation. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`;
+  const userPrompt = `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, pageBriefs: compilePageBriefs(config).briefs, pageEvidence: publicPageEvidence(config), copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`;
   for (const reasoningEffort of ["low", "high"]) {
-    const response = await openRouterChatCompletion({
-      title: "LaunchLoom revision operations",
-      sessionId,
-      responseCache: true,
-      responseCacheTtlSeconds: 900,
-      body: {
-        model,
-        reasoning_effort: reasoningEffort,
-        temperature: 0.1,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_page_content',routeId,field:'introduction'|'metadataDescription'|'faqs'|'localContext'|'media',value}; existing page evidence and its exact supported wording must be reused, never grant new confirmation or create evidence. A route-specific FAQ, image, local detail, introduction or metadata request must use the exact approved route ID and may not edit company-wide content. {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep hero headings to 4-10 memorable words, hero bodies to one sentence under 28 words, and service-card descriptions to one sentence under 22 words. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. When feedback names specific section(s), only edit those sections; never use page-wide design treatment or edit another section to satisfy a section-specific request. If the allowed operations cannot express the requested scope, return no operation. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
-          },
-          {
-            role: "user",
-            content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, pageBriefs: compilePageBriefs(config).briefs, pageEvidence: publicPageEvidence(config), copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`,
-          },
-        ],
-      },
-    });
-    if (!response.ok) continue;
     try {
-      logOpenRouterResponseCacheUsage("revision-operations", response);
-      const payload = await response.json();
-      logOpenRouterCacheUsage("revision-operations", payload.usage);
-      const content = payload.choices?.[0]?.message?.content;
-      const parsed = parseModelJson(content);
+      const result = await completeGoCreative({
+        logicalModel: model,
+        request: buildGoCreativeRequest({
+          systemPrompt,
+          userContent: [{ type: "text", text: userPrompt }],
+          maxOutputTokens: 8_000,
+          effort: reasoningEffort,
+          sessionId,
+        }),
+      });
+      const parsed = parseGoCreativeOutput(result, {
+        label: "revision operations",
+      });
       const operations = (
         Array.isArray(parsed.plans) ? parsed.plans : []
       ).flatMap((plan) =>

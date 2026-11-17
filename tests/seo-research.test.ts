@@ -9,6 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   createDataForSeoClient,
+  createOpenCodeGoIntentQueryPlanner,
   createOpenRouterIntentQueryPlanner,
   createOpenRouterWebSearchClient,
   normaliseSeoIntake,
@@ -475,6 +476,75 @@ describe("SEO market map", () => {
         cacheStatus: "MISS",
       },
     });
+  });
+
+  it("plans search intent on OpenCode Go with the Responses protocol", async () => {
+    const responsePayload = {
+      status: "completed",
+      model: "deepseek-v4.1-flash",
+      output: [
+        {
+          type: "message",
+          role: "assistant",
+          status: "completed",
+          content: [
+            {
+              type: "output_text",
+              text: JSON.stringify({
+                services: [
+                  {
+                    service: "Brake repair",
+                    phrases: ["brake shop", "brake repair"],
+                  },
+                ],
+              }),
+            },
+          ],
+        },
+      ],
+      usage: { input_tokens: 100, output_tokens: 30 },
+    };
+    const fetchImpl = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        new Response(JSON.stringify(responsePayload), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+    const planner = createOpenCodeGoIntentQueryPlanner({
+      apiKey: "test-go-key",
+      fetchImpl,
+    });
+    const result = await planner({
+      businessName: "Rivet and Road Auto Repair",
+      businessKind: "auto repair",
+      industry: "auto-repair",
+      services: ["Brake repair"],
+      languageCode: "en",
+    });
+    const request = fetchImpl.mock.calls[0]?.[1] as RequestInit;
+    const body = JSON.parse(String(request.body));
+
+    expect(String(fetchImpl.mock.calls[0]?.[0])).toContain(
+      "/inference/go/v1/responses",
+    );
+    expect(body).toMatchObject({
+      model: "deepseek-v4.1-flash",
+      max_output_tokens: 768,
+      reasoning: { effort: "low" },
+      text: { format: { type: "json_object" } },
+    });
+    expect(JSON.stringify(body.input)).toContain("Brake repair");
+    expect(result).toMatchObject({
+      provider: "opencode-go",
+      plan: {
+        services: [
+          { service: "Brake repair", phrases: ["brake shop", "brake repair"] },
+        ],
+      },
+      usage: { promptTokens: 100, completionTokens: 30 },
+    });
+    expect(result.usage?.costUsd).toBeGreaterThan(0);
   });
 
   it("bounds reasoning for query planning and records cost when output is exhausted", async () => {

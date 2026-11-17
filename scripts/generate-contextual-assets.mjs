@@ -1125,7 +1125,9 @@ async function generateContextualAssetsForRoute({
   let generationBlockedByFailure = null;
   const hasReviewProvider =
     imageReviewer !== reviewGeneratedAsset ||
-    Boolean(process.env.OPENROUTER_API_KEY);
+    (creativeLaneProvider() === "opencode-go"
+      ? Boolean(process.env.OPENCODE_GO_API_KEY)
+      : Boolean(process.env.OPENROUTER_API_KEY));
   const canGenerate = Boolean(key && !force && hasReviewProvider);
   if (canGenerate) falClient.config({ credentials: key });
 
@@ -1198,7 +1200,7 @@ async function generateContextualAssetsForRoute({
           ? !key
             ? "FAL_KEY-not-configured"
             : !hasReviewProvider
-              ? "OPENROUTER_API_KEY-not-configured"
+              ? "OPENCODE_GO_API_KEY-not-configured"
               : "image-generation-disabled"
           : "request-budget-exhausted",
         fallback,

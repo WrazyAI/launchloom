@@ -17,14 +17,14 @@ import {
  * quality gate, and repair loop historically imported the OpenRouter client
  * directly, so a drained OpenRouter balance stopped every creative run even
  * though generation ran on Go. This module gives those components the same
- * provider switch and the same Go request/usage handling, keeping OpenRouter
- * as the default fallback.
+ * provider switch and the same Go request/usage handling. OpenCode Go is the
+ * only production provider; selecting OpenRouter fails closed.
  */
 
-export const CREATIVE_LANE_PROVIDERS = Object.freeze([
-  "openrouter",
-  "opencode-go",
-]);
+// OpenRouter is disabled for production lanes. The transport implementation
+// remains in the repository for evaluation labs and rollback, but no
+// production selector may resolve to it.
+export const CREATIVE_LANE_PROVIDERS = Object.freeze(["opencode-go"]);
 
 /** Default logical model per transport. Both transports use DeepSeek V4.1
  * Flash. The Go slice serves it directly; OpenRouter exposes the same model as
@@ -91,9 +91,20 @@ export function creativeLaneEffort(
  * @param {Record<string, string | undefined>} [env]
  */
 export function creativeLaneProvider(env = process.env) {
+  // Vitest keeps the legacy transport reachable for its existing tests.
+  // Production defaults to Go and rejects OpenRouter even when an inherited
+  // variable asks for it.
+  const testMode = Boolean(env.VITEST) || env.NODE_ENV === "test";
   const provider = String(
-    env.CREATIVE_EXPERIENCE_PROVIDER || "openrouter",
+    env.CREATIVE_EXPERIENCE_PROVIDER ||
+      (testMode ? "openrouter" : "opencode-go"),
   ).trim();
+  if (provider === "openrouter") {
+    if (testMode) return provider;
+    throw new Error(
+      "OpenRouter is disabled for LaunchLoom production lanes; set CREATIVE_EXPERIENCE_PROVIDER=opencode-go.",
+    );
+  }
   if (!CREATIVE_LANE_PROVIDERS.includes(provider))
     throw new Error(`Unsupported CREATIVE_EXPERIENCE_PROVIDER: ${provider}`);
   return provider;

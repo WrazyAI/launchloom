@@ -9,10 +9,15 @@ import {
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import {
+  createOpenCodeGoIntentQueryPlanner,
   createOpenRouterIntentQueryPlanner,
   validateIntentQueryPlan,
 } from "./seo-intent-planner.mjs";
-export { createOpenRouterIntentQueryPlanner, validateIntentQueryPlan };
+export {
+  createOpenCodeGoIntentQueryPlanner,
+  createOpenRouterIntentQueryPlanner,
+  validateIntentQueryPlan,
+};
 import {
   openRouterApiError,
   openRouterChatCompletion,
@@ -516,10 +521,15 @@ function hasStrongRelatedServiceMatch(keyword, service) {
   const serviceTerms = [
     ...new Set(keywordKey(service).split(/\s+/u).filter(Boolean)),
   ];
-  const keywordTerms = new Set(keywordKey(keyword).split(/\s+/u).filter(Boolean));
+  const keywordTerms = new Set(
+    keywordKey(keyword).split(/\s+/u).filter(Boolean),
+  );
   if (!serviceTerms.length) return false;
   const requiredMatches = Math.min(2, serviceTerms.length);
-  return serviceTerms.filter((term) => keywordTerms.has(term)).length >= requiredMatches;
+  return (
+    serviceTerms.filter((term) => keywordTerms.has(term)).length >=
+    requiredMatches
+  );
 }
 
 function serviceMetricCandidateScore(item) {
@@ -543,7 +553,9 @@ function serviceMetricCandidateScore(item) {
 }
 
 function relatedDiscoveryCandidateScore(candidate) {
-  const intent = String(candidate.discoveryMetrics?.intent || "").toLocaleLowerCase();
+  const intent = String(
+    candidate.discoveryMetrics?.intent || "",
+  ).toLocaleLowerCase();
   const intentScore =
     intent === "transactional"
       ? 8
@@ -845,7 +857,9 @@ function mergeRelatedKeywordMetrics(primaryRows, relatedRows) {
     const next = { ...existing, metricSources, metricLocations };
     for (const field of fields) {
       if (
-        (next[field] === null || next[field] === undefined || next[field] === "") &&
+        (next[field] === null ||
+          next[field] === undefined ||
+          next[field] === "") &&
         related[field] !== null &&
         related[field] !== undefined &&
         related[field] !== ""
@@ -857,10 +871,12 @@ function mergeRelatedKeywordMetrics(primaryRows, relatedRows) {
     }
     if (related.metricLocation) next.metricLocation = related.metricLocation;
     const complete = fields.every(
-      (field) => next[field] !== null && next[field] !== undefined && next[field] !== "",
+      (field) =>
+        next[field] !== null && next[field] !== undefined && next[field] !== "",
     );
     const known = fields.some(
-      (field) => next[field] !== null && next[field] !== undefined && next[field] !== "",
+      (field) =>
+        next[field] !== null && next[field] !== undefined && next[field] !== "",
     );
     next.provenance = complete
       ? "dataforseo"
@@ -1221,7 +1237,8 @@ function boundedOptions(options) {
 export function createOpenRouterWebSearchClient({
   apiKey,
   fetchImpl = fetch,
-  model = process.env.SEO_FALLBACK_SEARCH_MODEL || "deepseek/deepseek-v4.1-flash",
+  model = process.env.SEO_FALLBACK_SEARCH_MODEL ||
+    "deepseek/deepseek-v4.1-flash",
 } = {}) {
   if (!apiKey) throw new Error("OpenRouter API key is required.");
   return {
@@ -2311,7 +2328,11 @@ async function researchSingleCity(intake = {}, options = {}) {
     for (const item of flattenItems(
       stage.value?.keywords || stage.value?.items || [],
     )) {
-      const candidate = relatedKeywordCandidate(item, service, seo.labsLocation);
+      const candidate = relatedKeywordCandidate(
+        item,
+        service,
+        seo.labsLocation,
+      );
       if (!candidate) continue;
       relatedCandidates.push(candidate);
       acceptedForService += 1;
@@ -2328,8 +2349,7 @@ async function researchSingleCity(intake = {}, options = {}) {
       )
       .sort(
         (a, b) =>
-          relatedDiscoveryCandidateScore(b) -
-          relatedDiscoveryCandidateScore(a),
+          relatedDiscoveryCandidateScore(b) - relatedDiscoveryCandidateScore(a),
       );
     relatedCandidatesToRemeasure.push(
       ...serviceCandidates.slice(
@@ -2879,7 +2899,9 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
         );
       const tasksError = Number(body.tasks_error ?? 0);
       if (!Number.isFinite(tasksError) || tasksError < 0)
-        throw new Error("DataForSEO returned an invalid location lookup task count.");
+        throw new Error(
+          "DataForSEO returned an invalid location lookup task count.",
+        );
       if (tasksError > 0)
         throw taskFailure(
           `DataForSEO reported ${tasksError} location lookup task error(s) without task details.`,
@@ -2948,9 +2970,7 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
           return true;
         });
     const uniqueCodes = [
-      ...new Set(
-        matches.map((location) => Number(location.location_code)),
-      ),
+      ...new Set(matches.map((location) => Number(location.location_code))),
     ];
     if (uniqueCodes.length !== 1)
       throw taskFailure(
@@ -3199,10 +3219,10 @@ export function renderSeoMapMarkdown(dossier) {
     `- ${dossier.cost?.tasks || 0} DataForSEO tasks; ${spendSummary}; configured cap $${Number(dossier.cost?.limitUsd || 0).toFixed(5)}.${dossier.cost?.overBudget ? " Provider reported an overrun on the final task." : ""}`,
     ...(intentPlanning.attempted
       ? [
-          `- OpenRouter intent planner (${intentPlanning.model || intentPlanning.usage?.model || "model unavailable"}): ${intentPlanning.usage?.costUsd === null || intentPlanning.usage?.costUsd === undefined ? "cost unreported" : `$${Number(intentPlanning.usage.costUsd).toFixed(5)}`}; ${Number(intentPlanning.usage?.cachedTokens || 0)} cached tokens; response cache ${intentPlanning.usage?.cacheStatus || "not reported"}.`,
+          `- OpenCode Go intent planner (${intentPlanning.model || intentPlanning.usage?.model || "model unavailable"}): ${intentPlanning.usage?.costUsd === null || intentPlanning.usage?.costUsd === undefined ? "cost unreported" : `$${Number(intentPlanning.usage.costUsd).toFixed(5)}`}; ${Number(intentPlanning.usage?.cachedTokens || 0)} cached tokens; response cache ${intentPlanning.usage?.cacheStatus || "not reported"}.`,
         ]
       : [
-          "- OpenRouter intent planner: not run; deterministic exact-service query variants were used.",
+          "- OpenCode Go intent planner: not run; deterministic exact-service query variants were used.",
         ]),
   );
   lines.push("");
@@ -3232,16 +3252,15 @@ async function main() {
   const password = process.env.DATAFORSEO_PASSWORD;
   const dataForSeo =
     login && password ? createDataForSeoClient({ login, password }) : undefined;
-  const openRouterKey = process.env.OPENROUTER_API_KEY;
-  const webSearch = openRouterKey
-    ? createOpenRouterWebSearchClient({ apiKey: openRouterKey })
-    : undefined;
-  const intentPlanner = openRouterKey
-    ? createOpenRouterIntentQueryPlanner({ apiKey: openRouterKey })
+  // OpenCode Go serves the intent planner. It has no hosted web-search tool,
+  // so measured SEO evidence stays on DataForSEO and the deterministic query
+  // path instead of falling back to OpenRouter.
+  const goKey = process.env.OPENCODE_GO_API_KEY;
+  const intentPlanner = goKey
+    ? createOpenCodeGoIntentQueryPlanner({ apiKey: goKey })
     : undefined;
   const dossier = await researchSiteContext(intake, {
     dataForSeo,
-    webSearch,
     intentPlanner,
     maxTasks: Number(process.env.SEO_RESEARCH_MAX_TASKS || DEFAULT_MAX_TASKS),
     maxUsd: Number(process.env.SEO_RESEARCH_MAX_USD || DEFAULT_MAX_USD),

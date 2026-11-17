@@ -25,8 +25,9 @@ const siteRoot = path.join(root, "templates/client-site");
 const configPath = path.join(siteRoot, "src/site.config.json");
 const selectedDir = path.join(siteRoot, "src/generated-experiences/selected");
 
-if (!process.env.OPENROUTER_API_KEY)
-  throw new Error("OPENROUTER_API_KEY is required for the model-authored creative canary.");
+if (!process.env.OPENCODE_GO_API_KEY)
+  throw new Error("OPENCODE_GO_API_KEY is required for the model-authored creative canary.");
+process.env.CREATIVE_EXPERIENCE_PROVIDER = "opencode-go";
 
 async function imageDataUri(relativePath) {
   return `data:image/webp;base64,${(

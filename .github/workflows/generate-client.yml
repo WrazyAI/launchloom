@@ -61,11 +61,6 @@ on:
         type: boolean
         default: false
 
-      inference_provider:
-        description: Force the author and site-copy inference provider for this dispatch; leave empty for repository defaults (acceptance uses opencode-go)
-        required: false
-        type: string
-        default: ""
       renderer:
         description: Visual renderer for a full generation
         required: false
@@ -246,7 +241,6 @@ jobs:
       test_profile: ${{ needs.profile_policy.outputs.profile }}
       fast_lane: ${{ inputs.fast_lane || false }}
       candidate_repository: ${{ inputs.candidate_repository || '' }}
-      inference_provider: ${{ inputs.inference_provider || '' }}
     secrets: inherit
 
   private_preview_access_smoke:
@@ -338,14 +332,12 @@ jobs:
       OPERATIONS_OIDC_AUDIENCE: ${{ vars.OPERATIONS_OIDC_AUDIENCE || 'launchloom-operations' }}
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
-      # Provider selection is an explicit, reviewed environment switch. The
-      # repository default stays OpenRouter until the Go acceptance run passes
-      # and the operator flips these variables; flipping them back is the
-      # manual rollback.
-      CREATIVE_EXPERIENCE_PROVIDER: ${{ vars.CREATIVE_EXPERIENCE_PROVIDER || 'openrouter' }}
-      SITE_COPY_PROVIDER: ${{ vars.SITE_COPY_PROVIDER || 'openrouter' }}
+      # OpenCode Go is the only production inference upstream. The code
+      # rejects `openrouter`, so an inherited or stale repository variable
+      # cannot redirect a run.
+      CREATIVE_EXPERIENCE_PROVIDER: opencode-go
+      SITE_COPY_PROVIDER: opencode-go
       SEO_QUERY_PLANNER_MODEL: ${{ vars.SEO_QUERY_PLANNER_MODEL || 'deepseek/deepseek-v4.1-flash' }}
       GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
       TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY || secrets.JEV_API_KEY }}
@@ -447,8 +439,7 @@ jobs:
         run: npx playwright install --with-deps chromium || npx playwright install chromium
       - name: Verify required secrets
         run: |
-          for key in GITHUB_ORG_TOKEN OPENROUTER_API_KEY REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_DEVELOPER_EMAIL; do test -n "${!key}" || { echo "Missing: $key"; exit 1; }; done
-          if [ "$CREATIVE_EXPERIENCE_PROVIDER" = "opencode-go" ] || [ "$SITE_COPY_PROVIDER" = "opencode-go" ]; then test -n "$OPENCODE_GO_API_KEY" || { echo "Missing: OPENCODE_GO_API_KEY"; exit 1; }; fi
+          for key in GITHUB_ORG_TOKEN OPENCODE_GO_API_KEY REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_DEVELOPER_EMAIL; do test -n "${!key}" || { echo "Missing: $key"; exit 1; }; done
       # Legacy tracking stays best-effort. New-mode telemetry is mandatory and
       # uses the claiming workload identity, never the legacy tracking secret.
       - name: Record generation started

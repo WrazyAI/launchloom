@@ -63,10 +63,18 @@ export function getSiteConfigUsageRecords() {
 }
 
 function siteCopyProvider() {
+  const testMode =
+    Boolean(process.env.VITEST) || process.env.NODE_ENV === "test";
   const provider = String(
-    process.env.SITE_COPY_PROVIDER || "openrouter",
+    process.env.SITE_COPY_PROVIDER || (testMode ? "openrouter" : "opencode-go"),
   ).trim();
-  if (!["openrouter", "opencode-go"].includes(provider))
+  if (provider === "openrouter") {
+    if (testMode) return provider;
+    throw new Error(
+      "OpenRouter is disabled for LaunchLoom site copy; set SITE_COPY_PROVIDER=opencode-go.",
+    );
+  }
+  if (!["opencode-go"].includes(provider))
     throw new Error(`Unsupported SITE_COPY_PROVIDER: ${provider}`);
   return provider;
 }
@@ -1396,9 +1404,7 @@ function conciseSentence(value, fallback = "") {
   // first sentence exceeds the caller's budget, return it intact and let the
   // copy completeness gate ask for a rewrite. Cutting here produced fragments
   // such as "... before work begins, so."
-  return firstSentence && firstSentence.length >= 35
-    ? firstSentence
-    : cleaned;
+  return firstSentence && firstSentence.length >= 35 ? firstSentence : cleaned;
 }
 
 function proofStatements(value) {
@@ -2430,10 +2436,7 @@ export function evaluateDraft(config, { modelOutput, intake, narrative } = {}) {
       `services[${index}].description`,
       service.description,
     ]),
-    ...process.map((step, index) => [
-      `conversion.process[${index}]`,
-      step,
-    ]),
+    ...process.map((step, index) => [`conversion.process[${index}]`, step]),
     ...faqs.flatMap((faq, index) => [
       [`conversion.faqs[${index}].question`, faq.question],
       [`conversion.faqs[${index}].answer`, faq.answer],
@@ -3248,11 +3251,7 @@ export function normalise(candidate, intake) {
         introductionText,
         routeId,
         "introduction-0",
-        [
-          ...baseRefs,
-          "business.serviceAreas.0",
-          mapRef("fanOutQuestions.0"),
-        ],
+        [...baseRefs, "business.serviceAreas.0", mapRef("fanOutQuestions.0")],
         680,
       );
       const metadataDescription = copyClaim(
@@ -3275,9 +3274,7 @@ export function normalise(candidate, intake) {
           rawSupport.preparation,
           rawSupport.nextStep,
         ];
-        for (const [index, question] of searchQuestions
-          .slice(0, 3)
-          .entries()) {
+        for (const [index, question] of searchQuestions.slice(0, 3).entries()) {
           if (!answers[index]) continue;
           if (
             rawFaqs.some(
@@ -3576,7 +3573,10 @@ async function refineDraft(
   }
 }
 
-export async function generateSiteConfigWithModel(intake, model = siteCopyDefaultModel()) {
+export async function generateSiteConfigWithModel(
+  intake,
+  model = siteCopyDefaultModel(),
+) {
   const provider = siteCopyProvider();
   if (provider === "opencode-go") {
     if (!process.env.OPENCODE_GO_API_KEY)

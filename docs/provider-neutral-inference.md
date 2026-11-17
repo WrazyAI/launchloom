@@ -2,19 +2,20 @@
 
 ## Status
 
-This is the first migration slice, not a provider cutover. OpenRouter remains the
-default in every existing pipeline/Worker/workflow. No Go model profile is enabled,
-no secret or subscription is changed, and there is no environment switch that
-can redirect existing calls. Go permission/capability and search/non-coding
-workload questions from the assessment remain unresolved.
+This document records the provider-neutral preparation slice. At the time of
+that slice, OpenRouter remained the default in every existing pipeline, Worker,
+and workflow. The current provider policy is OpenCode Go only; see the 2026-11-17
+update below and `docs/opencode-go-production.md`.
 
 **Update 2026-10-14:** the user confirmed Go hosted terms permit unattended CI
 generation for client deliverables and approved a production slice for the
-author engine and site copy. That slice now exists as an explicit opt-in
-(`CREATIVE_EXPERIENCE_PROVIDER` / `SITE_COPY_PROVIDER`, default `openrouter`;
-see `docs/opencode-go-production.md`). The repository default stays OpenRouter
-until the bounded Go acceptance run passes and operators flip the repository
-variables; flipping them back is the manual rollback.
+author engine and site copy (`CREATIVE_EXPERIENCE_PROVIDER` /
+`SITE_COPY_PROVIDER`; see `docs/opencode-go-production.md`).
+
+**Update 2026-11-17:** OpenRouter is disabled for production. Both selectors
+default to `opencode-go` and the code rejects `openrouter`, so a stale
+repository variable cannot redirect a run. The OpenRouter transport remains
+only for the manual model-evaluation labs and its existing test coverage.
 
 ## Interfaces
 
