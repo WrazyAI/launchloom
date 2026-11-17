@@ -90,7 +90,7 @@ const STAGE_LABELS: Record<string, string> = {
 
 export function activityStageLabel(stage: string): string {
   return (
-    STAGE_LABELS[stage] ??
+    (Object.hasOwn(STAGE_LABELS, stage) ? STAGE_LABELS[stage] : null) ??
     stage
       .split("_")
       .filter(Boolean)
