@@ -18,7 +18,9 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+      CREATIVE_EXPERIENCE_PROVIDER: opencode-go
+      SITE_COPY_PROVIDER: opencode-go
       CREATIVE_EXPERIENCE_MODEL: deepseek/deepseek-v4.1-flash
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
       REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
@@ -33,6 +35,9 @@ jobs:
       LAUNCHLOOM_ADMIN_ORIGIN: ${{ vars.ADMIN_PUBLIC_ORIGIN || 'https://api.launchloom.wrazyos.com' }}
     steps:
       - uses: actions/checkout@v5
+      - name: Verify OpenCode Go credential
+        run: |
+          test -n "$OPENCODE_GO_API_KEY" || { echo "Missing: OPENCODE_GO_API_KEY" >&2; exit 1; }
       - name: Atomically claim the one allowed repair
         id: claim
         env:

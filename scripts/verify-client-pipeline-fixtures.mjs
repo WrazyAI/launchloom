@@ -9,7 +9,7 @@ import { compileCanonicalSiteBrief } from "./compile-canonical-site-brief.mjs";
 import { researchSiteContext, renderSeoMapMarkdown } from "./seo-research.mjs";
 import { generateSiteConfigWithModel } from "./generate-site-config.mjs";
 import { checkSeoRelease } from "./seo-release-gate.mjs";
-import { OPENROUTER_CHAT_COMPLETIONS_URL } from "./openrouter-client.mjs";
+import { OPENCODE_GO_RESPONSES_ENDPOINT } from "./opencode-go.mjs";
 import {
   createClientIntakeV2Submission,
   normalizeClientIntake,
@@ -539,7 +539,8 @@ async function main() {
   await fs.mkdir(outputDir, { recursive: true });
   const originalConfig = await fs.readFile(siteConfigPath);
   const originalFetch = globalThis.fetch;
-  const originalApiKey = process.env.OPENROUTER_API_KEY;
+  const originalApiKey = process.env.OPENCODE_GO_API_KEY;
+  const originalProvider = process.env.SITE_COPY_PROVIDER;
   const publicAssetDir = path.join(templateRoot, "public", `pipeline-fixture-assets-${process.pid}`);
   let activeFixture;
   let mockModelCalls = 0;
@@ -562,17 +563,23 @@ async function main() {
   const summary = [];
   try {
     await fs.mkdir(publicAssetDir, { recursive: true });
-    process.env.OPENROUTER_API_KEY = "fixture-only-no-network";
+    process.env.OPENCODE_GO_API_KEY = "fixture-only-no-network";
+    process.env.SITE_COPY_PROVIDER = "opencode-go";
     globalThis.fetch = async (input) => {
-      if (String(input) !== OPENROUTER_CHAT_COMPLETIONS_URL)
+      if (String(input) !== OPENCODE_GO_RESPONSES_ENDPOINT)
         throw new Error("The client pipeline fixture attempted unexpected network access.");
       mockModelCalls += 1;
       const candidate = candidateFor(activeFixture, activeFixture.brief);
       return new Response(JSON.stringify({
-        id: `fixture-${activeFixture.key}-${mockModelCalls}`,
-        provider: "local-fixture",
-        choices: [{ message: { content: JSON.stringify(candidate) } }],
-        usage: { prompt_tokens: 100, completion_tokens: 100, cost: 0 },
+        status: "completed",
+        model: "deepseek-v4.1-flash",
+        output: [{
+          type: "message",
+          role: "assistant",
+          status: "completed",
+          content: [{ type: "output_text", text: JSON.stringify(candidate) }],
+        }],
+        usage: { input_tokens: 100, output_tokens: 100 },
       }), { status: 200, headers: { "Content-Type": "application/json" } });
     };
 
@@ -731,7 +738,7 @@ async function main() {
       metricEvidence: localFormRun
         ? "DataForSEO metrics unavailable; values remain null and publication remains blocked."
         : "synthetic DataForSEO-shaped fixtures only; not production research",
-      copyGeneration: "mocked OpenRouter response through the site-config generation boundary",
+      copyGeneration: "mocked OpenCode Go response through the site-config generation boundary",
       visualAssets: "locally generated illustrative SVG artwork; not evidence of completed work or client staff",
       formPayloadFields: localExample ? Object.keys(localExample.payload).sort() : undefined,
       mockModelCalls,
@@ -740,8 +747,10 @@ async function main() {
     console.log(`client_pipeline_fixtures_verified=${summary.length} mock_model_calls=${mockModelCalls} output=${outputDir}`);
   } finally {
     globalThis.fetch = originalFetch;
-    if (originalApiKey === undefined) delete process.env.OPENROUTER_API_KEY;
-    else process.env.OPENROUTER_API_KEY = originalApiKey;
+    if (originalApiKey === undefined) delete process.env.OPENCODE_GO_API_KEY;
+    else process.env.OPENCODE_GO_API_KEY = originalApiKey;
+    if (originalProvider === undefined) delete process.env.SITE_COPY_PROVIDER;
+    else process.env.SITE_COPY_PROVIDER = originalProvider;
     await fs.writeFile(siteConfigPath, originalConfig);
     await fs.rm(publicAssetDir, { recursive: true, force: true });
     await new Promise((resolve) => server.close(resolve));

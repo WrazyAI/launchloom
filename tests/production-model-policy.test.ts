@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import {
   assertCodeAuthoringModel,
   creativeLaneDefaultModel,
+  creativeLaneProvider,
 } from "../scripts/creative-lane-inference.mjs";
 import { VISUAL_GATE_MODEL } from "../scripts/visual-quality-gate-lib.mjs";
 
@@ -34,6 +36,36 @@ describe("production model policy", () => {
       expect(source, file).not.toMatch(/\|\|\s*["']z-ai\/glm-5\.3/);
       expect(source, file).not.toMatch(/\|\|\s*["']openai\/gpt-6-luna/);
     }
+  });
+
+  it("defaults production lanes to OpenCode Go and rejects OpenRouter", () => {
+    expect(creativeLaneProvider({})).toBe("opencode-go");
+    expect(() =>
+      creativeLaneProvider({ CREATIVE_EXPERIENCE_PROVIDER: "openrouter" }),
+    ).toThrow(/OpenRouter is disabled/);
+  });
+
+  it("rejects OpenRouter site copy outside test mode", () => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "-e",
+        `process.env.SITE_COPY_PROVIDER = "openrouter";
+process.env.NODE_ENV = "production";
+delete process.env.VITEST;
+const { generateSiteConfigWithModel } = await import("./scripts/generate-site-config.mjs");
+try {
+  await generateSiteConfigWithModel({ business: {} });
+  console.log("NO_ERROR");
+} catch (error) {
+  console.log(String(error.message));
+}`,
+      ],
+      { cwd: process.cwd(), encoding: "utf8" },
+    );
+    expect(result.stdout).toContain("OpenRouter is disabled");
+    expect(result.stdout).not.toContain("NO_ERROR");
   });
 
   it("keeps code authoring pinned to DeepSeek and rejects GLM", () => {
@@ -71,5 +103,15 @@ describe("production model policy", () => {
     expect(workflow).not.toContain(
       "vars.SEO_QUERY_PLANNER_MODEL || 'z-ai/glm-5.3-flash'",
     );
+    expect(workflow).toContain("CREATIVE_EXPERIENCE_PROVIDER: opencode-go");
+    expect(workflow).toContain("SITE_COPY_PROVIDER: opencode-go");
+    expect(workflow).not.toContain("OPENROUTER_API_KEY");
+    const focused = await readFile(
+      ".github/workflows/test-generation.yml",
+      "utf8",
+    );
+    expect(focused).toContain("CREATIVE_EXPERIENCE_PROVIDER: opencode-go");
+    expect(focused).toContain("SITE_COPY_PROVIDER: opencode-go");
+    expect(focused).not.toContain("OPENROUTER_API_KEY");
   });
 });

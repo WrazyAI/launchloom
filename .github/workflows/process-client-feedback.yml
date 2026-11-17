@@ -19,7 +19,9 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+      CREATIVE_EXPERIENCE_PROVIDER: opencode-go
+      SITE_COPY_PROVIDER: opencode-go
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
       LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
@@ -43,6 +45,9 @@ jobs:
       REVIEWED_PAGE: ${{ github.event.client_payload.reviewedPage }}
     steps:
       - uses: actions/checkout@v5
+      - name: Verify OpenCode Go credential
+        run: |
+          test -n "$OPENCODE_GO_API_KEY" || { echo "Missing: OPENCODE_GO_API_KEY" >&2; exit 1; }
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
       - name: Claim exact revision request
@@ -297,7 +302,7 @@ jobs:
               eventKey: "revision:" + String(process.env.REVISION_REQUEST_ID || "unknown").slice(0, 60),
               stage: "revision",
               status: process.env.EVENT_STATUS,
-              provider: "openrouter",
+              provider: "opencode-go",
               model: null,
               costUsd: null,
               costKind: "unreported",

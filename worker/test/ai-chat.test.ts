@@ -50,13 +50,24 @@ describe("AI website assistant", () => {
     let providerBody: Record<string, unknown> = {};
     network.use(
       http.post(
-        "https://openrouter.ai/api/v1/chat/completions",
+        "https://opencode.ai/inference/go/v1/responses",
         async ({ request }) => {
           providerBody = (await request.json()) as Record<string, unknown>;
           return HttpResponse.json({
-            choices: [
-              { message: { content: "Yes — drain cleaning is listed." } },
+            status: "completed",
+            model: "deepseek-v4.1-flash",
+            output: [
+              {
+                type: "message",
+                content: [
+                  {
+                    type: "output_text",
+                    text: "Yes — drain cleaning is listed.",
+                  },
+                ],
+              },
             ],
+            usage: { input_tokens: 12, output_tokens: 9 },
           });
         },
       ),

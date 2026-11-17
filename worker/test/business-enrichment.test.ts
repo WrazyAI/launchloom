@@ -83,10 +83,22 @@ describe("business enrichment", () => {
   it("returns suggestions separately so intake normalization only confirms checked services", async () => {
     const inviteToken = await createInvite("invite-services-001");
     let modelPrompt = "";
-    network.use(http.post("https://openrouter.ai/api/v1/chat/completions", async ({ request }) => {
-      const body = await request.json() as { messages?: Array<{ content?: string }> };
-      modelPrompt = body.messages?.[1]?.content || "";
-      return HttpResponse.json({ choices: [{ message: { content: JSON.stringify({ services: ["Drain cleaning", "Septic pumping", "Water heater repair"] }) } }] });
+    network.use(http.post("https://opencode.ai/inference/go/v1/responses", async ({ request }) => {
+      const body = await request.json() as { input?: Array<{ content?: Array<{ text?: string }> }> };
+      modelPrompt = body.input?.[1]?.content?.[0]?.text || "";
+      return HttpResponse.json({
+        status: "completed",
+        model: "deepseek-v4.1-flash",
+        output: [{
+          type: "message",
+          role: "assistant",
+          status: "completed",
+          content: [{
+            type: "output_text",
+            text: JSON.stringify({ services: ["Drain cleaning", "Septic pumping", "Water heater repair"] }),
+          }],
+        }],
+      });
     }));
     const response = await SELF.fetch("https://api.launchloom.test/api/service-suggestions", {
       method: "POST",

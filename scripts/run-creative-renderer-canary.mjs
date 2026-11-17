@@ -190,8 +190,9 @@ for (const [source, target] of [
 ]) {
   await fs.copyFile(path.join(out, "screenshots", source), path.join(visualGateScreenshots, target));
 }
-if (!process.env.OPENROUTER_API_KEY)
-  throw new Error("OPENROUTER_API_KEY is required to complete the creative canary visual gate.");
+if (!process.env.OPENCODE_GO_API_KEY)
+  throw new Error("OPENCODE_GO_API_KEY is required to complete the creative canary visual gate.");
+process.env.CREATIVE_EXPERIENCE_PROVIDER = "opencode-go";
 await execFileAsync(process.execPath, [
   path.join(root, "scripts/visual-quality-gate.mjs"),
   "--mode",

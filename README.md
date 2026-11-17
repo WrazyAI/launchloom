@@ -5,7 +5,7 @@
 <h1 align="center">LaunchLoom</h1>
 
 <p align="center"><strong>From verified local-business facts to AI-generated, reviewed, production-ready websites.</strong></p>
-<p align="center">Astro + React · Cloudflare · GitHub Actions · OpenRouter</p>
+<p align="center">Astro + React · Cloudflare · GitHub Actions · OpenCode Go</p>
 
 <p align="center">
   <a href="#architecture">Architecture</a> ·
@@ -39,7 +39,7 @@ There is no separately hosted backend server, external SQL database, Redis servi
 | API and state | Cloudflare Worker, Durable Objects (SQLite) | Intake, uploads, signed approvals, feedback, lead forms, queues and recovery |
 | Media | Cloudflare R2 | Client photos/logos, review attachments and generated image assets |
 | Automation | GitHub Actions, private per-client Git repositories | Research, authoring, build/test, preview, revision and publication |
-| Research and AI | Google Places, DataForSEO, OpenRouter, optional FAL | Grounded business details, measured SEO, design/content authoring and images |
+| Research and AI | Google Places, DataForSEO, OpenCode Go, optional FAL | Grounded business details, measured SEO, design/content authoring and images |
 | Delivery and visibility | Cloudflare Pages Direct Upload, Resend, Sentry, generation ledger | Previews, live sites, lifecycle email, errors, run costs and status |
 
 **Key boundary:** Cloudflare receives built static files through Pages Direct Upload, not access to client source repositories. Generated client source and review PRs live in **private WrazyAI repositories**.
@@ -123,7 +123,7 @@ GitHub Actions is the production automation control plane; most deploy credentia
 | --- | --- |
 | Cloudflare | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; Pages, Worker custom domain and R2 asset domain configured |
 | GitHub automation | `LAUNCHLOOM_GITHUB_ORG_TOKEN` for private client repositories, issues, PRs and dispatches |
-| AI and research | `OPENROUTER_API_KEY`, `GOOGLE_PLACES_API_KEY`; `DATAFORSEO_LOGIN` / `DATAFORSEO_PASSWORD` for measured local SEO |
+| AI and research | `OPENCODE_GO_API_KEY`, `GOOGLE_PLACES_API_KEY`; `DATAFORSEO_LOGIN` / `DATAFORSEO_PASSWORD` for measured local SEO |
 | Signed flows | `ONBOARDING_INVITE_SIGNING_SECRET`, `REVIEW_SIGNING_SECRET`, `LEAD_SIGNING_SECRET`, `REVISION_COORDINATOR_SECRET` |
 | Email | `RESEND_API_KEY`, `LAUNCHLOOM_FROM_EMAIL`, `LAUNCHLOOM_FEEDBACK_EMAIL`, `LAUNCHLOOM_DEVELOPER_EMAIL` |
 | Operator Access | `ONBOARDING_ORIGIN`, `ONBOARDING_ADMIN_EMAILS`, `ONBOARDING_ACCESS_AUD` |

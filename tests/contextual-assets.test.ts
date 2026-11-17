@@ -139,41 +139,46 @@ describe("contextual image generation", () => {
     const outputDir = await mkdtemp(
       join(tmpdir(), "launchloom-default-image-review-"),
     );
-    const previousKey = process.env.OPENROUTER_API_KEY;
-    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    const previousKey = process.env.OPENCODE_GO_API_KEY;
+    const previousProvider = process.env.CREATIVE_EXPERIENCE_PROVIDER;
+    process.env.OPENCODE_GO_API_KEY = "test-go-key";
+    process.env.CREATIVE_EXPERIENCE_PROVIDER = "opencode-go";
     const requests: Array<Record<string, any>> = [];
     vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
       requests.push(JSON.parse(String(init.body)));
       return new Response(
         JSON.stringify({
-          choices: [
+          status: "completed",
+          model: "deepseek-v4.1-flash",
+          output: [
             {
-              finish_reason: "stop",
-              message: {
-                content: JSON.stringify({
-                  isStandaloneImage: true,
-                  containsWebsiteOrInterface: false,
-                  containsVisibleTextOrTextLikeMarks: false,
-                  containsLogoOrWatermark: false,
-                  containsPeople: false,
-                  isRelevantToBusiness: true,
-                }),
-              },
+              type: "message",
+              role: "assistant",
+              status: "completed",
+              content: [
+                {
+                  type: "output_text",
+                  text: JSON.stringify({
+                    isStandaloneImage: true,
+                    containsWebsiteOrInterface: false,
+                    containsVisibleTextOrTextLikeMarks: false,
+                    containsLogoOrWatermark: false,
+                    containsPeople: false,
+                    isRelevantToBusiness: true,
+                  }),
+                },
+              ],
             },
           ],
           usage: {
-            prompt_tokens: 500,
-            completion_tokens: 30,
+            input_tokens: 500,
+            output_tokens: 30,
             total_tokens: 530,
-            cost: 0.0004,
           },
         }),
         {
           status: 200,
-          headers: {
-            "content-type": "application/json",
-            "x-openrouter-cache-status": "MISS",
-          },
+          headers: { "content-type": "application/json" },
         },
       );
     });
@@ -200,18 +205,17 @@ describe("contextual image generation", () => {
       });
 
       expect(requests).toHaveLength(1);
-      expect(requests[0].response_format.json_schema.strict).toBe(true);
-      const messages = requests[0].messages;
-      const reviewContent = messages[1].content;
+      expect(requests[0].text.format.strict).toBe(true);
+      const reviewContent = requests[0].input[1].content;
       expect(
         reviewContent.some(
           (part: any) =>
-            part.type === "image_url" &&
-            part.image_url.url.startsWith("data:image/webp;base64,"),
+            part.type === "input_image" &&
+            String(part.image_url).startsWith("data:image/webp;base64,"),
         ),
       ).toBe(true);
       const reviewText = reviewContent
-        .filter((part: any) => part.type === "text")
+        .filter((part: any) => part.type === "input_text")
         .map((part: any) => part.text)
         .join(" ");
       expect(reviewText).not.toContain("data:image/");
@@ -220,14 +224,16 @@ describe("contextual image generation", () => {
       expect(reviewText).toContain("photographic still life");
       expect(result.manifest.placements[0].imageReview).toMatchObject({
         status: "approved",
-        usage: { prompt_tokens: 500, completion_tokens: 30, cost: 0.0004 },
-        cacheStatus: "miss",
+        usage: { prompt_tokens: 500, completion_tokens: 30 },
       });
       expect(result.site.images.hero).toMatch(/^\/images\/generated\/hero-/);
     } finally {
       vi.unstubAllGlobals();
-      if (previousKey === undefined) delete process.env.OPENROUTER_API_KEY;
-      else process.env.OPENROUTER_API_KEY = previousKey;
+      if (previousKey === undefined) delete process.env.OPENCODE_GO_API_KEY;
+      else process.env.OPENCODE_GO_API_KEY = previousKey;
+      if (previousProvider === undefined)
+        delete process.env.CREATIVE_EXPERIENCE_PROVIDER;
+      else process.env.CREATIVE_EXPERIENCE_PROVIDER = previousProvider;
     }
   });
 
@@ -235,8 +241,10 @@ describe("contextual image generation", () => {
     const outputDir = await mkdtemp(
       join(tmpdir(), "launchloom-no-image-reviewer-"),
     );
-    const previousKey = process.env.OPENROUTER_API_KEY;
-    delete process.env.OPENROUTER_API_KEY;
+    const previousKey = process.env.OPENCODE_GO_API_KEY;
+    const previousProvider = process.env.CREATIVE_EXPERIENCE_PROVIDER;
+    delete process.env.OPENCODE_GO_API_KEY;
+    process.env.CREATIVE_EXPERIENCE_PROVIDER = "opencode-go";
     const site = fixture();
     site.images = { hero: "/images/reviewed-fallback.webp" };
     let requests = 0;
@@ -263,12 +271,15 @@ describe("contextual image generation", () => {
       expect(result.site.images.hero).toBe("/images/reviewed-fallback.webp");
       expect(result.manifest.skipped[0]).toMatchObject({
         placement: "hero",
-        reason: "OPENROUTER_API_KEY-not-configured",
+        reason: "OPENCODE_GO_API_KEY-not-configured",
         fallback: "/images/reviewed-fallback.webp",
       });
     } finally {
-      if (previousKey === undefined) delete process.env.OPENROUTER_API_KEY;
-      else process.env.OPENROUTER_API_KEY = previousKey;
+      if (previousKey === undefined) delete process.env.OPENCODE_GO_API_KEY;
+      else process.env.OPENCODE_GO_API_KEY = previousKey;
+      if (previousProvider === undefined)
+        delete process.env.CREATIVE_EXPERIENCE_PROVIDER;
+      else process.env.CREATIVE_EXPERIENCE_PROVIDER = previousProvider;
     }
   });
 
@@ -578,12 +589,14 @@ describe("contextual image generation", () => {
     });
   });
 
-  it("records sanitized OpenRouter visual-review failure diagnostics", async () => {
+  it("records sanitized OpenCode Go visual-review failure diagnostics", async () => {
     const outputDir = await mkdtemp(
       join(tmpdir(), "launchloom-image-review-error-"),
     );
-    const previousKey = process.env.OPENROUTER_API_KEY;
-    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    const previousKey = process.env.OPENCODE_GO_API_KEY;
+    const previousProvider = process.env.CREATIVE_EXPERIENCE_PROVIDER;
+    process.env.OPENCODE_GO_API_KEY = "test-go-key";
+    process.env.CREATIVE_EXPERIENCE_PROVIDER = "opencode-go";
     vi.stubGlobal(
       "fetch",
       async () =>
@@ -592,18 +605,12 @@ describe("contextual image generation", () => {
             error: {
               message: "private provider response must not be retained",
             },
-            usage: {
-              prompt_tokens: 400,
-              completion_tokens: 0,
-              total_tokens: 400,
-              cost: 0.001,
-            },
           }),
           {
             status: 503,
             headers: {
               "content-type": "application/json",
-              "x-request-id": "router-review-request-123",
+              "x-request-id": "go-review-request-123",
             },
           },
         ),
@@ -634,18 +641,18 @@ describe("contextual image generation", () => {
       const review = result.manifest.skipped[0].imageReviews[0];
       expect(review).toMatchObject({
         status: "unavailable",
-        failureCode: "http_error",
-        httpStatus: 503,
-        requestId: "router-review-request-123",
-        usage: { prompt_tokens: 400, cost: 0.001 },
+        failureCode: "transport_error",
       });
       expect(JSON.stringify(result.manifest)).not.toContain(
         "private provider response must not be retained",
       );
     } finally {
       vi.unstubAllGlobals();
-      if (previousKey === undefined) delete process.env.OPENROUTER_API_KEY;
-      else process.env.OPENROUTER_API_KEY = previousKey;
+      if (previousKey === undefined) delete process.env.OPENCODE_GO_API_KEY;
+      else process.env.OPENCODE_GO_API_KEY = previousKey;
+      if (previousProvider === undefined)
+        delete process.env.CREATIVE_EXPERIENCE_PROVIDER;
+      else process.env.CREATIVE_EXPERIENCE_PROVIDER = previousProvider;
     }
   });
 

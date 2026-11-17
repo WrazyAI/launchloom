@@ -4,14 +4,14 @@ import sharp from "sharp";
 import {
   VISUAL_GATE_MODEL,
   buildSafeVisualManifest,
-  parseVisualAuditContent,
 } from "./visual-quality-gate-lib.mjs";
 import {
-  logOpenRouterCacheUsage,
-  logOpenRouterResponseCacheUsage,
-  openRouterChatCompletion,
-  openRouterSessionId,
-} from "./openrouter-client.mjs";
+  buildGoCreativeRequest,
+  completeGoCreative,
+  goCreativeUsageMetrics,
+  parseGoCreativeOutput,
+} from "./creative-lane-inference.mjs";
+import { openRouterSessionId } from "./openrouter-client.mjs";
 
 const findingSchema = {
   type: "object",
@@ -267,9 +267,9 @@ export async function runHumanRevisionGate({
   const requestText = String(feedback || "").trim();
   if (!requestText)
     throw new Error("Human revision gate requires the triggering feedback.");
-  if (!process.env.OPENROUTER_API_KEY)
+  if (!process.env.OPENCODE_GO_API_KEY)
     throw new Error(
-      "OPENROUTER_API_KEY is required for the human revision gate.",
+      "OPENCODE_GO_API_KEY is required for the human revision gate with OpenCode Go.",
     );
 
   const config = JSON.parse(await fs.readFile(configPath, "utf8"));
@@ -341,71 +341,47 @@ Judge every creative feedback item independently by its exact feedbackIndex. Ret
     domain: config.business?.domain || "",
   });
   let lastError;
-  let payload;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 180_000);
     try {
-      const response = await openRouterChatCompletion({
-        title: "LaunchLoom human revision gate",
+      const goResult = await completeGoCreative({
+        logicalModel: model,
         signal: controller.signal,
-        sessionId,
-        responseCache: true,
-        responseCacheTtlSeconds: 900,
         fetchImpl,
-        body: {
-          model,
-          temperature: 0,
-          max_completion_tokens: [5000, 7500, 10000][attempt - 1],
-          reasoning_effort: "low",
-          provider: { require_parameters: true },
-          response_format: {
-            type: "json_schema",
-            json_schema: auditSchema,
-          },
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are LaunchLoom's strict human-revision acceptance gate. Treat each feedbackIndex as a separate acceptance criterion. Return one independently judged result with concrete screenshot evidence per listed index; never infer that all items pass from an aggregate impression. Do not reward unrelated polish. Do not invent facts or requirements. Use screenshot evidence for visual claims and the structured revision result only for nonvisual configuration changes. A request that is visibly incomplete must be revised. Return only actual remaining mismatches. Do not use em dashes.",
-            },
-            { role: "user", content: userContent },
-          ],
-        },
+        request: buildGoCreativeRequest({
+          systemPrompt:
+            "You are LaunchLoom's strict human-revision acceptance gate. Treat each feedbackIndex as a separate acceptance criterion. Return one independently judged result with concrete screenshot evidence per listed index; never infer that all items pass from an aggregate impression. Do not reward unrelated polish. Do not invent facts or requirements. Use screenshot evidence for visual claims and the structured revision result only for nonvisual configuration changes. A request that is visibly incomplete must be revised. Return only actual remaining mismatches. Do not use em dashes.",
+          userContent,
+          schemaName: auditSchema.name,
+          schema: auditSchema.schema,
+          maxOutputTokens: [5000, 7500, 10000][attempt - 1],
+          effort: "low",
+          sessionId,
+        }),
       });
-      const responseCache = logOpenRouterResponseCacheUsage(
-        "human-revision-gate",
-        response,
-      );
-      payload = await response.json().catch(() => ({}));
-      if (!response.ok)
-        throw new Error(
-          `OpenRouter human revision audit failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
-        );
-      const choice = payload?.choices?.[0];
-      if (["length", "max_tokens"].includes(choice?.finish_reason))
-        throw new Error(
-          `Human revision audit was truncated (${choice.finish_reason}).`,
-        );
       const audit = validateAudit(
-        parseVisualAuditContent(choice?.message?.content || ""),
+        parseGoCreativeOutput(goResult, {
+          invalidJsonCode: "HUMAN_REVISION_GATE_INVALID_JSON",
+          label: "human revision gate",
+        }),
         feedbackItems,
         candidateId,
       );
-      const cache = logOpenRouterCacheUsage(
-        "human-revision-gate",
-        payload.usage,
-      );
+      const cache = goCreativeUsageMetrics(goResult, {
+        label: "human-revision-gate",
+        logger: (line) => console.info(line),
+      });
       const report = {
         version: 1,
         model,
         feedback: requestText,
         audit,
-        usage: payload.usage || null,
+        usage: goResult.usage || null,
         cache,
-        responseCache,
+        responseCache: null,
         sessionId,
-        provider: payload.provider || null,
+        provider: goResult.provider || "opencode-go",
         attempt,
       };
       if (reportPath) {

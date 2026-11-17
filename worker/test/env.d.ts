@@ -4,7 +4,7 @@ declare module "cloudflare:workers" {
     REVISION_COORDINATOR_SECRET: string;
     REVIEW_SIGNING_SECRET: string;
     LEAD_SIGNING_SECRET: string;
-    OPENROUTER_API_KEY: string;
+    OPENCODE_GO_API_KEY: string;
     ONBOARDING_INVITE_SIGNING_SECRET: string;
     ONBOARDING_ORIGIN: string;
     ONBOARDING_ADMIN_EMAILS: string;

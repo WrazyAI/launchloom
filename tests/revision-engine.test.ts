@@ -1523,20 +1523,38 @@ describe("revision operations", () => {
   });
 
   it("retries an empty model plan once at higher reasoning effort", async () => {
-    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-key");
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
-        Response.json({ choices: [{ message: { content: '{"plans":[]}' } }] }),
+        Response.json({
+          status: "completed",
+          model: "deepseek-v4.1-flash",
+          output: [
+            {
+              type: "message",
+              role: "assistant",
+              status: "completed",
+              content: [{ type: "output_text", text: '{"plans":[]}' }],
+            },
+          ],
+        }),
       )
       .mockResolvedValueOnce(
         Response.json({
-          choices: [
+          status: "completed",
+          model: "deepseek-v4.1-flash",
+          output: [
             {
-              message: {
-                content:
-                  '{"plans":[{"feedbackIndex":0,"operations":[{"kind":"set_copy","field":"heroBody","value":"Local plumbing help across Tallahassee."}]}]}',
-              },
+              type: "message",
+              role: "assistant",
+              status: "completed",
+              content: [
+                {
+                  type: "output_text",
+                  text: '{"plans":[{"feedbackIndex":0,"operations":[{"kind":"set_copy","field":"heroBody","value":"Local plumbing help across Tallahassee."}]}]}',
+                },
+              ],
             },
           ],
         }),
@@ -1558,8 +1576,8 @@ describe("revision operations", () => {
     ]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     const retriedRequest = JSON.parse(fetchMock.mock.calls[1][1].body);
-    expect(retriedRequest.reasoning_effort).toBe("high");
-    expect(retriedRequest.messages[0].content).toContain(
+    expect(retriedRequest.reasoning.effort).toBe("high");
+    expect(retriedRequest.input[0].content[0].text).toContain(
       "When feedback names specific section(s), only edit those sections",
     );
   });
