@@ -5,7 +5,10 @@ const packs = fs.readFileSync(
   "templates/client-site/src/styles/experience-packs.css",
   "utf8",
 );
-const site = fs.readFileSync("templates/client-site/src/styles/site.css", "utf8");
+const site = fs.readFileSync(
+  "templates/client-site/src/styles/site.css",
+  "utf8",
+);
 
 /**
  * The rendered acceptance gate rejected two real launches with a blanket
@@ -37,14 +40,46 @@ describe("pack contact link contrast", () => {
   });
 
   it("gives each contact band a focus ring in its own link colour", () => {
-    for (const pack of ["guide", "folio", "stage", "ledger", "results", "service"])
+    for (const pack of [
+      "guide",
+      "folio",
+      "stage",
+      "ledger",
+      "results",
+      "service",
+    ])
       expect(packs).toContain(`.xp-${pack}__contact a:focus-visible {`);
+  });
+
+  it("gives every stage control a brass focus ring on the dark stage", () => {
+    const rule =
+      packs.match(
+        /\.xp-stage :where\(a, button, summary, input, select, textarea\):focus-visible \{([\s\S]*?)\}/u,
+      )?.[1] || "";
+    expect(rule).toContain("outline: 2px solid var(--stage-brass-text)");
+  });
+
+  it("backs the stage header focus plate with the stage forest", () => {
+    const rule =
+      packs.match(/\.xp-stage header a:focus-visible \{([\s\S]*?)\}/u)?.[1] ||
+      "";
+    expect(rule).toContain("background-color: var(--stage-forest-deep)");
+    expect(rule).toContain("box-shadow: 0 0 0 6px var(--stage-forest-deep)");
+  });
+
+  it("keeps the stage lead form focus ring dark on its white surface", () => {
+    const rule =
+      packs.match(
+        /\.xp-stage\s+\.lead-form\s+:where\([^)]*\):focus-visible \{([\s\S]*?)\}/u,
+      )?.[1] || "";
+    expect(rule).toContain("outline-color: var(--ink");
   });
 });
 
 describe("faq disclosure marker contrast", () => {
   it("uses the text-safe brand ink role rather than the fill colour", () => {
-    const rule = site.match(/\.faq-list summary span \{([\s\S]*?)\}/u)?.[1] || "";
+    const rule =
+      site.match(/\.faq-list summary span \{([\s\S]*?)\}/u)?.[1] || "";
     expect(rule).toContain("var(--brand-ink, var(--ink, #14201d))");
     expect(rule).not.toMatch(/color:\s*var\(--brand\);/u);
   });
@@ -53,8 +88,9 @@ describe("faq disclosure marker contrast", () => {
 describe("quick answers launcher focus ring", () => {
   it("pairs the ring with the brand surface, not the primary fill", () => {
     const rule =
-      site.match(/\.quick-answers__launcher:focus-visible \{([\s\S]*?)\}/u)?.[1] ||
-      "";
+      site.match(
+        /\.quick-answers__launcher:focus-visible \{([\s\S]*?)\}/u,
+      )?.[1] || "";
     // --on-brand is the text colour for the primary fill and can be black,
     // which measured 1.569 against the dark brand surface behind the launcher.
     expect(rule).toContain("var(--on-brand-surface");
