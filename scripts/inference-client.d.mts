@@ -73,6 +73,7 @@ export function postInferenceJson(options: {
   body: Record<string, any>;
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
+  /** @deprecated Accepted for source compatibility; redirects are always refused. */
   rejectRedirects?: boolean;
 }): Promise<Response>;
 export function normalizeInferenceResponse(

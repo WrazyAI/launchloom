@@ -1,3 +1,4 @@
+import "./helpers/legacy-inference-fixtures";
 import { buildRepairSpanCatalog } from "../scripts/creative-repair-spans.mjs";
 import * as renderedRepair from "../scripts/run-rendered-creative-repair.mjs";
 import * as repairModule from "../scripts/creative-repair-loop.mjs";

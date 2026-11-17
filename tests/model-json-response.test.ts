@@ -1,3 +1,4 @@
+import "./helpers/legacy-inference-fixtures";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   generateSiteConfigWithModel,

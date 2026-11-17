@@ -53,7 +53,7 @@ async function invoke(report: unknown, exit: number) {
   });
 }
 describe("visual gate subprocess quality outcome", () => {
-  it("preserves findings from the real QA CLI with only provider transport replaced", async () => {
+  it("blocks OpenRouter in the real QA CLI despite an inherited test environment", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-real-qa-"));
     roots.push(root);
     await fs.mkdir(path.join(root, "src"));
@@ -71,16 +71,15 @@ process.env.OPENROUTER_API_KEY = 'test-only-no-network';
 globalThis.fetch = async () => Response.json({choices:[{finish_reason:'stop',message:{content:${JSON.stringify(JSON.stringify(qualityReport.audit))}}}]});
 await import(${JSON.stringify(path.resolve("scripts/visual-quality-gate.mjs"))});
 `);
-    const result = await runVisualGateProcess({
+    await expect(runVisualGateProcess({
       siteDir: root,
       screenshotsDir,
       reportPath: path.join(root, "report.json"),
       visualGateScript: script,
-    });
-    expect(result.processExitCode).toBe(2);
-    expect(result.status).toBe("quality-blocked");
-    expect(result.audit.verdict).toBe("revise");
-    expect(result.blockers).toEqual([finding]);
+    })).rejects.toThrow(/could not run/);
+    const report = JSON.parse(await fs.readFile(path.join(root, "report.json"), "utf8"));
+    expect(report.status).toBe("error");
+    expect(report.error).toContain("OpenRouter inference is disabled");
   });
   it("runs the real QA CLI on OpenCode Go when the provider selects it", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-real-qa-go-"));

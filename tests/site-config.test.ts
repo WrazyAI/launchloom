@@ -1,3 +1,4 @@
+import "./helpers/legacy-inference-fixtures";
 import fallback from "../fixtures/seo-research/fallback-complete.json";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";

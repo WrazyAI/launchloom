@@ -1,3 +1,4 @@
+import "./helpers/legacy-inference-fixtures";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";

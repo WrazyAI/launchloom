@@ -1,5 +1,9 @@
 // Provider-neutral, non-streaming text/image inference. Profiles are trusted
 // application configuration, never client input or inferred model capabilities.
+import {
+  assertInferenceUpstreamAllowed,
+  InferenceUpstreamDisabledError,
+} from "./inference-upstream-policy.mjs";
 const PROTOCOLS = new Set(["chat-completions", "responses", "messages"]);
 const REQUEST_KEYS = [
   "messages",
@@ -455,7 +459,9 @@ export function buildInferenceRequest(profile, request) {
 
 /**
  * Shared raw transport: no retries, provider selection, parsing or implicit credentials.
- * @param {{url: string, headers: Record<string, string>, body: Record<string, any>, signal?: AbortSignal, fetchImpl?: typeof fetch, rejectRedirects?: boolean}} options
+ * OpenRouter is unconditionally denied before dispatch. Redirects are always
+ * refused so an allowed upstream cannot redirect credentials to a blocked one.
+ * @param {{url: string, headers: Record<string, string>, body: Record<string, any>, signal?: AbortSignal, fetchImpl?: typeof fetch}} options
  */
 export function postInferenceJson({
   url,
@@ -463,14 +469,14 @@ export function postInferenceJson({
   body,
   signal = undefined,
   fetchImpl = fetch,
-  rejectRedirects = false,
 }) {
+  assertInferenceUpstreamAllowed(url);
   return fetchImpl(url, {
     method: "POST",
     ...(signal ? { signal } : {}),
     headers,
     body: JSON.stringify(body),
-    ...(rejectRedirects ? { redirect: "error" } : {}),
+    redirect: "error",
   });
 }
 
@@ -884,9 +890,13 @@ export async function inferenceCompletion({
       ...wire,
       signal,
       fetchImpl,
-      rejectRedirects: true,
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof InferenceUpstreamDisabledError)
+      return {
+        ...normalizeInferenceResponse(target, null),
+        error: { code: "provider-disabled", httpStatus: null },
+      };
     // Fetch errors can embed URLs/provider diagnostics. Do not leak them into
     // user-visible errors, and never retry/fallback at this boundary.
     return transportFailure();

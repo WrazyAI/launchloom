@@ -48,7 +48,29 @@ GPT-6 Luna remains only for frozen legacy sessions. The defaults are guarded by
 OpenRouter is disabled for production. Both selectors default to
 `opencode-go` and the code rejects `openrouter` with an explicit error, so a
 stale repository variable or inherited environment cannot redirect a run.
-OpenRouter transport code remains only for the manual model-evaluation labs.
+Legacy OpenRouter transport and evaluation source remains in the repository,
+but live OpenRouter inference is blocked, including manual evaluation calls.
+
+### Transport-level enforcement
+
+`scripts/inference-upstream-policy.mjs` rejects `openrouter.ai` and its
+subdomains at `postInferenceJson`, before invoking any fetch implementation.
+The check uses the parsed, normalized hostname, not the logical provider name.
+It applies even when `NODE_ENV=test`, `VITEST`, credentials, or a stale selector
+ask for OpenRouter. There is no environment-variable opt-out. All requests
+through this shared transport also refuse redirects, preventing an allowed
+endpoint from redirecting to a blocked upstream.
+
+The legacy serializers remain covered with an explicit Vitest-only module
+mock in `tests/helpers/legacy-inference-fixtures.ts`. The unmocked policy tests
+and a plain Node subprocess verify that OpenRouter never reaches fetch. This
+is test isolation, not a production exemption.
+
+The unused `OPENROUTER_API_KEY` binding was removed from the live
+`launchloom-api` Worker; the Go binding and all unrelated bindings were
+preserved. The GitHub secret is retained, but does not override this transport
+policy. Removing a binding does not revoke a credential or erase historical
+Worker versions.
 
 | Environment variable           | Default       | Accepted values |
 | ------------------------------ | ------------- | --------------- |
