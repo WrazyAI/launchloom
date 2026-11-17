@@ -1054,7 +1054,11 @@ jobs:
           if [ -f /tmp/reasoning-preflight.json ]; then
             SESSION_ARGS=(--session /tmp/reasoning-preflight.json)
           fi
-          REPAIR_ARGS=(--max-cycles 1 --require-diversity false)
+          # Two cycles: the rendered contrast pass can now consume the first
+          # one (run 44129657225 spent its only cycle clearing contrast and then
+          # failed on a genuine mobile hero layout finding). One cycle made a
+          # multi-defect candidate unreachable by construction.
+          REPAIR_ARGS=(--max-cycles 2 --require-diversity false)
           if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
             REPAIR_ARGS=(--max-cycles 1 --qa-repair-experiment true --require-diversity false)
           fi
