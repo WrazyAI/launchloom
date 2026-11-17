@@ -431,7 +431,11 @@ function EntryRow({
               <Evidence event={event} />
             </div>
           ))}
-          {entry.kind === "model" ? (
+          {entry.kind === "model" &&
+          entry.evidence.some(
+            (event) =>
+              event.kind === "model_started" || event.kind === "model_finished",
+          ) ? (
             <details className="admin-activity__request-details">
               <summary>Request and completion details</summary>
               {entry.evidence
@@ -499,7 +503,10 @@ export function GenerationActivity({
     return () => window.clearInterval(timer);
   }, []);
 
-  const entries = useMemo(() => groupActivity(events), [events]);
+  const entries = useMemo(
+    () => groupActivity(events, threaded),
+    [events, threaded],
+  );
   const visible = useMemo(
     () => filterActivity(entries, filter),
     [entries, filter],

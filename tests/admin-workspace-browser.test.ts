@@ -3156,6 +3156,42 @@ it("renders model calls, actions, usage and inspectable evidence in a dedicated 
   }
 });
 
+it("shows recorded model output when its start is on an older activity page", async () => {
+  activityEnabled = true;
+  const initial = activityPageFor("attempt-diagnostic");
+  activityFixture = {
+    ...initial,
+    activity: {
+      ...initial.activity,
+      items: initial.activity.items.slice(1, 4),
+    },
+  };
+  const { page, errors } = await openPage({
+    path: "/admin/onboarding-invites?attempt=attempt-diagnostic",
+  });
+  try {
+    const drawer = page.locator("#attempt-inspector");
+    await drawer
+      .getByRole("button", { name: "Agent runs", exact: true })
+      .click();
+    const row = drawer.getByRole("button", {
+      name: /Model activity \(earlier request not loaded\)/u,
+    });
+    await visible(row);
+    await row.click();
+    await visible(
+      drawer.getByText(
+        "I am building the opening section around the approved service scope.",
+        { exact: true },
+      ),
+    );
+    await visible(drawer.getByText("Reported usage", { exact: true }));
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});
+
 it("distinguishes a run that never recorded activity", async () => {
   activityEnabled = true;
   activityFixture = {
