@@ -1,3 +1,4 @@
+import "./helpers/legacy-inference-fixtures";
 import { describe, expect, it, vi } from "vitest";
 import {
   cacheableReferenceDna,

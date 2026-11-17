@@ -47,6 +47,9 @@ export async function opencodeGoCompletion({
 }): Promise<OpenCodeGoCompletion> {
   const response = await fetch(OPENCODE_GO_RESPONSES_URL, {
     method: "POST",
+    // Workers does not support redirect:"error". A manual 3xx response is
+    // rejected by the !response.ok check below without forwarding credentials.
+    redirect: "manual",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",

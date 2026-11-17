@@ -1,3 +1,4 @@
+import "./helpers/legacy-inference-fixtures";
 import { compileCanonicalSiteBrief } from "../scripts/compile-canonical-site-brief.mjs";
 import { normalise } from "../scripts/generate-site-config.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";

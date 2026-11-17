@@ -14,8 +14,10 @@ author engine and site copy (`CREATIVE_EXPERIENCE_PROVIDER` /
 
 **Update 2026-11-17:** OpenRouter is disabled for production. Both selectors
 default to `opencode-go` and the code rejects `openrouter`, so a stale
-repository variable cannot redirect a run. The OpenRouter transport remains
-only for the manual model-evaluation labs and its existing test coverage.
+repository variable cannot redirect a run. A subsequent transport-level guard
+unconditionally blocks OpenRouter hosts, including calls made with test-mode
+environment flags. Legacy source remains for offline fixture coverage; manual
+evaluation is not an exemption from the guard.
 
 ## Interfaces
 

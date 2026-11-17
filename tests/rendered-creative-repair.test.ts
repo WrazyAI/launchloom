@@ -1,3 +1,4 @@
+import "./helpers/legacy-inference-fixtures";
 import { buildRepairSpanCatalog } from "../scripts/creative-repair-spans.mjs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";

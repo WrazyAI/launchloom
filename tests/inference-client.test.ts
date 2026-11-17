@@ -1,3 +1,4 @@
+import "./helpers/legacy-inference-fixtures";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildInferenceRequest,
@@ -785,6 +786,7 @@ describe("explicit transport and OpenRouter compatibility", () => {
         "X-OpenRouter-Cache-TTL": "1200",
       },
       body: JSON.stringify({ ...body, session_id: "existing-session" }),
+      redirect: "error",
     });
   });
   it("offers raw shared transport without imposing result normalization on legacy callers", async () => {
