@@ -157,6 +157,87 @@ describe("quick-answer mobile layout", () => {
   });
 });
 
+describe("quick-answer desktop anchoring", () => {
+  it("stays at the bottom-left anchor over full-width page content", async () => {
+    const page = await browser.newPage({
+      viewport: { width: 1440, height: 900 },
+    });
+    try {
+      await page.setContent(`
+        <style>${siteCss}</style>
+        <body style="--brand:#205d51;--on-brand:#fff;--ink:#14201d;--muted:#53605b;--line:#d8ded7;--cream:#f8f6f0;--hero-surface:#e8eee5">
+          <main style="min-height:1800px">
+            <a href="#contact" style="display:block;width:100%;margin-top:780px;padding:24px 0">Errands and transportation</a>
+            <p>When errands or local trips feel harder, errands and transportation can be planned around usual destinations and pace.</p>
+          </main>
+          <aside class="quick-answers">
+            <button class="quick-answers__launcher" aria-expanded="false">Got questions?</button>
+            <section class="quick-answers__panel" hidden></section>
+          </aside>
+        </body>
+      `);
+      await page.addScriptTag({ content: browserLayoutSource() });
+      await page.evaluate(() => {
+        (window as any).installQuickAnswersLayout(
+          document.querySelector(".quick-answers"),
+        );
+        window.scrollTo(0, 500);
+      });
+      await page.waitForTimeout(150);
+      const anchor = await page.evaluate(() => {
+        const root = document.querySelector<HTMLElement>(".quick-answers")!;
+        const rect = root.getBoundingClientRect();
+        return {
+          position: getComputedStyle(root).position,
+          left: Math.round(rect.left),
+          bottom: Math.round(innerHeight - rect.bottom),
+        };
+      });
+      expect(anchor).toEqual({
+        position: "fixed",
+        left: 24,
+        bottom: 24,
+      });
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("still moves above fixed chrome that would cover the launcher", async () => {
+    const page = await browser.newPage({
+      viewport: { width: 1440, height: 900 },
+    });
+    try {
+      await page.setContent(`
+        <style>${siteCss}</style>
+        <body style="--brand:#205d51;--on-brand:#fff;--ink:#14201d;--muted:#53605b;--line:#d8ded7;--cream:#f8f6f0;--hero-surface:#e8eee5">
+          <main><p>Visible service copy above the assistant.</p></main>
+          <div style="position:fixed;left:0;bottom:0;width:360px;height:120px;padding:12px;background:#fff;color:#14201d">Contact our team<button type="button">Prepare a request</button></div>
+          <aside class="quick-answers">
+            <button class="quick-answers__launcher" aria-expanded="false">Got questions?</button>
+            <section class="quick-answers__panel" hidden></section>
+          </aside>
+        </body>
+      `);
+      await page.addScriptTag({ content: browserLayoutSource() });
+      await page.evaluate(() => {
+        (window as any).installQuickAnswersLayout(
+          document.querySelector(".quick-answers"),
+        );
+      });
+      await page.waitForTimeout(150);
+      const bottom = await page.evaluate(() => {
+        const root = document.querySelector<HTMLElement>(".quick-answers")!;
+        const rect = root.getBoundingClientRect();
+        return Math.round(innerHeight - rect.bottom);
+      });
+      expect(bottom).toBeGreaterThan(120);
+    } finally {
+      await page.close();
+    }
+  });
+});
+
 describe("quick-answer close focus", () => {
   it("moves focus to page content before a colliding assistant becomes inert", async () => {
     const page = await browser.newPage({
