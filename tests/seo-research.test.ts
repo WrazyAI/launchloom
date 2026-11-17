@@ -531,7 +531,7 @@ describe("SEO market map", () => {
     );
     expect(body).toMatchObject({
       model: "deepseek-v4.1-flash",
-      max_output_tokens: 768,
+      max_output_tokens: 4096,
       reasoning: { effort: "low" },
       text: { format: { type: "json_object" } },
     });
@@ -592,7 +592,7 @@ describe("SEO market map", () => {
     const request = JSON.parse(String(fetchImpl.mock.calls[0]?.[1]?.body));
 
     expect(request).toMatchObject({
-      max_tokens: 768,
+      max_tokens: 4096,
       reasoning: { max_tokens: 96, exclude: true },
     });
     expect(dossier.intentPlanning.status).toBe("deterministic-fallback");
