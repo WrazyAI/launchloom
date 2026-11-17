@@ -67,7 +67,9 @@ function StatusPill({ status }: { status: string | null }) {
           status,
         )
       ? "bad"
-      : "live";
+      : status === "Unconfirmed"
+        ? "warn"
+        : "live";
   return (
     <span className={`admin-activity__status admin-activity__status--${tone}`}>
       {status.replace(/_/gu, " ")}

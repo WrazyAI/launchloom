@@ -3192,6 +3192,35 @@ it("shows recorded model output when its start is on an older activity page", as
   }
 });
 
+it("shows an unfinished call from an ended run as unconfirmed, not live", async () => {
+  activityEnabled = true;
+  const initial = activityPageFor("attempt-diagnostic");
+  activityFixture = {
+    ...initial,
+    activity: {
+      ...initial.activity,
+      items: initial.activity.items.slice(0, 1),
+      recording: "complete",
+    },
+  };
+  const { page, errors } = await openPage({
+    path: "/admin/onboarding-invites?attempt=attempt-diagnostic",
+  });
+  try {
+    const drawer = page.locator("#attempt-inspector");
+    await drawer
+      .getByRole("button", { name: "Agent runs", exact: true })
+      .click();
+    const row = drawer.locator('[data-kind="model"]');
+    await visible(row.getByText("Unconfirmed", { exact: true }));
+    expect(await row.locator(".admin-activity__status--live").count()).toBe(0);
+    await visible(row.locator(".admin-activity__status--warn"));
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});
+
 it("distinguishes a run that never recorded activity", async () => {
   activityEnabled = true;
   activityFixture = {
