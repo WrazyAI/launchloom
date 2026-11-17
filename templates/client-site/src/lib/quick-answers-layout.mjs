@@ -19,8 +19,9 @@ export function focusQuickAnswersFallback(focusWasInside) {
 }
 
 /**
- * Keep the collapsed desktop assistant clear of visible copy and controls.
- * Small-screen and expanded layouts are handled by shared CSS in site.css.
+ * Keep the collapsed desktop assistant at its bottom-left anchor. Only fixed
+ * or sticky chrome, such as a review banner, cookie notice, or call bar, may
+ * move it; page copy and full-width content cards must not.
  * @param {HTMLElement} root
  * @returns {{refresh: () => void}}
  */
@@ -54,28 +55,15 @@ export function installQuickAnswersLayout(root) {
 
   const obstacles = () => {
     const rectangles = [];
-    const walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_TEXT,
-    );
-    const range = document.createRange();
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      if (
-        !node.textContent?.trim() ||
-        node.parentElement?.closest(
-          ".quick-answers, [hidden], [inert], [aria-hidden='true'], script, style, template",
-        ) ||
-        effectivelyHidden(node.parentElement)
-      )
-        continue;
-      range.selectNodeContents(node);
-      for (const rect of range.getClientRects())
-        if (rect.width > 0 && rect.height > 0) rectangles.push(rect);
-    }
-
-    for (const element of document.querySelectorAll(obstacleSelector)) {
+    for (const element of document.body.querySelectorAll("*")) {
       if (root.contains(element) || effectivelyHidden(element)) continue;
+      const explicit = element.hasAttribute("data-quick-answers-obstacle");
+      const style = getComputedStyle(element);
+      if (!explicit && !["fixed", "sticky"].includes(style.position)) continue;
+      const interactive =
+        element.matches(obstacleSelector) ||
+        Boolean(element.querySelector(obstacleSelector));
+      if (!explicit && !interactive && !element.innerText?.trim()) continue;
       const rect = element.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) rectangles.push(rect);
     }
