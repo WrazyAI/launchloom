@@ -6,7 +6,11 @@ import {
   buildSpanRequestBudget,
 } from "./creative-repair-contract.mjs";
 import { createHash } from "node:crypto";
-import { interactionPromptParts, interactionSourceDigest } from "./rendered-interaction-evidence.mjs";
+import {
+  currentInteractionEvidence,
+  interactionPromptParts,
+  interactionSourceDigest,
+} from "./rendered-interaction-evidence.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -1070,9 +1074,18 @@ Use these helpers instead of inventing network calls or duplicating platform beh
     ),
   );
   const candidateEvidence = [];
-  const interactionParts = await interactionPromptParts(
+  const currentFilesDigest = interactionSourceDigest(files);
+  const evidenceForSource = currentInteractionEvidence(
     interactionEvidence,
-    { candidateId, sourceDigest: interactionSourceDigest(files) },
+    files,
+  );
+  if (interactionEvidence && !evidenceForSource)
+    logger(
+      `interaction_evidence_stale candidate=${candidateId} reason=source-changed; recaptured on the next render`,
+    );
+  const interactionParts = await interactionPromptParts(
+    evidenceForSource,
+    { candidateId, sourceDigest: currentFilesDigest },
     imagePart,
   );
   for (const screenshot of screenshots.slice(0, 3)) {

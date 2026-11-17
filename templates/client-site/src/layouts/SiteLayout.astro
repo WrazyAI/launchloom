@@ -54,6 +54,16 @@ const colorRoles = semanticColorCss(palette) + `
 .recipe-local-trades .inner-hero:not(.service-hero) .cta {color:var(--on-brand,#000000);background:var(--brand,${palette.primaryColor});}
 .recipe-local-trades .inner-hero:not(.service-hero) .breadcrumb {color:#bac9c4;}
 .recipe-local-trades .inner-hero:not(.service-hero) .call-link {color:#ffffff;}
+/* The header logo sits over the generated header image, so its focus ring is
+   measured against "background variable" and #348f7e measured 2.888:1 there
+   even though it clears 3:1 on every flat band. Paint the ring over the nav
+   surface instead: a same-colour plate plus a 6px halo, with the ring at a 2px
+   offset so it lands inside the halo. The backdrop is then deterministic. */
+header :is(a,button):focus-visible {
+  background-color: var(--ll-surface, var(--cream, #f8f6f0));
+  box-shadow: 0 0 0 6px var(--ll-surface, var(--cream, #f8f6f0));
+  outline-offset: 2px;
+}
 `;
 const testPreview = hasTestOnlySite(site);
 const testProfile = site.pipelineTest?.profile || (site.demoNotice ? "fictional-demo" : undefined);

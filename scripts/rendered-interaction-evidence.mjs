@@ -20,6 +20,24 @@ export function interactionSourceDigest(files) {
     .digest("hex");
 }
 
+/**
+ * Interaction evidence describes one exact source. A repair changes that source,
+ * and the next render recaptures the evidence, so a stale bundle must be omitted
+ * rather than aborting the request that happens to still hold it. Without this
+ * the first successful repair failed the whole run with "source identity
+ * mismatch" instead of continuing to the recapture.
+ *
+ * @param {Record<string, any> | null | undefined} evidence
+ * @param {Record<string, any>} files current authored files
+ * @returns {Record<string, any> | null}
+ */
+export function currentInteractionEvidence(evidence, files) {
+  if (!evidence) return null;
+  return evidence.sourceDigest === interactionSourceDigest(files)
+    ? evidence
+    : null;
+}
+
 export function requiresPurposefulInteraction(brief = {}) {
   return /\b(?:purposeful\s+(?:interactions?|interactive)|interactive\s+(?:care\s+)?(?:guide|selector|chooser|navigator|flow)|(?:guide|selector|chooser|navigator)\s+interaction)\b/iu.test(
     [brief.artDirection, brief.visualDirection, brief.preference]
