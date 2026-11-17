@@ -7,6 +7,7 @@ import os from "node:os";
 import http from "node:http";
 import {
   captureRenderedInteractionEvidence,
+  currentInteractionEvidence,
   interactionSourceDigest,
   requiresPurposefulInteraction,
   validateInteractionEvidence,
@@ -352,5 +353,27 @@ describe("bounded rendered interaction evidence", () => {
         sourceDigest: interactionSourceDigest({ ...files, styles: "new" }),
       }),
     ).toThrow(/source/);
+  });
+});
+
+describe("interaction evidence source identity", () => {
+  it("keeps evidence only for the source it was captured from", () => {
+    const files = { experience: "exp", styles: "styles", motion: "motion" };
+    const digest = interactionSourceDigest(files);
+    const evidence = {
+      version: 1,
+      candidateId: "candidate-a",
+      sourceDigest: digest,
+      observations: [],
+      pairs: [],
+      failures: [],
+    };
+    expect(currentInteractionEvidence(evidence, files)).toBe(evidence);
+    // A repair changes the source; the next render recaptures. Holding the old
+    // bundle must not abort the request that still references it.
+    expect(
+      currentInteractionEvidence(evidence, { ...files, styles: "changed" }),
+    ).toBeNull();
+    expect(currentInteractionEvidence(null, files)).toBeNull();
   });
 });

@@ -39,7 +39,7 @@ afterEach(async () => {
 });
 
 describe("creative repair loop", () => {
-  it("carries separately labeled interaction pairs beyond the three static images and rejects stale source", async () => {
+  it("carries separately labeled interaction pairs beyond the three static images and drops stale source evidence", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "ll-interaction-repair-prompt-"),
     );
@@ -114,10 +114,24 @@ describe("creative repair loop", () => {
         .map((p: any) => p.text)
         .join("\n"),
     ).toContain("after activation");
-    await expect(
-      requestRepair({ ...input, files: { ...files, styles: "new source" } }),
-    ).rejects.toThrow(/source identity/);
-    expect(requests).toHaveLength(1);
+    // A repair changes the source, and the next render recaptures the evidence.
+    // Holding a stale bundle must not abort the repair that still references it.
+    await requestRepair({
+      ...input,
+      files: { ...files, styles: "new source" },
+    });
+    expect(requests).toHaveLength(2);
+    const staleParts = requests[1].messages[1].content;
+    // Exactly the two interaction pair images disappear; static evidence stays.
+    expect(
+      staleParts.filter((p: any) => p.type === "image_url"),
+    ).toHaveLength(4);
+    const staleText = staleParts
+      .filter((p: any) => p.type === "text")
+      .map((p: any) => p.text)
+      .join("\n");
+    expect(staleText).not.toContain("Actual changed preparation guidance");
+    expect(staleText).not.toContain("after activation");
   });
 
   it("applies only unique, bounded literal edits to candidate files", () => {
