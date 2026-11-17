@@ -2690,6 +2690,27 @@
 .xp-stage__contact a:focus-visible {
   outline-color: var(--stage-brass-text) !important;
 }
+/* The stage's dark surfaces make the browser's default focus ring invisible.
+   Give every focusable stage control the same brass ring as its contact band. */
+.xp-stage :where(a, button, summary, input, select, textarea):focus-visible {
+  outline: 2px solid var(--stage-brass-text);
+  outline-offset: 3px;
+}
+/* The shared header focus plate uses a light surface, which is unreadable
+   behind the stage's ivory header links. Keep the plate on the stage forest. */
+.xp-stage header a:focus-visible {
+  background-color: var(--stage-forest-deep);
+  box-shadow: 0 0 0 6px var(--stage-forest-deep);
+  outline-color: var(--stage-brass-text);
+  outline-offset: 2px;
+}
+/* The stage lead form sits on a white surface, where the brass ring would
+   disappear. Keep its controls on the dark ink ring instead. */
+.xp-stage
+  .lead-form
+  :where(a, button, summary, input, select, textarea):focus-visible {
+  outline-color: var(--ink, #14201d);
+}
 .xp-ledger__contact a,
 .xp-ledger__contact a:visited {
   color: var(--ledger-navy);
