@@ -1096,6 +1096,29 @@ describe("contextual image generation", () => {
     });
   });
 
+  it("does not fetch a fallback image from an unapproved host", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-unapproved-fallback-"),
+    );
+    const site = fixture();
+    const remote = "https://internal.example.test/private.png";
+    site.images = { hero: remote };
+    let calls = 0;
+    const result = await generate({
+      site,
+      outputDir,
+      key: "",
+      fetchImpl: async () => {
+        calls += 1;
+        return new Response("not an image", {
+          headers: { "content-type": "image/png" },
+        });
+      },
+    });
+    expect(calls).toBe(0);
+    expect(result.site.images.hero).toBe(remote);
+  });
+
   it("fails soft without a key and retains reviewed fallback assets", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const site = fixture();

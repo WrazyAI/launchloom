@@ -24,6 +24,9 @@ export const DEFAULT_MAX_IMAGES = 3;
 export const DEFAULT_MAX_REQUESTS = 15;
 export const DEFAULT_MAX_PROMPT_LENGTH = 1500;
 export const GENERATED_ASSET_REVIEW_POLICY_VERSION = "visual-review-v1";
+// Reviewed stock fallbacks may only be downloaded from their documented
+// licensed source host. A site config cannot turn this into a general fetch.
+const STOCK_FALLBACK_HOSTS = new Set(["images.unsplash.com"]);
 
 // Production asset review uses the same approved model as the rest of the
 // pipeline. GLM-5.3 is not approved for production use.
@@ -940,6 +943,8 @@ async function localizeFallbackImage(
 ) {
   if (!/^https:\/\//iu.test(String(fallback || ""))) return fallback;
   try {
+    const host = new URL(fallback).hostname.toLowerCase();
+    if (!STOCK_FALLBACK_HOSTS.has(host)) return fallback;
     const downloaded = await downloadImage(fallback, fetchImpl, timeoutMs);
     const normalized = await normalizeImage(downloaded.data, placement);
     const fileName = `${placement.id}-stock-${sha256(fallback).slice(0, 12)}.webp`;
