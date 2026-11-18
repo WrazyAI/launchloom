@@ -4,6 +4,7 @@ import {
   REPAIR_EDITABLE_FILE_NAMES, MAX_REPAIR_EDITS, MAX_REPAIR_EDIT_FRAGMENT_CHARS,
   MAX_REPAIR_PATCH_TEXT_CHARS, MAX_REPAIR_FILE_SOURCE_CHARS,
 } from "./creative-repair-contract.mjs";
+import { normalizeRepairReplacementText } from "./creative-repair-text.mjs";
 const knownFiles = new Set(REPAIR_EDITABLE_FILE_NAMES);
 const digest = value => createHash("sha256").update(value).digest("hex");
 const spanId = (file, sourceDigest, start, find) => digest(JSON.stringify([file, sourceDigest, start, find]));
@@ -112,7 +113,11 @@ export function compileRepairSpanEdits(files, catalog, edits) {
     const end = start + span.find.length, previous = ranges.get(span.file) || [];
     if (previous.some(range => start < range.end && end > range.start)) reject("Overlapping repair spans.");
     previous.push({ start, end }); ranges.set(span.file, previous);
-    result.push({ file: span.file, find: span.find, replace: edit.replace });
+    result.push({
+      file: span.file,
+      find: span.find,
+      replace: normalizeRepairReplacementText(edit.replace, span.file),
+    });
   }
   return result;
 }

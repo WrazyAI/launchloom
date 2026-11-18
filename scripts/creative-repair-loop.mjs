@@ -11,6 +11,7 @@ import {
   interactionPromptParts,
   interactionSourceDigest,
 } from "./rendered-interaction-evidence.mjs";
+import { normalizeRepairReplacementText } from "./creative-repair-text.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -503,7 +504,10 @@ export function applyCreativeRepairEdits(files, edits, { allowInnerPages = true 
       throw rejectedEdit(
         `${label} exceeds the bounded literal replacement contract.`, edit, index,
       );
-    const replacement = edit.replace.replace(/[—–]/gu, "-");
+    const replacement = normalizeRepairReplacementText(
+      edit.replace,
+      edit.file,
+    ).replace(/[—–]/gu, "-");
     if (edit.find === replacement)
       throw rejectedEdit(
         `${label} does not change the candidate source.`, edit, index,

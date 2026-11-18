@@ -3056,3 +3056,34 @@ it("refuses an opt-in response above its advertised edit ceiling even when globa
     } as any),
   ).rejects.toThrow(/request.*3.*edit|edit.*ceiling/i);
 });
+
+describe("repair replacement text normalisation", () => {
+  it("unwraps markdown around a stylesheet replacement but not JSX", () => {
+    const files = { experience: "x", styles: "a { color: #000000; }", motion: "" };
+    const css = applyCreativeRepairEdits(files, [
+      {
+        file: "styles",
+        find: "a { color: #000000; }",
+        replace: "`.b { color: #14201d; }`",
+      },
+    ]);
+    // A single code span around a complete CSS replacement is markdown, not CSS;
+    // applied verbatim it produced "<css input>:1049:1: Unexpected }".
+    expect(css.styles).toBe(".b { color: #14201d; }");
+
+    const jsx = applyCreativeRepairEdits(files, [
+      { file: "experience", find: "x", replace: "`template`" },
+    ]);
+    // A backtick pair in JSX is a template literal and must survive.
+    expect(jsx.experience).toBe("`template`");
+
+    const fenced = applyCreativeRepairEdits(files, [
+      {
+        file: "styles",
+        find: "a { color: #000000; }",
+        replace: "```css\n.b { color: #14201d; }\n```",
+      },
+    ]);
+    expect(fenced.styles).toBe(".b { color: #14201d; }");
+  });
+});
