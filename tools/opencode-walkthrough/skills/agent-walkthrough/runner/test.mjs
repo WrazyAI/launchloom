@@ -47,6 +47,11 @@ test("real browser records panel states and only forwards approved GETs", {
     plan.scenarios.panel.splice(1, 0, { type: "screenshot" });
     plan.scenarios.broken = [{ type: "open", path: "/" },
       { type: "visible", role: "heading", name: "Sites", expected: true }];
+    plan.scenarios["blocked-then-skipped"] = [
+      { type: "open", path: "/" },
+      { type: "click", role: "button", name: "Missing" },
+      { type: "screenshot" },
+    ];
     plan.scenarios.redirect = [{ type: "http", path: "/redirect", status: 200 }];
     const [bytes, digest] = encoded(plan);
     await writeFile(join(folder, "plan.json"), bytes);
@@ -64,6 +69,8 @@ test("real browser records panel states and only forwards approved GETs", {
     }
     assert.equal((await run("broken")).steps[1].status, "failed");
     assert.equal((await run("redirect")).steps[0].status, "blocked");
+    assert.deepEqual((await run("blocked-then-skipped")).steps.map(s => s.status),
+      ["passed", "failed", "untested"]);
     assert.equal((await run("panel")).scenario, "panel");
     assert.ok(seen.some(([, url]) => url === "/health"));
     assert.ok(seen.every(([method, url, cookie]) =>
