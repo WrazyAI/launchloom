@@ -1053,6 +1053,49 @@ describe("contextual image generation", () => {
     expect(result.manifest.placements).toHaveLength(3);
   });
 
+  it("stores a remote reviewed fallback locally instead of hotlinking it", async () => {
+    const outputDir = await mkdtemp(
+      join(tmpdir(), "launchloom-local-fallback-"),
+    );
+    const site = fixture();
+    const remote =
+      "https://images.unsplash.com/photo-1543333995-a78aea2eee50?auto=format&fit=crop&w=1600&q=85";
+    site.images = { hero: remote };
+    const source = await sharp({
+      create: {
+        width: 1200,
+        height: 800,
+        channels: 3,
+        background: { r: 120, g: 140, b: 110 },
+      },
+    })
+      .jpeg()
+      .toBuffer();
+    const result = await generate({
+      site,
+      outputDir,
+      key: "",
+      fetchImpl: async () =>
+        new Response(source, { headers: { "content-type": "image/jpeg" } }),
+    });
+
+    expect(result.site.images.hero).toMatch(
+      /^\/images\/generated\/hero-stock-[a-f0-9]{12}\.webp$/u,
+    );
+    const file = join(
+      outputDir,
+      result.site.images.hero.split("/").pop() as string,
+    );
+    expect((await stat(file)).size).toBeGreaterThan(0);
+    expect(
+      (await sharp(await readFile(file)).metadata()).format,
+    ).toBe("webp");
+    expect(result.manifest.skipped[0]).toMatchObject({
+      placement: "hero",
+      fallback: result.site.images.hero,
+    });
+  });
+
   it("fails soft without a key and retains reviewed fallback assets", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const site = fixture();
