@@ -1,7 +1,4 @@
-import {
-  verifyApprovedRoutes,
-  diagnosticFormMode,
-} from "./browser-route-verification.mjs";
+import { verifyApprovedRoutes, diagnosticFormMode } from "./browser-route-verification.mjs";
 import { sanitizeVerificationReport } from "./route-verification-handoff.mjs";
 import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { hasTestOnlySite } from "../templates/client-site/src/lib/seo-readiness.mjs";
@@ -245,42 +242,17 @@ try {
     await page.goto(url, { waitUntil: "networkidle" });
     if (testPreview) {
       const banner = page.locator("[data-pipeline-test-preview]");
-      const profile =
-        config.pipelineTest?.profile ||
-        (config.demoNotice ? "fictional-demo" : undefined);
+      const profile = config.pipelineTest?.profile || (config.demoNotice ? "fictional-demo" : undefined);
       const skipped = pipelineTestBannerMessage(profile);
-      if (
-        !(await banner.isVisible()) ||
-        !(await banner.textContent())?.includes(profile || "invalid profile") ||
-        !(await banner.textContent())?.includes(skipped)
-      )
-        failures.push(
-          `${viewport.name}: test-only profile and skipped lane must be visible.`,
-        );
+      if (!(await banner.isVisible()) || !(await banner.textContent())?.includes(profile || "invalid profile") || !(await banner.textContent())?.includes(skipped))
+        failures.push(`${viewport.name}: test-only profile and skipped lane must be visible.`);
       if (await page.locator(".ll-approve, .ll-send-anyway").count())
-        failures.push(
-          `${viewport.name}: test-only preview contains release controls.`,
-        );
-      if (
-        (await page.locator('meta[name="robots"]').getAttribute("content")) !==
-          "noindex, nofollow" ||
-        (await page.locator('link[rel="canonical"]').count())
-      )
-        failures.push(
-          `${viewport.name}: test-only preview must remain unindexed without a production canonical.`,
-        );
-      for (const form of await page
-        .locator("form.lead-form, form.launchloom-lead-form")
-        .all()) {
-        if (
-          (await form.getAttribute("data-lead-preview")) !== "true" ||
-          (await form
-            .locator('[name="lead-token"]')
-            .evaluateAll((nodes) => nodes.some((node) => node.value)))
-        )
-          failures.push(
-            `${viewport.name}: test-only form exposes a live submission path.`,
-          );
+        failures.push(`${viewport.name}: test-only preview contains release controls.`);
+      if ((await page.locator('meta[name="robots"]').getAttribute("content")) !== "noindex, nofollow" || await page.locator('link[rel="canonical"]').count())
+        failures.push(`${viewport.name}: test-only preview must remain unindexed without a production canonical.`);
+      for (const form of await page.locator("form.lead-form, form.launchloom-lead-form").all()) {
+        if ((await form.getAttribute("data-lead-preview")) !== "true" || await form.locator('[name="lead-token"]').evaluateAll(nodes => nodes.some(node => node.value)))
+          failures.push(`${viewport.name}: test-only form exposes a live submission path.`);
       }
     }
     // Astro's inline module islands can finish attaching interaction handlers
@@ -722,14 +694,8 @@ try {
               mainFocused: document.activeElement === main,
             };
           });
-          if (
-            closeFocus.inert
-              ? !closeFocus.mainFocused
-              : !closeFocus.launcherFocused
-          )
-            failures.push(
-              `desktop: closing AI chat did not restore safe focus: ${JSON.stringify(closeFocus)}.`,
-            );
+          if (closeFocus.inert ? !closeFocus.mainFocused : !closeFocus.launcherFocused)
+            failures.push(`desktop: closing AI chat did not restore safe focus: ${JSON.stringify(closeFocus)}.`);
         }
       }
 
@@ -756,28 +722,20 @@ try {
       )
         failures.push("mobile: desktop exit offer is not suppressed.");
 
-      const quickAnswers = page.locator(
-        '[data-conversion-feature="quick-answers"]',
-      );
+      const quickAnswers = page.locator('[data-conversion-feature="quick-answers"]');
       if (await quickAnswers.count()) {
         const launcher = quickAnswers.locator(".quick-answers__launcher");
         const panel = quickAnswers.locator(".quick-answers__panel");
-        const closedPosition = await quickAnswers.evaluate(
-          (element) => getComputedStyle(element).position,
-        );
+        const closedPosition = await quickAnswers.evaluate((element) => getComputedStyle(element).position);
         if (closedPosition !== "static")
-          failures.push(
-            "mobile: quick-answer launcher is fixed over page content instead of remaining in flow.",
-          );
+          failures.push("mobile: quick-answer launcher is fixed over page content instead of remaining in flow.");
         if (await panel.isVisible())
           failures.push("mobile: quick answers opened without visitor action.");
         await launcher.click();
         if (!(await panel.isVisible()))
           failures.push("mobile: quick answers did not open.");
         const openLayout = await quickAnswers.evaluate((root) => {
-          const launcherElement = root.querySelector(
-            ".quick-answers__launcher",
-          );
+          const launcherElement = root.querySelector(".quick-answers__launcher");
           const panelElement = root.querySelector(".quick-answers__panel");
           const main = document.querySelector("main");
           const rootRect = root.getBoundingClientRect();
@@ -792,32 +750,15 @@ try {
             panelClipped:
               panelStyle.overflowY !== "visible" &&
               panelElement.scrollHeight > panelElement.clientHeight + 1,
-            rootAfterMain:
-              !main || rootRect.top >= main.getBoundingClientRect().bottom,
+            rootAfterMain: !main || rootRect.top >= main.getBoundingClientRect().bottom,
             panelAfterLauncher: panelRect.top >= launcherRect.bottom,
           };
         });
-        if (
-          openLayout.rootPosition !== "static" ||
-          openLayout.panelPosition !== "static" ||
-          openLayout.panelMaxHeight !== "none" ||
-          openLayout.panelClipped ||
-          !openLayout.rootAfterMain ||
-          !openLayout.panelAfterLauncher
-        )
-          failures.push(
-            `mobile: quick-answer panel is not in-flow and unclipped: ${JSON.stringify(openLayout)}.`,
-          );
+        if (openLayout.rootPosition !== "static" || openLayout.panelPosition !== "static" || openLayout.panelMaxHeight !== "none" || openLayout.panelClipped || !openLayout.rootAfterMain || !openLayout.panelAfterLauncher)
+          failures.push(`mobile: quick-answer panel is not in-flow and unclipped: ${JSON.stringify(openLayout)}.`);
         await quickAnswers.locator(".quick-answers__close").click();
-        if (
-          (await launcher.getAttribute("aria-expanded")) !== "false" ||
-          !(await launcher.evaluate(
-            (element) => document.activeElement === element,
-          ))
-        )
-          failures.push(
-            "mobile: closing quick answers did not restore its collapsed state and focus.",
-          );
+        if ((await launcher.getAttribute("aria-expanded")) !== "false" || !(await launcher.evaluate((element) => document.activeElement === element)))
+          failures.push("mobile: closing quick answers did not restore its collapsed state and focus.");
       }
     }
     await page.evaluate(async () => {
