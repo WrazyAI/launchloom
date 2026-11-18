@@ -12,6 +12,7 @@ import { chromium } from "playwright";
 import { revisionImageMatches } from "./revision-image-acceptance.mjs";
 import { pipelineTestBannerMessage } from "../templates/client-site/src/lib/pipeline-test-preview.mjs";
 import { splitGateFailures } from "./gate-policy.mjs";
+import { quickAnswersInteraction } from "./quick-answers-verification.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -307,34 +308,65 @@ try {
           failures.push(
             "desktop: quick answers opened without visitor action.",
           );
-        await quickAnswers.locator(".quick-answers__launcher").click();
-        if (!(await panel.isVisible()))
-          failures.push("desktop: quick answers did not open.");
-        const choice = quickAnswers.locator("[data-answer]").first();
-        await choice.click();
-        if (!(await quickAnswers.locator(".quick-answers__answer").isVisible()))
+        const launcherState = await quickAnswers.evaluate((root) => {
+          const launcher = root.querySelector(".quick-answers__launcher");
+          const style = launcher ? getComputedStyle(launcher) : null;
+          const rect = launcher?.getBoundingClientRect();
+          return {
+            launcherVisible: Boolean(
+              launcher &&
+                style?.visibility === "visible" &&
+                Number(style.opacity) > 0 &&
+                rect.width > 0 &&
+                rect.height > 0,
+            ),
+            inert: root.inert,
+            colliding: root.classList.contains("is-colliding"),
+          };
+        });
+        const interaction = quickAnswersInteraction(launcherState);
+        if (interaction === "invalid")
           failures.push(
-            "desktop: quick answer content did not become visible.",
+            "desktop: quick answers launcher was hidden without a proven collision.",
           );
-        else
-          await page.screenshot({
-            path: path.join(screenshotDir, "desktop-quick-answers.png"),
-          });
-        await page.keyboard.press("Escape");
-        if (await panel.isVisible()) {
-          failures.push("desktop: Escape did not close quick answers.");
-        } else {
-          const closeFocus = await quickAnswers.evaluate((root) => {
-            const launcher = root.querySelector(".quick-answers__launcher");
-            const main = document.querySelector("main");
-            return {
-              inert: root.inert,
-              launcherFocused: document.activeElement === launcher,
-              mainFocused: document.activeElement === main,
-            };
-          });
-          if (closeFocus.inert ? !closeFocus.mainFocused : !closeFocus.launcherFocused)
-            failures.push(`desktop: closing quick answers did not restore safe focus: ${JSON.stringify(closeFocus)}.`);
+        if (interaction === "interact") {
+          await quickAnswers.locator(".quick-answers__launcher").click();
+          if (!(await panel.isVisible()))
+            failures.push("desktop: quick answers did not open.");
+          const choice = quickAnswers.locator("[data-answer]").first();
+          await choice.click();
+          if (
+            !(await quickAnswers.locator(".quick-answers__answer").isVisible())
+          )
+            failures.push(
+              "desktop: quick answer content did not become visible.",
+            );
+          else
+            await page.screenshot({
+              path: path.join(screenshotDir, "desktop-quick-answers.png"),
+            });
+          await page.keyboard.press("Escape");
+          if (await panel.isVisible()) {
+            failures.push("desktop: Escape did not close quick answers.");
+          } else {
+            const closeFocus = await quickAnswers.evaluate((root) => {
+              const launcher = root.querySelector(".quick-answers__launcher");
+              const main = document.querySelector("main");
+              return {
+                inert: root.inert,
+                launcherFocused: document.activeElement === launcher,
+                mainFocused: document.activeElement === main,
+              };
+            });
+            if (
+              closeFocus.inert
+                ? !closeFocus.mainFocused
+                : !closeFocus.launcherFocused
+            )
+              failures.push(
+                `desktop: closing quick answers did not restore safe focus: ${JSON.stringify(closeFocus)}.`,
+              );
+          }
         }
 
         // Add a contact/footer region after the shared assistant has mounted.
@@ -414,23 +446,18 @@ try {
             .catch(() => false);
           if (!clearAfterHydration)
             failures.push("desktop: the assistant overlaps text or controls after a contact/footer region renders late.");
-          await page.evaluate((hidden) => {
+          await page.evaluate(() => {
             document.querySelector("[data-quick-answers-late-footer]")?.remove();
-            for (const item of hidden) {
-              const element = document.querySelector(`[data-quick-answers-shell-test=\"${item.key}\"]`);
-              if (!element) continue;
-              if (item.style === null) element.removeAttribute("style");
-              else element.setAttribute("style", item.style);
-              element.removeAttribute("data-quick-answers-shell-test");
-            }
-            window.dispatchEvent(new Event("resize"));
-          }, hiddenShell);
+          });
           await page.waitForTimeout(100);
 
           await quickAnswers.locator(".quick-answers__launcher").click();
           await page.waitForFunction(() => {
             const root = document.querySelector(".quick-answers");
             return root && !root.inert && !root.querySelector(".quick-answers__panel")?.hidden;
+          });
+          await page.screenshot({
+            path: path.join(screenshotDir, "desktop-quick-answers.png"),
           });
           await page.evaluate(() => {
             const blocker = document.createElement("button");
@@ -458,12 +485,18 @@ try {
             failures.push(`desktop: closing an assistant that must become inert did not move focus to page content: ${JSON.stringify(blockedClose)}.`);
           await page.evaluate(() => {
             document.querySelector("[data-quick-answers-focus-blocker]")?.remove();
+          });
+          await page.evaluate((hidden) => {
+            for (const item of hidden) {
+              const element = document.querySelector(`[data-quick-answers-shell-test=\"${item.key}\"]`);
+              if (!element) continue;
+              if (item.style === null) element.removeAttribute("style");
+              else element.setAttribute("style", item.style);
+              element.removeAttribute("data-quick-answers-shell-test");
+            }
             window.dispatchEvent(new Event("resize"));
-          });
-          await page.waitForFunction(() => {
-            const root = document.querySelector(".quick-answers");
-            return root && !root.inert;
-          });
+          }, hiddenShell);
+          await page.waitForTimeout(100);
         }
       }
 
