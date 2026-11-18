@@ -62,9 +62,18 @@ const colorRoles = semanticColorCss(palette) + `
 header :is(a,button):focus-visible {
   /* Halo only: it paints the backdrop the ring sits on. Filling the element
      itself would repaint the header CTA's interior and put its white label on
-     the light surface (measured 1.091:1). */
-  box-shadow: 0 0 0 6px var(--ll-surface, var(--cream, #f8f6f0));
+     the light surface (measured 1.091:1). The ring audit samples the outer 4px
+     of a (offset + width + 5) band, i.e. 5-9px outside the box, so the halo has
+     to reach past 9px or the header image is still what gets measured. */
+  box-shadow: 0 0 0 10px var(--ll-surface, var(--cream, #f8f6f0));
   outline-offset: 2px;
+}
+/* The launcher already pairs its ring with the surface it sits on, but that rule
+   lives in @layer legacy-site and an unlayered *:focus-visible repaints it with
+   --ll-focus, measuring 1.147:1 on the dark brand surface. Restate it unlayered. */
+.quick-answers__launcher:focus-visible {
+  outline: 3px solid var(--on-brand-surface, #ffffff);
+  outline-offset: -5px;
 }
 `;
 const testPreview = hasTestOnlySite(site);
