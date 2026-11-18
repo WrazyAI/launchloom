@@ -85,16 +85,18 @@ The pinned child may then choose exactly one listed scenario ID.
 ## Run and report
 
 ```sh
-node runner/run.mjs /private/path/plan.json /private/path/approval.json <scenario-id> ~/.local/state/opencode/walkthroughs
+node runner/run.mjs /private/path/plan.json /private/path/approval.json \
+  /private/path/selection.json ~/.local/state/opencode/walkthroughs
 ```
 
-The runner reads the approval artifact and rejects a mismatched manifest,
-digest, scenario set, or scenario ID. It creates a fresh private `scoped-*`
-directory containing `evidence/observations.json` and numbered PNG screenshots.
-A run with blocked or untested steps exits nonzero. The parent validates
-`results.json`, writes the walkthrough, and links the evidence. Only the parent
-writes the final report. Close the fixture yourself and delete obsolete runs
-when they are no longer needed.
+The runner reads the approval and selection artifacts and rejects a mismatched
+manifest, digest, scenario set, scenario ID, agent, session, provider, model, or
+variant. It creates a fresh private `scoped-*` directory containing
+`evidence/observations.json` and numbered PNG screenshots. A run with blocked or
+untested steps exits nonzero. The parent validates `results.json`, writes the
+walkthrough, and links the evidence. Only the parent writes the final report.
+Close the fixture yourself and delete obsolete runs when they are no longer
+needed.
 
 ## Package tests
 

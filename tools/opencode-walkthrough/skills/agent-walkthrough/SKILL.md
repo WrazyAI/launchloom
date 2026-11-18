@@ -44,21 +44,25 @@ tests and gates still apply.
    environment label, expected results, and the approved scenario IDs. Never
    send the implementer's verdict, page content, or artifact paths. Require
    exactly one ID from that list. Reject any other value and do not invent steps.
+   Record the child’s selection with its agent, session ID, provider, exact
+   model ID, and variant in a `selection.json` artifact. The runner rejects a
+   selection whose scenario or identity does not match the approval artifact.
 5. **Run the scoped runner.** From the host, run
-   `node <skill-dir>/runner/run.mjs <manifest> <approval.json> <scenario> <private-run-root>`.
-   The runner reads the approval artifact and rejects a missing, tampered, or
-   mismatched manifest, digest, scenario set, or scenario ID. It creates an
-   isolated Chromium under `bwrap --unshare-all` with an empty environment. It
-   fulfills only exact approved GET paths through a stdio broker, caps requests
-   and body sizes, refuses redirects and encoded responses, closes WebSockets
-   and popups, and writes screenshots plus `observations.json` into a fresh
-   private run directory. The page has no outbound network, credentials, or host
-   home/project data. It cannot run arbitrary commands, selectors, or eval
-   fragments. Only `/usr`, runtime libraries, and the runner mounts are visible.
-   Popups are closed best-effort rather than prevented from brief execution;
-   response headers other than status, content type, and body are not forwarded.
-   A run with blocked or untested steps exits nonzero. If the runner reports
-   blocked or the environment is unavailable, report that case blocked.
+   `node <skill-dir>/runner/run.mjs <manifest> <approval.json> <selection.json> <private-run-root>`.
+   The runner reads the approval and selection artifacts and rejects a missing,
+   tampered, or mismatched manifest, digest, scenario set, scenario ID, agent,
+   session, provider, model, or variant. It creates an isolated Chromium under
+   `bwrap --unshare-all` with an empty environment. It fulfills only exact
+   approved GET paths through a stdio broker, caps requests and body sizes,
+   refuses redirects and encoded responses, closes WebSockets and popups, and
+   writes screenshots plus `observations.json` into a fresh private run
+   directory. The page has no outbound network, credentials, or host home/project
+   data. It cannot run arbitrary commands, selectors, or eval fragments. Only
+   `/usr`, runtime libraries, and the runner mounts are visible. Popups are
+   closed best-effort rather than prevented from brief execution; response
+   headers other than status, content type, and body are not forwarded. A run
+   with blocked or untested steps exits nonzero. If the runner reports blocked
+   or the environment is unavailable, report that case blocked.
 6. **Ask for independent verdicts.** Send the child only sanitized observations:
    step number, action type, expected result, status, HTTP status. It cannot see
    screenshots by default. If image understanding has been separately proven,

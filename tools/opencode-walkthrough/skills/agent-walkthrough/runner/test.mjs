@@ -64,11 +64,19 @@ test("real browser records panel states and only forwards approved GETs", {
     await writeFile(join(folder, "approval.json"), JSON.stringify({
       digest, manifest: plan, scenarios: Object.keys(plan.scenarios),
     }));
-    const invoke = async id => {
+    const selectionFor = id => {
+      const file = join(folder, `selection-${id}.json`);
+      return writeFile(file, JSON.stringify({
+        scenario: id, agent: "walkthrough-verifier", sessionID: "ses_test000",
+        providerID: "opencode", model: "deepseek-v4.1-flash-free", variant: "max",
+      })).then(() => file);
+    };
+    const invoke = async (id, selection) => {
+      selection ??= await selectionFor(id);
       const child = promisify(execFile)(process.execPath, [
         new URL("./run.mjs", import.meta.url).pathname,
-        join(folder, "plan.json"), join(folder, "approval.json"), id, folder,
-      ], { timeout: 100_000 });
+        join(folder, "plan.json"), join(folder, "approval.json"), selection, folder,
+      ], { timeout: 130_000 });
       try {
         const { stdout } = await child;
         return { code: 0, result: JSON.parse(stdout) };
@@ -145,13 +153,32 @@ test("approval artifact binds the exact manifest and scenario", async () => {
   assert.throws(() => verifyApproval(bytes, { ...approval, manifest: { ...fixture(), origin: "http://127.0.0.1:1" } }, "panel"), /manifest/);
 });
 
+test("selection artifact binds exact agent, model, session and scenario", async () => {
+  const { approve, verifySelection } = await scope();
+  const [bytes, digest] = encoded(fixture());
+  const plan = approve(bytes, digest, "panel");
+  const selection = {
+    agent: "walkthrough-verifier", providerID: "opencode",
+    model: "deepseek-v4.1-flash-free", variant: "max",
+    sessionID: "ses_test", scenario: "panel",
+  };
+  assert.equal(verifySelection(plan, selection).sessionID, "ses_test");
+  for (const [key, value] of [
+    ["agent", "general"], ["providerID", "other"], ["model", "deepseek-v4.1-flash"],
+    ["variant", "high"], ["sessionID", "not-a-session"], ["scenario", "other"],
+  ]) {
+    assert.throws(() => verifySelection(plan, { ...selection, [key]: value }), /selection/);
+  }
+});
+
 test("zero-scenario manifests are refused", async () => {
   const { approve } = await scope();
   const [bytes, digest] = encoded({ ...fixture(), scenarios: {} });
   assert.throws(() => approve(bytes, digest, "panel"), /scenario/);
 });
 
-test("only exact, hash-approved scenario IDs can run", async () => {  const { approve } = await scope();
+test("only exact, hash-approved scenario IDs can run", async () => {
+  const { approve } = await scope();
   const args = encoded(fixture());
   assert.equal(approve(...args, "panel").steps.length, 5);
   assert.throws(() => approve(args[0], "0".repeat(64), "panel"), /digest/);

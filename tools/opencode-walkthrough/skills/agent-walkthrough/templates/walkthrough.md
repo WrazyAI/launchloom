@@ -3,7 +3,9 @@
 ## Verdict and scope
 Counts of passed / failed / blocked / untested; exact environment and revision.
 Requested and observed model/variant, with session metadata evidence.
-Name the evidence collector and independent reviewer separately.
+If no independent reviewer session exists, write “Reviewer unavailable” and do
+not claim an independent review. Name the evidence collector and independent
+reviewer separately.
 State remaining mandatory project gates separately.
 
 ## Steps and evidence

@@ -64,17 +64,19 @@ for login, MFA, CAPTCHA, or uncertain side effects.
 
 ## Implemented scoped runner
 
-The first runner is evidence-review-driven. The host validates and
-hash-approves one loopback fixture manifest, then the pinned child chooses
-exactly one listed scenario ID. A headless Chromium runs under
+The first runner is evidence-review-driven. The host validates and writes a
+hash-bound approval artifact for one loopback fixture manifest, then the pinned
+child chooses exactly one listed scenario ID; the host records that selection
+and the runner rejects an agent, session, provider, model, variant, or scenario
+mismatch. A headless Chromium runs under
 `bwrap --unshare-all` with no host home or project mounts; a stdio broker
 fulfills only exact approved GET paths, without cookies, auth headers,
 redirects, compression, WebSockets, popups, or arbitrary selectors. The host
-writes screenshots and sanitized observations to a private run directory. The
-child has no tools and returns verdicts; it does not personally operate the
-browser. Server-side fixture effects are not sandboxed, so fixtures must be
-disposable and credential-free. CLI evidence remains a separate,
-parent-collected path.
+writes screenshots and sanitized observations to a private run directory. A
+run with blocked or untested steps exits nonzero. The child has no tools and
+returns verdicts; it does not personally operate the browser. Server-side
+fixture effects are not sandboxed, so fixtures must be disposable and
+credential-free. CLI evidence remains a separate, parent-collected path.
 
 This task does not authorize LaunchLoom application changes, generation,
 deployment, or a push to its main branch. The isolated task branch holds the

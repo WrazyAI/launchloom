@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, open, realpath, writeFile } from "node:fs/promises";
 import http from "node:http";
 import { dirname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { allowedRequest, MAX_MANIFEST, verifyApproval } from "./scope.mjs";
+import { allowedRequest, MAX_MANIFEST, verifyApproval, verifySelection } from "./scope.mjs";
 
 const MAX_BODY = 2 * 1024 * 1024;
 const MAX_LINE = 6 * 1024 * 1024;
@@ -75,7 +75,7 @@ async function sandbox(plan, evidence) {
   let buffer = "";
   let result;
   const answer = message => worker.stdin.write(JSON.stringify(message) + "\n");
-  const timer = setTimeout(() => worker.kill("SIGKILL"), 80_000);
+  const timer = setTimeout(() => worker.kill("SIGKILL"), 110_000);
   const closed = new Promise(resolve => {
     worker.on("error", () => resolve(1));
     worker.on("close", resolve);
@@ -137,9 +137,9 @@ async function sandbox(plan, evidence) {
 }
 
 try {
-  const [file, approvalFile, scenario, root, extra] = process.argv.slice(2);
-  if (!file || !approvalFile || !scenario || !root || extra) {
-    throw new Error("usage: node run.mjs <manifest.json> <approval.json> <scenario-id> <private-run-root>");
+  const [file, approvalFile, selectionFile, root, extra] = process.argv.slice(2);
+  if (!file || !approvalFile || !selectionFile || !root || extra) {
+    throw new Error("usage: node run.mjs <manifest.json> <approval.json> <selection.json> <private-run-root>");
   }
   const handle = await open(file, constants.O_RDONLY | constants.O_NONBLOCK | constants.O_NOFOLLOW);
   let input;
@@ -165,14 +165,29 @@ try {
   } finally {
     await approvalHandle.close();
   }
-  const plan = verifyApproval(input, approval, scenario);
+  const selectionHandle = await open(selectionFile,
+    constants.O_RDONLY | constants.O_NONBLOCK | constants.O_NOFOLLOW);
+  let selection;
+  try {
+    const metadata = await selectionHandle.stat();
+    if (!metadata.isFile() || metadata.size > 16 * 1024) throw new Error("invalid selection file");
+    const bytes = Buffer.alloc(16 * 1024 + 1);
+    const { bytesRead } = await selectionHandle.read(bytes, 0, bytes.length, 0);
+    if (bytesRead > 16 * 1024) throw new Error("selection file too large");
+    selection = JSON.parse(bytes.subarray(0, bytesRead).toString("utf8"));
+  } finally {
+    await selectionHandle.close();
+  }
+  const plan = verifyApproval(input, approval, selection?.scenario);
+  const checkedSelection = verifySelection(plan, selection);
   const directory = await mkdtemp(join(await realpath(root), "scoped-"));
   const evidence = join(directory, "evidence");
   await mkdir(evidence, { mode: 0o700 });
   const steps = await sandbox(plan, evidence);
-  const result = { directory, scenario, digest: plan.digest, steps };
-  await writeFile(join(evidence, "observations.json"), JSON.stringify({ scenario, digest: plan.digest, steps }, null, 2) + "\n",
-    { flag: "wx", mode: 0o600 });
+  const result = { directory, scenario: plan.scenario, digest: plan.digest, selection: checkedSelection, steps };
+  await writeFile(join(evidence, "observations.json"), JSON.stringify({
+    scenario: plan.scenario, digest: plan.digest, selection: checkedSelection, steps,
+  }, null, 2) + "\n", { flag: "wx", mode: 0o600 });
   console.log(JSON.stringify(result));
   if (steps.some(step => step.status === "blocked" || step.status === "untested")) {
     process.exitCode = 1;

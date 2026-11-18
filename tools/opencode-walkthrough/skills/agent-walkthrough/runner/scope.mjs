@@ -79,6 +79,21 @@ export function verifyApproval(bytes, approval, scenario) {
   return approve(bytes, approval.digest, scenario);
 }
 
+export function verifySelection(plan, selection) {
+  check(selection && Object.getPrototypeOf(selection) === Object.prototype &&
+    isDeepStrictEqual(Object.keys(selection).sort(),
+      ["agent", "model", "providerID", "scenario", "sessionID", "variant"]),
+  "invalid selection artifact");
+  check(selection.agent === "walkthrough-verifier" &&
+    selection.providerID === "opencode" &&
+    selection.model === "deepseek-v4.1-flash-free" &&
+    selection.variant === "max" &&
+    typeof selection.sessionID === "string" && /^ses_[A-Za-z0-9]+$/.test(selection.sessionID),
+  "unverified selection identity");
+  check(selection.scenario === plan.scenario, "selection scenario mismatch");
+  return selection;
+}
+
 export function allowedRequest(plan, method, url) {
   if (method !== "GET" || typeof url !== "string" || !url.startsWith(`${plan.origin}/`)) return null;
   const path = url.slice(plan.origin.length);
