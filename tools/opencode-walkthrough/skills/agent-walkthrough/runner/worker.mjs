@@ -58,8 +58,10 @@ async function walk(plan) {
           try {
             await locator.waitFor({ state: step.expected ? "visible" : "hidden", timeout: 3000 });
             record = { status: "passed", observed: step.expected };
-          } catch {
-            record = { status: "failed", observed: !step.expected };
+          } catch (error) {
+            record = /strict mode violation/.test(String(error))
+              ? { status: "blocked" }
+              : { status: "failed", observed: !step.expected };
           }
         } else if (step.type === "screenshot") {
           record.capture = (await page.screenshot({ timeout: 3000 })).toString("base64");
@@ -83,9 +85,19 @@ async function walk(plan) {
       }
       if (record.status === "blocked" || (step.type === "click" && record.status === "failed")) stop = true;
       // Do not interact with browser-generated error pages or other origins.
-      if (step.type !== "http" && !plan.paths.includes(page.url().slice(plan.origin.length))) {
-        record = { status: "blocked" };
-        stop = true;
+      if (step.type !== "http") {
+        let current;
+        try {
+          current = new URL(page.url());
+        } catch {
+          record = { status: "blocked" };
+          stop = true;
+        }
+        if (current && (current.origin !== plan.origin || current.search || current.hash ||
+            !plan.paths.includes(current.pathname))) {
+          record = { status: "blocked" };
+          stop = true;
+        }
       }
       steps.push(record);
     }

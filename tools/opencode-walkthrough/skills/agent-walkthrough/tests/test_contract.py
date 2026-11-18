@@ -18,6 +18,7 @@ class ContractTests(unittest.TestCase):
         self.assertIn("\nmodel: opencode/deepseek-v4.1-flash-free#max\n", frontmatter)
         rules = re.findall(r'action: ([^,\n]+), resource: "([^"]+)", effect: (\w+)', frontmatter)
         self.assertGreater(len(rules), 1)
+        self.assertIn(('"*"', "*", "deny"), rules)
         self.assertTrue(all(effect == "deny" for _, _, effect in rules))
         for action in ("execute", "browser", "shell", "subagent", "edit"):
             self.assertIn((action, "*", "deny"), rules)

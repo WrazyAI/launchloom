@@ -82,12 +82,12 @@ export function verifyApproval(bytes, approval, scenario) {
 export function verifySelection(plan, selection) {
   check(selection && Object.getPrototypeOf(selection) === Object.prototype &&
     isDeepStrictEqual(Object.keys(selection).sort(),
-      ["agent", "model", "providerID", "scenario", "sessionID", "variant"]),
+      ["agent", "digest", "model", "providerID", "scenario", "sessionID", "variant"]),
   "invalid selection artifact");
   check(selection.agent === "walkthrough-verifier" &&
     selection.providerID === "opencode" &&
     selection.model === "deepseek-v4.1-flash-free" &&
-    selection.variant === "max" &&
+    selection.variant === "max" && selection.digest === plan.digest &&
     typeof selection.sessionID === "string" && /^ses_[A-Za-z0-9]+$/.test(selection.sessionID),
   "unverified selection identity");
   check(selection.scenario === plan.scenario, "selection scenario mismatch");

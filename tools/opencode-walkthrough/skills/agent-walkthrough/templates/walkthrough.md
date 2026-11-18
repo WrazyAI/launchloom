@@ -25,6 +25,16 @@ The parent writes `results.json` in the same run directory using this shape:
 ```json
 {
   "model": "opencode/deepseek-v4.1-flash-free#max",
+  "digest": "<64-character approval digest>",
+  "selection": {
+    "agent": "walkthrough-verifier",
+    "providerID": "opencode",
+    "model": "deepseek-v4.1-flash-free",
+    "variant": "max",
+    "sessionID": "ses_<verified child session>",
+    "scenario": "flow-01",
+    "digest": "<same approval digest>"
+  },
   "project": "synthetic-example",
   "revision": "fixture-v1",
   "environment": "approved disposable loopback fixture",
@@ -42,6 +52,8 @@ The parent writes `results.json` in the same run directory using this shape:
 ```
 
 Allowed statuses: `passed`, `failed`, `blocked`, `untested`.
+Visual verdicts additionally require a PNG capture and a nonempty
+`capabilities.image_understanding_evidence` file under `evidence/`.
 Executed cases need actual observations and nonempty local evidence files.
 Blocked/untested cases require a reason. Evidence paths are relative to the run
 directory and must start with `evidence/`; no symlinks, parent traversal or

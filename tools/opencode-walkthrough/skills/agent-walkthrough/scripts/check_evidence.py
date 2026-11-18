@@ -4,16 +4,35 @@ from collections import Counter
 import json
 import os
 from pathlib import Path
+import re
 import stat
 import sys
 
 MODEL = "opencode/deepseek-v4.1-flash-free#max"
 MAX_REPORT_BYTES = 1024 * 1024
 IMAGE_SUFFIXES = {".png", ".webp", ".jpeg", ".jpg"}
+SELECTION_KEYS = ["agent", "digest", "model", "providerID", "scenario", "sessionID", "variant"]
 
 
 def nonempty(value):
     return isinstance(value, str) and bool(value.strip())
+
+
+def safe_evidence(root: Path, name):
+    if not nonempty(name):
+        raise ValueError("nonempty relative path required")
+    relative = Path(name)
+    if (relative.is_absolute() or ".." in relative.parts
+            or len(relative.parts) < 2 or relative.parts[0] != "evidence"):
+        raise ValueError("expected a relative path inside evidence/")
+    target = root
+    for part in relative.parts:
+        target /= part
+        if target.is_symlink():
+            raise ValueError("symlinked evidence is not allowed")
+    if not target.is_file() or target.stat().st_size == 0:
+        raise ValueError("nonempty evidence file required")
+    return target
 
 
 def validate_report(report: dict, run_dir: Path) -> list[str]:
@@ -25,6 +44,21 @@ def validate_report(report: dict, run_dir: Path) -> list[str]:
             errors.append(f"{key}: nonempty string required")
     if report.get("model") != MODEL:
         errors.append(f"model: must be {MODEL}; fallback is not permitted")
+    if not nonempty(report.get("digest")) or len(report["digest"]) != 64:
+        errors.append("digest: 64-character approval digest required")
+    selection = report.get("selection")
+    if not isinstance(selection, dict) or sorted(selection) != SELECTION_KEYS:
+        errors.append("selection: exact child selection artifact required")
+    else:
+        if (selection.get("agent") != "walkthrough-verifier" or
+                selection.get("providerID") != "opencode" or
+                selection.get("model") != "deepseek-v4.1-flash-free" or
+                selection.get("variant") != "max" or
+                selection.get("digest") != report.get("digest") or
+                not nonempty(selection.get("scenario")) or
+                not isinstance(selection.get("sessionID"), str) or
+                not re.fullmatch(r"ses_[A-Za-z0-9]+", selection["sessionID"])):
+            errors.append("selection: identity or digest mismatch")
     capabilities = report.get("capabilities")
     if not isinstance(capabilities, dict) or type(
             capabilities.get("image_understanding")) is not bool:
@@ -61,8 +95,6 @@ def validate_report(report: dict, run_dir: Path) -> list[str]:
         if status in ("blocked", "untested") and not nonempty(case.get("reason")):
             errors.append(f"{label}.reason: explain unavailable or skipped coverage")
         visual_verdict = status in ("passed", "failed") and assertion == "visual"
-        if visual_verdict and not capabilities.get("image_understanding"):
-            errors.append(f"{label}: visual verdict without image understanding")
         evidence = case.get("evidence")
         if not isinstance(evidence, list):
             errors.append(f"{label}.evidence: array required")
@@ -72,24 +104,22 @@ def validate_report(report: dict, run_dir: Path) -> list[str]:
         has_capture = False
         for name in evidence:
             try:
-                if not nonempty(name):
-                    raise ValueError("nonempty relative path required")
-                relative = Path(name)
-                if (relative.is_absolute() or ".." in relative.parts
-                        or len(relative.parts) < 2 or relative.parts[0] != "evidence"):
-                    raise ValueError("expected a relative path inside evidence/")
-                target = root
-                for part in relative.parts:
-                    target /= part
-                    if target.is_symlink():
-                        raise ValueError("symlinked evidence is not allowed")
-                if not target.is_file() or target.stat().st_size == 0:
-                    raise ValueError("nonempty evidence file required")
-                has_capture |= target.suffix.lower() in IMAGE_SUFFIXES
+                target = safe_evidence(root, name)
+                if target.suffix.lower() in IMAGE_SUFFIXES:
+                    with target.open("rb") as image:
+                        has_capture |= image.read(8) == b"\x89PNG\r\n\x1a\n"
             except (OSError, ValueError, RuntimeError) as error:
                 errors.append(f"{label}.evidence: invalid path ({error})")
-        if visual_verdict and not has_capture:
-            errors.append(f"{label}: visual verdict requires a screenshot file")
+        if visual_verdict:
+            if not capabilities.get("image_understanding"):
+                errors.append(f"{label}: visual verdict without image understanding")
+            capability = capabilities.get("image_understanding_evidence")
+            try:
+                safe_evidence(root, capability)
+            except (OSError, ValueError, RuntimeError) as error:
+                errors.append(f"{label}: image capability evidence invalid ({error})")
+            if not has_capture:
+                errors.append(f"{label}: visual verdict requires a PNG screenshot")
     return errors
 
 

@@ -26,8 +26,11 @@ const fixture = () => ({
 });
 
 test("real browser records panel states and only forwards approved GETs", {
-  skip: !process.env.WALKTHROUGH_CHROMIUM || !process.env.WALKTHROUGH_PLAYWRIGHT_CORE,
+  skip: process.env.WALKTHROUGH_SKIP_BROWSER === "1" ? "explicitly skipped" : false,
 }, async () => {
+  if (!process.env.WALKTHROUGH_CHROMIUM || !process.env.WALKTHROUGH_PLAYWRIGHT_CORE) {
+    assert.fail("set WALKTHROUGH_CHROMIUM and WALKTHROUGH_PLAYWRIGHT_CORE, or WALKTHROUGH_SKIP_BROWSER=1");
+  }
   const seen = [];
   const server = createServer((req, res) => {
     seen.push([req.method, req.url, req.headers.cookie]);
@@ -67,7 +70,7 @@ test("real browser records panel states and only forwards approved GETs", {
     const selectionFor = id => {
       const file = join(folder, `selection-${id}.json`);
       return writeFile(file, JSON.stringify({
-        scenario: id, agent: "walkthrough-verifier", sessionID: "ses_test000",
+        scenario: id, digest, agent: "walkthrough-verifier", sessionID: "ses_test000",
         providerID: "opencode", model: "deepseek-v4.1-flash-free", variant: "max",
       })).then(() => file);
     };
@@ -159,13 +162,14 @@ test("selection artifact binds exact agent, model, session and scenario", async 
   const plan = approve(bytes, digest, "panel");
   const selection = {
     agent: "walkthrough-verifier", providerID: "opencode",
-    model: "deepseek-v4.1-flash-free", variant: "max",
+    model: "deepseek-v4.1-flash-free", variant: "max", digest,
     sessionID: "ses_test", scenario: "panel",
   };
   assert.equal(verifySelection(plan, selection).sessionID, "ses_test");
   for (const [key, value] of [
     ["agent", "general"], ["providerID", "other"], ["model", "deepseek-v4.1-flash"],
     ["variant", "high"], ["sessionID", "not-a-session"], ["scenario", "other"],
+    ["digest", "0".repeat(64)],
   ]) {
     assert.throws(() => verifySelection(plan, { ...selection, [key]: value }), /selection/);
   }

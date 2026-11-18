@@ -89,9 +89,10 @@ node runner/run.mjs /private/path/plan.json /private/path/approval.json \
   /private/path/selection.json ~/.local/state/opencode/walkthroughs
 ```
 
-The runner reads the approval and selection artifacts and rejects a mismatched
-manifest, digest, scenario set, scenario ID, agent, session, provider, model, or
-variant. It creates a fresh private `scoped-*` directory containing
+The selection artifact records the scenario, approval digest, agent, session,
+provider, model, and variant. The runner reads both artifacts and rejects a
+mismatched manifest, digest, scenario set, scenario ID, agent, session,
+provider, model, or variant. It creates a fresh private `scoped-*` directory containing
 `evidence/observations.json` and numbered PNG screenshots. A run with blocked or
 untested steps exits nonzero. The parent validates `results.json`, writes the
 walkthrough, and links the evidence. Only the parent writes the final report.

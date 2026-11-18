@@ -45,8 +45,9 @@ tests and gates still apply.
    send the implementer's verdict, page content, or artifact paths. Require
    exactly one ID from that list. Reject any other value and do not invent steps.
    Record the child’s selection with its agent, session ID, provider, exact
-   model ID, and variant in a `selection.json` artifact. The runner rejects a
-   selection whose scenario or identity does not match the approval artifact.
+   model ID, variant, and approval digest in a `selection.json` artifact. The
+   runner rejects a selection whose scenario, digest, or identity does not match
+   the approval artifact.
 5. **Run the scoped runner.** From the host, run
    `node <skill-dir>/runner/run.mjs <manifest> <approval.json> <selection.json> <private-run-root>`.
    The runner reads the approval and selection artifacts and rejects a missing,

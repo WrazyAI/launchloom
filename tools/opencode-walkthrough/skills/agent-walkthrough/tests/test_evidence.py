@@ -24,8 +24,15 @@ class EvidenceTests(unittest.TestCase):
         self.run_dir = Path(self.temp.name)
         (self.run_dir / "evidence").mkdir()
         (self.run_dir / "evidence/output.txt").write_text("actual: ready\n")
+        digest = "a" * 64
         self.report = {
             "model": "opencode/deepseek-v4.1-flash-free#max",
+            "digest": digest,
+            "selection": {
+                "agent": "walkthrough-verifier", "providerID": "opencode",
+                "model": "deepseek-v4.1-flash-free", "variant": "max",
+                "sessionID": "ses_test", "scenario": "cli-ready", "digest": digest,
+            },
             "project": "synthetic-demo",
             "revision": "fixture-v1",
             "environment": "loopback disposable fixture",
@@ -57,7 +64,8 @@ class EvidenceTests(unittest.TestCase):
                 self.assertEqual(self.errors(report), [])
 
     def test_rejects_missing_empty_or_wrong_type_metadata(self):
-        for key in ("model", "project", "revision", "environment", "capabilities", "cases"):
+        for key in ("model", "project", "revision", "environment", "capabilities", "cases",
+                    "digest", "selection"):
             for value in (None, "", [], 123):
                 with self.subTest(key=key, value=value):
                     report = copy.deepcopy(self.report)
@@ -93,6 +101,21 @@ class EvidenceTests(unittest.TestCase):
             self.report["cases"][0]["status"] = status
             self.assertTrue(self.errors())
 
+    def test_selection_identity_and_digest_are_required(self):
+        for key, value in (
+            ("agent", "general"), ("providerID", "other"), ("model", "deepseek-v4.1-flash"),
+            ("variant", "high"), ("digest", "0" * 64), ("sessionID", "bad"),
+            ("scenario", ""),
+        ):
+            with self.subTest(key=key):
+                report = copy.deepcopy(self.report)
+                report["selection"][key] = value
+                self.assertTrue(self.errors(report))
+        for name in ("digest", "selection"):
+            report = copy.deepcopy(self.report)
+            del report[name]
+            self.assertTrue(self.errors(report))
+
     def test_duplicate_case_ids_are_rejected(self):
         self.report["cases"].append(copy.deepcopy(self.report["cases"][0]))
         self.assertTrue(self.errors())
@@ -104,6 +127,8 @@ class EvidenceTests(unittest.TestCase):
         self.assertTrue(self.errors())
         self.report["capabilities"]["image_understanding"] = True
         (self.run_dir / "evidence/capture.png").write_bytes(b"\x89PNG\r\n\x1a\nstub")
+        (self.run_dir / "evidence/image-capability.json").write_text('{"probe":"passed"}')
+        self.report["capabilities"]["image_understanding_evidence"] = "evidence/image-capability.json"
         self.report["cases"][0]["evidence"] = ["evidence/capture.png"]
         self.assertEqual(self.errors(), [])
 
