@@ -26,11 +26,11 @@ class EvidenceTests(unittest.TestCase):
         (self.run_dir / "evidence/output.txt").write_text("actual: ready\n")
         digest = "a" * 64
         self.report = {
-            "model": "opencode/deepseek-v4.1-flash-free#max",
+            "model": "deeprelay/deepseek-v4.1-flash#xhigh",
             "digest": digest,
             "selection": {
-                "agent": "walkthrough-verifier", "providerID": "opencode",
-                "model": "deepseek-v4.1-flash-free", "variant": "max",
+                "agent": "walkthrough-verifier", "providerID": "deeprelay",
+                "model": "deepseek-v4.1-flash", "variant": "xhigh",
                 "sessionID": "ses_test", "scenario": "cli-ready", "digest": digest,
             },
             "project": "synthetic-demo",
@@ -77,8 +77,8 @@ class EvidenceTests(unittest.TestCase):
         self.assertTrue(self.errors([]))
 
     def test_rejects_model_family_variant_and_provider_substitutions(self):
-        for model in ("deepseek", "opencode/deepseek-v4.1-flash-free#high",
-                      "deeprelay/deepseek-v4.1-flash#xhigh"):
+        for model in ("deepseek", "opencode/deepseek-v4.1-flash#high",
+                      "deeprelay/deepseek-v4.1-flash#max"):
             self.report["model"] = model
             self.assertTrue(self.errors())
 
@@ -103,7 +103,7 @@ class EvidenceTests(unittest.TestCase):
 
     def test_selection_identity_and_digest_are_required(self):
         for key, value in (
-            ("agent", "general"), ("providerID", "other"), ("model", "deepseek-v4.1-flash"),
+            ("agent", "general"), ("providerID", "other"), ("model", "deepseek-v4.1-flash-free"),
             ("variant", "high"), ("digest", "0" * 64), ("sessionID", "bad"),
             ("scenario", ""),
         ):

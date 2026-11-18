@@ -1,7 +1,7 @@
 ---
 description: Independently selects an approved walkthrough scenario and reviews its sanitized evidence.
 mode: subagent
-model: opencode/deepseek-v4.1-flash-free#max
+model: deeprelay/deepseek-v4.1-flash#xhigh
 steps: 6
 permissions:
   - { action: "*", resource: "*", effect: deny }

@@ -8,7 +8,7 @@ import re
 import stat
 import sys
 
-MODEL = "opencode/deepseek-v4.1-flash-free#max"
+MODEL = "deeprelay/deepseek-v4.1-flash#xhigh"
 MAX_REPORT_BYTES = 1024 * 1024
 IMAGE_SUFFIXES = {".png", ".webp", ".jpeg", ".jpg"}
 SELECTION_KEYS = ["agent", "digest", "model", "providerID", "scenario", "sessionID", "variant"]
@@ -51,9 +51,9 @@ def validate_report(report: dict, run_dir: Path) -> list[str]:
         errors.append("selection: exact child selection artifact required")
     else:
         if (selection.get("agent") != "walkthrough-verifier" or
-                selection.get("providerID") != "opencode" or
-                selection.get("model") != "deepseek-v4.1-flash-free" or
-                selection.get("variant") != "max" or
+                selection.get("providerID") != "deeprelay" or
+                selection.get("model") != "deepseek-v4.1-flash" or
+                selection.get("variant") != "xhigh" or
                 selection.get("digest") != report.get("digest") or
                 not nonempty(selection.get("scenario")) or
                 not isinstance(selection.get("sessionID"), str) or

@@ -4,7 +4,7 @@
 - Project and absolute source checkout:
 - Revision / dirty-diff identifier:
 - Environment, origin(s), and target CLI/API commands:
-- Requested model: `opencode/deepseek-v4.1-flash-free#max`
+- Requested model: `deeprelay/deepseek-v4.1-flash#xhigh`
 - Run directory:
 - User approval and exact allowed actions:
 - Prohibited actions / external effects:

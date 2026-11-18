@@ -24,13 +24,13 @@ The parent writes `results.json` in the same run directory using this shape:
 
 ```json
 {
-  "model": "opencode/deepseek-v4.1-flash-free#max",
+  "model": "deeprelay/deepseek-v4.1-flash#xhigh",
   "digest": "<64-character approval digest>",
   "selection": {
     "agent": "walkthrough-verifier",
-    "providerID": "opencode",
-    "model": "deepseek-v4.1-flash-free",
-    "variant": "max",
+    "providerID": "deeprelay",
+    "model": "deepseek-v4.1-flash",
+    "variant": "xhigh",
     "sessionID": "ses_<verified child session>",
     "scenario": "flow-01",
     "digest": "<same approval digest>"

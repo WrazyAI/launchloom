@@ -71,7 +71,7 @@ test("real browser records panel states and only forwards approved GETs", {
       const file = join(folder, `selection-${id}.json`);
       return writeFile(file, JSON.stringify({
         scenario: id, digest, agent: "walkthrough-verifier", sessionID: "ses_test000",
-        providerID: "opencode", model: "deepseek-v4.1-flash-free", variant: "max",
+        providerID: "deeprelay", model: "deepseek-v4.1-flash", variant: "xhigh",
       })).then(() => file);
     };
     const invoke = async (id, selection) => {
@@ -161,13 +161,13 @@ test("selection artifact binds exact agent, model, session and scenario", async 
   const [bytes, digest] = encoded(fixture());
   const plan = approve(bytes, digest, "panel");
   const selection = {
-    agent: "walkthrough-verifier", providerID: "opencode",
-    model: "deepseek-v4.1-flash-free", variant: "max", digest,
+    agent: "walkthrough-verifier", providerID: "deeprelay",
+    model: "deepseek-v4.1-flash", variant: "xhigh", digest,
     sessionID: "ses_test", scenario: "panel",
   };
   assert.equal(verifySelection(plan, selection).sessionID, "ses_test");
   for (const [key, value] of [
-    ["agent", "general"], ["providerID", "other"], ["model", "deepseek-v4.1-flash"],
+    ["agent", "general"], ["providerID", "other"], ["model", "deepseek-v4.1-flash-free"],
     ["variant", "high"], ["sessionID", "not-a-session"], ["scenario", "other"],
     ["digest", "0".repeat(64)],
   ]) {
