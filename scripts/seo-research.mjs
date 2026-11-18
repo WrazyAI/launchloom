@@ -28,7 +28,7 @@ import { parseServiceAreas } from "./service-area-input.mjs";
 
 const DEFAULT_MAX_TASKS = 16;
 const HARD_MAX_TASKS = 32;
-const DEFAULT_MAX_USD = 0.25;
+const DEFAULT_MAX_USD = 0.35;
 const HARD_MAX_USD = 2;
 const ORGANIC_SERP_ESTIMATED_TASK_USD = 0.0025;
 const ORGANIC_SERP_BUDGET_BUFFER_USD = 0.002;

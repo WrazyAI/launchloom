@@ -19,9 +19,9 @@ export function focusQuickAnswersFallback(focusWasInside) {
 }
 
 /**
- * Keep the collapsed desktop assistant at its bottom-left anchor. Only fixed
- * or sticky chrome, such as a review banner, cookie notice, or call bar, may
- * move it; page copy and full-width content cards must not.
+ * Keep the collapsed desktop assistant at its bottom-left anchor. If visible
+ * copy, controls, or fixed chrome would occupy that corner, suppress it instead
+ * of moving it to an arbitrary mid-page slot.
  * @param {HTMLElement} root
  * @returns {{refresh: () => void}}
  */
@@ -55,15 +55,44 @@ export function installQuickAnswersLayout(root) {
 
   const obstacles = () => {
     const rectangles = [];
-    for (const element of document.body.querySelectorAll("*")) {
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+    );
+    const range = document.createRange();
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (
+        !node.textContent?.trim() ||
+        node.parentElement?.closest(
+          ".quick-answers, [hidden], [inert], [aria-hidden='true'], script, style, template",
+        ) ||
+        effectivelyHidden(node.parentElement)
+      )
+        continue;
+      range.selectNodeContents(node);
+      for (const rect of range.getClientRects())
+        if (rect.width > 0 && rect.height > 0) rectangles.push(rect);
+    }
+
+    for (const element of document.querySelectorAll(obstacleSelector)) {
       if (root.contains(element) || effectivelyHidden(element)) continue;
-      const explicit = element.hasAttribute("data-quick-answers-obstacle");
-      const style = getComputedStyle(element);
-      if (!explicit && !["fixed", "sticky"].includes(style.position)) continue;
-      const interactive =
-        element.matches(obstacleSelector) ||
-        Boolean(element.querySelector(obstacleSelector));
-      if (!explicit && !interactive && !element.innerText?.trim()) continue;
+      const rect = element.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) rectangles.push(rect);
+    }
+
+    // A fixed or sticky chrome panel can cover the corner with its surface even
+    // when its text and controls sit elsewhere. Empty page containers stay
+    // excluded so decorative fixed backgrounds do not hide the assistant.
+    for (const element of document.body.children) {
+      if (root.contains(element) || effectivelyHidden(element)) continue;
+      if (!["fixed", "sticky"].includes(getComputedStyle(element).position))
+        continue;
+      if (
+        !element.innerText?.trim() &&
+        !element.querySelector(obstacleSelector)
+      )
+        continue;
       const rect = element.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) rectangles.push(rect);
     }
@@ -89,61 +118,32 @@ export function installQuickAnswersLayout(root) {
     const width = launcherRect.width;
     const height = launcherRect.height;
     const margin = window.innerWidth <= 760 ? 14 : 24;
-    const header =
-      document.querySelector(".site-header") ||
-      [...document.querySelectorAll("header")].find(
-        (element) => !root.contains(element),
-      );
-    const headerBottom = header?.getBoundingClientRect().bottom || 0;
-    const topLimit = Math.min(
-      window.innerHeight - height - margin,
-      Math.max(margin, headerBottom + 12),
+    const top = window.innerHeight - margin - height;
+    const safe = {
+      left: margin - 8,
+      right: margin + width + 8,
+      top: top - 8,
+      bottom: top + height + 8,
+    };
+    const collides = obstacles().some(
+      (rect) =>
+        rect.left < safe.right &&
+        rect.right > safe.left &&
+        rect.top < safe.bottom &&
+        rect.bottom > safe.top,
     );
-    const maxBottom = window.innerHeight - height - topLimit;
-    const slots = [];
-    for (let bottom = margin; bottom <= maxBottom; bottom += height + 12) {
-      const top = window.innerHeight - bottom - height;
-      for (const left of [
-        margin,
-        Math.max(margin, window.innerWidth - width - margin),
-      ])
-        slots.push({
-          left,
-          bottom,
-          top,
-          score:
-            Math.abs(left - margin) +
-            Math.abs(top - (window.innerHeight - margin - height)),
-        });
+    if (collides) {
+      clearPosition();
+      root.classList.add("is-colliding");
+      root.inert = true;
+      return;
     }
-    slots.sort((a, b) => a.score - b.score);
-
-    const blocked = obstacles();
-    let placed = false;
-    for (const slot of slots) {
-      const safe = {
-        left: slot.left - 8,
-        right: slot.left + width + 8,
-        top: slot.top - 8,
-        bottom: slot.top + height + 8,
-      };
-      const collides = blocked.some(
-        (rect) =>
-          rect.left < safe.right &&
-          rect.right > safe.left &&
-          rect.top < safe.bottom &&
-          rect.bottom > safe.top,
-      );
-      if (collides) continue;
-      root.style.setProperty("left", `${slot.left}px`, "important");
-      root.style.setProperty("right", "auto", "important");
-      root.style.setProperty("bottom", `${slot.bottom}px`, "important");
-      root.style.setProperty("top", "auto", "important");
-      placed = true;
-      break;
-    }
-    root.classList.toggle("is-colliding", !placed);
-    root.inert = !placed;
+    root.style.setProperty("left", `${margin}px`, "important");
+    root.style.setProperty("right", "auto", "important");
+    root.style.setProperty("bottom", `${margin}px`, "important");
+    root.style.setProperty("top", "auto", "important");
+    root.classList.remove("is-colliding");
+    root.inert = false;
   };
 
   const schedule = () => {

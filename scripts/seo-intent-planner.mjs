@@ -16,7 +16,11 @@ import { opencodeGoCashCostUsd } from "./opencode-go.mjs";
 
 const DEFAULT_MODEL = "deepseek/deepseek-v4.1-flash";
 const GO_DEFAULT_MODEL = "opencode-go/deepseek-v4.1-flash";
-const MAX_OUTPUT_TOKENS = 768;
+// Go and OpenRouter count reasoning tokens against this ceiling. The previous
+// 768-token limit truncated the service plan on both providers and forced
+// unmeasured exact-service fallback queries. Keep enough room for the reasoned
+// JSON plan without changing the planner prompt.
+const MAX_OUTPUT_TOKENS = 4096;
 const MAX_SERVICES = 5;
 const MAX_PHRASES_PER_SERVICE = 5;
 const STOP_WORDS = new Set([
@@ -232,7 +236,7 @@ export function createOpenCodeGoIntentQueryPlanner({
       logicalModel: model,
       fetchImpl,
       env: { ...process.env, OPENCODE_GO_API_KEY: apiKey },
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(60_000),
       request: buildGoCreativeRequest({
         systemPrompt: INTENT_PLANNER_SYSTEM_PROMPT,
         userContent: [{ type: "text", text: JSON.stringify(context) }],
@@ -285,7 +289,7 @@ export function createOpenRouterIntentQueryPlanner({
       responseCache: true,
       responseCacheTtlSeconds: 86_400,
       fetchImpl,
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(60_000),
       body: {
         model,
         max_tokens: MAX_OUTPUT_TOKENS,
