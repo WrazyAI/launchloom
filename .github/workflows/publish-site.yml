@@ -80,12 +80,14 @@ jobs:
           git checkout --detach "$APPROVED_SHA"
           test "$(git rev-parse HEAD)" = "$APPROVED_SHA" || { echo "Approved commit checkout mismatch"; exit 1; }
           node "$GITHUB_WORKSPACE/scripts/assert-production-site.mjs" --site "$RUNNER_TEMP/client" --approved-sha "$APPROVED_SHA"
-          node "$GITHUB_WORKSPACE/scripts/materialize-stock-images.mjs" --site "$RUNNER_TEMP/client"
+          cp -a "$RUNNER_TEMP/client" "$RUNNER_TEMP/client-build"
+          cd "$RUNNER_TEMP/client-build"
+          node "$GITHUB_WORKSPACE/scripts/materialize-stock-images.mjs" --site "$RUNNER_TEMP/client-build"
           PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
           PRODUCTION="https://$PROJECT.pages.dev"
           npm ci
           PUBLIC_SITE_URL="$PRODUCTION" PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
-          node "$GITHUB_WORKSPACE/scripts/verify-contrast.mjs" --site "$RUNNER_TEMP/client" --report "$RUNNER_TEMP/production-contrast.json"
+          node "$GITHUB_WORKSPACE/scripts/verify-contrast.mjs" --site "$RUNNER_TEMP/client-build" --report "$RUNNER_TEMP/production-contrast.json"
           node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION"
           node "$GITHUB_WORKSPACE/scripts/verify-site-routes.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION" --site "$RUNNER_TEMP/client" --commit "$APPROVED_SHA" --report "$RUNNER_TEMP/production-route-handoff.json" --screenshots "$RUNNER_TEMP/production-route-screenshots" --write-manifest true
           if [ "$DEVELOPER_OVERRIDE" = "true" ]; then
