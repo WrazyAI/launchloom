@@ -486,6 +486,19 @@ try {
           failures.push(
             "desktop: could not expose the assistant for the late-footer collision check.",
           );
+          await page.evaluate((hidden) => {
+            for (const item of hidden) {
+              const element = document.querySelector(
+                `[data-quick-answers-shell-test=\"${item.key}\"]`,
+              );
+              if (!element) continue;
+              if (item.style === null) element.removeAttribute("style");
+              else element.setAttribute("style", item.style);
+              element.removeAttribute("data-quick-answers-shell-test");
+            }
+            window.dispatchEvent(new Event("resize"));
+          }, hiddenShell);
+          await page.waitForTimeout(100);
         } else {
           await page.evaluate(() => {
             const lateFooter = document.createElement("footer");
@@ -584,10 +597,23 @@ try {
             failures.push(
               "desktop: the assistant overlaps text or controls after a contact/footer region renders late.",
             );
-          await page.evaluate((hidden) => {
+          await page.evaluate(() => {
             document
               .querySelector("[data-quick-answers-late-footer]")
               ?.remove();
+          });
+          await page.waitForTimeout(100);
+
+          await quickAnswers.locator(".quick-answers__launcher").click();
+          await page.waitForFunction(() => {
+            const root = document.querySelector(".quick-answers");
+            return (
+              root &&
+              !root.inert &&
+              !root.querySelector(".quick-answers__panel")?.hidden
+            );
+          });
+          await page.evaluate((hidden) => {
             for (const item of hidden) {
               const element = document.querySelector(
                 `[data-quick-answers-shell-test=\"${item.key}\"]`,
@@ -600,68 +626,53 @@ try {
             window.dispatchEvent(new Event("resize"));
           }, hiddenShell);
           await page.waitForTimeout(100);
-
-          const refreshedInteraction = quickAnswersInteraction(
-            await readLauncherState(),
-          );
-          if (refreshedInteraction === "interact") {
-            await quickAnswers.locator(".quick-answers__launcher").click();
-            await page.waitForFunction(() => {
-              const root = document.querySelector(".quick-answers");
-              return (
-                root &&
-                !root.inert &&
-                !root.querySelector(".quick-answers__panel")?.hidden
-              );
-            });
-            await page.evaluate(() => {
-              const blocker = document.createElement("button");
-              blocker.dataset.quickAnswersFocusBlocker = "true";
-              blocker.textContent = "Focus collision blocker";
-              blocker.style.cssText =
-                "position:fixed;inset:0;z-index:1000;margin:0;padding:0;border:0;background:transparent;color:transparent;pointer-events:none";
-              document.body.append(blocker);
-            });
-            await quickAnswers.locator(".quick-answers__close").click();
-            const blockedClose = await page
-              .waitForFunction(
-                () => document.querySelector(".quick-answers")?.inert,
-                null,
-                { timeout: 1500 },
-              )
-              .then(() =>
-                page.evaluate(() => {
-                  const root = document.querySelector(".quick-answers");
-                  const main = document.querySelector("main");
-                  return {
-                    inert: root?.inert,
-                    focusInsideAssistant: Boolean(
-                      root?.contains(document.activeElement),
-                    ),
-                    mainFocused: document.activeElement === main,
-                  };
-                }),
-              )
-              .catch(() => null);
-            if (
-              !blockedClose?.inert ||
-              blockedClose.focusInsideAssistant ||
-              !blockedClose.mainFocused
+          await page.screenshot({
+            path: path.join(screenshotDir, "desktop-quick-answers.png"),
+          });
+          await page.evaluate(() => {
+            const blocker = document.createElement("button");
+            blocker.dataset.quickAnswersFocusBlocker = "true";
+            blocker.textContent = "Focus collision blocker";
+            blocker.style.cssText =
+              "position:fixed;inset:0;z-index:1000;margin:0;padding:0;border:0;background:transparent;color:transparent;pointer-events:none";
+            document.body.append(blocker);
+          });
+          await quickAnswers.locator(".quick-answers__close").click();
+          const blockedClose = await page
+            .waitForFunction(
+              () => document.querySelector(".quick-answers")?.inert,
+              null,
+              { timeout: 1500 },
             )
-              failures.push(
-                `desktop: closing an assistant that must become inert did not move focus to page content: ${JSON.stringify(blockedClose)}.`,
-              );
-            await page.evaluate(() => {
-              document
-                .querySelector("[data-quick-answers-focus-blocker]")
-                ?.remove();
-              window.dispatchEvent(new Event("resize"));
-            });
-            await page.waitForFunction(() => {
-              const root = document.querySelector(".quick-answers");
-              return root && !root.inert;
-            });
-          }
+            .then(() =>
+              page.evaluate(() => {
+                const root = document.querySelector(".quick-answers");
+                const main = document.querySelector("main");
+                return {
+                  inert: root?.inert,
+                  focusInsideAssistant: Boolean(
+                    root?.contains(document.activeElement),
+                  ),
+                  mainFocused: document.activeElement === main,
+                };
+              }),
+            )
+            .catch(() => null);
+          if (
+            !blockedClose?.inert ||
+            blockedClose.focusInsideAssistant ||
+            !blockedClose.mainFocused
+          )
+            failures.push(
+              `desktop: closing an assistant that must become inert did not move focus to page content: ${JSON.stringify(blockedClose)}.`,
+            );
+          await page.evaluate(() => {
+            document
+              .querySelector("[data-quick-answers-focus-blocker]")
+              ?.remove();
+            window.dispatchEvent(new Event("resize"));
+          });
+          await page.waitForTimeout(100);
         }
       }
 

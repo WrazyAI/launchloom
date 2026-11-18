@@ -23,9 +23,18 @@ describe("quick answers verification mode", () => {
   });
 
   it.each([
-    ["hidden without collision", { launcherVisible: false, inert: false, colliding: false }],
-    ["hidden with collision but still interactive", { launcherVisible: false, inert: false, colliding: true }],
-    ["visible but inert", { launcherVisible: true, inert: true, colliding: true }],
+    [
+      "hidden without collision",
+      { launcherVisible: false, inert: false, colliding: false },
+    ],
+    [
+      "hidden with collision but still interactive",
+      { launcherVisible: false, inert: false, colliding: true },
+    ],
+    [
+      "visible but inert",
+      { launcherVisible: true, inert: true, colliding: true },
+    ],
   ])("rejects %s", (_label, state) => {
     expect(quickAnswersInteraction(state)).toBe("invalid");
   });
