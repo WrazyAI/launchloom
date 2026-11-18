@@ -72,6 +72,7 @@ let heroPng: Buffer;
 let operationsReadCapability = false;
 let activityEnabled = false;
 let activityFixture: unknown = null;
+let seoDetail: string | null = null;
 
 function sendJson(response: http.ServerResponse, body: unknown, status = 200) {
   response.writeHead(status, {
@@ -328,9 +329,9 @@ async function serve(
     sendJson(response, {
       principal: adminPrincipal,
       capabilities: {
-          operationsRead: operationsReadCapability,
-          generationActivityRead: activityEnabled,
-        },
+        operationsRead: operationsReadCapability,
+        generationActivityRead: activityEnabled,
+      },
     });
     return;
   }
@@ -379,10 +380,7 @@ async function serve(
   const activityMatch = /^\/legacy\/attempts\/([^/]+)\/activity$/u.exec(suffix);
   if (activityMatch) {
     const id = decodeURIComponent(activityMatch[1]);
-    sendJson(
-      response,
-      activityFixture ?? activityPageFor(id),
-    );
+    sendJson(response, activityFixture ?? activityPageFor(id));
     return;
   }
 
@@ -403,6 +401,20 @@ async function serve(
     const detail = attemptDetail(attempt);
     const detailOverride = eventDetails.get(id);
     const events = eventPage(attempt, params);
+    if (seoDetail && id === "attempt-0000" && !params.has("cursor")) {
+      const event = {
+        ...detail.events[0],
+        eventKey: "seo-fixture",
+        stage: "seo_research",
+        status: "recorded-incomplete",
+        detail: seoDetail,
+        costUsd: 0.10512,
+        costKind: "actual" as const,
+      };
+      detail.events = [event, ...detail.events];
+      events.items = [event, ...events.items];
+      events.total += 1;
+    }
     if (detailOverride) {
       detail.events = detail.events.map((event) =>
         event.stage === "creative"
@@ -485,10 +497,7 @@ type OpenOptions = {
   path?: string;
 };
 
-function activityEvent(
-  index: number,
-  overrides: Record<string, unknown> = {},
-) {
+function activityEvent(index: number, overrides: Record<string, unknown> = {}) {
   return {
     schemaVersion: 1,
     eventId: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
@@ -1888,6 +1897,9 @@ describe("real admin workspace browser behavior", () => {
       await page.locator(".admin-gallery-card").first().click();
       const dialog = page.getByRole("dialog");
       await visible(dialog);
+      await dialog
+        .getByRole("button", { name: "Site preview", exact: true })
+        .click();
       await visible(
         dialog.getByText("Generation screenshot.", { exact: false }),
       );
@@ -2041,6 +2053,9 @@ describe("real admin workspace browser behavior", () => {
       await page.locator(".admin-gallery-card").first().click();
       const dialog = page.getByRole("dialog");
       await visible(dialog);
+      await dialog
+        .getByRole("button", { name: "Site preview", exact: true })
+        .click();
       const sheetImage = dialog.locator(".admin-browser__media img");
       await visible(sheetImage);
       await expect
@@ -2100,6 +2115,9 @@ describe("real admin workspace browser behavior", () => {
             .getByRole("link", { name: "Visit site" })
             .getAttribute("href"),
         ).toBe("/admin/preview/abc123.launchloom-pipeline-preview.pages.dev/");
+        await dialog
+          .getByRole("button", { name: "Site preview", exact: true })
+          .click();
         expect(
           await dialog.locator(".admin-browser__media img").getAttribute("src"),
         ).toContain("id=github%3A90000%3A2");
@@ -2142,6 +2160,9 @@ describe("real admin workspace browser behavior", () => {
       expect(
         await dialog.getByRole("link", { name: "Visit site" }).count(),
       ).toBe(0);
+      await dialog
+        .getByRole("button", { name: "Site preview", exact: true })
+        .click();
       await visible(dialog.getByText("Preview not captured"));
       expect(
         requests.some(
@@ -2183,6 +2204,9 @@ describe("real admin workspace browser behavior", () => {
       expect(
         await dialog.getByRole("link", { name: "Visit site" }).count(),
       ).toBe(0);
+      await dialog
+        .getByRole("button", { name: "Site preview", exact: true })
+        .click();
       await visible(dialog.getByText("Preview not captured"));
       expect(
         requests.some(
@@ -2217,6 +2241,9 @@ describe("real admin workspace browser behavior", () => {
       expect(
         await dialog.getByRole("link", { name: "Visit site" }).count(),
       ).toBe(0);
+      await dialog
+        .getByRole("button", { name: "Site preview", exact: true })
+        .click();
       await visible(dialog.getByText("Preview not captured"));
       expect(
         requests.some(
@@ -2268,6 +2295,9 @@ describe("real admin workspace browser behavior", () => {
           name: "Attempt attempt-related-preview",
         });
         await visible(dialog);
+        await dialog
+          .getByRole("button", { name: "Site preview", exact: true })
+          .click();
         await visible(
           dialog.getByRole("heading", {
             name: "Preview from another attempt",
@@ -2417,6 +2447,9 @@ describe("real admin workspace browser behavior", () => {
       });
       await visible(dialog);
       await dialog
+        .getByRole("button", { name: "Site preview", exact: true })
+        .click();
+      await dialog
         .getByRole("button", { name: "Open related attempt" })
         .click();
       await visible(
@@ -2461,6 +2494,9 @@ describe("real admin workspace browser behavior", () => {
         await page.locator(".admin-row-action").first().click();
         const dialog = page.getByRole("dialog");
         await visible(dialog);
+        await dialog
+          .getByRole("button", { name: "Site preview", exact: true })
+          .click();
         const largePlaceholder = dialog.locator(
           ".admin-browser__media .admin-preview__placeholder--large",
         );
@@ -2994,152 +3030,442 @@ it("keeps studio navigation and summary actions usable on desktop and mobile", a
       await page.close();
     }
   }
-
 }, 60_000);
 
-  it("omits the activity section when the capability is disabled", async () => {
-    activityEnabled = false;
-    const { page, errors } = await openPage({
-      path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+it("omits the activity section when the capability is disabled", async () => {
+  activityEnabled = false;
+  const { page, errors } = await openPage({
+    path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+  });
+  try {
+    await waitForGenerations(page);
+    const inspector = page.getByRole("dialog", {
+      name: "Attempt attempt-diagnostic",
     });
-    try {
-      await waitForGenerations(page);
-      const inspector = page.getByRole("dialog", {
-        name: "Attempt attempt-diagnostic",
-      });
-      await visible(inspector);
-      // Disabling the feature restores the existing inspector exactly.
-      expect(await inspector.locator(".admin-activity").count()).toBe(0);
-      await visible(
-        inspector.getByRole("heading", { name: "Attempt attempt-diagnostic" }),
+    await visible(inspector);
+    // Disabling the feature restores the existing inspector exactly.
+    expect(await inspector.locator(".admin-activity").count()).toBe(0);
+    await visible(
+      inspector.getByRole("heading", { name: "Attempt attempt-diagnostic" }),
+    );
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});
+
+it("renders model calls, actions, usage and inspectable evidence in a dedicated thread", async () => {
+  activityEnabled = true;
+  const { page, errors } = await openPage({
+    path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+  });
+  try {
+    await waitForGenerations(page);
+    const inspector = page.getByRole("dialog", {
+      name: "Attempt attempt-diagnostic",
+    });
+    await visible(inspector);
+    expect(await inspector.locator(".admin-activity").count()).toBe(0);
+    expect(requests.some((request) => request.path.endsWith("/activity"))).toBe(
+      false,
+    );
+    await inspector
+      .getByRole("button", { name: "Agent runs", exact: true })
+      .click();
+    expect(await inspector.locator("[data-attempt-metrics]").count()).toBe(0);
+    await visible(
+      inspector.getByText(/Diagnostic delivery is for review only/u),
+    );
+    const activity = inspector.locator(".admin-activity");
+    await visible(activity);
+    await expect
+      .poll(() => activity.locator(".admin-activity__entry").count())
+      .toBeGreaterThanOrEqual(4);
+    expect(await activity.locator('[data-kind="model"]').count()).toBe(1);
+    expect(await activity.locator('[data-kind="action"]').count()).toBe(1);
+    await expect
+      .poll(() => activity.locator(".admin-activity__summary").textContent())
+      .toContain("1.2k in");
+    await expect
+      .poll(() => activity.locator(".admin-activity__summary").textContent())
+      .toContain("$0.1200 actual");
+    await expect
+      .poll(() =>
+        activity.locator(".admin-activity__coverage summary").textContent(),
+      )
+      .toContain("Coverage: 1 instrumented");
+    await visible(
+      activity.getByText(/Token totals cover completed calls only/u),
+    );
+
+    await activity.getByRole("button", { name: /Model request/u }).click();
+    const evidence = activity.locator(
+      '[data-kind="model"] .admin-activity__evidence',
+    );
+    await visible(evidence);
+    await expect
+      .poll(() => evidence.textContent())
+      .toContain(
+        "I am building the opening section around the approved service scope.",
       );
-      autoErrors(errors);
-    } finally {
-      await page.close();
-    }
+    await expect.poll(() => evidence.textContent()).toContain("Reported usage");
+    expect(
+      await evidence
+        .locator(".admin-activity__evidence-block")
+        .first()
+        .textContent(),
+    ).toContain(
+      "I am building the opening section around the approved service scope.",
+    );
+    const thread = activity.locator('[data-kind="model"]');
+    expect(
+      await thread.locator(".admin-activity__tokens").textContent(),
+    ).toContain("340 out · reported");
+    await activity.getByRole("button", { name: /Model request/u }).click();
+    expect(await evidence.count()).toBe(0);
+    await visible(
+      thread.getByText(
+        "I am building the opening section around the approved service scope.",
+        { exact: true },
+      ),
+    );
+
+    await activity
+      .getByRole("button", { name: "Actions", exact: true })
+      .click();
+    await expect
+      .poll(() => activity.locator('[data-kind="model"]').count())
+      .toBe(0);
+    expect(await activity.locator('[data-kind="action"]').count()).toBe(1);
+    await activity.getByRole("button", { name: "Issues", exact: true }).click();
+    await expect
+      .poll(() => activity.locator('[data-kind="error"]').count())
+      .toBe(1);
+    await activity.getByRole("button", { name: "Model", exact: true }).click();
+    await expect
+      .poll(() => activity.locator('[data-kind="action"]').count())
+      .toBe(0);
+    expect(await activity.locator('[data-kind="model"]').count()).toBe(1);
+    await inspector
+      .getByRole("button", { name: "Overview", exact: true })
+      .click();
+    await visible(inspector.locator("[data-attempt-metrics]"));
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});
+
+it("shows recorded model output when its start is on an older activity page", async () => {
+  activityEnabled = true;
+  const initial = activityPageFor("attempt-diagnostic");
+  activityFixture = {
+    ...initial,
+    activity: {
+      ...initial.activity,
+      items: initial.activity.items.slice(1, 4),
+    },
+  };
+  const { page, errors } = await openPage({
+    path: "/admin/onboarding-invites?attempt=attempt-diagnostic",
   });
-
-  it("renders model calls, actions, usage and inspectable evidence", async () => {
-    activityEnabled = true;
-    const { page, errors } = await openPage({
-      path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+  try {
+    const drawer = page.locator("#attempt-inspector");
+    await drawer
+      .getByRole("button", { name: "Agent runs", exact: true })
+      .click();
+    const row = drawer.getByRole("button", {
+      name: /Model activity \(earlier request not loaded\)/u,
     });
-    try {
-      await waitForGenerations(page);
-      const inspector = page.getByRole("dialog", {
-        name: "Attempt attempt-diagnostic",
-      });
-      await visible(inspector);
-      const activity = inspector.locator(".admin-activity");
-      await visible(activity);
-      await expect
-        .poll(() => activity.locator(".admin-activity__entry").count())
-        .toBeGreaterThanOrEqual(4);
-      expect(await activity.locator('[data-kind="model"]').count()).toBe(1);
-      expect(await activity.locator('[data-kind="action"]').count()).toBe(1);
-      await expect
-        .poll(() => activity.locator(".admin-activity__summary").textContent())
-        .toContain("1.2k in");
-      await expect
-        .poll(() => activity.locator(".admin-activity__summary").textContent())
-        .toContain("$0.1200 actual");
-      await expect
-        .poll(() => activity.locator(".admin-activity__coverage summary").textContent())
-        .toContain("Coverage: 1 instrumented");
-      await visible(
-        activity.getByText(/Token totals cover completed calls only/u),
-      );
+    await visible(row);
+    await row.click();
+    await visible(
+      drawer.getByText(
+        "I am building the opening section around the approved service scope.",
+        { exact: true },
+      ),
+    );
+    await visible(drawer.getByText("Reported usage", { exact: true }));
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});
 
-      await activity.getByRole("button", { name: /Model request/u }).click();
-      const evidence = activity.locator(".admin-activity__evidence");
-      await visible(evidence);
-      await expect
-        .poll(() => evidence.textContent())
-        .toContain("I am building the opening section around the approved service scope.");
-      await expect
-        .poll(() => evidence.textContent())
-        .toContain("Reported usage");
-
-      await activity.getByRole("button", { name: "Actions", exact: true }).click();
-      await expect
-        .poll(() => activity.locator('[data-kind="model"]').count())
-        .toBe(0);
-      expect(await activity.locator('[data-kind="action"]').count()).toBe(1);
-      await activity.getByRole("button", { name: "Issues", exact: true }).click();
-      await expect
-        .poll(() => activity.locator('[data-kind="error"]').count())
-        .toBe(1);
-      await activity.getByRole("button", { name: "Model", exact: true }).click();
-      await expect
-        .poll(() => activity.locator('[data-kind="action"]').count())
-        .toBe(0);
-      expect(await activity.locator('[data-kind="model"]').count()).toBe(1);
-      autoErrors(errors);
-    } finally {
-      await page.close();
-    }
+it("shows an unfinished call from an ended run as unconfirmed, not live", async () => {
+  activityEnabled = true;
+  const initial = activityPageFor("attempt-diagnostic");
+  activityFixture = {
+    ...initial,
+    activity: {
+      ...initial.activity,
+      items: initial.activity.items.slice(0, 1),
+      recording: "complete",
+    },
+  };
+  const { page, errors } = await openPage({
+    path: "/admin/onboarding-invites?attempt=attempt-diagnostic",
   });
+  try {
+    const drawer = page.locator("#attempt-inspector");
+    await drawer
+      .getByRole("button", { name: "Agent runs", exact: true })
+      .click();
+    const row = drawer.locator('[data-kind="model"]');
+    await visible(row.getByText("Unconfirmed", { exact: true }));
+    expect(await row.locator(".admin-activity__status--live").count()).toBe(0);
+    await visible(row.locator(".admin-activity__status--warn"));
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});
 
-  it("distinguishes a run that never recorded activity", async () => {
-    activityEnabled = true;
-    activityFixture = {
-      activity: {
-        ...activityPageFor("attempt-diagnostic").activity,
-        items: [],
-        recording: "not_recorded",
-      },
-      readOnly: true,
-    };
-    const { page, errors } = await openPage({
-      path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
-    });
-    try {
-      await waitForGenerations(page);
-      const inspector = page.getByRole("dialog", {
-        name: "Attempt attempt-diagnostic",
-      });
-      await visible(inspector);
-      const activity = inspector.locator(".admin-activity");
-      await visible(activity);
-      await expect
-        .poll(() => activity.textContent())
-        .toContain("Detailed activity was not recorded for this run.");
-      autoErrors(errors);
-    } finally {
-      await page.close();
-    }
+it("distinguishes a run that never recorded activity", async () => {
+  activityEnabled = true;
+  activityFixture = {
+    activity: {
+      ...activityPageFor("attempt-diagnostic").activity,
+      items: [],
+      recording: "not_recorded",
+    },
+    readOnly: true,
+  };
+  const { page, errors } = await openPage({
+    path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
   });
-
-  it("keeps the activity inspector inside the viewport at 390px", async () => {
-    activityEnabled = true;
-    const { page, errors } = await openPage({
-      viewport: { width: 390, height: 844 },
-      path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+  try {
+    await waitForGenerations(page);
+    const inspector = page.getByRole("dialog", {
+      name: "Attempt attempt-diagnostic",
     });
-    try {
-      await waitForGenerations(page);
-      const inspector = page.getByRole("dialog", {
-        name: "Attempt attempt-diagnostic",
-      });
-      await visible(inspector);
-      const activity = inspector.locator(".admin-activity");
-      await visible(activity);
-      await activity.getByRole("button", { name: /Model request/u }).click();
-      await visible(activity.locator(".admin-activity__evidence"));
-      const metrics = await page.evaluate(() => ({
-        documentWidth: document.documentElement.scrollWidth,
-        viewport: window.innerWidth,
+    await visible(inspector);
+    await inspector
+      .getByRole("button", { name: "Agent runs", exact: true })
+      .click();
+    const activity = inspector.locator(".admin-activity");
+    await visible(activity);
+    await expect
+      .poll(() => activity.textContent())
+      .toContain("Detailed activity was not recorded for this run.");
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});
+
+it("keeps the activity inspector inside the viewport at 390px", async () => {
+  activityEnabled = true;
+  const { page, errors } = await openPage({
+    viewport: { width: 390, height: 844 },
+    path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+  });
+  try {
+    await waitForGenerations(page);
+    const inspector = page.getByRole("dialog", {
+      name: "Attempt attempt-diagnostic",
+    });
+    await visible(inspector);
+    await inspector
+      .getByRole("button", { name: "Agent runs", exact: true })
+      .click();
+    const activity = inspector.locator(".admin-activity");
+    await visible(activity);
+    await activity.getByRole("button", { name: /Model request/u }).click();
+    await visible(activity.locator(".admin-activity__evidence"));
+    const metrics = await page.evaluate(() => ({
+      documentWidth: document.documentElement.scrollWidth,
+      viewport: window.innerWidth,
+    }));
+    expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewport);
+    const feed = await activity
+      .locator(".admin-activity__feed")
+      .evaluate((element) => ({
+        scrollWidth: element.scrollWidth,
+        clientWidth: element.clientWidth,
       }));
-      expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewport);
-      const feed = await activity
-        .locator(".admin-activity__feed")
-        .evaluate((element) => ({
-          scrollWidth: element.scrollWidth,
-          clientWidth: element.clientWidth,
-        }));
-      expect(feed.scrollWidth).toBeLessThanOrEqual(feed.clientWidth + 1);
+    expect(feed.scrollWidth).toBeLessThanOrEqual(feed.clientWidth + 1);
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});
+
+it("explains context-only SEO evidence without presenting missing metrics as zero", async () => {
+  seoDetail = JSON.stringify({
+    mode: "context-only",
+    publishReady: false,
+    tasks: 2,
+    validatedQueries: 0,
+    stageCosts: [
+      {
+        stage: "local_search_volume",
+        city: "Charleston, SC",
+        tasks: 1,
+        usd: 0,
+        status: "complete",
+      },
+      {
+        stage: "search_intent",
+        city: "Charleston, SC",
+        tasks: 1,
+        usd: null,
+        status: "failed",
+      },
+    ],
+  });
+  const { page } = await openPage({
+    path: "/admin/onboarding-invites?attempt=attempt-0000",
+  });
+  try {
+    const drawer = page.locator("#attempt-inspector");
+    expect(await drawer.getByText("Charleston, SC").count()).toBe(0);
+    await drawer
+      .getByRole("button", { name: "SEO research", exact: true })
+      .click();
+    await visible(drawer.getByText("Context only", { exact: true }));
+    await visible(drawer.getByText(/cannot clear the SEO release gate/u));
+    const checks = drawer.getByRole("table", { name: "Research checks" });
+    await visible(
+      checks.getByRole("row", { name: /Local search volume.*\$0\.00/u }),
+    );
+    await visible(
+      checks.getByRole("row", { name: /Search intent.*Not recorded/u }),
+    );
+    await drawer.getByText("Recorded source", { exact: true }).click();
+    await visible(drawer.getByText(/"publishReady":false/u));
+  } finally {
+    seoDetail = null;
+    await page.close();
+  }
+});
+
+it("opens an uncropped site capture in its own view at 390px", async () => {
+  const { page } = await openPage({
+    viewport: { width: 390, height: 844 },
+    path: "/admin/onboarding-invites?attempt=attempt-0000",
+  });
+  try {
+    const drawer = page.locator("#attempt-inspector");
+    expect(await drawer.locator(".admin-browser__media img").count()).toBe(0);
+    await drawer
+      .getByRole("button", { name: "Site preview", exact: true })
+      .click();
+    const image = drawer.locator(".admin-browser__media img");
+    await visible(image);
+    await expect
+      .poll(() => image.evaluate((node: HTMLImageElement) => node.naturalWidth))
+      .toBeGreaterThan(0);
+    const proportions = await image.evaluate((node: HTMLImageElement) => ({
+      rendered: node.width / node.height,
+      natural: node.naturalWidth / node.naturalHeight,
+    }));
+    expect(proportions.rendered).toBeCloseTo(proportions.natural, 1);
+    expect(
+      await drawer
+        .getByRole("link", { name: "Open full-size capture" })
+        .getAttribute("href"),
+    ).toContain("/generation-hero?");
+    expect(await drawer.getByRole("link", { name: "Visit site" }).count()).toBe(
+      1,
+    );
+    await visible(drawer.getByText(/may predate later revisions/u));
+  } finally {
+    await page.close();
+  }
+});
+
+it.each([
+  "{broken-json",
+  '{"mode":"__proto__"}',
+  '{"mode":"context-only","stageCosts":[{"stage":"__proto__","status":"constructor","usd":null}]}',
+  '{"mode":"context-only","stageCosts":[null,4,{"stage":"<img src=x onerror=alert(1)>","usd":"0"}]}',
+])(
+  "preserves malformed or untrusted SEO as evidence without executing it: %s",
+  async (source) => {
+    seoDetail = source;
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?attempt=attempt-0000",
+    });
+    try {
+      const drawer = page.locator("#attempt-inspector");
+      await drawer
+        .getByRole("button", { name: "SEO research", exact: true })
+        .click();
+      await drawer.getByText("Recorded source", { exact: true }).click();
+      expect(await drawer.locator(".admin-seo-source pre").textContent()).toBe(
+        source,
+      );
+      expect(await drawer.locator(".admin-seo-view img").count()).toBe(0);
       autoErrors(errors);
     } finally {
+      seoDetail = null;
       await page.close();
     }
-  });
+  },
+);
+
+it.each([1512, 390])(
+  "captures all focused drawer views at %ipx",
+  async (width) => {
+    activityEnabled = true;
+    seoDetail = JSON.stringify({
+      mode: "context-only",
+      publishReady: false,
+      tasks: 9,
+      validatedQueries: 0,
+      stageCosts: [
+        {
+          stage: "local_search_volume",
+          city: "Charleston, SC",
+          tasks: 1,
+          usd: 0.09,
+          status: "complete",
+        },
+        {
+          stage: "search_intent",
+          city: "Charleston, SC",
+          tasks: 1,
+          usd: 0.01512,
+          status: "complete",
+        },
+      ],
+    });
+    const { page, errors } = await openPage({
+      viewport: { width, height: 960 },
+      path: "/admin/onboarding-invites?attempt=attempt-0000",
+    });
+    try {
+      const drawer = page.locator("#attempt-inspector");
+      for (const [name, slug] of [
+        ["Agent runs", "agent"],
+        ["SEO research", "seo"],
+        ["Site preview", "preview"],
+      ]) {
+        await drawer.getByRole("button", { name, exact: true }).click();
+        if (slug === "agent") {
+          await visible(drawer.locator('[data-kind="model"]'));
+          await drawer.getByRole("button", { name: /Model request/u }).click();
+        }
+        await page.waitForTimeout(350);
+        const overflow = await drawer.evaluate((node) => ({
+          width: node.clientWidth,
+          content: node.scrollWidth,
+        }));
+        expect(overflow.content).toBeLessThanOrEqual(overflow.width + 1);
+        await drawer.screenshot({
+          path: `/tmp/opencode/run-inspector-${slug}-${width}.png`,
+        });
+      }
+      await drawer
+        .getByRole("button", { name: "Overview", exact: true })
+        .click();
+      await page.keyboard.press("Escape");
+      await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
+      autoErrors(errors);
+    } finally {
+      seoDetail = null;
+      await page.close();
+    }
+  },
+);

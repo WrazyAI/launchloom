@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import type {
   GenerationActivityCoverageEntry,
   StoredTraceEvent,
@@ -9,6 +9,8 @@ import type {
 import type { AdminApi } from "./api";
 import {
   activityProgress,
+  activityRoleLabel,
+  activityStageLabel,
   activityStages,
   filterActivity,
   formatClock,
@@ -59,13 +61,14 @@ function coverageSummary(entries: GenerationActivityCoverageEntry[]): string {
 
 function StatusPill({ status }: { status: string | null }) {
   if (!status) return null;
-  const tone =
-    ["completed", "succeeded", "complete"].includes(status)
-      ? "done"
-      : ["error", "failed", "incomplete", "transport", "cancelled"].includes(
-            status,
-          )
-        ? "bad"
+  const tone = ["completed", "succeeded", "complete"].includes(status)
+    ? "done"
+    : ["error", "failed", "incomplete", "transport", "cancelled"].includes(
+          status,
+        )
+      ? "bad"
+      : status === "Unconfirmed"
+        ? "warn"
         : "live";
   return (
     <span className={`admin-activity__status admin-activity__status--${tone}`}>
@@ -198,8 +201,8 @@ function Evidence({ event }: { event: StoredTraceEvent }) {
             {text(event.payload.message)}
           </pre>
           <p className="admin-activity__note">
-            Emitted model text, not private reasoning. Credentials and unapproved
-            links are removed before storage.
+            Emitted model text, not private reasoning. Credentials and
+            unapproved links are removed before storage.
           </p>
           {meta}
         </>
@@ -219,7 +222,9 @@ function Evidence({ event }: { event: StoredTraceEvent }) {
     case "action_started":
     case "action_finished": {
       const fields =
-        event.kind === "action_started" ? event.payload.input : event.payload.result;
+        event.kind === "action_started"
+          ? event.payload.input
+          : event.payload.result;
       return (
         <>
           <h4>{event.payload.name.replace(/_/gu, " ")}</h4>
@@ -267,9 +272,7 @@ function Evidence({ event }: { event: StoredTraceEvent }) {
             {event.payload.status.replace(/_/gu, " ")}
           </p>
           {event.payload.detail ? (
-            <p className="admin-activity__note">
-              {text(event.payload.detail)}
-            </p>
+            <p className="admin-activity__note">{text(event.payload.detail)}</p>
           ) : null}
           {meta}
         </>
@@ -297,9 +300,7 @@ function Evidence({ event }: { event: StoredTraceEvent }) {
             <p>Started.</p>
           )}
           {event.payload.detail ? (
-            <p className="admin-activity__note">
-              {text(event.payload.detail)}
-            </p>
+            <p className="admin-activity__note">{text(event.payload.detail)}</p>
           ) : null}
           {meta}
         </>
@@ -310,9 +311,7 @@ function Evidence({ event }: { event: StoredTraceEvent }) {
           <h4>Recording finished</h4>
           <p>{event.payload.status}</p>
           {event.payload.detail ? (
-            <p className="admin-activity__note">
-              {text(event.payload.detail)}
-            </p>
+            <p className="admin-activity__note">{text(event.payload.detail)}</p>
           ) : null}
           {meta}
         </>
@@ -331,13 +330,36 @@ function EntryRow({
   entry,
   selected,
   onSelect,
+  threaded,
+  active,
 }: {
   entry: ActivityEntry;
   selected: boolean;
   onSelect: (id: string) => void;
+  threaded: boolean;
+  active: boolean;
 }) {
   const open = isOpenEntry(entry);
   const progress = entry.kind === "model" ? activityProgress(entry) : null;
+  const usage = threaded
+    ? entry.evidence.findLast((event) => event.kind === "usage")
+    : null;
+  const output = threaded
+    ? entry.evidence.findLast((event) => event.kind === "output")
+    : null;
+  const outputText = output ? text(output.payload.message) : "";
+  const latestProgress = entry.evidence.findLast(
+    (event) => event.kind === "output_delta",
+  );
+  const visibleEvidence =
+    entry.kind === "model"
+      ? entry.evidence.filter(
+          (event) =>
+            event.kind === "output" ||
+            event.kind === "usage" ||
+            (event === latestProgress && !usage),
+        )
+      : entry.evidence;
   const subtitle =
     entry.kind === "model"
       ? `${entry.role.replace(/_/gu, " ")} · model call`
@@ -354,10 +376,14 @@ function EntryRow({
       <button
         type="button"
         className="admin-activity__row"
-        aria-pressed={selected}
+        aria-pressed={threaded ? undefined : selected}
+        aria-expanded={threaded ? selected : undefined}
         onClick={() => onSelect(entry.primary.eventId)}
       >
-        <time className="admin-activity__clock" dateTime={new Date(entry.at).toISOString()}>
+        <time
+          className="admin-activity__clock"
+          dateTime={new Date(entry.at).toISOString()}
+        >
           {formatClock(entry.at)}
         </time>
         <span className="admin-activity__glyph" aria-hidden="true">
@@ -365,22 +391,73 @@ function EntryRow({
         </span>
         <span className="admin-activity__copy">
           <span className="admin-activity__title">{entry.title}</span>
-          <span className="admin-activity__sub">{subtitle}</span>
-          {progress ? (
+          <span className="admin-activity__sub">
+            {threaded
+              ? `${activityStageLabel(entry.stage)} · ${activityRoleLabel(entry.role)}${entry.primary.kind === "model_started" ? ` · ${entry.primary.payload.model}` : ""}`
+              : subtitle}
+          </span>
+          {usage ? (
+            <span className="admin-activity__tokens">
+              {formatCount(usage.payload.usage.inputTokens)} in ·{" "}
+              {formatCount(usage.payload.usage.outputTokens)} out · reported
+            </span>
+          ) : progress && (!threaded || (open && active)) ? (
             <span className="admin-activity__sub">
               ~{Math.ceil(progress.visibleChars / 4)} output tokens estimated
               while streaming · {progress.reasoningTokens} reasoning deltas
             </span>
           ) : null}
         </span>
-        {open ? (
+        {open && (!threaded || active) ? (
           <span className="admin-activity__status admin-activity__status--live">
             running
           </span>
         ) : (
-          <StatusPill status={entry.status} />
+          <StatusPill status={open ? "Unconfirmed" : entry.status} />
         )}
       </button>
+      {threaded && outputText && !selected ? (
+        <p className="admin-activity__excerpt">
+          {outputText.length > 320
+            ? `${outputText.slice(0, 320)}…`
+            : outputText}
+        </p>
+      ) : null}
+      {threaded && selected ? (
+        <div
+          className="admin-activity__evidence"
+          aria-label="Recorded evidence"
+        >
+          {visibleEvidence.map((event) => (
+            <div className="admin-activity__evidence-block" key={event.eventId}>
+              <Evidence event={event} />
+            </div>
+          ))}
+          {entry.kind === "model" &&
+          entry.evidence.some(
+            (event) =>
+              event.kind === "model_started" || event.kind === "model_finished",
+          ) ? (
+            <details className="admin-activity__request-details">
+              <summary>Request and completion details</summary>
+              {entry.evidence
+                .filter(
+                  (event) =>
+                    event.kind === "model_started" ||
+                    event.kind === "model_finished",
+                )
+                .map((event) => (
+                  <div
+                    className="admin-activity__evidence-block"
+                    key={event.eventId}
+                  >
+                    <Evidence event={event} />
+                  </div>
+                ))}
+            </details>
+          ) : null}
+        </div>
+      ) : null}
     </li>
   );
 }
@@ -390,11 +467,13 @@ export function GenerationActivity({
   identity,
   active,
   enabled,
+  threaded = false,
 }: {
   api: AdminApi;
   identity: TraceIdentity;
   active: boolean;
   enabled: boolean;
+  threaded?: boolean;
 }) {
   const activityIdentity = useMemo(
     () => ({ namespace: identity.namespace, attemptId: identity.attemptId }),
@@ -426,7 +505,10 @@ export function GenerationActivity({
     return () => window.clearInterval(timer);
   }, []);
 
-  const entries = useMemo(() => groupActivity(events), [events]);
+  const entries = useMemo(
+    () => groupActivity(events, threaded),
+    [events, threaded],
+  );
   const visible = useMemo(
     () => filterActivity(entries, filter),
     [entries, filter],
@@ -443,14 +525,14 @@ export function GenerationActivity({
     : null;
 
   useEffect(() => {
-    if (!follow.current) return;
+    if (threaded || !follow.current) return;
     const feed = feedRef.current;
     if (!feed) return;
     feed.scrollTop = feed.scrollHeight;
-  }, [visible.length]);
+  }, [threaded, visible.length]);
 
   function select(key: string) {
-    setSelectedKey(key);
+    setSelectedKey((current) => (threaded && current === key ? null : key));
     follow.current = false;
   }
 
@@ -459,7 +541,13 @@ export function GenerationActivity({
   function jumpToLatest() {
     follow.current = true;
     const feed = feedRef.current;
-    if (feed) feed.scrollTop = feed.scrollHeight;
+    if (threaded) {
+      const last = feed?.lastElementChild;
+      last?.scrollIntoView({ block: "nearest" });
+      last
+        ?.querySelector<HTMLButtonElement>("button")
+        ?.focus({ preventScroll: true });
+    } else if (feed) feed.scrollTop = feed.scrollHeight;
   }
 
   const emptyMessage = !page
@@ -476,13 +564,24 @@ export function GenerationActivity({
 
   return (
     <section
-      className="admin-activity"
+      className={`admin-activity${threaded ? " admin-activity--thread" : ""}`}
       aria-labelledby="generation-activity-title"
       data-activity-connection={connection}
     >
       <header className="admin-activity__head">
         <div>
-          <h3 id="generation-activity-title">Live activity</h3>
+          {threaded ? (
+            <p className="admin-view-kicker">Execution trace</p>
+          ) : null}
+          <h3 id="generation-activity-title">
+            {threaded ? "Agent runs" : "Live activity"}
+          </h3>
+          {threaded ? (
+            <p className="admin-activity__intro">
+              Follow recorded work, from pipeline actions to model outputs and
+              token usage.
+            </p>
+          ) : null}
           <p className="admin-activity__meta">
             {page
               ? `Updated ${formatRelativeTime(page.observedAt, now)} · times in UTC`
@@ -541,7 +640,11 @@ export function GenerationActivity({
           {error ? (
             <div className="admin-activity__error" role="alert">
               <span>{error}</span>
-              <button type="button" className="admin-link-button" onClick={refresh}>
+              <button
+                type="button"
+                className="admin-link-button"
+                onClick={refresh}
+              >
                 Retry
               </button>
             </div>
@@ -562,7 +665,11 @@ export function GenerationActivity({
           ) : null}
 
           <div className="admin-activity__toolbar">
-            <div className="admin-activity__filters" role="group" aria-label="Activity filters">
+            <div
+              className="admin-activity__filters"
+              role="group"
+              aria-label="Activity filters"
+            >
               {FILTERS.map((option) => (
                 <button
                   key={option.value}
@@ -574,7 +681,12 @@ export function GenerationActivity({
                 </button>
               ))}
             </div>
-            <button type="button" className="admin-link-button" onClick={jumpToLatest}>
+            <button
+              type="button"
+              className="admin-link-button"
+              onClick={jumpToLatest}
+              disabled={threaded && !visible.length}
+            >
               Jump to latest
             </button>
           </div>
@@ -587,48 +699,68 @@ export function GenerationActivity({
               onScroll={(event) => {
                 const element = event.currentTarget;
                 follow.current =
-                  element.scrollHeight - element.scrollTop - element.clientHeight < 24;
+                  element.scrollHeight -
+                    element.scrollTop -
+                    element.clientHeight <
+                  24;
               }}
             >
               {visible.length ? (
-                visible.map((entry) => (
-                  <EntryRow
-                    key={entry.key}
-                    entry={entry}
-                    selected={selectedKey === entry.key}
-                    onSelect={select}
-                  />
+                visible.map((entry, index) => (
+                  <Fragment key={entry.key}>
+                    {threaded && visible[index - 1]?.stage !== entry.stage ? (
+                      <li className="admin-activity__chapter">
+                        <span>{activityStageLabel(entry.stage)}</span>
+                      </li>
+                    ) : null}
+                    <EntryRow
+                      entry={entry}
+                      selected={selectedKey === entry.key}
+                      onSelect={select}
+                      threaded={threaded}
+                      active={active}
+                    />
+                  </Fragment>
                 ))
               ) : (
-                <li className="admin-activity__empty">{emptyMessage}</li>
+                <li className="admin-activity__empty">
+                  {threaded && entries.length
+                    ? "No recorded work matches this filter."
+                    : emptyMessage}
+                </li>
               )}
             </ol>
-            <aside className="admin-activity__evidence" aria-label="Selected evidence">
-              {selected ? (
-                <>
-                  {selected.evidence.map((event, index) => (
-                    <div
-                      key={event.eventId}
-                      className={
-                        index === 0
-                          ? "admin-activity__evidence-block"
-                          : "admin-activity__evidence-block admin-activity__evidence-block--stack"
-                      }
-                    >
-                      <Evidence event={event} />
-                    </div>
-                  ))}
-                  <p className="admin-activity__note">
-                    Only observable actions and emitted output are retained.
-                    Private reasoning is never recorded.
+            {!threaded ? (
+              <aside
+                className="admin-activity__evidence"
+                aria-label="Selected evidence"
+              >
+                {selected ? (
+                  <>
+                    {selected.evidence.map((event, index) => (
+                      <div
+                        key={event.eventId}
+                        className={
+                          index === 0
+                            ? "admin-activity__evidence-block"
+                            : "admin-activity__evidence-block admin-activity__evidence-block--stack"
+                        }
+                      >
+                        <Evidence event={event} />
+                      </div>
+                    ))}
+                    <p className="admin-activity__note">
+                      Only observable actions and emitted output are retained.
+                      Private reasoning is never recorded.
+                    </p>
+                  </>
+                ) : (
+                  <p className="admin-activity__empty">
+                    Select a model call or action to inspect its evidence.
                   </p>
-                </>
-              ) : (
-                <p className="admin-activity__empty">
-                  Select a model call or action to inspect its evidence.
-                </p>
-              )}
-            </aside>
+                )}
+              </aside>
+            ) : null}
           </div>
 
           <footer className="admin-activity__foot">
@@ -640,7 +772,9 @@ export function GenerationActivity({
                   onClick={loadOlder}
                   disabled={loadingOlder}
                 >
-                  {loadingOlder ? "Loading earlier activity..." : "Load earlier activity"}
+                  {loadingOlder
+                    ? "Loading earlier activity..."
+                    : "Load earlier activity"}
                 </button>
               ) : null}
             </div>
@@ -664,6 +798,12 @@ export function GenerationActivity({
           </footer>
         </>
       )}
+      {threaded ? (
+        <p className="admin-activity__note">
+          Only recorded actions and visible output are shown. Private reasoning
+          is not recorded.
+        </p>
+      ) : null}
     </section>
   );
 }

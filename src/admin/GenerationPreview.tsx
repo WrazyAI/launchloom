@@ -2,34 +2,41 @@ import { useEffect, useState } from "react";
 import type { AttemptSummary } from "../lib/admin-contracts";
 import { generationHeroUrl } from "./format";
 
+type CaptureAttempt = Pick<
+  AttemptSummary,
+  | "attemptId"
+  | "issueNumber"
+  | "clientName"
+  | "clientId"
+  | "profile"
+  | "runId"
+  | "runAttempt"
+  | "executionStatus"
+  | "deliveryStatus"
+  | "previewUrl"
+  | "updatedAt"
+>;
+
+export function generationCaptureSrc(attempt: CaptureAttempt): string | null {
+  const hero = generationHeroUrl(attempt);
+  // A live candidate can be replaced between polling passes.
+  return hero
+    ? `${hero}&v=${encodeURIComponent(String(attempt.updatedAt ?? 0))}`
+    : null;
+}
+
 export function GenerationPreview({
   attempt,
   large = false,
   className = "",
+  onCaptureLoad,
 }: {
-  attempt: Pick<
-    AttemptSummary,
-    | "attemptId"
-    | "issueNumber"
-    | "clientName"
-    | "clientId"
-    | "profile"
-    | "runId"
-    | "runAttempt"
-    | "executionStatus"
-    | "deliveryStatus"
-    | "previewUrl"
-    | "updatedAt"
-  >;
+  attempt: CaptureAttempt;
   large?: boolean;
   className?: string;
+  onCaptureLoad?: (src: string | null) => void;
 }) {
-  const hero = generationHeroUrl(attempt);
-  // The live candidate image can be replaced between polling passes without a
-  // new attempt id. Version the URL so the browser fetches the newest capture.
-  const src = hero
-    ? `${hero}&v=${encodeURIComponent(String(attempt.updatedAt ?? 0))}`
-    : null;
+  const src = generationCaptureSrc(attempt);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -58,7 +65,11 @@ export function GenerationPreview({
       alt={`Generation screenshot for ${label}`}
       loading={large ? "eager" : "lazy"}
       decoding="async"
-      onError={() => setFailed(true)}
+      onLoad={() => onCaptureLoad?.(src)}
+      onError={() => {
+        setFailed(true);
+        onCaptureLoad?.(null);
+      }}
     />
   );
 }

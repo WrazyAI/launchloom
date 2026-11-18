@@ -14,7 +14,11 @@ import type {
   GenerationActivityPage,
   StoredTraceEvent,
 } from "../src/lib/generation-activity";
-import { BASE_CALL_ID, traceEvent, usage } from "./fixtures/generation-activity";
+import {
+  BASE_CALL_ID,
+  traceEvent,
+  usage,
+} from "./fixtures/generation-activity";
 
 function stored(
   overrides: Record<string, unknown>,
@@ -103,6 +107,24 @@ describe("generation activity presentation", () => {
       elapsedMs: 1500,
     });
     expect(groupActivity([delta])).toHaveLength(0);
+    const partial = groupActivity([delta], true);
+    expect(partial).toHaveLength(1);
+    expect(partial[0]?.evidence).toEqual([delta]);
+    expect(partial[0]?.primary.kind).toBe("output_delta");
+    expect(activityProgress(partial[0]!)).toMatchObject({ visibleChars: 120 });
+    // Loading older context replaces the partial entry, never duplicates it.
+    expect(groupActivity([modelEvents[0]!, delta], true)).toHaveLength(1);
+  });
+
+  it("retains reported output and usage when the request is outside the loaded page", () => {
+    const partial = groupActivity(modelEvents.slice(1), true);
+    expect(partial).toHaveLength(1);
+    expect(partial[0]?.status).toBe("completed");
+    expect(partial[0]?.evidence.map((event) => event.kind)).toEqual([
+      "model_finished",
+      "output",
+      "usage",
+    ]);
   });
 
   it("merges an action and preserves failures", () => {
@@ -175,9 +197,9 @@ describe("generation activity presentation", () => {
       ["model"],
     );
     expect(filterActivity(entries, "actions")).toHaveLength(0);
-    expect(filterActivity(entries, "issues").map((entry) => entry.kind)).toEqual(
-      ["error"],
-    );
+    expect(
+      filterActivity(entries, "issues").map((entry) => entry.kind),
+    ).toEqual(["error"]);
   });
 
   it("keeps an unfinished stage active instead of marking it done", () => {
@@ -235,7 +257,12 @@ describe("generation activity presentation", () => {
       reasoningTokens: null,
       responses: 1,
       unknownResponses: 0,
-      cost: { currency: null, actual: null, estimated: null, unreportedCount: 1 },
+      cost: {
+        currency: null,
+        actual: null,
+        estimated: null,
+        unreportedCount: 1,
+      },
     };
     const zero = formatUsage(base);
     expect(zero.tokens).toBe("0 in · 0 out");

@@ -5,11 +5,13 @@ import type {
   ClientRecord,
 } from "../lib/admin-contracts";
 import { ActorLabel } from "./ActorLabel";
-import { AdminIcon } from "./AdminIcon";
+import { AdminIcon, type AdminIconName } from "./AdminIcon";
 import { isSiteGeneration } from "./site-groups";
-import { GenerationPreview } from "./GenerationPreview";
+import { AttemptSitePreview } from "./AttemptSitePreview";
+import { AttemptSeoResearch } from "./AttemptSeoResearch";
 import { DetailValue } from "./DetailValue";
 import { GenerationActivity } from "./GenerationActivity";
+import { activityStageLabel } from "./generation-activity-format";
 import { RevisionTimeline } from "./RevisionTimeline";
 import type { AdminApi } from "./api";
 import {
@@ -28,6 +30,15 @@ import {
   safeEvidenceUrl,
   safeSiteUrl,
 } from "./format";
+
+type InspectorView = "overview" | "activity" | "seo" | "preview";
+
+const VIEWS: { id: InspectorView; label: string; icon: AdminIconName }[] = [
+  { id: "overview", label: "Overview", icon: "generations" },
+  { id: "activity", label: "Agent runs", icon: "operations" },
+  { id: "seo", label: "SEO research", icon: "search" },
+  { id: "preview", label: "Site preview", icon: "panel" },
+];
 
 export type AttemptInspectorProps = {
   api: AdminApi;
@@ -169,7 +180,9 @@ function EventTimeline({
             return (
               <li key={event.eventKey} className="admin-timeline__item">
                 <div className="admin-timeline__head">
-                  <span className="admin-timeline__stage">{event.stage}</span>
+                  <span className="admin-timeline__stage">
+                    {activityStageLabel(event.stage)}
+                  </span>
                   <StatusBadge label={event.status} />
                   <span className="admin-muted">
                     {formatTimestamp(event.createdAt)}
@@ -252,7 +265,18 @@ export function AttemptInspector({
   onOpenAttempt,
 }: AttemptInspectorProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
+  const [selection, setSelection] = useState<{
+    attemptId: string;
+    view: InspectorView;
+  }>();
+  const view =
+    selection &&
+    selection.attemptId === attempt?.attemptId &&
+    (selection.view !== "activity" || activityEnabled)
+      ? selection.view
+      : "overview";
   const focused = attempt ? !isSiteGeneration(attempt) : false;
   const attemptSiteUrl = attempt ? safeSiteUrl(attempt.siteUrl) : null;
   const previewUrl =
@@ -271,6 +295,17 @@ export function AttemptInspector({
     attempt && isSiteGeneration(attempt)
       ? relatedPreviewLink(attempt.relatedPreview, siteHref)
       : null;
+  const allEvents = Array.from(
+    new Map(
+      [...(attempt?.events || []), ...events].map((event) => [
+        event.eventKey,
+        event,
+      ]),
+    ).values(),
+  );
+  const overviewEvents = events.filter(
+    (event) => event.stage !== "seo_research",
+  );
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -328,7 +363,34 @@ export function AttemptInspector({
         </button>
       </div>
 
-      <div className="admin-sheet__body">
+      {attempt ? (
+        <nav className="admin-attempt-nav" aria-label="Generation detail views">
+          {VIEWS.filter(
+            (option) => option.id !== "activity" || activityEnabled,
+          ).map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={view === option.id}
+              aria-controls="attempt-inspector-content"
+              onClick={() => {
+                if (view === option.id) return;
+                setSelection({ attemptId: attempt.attemptId, view: option.id });
+                if (scrollRef.current) scrollRef.current.scrollTop = 0;
+              }}
+            >
+              <AdminIcon name={option.icon} />
+              <span>{option.label}</span>
+            </button>
+          ))}
+        </nav>
+      ) : null}
+
+      <div
+        className="admin-sheet__body"
+        id="attempt-inspector-content"
+        ref={scrollRef}
+      >
         {loading ? (
           <p className="admin-muted" role="status">
             Loading attempt detail...
@@ -344,27 +406,50 @@ export function AttemptInspector({
           </div>
         ) : null}
 
-        {attempt ? (
+        {attempt?.stale ? (
+          <p className="admin-notice admin-notice--attention" role="status">
+            This attempt is marked stale. Its recorded outcome may be
+            incomplete.
+          </p>
+        ) : null}
+        {attempt?.deliveryStatus === "diagnostic" ? (
+          <p className="admin-notice admin-notice--attention">
+            Diagnostic delivery is for review only, not production approval.
+          </p>
+        ) : null}
+        {attempt?.deliveryStatus === "attention" ? (
+          <p className="admin-notice admin-notice--attention">
+            Delivery has open review warnings. The preview is usable, but the
+            listed findings are unresolved.
+          </p>
+        ) : null}
+
+        {attempt && view === "activity" ? (
+          <GenerationActivity
+            key={attempt.attemptId}
+            api={api}
+            identity={{ namespace: "legacy", attemptId: attempt.attemptId }}
+            active={
+              attempt.executionStatus === "running" ||
+              attempt.executionStatus === "queued"
+            }
+            enabled={activityEnabled}
+            threaded
+          />
+        ) : null}
+
+        {attempt && view === "seo" ? (
+          <AttemptSeoResearch
+            events={allEvents}
+            loading={eventsLoading}
+            error={eventsError}
+            hasMore={Boolean(eventsNextCursor)}
+            onLoadMore={onLoadMoreEvents}
+          />
+        ) : null}
+
+        {attempt && view === "overview" ? (
           <>
-            {attempt.stale ? (
-              <p className="admin-notice admin-notice--attention" role="status">
-                This attempt is marked stale. Its recorded outcome may be
-                incomplete.
-              </p>
-            ) : null}
-
-            {attempt.deliveryStatus === "diagnostic" ? (
-              <p className="admin-notice admin-notice--attention">
-                Diagnostic delivery is for review only, not production approval.
-              </p>
-            ) : null}
-
-            {attempt.deliveryStatus === "attention" ? (
-              <p className="admin-notice admin-notice--attention">
-                Delivery has open review warnings. The preview is usable, but the listed findings are unresolved.
-              </p>
-            ) : null}
-
             <dl className="admin-panel-outcomes" data-attempt-outcomes>
               <div>
                 <dt>Execution</dt>
@@ -460,60 +545,28 @@ export function AttemptInspector({
               </div>
             ) : null}
 
-            <GenerationActivity
-              api={api}
-              identity={{ namespace: "legacy", attemptId: attempt.attemptId }}
-              active={
-                attempt.executionStatus === "running" ||
-                attempt.executionStatus === "queued"
-              }
-              enabled={activityEnabled}
-            />
-
             <RevisionTimeline api={api} repository={attempt.repository} />
 
             <EventTimeline
-              events={events}
+              events={overviewEvents}
               nextCursor={eventsNextCursor}
               eventCount={eventCount}
               loading={eventsLoading}
               error={eventsError}
               onLoadMore={onLoadMoreEvents}
             />
+          </>
+        ) : null}
 
-            <details className="admin-panel-disclosure" open>
-              <summary id="attempt-preview-title">Site capture</summary>
-              <div
-                className="admin-sheet__preview"
-                aria-labelledby="attempt-preview-title"
-              >
-                <div className="admin-browser">
-                  <div className="admin-browser__bar">
-                    <span className="admin-browser__dots" aria-hidden="true">
-                      <i />
-                      <i />
-                      <i />
-                    </span>
-                    <span className="admin-browser__url">
-                      {siteUrl
-                        ? new URL(siteUrl).hostname
-                        : "Preview unavailable"}
-                    </span>
-                  </div>
-                  <div className="admin-browser__media">
-                    <GenerationPreview attempt={attempt} large />
-                  </div>
-                </div>
-                <p className="admin-sheet__notes">
-                  <strong>Generation screenshot.</strong>{" "}
-                  {focused
-                    ? "Captured for this attempt."
-                    : relatedPreview
-                      ? "Issue capture, not this attempt's delivery."
-                      : "Issue capture; may predate later revisions."}
-                </p>
-              </div>
-            </details>
+        {attempt && view === "preview" ? (
+          <>
+            <AttemptSitePreview
+              attempt={attempt}
+              siteUrl={siteUrl}
+              siteHref={siteHref}
+              focused={focused}
+              related={Boolean(relatedPreview)}
+            />
 
             {relatedPreview ? (
               <section
@@ -563,7 +616,11 @@ export function AttemptInspector({
                 </p>
               </section>
             ) : null}
+          </>
+        ) : null}
 
+        {attempt && view === "overview" ? (
+          <>
             <details className="admin-panel-disclosure">
               <summary>Record details</summary>
               <section
@@ -672,7 +729,7 @@ export function AttemptInspector({
     <dialog
       id="attempt-inspector"
       ref={dialogRef}
-      className={`admin-sheet admin-detail-panel${open ? " is-open" : ""}`}
+      className={`admin-sheet admin-detail-panel admin-attempt-drawer${open ? " is-open" : ""}`}
       data-inspector-surface="dialog"
       aria-modal="true"
       aria-labelledby="attempt-inspector-title"

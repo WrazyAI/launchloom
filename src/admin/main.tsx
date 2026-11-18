@@ -9,6 +9,7 @@ import "./studio.css";
 import "./detail-panels.css";
 import "./tables.css";
 import "./generation-activity.css";
+import "./attempt-drawer.css";
 
 const root = document.getElementById("admin-root");
 

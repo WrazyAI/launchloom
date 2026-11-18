@@ -90,7 +90,7 @@ const STAGE_LABELS: Record<string, string> = {
 
 export function activityStageLabel(stage: string): string {
   return (
-    STAGE_LABELS[stage] ??
+    (Object.hasOwn(STAGE_LABELS, stage) ? STAGE_LABELS[stage] : null) ??
     stage
       .split("_")
       .filter(Boolean)
@@ -162,7 +162,10 @@ function entryTitle(event: StoredTraceEvent): string {
  * Collapse one model call or action into a single feed row. The feed never
  * invents work: an unpaired start remains visibly unfinished.
  */
-export function groupActivity(events: StoredTraceEvent[]): ActivityEntry[] {
+export function groupActivity(
+  events: StoredTraceEvent[],
+  includePartial = false,
+): ActivityEntry[] {
   const entries: ActivityEntry[] = [];
   const calls = new Map<string, ActivityEntry>();
   const actions = new Map<string, ActivityEntry>();
@@ -177,29 +180,28 @@ export function groupActivity(events: StoredTraceEvent[]): ActivityEntry[] {
         break;
       }
       case "model_finished":
-      case "output": {
-        const entry = calls.get(event.payload.callId);
-        if (!entry) break;
-        entry.evidence.push(event);
-        if (event.kind === "model_finished") entry.status = event.payload.status;
-        break;
-      }
-      case "usage": {
-        const entry = calls.get(event.payload.callId);
-        if (entry) entry.evidence.push(event);
-        break;
-      }
+      case "output":
+      case "usage":
       case "output_delta": {
-        const entry = calls.get(event.payload.callId);
-        if (entry) entry.evidence.push(event);
+        let entry = calls.get(event.payload.callId);
+        if (!entry && includePartial) {
+          entry = entryFor(
+            event,
+            "model",
+            "Model activity (earlier request not loaded)",
+          );
+          entry.callId = event.payload.callId;
+          calls.set(event.payload.callId, entry);
+          entries.push(entry);
+        }
+        if (!entry) break;
+        if (entry.primary !== event) entry.evidence.push(event);
+        if (event.kind === "model_finished")
+          entry.status = event.payload.status;
         break;
       }
       case "action_started": {
-        const entry = entryFor(
-          event,
-          "action",
-          titleCase(event.payload.name),
-        );
+        const entry = entryFor(event, "action", titleCase(event.payload.name));
         entry.callId = event.payload.actionId;
         actions.set(event.payload.actionId, entry);
         entries.push(entry);
@@ -259,19 +261,18 @@ export function filterActivity(
       ["action", "task", "finished"].includes(entry.kind),
     );
   if (filter === "model")
-    return entries.filter((entry) =>
-      ["model", "output"].includes(entry.kind),
-    );
-  return entries.filter((entry) =>
-    ["error", "retry"].includes(entry.kind) ||
-    (entry.kind === "coverage" &&
-      ["limited", "unsupported"].includes(
-        String(
-          entry.primary.kind === "coverage"
-            ? entry.primary.payload.status
-            : "",
-        ),
-      )),
+    return entries.filter((entry) => ["model", "output"].includes(entry.kind));
+  return entries.filter(
+    (entry) =>
+      ["error", "retry"].includes(entry.kind) ||
+      (entry.kind === "coverage" &&
+        ["limited", "unsupported"].includes(
+          String(
+            entry.primary.kind === "coverage"
+              ? entry.primary.payload.status
+              : "",
+          ),
+        )),
   );
 }
 
@@ -396,7 +397,8 @@ export function heartbeatNotice(
       ? page.observedAt
       : now;
   const silence = Math.max(0, reference - page.lastHeartbeatAt);
-  if (silence > 60_000) return "Activity may be incomplete: no signal for over a minute.";
+  if (silence > 60_000)
+    return "Activity may be incomplete: no signal for over a minute.";
   if (silence > 30_000) return "No recent activity signal.";
   return null;
 }
