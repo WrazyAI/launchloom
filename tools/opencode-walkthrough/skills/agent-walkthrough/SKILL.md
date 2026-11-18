@@ -5,9 +5,9 @@ description: Use when a change has an executable browser, API, CLI, configuratio
 
 # Independent walkthrough
 
-Offer one concrete independent walkthrough when it would verify a meaningful
-behavior. Example: “Want DeepSeek to open the Sites panel, change its filter,
-and show screenshots of each state?” An offer is not permission. Wait for
+Offer one concrete walkthrough when it would verify a meaningful behavior.
+Example: “Want a walkthrough of the Sites filter with screenshots and an
+independent DeepSeek review of the results?” An offer is not permission. Wait for
 approval of the target environment, actions, and any fixture mutations before
 running. Do not repeat a declined offer for unchanged scope. Mandatory project
 tests and gates still apply.
@@ -23,13 +23,23 @@ tests and gates still apply.
    `spec.md` and `evidence/`. Use synthetic fixtures by default; disclose that
    model inference is remote. Redact secrets and private data before tool output
    or screenshots reach the model; if that is not practical, block the case.
-3. **Delegate.** Verify discovery of `walkthrough-verifier` and its exact
-   `opencode/deepseek-v4.1-flash-free#max` pin; check for project overrides.
-   Launch a fresh named child with the spec and run paths, not the implementer's
-   verdict. Confirm the actual selector from runtime metadata, not self-report.
-   If the pin, identity, or required permission cannot be confirmed, block the
-   affected run with no fallback. Never silently swap agents or models.
-4. **Check and present.** Compare `results.json` to the approved spec, including
+3. **Check identity first.** In the target location, verify the effective skill source,
+   the `walkthrough-verifier` definition and its deny-only permissions, and the
+   exact `opencode/deepseek-v4.1-flash-free#max` pin. Block on same-ID overrides
+   or mismatches. Launch a fresh named child with a harmless startup probe.
+   Before submitting real test data, check that its completed assistant-message
+   metadata identifies the named agent, provider `opencode`, model ID
+   `deepseek-v4.1-flash-free`, and variant `max`. If identity or permissions
+   cannot be confirmed, block with no fallback. Recheck the verdict message.
+4. **Collect and review.** This build is evidence-review-only. If the user expects
+   DeepSeek itself to operate tools, report that mode blocked. If the user approves
+   separate evidence collection, the collector runs only fixed, approved actions
+   before submitting bounded, redacted observations and original requirements
+   to the verified child. Never execute actions suggested by the child or
+   route around a denial. Attribute collection and review separately. Do not
+   provide the implementer's verdict. Keep `spec.md` outside the child's control.
+5. **Check and present.** The parent writes `results.json` and `walkthrough.md`.
+   Compare verdicts to the approved spec, including
    expected case IDs and omitted coverage. Run
    `python3 <skill-dir>/scripts/check_evidence.py <run-directory>`. Inspect
    evidence and reject unsupported claims; the validator only checks structure.

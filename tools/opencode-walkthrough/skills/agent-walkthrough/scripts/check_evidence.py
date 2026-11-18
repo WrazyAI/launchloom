@@ -2,10 +2,14 @@
 import argparse
 from collections import Counter
 import json
+import os
 from pathlib import Path
+import stat
 import sys
 
 MODEL = "opencode/deepseek-v4.1-flash-free#max"
+MAX_REPORT_BYTES = 1024 * 1024
+IMAGE_SUFFIXES = {".png", ".webp", ".jpeg", ".jpg"}
 
 
 def nonempty(value):
@@ -56,29 +60,49 @@ def validate_report(report: dict, run_dir: Path) -> list[str]:
             errors.append(f"{label}.actual: observations required")
         if status in ("blocked", "untested") and not nonempty(case.get("reason")):
             errors.append(f"{label}.reason: explain unavailable or skipped coverage")
-        if status == "passed" and assertion == "visual" and not capabilities.get(
-                "image_understanding"):
-            errors.append(f"{label}: visual pass without image understanding")
+        visual_verdict = status in ("passed", "failed") and assertion == "visual"
+        if visual_verdict and not capabilities.get("image_understanding"):
+            errors.append(f"{label}: visual verdict without image understanding")
         evidence = case.get("evidence")
         if not isinstance(evidence, list):
             errors.append(f"{label}.evidence: array required")
             continue
         if status in ("passed", "failed") and not evidence:
             errors.append(f"{label}.evidence: evidence required")
+        has_capture = False
         for name in evidence:
             try:
                 if not nonempty(name):
                     raise ValueError("nonempty relative path required")
                 relative = Path(name)
-                if relative.is_absolute() or ".." in relative.parts:
-                    raise ValueError("absolute paths and parent traversal forbidden")
-                target = (root / relative).resolve()
-                target.relative_to(root)
+                if (relative.is_absolute() or ".." in relative.parts
+                        or len(relative.parts) < 2 or relative.parts[0] != "evidence"):
+                    raise ValueError("expected a relative path inside evidence/")
+                target = root
+                for part in relative.parts:
+                    target /= part
+                    if target.is_symlink():
+                        raise ValueError("symlinked evidence is not allowed")
                 if not target.is_file() or target.stat().st_size == 0:
                     raise ValueError("nonempty evidence file required")
+                has_capture |= target.suffix.lower() in IMAGE_SUFFIXES
             except (OSError, ValueError, RuntimeError) as error:
                 errors.append(f"{label}.evidence: invalid path ({error})")
+        if visual_verdict and not has_capture:
+            errors.append(f"{label}: visual verdict requires a screenshot file")
     return errors
+
+
+def read_report(run_dir: Path):
+    fd = os.open(run_dir / "results.json", os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(fd, "rb") as report:
+        attributes = os.fstat(report.fileno())
+        if not stat.S_ISREG(attributes.st_mode) or attributes.st_size > MAX_REPORT_BYTES:
+            raise ValueError("report must be a regular file of at most 1 MiB")
+        content = report.read(MAX_REPORT_BYTES + 1)
+        if len(content) > MAX_REPORT_BYTES:
+            raise ValueError("report exceeds 1 MiB")
+        return json.loads(content)
 
 
 def main():
@@ -86,7 +110,7 @@ def main():
     parser.add_argument("run_directory", type=Path)
     args = parser.parse_args()
     try:
-        report = json.loads((args.run_directory / "results.json").read_text())
+        report = read_report(args.run_directory)
         errors = validate_report(report, args.run_directory)
     except (OSError, ValueError, RecursionError) as error:
         errors = [f"results.json: cannot read valid JSON ({error})"]

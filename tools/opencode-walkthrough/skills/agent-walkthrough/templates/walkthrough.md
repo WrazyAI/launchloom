@@ -3,6 +3,7 @@
 ## Verdict and scope
 Counts of passed / failed / blocked / untested; exact environment and revision.
 Requested and observed model/variant, with session metadata evidence.
+Name the evidence collector and independent reviewer separately.
 State remaining mandatory project gates separately.
 
 ## Steps and evidence
@@ -16,7 +17,7 @@ visual judgment from DOM checks alone. Record skipped coverage, unavailable
 tools/accounts, fixture cleanup, and any remaining processes/tabs.
 
 ## Machine-readable report
-Write `results.json` in the same run directory using this shape:
+The parent writes `results.json` in the same run directory using this shape:
 
 ```json
 {
@@ -40,6 +41,7 @@ Write `results.json` in the same run directory using this shape:
 Allowed statuses: `passed`, `failed`, `blocked`, `untested`.
 Executed cases need actual observations and nonempty local evidence files.
 Blocked/untested cases require a reason. Evidence paths are relative to the run
-directory; no parent traversal, absolute paths, or escaping symlinks.
+directory and must start with `evidence/`; no symlinks, parent traversal or
+absolute paths. Visual verdicts require confirmed image understanding and a capture.
 Run `python3 scripts/check_evidence.py <run-directory>` from the skill directory.
 A valid structure is not proof that assertions are true.

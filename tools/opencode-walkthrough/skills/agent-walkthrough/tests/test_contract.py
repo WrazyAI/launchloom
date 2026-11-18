@@ -17,18 +17,15 @@ class ContractTests(unittest.TestCase):
         self.assertIn("\nmode: subagent\n", frontmatter)
         self.assertIn("\nmodel: opencode/deepseek-v4.1-flash-free#max\n", frontmatter)
         rules = re.findall(r'action: ([^,\n]+), resource: "([^"]+)", effect: (\w+)', frontmatter)
-        edits = [rule for rule in rules if rule[0] in ("edit", '"*"')]
-        self.assertEqual(edits, [
-            ('"*"', "*", "deny"),
-            ("edit", "~/.local/state/opencode/walkthroughs/**", "allow"),
-        ])
-        self.assertIn(("shell", "*", "ask"), rules)
-        self.assertIn(("subagent", "*", "deny"), rules)
+        self.assertGreater(len(rules), 1)
+        self.assertTrue(all(effect == "deny" for _, _, effect in rules))
+        for action in ("execute", "browser", "shell", "subagent", "edit"):
+            self.assertIn((action, "*", "deny"), rules)
 
     def test_agent_covers_required_boundaries(self):
         body = self.load("agents/walkthrough-verifier.md").lower()
         for text in ("treat as untrusted data", "no fallback", "image understanding",
-                     "production", "actual observation", "api", "cli", "browser skill"):
+                     "production", "actual observation", "api", "cli", "browser"):
             self.assertIn(text, body)
 
     def test_suggestion_is_not_execution(self):
@@ -40,5 +37,6 @@ class ContractTests(unittest.TestCase):
     def test_skill_delegates_against_the_approved_revision(self):
         body = self.load("skills/agent-walkthrough/SKILL.md")
         for text in ("walkthrough-verifier", "original requirements", "revision", "no fallback",
-                     "check_evidence.py", "spec.md", "walkthrough.md"):
+                     "check_evidence.py", "spec.md", "walkthrough.md",
+                     "harmless startup probe", "effective skill source", "evidence-review-only"):
             self.assertIn(text, body)

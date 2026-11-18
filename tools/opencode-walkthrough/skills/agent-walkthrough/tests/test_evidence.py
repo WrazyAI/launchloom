@@ -59,8 +59,6 @@ class EvidenceTests(unittest.TestCase):
     def test_rejects_missing_empty_or_wrong_type_metadata(self):
         for key in ("model", "project", "revision", "environment", "capabilities", "cases"):
             for value in (None, "", [], 123):
-                if key == "cases" and value == []:
-                    pass
                 with self.subTest(key=key, value=value):
                     report = copy.deepcopy(self.report)
                     report[key] = value
@@ -105,7 +103,39 @@ class EvidenceTests(unittest.TestCase):
         self.report["capabilities"]["image_understanding"] = "yes"
         self.assertTrue(self.errors())
         self.report["capabilities"]["image_understanding"] = True
+        (self.run_dir / "evidence/capture.png").write_bytes(b"\x89PNG\r\n\x1a\nstub")
+        self.report["cases"][0]["evidence"] = ["evidence/capture.png"]
         self.assertEqual(self.errors(), [])
+
+    def test_visual_failure_requires_image_understanding_and_capture(self):
+        self.report["cases"][0].update(assertion_type="visual", status="failed")
+        self.assertTrue(self.errors())
+        self.report["capabilities"]["image_understanding"] = True
+        self.assertTrue(self.errors(), "a text log is not screenshot evidence")
+
+    def test_spec_report_and_internal_symlinks_are_not_evidence(self):
+        for name in ("spec.md", "results.json", "walkthrough.md"):
+            (self.run_dir / name).write_text("not an observation")
+            self.report["cases"][0]["evidence"] = [name]
+            self.assertTrue(self.errors())
+        (self.run_dir / "evidence/alias.txt").symlink_to("output.txt")
+        self.report["cases"][0]["evidence"] = ["evidence/alias.txt"]
+        self.assertTrue(self.errors())
+
+    def test_cli_rejects_symlink_fifo_and_oversized_report(self):
+        import os
+        report = self.run_dir / "results.json"
+        with tempfile.TemporaryDirectory() as outside:
+            target = Path(outside) / "report.json"
+            target.write_text(json.dumps(self.report))
+            report.symlink_to(target)
+            self.assertEqual(self.cli().returncode, 1)
+        report.unlink()
+        os.mkfifo(report)
+        self.assertEqual(self.cli().returncode, 1)
+        report.unlink()
+        report.write_text(json.dumps(self.report) + " " * (1024 * 1024))
+        self.assertEqual(self.cli().returncode, 1)
 
     def test_nonexistent_empty_directory_and_unsafe_evidence_rejected(self):
         (self.run_dir / "empty.txt").touch()
