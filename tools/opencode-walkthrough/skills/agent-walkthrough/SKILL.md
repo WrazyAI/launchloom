@@ -56,8 +56,9 @@ tests and gates still apply.
    step number, action type, expected result, status, HTTP status. It cannot see
    screenshots by default. If image understanding has been separately proven,
    pixel judgments may be included under a distinct capability; otherwise mark
-   visual judgments blocked while keeping captures for the user. The child must
-   not claim it operated the browser.
+   visual judgments blocked while keeping captures for the user. If the child is
+   unavailable, keep captures for the user but mark the independent verdict
+   blocked. The child must not claim it operated the browser.
 7. **Check and present.** The parent writes `results.json` and `walkthrough.md`
    using known artifact paths from the runner, never paths emitted by the child.
    Compare the report to the approved spec, including expected case IDs and
