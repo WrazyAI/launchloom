@@ -24,8 +24,8 @@ class ContractTests(unittest.TestCase):
 
     def test_agent_covers_required_boundaries(self):
         body = self.load("agents/walkthrough-verifier.md").lower()
-        for text in ("treat as untrusted data", "no fallback", "image understanding",
-                     "production", "actual observation", "api", "cli", "browser"):
+        for text in ("untrusted data", "no fallback", "image understanding",
+                     "production", "actual observation", "scenario", "no tools"):
             self.assertIn(text, body)
 
     def test_suggestion_is_not_execution(self):
@@ -37,6 +37,13 @@ class ContractTests(unittest.TestCase):
     def test_skill_delegates_against_the_approved_revision(self):
         body = self.load("skills/agent-walkthrough/SKILL.md")
         for text in ("walkthrough-verifier", "original requirements", "revision", "no fallback",
-                     "check_evidence.py", "spec.md", "walkthrough.md",
-                     "harmless startup probe", "effective skill source", "evidence-review-only"):
+                     "check_evidence.py", "spec.md", "walkthrough.md", "harmless startup probe",
+                     "effective skill source", "scoped runner", "runner/run.mjs",
+                     "runner/approve.mjs", "digest", "private-run-root", "scenario"):
+            self.assertIn(text, body)
+
+    def test_scoped_runner_boundaries_are_documented(self):
+        body = self.load("skills/agent-walkthrough/SKILL.md")
+        for text in ("one scenario", "cannot", "screenshots", "observations",
+                     "production", "approve"):
             self.assertIn(text, body)

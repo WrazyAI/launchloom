@@ -25,9 +25,11 @@ Pause for login/MFA/CAPTCHA and missing approval, never work around them.
 | --- | --- | --- | --- | --- | --- |
 | flow-01 | functional | synthetic inputs ready | exercise the actual flow | observable state/result | numbered screenshot or redacted output |
 
-Include a meaningful negative/boundary case when applicable. State excluded
-coverage and why. Add existing unit/integration commands relevant to the flow;
-do not invent a parallel unit suite instead of exercising the workflow.
+For the scoped runner, record the manifest path, its SHA-256 digest, the exact
+loopback origin and permitted GET paths, and the approved scenario ID. Include
+a meaningful negative/boundary case when applicable. State excluded coverage and
+why. Add existing unit/integration commands relevant to the flow; do not invent
+a parallel unit suite instead of exercising the workflow.
 
 ## Stop conditions
 Missing prerequisites or unauthorized mutations are blocked. Unperformed steps

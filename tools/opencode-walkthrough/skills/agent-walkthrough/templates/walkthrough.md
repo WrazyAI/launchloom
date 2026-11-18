@@ -9,7 +9,8 @@ State remaining mandatory project gates separately.
 ## Steps and evidence
 For each case: action, expected result, actual observation, status, evidence
 link, and a caption explaining what each numbered screenshot demonstrates.
-Nonvisual cases link redacted command output, API responses, or logs.
+Nonvisual cases link redacted command output, API responses, or logs. Name the
+host scoped runner as the collector and DeepSeek as the independent reviewer.
 
 ## Limitations and cleanup
 Distinguish screenshot capture from screenshot interpretation. Never imply
