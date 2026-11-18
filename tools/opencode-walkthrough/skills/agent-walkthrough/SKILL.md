@@ -37,8 +37,8 @@ tests and gates still apply.
    the `walkthrough-verifier` definition, and its deny-only permissions.
    Block on same-ID overrides or mismatches. Launch a fresh named child with a
    harmless startup probe. Before sending a scenario list, verify the completed
-   assistant-message metadata names the agent, provider `opencode`, model ID
-   `deepseek-v4.1-flash-free`, and variant `max`. On any mismatch, block with
+   assistant-message metadata names the agent, provider `deeprelay`, model ID
+   `deepseek-v4.1-flash`, and variant `xhigh`. On any mismatch, block with
    no fallback and recheck identity on the verdict turn.
 4. **Let the child select one scenario.** Send only original requirements,
    environment label, expected results, and the approved scenario IDs. Never

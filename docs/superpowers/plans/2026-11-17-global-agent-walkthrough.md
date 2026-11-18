@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Use `opencode/deepseek-v4.1-flash-free#max`; never silently substitute provider, model, or variant.
+- Use `deeprelay/deepseek-v4.1-flash#xhigh`; never silently substitute provider, model, or variant.
 - Suggest verification for executable flows, not just UI; wait for user approval before running.
 - No application edits by the verifier; write only scoped evidence and approved disposable fixtures.
 - Production writes, destructive operations, and external effects require explicit authorization.
@@ -84,11 +84,11 @@ environment, and project context. It creates `spec.md` and delegates its path
 and the run directory to `walkthrough-verifier`. The child creates validated
 `results.json` and a screenshot-linked `walkthrough.md`; it cannot delegate again.
 
-- [ ] Write contract tests requiring `mode: subagent`, exact `model: opencode/deepseek-v4.1-flash-free#max`, deny-by-default source edits, evidence-only edit exception, shell approval, and denied nested delegation. Assert suggestion/approval, API/CLI coverage, no fallback, unsupported-image handling, prompt-injection boundaries, and unchanged mandatory gates are documented.
+- [ ] Write contract tests requiring `mode: subagent`, exact `model: deeprelay/deepseek-v4.1-flash#xhigh`, deny-by-default source edits, evidence-only edit exception, shell approval, and denied nested delegation. Assert suggestion/approval, API/CLI coverage, no fallback, unsupported-image handling, prompt-injection boundaries, and unchanged mandatory gates are documented.
 
   Pin the exact selector, not just a matching model family:
   ```python
-  self.assertEqual(agent_fields["model"], "opencode/deepseek-v4.1-flash-free#max")
+  self.assertEqual(agent_fields["model"], "deeprelay/deepseek-v4.1-flash#xhigh")
   self.assertEqual(agent_fields["mode"], "subagent")
   ```
 - [ ] Run the contract tests and confirm missing package definitions fail.

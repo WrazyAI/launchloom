@@ -15,7 +15,7 @@ class ContractTests(unittest.TestCase):
     def test_model_and_ordered_permissions(self):
         frontmatter = self.load("agents/walkthrough-verifier.md").split("---", 2)[1]
         self.assertIn("\nmode: subagent\n", frontmatter)
-        self.assertIn("\nmodel: opencode/deepseek-v4.1-flash-free#max\n", frontmatter)
+        self.assertIn("\nmodel: deeprelay/deepseek-v4.1-flash#xhigh\n", frontmatter)
         rules = re.findall(r'action: ([^,\n]+), resource: "([^"]+)", effect: (\w+)', frontmatter)
         self.assertGreater(len(rules), 1)
         self.assertIn(('"*"', "*", "deny"), rules)

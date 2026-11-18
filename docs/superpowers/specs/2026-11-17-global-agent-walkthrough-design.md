@@ -10,8 +10,8 @@ The user approved this first version in conversation on 2026-11-17.
 
 ## Fixed decisions
 
-- Use **DeepSeek V4.1 Flash, max**, pinned to
-  `opencode/deepseek-v4.1-flash-free#max`, an available selector in this setup.
+- Use **DeepSeek V4.1 Flash, xhigh**, pinned to
+  `deeprelay/deepseek-v4.1-flash#xhigh`, an available selector in this setup.
 - Never silently substitute a provider, model, or reasoning variant. An
   unavailable model produces a blocked outcome and a request for direction.
 - Install one global skill and one named verifier agent. Keep per-project
