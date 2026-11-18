@@ -372,6 +372,7 @@ jobs:
       # no repository variable can route a new site back to the legacy DOM.
       CREATIVE_EXPERIENCE_MODE: ${{ vars.CREATIVE_EXPERIENCE_MODE == 'promote' && 'promote' || 'preview' }}
       SEO_RESEARCH_MAX_TASKS: ${{ vars.SEO_RESEARCH_MAX_TASKS || '16' }}
+      SEO_RESEARCH_METRIC_LOCATION_NAME: ${{ vars.SEO_RESEARCH_METRIC_LOCATION_NAME || '' }}
       SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.35' }}
       SEO_FALLBACK_MAX_QUERIES: ${{ vars.SEO_FALLBACK_MAX_QUERIES || '3' }}
       SEO_FALLBACK_MAX_USD: ${{ vars.SEO_FALLBACK_MAX_USD || '0.05' }}

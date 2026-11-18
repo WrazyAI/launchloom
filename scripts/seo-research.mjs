@@ -266,8 +266,13 @@ export function normaliseSeoIntake(intake = {}) {
       ? industry
       : "");
   const website = text(intake.website || intake.existingWebsite, 500);
+  // Primary-market Google Ads and SERP evidence can be measured at the
+  // country level when city-level data is too sparse for narrow services. The
+  // local coverage research still measures each confirmed city separately.
   const metricLocation =
-    text(intake.metricLocation, 180) || metricLocationForCity(primaryCity);
+    text(intake.metricLocation, 180) ||
+    text(process.env.SEO_RESEARCH_METRIC_LOCATION_NAME, 180) ||
+    metricLocationForCity(primaryCity);
   const configuredLabsLocation =
     text(intake.labsLocation, 180) ||
     process.env.SEO_RESEARCH_LABS_LOCATION_NAME ||
@@ -1519,7 +1524,11 @@ export async function researchSiteContext(intake = {}, options = {}) {
         serviceAreas: city,
         coverageAreas: [city],
         coverageConfirmation: undefined,
-        metricLocation: metricLocationForCity(city),
+        // The first confirmed city is the site's primary market and uses the
+        // configured primary research location in both single- and multi-city
+        // paths. The remaining cities keep their own city-level coverage.
+        metricLocation:
+          cities.length === 0 ? seo.metricLocation : metricLocationForCity(city),
         website: cities.length ? "" : intake.website,
         existingWebsite: cities.length ? "" : intake.existingWebsite,
       },

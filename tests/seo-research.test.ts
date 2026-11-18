@@ -253,6 +253,21 @@ describe("SEO market map", () => {
     });
   });
 
+  it("uses the configured primary research location without changing city coverage", () => {
+    const previous = process.env.SEO_RESEARCH_METRIC_LOCATION_NAME;
+    process.env.SEO_RESEARCH_METRIC_LOCATION_NAME = "United States";
+    try {
+      const seo = normaliseSeoIntake(intake);
+      expect(seo.metricLocation).toBe("United States");
+      expect(seo.labsLocation).toBe("United States");
+      expect(seo.coverageAreas).toContain("Tacoma, WA");
+    } finally {
+      if (previous === undefined)
+        delete process.env.SEO_RESEARCH_METRIC_LOCATION_NAME;
+      else process.env.SEO_RESEARCH_METRIC_LOCATION_NAME = previous;
+    }
+  });
+
   it("qualifies a full US state name with the United States for metric targeting", () => {
     expect(
       normaliseSeoIntake({
