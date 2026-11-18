@@ -35,8 +35,9 @@ test("real browser records panel states and only forwards approved GETs", {
     if (req.url === "/redirect") return res.writeHead(302, { location: "/forbidden" }).end();
     res.writeHead(200, { "Content-Type": "text/html", "Set-Cookie": "fixture=private" }).end(
       `<button onclick="document.querySelector('h2').hidden=false;
+        setTimeout(()=>document.querySelector('h3').hidden=false,300);
         fetch('/forbidden').catch(()=>{}); fetch('/health',{method:'POST'}).catch(()=>{})">Sites</button>
-        <h2 hidden>Sites</h2>`);
+        <h2 hidden>Sites</h2><h3 hidden>Async ready</h3>`);
   });
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
   const folder = await mkdtemp(join(tmpdir(), "walkthrough-test-"));
@@ -51,6 +52,11 @@ test("real browser records panel states and only forwards approved GETs", {
       { type: "open", path: "/" },
       { type: "click", role: "button", name: "Missing" },
       { type: "screenshot" },
+    ];
+    plan.scenarios.async = [
+      { type: "open", path: "/" },
+      { type: "click", role: "button", name: "Sites" },
+      { type: "visible", role: "heading", name: "Async ready", expected: true },
     ];
     plan.scenarios.redirect = [{ type: "http", path: "/redirect", status: 200 }];
     const [bytes, digest] = encoded(plan);
@@ -71,6 +77,8 @@ test("real browser records panel states and only forwards approved GETs", {
     assert.equal((await run("redirect")).steps[0].status, "blocked");
     assert.deepEqual((await run("blocked-then-skipped")).steps.map(s => s.status),
       ["passed", "failed", "untested"]);
+    const asyncResult = await run("async");
+    assert.equal(asyncResult.steps[2].status, "passed", JSON.stringify(asyncResult));
     assert.equal((await run("panel")).scenario, "panel");
     assert.ok(seen.some(([, url]) => url === "/health"));
     assert.ok(seen.every(([method, url, cookie]) =>

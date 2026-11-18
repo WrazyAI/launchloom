@@ -55,8 +55,12 @@ async function walk(plan) {
           if (!await locator.isVisible()) record = { status: "failed", observed: false };
           else await locator.click({ timeout: 3000 });
         } else if (step.type === "visible") {
-          const observed = await locator.isVisible();
-          record = { status: observed === step.expected ? "passed" : "failed", observed };
+          try {
+            await locator.waitFor({ state: step.expected ? "visible" : "hidden", timeout: 3000 });
+            record = { status: "passed", observed: step.expected };
+          } catch {
+            record = { status: "failed", observed: !step.expected };
+          }
         } else if (step.type === "screenshot") {
           record.capture = (await page.screenshot({ timeout: 3000 })).toString("base64");
         } else if (step.type === "http") {
