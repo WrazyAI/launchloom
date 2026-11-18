@@ -1,4 +1,7 @@
-import { verifyApprovedRoutes, diagnosticFormMode } from "./browser-route-verification.mjs";
+import {
+  verifyApprovedRoutes,
+  diagnosticFormMode,
+} from "./browser-route-verification.mjs";
 import { sanitizeVerificationReport } from "./route-verification-handoff.mjs";
 import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { hasTestOnlySite } from "../templates/client-site/src/lib/seo-readiness.mjs";
@@ -242,17 +245,42 @@ try {
     await page.goto(url, { waitUntil: "networkidle" });
     if (testPreview) {
       const banner = page.locator("[data-pipeline-test-preview]");
-      const profile = config.pipelineTest?.profile || (config.demoNotice ? "fictional-demo" : undefined);
+      const profile =
+        config.pipelineTest?.profile ||
+        (config.demoNotice ? "fictional-demo" : undefined);
       const skipped = pipelineTestBannerMessage(profile);
-      if (!(await banner.isVisible()) || !(await banner.textContent())?.includes(profile || "invalid profile") || !(await banner.textContent())?.includes(skipped))
-        failures.push(`${viewport.name}: test-only profile and skipped lane must be visible.`);
+      if (
+        !(await banner.isVisible()) ||
+        !(await banner.textContent())?.includes(profile || "invalid profile") ||
+        !(await banner.textContent())?.includes(skipped)
+      )
+        failures.push(
+          `${viewport.name}: test-only profile and skipped lane must be visible.`,
+        );
       if (await page.locator(".ll-approve, .ll-send-anyway").count())
-        failures.push(`${viewport.name}: test-only preview contains release controls.`);
-      if ((await page.locator('meta[name="robots"]').getAttribute("content")) !== "noindex, nofollow" || await page.locator('link[rel="canonical"]').count())
-        failures.push(`${viewport.name}: test-only preview must remain unindexed without a production canonical.`);
-      for (const form of await page.locator("form.lead-form, form.launchloom-lead-form").all()) {
-        if ((await form.getAttribute("data-lead-preview")) !== "true" || await form.locator('[name="lead-token"]').evaluateAll(nodes => nodes.some(node => node.value)))
-          failures.push(`${viewport.name}: test-only form exposes a live submission path.`);
+        failures.push(
+          `${viewport.name}: test-only preview contains release controls.`,
+        );
+      if (
+        (await page.locator('meta[name="robots"]').getAttribute("content")) !==
+          "noindex, nofollow" ||
+        (await page.locator('link[rel="canonical"]').count())
+      )
+        failures.push(
+          `${viewport.name}: test-only preview must remain unindexed without a production canonical.`,
+        );
+      for (const form of await page
+        .locator("form.lead-form, form.launchloom-lead-form")
+        .all()) {
+        if (
+          (await form.getAttribute("data-lead-preview")) !== "true" ||
+          (await form
+            .locator('[name="lead-token"]')
+            .evaluateAll((nodes) => nodes.some((node) => node.value)))
+        )
+          failures.push(
+            `${viewport.name}: test-only form exposes a live submission path.`,
+          );
       }
     }
     // Astro's inline module islands can finish attaching interaction handlers
@@ -308,28 +336,30 @@ try {
           failures.push(
             "desktop: quick answers opened without visitor action.",
           );
-        const launcherState = await quickAnswers.evaluate((root) => {
-          const launcher = root.querySelector(".quick-answers__launcher");
-          const style = launcher ? getComputedStyle(launcher) : null;
-          const rect = launcher?.getBoundingClientRect();
-          return {
-            launcherVisible: Boolean(
-              launcher &&
+        const readLauncherState = () =>
+          quickAnswers.evaluate((root) => {
+            const launcher = root.querySelector(".quick-answers__launcher");
+            const style = launcher ? getComputedStyle(launcher) : null;
+            const rect = launcher?.getBoundingClientRect();
+            return {
+              launcherVisible: Boolean(
+                launcher &&
                 style?.visibility === "visible" &&
                 Number(style.opacity) > 0 &&
                 rect.width > 0 &&
                 rect.height > 0,
-            ),
-            inert: root.inert,
-            colliding: root.classList.contains("is-colliding"),
-          };
-        });
-        const interaction = quickAnswersInteraction(launcherState);
+              ),
+              inert: root.inert,
+              colliding: root.classList.contains("is-colliding"),
+            };
+          });
+        const interaction = quickAnswersInteraction(await readLauncherState());
         if (interaction === "invalid")
           failures.push(
             "desktop: quick answers launcher was hidden without a proven collision.",
           );
         let suppressedShells = null;
+        let readyForInteraction = interaction === "interact";
         if (interaction === "suppressed") {
           suppressedShells = await page.evaluate(() => {
             const targets = [
@@ -369,69 +399,75 @@ try {
             )
             .then(() => true)
             .catch(() => false);
+          readyForInteraction = exposed;
           if (!exposed)
             failures.push(
               "desktop: a proven collision suppression could not be exposed for the functional check.",
             );
         }
-        if (interaction === "interact" || suppressedShells) {
-          await quickAnswers.locator(".quick-answers__launcher").click();
-          if (!(await panel.isVisible()))
-            failures.push("desktop: quick answers did not open.");
-          const choice = quickAnswers.locator("[data-answer]").first();
-          await choice.click();
-          if (
-            !(await quickAnswers.locator(".quick-answers__answer").isVisible())
-          )
-            failures.push(
-              "desktop: quick answer content did not become visible.",
-            );
-          else
-            await page.screenshot({
-              path: path.join(
-                screenshotDir,
-                suppressedShells
-                  ? "desktop-quick-answers-suppressed.png"
-                  : "desktop-quick-answers.png",
-              ),
-            });
-          await page.keyboard.press("Escape");
-          if (await panel.isVisible()) {
-            failures.push("desktop: Escape did not close quick answers.");
-          } else {
-            const closeFocus = await quickAnswers.evaluate((root) => {
-              const launcher = root.querySelector(".quick-answers__launcher");
-              const main = document.querySelector("main");
-              return {
-                inert: root.inert,
-                launcherFocused: document.activeElement === launcher,
-                mainFocused: document.activeElement === main,
-              };
-            });
+        try {
+          if (readyForInteraction) {
+            await quickAnswers.locator(".quick-answers__launcher").click();
+            if (!(await panel.isVisible()))
+              failures.push("desktop: quick answers did not open.");
+            const choice = quickAnswers.locator("[data-answer]").first();
+            await choice.click();
             if (
-              closeFocus.inert
-                ? !closeFocus.mainFocused
-                : !closeFocus.launcherFocused
+              !(await quickAnswers
+                .locator(".quick-answers__answer")
+                .isVisible())
             )
               failures.push(
-                `desktop: closing quick answers did not restore safe focus: ${JSON.stringify(closeFocus)}.`,
+                "desktop: quick answer content did not become visible.",
               );
-          }
-        }
-        if (suppressedShells) {
-          await page.evaluate((hidden) => {
-            for (const item of hidden) {
-              const element = document.querySelector(
-                `[data-quick-answers-early-shell=\"${item.key}\"]`,
-              );
-              if (!element) continue;
-              if (item.style === null) element.removeAttribute("style");
-              else element.setAttribute("style", item.style);
-              element.removeAttribute("data-quick-answers-early-shell");
+            else
+              await page.screenshot({
+                path: path.join(
+                  screenshotDir,
+                  suppressedShells
+                    ? "desktop-quick-answers-suppressed.png"
+                    : "desktop-quick-answers.png",
+                ),
+              });
+            await page.keyboard.press("Escape");
+            if (await panel.isVisible()) {
+              failures.push("desktop: Escape did not close quick answers.");
+            } else {
+              const closeFocus = await quickAnswers.evaluate((root) => {
+                const launcher = root.querySelector(".quick-answers__launcher");
+                const main = document.querySelector("main");
+                return {
+                  inert: root.inert,
+                  launcherFocused: document.activeElement === launcher,
+                  mainFocused: document.activeElement === main,
+                };
+              });
+              if (
+                closeFocus.inert
+                  ? !closeFocus.mainFocused
+                  : !closeFocus.launcherFocused
+              )
+                failures.push(
+                  `desktop: closing quick answers did not restore safe focus: ${JSON.stringify(closeFocus)}.`,
+                );
             }
-            window.dispatchEvent(new Event("resize"));
-          }, suppressedShells);
-          await page.waitForTimeout(100);
+          }
+        } finally {
+          if (suppressedShells) {
+            await page.evaluate((hidden) => {
+              for (const item of hidden) {
+                const element = document.querySelector(
+                  `[data-quick-answers-early-shell=\"${item.key}\"]`,
+                );
+                if (!element) continue;
+                if (item.style === null) element.removeAttribute("style");
+                else element.setAttribute("style", item.style);
+                element.removeAttribute("data-quick-answers-early-shell");
+              }
+              window.dispatchEvent(new Event("resize"));
+            }, suppressedShells);
+            await page.waitForTimeout(100);
+          }
         }
 
         // Add a contact/footer region after the shared assistant has mounted.
@@ -455,66 +491,135 @@ try {
         });
         await page.waitForTimeout(100);
         const launcherReady = await page
-          .waitForFunction(() => {
-            const root = document.querySelector(".quick-answers");
-            const launcher = root?.querySelector(".quick-answers__launcher");
-            if (!root || !launcher || root.inert) return false;
-            const style = getComputedStyle(root);
-            const rect = launcher.getBoundingClientRect();
-            return style.visibility === "visible" && Number(style.opacity) > 0 && rect.width > 0 && rect.height > 0;
-          }, null, { timeout: 1000 })
+          .waitForFunction(
+            () => {
+              const root = document.querySelector(".quick-answers");
+              const launcher = root?.querySelector(".quick-answers__launcher");
+              if (!root || !launcher || root.inert) return false;
+              const style = getComputedStyle(root);
+              const rect = launcher.getBoundingClientRect();
+              return (
+                style.visibility === "visible" &&
+                Number(style.opacity) > 0 &&
+                rect.width > 0 &&
+                rect.height > 0
+              );
+            },
+            null,
+            { timeout: 1000 },
+          )
           .then(() => true)
           .catch(() => false);
         if (!launcherReady) {
-          failures.push("desktop: could not expose the assistant for the late-footer collision check.");
+          failures.push(
+            "desktop: could not expose the assistant for the late-footer collision check.",
+          );
         } else {
           await page.evaluate(() => {
             const lateFooter = document.createElement("footer");
             lateFooter.className = "footer";
             lateFooter.dataset.quickAnswersLateFooter = "true";
-            lateFooter.style.cssText = "position:fixed;left:0;bottom:0;z-index:1000;display:grid;gap:8px;width:360px;height:112px;padding:12px;background:#fff;color:#14201d;border:1px solid #14201d";
-            lateFooter.innerHTML = "<p>Contact our team about your service.</p><button type=\"button\">Prepare a request</button>";
+            lateFooter.style.cssText =
+              "position:fixed;left:0;bottom:0;z-index:1000;display:grid;gap:8px;width:360px;height:112px;padding:12px;background:#fff;color:#14201d;border:1px solid #14201d";
+            lateFooter.innerHTML =
+              '<p>Contact our team about your service.</p><button type="button">Prepare a request</button>';
             document.body.append(lateFooter);
           });
           const clearAfterHydration = await page
-            .waitForFunction(() => {
-              const root = document.querySelector(".quick-answers");
-              const launcher = root?.querySelector(".quick-answers__launcher");
-              const footer = document.querySelector("[data-quick-answers-late-footer]");
-              if (!root || !launcher || !footer) return false;
-              const style = getComputedStyle(root);
-              if (root.inert || style.visibility === "hidden" || Number(style.opacity) === 0) return true;
-              const rect = launcher.getBoundingClientRect();
-              const collides = (other) =>
-                rect.left < other.right && rect.right > other.left &&
-                rect.top < other.bottom && rect.bottom > other.top;
-              const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-              const range = document.createRange();
-              while (walker.nextNode()) {
-                const node = walker.currentNode;
-                if (!node.textContent?.trim() || node.parentElement?.closest(".quick-answers,[hidden],[inert],script,style,template")) continue;
-                const parentStyle = getComputedStyle(node.parentElement);
-                if (parentStyle.display === "none" || parentStyle.visibility !== "visible" || Number(parentStyle.opacity) === 0) continue;
-                range.selectNodeContents(node);
-                if ([...range.getClientRects()].some((textRect) => textRect.width > 0 && textRect.height > 0 && collides(textRect))) return false;
-              }
-              for (const control of document.querySelectorAll("a[href],button,input,select,textarea,summary,[role=button]")) {
-                if (control.closest(".quick-answers,[hidden],[inert]")) continue;
-                const controlStyle = getComputedStyle(control);
-                if (controlStyle.display === "none" || controlStyle.visibility !== "visible" || Number(controlStyle.opacity) === 0) continue;
-                const controlRect = control.getBoundingClientRect();
-                if (controlRect.width > 0 && controlRect.height > 0 && collides(controlRect)) return false;
-              }
-              return true;
-            }, null, { timeout: 1500 })
+            .waitForFunction(
+              () => {
+                const root = document.querySelector(".quick-answers");
+                const launcher = root?.querySelector(
+                  ".quick-answers__launcher",
+                );
+                const footer = document.querySelector(
+                  "[data-quick-answers-late-footer]",
+                );
+                if (!root || !launcher || !footer) return false;
+                const style = getComputedStyle(root);
+                if (
+                  root.inert ||
+                  style.visibility === "hidden" ||
+                  Number(style.opacity) === 0
+                )
+                  return true;
+                const rect = launcher.getBoundingClientRect();
+                const collides = (other) =>
+                  rect.left < other.right &&
+                  rect.right > other.left &&
+                  rect.top < other.bottom &&
+                  rect.bottom > other.top;
+                const walker = document.createTreeWalker(
+                  document.body,
+                  NodeFilter.SHOW_TEXT,
+                );
+                const range = document.createRange();
+                while (walker.nextNode()) {
+                  const node = walker.currentNode;
+                  if (
+                    !node.textContent?.trim() ||
+                    node.parentElement?.closest(
+                      ".quick-answers,[hidden],[inert],script,style,template",
+                    )
+                  )
+                    continue;
+                  const parentStyle = getComputedStyle(node.parentElement);
+                  if (
+                    parentStyle.display === "none" ||
+                    parentStyle.visibility !== "visible" ||
+                    Number(parentStyle.opacity) === 0
+                  )
+                    continue;
+                  range.selectNodeContents(node);
+                  if (
+                    [...range.getClientRects()].some(
+                      (textRect) =>
+                        textRect.width > 0 &&
+                        textRect.height > 0 &&
+                        collides(textRect),
+                    )
+                  )
+                    return false;
+                }
+                for (const control of document.querySelectorAll(
+                  "a[href],button,input,select,textarea,summary,[role=button]",
+                )) {
+                  if (control.closest(".quick-answers,[hidden],[inert]"))
+                    continue;
+                  const controlStyle = getComputedStyle(control);
+                  if (
+                    controlStyle.display === "none" ||
+                    controlStyle.visibility !== "visible" ||
+                    Number(controlStyle.opacity) === 0
+                  )
+                    continue;
+                  const controlRect = control.getBoundingClientRect();
+                  if (
+                    controlRect.width > 0 &&
+                    controlRect.height > 0 &&
+                    collides(controlRect)
+                  )
+                    return false;
+                }
+                return true;
+              },
+              null,
+              { timeout: 1500 },
+            )
             .then(() => true)
             .catch(() => false);
           if (!clearAfterHydration)
-            failures.push("desktop: the assistant overlaps text or controls after a contact/footer region renders late.");
+            failures.push(
+              "desktop: the assistant overlaps text or controls after a contact/footer region renders late.",
+            );
           await page.evaluate((hidden) => {
-            document.querySelector("[data-quick-answers-late-footer]")?.remove();
+            document
+              .querySelector("[data-quick-answers-late-footer]")
+              ?.remove();
             for (const item of hidden) {
-              const element = document.querySelector(`[data-quick-answers-shell-test=\"${item.key}\"]`);
+              const element = document.querySelector(
+                `[data-quick-answers-shell-test=\"${item.key}\"]`,
+              );
               if (!element) continue;
               if (item.style === null) element.removeAttribute("style");
               else element.setAttribute("style", item.style);
@@ -524,38 +629,60 @@ try {
           }, hiddenShell);
           await page.waitForTimeout(100);
 
-          if (interaction !== "suppressed") {
+          const refreshedInteraction = quickAnswersInteraction(
+            await readLauncherState(),
+          );
+          if (refreshedInteraction === "interact") {
             await quickAnswers.locator(".quick-answers__launcher").click();
             await page.waitForFunction(() => {
               const root = document.querySelector(".quick-answers");
-              return root && !root.inert && !root.querySelector(".quick-answers__panel")?.hidden;
+              return (
+                root &&
+                !root.inert &&
+                !root.querySelector(".quick-answers__panel")?.hidden
+              );
             });
             await page.evaluate(() => {
               const blocker = document.createElement("button");
               blocker.dataset.quickAnswersFocusBlocker = "true";
               blocker.textContent = "Focus collision blocker";
-              blocker.style.cssText = "position:fixed;inset:0;z-index:1000;margin:0;padding:0;border:0;background:transparent;color:transparent;pointer-events:none";
+              blocker.style.cssText =
+                "position:fixed;inset:0;z-index:1000;margin:0;padding:0;border:0;background:transparent;color:transparent;pointer-events:none";
               document.body.append(blocker);
             });
             await quickAnswers.locator(".quick-answers__close").click();
             const blockedClose = await page
-              .waitForFunction(() => document.querySelector(".quick-answers")?.inert, null, { timeout: 1500 })
+              .waitForFunction(
+                () => document.querySelector(".quick-answers")?.inert,
+                null,
+                { timeout: 1500 },
+              )
               .then(() =>
                 page.evaluate(() => {
                   const root = document.querySelector(".quick-answers");
                   const main = document.querySelector("main");
                   return {
                     inert: root?.inert,
-                    focusInsideAssistant: Boolean(root?.contains(document.activeElement)),
+                    focusInsideAssistant: Boolean(
+                      root?.contains(document.activeElement),
+                    ),
                     mainFocused: document.activeElement === main,
                   };
                 }),
               )
               .catch(() => null);
-            if (!blockedClose?.inert || blockedClose.focusInsideAssistant || !blockedClose.mainFocused)
-              failures.push(`desktop: closing an assistant that must become inert did not move focus to page content: ${JSON.stringify(blockedClose)}.`);
+            if (
+              !blockedClose?.inert ||
+              blockedClose.focusInsideAssistant ||
+              !blockedClose.mainFocused
+            )
+              failures.push(
+                `desktop: closing an assistant that must become inert did not move focus to page content: ${JSON.stringify(blockedClose)}.`,
+              );
             await page.evaluate(() => {
-              document.querySelector("[data-quick-answers-focus-blocker]")?.remove();
+              document
+                .querySelector("[data-quick-answers-focus-blocker]")
+                ?.remove();
               window.dispatchEvent(new Event("resize"));
             });
             await page.waitForFunction(() => {
@@ -595,8 +722,14 @@ try {
               mainFocused: document.activeElement === main,
             };
           });
-          if (closeFocus.inert ? !closeFocus.mainFocused : !closeFocus.launcherFocused)
-            failures.push(`desktop: closing AI chat did not restore safe focus: ${JSON.stringify(closeFocus)}.`);
+          if (
+            closeFocus.inert
+              ? !closeFocus.mainFocused
+              : !closeFocus.launcherFocused
+          )
+            failures.push(
+              `desktop: closing AI chat did not restore safe focus: ${JSON.stringify(closeFocus)}.`,
+            );
         }
       }
 
@@ -623,20 +756,28 @@ try {
       )
         failures.push("mobile: desktop exit offer is not suppressed.");
 
-      const quickAnswers = page.locator('[data-conversion-feature="quick-answers"]');
+      const quickAnswers = page.locator(
+        '[data-conversion-feature="quick-answers"]',
+      );
       if (await quickAnswers.count()) {
         const launcher = quickAnswers.locator(".quick-answers__launcher");
         const panel = quickAnswers.locator(".quick-answers__panel");
-        const closedPosition = await quickAnswers.evaluate((element) => getComputedStyle(element).position);
+        const closedPosition = await quickAnswers.evaluate(
+          (element) => getComputedStyle(element).position,
+        );
         if (closedPosition !== "static")
-          failures.push("mobile: quick-answer launcher is fixed over page content instead of remaining in flow.");
+          failures.push(
+            "mobile: quick-answer launcher is fixed over page content instead of remaining in flow.",
+          );
         if (await panel.isVisible())
           failures.push("mobile: quick answers opened without visitor action.");
         await launcher.click();
         if (!(await panel.isVisible()))
           failures.push("mobile: quick answers did not open.");
         const openLayout = await quickAnswers.evaluate((root) => {
-          const launcherElement = root.querySelector(".quick-answers__launcher");
+          const launcherElement = root.querySelector(
+            ".quick-answers__launcher",
+          );
           const panelElement = root.querySelector(".quick-answers__panel");
           const main = document.querySelector("main");
           const rootRect = root.getBoundingClientRect();
@@ -651,15 +792,32 @@ try {
             panelClipped:
               panelStyle.overflowY !== "visible" &&
               panelElement.scrollHeight > panelElement.clientHeight + 1,
-            rootAfterMain: !main || rootRect.top >= main.getBoundingClientRect().bottom,
+            rootAfterMain:
+              !main || rootRect.top >= main.getBoundingClientRect().bottom,
             panelAfterLauncher: panelRect.top >= launcherRect.bottom,
           };
         });
-        if (openLayout.rootPosition !== "static" || openLayout.panelPosition !== "static" || openLayout.panelMaxHeight !== "none" || openLayout.panelClipped || !openLayout.rootAfterMain || !openLayout.panelAfterLauncher)
-          failures.push(`mobile: quick-answer panel is not in-flow and unclipped: ${JSON.stringify(openLayout)}.`);
+        if (
+          openLayout.rootPosition !== "static" ||
+          openLayout.panelPosition !== "static" ||
+          openLayout.panelMaxHeight !== "none" ||
+          openLayout.panelClipped ||
+          !openLayout.rootAfterMain ||
+          !openLayout.panelAfterLauncher
+        )
+          failures.push(
+            `mobile: quick-answer panel is not in-flow and unclipped: ${JSON.stringify(openLayout)}.`,
+          );
         await quickAnswers.locator(".quick-answers__close").click();
-        if ((await launcher.getAttribute("aria-expanded")) !== "false" || !(await launcher.evaluate((element) => document.activeElement === element)))
-          failures.push("mobile: closing quick answers did not restore its collapsed state and focus.");
+        if (
+          (await launcher.getAttribute("aria-expanded")) !== "false" ||
+          !(await launcher.evaluate(
+            (element) => document.activeElement === element,
+          ))
+        )
+          failures.push(
+            "mobile: closing quick answers did not restore its collapsed state and focus.",
+          );
       }
     }
     await page.evaluate(async () => {
