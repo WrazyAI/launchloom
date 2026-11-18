@@ -352,9 +352,6 @@ async function verifyForm(page, form, config, phase, requests, timeout) {
   return result;
 }
 
-/** Approved route browser evidence. Mutating requests are always intercepted.
- * @param {{config: any, origin: string, formMode?: string, mode?: string, viewports?: Array<{name:string,width:number,height:number}>, representativeViewports?: Array<{name:string,width:number,height:number}>, screenshotsDir?: string, timeout?: number, browser?: import("playwright").Browser}} options
- */
 /**
  * Activate a form's submit control.
  *
@@ -375,6 +372,9 @@ async function activateFormSubmit(form, timeout) {
   return "requestSubmit";
 }
 
+/** Approved route browser evidence. Mutating requests are always intercepted.
+ * @param {{config: any, origin: string, formMode?: string, mode?: string, viewports?: Array<{name:string,width:number,height:number}>, representativeViewports?: Array<{name:string,width:number,height:number}>, screenshotsDir?: string, timeout?: number, browser?: import("playwright").Browser}} options
+ */
 export async function verifyApprovedRoutes({
   config,
   origin,
