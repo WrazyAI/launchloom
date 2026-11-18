@@ -3,8 +3,8 @@
 Ask “Use `agent-walkthrough` to independently verify this change” or accept an
 agent’s offer. A host **scoped runner** exercises one approved browser scenario
 inside an isolated Chromium, writes screenshots and observations privately, and
-the pinned DeepSeek child independently selects and judges the evidence. The
-child has no browser, shell, API, or file tools.
+the pinned DeepSeek child is designed to select and judge that evidence when the
+provider is available. The child has no browser, shell, API, or file tools.
 
 ## Boundaries
 
@@ -14,16 +14,21 @@ child has no browser, shell, API, or file tools.
 - Only `http://127.0.0.1:<port>` is accepted. The stdio broker fulfills exact
   approved GET paths only; it forwards no headers or cookies, refuses redirects
   and compressed responses, and caps request count, body size, and time. The
-  page has no outbound network, service workers, WebSockets, popups, downloads,
-  files, credentials, or project access.
+  page has no outbound network, service workers, WebSockets, downloads,
+  credentials, or project access; popups are closed best-effort.
 - Actions are declarative: open an approved path, click or assert a role/name,
   screenshot, or call an approved GET with an expected status/JSON body. There
   is no shell, eval, arbitrary selector, navigation outside the manifest, or
-  CLI.
-- Server-side effects are not sandboxed. Use a disposable synthetic fixture
-  with no production credentials or outbound dependencies. Production writes,
-  external origins, authentication, and offensive security work are out of
-  scope.
+  CLI. Popups are closed best-effort rather than prevented from brief execution.
+  Only status, content type, and body are forwarded; CSP, cookies, CORS, and
+  other response headers are dropped.
+- The sandbox exposes `/usr`, runtime libraries, and the runner mounts
+  read-only. It does not expose the host home or project directories. Server
+  side effects are not sandboxed. Use a disposable synthetic fixture with no
+  production credentials or outbound dependencies. Production writes, external
+  origins, authentication, and offensive security work are out of scope.
+- A run with any blocked or untested step exits nonzero; passed and failed
+  verdicts remain in the JSON result.
 - The child receives only sanitized observations by default. Screenshot
   understanding is a separate, unproven capability; never claim a pixel verdict
   without demonstrating it.
@@ -68,21 +73,25 @@ export WALKTHROUGH_CHROMIUM=/absolute/path/to/chrome-headless-shell
 Validate and approve it before running:
 
 ```sh
-node runner/approve.mjs /private/path/plan.json
+node runner/approve.mjs /private/path/plan.json --out /private/path/approval.json
 ```
 
-The command prints the SHA-256 digest and scenario IDs only if every scenario is
-valid. Show the origin, paths, scenarios, expected results, and digest to the
-user. The pinned child may then choose exactly one listed scenario ID.
+The command validates every scenario, refuses an empty scenario set, and writes
+an approval artifact binding the exact manifest, its SHA-256 digest, and the
+approved scenario IDs. It prints the digest and scenario IDs. Show the origin,
+paths, scenarios, expected results, digest, and approval artifact to the user.
+The pinned child may then choose exactly one listed scenario ID.
 
 ## Run and report
 
 ```sh
-node runner/run.mjs /private/path/plan.json <digest> <scenario-id> ~/.local/state/opencode/walkthroughs
+node runner/run.mjs /private/path/plan.json /private/path/approval.json <scenario-id> ~/.local/state/opencode/walkthroughs
 ```
 
-The runner creates a fresh private `scoped-*` directory containing
-`evidence/observations.json` and numbered PNG screenshots. The parent validates
+The runner reads the approval artifact and rejects a mismatched manifest,
+digest, scenario set, or scenario ID. It creates a fresh private `scoped-*`
+directory containing `evidence/observations.json` and numbered PNG screenshots.
+A run with blocked or untested steps exits nonzero. The parent validates
 `results.json`, writes the walkthrough, and links the evidence. Only the parent
 writes the final report. Close the fixture yourself and delete obsolete runs
 when they are no longer needed.

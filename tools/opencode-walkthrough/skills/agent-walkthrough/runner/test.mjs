@@ -61,12 +61,23 @@ test("real browser records panel states and only forwards approved GETs", {
     plan.scenarios.redirect = [{ type: "http", path: "/redirect", status: 200 }];
     const [bytes, digest] = encoded(plan);
     await writeFile(join(folder, "plan.json"), bytes);
-    const run = async id => {
-      const { stdout } = await promisify(execFile)(process.execPath, [
-        new URL("./run.mjs", import.meta.url).pathname, join(folder, "plan.json"), digest, id, folder,
-      ], { timeout: 60_000 });
-      return JSON.parse(stdout);
+    await writeFile(join(folder, "approval.json"), JSON.stringify({
+      digest, manifest: plan, scenarios: Object.keys(plan.scenarios),
+    }));
+    const invoke = async id => {
+      const child = promisify(execFile)(process.execPath, [
+        new URL("./run.mjs", import.meta.url).pathname,
+        join(folder, "plan.json"), join(folder, "approval.json"), id, folder,
+      ], { timeout: 100_000 });
+      try {
+        const { stdout } = await child;
+        return { code: 0, result: JSON.parse(stdout) };
+      } catch (error) {
+        if (error.stdout) return { code: error.code, result: JSON.parse(error.stdout) };
+        throw error;
+      }
     };
+    const run = async id => (await invoke(id)).result;
     const result = await run("panel");
     assert.deepEqual(result.steps.map(s => s.status), Array(6).fill("passed"));
     for (const index of [1, 4]) {
@@ -74,9 +85,14 @@ test("real browser records panel states and only forwards approved GETs", {
       assert.equal(shot.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
     }
     assert.equal((await run("broken")).steps[1].status, "failed");
-    assert.equal((await run("redirect")).steps[0].status, "blocked");
-    assert.deepEqual((await run("blocked-then-skipped")).steps.map(s => s.status),
+    const redirect = await invoke("redirect");
+    assert.equal(redirect.code, 1);
+    assert.equal(redirect.result.steps[0].status, "blocked");
+    const skipped = await invoke("blocked-then-skipped");
+    assert.equal(skipped.code, 1);
+    assert.deepEqual(skipped.result.steps.map(s => s.status),
       ["passed", "failed", "untested"]);
+    assert.equal((await invoke("async")).code, 0);
     const asyncResult = await run("async");
     assert.equal(asyncResult.steps[2].status, "passed", JSON.stringify(asyncResult));
     assert.equal((await run("panel")).scenario, "panel");
@@ -93,24 +109,46 @@ function encoded(manifest) {
   return [bytes, createHash("sha256").update(bytes).digest("hex")];
 }
 
-test("operator approval CLI prints the exact digest and scenario IDs", async () => {
+test("operator approval CLI writes a bound approval artifact", async () => {
   const folder = await mkdtemp(join(tmpdir(), "walkthrough-approve-"));
   try {
     const manifest = fixture();
     const [bytes, digest] = encoded(manifest);
     const file = join(folder, "plan.json");
+    const approval = join(folder, "approval.json");
     await writeFile(file, bytes);
     const cli = promisify(execFile);
     const { stdout } = await cli(process.execPath, [
-      new URL("./approve.mjs", import.meta.url).pathname, file,
+      new URL("./approve.mjs", import.meta.url).pathname, file, "--out", approval,
     ]);
     assert.deepEqual(JSON.parse(stdout), { digest, origin: manifest.origin, scenarios: ["panel"] });
+    const saved = JSON.parse(await readFile(approval, "utf8"));
+    assert.equal(saved.digest, digest);
+    assert.deepEqual(saved.manifest, manifest);
     await writeFile(file, "{");
-    await assert.rejects(cli(process.execPath, [new URL("./approve.mjs", import.meta.url).pathname, file]),
-      error => error.code === 1 && !error.stderr.includes("Traceback"));
+    await assert.rejects(cli(process.execPath, [
+      new URL("./approve.mjs", import.meta.url).pathname, file, "--out", join(folder, "bad.json"),
+    ]), error => error.code === 1 && !error.stderr.includes("Traceback"));
   } finally {
     await rm(folder, { recursive: true });
   }
+});
+
+test("approval artifact binds the exact manifest and scenario", async () => {
+  const { verifyApproval } = await scope();
+  const [bytes] = encoded(fixture());
+  const digest = createHash("sha256").update(bytes).digest("hex");
+  const approval = { digest, manifest: fixture(), scenarios: ["panel"] };
+  assert.equal(verifyApproval(bytes, approval, "panel").steps.length, 5);
+  assert.throws(() => verifyApproval(bytes, { ...approval, digest: "0".repeat(64) }, "panel"), /digest/);
+  assert.throws(() => verifyApproval(bytes, { ...approval, scenarios: ["other"] }, "panel"), /scenario/);
+  assert.throws(() => verifyApproval(bytes, { ...approval, manifest: { ...fixture(), origin: "http://127.0.0.1:1" } }, "panel"), /manifest/);
+});
+
+test("zero-scenario manifests are refused", async () => {
+  const { approve } = await scope();
+  const [bytes, digest] = encoded({ ...fixture(), scenarios: {} });
+  assert.throws(() => approve(bytes, digest, "panel"), /scenario/);
 });
 
 test("only exact, hash-approved scenario IDs can run", async () => {  const { approve } = await scope();

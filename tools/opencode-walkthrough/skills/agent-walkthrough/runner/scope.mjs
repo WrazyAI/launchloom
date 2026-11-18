@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 
 const id = /^[a-z][a-z0-9-]{0,39}$/;
 const route = /^\/(?:[A-Za-z0-9_.~-]+\/)*[A-Za-z0-9_.~-]*$/;
@@ -28,7 +29,8 @@ export function approve(bytes, digest, scenario) {
       !path.split("/").some(part => part === "." || part === ".."), "invalid path");
   }
   check(scenarios && Object.getPrototypeOf(scenarios) === Object.prototype &&
-    Object.keys(scenarios).length <= 16 && typeof scenario === "string" && id.test(scenario) &&
+    Object.keys(scenarios).length > 0 && Object.keys(scenarios).length <= 16 &&
+    typeof scenario === "string" && id.test(scenario) &&
     Object.hasOwn(scenarios, scenario), "unapproved scenario");
   for (const [name, steps] of Object.entries(scenarios)) {
     check(id.test(name) && Array.isArray(steps) && steps.length > 0 && steps.length <= 20, "invalid scenario");
@@ -60,6 +62,21 @@ export function approve(bytes, digest, scenario) {
     }
   }
   return { origin, paths, steps: scenarios[scenario], scenario, digest };
+}
+
+export function verifyApproval(bytes, approval, scenario) {
+  check(Buffer.isBuffer(bytes) && bytes.length <= MAX_MANIFEST, "manifest too large");
+  check(approval && Object.getPrototypeOf(approval) === Object.prototype &&
+    typeof approval.digest === "string" && /^[0-9a-f]{64}$/.test(approval.digest) &&
+    approval.manifest && Object.getPrototypeOf(approval.manifest) === Object.prototype &&
+    Array.isArray(approval.scenarios), "invalid approval artifact");
+  check(createHash("sha256").update(bytes).digest("hex") === approval.digest,
+    "approval digest mismatch");
+  const manifest = JSON.parse(bytes.toString("utf8"));
+  check(isDeepStrictEqual(manifest, approval.manifest), "approval manifest mismatch");
+  check([...approval.scenarios].sort().join("\n") === Object.keys(manifest.scenarios ?? {}).sort().join("\n"),
+    "approval scenario set mismatch");
+  return approve(bytes, approval.digest, scenario);
 }
 
 export function allowedRequest(plan, method, url) {

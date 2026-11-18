@@ -18,7 +18,7 @@ function request(method, url) {
 
 async function walk(plan) {
   const browser = await chromium.launch({
-    executablePath: process.argv[2], headless: true, chromiumSandbox: true, timeout: 20_000,
+    executablePath: process.argv[2], headless: true, chromiumSandbox: true, timeout: 45_000,
   });
   try {
     const context = await browser.newContext({

@@ -16,9 +16,11 @@ tests and gates still apply.
    and revision (include dirty-change identity or explicit fixture version) and
    confirm it matches the running target. Write a manifest containing one
    loopback origin, exact GET paths, and up to 16 scenarios. Run
-   `node <skill-dir>/runner/approve.mjs <manifest.json>`; it prints the digest
-   and scenario IDs only after every scenario passes validation. Show the user
-   the origin, paths, scenarios, expected results, and digest before running.
+   `node <skill-dir>/runner/approve.mjs <manifest.json> --out <approval.json>`;
+   it validates every scenario, refuses zero scenarios, and writes an approval
+   artifact containing the exact manifest, its digest, and the approved scenario
+   IDs. Show the user the origin, paths, scenarios, expected results, digest, and
+   approval artifact before running.
    The runner is Linux-only and deliberately narrow: synthetic disposable
    fixtures, browser actions, bounded unauthenticated loopback GETs, screenshots,
    and observations. It does not run arbitrary CLI commands, reach external
@@ -43,15 +45,20 @@ tests and gates still apply.
    send the implementer's verdict, page content, or artifact paths. Require
    exactly one ID from that list. Reject any other value and do not invent steps.
 5. **Run the scoped runner.** From the host, run
-   `node <skill-dir>/runner/run.mjs <manifest> <digest> <scenario> <private-run-root>`.
-   The runner creates an isolated Chromium under `bwrap --unshare-all` with an
-   empty environment. It fulfills only exact approved GET paths through a stdio
-   broker, caps requests and body sizes, refuses redirects and encoded
-   responses, closes WebSockets and popups, and writes screenshots plus
-   `observations.json` into a fresh private run directory. The page has no
-   outbound network, credentials, or host files. It cannot run arbitrary
-   commands, selectors, or eval fragments. If the runner reports blocked or the
-   environment is unavailable, report that case blocked.
+   `node <skill-dir>/runner/run.mjs <manifest> <approval.json> <scenario> <private-run-root>`.
+   The runner reads the approval artifact and rejects a missing, tampered, or
+   mismatched manifest, digest, scenario set, or scenario ID. It creates an
+   isolated Chromium under `bwrap --unshare-all` with an empty environment. It
+   fulfills only exact approved GET paths through a stdio broker, caps requests
+   and body sizes, refuses redirects and encoded responses, closes WebSockets
+   and popups, and writes screenshots plus `observations.json` into a fresh
+   private run directory. The page has no outbound network, credentials, or host
+   home/project data. It cannot run arbitrary commands, selectors, or eval
+   fragments. Only `/usr`, runtime libraries, and the runner mounts are visible.
+   Popups are closed best-effort rather than prevented from brief execution;
+   response headers other than status, content type, and body are not forwarded.
+   A run with blocked or untested steps exits nonzero. If the runner reports
+   blocked or the environment is unavailable, report that case blocked.
 6. **Ask for independent verdicts.** Send the child only sanitized observations:
    step number, action type, expected result, status, HTTP status. It cannot see
    screenshots by default. If image understanding has been separately proven,
