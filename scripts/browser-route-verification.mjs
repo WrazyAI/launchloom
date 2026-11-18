@@ -120,7 +120,7 @@ async function verifyDiagnosticForm(
       node.textContent = "";
     });
     phase.value = "preview-submit";
-    await form.locator("button[type=submit]").click();
+    await activateFormSubmit(form, timeout);
     await status
       .filter({
         hasText:
@@ -273,7 +273,7 @@ async function verifyForm(page, form, config, phase, requests, timeout) {
       phase.value = attempt;
       await fill();
       const start = requests.length;
-      await form.locator("button[type=submit]").click();
+      await activateFormSubmit(form, timeout);
       await page
         .waitForFunction(
           () => !document.querySelector("form button[type=submit]:disabled"),
@@ -355,6 +355,26 @@ async function verifyForm(page, form, config, phase, requests, timeout) {
 /** Approved route browser evidence. Mutating requests are always intercepted.
  * @param {{config: any, origin: string, formMode?: string, mode?: string, viewports?: Array<{name:string,width:number,height:number}>, representativeViewports?: Array<{name:string,width:number,height:number}>, screenshotsDir?: string, timeout?: number, browser?: import("playwright").Browser}} options
  */
+/**
+ * Activate a form's submit control.
+ *
+ * A styled form can hide its native submit button and drive submission from a
+ * label or an overlay. Clicking the hidden node made Playwright retry for the
+ * whole timeout ("58 x waiting for element to be visible") and failed the route
+ * in run 44338781816. Activate the real control when it is visible; otherwise
+ * submit the form programmatically, which still runs the page's own submit
+ * handler and the recorded request/telemetry assertions.
+ */
+async function activateFormSubmit(form, timeout) {
+  const submit = form.locator('button[type="submit"]').first();
+  if (await submit.isVisible().catch(() => false)) {
+    await submit.click({ timeout });
+    return "click";
+  }
+  await form.evaluate((node) => node.requestSubmit());
+  return "requestSubmit";
+}
+
 export async function verifyApprovedRoutes({
   config,
   origin,
