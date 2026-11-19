@@ -281,19 +281,29 @@ export function launchRecordFrom({
               ...(route.referenceIds || []),
             ]),
           ),
-          [normalizedStage === "attempt"
-            ? "reservedReferenceIds"
-            : "authoredReferenceIds"]: cleanList(
-            authoredRoutes.flatMap((route) => [
-              route.referenceDossier?.id,
-              ...(route.referenceIds || []),
-            ]),
-          ),
-          [normalizedStage === "attempt"
-            ? "reservedHeroArchetypes"
-            : "authoredHeroArchetypes"]: cleanList(
-            authoredRoutes.map((route) => route.heroArchetype),
-          ),
+          ...(normalizedStage === "attempt"
+            ? {
+                reservedReferenceIds: cleanList(
+                  authoredRoutes.flatMap((route) => [
+                    route.referenceDossier?.id,
+                    ...(route.referenceIds || []),
+                  ]),
+                ),
+                reservedHeroArchetypes: cleanList(
+                  authoredRoutes.map((route) => route.heroArchetype),
+                ),
+              }
+            : {
+                authoredReferenceIds: cleanList(
+                  authoredRoutes.flatMap((route) => [
+                    route.referenceDossier?.id,
+                    ...(route.referenceIds || []),
+                  ]),
+                ),
+                authoredHeroArchetypes: cleanList(
+                  authoredRoutes.map((route) => route.heroArchetype),
+                ),
+              }),
         }
       : {}),
     referenceIds: cleanList(

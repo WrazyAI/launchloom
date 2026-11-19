@@ -39,6 +39,8 @@ describe("the reference actually authored", () => {
       inspiration: first,
       stage: "attempt",
     });
+    if (!("reservedReferenceIds" in reservation))
+      throw new Error("Attempt lacks reserved reference evidence");
     expect(reservation.reservedReferenceIds).toEqual([
       first.routes[0].referenceDossier.id,
     ]);
@@ -123,9 +125,11 @@ describe("the reference actually authored", () => {
       inspiration,
       stage: "attempt",
     });
+    if (!("reservedReferenceIds" in reserved))
+      throw new Error("Attempt lacks reserved reference evidence");
     expect(reserved.reservedReferenceIds).toEqual(["alpha"]);
     expect(reserved.referenceIds).toEqual(["alpha"]);
-    expect(reserved.authoredReferenceIds).toBeUndefined();
+    expect("authoredReferenceIds" in reserved).toBe(false);
     expect(reserved.proposedReferenceIds).toEqual(["alpha", "beta", "gamma"]);
     const delivered = launchRecordFrom({
       config: {
@@ -141,6 +145,8 @@ describe("the reference actually authored", () => {
       inspiration,
       stage: "preview",
     });
+    if (!("authoredReferenceIds" in delivered))
+      throw new Error("Delivery lacks authored reference evidence");
     expect(delivered.authoredReferenceIds).toEqual(["gamma"]);
   });
   it("compares only same-kind deliveries and never claims measured visual diversity", () => {
