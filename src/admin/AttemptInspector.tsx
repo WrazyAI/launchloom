@@ -303,9 +303,6 @@ export function AttemptInspector({
       ]),
     ).values(),
   );
-  const overviewEvents = events.filter(
-    (event) => event.stage !== "seo_research",
-  );
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -425,17 +422,27 @@ export function AttemptInspector({
         ) : null}
 
         {attempt && view === "activity" ? (
-          <GenerationActivity
-            key={attempt.attemptId}
-            api={api}
-            identity={{ namespace: "legacy", attemptId: attempt.attemptId }}
-            active={
-              attempt.executionStatus === "running" ||
-              attempt.executionStatus === "queued"
-            }
-            enabled={activityEnabled}
-            threaded
-          />
+          <>
+            <GenerationActivity
+              key={attempt.attemptId}
+              api={api}
+              identity={{ namespace: "legacy", attemptId: attempt.attemptId }}
+              active={
+                attempt.executionStatus === "running" ||
+                attempt.executionStatus === "queued"
+              }
+              enabled={activityEnabled}
+              threaded
+            />
+            <EventTimeline
+              events={events}
+              nextCursor={eventsNextCursor}
+              eventCount={eventCount}
+              loading={eventsLoading}
+              error={eventsError}
+              onLoadMore={onLoadMoreEvents}
+            />
+          </>
         ) : null}
 
         {attempt && view === "seo" ? (
@@ -548,7 +555,7 @@ export function AttemptInspector({
             <RevisionTimeline api={api} repository={attempt.repository} />
 
             <EventTimeline
-              events={overviewEvents}
+              events={events}
               nextCursor={eventsNextCursor}
               eventCount={eventCount}
               loading={eventsLoading}

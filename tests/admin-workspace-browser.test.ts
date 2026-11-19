@@ -3078,6 +3078,7 @@ it("renders model calls, actions, usage and inspectable evidence in a dedicated 
     );
     const activity = inspector.locator(".admin-activity");
     await visible(activity);
+    await visible(inspector.getByText("Stage timeline"));
     await expect
       .poll(() => activity.locator(".admin-activity__entry").count())
       .toBeGreaterThanOrEqual(4);

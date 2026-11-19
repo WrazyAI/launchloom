@@ -121,6 +121,43 @@ describe("private operations event producer", () => {
     ).toBe(true);
     expect(urls.some((url) => url.includes("generation-attempts"))).toBe(false);
   });
+  it("emits a live activity task event for each recorded stage", async () => {
+    const runnerTemp = await mkdtemp("launchloom-stage-activity-");
+    const requests: Array<{ url: string; body: string }> = [];
+    const env = {
+      GENERATION_ACTIVITY_ENABLED: "true",
+      TRACK_ATTEMPT: "github:123:1",
+      OPERATIONS_API_URL: "https://worker.test",
+      ACTIONS_ID_TOKEN_REQUEST_URL:
+        "https://pipelines.actions.githubusercontent.com/token",
+      ACTIONS_ID_TOKEN_REQUEST_TOKEN: "private",
+      RUNNER_TEMP: runnerTemp,
+    };
+    try {
+      await recordGenerationStage({
+        stage: "intake",
+        status: "completed",
+        detail: "Intake parsed.",
+        env,
+        fetchImpl: async (url, init) => {
+          requests.push({ url: String(url), body: String(init?.body || "") });
+          return String(url).includes("actions.githubusercontent")
+            ? Response.json({ value: "aaaaaaaa.bbbbbbbb.cccccccc" })
+            : Response.json({ status: "inserted" });
+        },
+      });
+      const activity = requests.find((request) =>
+        request.url.endsWith("/api/internal/generation-activity"),
+      );
+      expect(activity).toBeTruthy();
+      expect(activity?.body).toContain('"kind":"task_finished"');
+      expect(activity?.body).toContain('"label":"Intake"');
+      expect(activity?.body).toContain('"namespace":"legacy"');
+    } finally {
+      await rm(runnerTemp, { recursive: true, force: true });
+    }
+  });
+
   it("places mandatory authenticated handoff after successful delivery, never at legacy preview marker", async () => {
     const source = await readFile(
       ".github/workflows/generate-client.yml",
