@@ -72,6 +72,30 @@ describe("workflow dossier selection", () => {
     expect(result.error).toContain("ENOENT");
   });
 
+  it("fails closed if a core record is missing from the workflow registry", () => {
+    const dir = mkdtempSync(join(tmpdir(), "dossier-registry-"));
+    try {
+      const registryPath = join(dir, "registry.json");
+      const registry = JSON.parse(
+        readFileSync("data/inspiration-registry.json", "utf8"),
+      );
+      registry.records = registry.records.filter(
+        ({ id }: { id: string }) => id !== "html5up-home-care-story",
+      );
+      writeFileSync(registryPath, JSON.stringify(registry));
+      const result = compile({ businessKind: "home-care" }, "allow-shortage", [
+        "--registry",
+        registryPath,
+      ]);
+      expect(result.status).toBe(1);
+      expect(result.error).toContain(
+        "Core reference 'html5up-home-care-story'",
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("does not read the dossier registry when selection is skipped", () => {
     const result = compile({ businessKind: "home-care" }, "skip", [
       "--registry",

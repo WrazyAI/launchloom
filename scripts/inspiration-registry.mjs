@@ -1066,7 +1066,7 @@ export class ReferenceShortageError extends Error {
 export function buildInspirationPack(
   request,
   rawRegistry,
-  { repositoryRoot = process.cwd(), requireDossiers = true } = {},
+  { repositoryRoot = process.cwd(), requireDossiers = true, requireCompleteCore = false } = {},
 ) {
   let registry = normalizeRegistry(rawRegistry);
   const seed = cleanText(request?.seed, 180);
@@ -1106,9 +1106,12 @@ export function buildInspirationPack(
   };
   const dossiersById = new Map();
   if (requireDossiers) {
+    // Full generation uses the canonical catalog; a missing record there is
+    // corruption. Offline callers may intentionally supply a reduced pool.
     const matchedRecords = new Map(registry.records.map((record) => [record.id, record]));
     for (const id of canonicalReferenceIds) {
-      if (!matchedRecords.get(id)?.dossierPath)
+      const record = matchedRecords.get(id);
+      if ((record || requireCompleteCore) && !record?.dossierPath)
         throw new Error(`Core reference '${id}' is missing its registry dossier path.`);
     }
     for (const record of registry.records.filter((item) => item.dossierPath)) {

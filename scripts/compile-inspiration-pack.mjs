@@ -218,6 +218,7 @@ if (selectionMode !== "skip") {
     pack = buildInspirationPack(request, registry, {
       repositoryRoot: repository,
       requireDossiers: true,
+      requireCompleteCore: selectionMode === "allow-shortage",
     });
     status = "selected";
   } catch (error) {
