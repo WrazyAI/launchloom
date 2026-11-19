@@ -3,6 +3,7 @@ import {
   postAttemptTracking,
   postOperationsEvent,
 } from "./record-generation-event.mjs";
+import { activityFromEnv } from "./generation-activity-context.mjs";
 
 function argsFrom(values) {
   const result = {};
@@ -27,6 +28,63 @@ function clean(value, limit = 500) {
     .slice(0, limit);
 }
 
+function stageActivityLabel(stage) {
+  return String(stage || "stage")
+    .split(/[_-]+/u)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function stageActivityStatus(status) {
+  switch (String(status || "").toLowerCase()) {
+    case "started":
+    case "running":
+      return "started";
+    case "completed":
+      return "succeeded";
+    case "failed":
+      return "failed";
+    case "cancelled":
+      return "cancelled";
+    default:
+      return null;
+  }
+}
+
+/** Mirror each recorded stage into the live diagnostic trace. Best effort. */
+async function emitStageActivity({ stage, status, detail, env, fetchImpl }) {
+  if (env.GENERATION_ACTIVITY_ENABLED !== "true") return;
+  const activityStatus = stageActivityStatus(status);
+  if (!activityStatus) return;
+  const producer = activityFromEnv(
+    env,
+    {
+      stage,
+      actor: { kind: "orchestrator", role: "workflow" },
+    },
+    { fetchImpl },
+  );
+  if (producer.context() === null) return;
+  const summary = clean(detail, 2000);
+  const payloadDetail = summary ? { kind: "text", text: summary } : null;
+  try {
+    if (activityStatus === "started")
+      producer.emit("task_started", {
+        label: stageActivityLabel(stage),
+        detail: payloadDetail,
+      });
+    else
+      producer.emit("task_finished", {
+        label: stageActivityLabel(stage),
+        status: activityStatus,
+        detail: payloadDetail,
+      });
+  } finally {
+    await producer.close();
+  }
+}
+
 /**
  * Emit one explicit pipeline stage transition through the trusted producer.
  * Legacy tracking is best effort; new-mode telemetry failures throw instead of
@@ -42,6 +100,11 @@ export async function recordGenerationStage({
   env = process.env,
   fetchImpl = fetch,
 } = {}) {
+  try {
+    await emitStageActivity({ stage, status, detail, env, fetchImpl });
+  } catch {
+    // Diagnostic activity is best effort and never blocks stage recording.
+  }
   if (env.OPERATION_ID) {
     await postOperationsEvent({ stage, 'stage-status': status }, { env, fetchImpl });
     return { ok: true };
