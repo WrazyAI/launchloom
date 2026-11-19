@@ -69,7 +69,10 @@ export async function readLaunchHistory(historyPath = defaultHistoryPath()) {
         );
         const byId = new Map();
         for (const record of launchesByBusinessKind[key])
-          byId.set(record.id || `${record.launchedAt || ""}:${byId.size}`, record);
+          byId.set(
+            record.id || `${record.launchedAt || ""}:${byId.size}`,
+            record,
+          );
         launchesByBusinessKind[key] = [...byId.values()].slice(-HISTORY_LIMIT);
       }
     }
@@ -88,7 +91,10 @@ export function launchesForBusinessKind(history, businessKind, limit = 30) {
   const key = businessKindKey(businessKind);
   if (!key) return [];
   const scoped = Object.entries(history?.launchesByBusinessKind || {})
-    .filter(([kind, records]) => businessKindKey(kind) === key && Array.isArray(records))
+    .filter(
+      ([kind, records]) =>
+        businessKindKey(kind) === key && Array.isArray(records),
+    )
     .flatMap(([, records]) => records.map(canonicalizeLaunchKind));
   const globalScoped = (history?.launches || [])
     .filter((launch) => businessKindKey(launch?.businessKind) === key)
@@ -120,6 +126,33 @@ export function recentLayoutFingerprints(history) {
         .filter(Boolean),
     ),
   ];
+}
+
+/** Metadata comparison only. A shortlist or an attempt is not a delivered design. */
+export function compareDeliveredDesigns(design, history) {
+  const kind = businessKindKey(design.businessKind);
+  const delivered = kind
+    ? launchesForBusinessKind(history, kind).filter(
+        (entry) =>
+          businessKindKey(entry.businessKind) === kind &&
+          ["preview", "production"].includes(entry.stage) &&
+          entry.layoutFingerprint,
+      )
+    : [];
+  return {
+    evidence: "recorded-delivery-metadata",
+    historyUpdatedAt: history?.updatedAt || null,
+    comparedCount: delivered.length,
+    repeatedFingerprintCount: delivered.filter(
+      (entry) => entry.layoutFingerprint === design.layoutFingerprint,
+    ).length,
+    repeatedAuthoredReferenceCount: design.usedDossierId
+      ? delivered.filter((entry) =>
+          (entry.authoredReferenceIds || []).includes(design.usedDossierId),
+        ).length
+      : 0,
+    visualDiversity: "not-measured",
+  };
 }
 
 export function recentCreativeFamilyIds(history) {
@@ -188,7 +221,19 @@ export function launchRecordFrom({
         : "preview";
   if (normalizedStage !== "attempt" && (!packId || !fingerprint))
     throw new Error("A launch record needs a pack id and layout fingerprint.");
-  const routes = Array.isArray(inspiration?.routes) ? inspiration.routes : [];
+  const proposedRoutes = Array.isArray(inspiration?.routes)
+    ? inspiration.routes
+    : [];
+  const authoredRoutes =
+    normalizedStage === "attempt" &&
+    inspiration?.request?.authoringCandidateCount === 1
+      ? proposedRoutes.slice(0, 1)
+      : normalizedStage !== "attempt" &&
+          experience.renderer === "creative-candidate" &&
+          experience.routeId
+        ? proposedRoutes.filter((route) => route.id === experience.routeId)
+        : [];
+  const routes = authoredRoutes.length ? authoredRoutes : proposedRoutes;
   const baseId = `${launchedAt.slice(0, 10)}-${slug(config?.business?.name)}`;
   const reservationKey = String(recordKey || "").trim() ? slug(recordKey) : "";
   const attemptKey = slug(
@@ -211,7 +256,8 @@ export function launchRecordFrom({
     businessName: String(config?.business?.name || "").trim(),
     businessKind: businessKindKey(
       (routes.length && inspiration?.request?.industry) ||
-        config?.businessKind || config?.industry,
+        config?.businessKind ||
+        config?.industry,
     ),
     recipe: String(config?.design?.recipe || "").trim(),
     packId,
@@ -227,6 +273,29 @@ export function launchRecordFrom({
       ]),
     ),
     heroArchetypes: cleanList(routes.map((route) => route.heroArchetype)),
+    ...(authoredRoutes.length
+      ? {
+          proposedReferenceIds: cleanList(
+            proposedRoutes.flatMap((route) => [
+              route.referenceDossier?.id,
+              ...(route.referenceIds || []),
+            ]),
+          ),
+          [normalizedStage === "attempt"
+            ? "reservedReferenceIds"
+            : "authoredReferenceIds"]: cleanList(
+            authoredRoutes.flatMap((route) => [
+              route.referenceDossier?.id,
+              ...(route.referenceIds || []),
+            ]),
+          ),
+          [normalizedStage === "attempt"
+            ? "reservedHeroArchetypes"
+            : "authoredHeroArchetypes"]: cleanList(
+            authoredRoutes.map((route) => route.heroArchetype),
+          ),
+        }
+      : {}),
     referenceIds: cleanList(
       routes.flatMap((route) => [
         ...(Array.isArray(route.referenceIds) ? route.referenceIds : []),

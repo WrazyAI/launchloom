@@ -115,6 +115,15 @@ async function intakeFromFile(file) {
 
 const args = parseArgs(process.argv.slice(2));
 const selectionMode = args.selection || "strict";
+const authoringCandidateCount =
+  args["candidate-count"] === undefined
+    ? undefined
+    : Number(args["candidate-count"]);
+if (
+  authoringCandidateCount !== undefined &&
+  ![1, 2, 3].includes(authoringCandidateCount)
+)
+  throw new Error("Candidate count must be 1, 2, or 3.");
 if (!["strict", "allow-shortage", "skip"].includes(selectionMode))
   throw new Error("Invalid dossier selection mode.");
 const repository = path.resolve(import.meta.dirname, "..");
@@ -188,6 +197,7 @@ const styleText = [
   .join(". ");
 const styleTerms = positiveStyleTerms(styleText);
 const request = {
+  ...(authoringCandidateCount === undefined ? {} : { authoringCandidateCount }),
   seed:
     process.env.LAUNCHLOOM_INTAKE_ID ||
     intake.submissionId ||

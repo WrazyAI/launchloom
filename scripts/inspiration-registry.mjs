@@ -999,7 +999,16 @@ function selectionHistory(request, eligibleIds, eligibleSignatures, industry) {
       !businessKindMatches({ industries: [launch.businessKind] }, industry)
     )
       continue;
-    const ids = cleanList(launch?.referenceIds, 20);
+    const ids = cleanList(
+      request.authoringCandidateCount === 1 &&
+        (launch?.reservedReferenceIds?.length ||
+          launch?.authoredReferenceIds?.length)
+        ? launch.reservedReferenceIds?.length
+          ? launch.reservedReferenceIds
+          : launch.authoredReferenceIds
+        : launch?.referenceIds,
+      20,
+    );
     if (!ids.length) {
       // Older launches may lack both IDs and business kind. In that case an
       // exact eligible route signature is the only safe niche evidence.
@@ -1063,10 +1072,50 @@ export class ReferenceShortageError extends Error {
   }
 }
 
+/** Order the slot actually consumed by a single-candidate author, not just its shortlist. */
+export function prioritizeAuthoredAnchor(anchors, request, launches = []) {
+  if (request.authoringCandidateCount !== 1) return anchors;
+  const references = new Map();
+  const heroes = new Map();
+  for (const launch of launches) {
+    // Legacy shortlists do not prove which reference was authored.
+    for (const id of cleanList(
+      launch.stage === "attempt"
+        ? launch.reservedReferenceIds
+        : launch.authoredReferenceIds,
+      3,
+    ))
+      references.set(id, (references.get(id) || 0) + 1);
+    for (const hero of cleanList(
+      launch.stage === "attempt"
+        ? launch.reservedHeroArchetypes
+        : launch.authoredHeroArchetypes,
+      3,
+    ))
+      heroes.set(hero, (heroes.get(hero) || 0) + 1);
+  }
+  const ordered = [...anchors].sort(
+    (left, right) =>
+      Number(explicitlyRequested(right, request)) -
+        Number(explicitlyRequested(left, request)) ||
+      (references.get(left.id) || 0) - (references.get(right.id) || 0) ||
+      (heroes.get(normalizedHeroArchetype(left)) || 0) -
+        (heroes.get(normalizedHeroArchetype(right)) || 0) ||
+      stableFraction(`${request.seed}|authored|${left.id}`) -
+        stableFraction(`${request.seed}|authored|${right.id}`),
+  );
+  const first = ordered[0];
+  return [first, ...anchors.filter((anchor) => anchor !== first)];
+}
+
 export function buildInspirationPack(
   request,
   rawRegistry,
-  { repositoryRoot = process.cwd(), requireDossiers = true, requireCompleteCore = false } = {},
+  {
+    repositoryRoot = process.cwd(),
+    requireDossiers = true,
+    requireCompleteCore = false,
+  } = {},
 ) {
   let registry = normalizeRegistry(rawRegistry);
   const seed = cleanText(request?.seed, 180);
@@ -1108,11 +1157,15 @@ export function buildInspirationPack(
   if (requireDossiers) {
     // Full generation uses the canonical catalog; a missing record there is
     // corruption. Offline callers may intentionally supply a reduced pool.
-    const matchedRecords = new Map(registry.records.map((record) => [record.id, record]));
+    const matchedRecords = new Map(
+      registry.records.map((record) => [record.id, record]),
+    );
     for (const id of canonicalReferenceIds) {
       const record = matchedRecords.get(id);
       if ((record || requireCompleteCore) && !record?.dossierPath)
-        throw new Error(`Core reference '${id}' is missing its registry dossier path.`);
+        throw new Error(
+          `Core reference '${id}' is missing its registry dossier path.`,
+        );
     }
     for (const record of registry.records.filter((item) => item.dossierPath)) {
       const dossier = loadReferenceDossier(record.dossierPath, {
@@ -1132,7 +1185,9 @@ export function buildInspirationPack(
         );
       assertReferenceDossierMatchesRecord(dossier, record, { repositoryRoot });
       if (canonicalReferenceIds.has(record.id) && !dossier.productionEligible)
-        throw new Error(`Core reference '${record.id}' is not production eligible.`);
+        throw new Error(
+          `Core reference '${record.id}' is not production eligible.`,
+        );
       dossiersById.set(record.id, dossier);
     }
     const eligibleRecords = registry.records
@@ -1195,8 +1250,7 @@ export function buildInspirationPack(
       );
       registry = {
         ...registry,
-        records:
-          focusedRecords.length >= 3 ? focusedRecords : basePool,
+        records: focusedRecords.length >= 3 ? focusedRecords : basePool,
       };
     } else {
       registry = { ...registry, records: basePool };
@@ -1303,7 +1357,11 @@ export function buildInspirationPack(
     throw new Error(
       `The inspiration registry cannot supply three structurally independent creative routes for '${industry}'.`,
     );
-  const anchors = selection.chosen.anchors;
+  const anchors = prioritizeAuthoredAnchor(
+    selection.chosen.anchors,
+    request,
+    history.relevantLaunches,
+  );
   const selectedHeroArchetypes = anchors.map(normalizedHeroArchetype);
   const heroArchetypeGroups = registry.records.reduce((groups, record) => {
     const archetype = normalizedHeroArchetype(record);
@@ -1416,6 +1474,9 @@ export function buildInspirationPack(
     recentFamilyIds: [...recentFamilyIds].sort(),
     recentRouteSignatures: [...recentRouteSignatures].sort(),
     recentReferenceSets: history.recentTrios.map((trio) => [...trio].sort()),
+    ...(request.authoringCandidateCount === 1
+      ? { authoringCandidateCount: 1, authoringReferenceIds: [anchors[0].id] }
+      : {}),
     selectedReferenceIds: anchors.map((anchor) => anchor.id),
     selectedHeroTopologies: anchors.map(
       (anchor) => compositionTopologyFor(anchor).hero,

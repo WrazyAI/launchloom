@@ -18,6 +18,10 @@ import {
 } from "./pipeline-test-policy.mjs";
 import { summarizeGenerationCosts } from "./generation-cost-summary.mjs";
 import { collectEvidenceSamples, summarizeGateHealth } from "./gate-health.mjs";
+import {
+  compareDeliveredDesigns,
+  readLaunchHistory,
+} from "./launch-history.mjs";
 import { resolvePreviewLink } from "./preview-link.mjs";
 import { previewHostSuffixes } from "../src/lib/preview-proxy-contract.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
@@ -456,9 +460,7 @@ export async function runPipelineTest(input, dependencies) {
         ) &&
         error.gates
           .filter((gate) => !gate.passed)
-          .every(
-            (gate) => gate.name === "contrast" && gate.advisory === true,
-          );
+          .every((gate) => gate.name === "contrast" && gate.advisory === true);
       if (nearMissContrastOnly) {
         report.deliveryMode = "creative-near-miss";
         report.stages[name] = {
@@ -808,6 +810,8 @@ export function createCloudDependencies(
   }
   async function initializeAuthorship() {
     await node("compile-inspiration-pack.mjs", [
+      "--candidate-count",
+      String(fastPolicy.candidateCount),
       "--config",
       config,
       "--intake",
@@ -1598,6 +1602,20 @@ export function createCloudDependencies(
         throw new Error(
           "Creative renderer marker missing from the live diagnostic preview.",
         );
+      const deliveredConfig = await readJson(config);
+      const deliveredPack = await readJson(inspiration);
+      const usedRoute = deliveredPack.routes.find(
+        (route) => route.id === deliveredConfig.design?.experience?.routeId,
+      );
+      report.recentDeliveryComparison = compareDeliveredDesigns(
+        {
+          businessKind:
+            deliveredConfig.businessKind || deliveredConfig.industry,
+          layoutFingerprint: deliveredConfig.design?.experience?.fingerprint,
+          usedDossierId: usedRoute?.referenceDossier?.id,
+        },
+        await readLaunchHistory(),
+      );
       report.previewUrl = url;
       return { url, access: previewAccess };
     },

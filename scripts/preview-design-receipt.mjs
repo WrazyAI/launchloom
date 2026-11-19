@@ -4,6 +4,11 @@ import path from "node:path";
 import { parseHTML } from "linkedom";
 import { canonicalBusinessKind } from "./business-kind.mjs";
 
+import {
+  compareDeliveredDesigns,
+  readLaunchHistory,
+} from "./launch-history.mjs";
+
 const renderers = new Set(["creative", "pack", "foundation"]);
 const previewKinds = new Set(["reviewable", "diagnostic"]);
 const fallbackReasons = new Set([
@@ -149,6 +154,10 @@ async function main() {
   }
   if (!receipt.layoutFingerprint)
     throw new Error("Rendered design fingerprint is missing.");
+  receipt.recentDeliveryComparison = compareDeliveredDesigns(
+    receipt,
+    await readLaunchHistory(),
+  );
   console.log(JSON.stringify(receipt, null, 2));
 }
 

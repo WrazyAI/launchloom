@@ -615,6 +615,7 @@ jobs:
             HISTORY_FILE="$HISTORY_DIR/data/recent-launch-signatures.json"
             node "$GITHUB_WORKSPACE/scripts/compile-inspiration-pack.mjs" \
               --selection allow-shortage \
+              --candidate-count 1 \
               --config /tmp/site.config.json \
               --intake /tmp/canonical-site-brief.json \
               --history "$HISTORY_FILE" \
@@ -981,7 +982,7 @@ jobs:
       - name: Author independent experience candidates
         if: env.GENERATION_RENDERER == 'creative'
         id: authoring
-        # Luna authors three independent candidates in separate stages, now
+        # The production lane authors one reference-balanced candidate,
         # including the authored service, location, and services-index pages
         # per candidate. Keep the runner timeout above the author's internal
         # fail-closed budget so Actions cannot terminate a valid creative run
