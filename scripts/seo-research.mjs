@@ -34,6 +34,22 @@ const ORGANIC_SERP_ESTIMATED_TASK_USD = 0.0025;
 const ORGANIC_SERP_BUDGET_BUFFER_USD = 0.002;
 const MAX_CORE_SERVICES = 5;
 const MAX_SERVICE_VARIANTS = 8;
+// Care services often have long descriptive names with no measurable Google Ads
+// volume. Seed one measured head term per care service before model variants so
+// a stochastic planner result cannot leave a confirmed service unmeasured.
+const CARE_SERVICE_HEAD_TERMS = [
+  { pattern: /companion/iu, term: "companion care" },
+  { pattern: /errand|transport/iu, term: "transportation for seniors" },
+  { pattern: /respite|caregiver/iu, term: "respite care" },
+  { pattern: /meal|food/iu, term: "meal preparation service" },
+  { pattern: /housekeep/iu, term: "light housekeeping" },
+];
+
+function careServiceHeadTerms(service) {
+  return CARE_SERVICE_HEAD_TERMS.filter(({ pattern }) =>
+    pattern.test(String(service || "")),
+  ).map(({ term }) => term);
+}
 const MAX_RELATED_KEYWORDS_PER_SERVICE = 5;
 const MAX_REMEASURED_RELATED_KEYWORDS_PER_SERVICE = 3;
 const DEFAULT_FALLBACK_SEARCH_QUERIES = 3;
@@ -490,7 +506,12 @@ function seedQueryRecords(seo, intentPlanning) {
       seo.industry,
     );
     const variants = [
-      ...new Set([service, ...modelVariants, ...fallbackVariants]),
+      ...new Set([
+        service,
+        ...careServiceHeadTerms(service),
+        ...modelVariants,
+        ...fallbackVariants,
+      ]),
     ]
       .filter(Boolean)
       .slice(0, MAX_SERVICE_VARIANTS);

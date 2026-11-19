@@ -228,6 +228,29 @@ describe("SEO market map", () => {
     );
   });
 
+  it("seeds deterministic care head terms before model variants", async () => {
+    const provider = researchProvider();
+    const dossier = await researchSiteContext(
+      {
+        ...intake,
+        industry: "wellness",
+        businessKind: "home-care",
+        services:
+          "Companionship visits\nMeal planning and preparation\nLight housekeeping\nErrands and transportation\nRespite support for family caregivers",
+      },
+      { dataForSeo: provider },
+    );
+    expect(dossier.seedQueries).toEqual(
+      expect.arrayContaining([
+        "companion care",
+        "meal preparation service",
+        "light housekeeping",
+        "transportation for seniors",
+        "respite care",
+      ]),
+    );
+  });
+
   it("keeps empty successful measured responses incomplete", async () => {
     const empty = async () => ({ cost: 0, keywords: [], results: [] });
     const dossier = await researchSiteContext(intake, {
