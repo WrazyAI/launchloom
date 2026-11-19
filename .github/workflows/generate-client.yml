@@ -540,7 +540,6 @@ jobs:
             node scripts/seo-research.mjs --source /tmp/intake.md --out /tmp/seo-research.json --map-out /tmp/seo-map.md --enrichment /tmp/business-enrichment.json
             node scripts/compile-canonical-site-brief.mjs --source /tmp/intake.md --research /tmp/seo-research.json --enrichment /tmp/business-enrichment.json --out /tmp/canonical-site-brief.json
             node scripts/generate-site-config.mjs --brief /tmp/canonical-site-brief.json --out /tmp/site.config.json --usage-out /tmp/site-config-usage.json
-            node scripts/compile-inspiration-pack.mjs --config /tmp/site.config.json --intake /tmp/canonical-site-brief.json --out /tmp/inspiration-pack.json
             rm -f /tmp/reasoning-preflight.json
           fi
           SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
@@ -587,53 +586,24 @@ jobs:
           GUARD_PROFILE=full
           if [ "$PREVIEW_ONLY" = "true" ]; then GUARD_PROFILE=full-preview; fi
           node scripts/assert-client-generation-mode.mjs --config /tmp/site.config.json --profile "$GUARD_PROFILE"
-      # The owner's target is a delivered preview, not a specific renderer.
-      # If the creative reference library cannot supply a pack for this business
-      # kind, switch to the site's already-selected pack before authoring spends
-      # time and tokens. Unknown registry failures still stop the run.
-      - name: Resolve effective renderer
-        if: env.GENERATION_RENDERER == 'creative' && needs.profile_policy.outputs.profile == 'full' && env.REUSE_AUTHORED_CANDIDATES != 'true'
-        run: |
-          INDUSTRY=$(jq -r '.industry // ""' /tmp/site.config.json)
-          PACK_ID=$(jq -r '.design.experience.packId // ""' /tmp/site.config.json)
-          PACK_VARIANT=$(jq -r '.design.experience.variantId // "standard"' /tmp/site.config.json)
-          FOUNDATION_ID=$(jq -r '.design.experience.foundationId // ""' /tmp/site.config.json)
-          test -n "$INDUSTRY" || { echo "No business kind for renderer preflight"; exit 0; }
-          PROBE=$(node scripts/reference-availability.mjs --industry "$INDUSTRY")
-          AVAILABLE=$(printf '%s' "$PROBE" | jq -r '.available')
-          DECISION=$(node scripts/resolve-effective-renderer.mjs --requested creative --profile full --creative-references-available "$AVAILABLE" --pack "$PACK_ID" --variant "$PACK_VARIANT" --foundation "$FOUNDATION_ID")
-          EFFECTIVE=$(printf '%s' "$DECISION" | jq -r '.effective // empty')
-          REASON=$(printf '%s' "$DECISION" | jq -r '.reason')
-          if [ -z "$EFFECTIVE" ]; then
-            echo "No renderer can build this intake: $REASON" >&2
-            exit 1
-          fi
-          if [ "$EFFECTIVE" != "creative" ]; then
-            echo "GENERATION_RENDERER=$EFFECTIVE" >> "$GITHUB_ENV"
-            echo "PACK_ID=$PACK_ID" >> "$GITHUB_ENV"
-            echo "PACK_VARIANT=$PACK_VARIANT" >> "$GITHUB_ENV"
-            echo "FOUNDATION_ID=$FOUNDATION_ID" >> "$GITHUB_ENV"
-            echo "RENDERER_FALLBACK_REASON=$REASON" >> "$GITHUB_ENV"
-            echo "::warning title=Renderer fallback::Creative references are short for $INDUSTRY; delivering a $EFFECTIVE preview instead."
-          fi
       # Reserve visual routes against the latest main history before expensive
-      # reference analysis or authoring. Branch preview-only canaries read the
-      # same history without writing hypothetical attempts into production.
-      # If a production intake wins the push race, reselect from latest main.
+      # authoring. The resulting pack is also the renderer policy input.
       - name: Reserve inspiration routes
-        if: >-
-          env.GENERATION_RENDERER == 'creative' &&
-          (github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main' ||
-          (github.event_name == 'workflow_dispatch' && inputs.preview_only)) &&
-          env.REUSE_AUTHORED_CANDIDATES != 'true'
+        id: inspiration
+        if: env.REUSE_AUTHORED_CANDIDATES != 'true'
         env:
           LAUNCHLOOM_INTAKE_ID: ${{ steps.intake.outputs.intake_key }}
-          LAUNCHLOOM_READ_ONLY_HISTORY: ${{ github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main' && inputs.preview_only || false }}
+          LAUNCHLOOM_READ_ONLY_HISTORY: ${{ github.event_name != 'repository_dispatch' && github.ref != 'refs/heads/main' }}
         run: |
+          if [ "$GENERATION_RENDERER" != "creative" ]; then
+            node scripts/compile-inspiration-pack.mjs --selection skip --config /tmp/site.config.json --out /tmp/inspiration-pack.json
+            exit 0
+          fi
           git config user.name "LaunchLoom"
           git config user.email "automation@launchloom.app"
           HISTORY_DIR="$RUNNER_TEMP/launchloom-history-main"
           HISTORY_READY=false
+          RESERVED=false
           for HISTORY_ATTEMPT in 1 2 3; do
             git worktree remove --force "$HISTORY_DIR" >/dev/null 2>&1 || true
             if ! git fetch origin main; then
@@ -644,10 +614,15 @@ jobs:
             fi
             HISTORY_FILE="$HISTORY_DIR/data/recent-launch-signatures.json"
             node "$GITHUB_WORKSPACE/scripts/compile-inspiration-pack.mjs" \
+              --selection allow-shortage \
               --config /tmp/site.config.json \
               --intake /tmp/canonical-site-brief.json \
               --history "$HISTORY_FILE" \
               --out /tmp/inspiration-pack.json
+            if jq -e '.referenceLibrary.status == "reference-shortage"' /tmp/inspiration-pack.json >/dev/null; then
+              HISTORY_READY=true
+              break
+            fi
             if [ "$LAUNCHLOOM_READ_ONLY_HISTORY" = "true" ]; then
               echo "Preview-only branch canary selected against latest main history; no production attempt will be written."
               HISTORY_READY=true
@@ -670,12 +645,14 @@ jobs:
             if git -C "$HISTORY_DIR" diff --quiet -- data/recent-launch-signatures.json; then
               echo "No inspiration history change."
               HISTORY_READY=true
+              RESERVED=true
               break
             fi
             git -C "$HISTORY_DIR" add data/recent-launch-signatures.json
             git -C "$HISTORY_DIR" commit -m "Record inspiration attempt [skip ci]"
             if git -C "$HISTORY_DIR" push origin HEAD:main; then
               HISTORY_READY=true
+              RESERVED=true
               break
             fi
             echo "History push raced with another intake; reselecting from latest main ($HISTORY_ATTEMPT/3)."
@@ -685,7 +662,30 @@ jobs:
             echo "::error title=Inspiration reservation failed::Could not atomically reserve a fresh inspiration pack after three attempts."
             exit 1
           fi
+          echo "reserved=$RESERVED" >> "$GITHUB_OUTPUT"
+      - name: Resolve effective renderer
+        if: env.GENERATION_RENDERER == 'creative' && env.REUSE_AUTHORED_CANDIDATES != 'true'
+        run: |
+          STATUS=$(jq -er '.referenceLibrary.status' /tmp/inspiration-pack.json)
+          case "$STATUS" in
+            selected) exit 0 ;;
+            reference-shortage) ;;
+            *) echo "Unexpected creative reference selection status" >&2; exit 1 ;;
+          esac
+          PACK_ID=$(jq -r '.design.experience.packId // ""' /tmp/site.config.json)
+          PACK_VARIANT=$(jq -r '.design.experience.variantId // "standard"' /tmp/site.config.json)
+          FOUNDATION_ID=$(jq -r '.design.experience.foundationId // ""' /tmp/site.config.json)
+          DECISION=$(node scripts/resolve-effective-renderer.mjs --requested creative --profile full --creative-references-available false --pack "$PACK_ID" --variant "$PACK_VARIANT" --foundation "$FOUNDATION_ID")
+          EFFECTIVE=$(printf '%s' "$DECISION" | jq -er '.effective')
+          REASON=$(printf '%s' "$DECISION" | jq -er '.reason')
+          echo "GENERATION_RENDERER=$EFFECTIVE" >> "$GITHUB_ENV"
+          echo "PACK_ID=$PACK_ID" >> "$GITHUB_ENV"
+          echo "PACK_VARIANT=$PACK_VARIANT" >> "$GITHUB_ENV"
+          echo "FOUNDATION_ID=$FOUNDATION_ID" >> "$GITHUB_ENV"
+          echo "RENDERER_FALLBACK_REASON=$REASON" >> "$GITHUB_ENV"
+          echo "::warning title=Renderer fallback::Too few eligible dossiers for the selected business kind; delivering a $EFFECTIVE preview instead."
       - name: Record inspiration selection stage
+        if: steps.inspiration.outputs.reserved == 'true'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage inspiration_selection --status completed --detail "Production reference routes reserved."
       - name: Record reference analysis started
@@ -1198,6 +1198,14 @@ jobs:
             --source-sha "$(git rev-parse HEAD)")
           PREVIEW=$(printf '%s' "$PREVIEW_RESULT" | jq -er '.url')
           echo "preview=$PREVIEW" >> "$GITHUB_OUTPUT"
+      - name: Summarize protected diagnostic design
+        if: always() && steps.diagnostic_preview.outputs.preview != ''
+        continue-on-error: true
+        env:
+          CLIENT_DIR: ${{ steps.branch.outputs.dir }}
+        run: |
+          RECEIPT=$(node scripts/preview-design-receipt.mjs "$CLIENT_DIR" creative creative diagnostic "" protected-build)
+          printf '### Protected diagnostic build design\n\n```json\n%s\n```\n' "$RECEIPT" >> "$GITHUB_STEP_SUMMARY"
       - name: Record diagnostic preview stage
         if: env.GENERATION_RENDERER == 'creative'
         continue-on-error: true
@@ -1453,6 +1461,7 @@ jobs:
           gh label create launchloom-delivery-pending --repo "${{ steps.client.outputs.repo }}" --color e4e669 --force
           gh pr edit "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --add-label launchloom-delivery-pending
       - name: Wait for secure preview URL
+        id: preview_readback
         if: always() && steps.deploy.outputs.preview != ''
         run: |
           MARKER_ARGS=()
@@ -1465,7 +1474,19 @@ jobs:
             PACK_ID=$(jq -r '.design.experience.packId' "${{ steps.branch.outputs.dir }}/src/site.config.json")
             MARKER_ARGS=(--marker "data-experience-pack=\"$PACK_ID\"")
           fi
-          node scripts/wait-for-pages-preview.mjs --url "${{ steps.deploy.outputs.preview }}" "${MARKER_ARGS[@]}"
+          node scripts/wait-for-pages-preview.mjs --url "${{ steps.deploy.outputs.preview }}" "${MARKER_ARGS[@]}" --write-homepage-digest "$RUNNER_TEMP/preview-homepage.sha256"
+      - name: Summarize verified preview design
+        if: always() && steps.preview_readback.outcome == 'success'
+        continue-on-error: true
+        env:
+          REQUESTED_RENDERER: ${{ needs.renderer_policy.outputs.renderer }}
+          CLIENT_DIR: ${{ steps.branch.outputs.dir }}
+          DIAGNOSTIC: ${{ steps.deploy.outputs.diagnostic }}
+        run: |
+          PREVIEW_KIND=reviewable
+          if [ "$DIAGNOSTIC" = "true" ]; then PREVIEW_KIND=diagnostic; fi
+          RECEIPT=$(node scripts/preview-design-receipt.mjs "$CLIENT_DIR" "$REQUESTED_RENDERER" "$GENERATION_RENDERER" "$PREVIEW_KIND" "${RENDERER_FALLBACK_REASON:-}" "$RUNNER_TEMP/preview-homepage.sha256")
+          printf '### Verified preview design\n\n```json\n%s\n```\n' "$RECEIPT" >> "$GITHUB_STEP_SUMMARY"
       - name: Record preview ready
         id: preview_telemetry
         if: always() && steps.deploy.outputs.preview != ''

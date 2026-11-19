@@ -1053,6 +1053,16 @@ function selectionHistory(request, eligibleIds, eligibleSignatures, industry) {
   return { recentReferenceIds, recentTrios, exposure, relevantLaunches };
 }
 
+export class ReferenceShortageError extends Error {
+  constructor(industry, eligibleCount, totalCount) {
+    super(
+      `The production library has ${eligibleCount} eligible dossier(s) matched to '${industry}' out of ${totalCount} eligible references; six distinct production-eligible business-matched dossiers are required. Unrelated industries are not used as filler.`,
+    );
+    this.name = "ReferenceShortageError";
+    this.eligibleCount = eligibleCount;
+  }
+}
+
 export function buildInspirationPack(
   request,
   rawRegistry,
@@ -1096,6 +1106,11 @@ export function buildInspirationPack(
   };
   const dossiersById = new Map();
   if (requireDossiers) {
+    const matchedRecords = new Map(registry.records.map((record) => [record.id, record]));
+    for (const id of canonicalReferenceIds) {
+      if (!matchedRecords.get(id)?.dossierPath)
+        throw new Error(`Core reference '${id}' is missing its registry dossier path.`);
+    }
     for (const record of registry.records.filter((item) => item.dossierPath)) {
       const dossier = loadReferenceDossier(record.dossierPath, {
         repositoryRoot,
@@ -1113,6 +1128,8 @@ export function buildInspirationPack(
           `Inspiration record '${record.id}' and its dossier disagree on rights.`,
         );
       assertReferenceDossierMatchesRecord(dossier, record, { repositoryRoot });
+      if (canonicalReferenceIds.has(record.id) && !dossier.productionEligible)
+        throw new Error(`Core reference '${record.id}' is not production eligible.`);
       dossiersById.set(record.id, dossier);
     }
     const eligibleRecords = registry.records
@@ -1147,8 +1164,10 @@ export function buildInspirationPack(
       businessKindMatches(record, industry),
     );
     if (businessMatchedRecords.length < 6)
-      throw new Error(
-        `The production library has ${businessMatchedRecords.length} eligible dossier(s) matched to '${industry}' out of ${eligibleRecords.length} eligible references; six distinct production-eligible business-matched dossiers are required. Unrelated industries are not used as filler.`,
+      throw new ReferenceShortageError(
+        industry,
+        businessMatchedRecords.length,
+        eligibleRecords.length,
       );
     // Apply the people-free preference before the narrow business-focus
     // filter. The focus tags can omit a valid utility reference, and filtering

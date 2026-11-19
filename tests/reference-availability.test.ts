@@ -57,4 +57,18 @@ describe("creative reference availability", () => {
       }),
     ).toThrow(/specific business kind|unsupported/iu);
   });
+
+  it("rejects a core registry record without its dossier instead of offering fallback", () => {
+    const broken = structuredClone(registry);
+    delete broken.records.find(
+      (record: { id: string }) => record.id === "html5up-home-care-story",
+    ).dossierPath;
+    expect(() =>
+      probeCreativeReferences({
+        industry: "home-care",
+        registry: broken,
+        repositoryRoot: root,
+      }),
+    ).toThrow(/core.*dossier path/iu);
+  });
 });

@@ -209,7 +209,10 @@ export function launchRecordFrom({
     stage: normalizedStage,
     ...(reservationKey ? { reservationKey } : {}),
     businessName: String(config?.business?.name || "").trim(),
-    businessKind: businessKindKey(config?.businessKind || config?.industry),
+    businessKind: businessKindKey(
+      (routes.length && inspiration?.request?.industry) ||
+        config?.businessKind || config?.industry,
+    ),
     recipe: String(config?.design?.recipe || "").trim(),
     packId,
     variantId,

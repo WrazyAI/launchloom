@@ -1,15 +1,72 @@
 import fs from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import yaml from "yaml";
 import { describe, expect, it } from "vitest";
 
 describe("effective renderer workflow", () => {
-  it("preflights creative references before authoring and switches through the env", async () => {
+  it.each([
+    ["selected", ""],
+    ["reference-shortage", "GENERATION_RENDERER=pack"],
+  ])(
+    "makes a %s routing decision from the compiler output",
+    async (status, assignment) => {
+      const dir = await fs.mkdtemp(join(tmpdir(), "workflow-renderer-"));
+      try {
+        const { jobs } = yaml.parse(
+          await fs.readFile(".github/workflows/generate-client.yml", "utf8"),
+        );
+        const step = jobs.generate.steps.find(
+          ({ name }: { name: string }) => name === "Resolve effective renderer",
+        );
+        await fs.writeFile(
+          join(dir, "site.config.json"),
+          JSON.stringify({
+            industry: "wellness",
+            businessKind: "home-care",
+            design: { experience: { packId: "kinetic-poster" } },
+          }),
+        );
+        await fs.writeFile(
+          join(dir, "inspiration-pack.json"),
+          JSON.stringify({
+            referenceLibrary: { status },
+          }),
+        );
+        const envFile = join(dir, "github-env");
+        await fs.writeFile(envFile, "");
+        execFileSync(
+          "bash",
+          ["-eo", "pipefail", "-c", step.run.replaceAll("/tmp/", `${dir}/`)],
+          {
+            env: { ...process.env, GITHUB_ENV: envFile },
+          },
+        );
+        const exported = await fs.readFile(envFile, "utf8");
+        if (assignment) {
+          expect(exported).toContain(`${assignment}\n`);
+          expect(exported).toContain("PACK_ID=kinetic-poster\n");
+          expect(exported).toContain(
+            "RENDERER_FALLBACK_REASON=creative-reference-shortage\n",
+          );
+        } else {
+          expect(exported).toBe("");
+        }
+      } finally {
+        await fs.rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  it("routes from the compiled selection before authoring and switches through the env", async () => {
     const source = await fs.readFile(
       ".github/workflows/generate-client.yml",
       "utf8",
     );
     expect(source).toContain("Resolve effective renderer");
-    expect(source).toContain("reference-availability.mjs");
+    expect(source).not.toContain("reference-availability.mjs");
+    expect(source).toContain("'.referenceLibrary.status'");
     expect(source).toContain("resolve-effective-renderer.mjs");
     expect(source).toContain("GENERATION_RENDERER=$EFFECTIVE");
     expect(source).toContain("RENDERER_FALLBACK_REASON");
@@ -26,7 +83,7 @@ describe("effective renderer workflow", () => {
       "Author independent experience candidates",
     );
     expect(preflight).toBeGreaterThan(-1);
-    expect(preflight).toBeLessThan(reserve);
+    expect(preflight).toBeGreaterThan(reserve);
     expect(preflight).toBeLessThan(authoring);
   });
 
@@ -41,7 +98,18 @@ describe("effective renderer workflow", () => {
       source.indexOf("Reserve inspiration routes"),
       source.indexOf("Record inspiration selection stage"),
     );
-    expect(reserve).toContain("env.GENERATION_RENDERER == 'creative'");
+    expect(reserve).toContain('if [ "$GENERATION_RENDERER" != "creative" ]');
+  });
+
+  it("records a completed reservation only after the reservation step confirms it", async () => {
+    const { jobs } = yaml.parse(
+      await fs.readFile(".github/workflows/generate-client.yml", "utf8"),
+    );
+    const step = jobs.generate.steps.find(
+      ({ name }: { name: string }) =>
+        name === "Record inspiration selection stage",
+    );
+    expect(step.if).toBe("steps.inspiration.outputs.reserved == 'true'");
   });
 
   it("switches to the pack path when creative authoring or rendering fails", async () => {
