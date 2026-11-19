@@ -882,7 +882,7 @@ jobs:
         run: node scripts/record-generation-stage.mjs --stage review_branch --status completed --detail "Private review branch created."
       - name: Generate or reuse contextual imagery
         id: assets
-        timeout-minutes: 12
+        timeout-minutes: 20
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           mkdir -p public/images/generated
