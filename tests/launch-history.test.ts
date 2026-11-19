@@ -53,6 +53,15 @@ async function temporaryHistory() {
 }
 
 describe("launch history", () => {
+  it("records a reservation in the same dedicated niche that the compiler selected", () => {
+    const record = launchRecordFrom({
+      config: { ...config, businessKind: "home-services" },
+      inspiration: { ...inspiration, request: { industry: "roofing" } },
+      stage: "attempt",
+    });
+    expect(launchesForBusinessKind({ launches: [record] }, "roofing")).toEqual([record]);
+  });
+
   it("returns empty defaults for a missing history file", async () => {
     const history = await readLaunchHistory(await temporaryHistory());
     expect(history).toEqual({

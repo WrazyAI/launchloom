@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { buildInspirationPack } from "./inspiration-registry.mjs";
+import { buildInspirationPack, ReferenceShortageError } from "./inspiration-registry.mjs";
 
 /**
  * Probe whether the production reference library can supply a creative pack
@@ -35,16 +35,14 @@ export function probeCreativeReferences({
       reason: null,
     };
   } catch (error) {
-    const message = String(error?.message || error);
-    const match = /has (\d+) eligible dossier\(s\) matched to/u.exec(message);
-    if (!match) throw error;
+    if (!(error instanceof ReferenceShortageError)) throw error;
     return {
       available: false,
       industry,
-      eligible: Number(match[1]),
+      eligible: error.eligibleCount,
       requiredRoutes,
       reason: "reference-shortage",
-      detail: message.slice(0, 300),
+      detail: error.message.slice(0, 300),
     };
   }
 }

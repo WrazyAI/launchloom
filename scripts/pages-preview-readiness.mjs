@@ -11,6 +11,7 @@ export function parseWaitForPagesPreviewArgs(argv = []) {
     "timeout-seconds",
     "interval-seconds",
     "marker",
+    "write-homepage-digest",
   ]);
   for (let index = 0; index < argv.length; index += 1) {
     const token = String(argv[index] || "");
@@ -64,6 +65,7 @@ export function classifyPagesPreviewResponse({
  *   wait?: (milliseconds: number) => Promise<void>,
  *   now?: () => number,
  *   onAttempt?: (message: string) => void
+ *   onReadyHomepage?: (html: string) => void
  * }} input
  * @returns {Promise<{state: "ready" | "access-challenge", status: number}>}
  */
@@ -78,6 +80,7 @@ export async function waitForPagesPreview({
     new Promise((resolve) => setTimeout(resolve, milliseconds)),
   now = () => Date.now(),
   onAttempt = () => {},
+  onReadyHomepage,
 } = {}) {
   const preview = String(url || "").trim();
   if (!preview) throw new Error("--url is required.");
@@ -119,9 +122,12 @@ export async function waitForPagesPreview({
         protectedPreview,
       });
       if (state === "ready") {
-        if (!marker) return { state, status: response.status };
-        const body = await response.text().catch(() => "");
-        if (body.includes(marker)) return { state, status: response.status };
+        if (!marker && !onReadyHomepage) return { state, status: response.status };
+        const body = await response.text();
+        if (body.includes(marker)) {
+          onReadyHomepage?.(body);
+          return { state, status: response.status };
+        }
         lastFailure = "renderer marker missing";
       } else if (state === "access-challenge") {
         return { state, status: response.status };

@@ -117,7 +117,6 @@ fi
         .split("\n");
       expect(values).toEqual([
         `scripts/generate-site-config.mjs=${mode === "postgres" ? intakeId : "123"}`,
-        `scripts/compile-inspiration-pack.mjs=${mode === "postgres" ? intakeId : "123"}`,
       ]);
       const outputs = await readFile(path.join(directory, "outputs"), "utf8");
       expect(outputs).toContain(

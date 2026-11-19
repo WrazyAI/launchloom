@@ -3466,7 +3466,7 @@ export default function Experience`,
       "utf8",
     );
     const inspirationIndex = workflow.indexOf(
-      "node scripts/compile-inspiration-pack.mjs",
+      'node "$GITHUB_WORKSPACE/scripts/compile-inspiration-pack.mjs"',
     );
     const authorIndex = workflow.indexOf(
       "name: Author independent experience candidates",

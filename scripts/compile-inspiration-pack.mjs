@@ -4,7 +4,10 @@ import path from "node:path";
 import { normalizeBusinessKind } from "./business-kind.mjs";
 import { inferBusinessFocusTerms } from "./business-focus.mjs";
 import { launchesForBusinessKind } from "./launch-history.mjs";
-import { buildInspirationPack } from "./inspiration-registry.mjs";
+import {
+  buildInspirationPack,
+  ReferenceShortageError,
+} from "./inspiration-registry.mjs";
 
 function parseArgs(values) {
   const result = {};
@@ -111,6 +114,9 @@ async function intakeFromFile(file) {
 }
 
 const args = parseArgs(process.argv.slice(2));
+const selectionMode = args.selection || "strict";
+if (!["strict", "allow-shortage", "skip"].includes(selectionMode))
+  throw new Error("Invalid dossier selection mode.");
 const repository = path.resolve(import.meta.dirname, "..");
 const configPath = path.resolve(args.config || "src/site.config.json");
 const registryPath = path.resolve(
@@ -125,8 +131,12 @@ const outputPath = path.resolve(
 
 const [config, baseRegistry, history, intake] = await Promise.all([
   fs.readFile(configPath, "utf8").then(JSON.parse),
-  fs.readFile(registryPath, "utf8").then(JSON.parse),
-  fs.readFile(historyPath, "utf8").then(JSON.parse),
+  selectionMode === "skip"
+    ? null
+    : fs.readFile(registryPath, "utf8").then(JSON.parse),
+  selectionMode === "skip"
+    ? null
+    : fs.readFile(historyPath, "utf8").then(JSON.parse),
   args.intake ? intakeFromFile(path.resolve(args.intake)) : {},
 ]);
 const registry = baseRegistry;
@@ -146,7 +156,7 @@ const businessFocusTerms = inferBusinessFocusTerms({
       ? intake.services
       : config.services || [],
 });
-if (businessFocusTerms.length === 1) {
+if (selectionMode !== "skip" && businessFocusTerms.length === 1) {
   const focus = normalizeBusinessKind(businessFocusTerms[0]);
   const coreCollection = await fs
     .readFile(
@@ -162,7 +172,8 @@ if (businessFocusTerms.length === 1) {
   );
   if (dedicatedNiche) industry = dedicatedNiche.businessKind;
 }
-const recent = launchesForBusinessKind(history, industry);
+const recent =
+  selectionMode === "skip" ? [] : launchesForBusinessKind(history, industry);
 const styleText = [
   publicIntake.stylePreference,
   publicIntake.brandNotes,
@@ -176,36 +187,55 @@ const styleText = [
   .filter(Boolean)
   .join(". ");
 const styleTerms = positiveStyleTerms(styleText);
-const pack = buildInspirationPack(
-  {
-    seed:
-      process.env.LAUNCHLOOM_INTAKE_ID ||
-      intake.submissionId ||
-      config.business?.name ||
-      "launchloom-intake",
-    industry,
-    businessFocusTerms,
-    styleTerms,
-    styleText,
-    recentLaunches: recent,
-    recentReferenceIds: recent.flatMap((launch) =>
-      Array.isArray(launch.referenceIds) ? launch.referenceIds : [],
-    ),
-    recentFamilyIds: recent.flatMap((launch) => [
-      ...(Array.isArray(launch.routeFamilyIds) ? launch.routeFamilyIds : []),
-      launch.creativeFamilyId,
-      launch.referenceFamilyId,
-    ]),
-    recentRouteSignatures: recent.flatMap((launch) =>
-      Array.isArray(launch.routeSignatures) ? launch.routeSignatures : [],
-    ),
-  },
-  registry,
-  { repositoryRoot: repository, requireDossiers: true },
-);
+const request = {
+  seed:
+    process.env.LAUNCHLOOM_INTAKE_ID ||
+    intake.submissionId ||
+    config.business?.name ||
+    "launchloom-intake",
+  industry,
+  businessFocusTerms,
+  styleTerms,
+  styleText,
+  recentLaunches: recent,
+  recentReferenceIds: recent.flatMap((launch) =>
+    Array.isArray(launch.referenceIds) ? launch.referenceIds : [],
+  ),
+  recentFamilyIds: recent.flatMap((launch) => [
+    ...(Array.isArray(launch.routeFamilyIds) ? launch.routeFamilyIds : []),
+    launch.creativeFamilyId,
+    launch.referenceFamilyId,
+  ]),
+  recentRouteSignatures: recent.flatMap((launch) =>
+    Array.isArray(launch.routeSignatures) ? launch.routeSignatures : [],
+  ),
+};
+let pack = { version: 1, request: { industry }, routes: [] };
+let status = "skipped";
+let eligibleDossierCount;
+if (selectionMode !== "skip") {
+  try {
+    pack = buildInspirationPack(request, registry, {
+      repositoryRoot: repository,
+      requireDossiers: true,
+      requireCompleteCore: selectionMode === "allow-shortage",
+    });
+    status = "selected";
+  } catch (error) {
+    if (
+      selectionMode !== "allow-shortage" ||
+      !(error instanceof ReferenceShortageError)
+    )
+      throw error;
+    status = "reference-shortage";
+    eligibleDossierCount = error.eligibleCount;
+  }
+}
 pack.referenceLibrary = {
   policy: "permission-cleared-only",
   source: "data/reference-library/core-collection.json",
+  status,
+  ...(eligibleDossierCount === undefined ? {} : { eligibleDossierCount }),
   selectedDossierCount: pack.routes.filter((route) => route.referenceDossier)
     .length,
   recordIds: pack.routes
@@ -216,5 +246,5 @@ pack.referenceLibrary = {
 await fs.mkdir(path.dirname(outputPath), { recursive: true });
 await fs.writeFile(outputPath, `${JSON.stringify(pack, null, 2)}\n`);
 console.log(
-  `inspiration_pack=${outputPath} routes=${pack.routes.length} registry=${pack.registryDigest.slice(0, 12)}`,
+  `inspiration_pack=${outputPath} status=${status} routes=${pack.routes.length} registry=${pack.registryDigest?.slice(0, 12) || "none"}`,
 );

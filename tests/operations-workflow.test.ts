@@ -614,7 +614,17 @@ describe("workflow job graph and public-log privacy", () => {
       new Set(["issue", "intake_ref", "intake_key"]),
     );
 
-    expect(source).not.toContain("GITHUB_STEP_SUMMARY");
+    // Only the design receipt writer may emit summary content; never the
+    // intake, generated copy, signed links or private artifacts.
+    const summarySteps = steps.filter((step) => step.run?.includes("GITHUB_STEP_SUMMARY"));
+    expect(summarySteps.map((step) => step.name)).toEqual([
+      "Summarize protected diagnostic design",
+      "Summarize verified preview design",
+    ]);
+    for (const step of summarySteps) {
+      expect(step.run).toMatch(/RECEIPT=\$\(node scripts\/preview-design-receipt\.mjs /u);
+      expect(step.run).toMatch(/"\$RECEIPT" >> "\$GITHUB_STEP_SUMMARY"/u);
+    }
     expect(source).not.toContain("upload-artifact");
     // Review and repair capabilities stay in private files, not step outputs.
     expect(source).not.toMatch(/steps\.(?:review|creative_repair_link)\.outputs/u);

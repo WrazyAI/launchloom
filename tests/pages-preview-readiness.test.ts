@@ -51,6 +51,21 @@ describe("pages preview readiness marker", () => {
     ).resolves.toEqual({ state: "ready", status: 200 });
   });
 
+  it("passes the exact marker-verified homepage to the audit", async () => {
+    const html = '<main data-experience-pack="bold-utility"></main>';
+    const observed: string[] = [];
+    await waitForPagesPreview({
+      url,
+      marker: 'data-experience-pack="bold-utility"',
+      send: async () => response(html),
+      onReadyHomepage: (body) => {
+        observed.push(body);
+      },
+      now: () => 0,
+    });
+    expect(observed).toEqual([html]);
+  });
+
   it("parses --marker as a value option", () => {
     expect(
       parseWaitForPagesPreviewArgs([
