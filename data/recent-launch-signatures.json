@@ -1,38 +1,7 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-17T19:42:35.744Z",
+  "updatedAt": "2026-11-19T20:32:22.562Z",
   "launches": [
-    {
-      "id": "2026-09-29-apex-air-conditioning-heating-attempt-83",
-      "launchedAt": "2026-09-29T17:27:34.292Z",
-      "stage": "attempt",
-      "businessName": "Apex Air Conditioning & Heating",
-      "businessKind": "hvac",
-      "recipe": "local-trades",
-      "packId": "bold-utility",
-      "variantId": "portrait",
-      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
-      "creativeFamilyId": "",
-      "referenceFamilyId": "",
-      "routeFamilyIds": [
-        "editorial-monument",
-        "hvac-local-aerial-hero",
-        "hvac-symptom-first-choice-grid",
-        "hvac-three-part-contact-ribbon",
-        "typographic-poster",
-        "utility-diagnostic"
-      ],
-      "referenceIds": [
-        "web-hvac-alamo-austin-air",
-        "web-hvac-allied-air-heat",
-        "web-hvac-city-wide-austin"
-      ],
-      "routeSignatures": [
-        "Blue service link line and a bright quote control above the hero, with contact r|A suburban-home photo carries the firm introduction while a conspicuous three-pa|Use a heating/cooling/air-quality/ductless service grid only for services the cl|Direct sans headings in saturated blue, slim body paragraphs and red underline/C|house-photo opening -> phone-and-quote ribbon -> service two-by-two image grid -|Technician action photos form a two-by-two service grid; family/team, financing,",
-        "Small company mark, phone number and practical service/product links share the d|An aerial Austin bridge photograph supports a centered white condensed service p|Lead with heating, cooling, maintenance and air quality as distinct confirmed se|Tall condensed uppercase display for section headings, short sans support copy a|local photo hero and service quartet -> crew introduction split -> customer proo|Local aerial imagery, technician group portrait, customer home scenes and a mapp",
-        "Thin service-area utility line, white brand row, service links, call number and |A dark technician-at-condenser photograph supports a left-aligned plainspoken re|Start with what the system is doing, route to confirmed AC/heating/maintenance s|Large friendly sans headlines, compact status labels and concise visitor-centere|technician hero -> symptom-choice cards -> service photograph grid -> diagnosis |Authentic technician scenes fill a service photo grid, while a simple circular m"
-      ]
-    },
     {
       "id": "2026-09-30-juniper-grove-estate-law-attempt-93",
       "launchedAt": "2026-09-30T18:31:11.235Z",
@@ -1784,6 +1753,41 @@
         "small white service navigation with a gold estimate action|a coastal-house image carries a navy overlay, stacked gold-and-white statement, |service list for interior, exterior, cabinetry, and wood staining followed by pr|large modern sans statements, small uppercase labels, and compact practical copy|coastal-home and form hero -> navy business introduction -> three audience cards|residential project photography with a few before-and-after work scenes",
         "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
       ]
+    },
+    {
+      "id": "2026-11-19-coastal-brush-painting-co-attempt-146-run-44607246535-attempt-1",
+      "launchedAt": "2026-11-19T20:32:22.560Z",
+      "stage": "attempt",
+      "reservationKey": "146-run-44607246535-attempt-1",
+      "businessName": "Coastal Brush Painting Co.",
+      "businessKind": "painting",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "editorial-monument",
+        "typographic-poster",
+        "web-painting-av",
+        "web-painting-novak",
+        "web-painting-southern"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form"
+      ],
+      "referenceIds": [
+        "web-painting-av",
+        "web-painting-novak",
+        "web-painting-southern"
+      ],
+      "routeSignatures": [
+        "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
+        "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
+        "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
+      ]
     }
   ],
   "launchesByBusinessKind": {
@@ -2743,6 +2747,41 @@
           "minimal charcoal service links and light estimate controls|a low-light exterior-home photograph anchors a dark charcoal layout with a float|compact dark service cards followed by a visual before-and-after comparison|clean geometric sans with large centered statements and compact utility labels|dark image and form hero -> horizontal service strip -> four service cards -> be|darkened finished-home scenes, before-and-after slider, interior projects, and s",
           "small white service navigation with a gold estimate action|a coastal-house image carries a navy overlay, stacked gold-and-white statement, |service list for interior, exterior, cabinetry, and wood staining followed by pr|large modern sans statements, small uppercase labels, and compact practical copy|coastal-home and form hero -> navy business introduction -> three audience cards|residential project photography with a few before-and-after work scenes",
           "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
+        ]
+      },
+      {
+        "id": "2026-11-19-coastal-brush-painting-co-attempt-146-run-44607246535-attempt-1",
+        "launchedAt": "2026-11-19T20:32:22.560Z",
+        "stage": "attempt",
+        "reservationKey": "146-run-44607246535-attempt-1",
+        "businessName": "Coastal Brush Painting Co.",
+        "businessKind": "painting",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "editorial-monument",
+          "typographic-poster",
+          "web-painting-av",
+          "web-painting-novak",
+          "web-painting-southern"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form"
+        ],
+        "referenceIds": [
+          "web-painting-av",
+          "web-painting-novak",
+          "web-painting-southern"
+        ],
+        "routeSignatures": [
+          "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
+          "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
+          "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
         ]
       }
     ],
