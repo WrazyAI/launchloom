@@ -57,10 +57,12 @@ it("selects branch-preview canaries against latest main history without recordin
 
   expect(reserveStart).toBeGreaterThanOrEqual(0);
   expect(reserveBlock).toContain(
-    "github.event_name == 'workflow_dispatch' && inputs.preview_only",
+    "LAUNCHLOOM_READ_ONLY_HISTORY: ${{ github.event_name != 'repository_dispatch' && github.ref != 'refs/heads/main' }}",
   );
   expect(reserveBlock).toContain('HISTORY_DIR="$RUNNER_TEMP/launchloom-history-main"');
-  expect(reserveBlock).toContain("LAUNCHLOOM_READ_ONLY_HISTORY");
+  expect(reserveBlock).toContain('git fetch origin main');
+  expect(reserveBlock).toContain('git worktree add --detach "$HISTORY_DIR" origin/main');
+  expect(reserveBlock).toContain('--history "$HISTORY_FILE"');
   expect(reserveBlock.indexOf('if [ "$LAUNCHLOOM_READ_ONLY_HISTORY" = "true" ]; then')).toBeGreaterThanOrEqual(0);
   expect(reserveBlock.indexOf('if [ "$LAUNCHLOOM_READ_ONLY_HISTORY" = "true" ]; then')).toBeLessThan(
     reserveBlock.indexOf('node "$GITHUB_WORKSPACE/scripts/record-launch.mjs"'),
