@@ -158,6 +158,7 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
       complete,
       detail: {
         mode: seo.mode || null,
+        researchBasis: seo.researchBasis || null,
         tasks: Number(seo.cost?.tasks) || 0,
         unreportedTasks: Number(seo.cost?.unreportedTasks) || 0,
         stageCosts: Array.isArray(seo.cost?.stageCosts)
@@ -165,6 +166,9 @@ export function summarizeGenerationCosts(input = {}, options = {}) {
           : [],
         fallbackStatus: seo.fallbackSearch?.status || null,
         fallbackQueries: Number(seo.fallbackSearch?.queriesAttempted) || 0,
+        fallbackEvidence: Array.isArray(seo.externalSearchEvidence)
+          ? seo.externalSearchEvidence.length
+          : 0,
         publishReady: seo.publishReady === true,
         queryPlannerStatus: intentPlanning.status || null,
         queryPlannerModel: intentPlanning.model || plannerUsage.model || null,
