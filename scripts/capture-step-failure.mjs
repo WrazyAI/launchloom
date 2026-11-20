@@ -4,7 +4,8 @@ import { redactTrackingText } from "./generation-tracking-contract.mjs";
 const ERROR_SHAPE =
   /\b(?:error|failed|failure|fatal|timed?\s*out|timeout|invalid|cannot|unable|refused|denied|forbidden|unauthorized|not found|missing|required|ENOENT|EACCES|EPERM|exit(?:ed)? (?:code|status))\b|HTTP\s*[45]\d\d|status\s*[45]\d\d|::error/iu;
 const NOISE =
-  /^(?:\+|##\[|::debug|shell:|env:|command:|post job cleanup|cleaning up orphan)/iu;
+  /^(?:\+|##\[|::debug|shell:|env:|command:|post job cleanup|cleaning up orphan|- |at\s|locator resolved|waiting for|strict mode violation)/iu;
+const MARKUP = /<\/?[a-z][^>]*>/iu;
 const SOURCE_LIKE =
   /^(?:--|\\|echo|printf|node\s|npm\s|npx\s|gh\s|git\s|bash\s|cat\s|cd\s|mkdir\s|rm\s|cp\s|mv\s|if\s|elif\s|then$|else$|fi$|for\s|while\s|local\s|export\s|set\s|trap\s|const\s|let\s|var\s|import\s|require\s|test\s|\[\[|#|\$|\}|\{)|^[A-Z][A-Z0-9_]+=/u;
 
@@ -54,6 +55,7 @@ export function extractFailureEvidence(log, status = 1) {
       line.length < 8 ||
       NOISE.test(line) ||
       SOURCE_LIKE.test(line) ||
+      MARKUP.test(line) ||
       GENERIC_EXIT.test(line) ||
       !ERROR_SHAPE.test(line)
     )

@@ -36,6 +36,7 @@ describe("bounded failure evidence", () => {
         'generate\tUNKNOWN STEP\t2026-11-20T17:43:39.1005074Z \u001b[36;1m --failure-next-step "Inspect the run"',
         "generate\tBuild and direct-upload public preview\t2026-11-20T17:43:39.2000000Z \u001b[31mError: preview upload failed with HTTP 502\u001b[0m",
         "generate\tUNKNOWN STEP\t2026-11-20T17:43:39.3000000Z ERROR: unrelated summary",
+        '- locator resolved to <input required="" type="email" name="email">',
       ].join("\n"),
       1,
     );
