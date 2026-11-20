@@ -61,7 +61,7 @@ function FailureDetails({
     return <p className="flow-muted">No failure details were recorded.</p>;
   return (
     <div className="flow-failure">
-      {event ? <StageEvidence event={event} /> : null}
+      {structuredFailure(event) ? <StageEvidence event={event!} /> : null}
       {failure.summary ? (
         <DetailValue value={failure.summary} />
       ) : (
@@ -81,6 +81,34 @@ function FailureDetails({
   );
 }
 
+type StructuredFailure = {
+  errorCode: string;
+  diagnosticExcerpt: string;
+};
+
+function structuredFailure(
+  event: AttemptEventRecord | undefined,
+): StructuredFailure | null {
+  if (
+    !event?.detail ||
+    event.source !== "github-reconcile" ||
+    event.eventKey !== `github-step:${event.stage}`
+  )
+    return null;
+  try {
+    const evidence = JSON.parse(event.detail);
+    if (
+      typeof evidence?.errorCode === "string" &&
+      /^LL_STAGE_[A-Z_]+_(FAILED|TIMED_OUT)$/u.test(evidence.errorCode) &&
+      typeof evidence.diagnosticExcerpt === "string"
+    )
+      return evidence as StructuredFailure;
+  } catch {
+    // Older retained evidence renders below as plain text.
+  }
+  return null;
+}
+
 function StageEvidence({ event }: { event: AttemptEventRecord }) {
   if (!event.detail) return null;
   if (
@@ -88,12 +116,8 @@ function StageEvidence({ event }: { event: AttemptEventRecord }) {
     event.eventKey === `github-step:${event.stage}`
   ) {
     try {
-      const evidence = JSON.parse(event.detail);
-      if (
-        typeof evidence?.errorCode === "string" &&
-        /^LL_STAGE_[A-Z_]+_(FAILED|TIMED_OUT)$/u.test(evidence.errorCode) &&
-        typeof evidence.diagnosticExcerpt === "string"
-      ) {
+      const evidence = structuredFailure(event);
+      if (evidence) {
         return (
           <div className="flow-diagnostic">
             <p>
@@ -122,7 +146,10 @@ function runHeadline(
   active: boolean,
 ) {
   const failed = stages.find((item) => item.status === "failed");
-  if (failed) return `${stageLabel(failed.stage)} failed`;
+  if (failed)
+    return failed.stage === "workflow"
+      ? "Run failed"
+      : `${stageLabel(failed.stage)} failed`;
   if (active) {
     const running = stages.findLast((item) => item.status === "started");
     return running
