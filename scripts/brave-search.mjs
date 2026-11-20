@@ -25,7 +25,7 @@ function clipped(value, limit) {
 /**
  * Bounded Brave Search client for cited diagnostic evidence. It never claims
  * keyword volume, difficulty, rankings, or other measured SEO metrics.
- * @param {{apiKey?: string, fetchImpl?: typeof fetch, timeoutMs?: number}} [options]
+ * @param {{apiKey?: string, fetchImpl?: typeof fetch, timeoutMs?: number, retryDelayMs?: number}} [options]
  */
 export function createBraveSearchClient({
   apiKey,
