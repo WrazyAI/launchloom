@@ -17,6 +17,7 @@ const LABELS: Record<string, string> = {
   renderer_policy: "Renderer",
   intake_handoff_check: "Handoff check",
   setup: "Environment",
+  seo_research: "SEO research",
   seo_telemetry: "SEO reporting",
   inspiration_selection: "References",
   client_repo: "Client workspace",
@@ -27,12 +28,15 @@ const LABELS: Record<string, string> = {
   creative_render: "Creative render",
   diagnostic_preview: "Diagnostic preview",
   preview_deploy: "Preview deploy",
+  workflow: "Run failure",
   preview_verification: "Preview check",
   preview_ready: "Preview delivery",
   review_link: "Review link",
 };
 
 const DEPENDENCIES: Record<string, string[]> = {
+  seo_research: ["intake"],
+  workflow: ["handoff"],
   setup: ["profile_policy"],
   intake_handoff_check: ["profile_policy"],
   intake: ["setup"],
@@ -53,6 +57,11 @@ const DEPENDENCIES: Record<string, string[]> = {
   preview_ready: ["preview_verification"],
   review_link: ["preview_verification"],
   handoff: ["review_link", "preview_ready"],
+};
+
+const ALIASES: Record<string, string> = {
+  seo_telemetry: "seo_research",
+  seo_research: "seo_telemetry",
 };
 
 const ORDER = [
@@ -237,7 +246,9 @@ function layout(stages: WorkflowStage[], width: number) {
     visiting.add(stage);
     const found: string[] = [];
     for (const dependency of DEPENDENCIES[stage] ?? []) {
+      const alias = ALIASES[dependency];
       if (visibleSet.has(dependency)) found.push(dependency);
+      else if (alias && visibleSet.has(alias)) found.push(alias);
       else found.push(...ancestorsOf(dependency, visiting));
     }
     return found;
@@ -270,8 +281,12 @@ function layout(stages: WorkflowStage[], width: number) {
   const laneGap = 14;
   const byBand = new Map<number, Map<number, Placed[]>>();
   const placed: Placed[] = [];
+  let previousDepth = -1;
   for (const stage of stages) {
-    const d = visibleSet.has(stage.stage) ? depthOf(stage.stage) : 0;
+    const d = Object.hasOwn(DEPENDENCIES, stage.stage)
+      ? depthOf(stage.stage)
+      : previousDepth + 1;
+    previousDepth = d;
     const band = Math.floor(d / columns);
     const column = d % columns;
     const lanes = byBand.get(band) ?? new Map<number, Placed[]>();
@@ -366,15 +381,20 @@ export function WorkflowGraph({
   }, []);
   const chart = layout(stages, width);
   const byStage = new Map(chart.placed.map((item) => [item.stage.stage, item]));
-  const edges = chart.placed.flatMap((item) => {
+  const edges = chart.placed.flatMap((item, index) => {
     const parents = new Map<string, Placed>();
     for (const dependency of DEPENDENCIES[item.stage.stage] ?? []) {
-      const direct = byStage.get(dependency);
+      const direct =
+        byStage.get(dependency) ?? byStage.get(ALIASES[dependency]);
       const ancestors = direct
         ? [direct]
         : nearestVisibleAncestors(dependency, byStage);
       for (const parent of ancestors)
         if (parent.key !== item.key) parents.set(parent.key, parent);
+    }
+    if (!Object.hasOwn(DEPENDENCIES, item.stage.stage)) {
+      const previous = chart.placed[index - 1];
+      if (previous) parents.set(previous.key, previous);
     }
     const vertical = width < 520;
     return [...parents.values()].map((parent) => {
