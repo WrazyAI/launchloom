@@ -85,6 +85,7 @@ let health: Health = fixtureHealth();
 let delays = new Map<string, number>();
 let failAttemptListOnce = false;
 let failHealth = false;
+let legacyWorkflow = false;
 let attemptListDelay = 0;
 let relatedPreviews = new Map<string, RelatedIssuePreview>();
 let eventDetails = new Map<string, string>();
@@ -427,7 +428,34 @@ async function serve(
       );
       return;
     }
-    const detail = attemptDetail(attempt);
+    const detail =
+      legacyWorkflow && id === "attempt-0000"
+        ? {
+            ...attemptDetail(attempt),
+            executionStatus: "failed" as const,
+            failure: {
+              category: "workflow",
+              stage: "workflow",
+              summary: "The workflow stopped before a preview was ready.",
+              evidenceUrl: null,
+              nextStep: "Inspect the run.",
+            },
+            events: [
+              "intake",
+              "seo_research",
+              "inspiration_selection",
+              "reference_analysis",
+              "workflow",
+            ].map((stage, index) => ({
+              ...attemptDetail(attempt).events[0],
+              eventKey: `github-step:${stage}`,
+              stage,
+              status: stage === "workflow" ? "failed" : "completed",
+              source: "github-reconcile" as const,
+              createdAt: attempt.updatedAt + index,
+            })),
+          }
+        : attemptDetail(attempt);
     if (id === "attempt-diagnostic") {
       const base = detail.events[0];
       detail.events = [
@@ -575,6 +603,7 @@ beforeEach(() => {
   delays = new Map();
   failAttemptListOnce = false;
   failHealth = false;
+  legacyWorkflow = false;
   attemptListDelay = 0;
   heroMode = "ok";
   relatedPreviews = new Map();
@@ -1488,6 +1517,46 @@ describe("real admin workspace browser behavior", () => {
       autoErrors(second.errors);
     } finally {
       await second.page.close();
+    }
+  });
+
+  it("connects legacy research stages and a terminal workflow failure in order", async () => {
+    legacyWorkflow = true;
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-0000",
+    });
+    try {
+      const inspector = page.locator("#attempt-inspector");
+      await inspector
+        .getByRole("button", { name: "View workflow", exact: true })
+        .click();
+      const workflow = inspector.getByRole("region", { name: "Workflow run" });
+      const graph = workflow.getByRole("list", {
+        name: "Workflow stage graph",
+      });
+      await visible(graph);
+      for (const label of [
+        "Intake: Passed",
+        "SEO research: Passed",
+        "References: Passed",
+        "Reference analysis: Passed",
+        "Run failure: Failed",
+      ])
+        await visible(graph.getByRole("button", { name: label }));
+      expect(
+        await workflow.locator(".flow-edge").count(),
+      ).toBeGreaterThanOrEqual(4);
+      await visible(
+        workflow.getByText("The workflow stopped before a preview was ready."),
+      );
+      expect(
+        await workflow
+          .getByText("The workflow stopped before a preview was ready.")
+          .count(),
+      ).toBe(1);
+      autoErrors(errors);
+    } finally {
+      await page.close();
     }
   });
 
@@ -3576,7 +3645,9 @@ it("labels cited fallback research as approval-ready but not measured", async ()
   });
   try {
     const drawer = page.locator("#attempt-inspector");
-    await drawer.getByRole("button", { name: "SEO research", exact: true }).click();
+    await drawer
+      .getByRole("button", { name: "SEO research", exact: true })
+      .click();
     await visible(drawer.getByText("Cited fallback evidence complete"));
     await visible(drawer.getByText(/not measured SEO metrics/u));
     await visible(drawer.getByText(/Fallback status: Complete/u));

@@ -50,11 +50,18 @@ export function ClientWorkflowDirectory({
   );
 }
 
-function FailureDetails({ failure }: { failure: Failure | undefined }) {
+function FailureDetails({
+  failure,
+  event,
+}: {
+  failure: Failure | undefined;
+  event?: AttemptEventRecord;
+}) {
   if (!failure?.category && !failure?.summary && !failure?.nextStep)
     return <p className="flow-muted">No failure details were recorded.</p>;
   return (
     <div className="flow-failure">
+      {event ? <StageEvidence event={event} /> : null}
       {failure.summary ? (
         <DetailValue value={failure.summary} />
       ) : (
@@ -388,6 +395,7 @@ export function WorkflowRunPanel({
                 </div>
               </header>
               {shownEvent?.detail &&
+              selected !== attributed &&
               stageStatus(
                 shownEvent.status,
                 active,
@@ -397,7 +405,7 @@ export function WorkflowRunPanel({
                 <StageEvidence event={shownEvent} />
               ) : null}
               {selected === attributed ? (
-                <FailureDetails failure={attempt.failure} />
+                <FailureDetails failure={attempt.failure} event={shownEvent} />
               ) : null}
               {selected === "preview_ready" &&
               !["preview_ready", "published"].includes(
