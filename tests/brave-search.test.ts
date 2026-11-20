@@ -55,10 +55,39 @@ describe("Brave Search fallback client", () => {
     });
   });
 
+  it("retries one throttled request before failing", async () => {
+    let calls = 0;
+    const client = createBraveSearchClient({
+      apiKey: "brave-test-key",
+      retryDelayMs: 0,
+      fetchImpl: async () => {
+        calls += 1;
+        return calls === 1
+          ? new Response("rate limited", { status: 429 })
+          : Response.json({
+              web: {
+                results: [
+                  {
+                    title: "Companion care",
+                    url: "https://example.test/care",
+                    description: "A cited result.",
+                  },
+                ],
+              },
+            });
+      },
+    });
+    const result = await client.search({ query: "companion care" });
+    expect(calls).toBe(2);
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0].url).toBe("https://example.test/care");
+  });
+
   it("rejects a provider error instead of returning uncited text", async () => {
     const client = createBraveSearchClient({
       apiKey: "brave-test-key",
       fetchImpl: async () => new Response("rate limited", { status: 429 }),
+      retryDelayMs: 0,
     });
     await expect(client.search({ query: "companion care" })).rejects.toThrow(
       "Brave Search API returned HTTP 429",

@@ -8,6 +8,7 @@ import {
 } from "./confirmed-coverage.mjs";
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { createBraveSearchClient } from "./brave-search.mjs";
 import {
   createOpenCodeGoIntentQueryPlanner,
   createOpenRouterIntentQueryPlanner,
@@ -1398,8 +1399,16 @@ async function collectFallbackWebEvidence(
     warnings.push(
       "Fallback web search budget is zero; no online fallback requests were attempted.",
     );
+  const minimumQueryIntervalMs = Math.max(
+    0,
+    Number(webSearch.minIntervalMs) || 0,
+  );
   for (const query of selected) {
     if (budgetExhausted) break;
+    if (queriesAttempted > 0 && minimumQueryIntervalMs)
+      await new Promise((resolve) =>
+        setTimeout(resolve, minimumQueryIntervalMs),
+      );
     try {
       const observed = await webSearch.search({
         query,
