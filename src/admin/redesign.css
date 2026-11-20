@@ -1758,7 +1758,165 @@
   width: 17%;
 }
 .admin-client-table th:nth-child(5) {
-  width: 5%;
+  width: 20%;
+}
+.admin-client-table th:nth-child(6) {
+  width: 9%;
+}
+
+.admin-workflow-strip {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+}
+
+.admin-workflow-status {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.admin-workflow-caption {
+  color: var(--admin-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.admin-workflow-track {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-workflow-track li {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.admin-workflow-track:not(.admin-workflow-track--detail) li + li::before {
+  content: "";
+  width: 5px;
+  height: 1px;
+  margin-right: 4px;
+  background: var(--admin-line);
+}
+
+.admin-workflow-node {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 2px 4px;
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  background: var(--admin-paper);
+  color: var(--admin-ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.admin-workflow-node__glyph {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--admin-paper);
+  font-weight: 800;
+}
+
+.admin-workflow-node[data-stage-tone="success"] .admin-workflow-node__glyph {
+  background: #e3efe6;
+  color: #245936;
+}
+.admin-workflow-node[data-stage-tone="failure"] .admin-workflow-node__glyph {
+  background: #fae4e2;
+  color: #8d2e35;
+}
+.admin-workflow-node[data-stage-tone="attention"] .admin-workflow-node__glyph {
+  background: #f8eed6;
+  color: #6f500d;
+}
+.admin-workflow-node[data-stage-tone="running"] .admin-workflow-node__glyph {
+  background: #e3edf6;
+  color: #244d70;
+}
+
+.admin-workflow-node:hover,
+.admin-workflow-node[aria-pressed="true"] {
+  border-color: var(--admin-forest);
+  background: var(--admin-paper);
+  box-shadow: inset 0 0 0 1px var(--admin-forest);
+}
+
+.admin-workflow-node:focus-visible,
+.admin-workflow-status:focus-visible {
+  outline: 2px solid var(--admin-forest);
+  outline-offset: 2px;
+}
+
+.admin-workflow-outcomes,
+.admin-workflow-outcomes > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-workflow-outcomes {
+  gap: 8px 16px;
+  font-size: 13px;
+}
+
+.admin-workflow-track--detail {
+  gap: 8px;
+}
+
+.admin-workflow-track--detail .admin-workflow-node {
+  justify-content: start;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 8px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.admin-workflow-node small {
+  color: var(--admin-muted);
+}
+
+.admin-workflow-evidence {
+  padding: 12px;
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+
+.admin-workflow-evidence h4 {
+  margin: 0 0 4px;
+}
+
+.admin-workflow-log {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-workflow-footer {
+  padding-top: 8px;
+  border-top: 1px solid var(--admin-line);
+  font-size: 12px;
 }
 
 .admin-client-table tbody tr {
@@ -1964,6 +2122,7 @@
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "client client"
+      "workflow workflow"
       "contact action"
       "submitted action"
       "admin action";
@@ -1996,6 +2155,9 @@
     grid-area: admin;
   }
   .admin-client-table td:nth-child(5) {
+    grid-area: workflow;
+  }
+  .admin-client-table td:nth-child(6) {
     grid-area: action;
     align-self: end;
   }
@@ -2034,6 +2196,14 @@
 
   .admin-client-pagination button {
     grid-row: 2;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-workflow-strip .admin-workflow-node,
+  .admin-workflow-strip .admin-workflow-status {
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 

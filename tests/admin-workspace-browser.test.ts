@@ -30,7 +30,24 @@ import {
 } from "./fixtures/admin-workspace";
 
 const ATTEMPTS = syntheticAttempts();
-const CLIENTS = syntheticClients();
+const CLIENTS = syntheticClients().map((client) =>
+  client.clientId === "submission:client-a"
+    ? {
+        ...client,
+        workflow: {
+          attemptId: "attempt-diagnostic",
+          executionStatus: "failed" as const,
+          deliveryStatus: "diagnostic" as const,
+          stale: false,
+          failureStage: "setup",
+          stages: [
+            { stage: "creative", status: "succeeded" },
+            { stage: "preview_ready", status: "completed" },
+          ],
+        },
+      }
+    : { ...client, workflow: null },
+);
 const ATTENTION_ATTEMPTS = ATTEMPTS.filter(
   (attempt) =>
     attempt.executionStatus === "failed" ||
@@ -151,7 +168,14 @@ function attemptPage(params: URLSearchParams) {
       (!initiator || attempt.initiator.id === initiator) &&
       (!creator || attempt.invitationCreator.id === creator) &&
       (!profile || attempt.profile === profile) &&
-      (!clientId || attempt.clientId === clientId) &&
+      (!clientId ||
+        attempt.clientId === clientId ||
+        (!attempt.clientId &&
+          CLIENTS.some(
+            (record) =>
+              record.clientId === clientId &&
+              record.issueNumber === attempt.issueNumber,
+          ))) &&
       (!issueNumber || attempt.issueNumber === issueNumber) &&
       (!siteOnly ||
         attempt.profile === "full" ||
@@ -399,6 +423,15 @@ async function serve(
       return;
     }
     const detail = attemptDetail(attempt);
+    if (id === "attempt-diagnostic") {
+      detail.events.push({
+        ...detail.events[0],
+        eventKey: "preview-marker",
+        stage: "preview_ready",
+        status: "completed",
+        detail: "Preview ready state recorded.",
+      });
+    }
     const detailOverride = eventDetails.get(id);
     const events = eventPage(attempt, params);
     if (seoDetail && id === "attempt-0000" && !params.has("cursor")) {
@@ -1401,6 +1434,86 @@ describe("real admin workspace browser behavior", () => {
       await second.page.close();
     }
   });
+
+  it.each([390, 1440])(
+    "opens a failed pipeline stage in Clients at %ipx and keeps GitHub in the workflow footer",
+    async (width) => {
+      const { page, errors } = await openPage({
+        viewport: { width, height: 844 },
+        path: "/admin/onboarding-invites?view=clients&search=same@example.test",
+      });
+      try {
+        const row = page.locator('[data-client-id="submission:client-a"]');
+        await visible(row.getByRole("link", { name: "View site" }));
+        expect(await row.locator('a[href*="github.com"]').count()).toBe(0);
+        expect(await row.getByText(/Issue #|Intake #/u).count()).toBe(0);
+        await visible(row.getByText("Setup failed", { exact: true }));
+        const noRun = page.locator('[data-client-id="submission:client-b"]');
+        await visible(noRun.getByText("No run recorded"));
+        const captures = process.env.CLIENT_WORKFLOW_SCREENSHOTS;
+        if (captures) {
+          await page.screenshot({
+            path: path.join(captures, `clients-${width}.png`),
+            animations: "disabled",
+          });
+        }
+        const trigger = row.getByRole("button", { name: "Setup: Failed" });
+        await visible(
+          row.getByRole("button", { name: "Preview delivery: Needs review" }),
+        );
+        await trigger.focus();
+        await page.keyboard.press("Enter");
+        const dossier = page.getByRole("dialog", {
+          name: "Client dossier: Acme & Sons",
+        });
+        const workflow = dossier.getByRole("region", { name: "Workflow run" });
+        await visible(
+          workflow.getByText(
+            "The workflow could not verify its required inputs.",
+          ),
+        );
+        await workflow
+          .getByRole("button", { name: "Preview delivery: Needs review" })
+          .click();
+        expect(
+          await workflow.getByText("Preview ready state recorded.").count(),
+        ).toBe(0);
+        await workflow.getByRole("button", { name: "Setup: Failed" }).click();
+        await visible(workflow.getByText("prerequisite", { exact: true }));
+        expect(page.url()).toContain("view=clients");
+        const github = workflow
+          .locator("footer")
+          .getByRole("link", { name: "View on GitHub" });
+        await visible(github);
+        expect(await github.getAttribute("href")).toBe(
+          "https://github.com/WrazyAI/launchloom/actions/runs/90008/attempts/1",
+        );
+        if (captures) {
+          await page.screenshot({
+            path: path.join(captures, `workflow-${width}.png`),
+            animations: "disabled",
+          });
+        }
+        await workflow
+          .getByRole("button", { name: "Creative: Passed" })
+          .click();
+        await visible(workflow.getByText("Stage evidence recorded."));
+        expect(
+          await workflow
+            .getByText("The workflow could not verify its required inputs.")
+            .count(),
+        ).toBe(0);
+        expect(
+          await dossier.evaluate((el) => el.scrollWidth),
+        ).toBeLessThanOrEqual(width);
+        await page.keyboard.press("Escape");
+        await focused(trigger);
+        autoErrors(errors);
+      } finally {
+        await page.close();
+      }
+    },
+  );
 
   it("keeps failed diagnostic execution separate and never demotes a published site", async () => {
     const { page, errors } = await openPage({

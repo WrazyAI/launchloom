@@ -180,6 +180,15 @@ export type ClientInput = {
   creator: ActorSnapshot;
   submittedAt: number | null;
 };
+export type WorkflowStage = { stage: string; status: string };
+export type ClientWorkflow = Pick<
+  AttemptInput,
+  "attemptId" | "executionStatus" | "deliveryStatus" | "stale"
+> & {
+  failureStage: string | null;
+  /** Recent stage outcomes only. No log text, run URLs, or provider metadata. */
+  stages: WorkflowStage[];
+};
 export type ClientRecord = ClientInput & {
   createdAt: number;
   updatedAt: number;
@@ -187,6 +196,8 @@ export type ClientRecord = ClientInput & {
   productionUrl: string | null;
   /** Display-only verified site resolved from the trusted issue generation. */
   siteUrl?: string | null;
+  /** Undefined on older responses; null when no full-site workflow is recorded. */
+  workflow?: ClientWorkflow | null;
 };
 export type ClientFilters = {
   search?: string;

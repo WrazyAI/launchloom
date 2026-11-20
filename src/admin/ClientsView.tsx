@@ -10,6 +10,7 @@ import type { AdminRouteState } from "./route-state";
 import { ActorLabel } from "./ActorLabel";
 import { AdminIcon } from "./AdminIcon";
 import { ClientDossier } from "./ClientDossier";
+import { ClientWorkflowStrip } from "./ClientWorkflow";
 import { groupClients } from "./client-groups";
 import { HealthNotice } from "./HealthNotice";
 import {
@@ -116,6 +117,11 @@ export function ClientsView({
   const [clientLoading, setClientLoading] = useState(false);
   const [clientError, setClientError] = useState<string | null>(null);
   const [clientToken, setClientToken] = useState(0);
+  const [workflowTarget, setWorkflowTarget] = useState<{
+    clientId: string;
+    attemptId: string;
+    stage: string | null;
+  } | null>(null);
   const [attempts, setAttempts] = useState<AttemptSummary[]>([]);
   const [attemptTotal, setAttemptTotal] = useState(0);
   const [attemptsNextCursor, setAttemptsNextCursor] = useState<string | null>(
@@ -240,36 +246,26 @@ export function ClientsView({
   }, [api, selectedId, clientToken]);
 
   useEffect(() => {
-    if (!selectedId || !client?.issueNumber) return;
+    if (!selectedId || client?.clientId !== selectedId) return;
     const requestId = ++attemptsRequest.current;
     const controller = new AbortController();
     setAttemptsLoading(true);
     setAttemptsError(null);
-    Promise.all([
-      api.listAttempts(
+    api
+      .listAttempts(
         { clientId: selectedId, limit: 100 },
         { signal: controller.signal },
-      ),
-      api.listAttempts(
-        { issueNumber: client.issueNumber, limit: 100 },
-        { signal: controller.signal },
-      ),
-    ])
-      .then(([byClient, byIssue]) => {
+      )
+      .then((page) => {
         if (
           controller.signal.aborted ||
           attemptsRequest.current !== requestId ||
           detailIdRef.current !== selectedId
         )
           return;
-        const seen = new Set(byIssue.items.map((item) => item.attemptId));
-        const items = [
-          ...byIssue.items,
-          ...byClient.items.filter((item) => !seen.has(item.attemptId)),
-        ].sort((a, b) => b.createdAt - a.createdAt);
-        setAttempts(items);
-        setAttemptTotal(Math.max(byClient.total, byIssue.total, items.length));
-        setAttemptsNextCursor(byIssue.nextCursor ?? byClient.nextCursor);
+        setAttempts(page.items);
+        setAttemptTotal(page.total);
+        setAttemptsNextCursor(page.nextCursor);
         setAttemptsLoading(false);
       })
       .catch((failure) => {
@@ -283,7 +279,7 @@ export function ClientsView({
         setAttemptsLoading(false);
       });
     return () => controller.abort();
-  }, [api, selectedId, client?.issueNumber, clientToken]);
+  }, [api, selectedId, client?.clientId, client?.issueNumber, clientToken]);
 
   useEffect(() => {
     if (selectedId) {
@@ -340,9 +336,22 @@ export function ClientsView({
     );
   }
 
-  function selectClient(record: ClientRecord, trigger: HTMLButtonElement) {
+  function selectClient(
+    record: ClientRecord,
+    trigger: HTMLButtonElement,
+    stage?: string | null,
+  ) {
     triggerRef.current = trigger;
     focusOnOpenRef.current = true;
+    setWorkflowTarget(
+      stage !== undefined && record.workflow
+        ? {
+            clientId: record.clientId,
+            attemptId: record.workflow.attemptId,
+            stage,
+          }
+        : null,
+    );
     onNavigate({
       ...state,
       clientId: record.clientId,
@@ -397,7 +406,7 @@ export function ClientsView({
     setAttemptsError(null);
     api
       .listAttempts({
-        issueNumber: client.issueNumber,
+        clientId: activeId,
         cursor: attemptsNextCursor,
         limit: 100,
       })
@@ -439,7 +448,7 @@ export function ClientsView({
         ? "Needs attention"
         : health.coverageStart === null
           ? "Coverage unknown"
-          : "Directory current"
+          : "Intake data current"
       : "Checking coverage";
   const showing =
     clients.length > 0
@@ -482,7 +491,7 @@ export function ClientsView({
         <span className="admin-pulse__sep" />
         <span>{directoryState}</span>
         <span className="admin-pulse__sep" />
-        <span>Accepted intake only</span>
+        <span>Accepted intakes · Legacy workflows</span>
       </div>
 
       <form
@@ -659,6 +668,7 @@ export function ClientsView({
                 <th scope="col">Contact</th>
                 <th scope="col">Submitted</th>
                 <th scope="col">Inviting admin</th>
+                <th scope="col">Latest workflow</th>
                 <th scope="col">
                   <span className="admin-visually-hidden">Client dossier</span>
                 </th>
@@ -670,9 +680,6 @@ export function ClientsView({
                 const siteUrl = group.clients.find(
                   (client) => client.siteUrl,
                 )?.siteUrl;
-                const issues = [
-                  ...new Set(group.clients.map((c) => c.issueNumber)),
-                ].sort((a, b) => b - a);
                 const selected = group.key === selectedGroupKey;
                 return (
                   <tr
@@ -705,13 +712,6 @@ export function ClientsView({
                           <span className="admin-client-name">
                             {formatClientName(record)}
                           </span>
-                          <span className="admin-client-meta">
-                            {issues.length === 1
-                              ? `Issue #${issues[0]}`
-                              : `Intakes ${issues
-                                  .map((issue) => `#${issue}`)
-                                  .join(", ")}`}
-                          </span>
                           {group.clients.length > 1 ? (
                             <details className="admin-client-intakes">
                               <summary>{group.clients.length} intakes</summary>
@@ -729,8 +729,10 @@ export function ClientsView({
                                         );
                                       }}
                                     >
-                                      Intake #{client.issueNumber} ·{" "}
-                                      {formatDate(client.submittedAt)}
+                                      {client === record
+                                        ? "Latest intake"
+                                        : "Intake"}{" "}
+                                      · {formatDate(client.submittedAt)}
                                     </button>
                                   </li>
                                 ))}
@@ -771,6 +773,14 @@ export function ClientsView({
                     </td>
                     <td data-label="Inviting admin">
                       <ActorLabel actor={record.creator} showSource={false} />
+                    </td>
+                    <td data-label="Latest workflow">
+                      <ClientWorkflowStrip
+                        workflow={record.workflow}
+                        onOpen={(stage, trigger) =>
+                          selectClient(record, trigger, stage)
+                        }
+                      />
                     </td>
                     <td
                       data-label="Client dossier"
@@ -830,7 +840,12 @@ export function ClientsView({
 
       {selectedId ? (
         <ClientDossier
-          client={client}
+          key={selectedId}
+          api={api}
+          workflowTarget={
+            workflowTarget?.clientId === selectedId ? workflowTarget : null
+          }
+          client={client?.clientId === selectedId ? client : null}
           loading={clientLoading}
           error={clientError}
           attempts={attempts}
@@ -839,21 +854,12 @@ export function ClientsView({
           attemptsError={attemptsError}
           attemptTotal={attemptTotal}
           headingRef={headingRef}
-          onClose={() => onNavigate({ ...state, clientId: null })}
+          onClose={() => {
+            setWorkflowTarget(null);
+            onNavigate({ ...state, clientId: null });
+          }}
           onRetry={() => setClientToken((token) => token + 1)}
           onLoadMoreAttempts={loadMoreAttempts}
-          onOpenAttempt={(attemptId) =>
-            onNavigate(
-              {
-                view: "generations",
-                attemptId,
-                clientId: null,
-                filters: { clientId: selectedId },
-                cursor: null,
-              },
-              { cursorTrail: [] },
-            )
-          }
         />
       ) : null}
     </div>

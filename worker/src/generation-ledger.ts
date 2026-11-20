@@ -304,12 +304,20 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
     const page = await this.attempts.listClients(query);
     return {
       ...page,
-      items: page.items.map((client) => this.withClientSiteUrl(client)),
+      items: page.items.map((client) => ({
+        ...this.withClientSiteUrl(client),
+        workflow: this.attempts.clientWorkflow(client),
+      })),
     };
   }
   async getClient(id: string) {
     const client = await this.attempts.getClient(id);
-    return client ? this.withClientSiteUrl(client) : client;
+    return client
+      ? {
+          ...this.withClientSiteUrl(client),
+          workflow: this.attempts.clientWorkflow(client),
+        }
+      : null;
   }
   async registerDispatch(input: DispatchRequest) {
     return this.attempts.registerDispatch(input);

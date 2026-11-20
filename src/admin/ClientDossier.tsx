@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import type { AttemptSummary, ClientRecord } from "../lib/admin-contracts";
 import { ActorLabel } from "./ActorLabel";
 import { AdminIcon } from "./AdminIcon";
+import type { AdminApi } from "./api";
+import { ClientWorkflowRun } from "./ClientWorkflow";
 import { DeliveryStatusBadge, ExecutionStatusBadge } from "./StatusBadge";
 import {
   formatClientName,
@@ -14,6 +16,8 @@ import {
 } from "./format";
 
 export type ClientDossierProps = {
+  api: AdminApi;
+  workflowTarget: { attemptId: string; stage: string | null } | null;
   client: ClientRecord | null;
   loading: boolean;
   error: string | null;
@@ -26,7 +30,6 @@ export type ClientDossierProps = {
   onClose: () => void;
   onRetry: () => void;
   onLoadMoreAttempts: () => void;
-  onOpenAttempt: (attemptId: string) => void;
 };
 
 function SiteLinks({ client }: { client: ClientRecord }) {
@@ -268,6 +271,8 @@ function ClientDetails({ client }: { client: ClientRecord }) {
 }
 
 export function ClientDossier({
+  api,
+  workflowTarget,
   client,
   loading,
   error,
@@ -280,10 +285,18 @@ export function ClientDossier({
   onClose,
   onRetry,
   onLoadMoreAttempts,
-  onOpenAttempt,
 }: ClientDossierProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const workflowRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
+  const [selectedRun, setSelectedRun] = useState<string | null>(null);
+  const runId =
+    selectedRun ??
+    workflowTarget?.attemptId ??
+    client?.workflow?.attemptId ??
+    (client?.workflow === undefined
+      ? attempts.find((attempt) => attempt.profile === "full")?.attemptId
+      : null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -387,6 +400,34 @@ export function ClientDossier({
 
         {client ? (
           <>
+            <div ref={workflowRef} tabIndex={-1} aria-label="Client workflow">
+              {runId ? (
+                <ClientWorkflowRun
+                  key={runId}
+                  api={api}
+                  attemptId={runId}
+                  initialStage={
+                    selectedRun ? null : (workflowTarget?.stage ?? null)
+                  }
+                />
+              ) : (
+                <section
+                  className="admin-sheet__section"
+                  aria-labelledby="client-workflow-title"
+                >
+                  <h3 id="client-workflow-title">Workflow run</h3>
+                  <p className="admin-muted">
+                    {client.workflow === null
+                      ? "No site workflow is recorded for this intake."
+                      : attemptsError
+                        ? "Workflow history is unavailable."
+                        : attemptsLoading
+                          ? "Checking for a site workflow…"
+                          : "No site workflow is recorded for this intake."}
+                  </p>
+                </section>
+              )}
+            </div>
             <dl
               className="admin-panel-metrics admin-panel-metrics--pair"
               data-client-metrics
@@ -420,7 +461,10 @@ export function ClientDossier({
               error={attemptsError}
               nextCursor={attemptsNextCursor}
               total={attemptTotal}
-              onOpenAttempt={onOpenAttempt}
+              onOpenAttempt={(attemptId) => {
+                setSelectedRun(attemptId);
+                workflowRef.current?.focus();
+              }}
               onLoadMore={onLoadMoreAttempts}
               onRetry={onRetry}
             />

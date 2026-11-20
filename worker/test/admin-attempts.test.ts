@@ -85,6 +85,133 @@ function inside(
 }
 
 describe("GenerationLedger attempt history", () => {
+  it("projects only the latest full workflow for the exact intake without log text", async () => {
+    const store = ledger();
+    const client = await store.upsertClient({
+      clientId: "submission:pipeline-client",
+      inviteId: null,
+      submissionId: "pipeline-client",
+      issueNumber: 837,
+      businessName: "Pipeline Studio",
+      contactName: null,
+      email: null,
+      phone: null,
+      creator: attempt().invitationCreator,
+      submittedAt: 1000,
+    });
+    await store.upsertAttempt(
+      attempt({ attemptId: "older-full", clientId: client.clientId }),
+    );
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "github:42:10",
+        issueNumber: 837,
+        repository: "WrazyAI/launchloom",
+        runId: "42",
+        runAttempt: 10,
+        createdAt: 2000,
+        updatedAt: 2700,
+        executionStatus: "failed",
+        failure: {
+          ...attempt().failure,
+          stage: "pack_render",
+          summary: "Private diagnostic detail",
+        },
+      }),
+    );
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "github:42:9",
+        issueNumber: 837,
+        repository: "WrazyAI/launchloom",
+        runId: "42",
+        runAttempt: 9,
+        createdAt: 2000,
+        updatedAt: 2600,
+      }),
+    );
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "focused-probe",
+        clientId: client.clientId,
+        profile: "full-preview",
+        createdAt: 3000,
+        updatedAt: 3000,
+      }),
+    );
+    await store.upsertAttempt(
+      attempt({
+        attemptId: "other-client",
+        clientId: "submission:other-client",
+        issueNumber: 837,
+        createdAt: 4000,
+        updatedAt: 4000,
+      }),
+    );
+    await store.recordAttemptEvents("github:42:10", [
+      event("intake", {
+        stage: "intake",
+        status: "completed",
+        createdAt: 2100,
+        observedAt: 2100,
+        detail: "Private intake detail",
+      }),
+      event("render-start", {
+        stage: "pack_render",
+        status: "started",
+        createdAt: 2200,
+        observedAt: 2200,
+      }),
+      event("render-end", {
+        stage: "pack_render",
+        status: "failed",
+        createdAt: 2300,
+        observedAt: 2300,
+      }),
+      event("execution", {
+        stage: "execution",
+        status: "failed",
+        createdAt: 2400,
+        observedAt: 2400,
+      }),
+      event("cost:intake:1", {
+        stage: "intake",
+        status: "recorded",
+        createdAt: 2500,
+        observedAt: 2500,
+      }),
+    ]);
+    const page = await store.listClients({ search: "Pipeline Studio" });
+    expect(page.items[0]?.workflow).toEqual({
+      attemptId: "github:42:10",
+      executionStatus: "failed",
+      deliveryStatus: "none",
+      stale: false,
+      failureStage: "pack_render",
+      stages: [
+        { stage: "intake", status: "completed" },
+        { stage: "pack_render", status: "failed" },
+      ],
+    });
+    const ids = [];
+    let cursor: string | undefined;
+    do {
+      const page = await store.listAttempts({
+        clientId: client.clientId,
+        cursor,
+        limit: 1,
+      });
+      ids.push(page.items[0]?.attemptId);
+      cursor = page.nextCursor ?? undefined;
+    } while (cursor);
+    expect(ids).toEqual([
+      "focused-probe",
+      "github:42:9",
+      "github:42:10",
+      "older-full",
+    ]);
+  });
+
   it("retains a failed execution after a successful rerun sharing the dispatch", async () => {
     const store = ledger();
     await store.upsertAttempt(
