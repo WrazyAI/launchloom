@@ -1962,6 +1962,7 @@ describe("SEO market map", () => {
     );
     provider.relatedKeywords.mockResolvedValue({ cost: 0.01, keywords: [] });
     const webSearch = {
+      provider: "Brave Search API",
       search: vi.fn(async ({ query }: { query: string }) => ({
         costUsd: 0.003,
         results: [
@@ -2852,6 +2853,7 @@ describe("SEO market map", () => {
 
   it("collects bounded cited web evidence without DataForSEO but remains unready for production", async () => {
     const webSearch = {
+      provider: "Brave Search API",
       search: vi.fn(async ({ query }: { query: string }) => ({
         results: [
           {
@@ -2879,7 +2881,7 @@ describe("SEO market map", () => {
       queriesAttempted: 2,
       maxQueries: 2,
       maxResultsPerQuery: 4,
-      provider: "OpenRouter web search (Parallel)",
+      provider: "Brave Search API",
       costUsd: 0.004,
       maxUsd: 0.05,
       costComplete: true,
@@ -2892,7 +2894,7 @@ describe("SEO market map", () => {
       title: expect.stringContaining("Observed result"),
       snippet: "Extracted search evidence from the public page.",
       retrievedAt: expect.any(String),
-      provider: "OpenRouter web search (Parallel)",
+      provider: "Brave Search API",
       provenance: "external_search_observation",
     });
     expect(

@@ -1406,6 +1406,8 @@ async function collectFallbackWebEvidence(
         maxResults: FALLBACK_RESULTS_PER_QUERY,
       });
       queriesAttempted += 1;
+      if (observed?.costNote && !warnings.includes(observed.costNote))
+        warnings.push(observed.costNote);
       const reportedCost = finiteMetric(observed?.costUsd);
       if (reportedCost === null) {
         costComplete = false;
@@ -1425,7 +1427,8 @@ async function collectFallbackWebEvidence(
           title: text(result?.title, 300),
           snippet: text(result?.snippet, 1_200),
           retrievedAt,
-          provider: "OpenRouter web search (Parallel)",
+          provider:
+            observed?.provider || webSearch.provider || "Web search",
           provenance: "external_search_observation",
         });
       }
@@ -1471,7 +1474,7 @@ async function collectFallbackWebEvidence(
     failedQueries: failed,
     maxQueries,
     maxResultsPerQuery: FALLBACK_RESULTS_PER_QUERY,
-    provider: "OpenRouter web search (Parallel)",
+    provider: webSearch.provider || "Web search",
     costUsd: roundCost(costUsd),
     maxUsd,
     costComplete,
@@ -1706,7 +1709,7 @@ async function researchSingleCity(intake = {}, options = {}) {
     externalSearchEvidence: [],
     fallbackSearch: {
       status: options.webSearch ? "pending" : "unavailable",
-      provider: options.webSearch ? "OpenRouter web search (Parallel)" : null,
+      provider: options.webSearch ? options.webSearch.provider || "Web search" : null,
       queriesAttempted: 0,
       failedQueries: 0,
       maxQueries: Math.max(
@@ -3289,8 +3292,13 @@ async function main() {
   const intentPlanner = goKey
     ? createOpenCodeGoIntentQueryPlanner({ apiKey: goKey })
     : undefined;
+  const braveKey = process.env.BRAVE_SEARCH_API_KEY;
+  const webSearch = braveKey
+    ? createBraveSearchClient({ apiKey: braveKey })
+    : undefined;
   const dossier = await researchSiteContext(intake, {
     dataForSeo,
+    webSearch,
     intentPlanner,
     maxTasks: Number(process.env.SEO_RESEARCH_MAX_TASKS || DEFAULT_MAX_TASKS),
     maxUsd: Number(process.env.SEO_RESEARCH_MAX_USD || DEFAULT_MAX_USD),
