@@ -219,9 +219,9 @@ describe("contextual image generation", () => {
         .map((part: any) => part.text)
         .join(" ");
       expect(reviewText).not.toContain("data:image/");
-      expect(reviewText).toContain("incidental unreadable texture");
-      expect(reviewText).toContain("readable words");
-      expect(reviewText).toContain("photographic still life");
+      expect(reviewText).toContain("small incidental labels");
+      expect(reviewText).toContain("prominent lettering");
+      expect(reviewText).toContain("Intended scene:");
       expect(result.manifest.placements[0].imageReview).toMatchObject({
         status: "approved",
         usage: { prompt_tokens: 500, completion_tokens: 30 },
@@ -346,9 +346,8 @@ describe("contextual image generation", () => {
     expect(falRequests).toBe(6);
     expect(result.requests).toBe(6);
     expect(reviewAttempts).toEqual([1, 2, 1, 2, 1, 2]);
-    expect(prompts[1]).toContain(
-      "Do not create a webpage, interface, readable words",
-    );
+    expect(prompts[1]).toContain("Do not create a webpage");
+    expect(prompts[1]).toContain("Remove prominent lettering");
     expect(result.site.images.hero).toBe("/images/reviewed-roofing-hero.webp");
     expect(result.manifest.placements).toEqual([]);
     expect(result.manifest.generationRequests).toBe(6);
@@ -453,9 +452,7 @@ describe("contextual image generation", () => {
 
     expect(prompts[0]).toHaveLength(DEFAULT_MAX_PROMPT_LENGTH);
     expect(prompts[1].length).toBeLessThanOrEqual(DEFAULT_MAX_PROMPT_LENGTH);
-    expect(prompts[1]).toContain(
-      "Do not create a webpage, interface, readable words",
-    );
+    expect(prompts[1]).toContain("Do not create a webpage");
     expect(result.manifest.placements).toHaveLength(1);
   });
 
@@ -1437,7 +1434,7 @@ describe("contextual image generation", () => {
             calls += 1;
             if (
               !options.input.prompt.includes(
-                "Do not create a webpage, interface, readable words",
+                "Regenerate a single standalone photographic asset",
               )
             )
               throw new Error("Retry this placement.");
@@ -1936,4 +1933,77 @@ describe("generated asset review on OpenCode Go", () => {
       vi.unstubAllGlobals();
     }
   }, 20000);
+});
+
+describe("scene-aware generated-image review", () => {
+  it("passes the intended scene and the niche people policy to the reviewer", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-scene-review-"));
+    const reviews: Array<Record<string, unknown>> = [];
+    const site = fixture();
+    site.businessKind = "architecture";
+    const result = await generateContextualAssets({
+      site,
+      inspiration: {
+        routes: [
+          {
+            id: "scene-route",
+            referenceDna: { familyId: "guided-conversation" },
+          },
+        ],
+      },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 2,
+      falClient: {
+        config() {},
+        async subscribe() {
+          return {
+            data: { images: [{ url: "https://fal.example/scene.jpg" }] },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+      imageReviewer: async (input: any) => {
+        reviews.push(input);
+        return { approved: true, reasonCodes: [], model: "test-reviewer" };
+      },
+    } as any);
+
+    expect(reviews[0].scene).toContain("one standalone visual image asset");
+    expect(reviews[0].businessKind).toBe("architecture");
+    expect(reviews[0].placement).toBe("hero");
+    expect(result.manifest.placements[0].imageReview.status).toBe("approved");
+  });
+
+  it("records a people rejection with its reason code in private evidence", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-people-review-"));
+    const result = await generateContextualAssets({
+      site: fixture(),
+      inspiration: { routes: [{ id: "people-route" }] },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 2,
+      falClient: {
+        config() {},
+        async subscribe() {
+          return {
+            data: { images: [{ url: "https://fal.example/people.jpg" }] },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+      imageReviewer: async () => ({
+        approved: false,
+        reasonCodes: ["people_or_faces"],
+        model: "test-reviewer",
+      }),
+    } as any);
+
+    expect(result.manifest.placements).toEqual([]);
+    expect(result.manifest.skipped[0].imageReviews[0].reasonCodes).toEqual([
+      "people_or_faces",
+    ]);
+  });
 });
