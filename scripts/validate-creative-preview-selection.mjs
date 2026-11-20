@@ -47,6 +47,7 @@ export function validateCreativePreviewSelection({ config, bakeoff, gate } = {})
     null;
   if (!selectedCandidate)
     reasons.push("selected candidate is missing from the bakeoff report");
+  const warnings = [...gateResult.warnings];
   if (selectedCandidate) {
     const { hard } = splitFailureLines(selectedCandidate.failures || []);
     if (hard.length)
@@ -56,6 +57,36 @@ export function validateCreativePreviewSelection({ config, bakeoff, gate } = {})
       !selectedCandidate.renderedReferenceFidelity?.audit
     )
       reasons.push("selected candidate audit evidence is missing");
+    // A composition that declares a media region but renders no raster media
+    // is image-led in intent and graphic in result. Never call that clean: the
+    // approved imagery contract was not met, even when the graphic stand-in is
+    // deliberate and readable.
+    const mediaViewports = (Array.isArray(selectedCandidate.viewports)
+      ? selectedCandidate.viewports
+      : []
+    ).filter((viewport) => Number(viewport?.heroMediaRegionCount) > 0);
+    const noRenderedMedia =
+      mediaViewports.length > 0 &&
+      mediaViewports.every(
+        (viewport) => Number(viewport?.heroMediaVisualCount) === 0,
+      );
+    const coverage = selectedCandidate.imageCoverage;
+    const emptyCoverage =
+      coverage &&
+      Number(coverage.count) === 0 &&
+      coverage.required === true;
+    if (noRenderedMedia)
+      warnings.push(
+        "Image-led composition rendered no approved imagery; the preview uses a graphic stand-in.",
+      );
+    else if (emptyCoverage)
+      warnings.push(
+        "No approved imagery was available for an image-required composition.",
+      );
+    else if (coverage && coverage.required === true && coverage.hero !== true)
+      warnings.push(
+        "Hero imagery was not approved for an image-required composition.",
+      );
   }
 
   if (
@@ -75,10 +106,16 @@ export function validateCreativePreviewSelection({ config, bakeoff, gate } = {})
     reasons.push("creative selection mode is missing or unknown");
   }
 
+  const decision =
+    reasons.length === 0
+      ? gateResult.decision === "clean" && warnings.length
+        ? "warned"
+        : gateResult.decision
+      : "reject";
   return {
-    decision: reasons.length === 0 ? gateResult.decision : "reject",
+    decision,
     candidateId: candidateId || null,
-    warnings: gateResult.warnings,
+    warnings,
     reasons,
   };
 }

@@ -2007,3 +2007,100 @@ describe("scene-aware generated-image review", () => {
     ]);
   });
 });
+
+describe("reviewer failure handling", () => {
+  const reviewResponse = (text: string) =>
+    new Response(
+      JSON.stringify({
+        id: "resp_review_retry",
+        status: "completed",
+        output: [
+          {
+            type: "message",
+            role: "assistant",
+            status: "completed",
+            content: [{ type: "output_text", text }],
+          },
+        ],
+        usage: { input_tokens: 100, output_tokens: 20 },
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+
+  it("recovers on a third review when two structured responses are malformed", async () => {
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    const image = await sharp({
+      create: {
+        width: 16,
+        height: 16,
+        channels: 3,
+        background: { r: 12, g: 40, b: 30 },
+      },
+    })
+      .webp()
+      .toBuffer();
+    let calls = 0;
+    vi.stubGlobal("fetch", async () => {
+      calls += 1;
+      if (calls < 3) return reviewResponse(JSON.stringify({ approved: true }));
+      return reviewResponse(
+        JSON.stringify({
+          isStandaloneImage: true,
+          containsWebsiteOrInterface: false,
+          containsProminentText: false,
+          containsLogoOrWatermark: false,
+          containsPeople: false,
+          peopleAreIncidental: false,
+          matchesIntendedScene: true,
+        }),
+      );
+    });
+    try {
+      const review = await reviewGeneratedAsset({
+        imageData: image,
+        placement: "hero",
+        businessKind: "restaurant",
+        scene: "A warm dining room with no visible people.",
+      });
+      expect(review.approved).toBe(true);
+      expect(calls).toBe(3);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  }, 20000);
+
+  it("records review outcomes as a manifest summary", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-review-stats-"));
+    const result = await generateContextualAssets({
+      site: fixture(),
+      inspiration: { routes: [{ id: "stats-route" }] },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 2,
+      falClient: {
+        config() {},
+        async subscribe() {
+          return {
+            data: { images: [{ url: "https://fal.example/stats.jpg" }] },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+      imageReviewer: async () => ({
+        approved: false,
+        reasonCodes: ["visible_text"],
+        model: "test-reviewer",
+      }),
+    } as any);
+
+    expect((result.manifest as any).reviewStats).toEqual({
+      approved: 0,
+      rejected: 2,
+      unavailable: 0,
+      total: 2,
+    });
+  });
+});
