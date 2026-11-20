@@ -19,6 +19,7 @@ const factNotice = factReport ? [
   ...(deferredFactCount > 0 ? [`${deferredFactCount} optional business facts are deferred.`] : []),
 ].join(" ") : "";
 const webResearchComplete = hasCompletedFallbackResearch(site.seoResearch);
+const researchMode = site.seoResearch?.mode;
 const cityResearch = site.seoResearch?.coverageResearch;
 const pendingCoverage = cityResearch && cityResearch.complete !== true;
 const completedCityCount = cityResearch?.cities?.filter((city) => city.status === "complete").length || 0;
@@ -624,7 +625,7 @@ const { diagnosticPreview = false } = Astro.props;
 
 </style>
 
-<script is:inline define:vars={{ launchloomUrl, publishReady, webResearchComplete, pendingCoverage, completedCityCount, confirmedCityCount, factNotice, factBlocked, routeBlocked, routeNotice, pageBlocked, pageNotice, pageDraftCount, palette }}>
+<script is:inline define:vars={{ launchloomUrl, publishReady, webResearchComplete, researchMode, pendingCoverage, completedCityCount, confirmedCityCount, factNotice, factBlocked, routeBlocked, routeNotice, pageBlocked, pageNotice, pageDraftCount, palette }}>
   const root = document.querySelector("#ll-review");
   const diagnosticPreview = root?.getAttribute("data-diagnostic-preview") === "true";
   const token = new URLSearchParams(window.location.search).get("review");
@@ -1638,7 +1639,7 @@ const { diagnosticPreview = false } = Astro.props;
     }
     if (developer && webResearchComplete) {
       const researchNotice = root.querySelector(".ll-review__research-notice");
-      const citedFallback = site.seoResearch?.mode === "fallback";
+      const citedFallback = researchMode === "fallback";
       researchNotice.hidden = false;
       researchNotice.textContent =
         citedFallback && publishReady
@@ -1649,7 +1650,7 @@ const { diagnosticPreview = false } = Astro.props;
     if (developer && pendingCoverage) {
       const researchNotice = root.querySelector(".ll-review__research-notice");
       researchNotice.hidden = false;
-      researchNotice.textContent = `${completedCityCount} of ${confirmedCityCount} confirmed cities have completed research. Remaining city research is pending within the shared budget. ${publishReady ? (site.seoResearch?.mode === "fallback" ? "Primary-city research passed under the cited fallback policy." : "Primary-city research passed the approval checks.") : "Required primary-city research is incomplete; publishing is blocked."}`;
+      researchNotice.textContent = `${completedCityCount} of ${confirmedCityCount} confirmed cities have completed research. Remaining city research is pending within the shared budget. ${publishReady ? (researchMode === "fallback" ? "Primary-city research passed under the cited fallback policy." : "Primary-city research passed the approval checks.") : "Required primary-city research is incomplete; publishing is blocked."}`;
       root.dataset.coverageResearch = "partial";
     }
     if (diagnosticReview) {
