@@ -342,6 +342,16 @@ export class GenerationLedger extends DurableObject<GenerationLedgerEnvironment>
     return this.attempts.registerInitialDispatch(input);
   }
 
+  async recordFailureEvidence(input: {
+    repository: string;
+    runId: string;
+    runAttempt: number;
+    code: string;
+    detail: string;
+  }) {
+    return this.attempts.recordFailureEvidence(input);
+  }
+
   async getAttempt(id: string) {
     const attempt = this.attempts.getAttempt(id);
     if (!attempt) return null;

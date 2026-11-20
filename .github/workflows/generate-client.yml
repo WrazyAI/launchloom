@@ -1526,6 +1526,16 @@ jobs:
             --creative-run "${{ steps.branch.outputs.dir }}/.launchloom/generated-experiences/creative-run.json" \
             --repair-dir "${{ steps.branch.outputs.dir }}/.launchloom/creative-repair" \
             --output /tmp/generation-cost.json
+          FAILURE_CODE=""
+          FAILURE_DETAIL=""
+          EVIDENCE="$RUNNER_TEMP/launchloom-step-failure.json"
+          if [ -s "$EVIDENCE" ]; then
+            FAILURE_CODE=$(node -e 'const x=require(process.argv[1]); const c=String(x.code||""); if (/^[A-Z0-9_]{1,40}$/.test(c)) process.stdout.write(`LL_${process.env.FAILURE_STAGE}_${c}`)' "$EVIDENCE" 2>/dev/null || true)
+            FAILURE_DETAIL=$(node -e 'const x=require(process.argv[1]); const d=String(x.detail||"").trim().slice(0,600); process.stdout.write(d)' "$EVIDENCE" 2>/dev/null || true)
+          fi
+          EXTRA_FAILURE_ARGS=()
+          if [ -n "$FAILURE_CODE" ]; then EXTRA_FAILURE_ARGS+=(--failure-code "$FAILURE_CODE"); fi
+          if [ -n "$FAILURE_DETAIL" ]; then EXTRA_FAILURE_ARGS+=(--failure-detail "$FAILURE_DETAIL"); fi
           node scripts/record-generation-event.mjs \
             --action complete \
             --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --profile full \
@@ -1748,12 +1758,23 @@ jobs:
             FAILURE_STAGE=preview_ready
             FAILURE_CATEGORY=preview_delivery
           fi
+          export FAILURE_STAGE
           if [ -n "$OPERATION_ID" ]; then
             node scripts/record-operations-telemetry.mjs \
               --mode failure --stage "$FAILURE_STAGE" \
               --client-dir "${{ steps.branch.outputs.dir }}"
             exit 0
           fi
+          FAILURE_CODE=""
+          FAILURE_DETAIL=""
+          EVIDENCE="$RUNNER_TEMP/launchloom-step-failure.json"
+          if [ -s "$EVIDENCE" ]; then
+            FAILURE_CODE=$(node -e 'const x=require(process.argv[1]); const c=String(x.code||""); if (/^[A-Z0-9_]{1,40}$/.test(c)) process.stdout.write(`LL_${process.env.FAILURE_STAGE}_${c}`)' "$EVIDENCE" 2>/dev/null || true)
+            FAILURE_DETAIL=$(node -e 'const x=require(process.argv[1]); const d=String(x.detail||"").trim().slice(0,600); process.stdout.write(d)' "$EVIDENCE" 2>/dev/null || true)
+          fi
+          EXTRA_FAILURE_ARGS=()
+          if [ -n "$FAILURE_CODE" ]; then EXTRA_FAILURE_ARGS+=(--failure-code "$FAILURE_CODE"); fi
+          if [ -n "$FAILURE_DETAIL" ]; then EXTRA_FAILURE_ARGS+=(--failure-detail "$FAILURE_DETAIL"); fi
           node scripts/record-generation-event.mjs \
             --action complete \
             --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --profile full \
@@ -1768,6 +1789,7 @@ jobs:
             --failure-stage "$FAILURE_STAGE" \
             --failure-category "$FAILURE_CATEGORY" \
             --failure-next-step "Inspect the Actions run and the private candidate evidence." \
+            "${EXTRA_FAILURE_ARGS[@]}" \
             --completed-at "$(date +%s%3N)"
 
       - name: Finalize generation activity

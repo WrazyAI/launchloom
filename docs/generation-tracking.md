@@ -98,6 +98,22 @@ Providers that do not report a per-run price are marked `unreported` and the
 summary reports `incomplete` rather than inventing a number. Set the repository
 variable `FAL_IMAGE_USD_PER_IMAGE` to show a labeled image estimate.
 
+### Failure reasons
+
+Legacy issue-linked generation steps run through `scripts/private-run.sh`. On a
+nonzero exit it retains the step output only long enough to extract up to four
+error-shaped lines, scrubs emails, tokens, paths and non-approved URLs, and
+writes a bounded code and excerpt to `RUNNER_TEMP/launchloom-step-failure.json`.
+The full output is deleted in the same step. The failure recorder adds the code
+and excerpt to the attempt failure record, and the Clients drawer displays them
+only when present. Operations-identified runs keep their stricter no-excerpt
+boundary.
+
+`Backfill failure reasons` is a manual, bounded workflow for recent failed
+issue-linked runs. It reads failed-step logs just long enough to apply the same
+extraction and posts only the bounded code and excerpt. It never stores a log
+archive. Dry run is the default.
+
 ### Hero screenshot failure
 
 The preview-ready path encodes the desktop screenshot as a bounded WebP and

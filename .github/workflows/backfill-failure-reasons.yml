@@ -1,0 +1,46 @@
+name: Backfill failure reasons
+
+# Bounded, manual enrichment of recent failed generation attempts. It reads
+# failed-step logs only long enough to extract scrubbed error-shaped lines and
+# posts a code plus excerpt. No log archive is retained or published.
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: Recent failed runs to inspect (1-50)
+        type: number
+        default: 20
+      dry_run:
+        description: Read logs but do not write evidence
+        type: boolean
+        default: true
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: launchloom-failure-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    if: ${{ github.repository == 'WrazyAI/launchloom' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with: { node-version: 22 }
+      - name: Backfill bounded failure evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LAUNCHLOOM_API_URL: ${{ vars.ADMIN_PUBLIC_ORIGIN || 'https://api.launchloom.wrazyos.com' }}
+          GENERATION_TRACKING_SECRET: ${{ inputs.dry_run == false && secrets.GENERATION_TRACKING_SECRET || '' }}
+        run: |
+          ARGS=(--limit "${{ inputs.limit }}")
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS+=(--dry-run); fi
+          node scripts/backfill-failure-reasons.mjs "${ARGS[@]}"

@@ -35,8 +35,8 @@ import {
 import type { PublicationCommand } from "./publication";
 import { OnboardingInvites } from "./onboarding-invites";
 import {
-  workspaceApi, workspaceError, attemptIngest, legacyAccessPrincipal,
-  operationsDashboardApi,
+  workspaceApi, workspaceError, attemptIngest, failureEvidenceIngest,
+  legacyAccessPrincipal, operationsDashboardApi,
 } from "./admin/workspace-api";
 import {
   generationActivityIngest,
@@ -4054,6 +4054,13 @@ export default {
       if (!env.GENERATION_TRACKING_SECRET) return workspaceError('unavailable','Generation tracking is not configured.',503);
       if (!internalSecretAuthorized(request,env.GENERATION_TRACKING_SECRET)) return workspaceError('unauthorized','Unauthorized.',401);
       return attemptIngest(request,env,path.endsWith('generation-reconciliation'));
+    }
+    if (path === "/api/internal/generation-failure-evidence") {
+      if (!env.GENERATION_TRACKING_SECRET)
+        return workspaceError("unavailable", "Generation tracking is not configured.", 503);
+      if (!internalSecretAuthorized(request, env.GENERATION_TRACKING_SECRET))
+        return workspaceError("unauthorized", "Unauthorized.", 401);
+      return failureEvidenceIngest(request, env);
     }
     if (path === "/api/internal/generations/hero")
       return generationHeroUpload(request, env);

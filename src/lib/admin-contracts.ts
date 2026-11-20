@@ -64,6 +64,10 @@ export type Failure = {
   summary: string | null;
   evidenceUrl: string | null;
   nextStep: string | null;
+  /** Stable bounded code derived from the failing step, when captured. */
+  code?: string | null;
+  /** Bounded, scrubbed error excerpt. Never a raw log archive. */
+  detail?: string | null;
 };
 export type AttemptInput = {
   attemptId: string;

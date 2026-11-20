@@ -353,6 +353,8 @@ export function buildAttemptTrackingPayload(args = {}, events = []) {
           stage: clean(args["failure-stage"], 80) || null,
           category: clean(args["failure-category"], 80) || null,
           nextStep: clean(args["failure-next-step"], 500) || null,
+          code: clean(args["failure-code"], 80) || null,
+          detail: clean(args["failure-detail"], 600) || null,
         }
       : undefined,
   });
