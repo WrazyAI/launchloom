@@ -239,7 +239,9 @@ const RECIPE_CREATIVE_DIRECTION =
 function seoResearchForConfig(value) {
   if (!value || typeof value !== "object") return undefined;
   const sourceVersion = Number(value.version) || 1;
-  const mode = ["researched", "context-only", "baseline"].includes(value.mode)
+  const mode = ["researched", "fallback", "context-only", "baseline"].includes(
+    value.mode,
+  )
     ? value.mode
     : "baseline";
   const list = (items, limit = 12) =>
@@ -247,10 +249,14 @@ function seoResearchForConfig(value) {
   return {
     version: sourceVersion,
     mode,
+    researchBasis:
+      value.researchBasis ||
+      (mode === "fallback" ? "cited-web-fallback" : "context-only"),
     languageCode: value.languageCode || "en",
     publishReady:
-      mode === "researched" &&
-      (value.publishReady === true || sourceVersion < 2),
+      (mode === "researched" &&
+        (value.publishReady === true || sourceVersion < 2)) ||
+      (mode === "fallback" && value.publishReady === true),
     validatedQueries: list(
       value.validatedQueries,
       sourceVersion >= 2 ? 120 : 12,

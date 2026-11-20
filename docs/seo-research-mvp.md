@@ -86,7 +86,7 @@ fallback runs when DataForSEO responds successfully but the required measured
 map is still incomplete, such as a confirmed service with sparse metrics or a
 missing local SERP snapshot. This provides cited context for private review; it
 does not fill a metric field or satisfy a release gate. That path runs at most
-the configured number of queries (default 3, hard maximum 5), caps each query at
+the configured number of queries (default 5, hard maximum 5), caps each query at
 four web results, and stays within the fallback query budget (default $0.05,
 hard maximum $0.25). Brave Search pricing is plan-based and does not report a
 per-query charge; the dossier records `$0` incremental spend with an explicit
@@ -98,18 +98,15 @@ is never treated as search evidence.
 Fallback web observations remain separate from confirmed business facts and
 measured SEO fields. They do not create search volume, Keyword Difficulty,
 intent, ranking positions, competitor-rank claims, services, or locations.
-Completed bounded fallback research stays `context-only` and remains available
-for private diagnostic review, but it never sets `publishReady: true` and cannot
-be approved or released to a client. It must still have usable HTTPS citations,
-no failed queries, complete provider-reported fallback cost within its cap, and
-no budget exhaustion before its observations are retained. The review banner
-states that cited observations are available for review but do not replace
-measured SEO, so production approval remains blocked. Missing, empty, failed,
-partial, or unreported-cost fallback research remains blocked. The Worker,
-rendered review controls, and production build require measured version-two
-research for new-site publication; a ready flag alone cannot unlock it.
-If Brave Search is unavailable or not configured, the result stays explicitly
-degraded/context-only and is not described as researched.
+Completed bounded fallback research sets `mode: "fallback"` and may clear the
+production SEO gate under the explicit fallback policy, but it is never
+presented as measured research. Every confirmed service must have at least one
+usable HTTPS citation, with no failed queries, complete fallback accounting, and
+no budget exhaustion. The developer review banner and admin SEO view both state
+that production approval uses cited Brave fallback evidence and that measured
+SEO metrics are unavailable. Missing, empty, failed, partial, or unreported-cost
+fallback research remains blocked. If Brave Search is unavailable or not
+configured, the result stays explicitly degraded/context-only.
 
 Missing provider values stay `null` or are listed as unavailable. The report
 shows warnings, the configured task/cost limits, and DataForSEO-reported spend.
@@ -154,12 +151,12 @@ GitHub Actions variables:
 
 The generated client repository retains the JSON map, Markdown report,
 business enrichment, and canonical brief under `.launchloom/`. Production
-approval requires a complete measured map with all measurement stages, service
-SERPs, three ranking domains, and reported cost. Completed cited fallback
-receipts are preserved as private diagnostic context only and cannot satisfy
-the production gate, including historical version-two receipts whose
-`publishReady` flag was true. Incomplete research remains blocked. Creative, reference, content,
-indexability, signed-review, and exact-reviewed-head checks still apply.
+approval requires either a complete measured map with all measurement stages,
+service SERPs, three ranking domains, and reported cost, or a complete cited
+fallback dossier with per-service HTTPS citations. Historical version-two
+receipts without service-level fallback coverage remain blocked. Creative,
+reference, content, indexability, signed-review, and exact-reviewed-head checks
+still apply.
 
 The operator Access setup and one-use invitation secret are documented in
 [`private-onboarding.md`](private-onboarding.md). No SEO metric, competitor

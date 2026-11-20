@@ -53,7 +53,7 @@ function careServiceHeadTerms(service) {
 }
 const MAX_RELATED_KEYWORDS_PER_SERVICE = 5;
 const MAX_REMEASURED_RELATED_KEYWORDS_PER_SERVICE = 3;
-const DEFAULT_FALLBACK_SEARCH_QUERIES = 3;
+const DEFAULT_FALLBACK_SEARCH_QUERIES = 5;
 const HARD_MAX_FALLBACK_SEARCH_QUERIES = 5;
 const DEFAULT_FALLBACK_MAX_USD = 0.05;
 const HARD_MAX_FALLBACK_USD = 0.25;
@@ -1383,12 +1383,14 @@ async function collectFallbackWebEvidence(
       (item) => keywordKey(item.service) === keywordKey(service),
     )?.phrases?.[0];
     const phrase = plannedPhrase || searchServiceTerm(seo, service);
-    queries.push(localServiceQuery(phrase, seo.primaryCity));
+    queries.push({ query: localServiceQuery(phrase, seo.primaryCity), service });
   }
   if (seo.businessName && seo.primaryCity)
-    queries.push(`${seo.businessName} ${seo.primaryCity}`);
-  for (const seed of seeds) if (!queries.includes(seed)) queries.push(seed);
-  const selected = queries.filter(Boolean).slice(0, maxQueries);
+    queries.push({ query: `${seo.businessName} ${seo.primaryCity}`, service: null });
+  for (const seed of seeds)
+    if (!queries.some((item) => item.query === seed))
+      queries.push({ query: seed, service: null });
+  const selected = queries.filter((item) => item.query).slice(0, maxQueries);
   const evidence = [];
   let failed = 0;
   let queriesAttempted = 0;
@@ -1403,7 +1405,8 @@ async function collectFallbackWebEvidence(
     0,
     Number(webSearch.minIntervalMs) || 0,
   );
-  for (const query of selected) {
+  for (const item of selected) {
+    const query = item.query;
     if (budgetExhausted) break;
     if (queriesAttempted > 0 && minimumQueryIntervalMs)
       await new Promise((resolve) =>
@@ -1439,6 +1442,7 @@ async function collectFallbackWebEvidence(
           provider:
             observed?.provider || webSearch.provider || "Web search",
           provenance: "external_search_observation",
+          confirmedService: item.service || undefined,
         });
       }
       if (!costComplete) break;
@@ -1468,6 +1472,13 @@ async function collectFallbackWebEvidence(
     budgetExhausted ||
     !costComplete ||
     queriesAttempted < selected.length;
+  const serviceCoverage = [
+    ...new Set(
+      evidence
+        .map((item) => item.confirmedService)
+        .filter((service) => typeof service === "string" && service),
+    ),
+  ];
   return {
     evidence,
     status: evidence.length
@@ -1488,7 +1499,20 @@ async function collectFallbackWebEvidence(
     maxUsd,
     costComplete,
     budgetExhausted,
+    serviceCoverage,
+    servicesRequired: seo.services.length,
   };
+}
+
+function fallbackPublicationReady(seo, fallback) {
+  return (
+    fallback?.status === "complete" &&
+    fallback.failedQueries === 0 &&
+    fallback.budgetExhausted !== true &&
+    fallback.costComplete === true &&
+    Array.isArray(fallback.serviceCoverage) &&
+    seo.services.every((service) => fallback.serviceCoverage.includes(service))
+  );
 }
 
 export async function researchSiteContext(intake = {}, options = {}) {
@@ -1664,6 +1688,7 @@ async function researchSingleCity(intake = {}, options = {}) {
   const base = {
     version: 2,
     mode: "context-only",
+    researchBasis: "context-only",
     publishReady: false,
     generatedAt: new Date().toISOString(),
     metricLocation: seo.metricLocation,
@@ -1807,7 +1832,12 @@ async function researchSingleCity(intake = {}, options = {}) {
     );
     base.externalSearchEvidence = fallback.evidence;
     base.fallbackSearch = { ...fallback };
-    base.publishReady = false;
+    const fallbackReady = fallbackPublicationReady(seo, fallback);
+    base.publishReady = fallbackReady;
+    base.mode = fallbackReady ? "fallback" : "context-only";
+    base.researchBasis = fallbackReady
+      ? "cited-web-fallback"
+      : "context-only";
     base.evidence.push(
       ...fallback.evidence.map((item) => ({
         type: "external_web_search",
@@ -2039,7 +2069,12 @@ async function researchSingleCity(intake = {}, options = {}) {
     );
     base.externalSearchEvidence = fallback.evidence;
     base.fallbackSearch = { ...fallback };
-    base.publishReady = false;
+    const fallbackReady = fallbackPublicationReady(seo, fallback);
+    base.publishReady = fallbackReady;
+    base.mode = fallbackReady ? "fallback" : "context-only";
+    base.researchBasis = fallbackReady
+      ? "cited-web-fallback"
+      : "context-only";
     base.evidence.push(
       ...fallback.evidence.map((item) => ({
         type: "external_web_search",

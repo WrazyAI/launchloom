@@ -2874,14 +2874,16 @@ describe("SEO market map", () => {
     });
 
     expect(webSearch.search).toHaveBeenCalledTimes(2);
-    expect(dossier.mode).toBe("context-only");
-    expect(dossier.publishReady).toBe(false);
+    expect(dossier.mode).toBe("fallback");
+    expect(dossier.publishReady).toBe(true);
     expect(dossier.fallbackSearch).toMatchObject({
       status: "complete",
       queriesAttempted: 2,
       maxQueries: 2,
       maxResultsPerQuery: 4,
       provider: "Brave Search API",
+      serviceCoverage: ["Drain cleaning", "Water heater repair"],
+      servicesRequired: 2,
       costUsd: 0.004,
       maxUsd: 0.05,
       costComplete: true,
@@ -2951,8 +2953,8 @@ describe("SEO market map", () => {
       "veterinary vaccination appointments Madison WI",
       "veterinary diagnostic consultations Madison WI",
     ]);
-    expect(veterinary.mode).toBe("context-only");
-    expect(veterinary.publishReady).toBe(false);
+    expect(veterinary.mode).toBe("fallback");
+    expect(veterinary.publishReady).toBe(true);
     expect(veterinary.marketSnapshot.businessKind).toBe("veterinary");
     expect(
       veterinary.validatedQueries.every(
@@ -3022,8 +3024,8 @@ describe("SEO market map", () => {
     });
 
     expect(webSearch.search).toHaveBeenCalledTimes(2);
-    expect(dossier.mode).toBe("context-only");
-    expect(dossier.publishReady).toBe(false);
+    expect(dossier.mode).toBe("fallback");
+    expect(dossier.publishReady).toBe(true);
     expect(dossier.cost.stageCosts[0]).toMatchObject({
       stage: "local_search_volume",
       status: "failed",
@@ -3413,7 +3415,8 @@ it("shares fallback query and USD caps across confirmed cities instead of multip
   expect(
     dossier.coverageResearch!.cities.slice(1).map((item) => item.status),
   ).toEqual(["pending", "pending"]);
-  expect(dossier.publishReady).toBe(false);
+  expect(dossier.publishReady).toBe(true);
+  expect(dossier.mode).toBe("fallback");
   expect(dossier.coverageResearch!.complete).toBe(false);
   expect(dossier.coverageResearch!.approvalPolicy).toBe("primary-city");
 });

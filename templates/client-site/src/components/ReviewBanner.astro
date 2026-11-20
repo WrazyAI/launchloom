@@ -1638,14 +1638,18 @@ const { diagnosticPreview = false } = Astro.props;
     }
     if (developer && webResearchComplete) {
       const researchNotice = root.querySelector(".ll-review__research-notice");
+      const citedFallback = site.seoResearch?.mode === "fallback";
       researchNotice.hidden = false;
-      researchNotice.textContent = "Cited web observations are available for review. They do not replace measured SEO, so production approval remains blocked.";
-      root.dataset.researchMode = "web-researched";
+      researchNotice.textContent =
+        citedFallback && publishReady
+          ? "Production approval uses cited Brave web fallback research. These are not measured SEO metrics; fallback mode is recorded in the admin view."
+          : "Cited web observations are available for review. They do not replace measured SEO, so production approval remains blocked.";
+      root.dataset.researchMode = citedFallback ? "web-fallback" : "web-researched";
     }
     if (developer && pendingCoverage) {
       const researchNotice = root.querySelector(".ll-review__research-notice");
       researchNotice.hidden = false;
-      researchNotice.textContent = `${completedCityCount} of ${confirmedCityCount} confirmed cities have completed research. Remaining city research is pending within the shared budget. ${publishReady ? "Primary-city research passed the approval checks." : "Required primary-city research is incomplete; publishing is blocked."}`;
+      researchNotice.textContent = `${completedCityCount} of ${confirmedCityCount} confirmed cities have completed research. Remaining city research is pending within the shared budget. ${publishReady ? (site.seoResearch?.mode === "fallback" ? "Primary-city research passed under the cited fallback policy." : "Primary-city research passed the approval checks.") : "Required primary-city research is incomplete; publishing is blocked."}`;
       root.dataset.coverageResearch = "partial";
     }
     if (diagnosticReview) {
